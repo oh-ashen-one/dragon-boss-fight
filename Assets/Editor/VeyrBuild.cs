@@ -27,6 +27,7 @@ public static class VeyrBuild
         var settings=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
         var input=settings.FindProperty("activeInputHandler");if(input!=null){input.intValue=0;settings.ApplyModifiedPropertiesWithoutUndo();}
         AssetDatabase.SaveAssets();
+        VeyrModelImporter.InspectKnightClips();
         using(var sha=SHA256.Create()){
             var entries=Directory.GetFiles("Assets","*",SearchOption.AllDirectories).Where(p=>p.EndsWith(".cs")||p.EndsWith(".fbx")||p.EndsWith(".shader")||p.EndsWith(".mat")||p.EndsWith(".unity")||p.EndsWith(".png")).OrderBy(p=>p).Select(p=>p.Replace('\\','/')+" "+System.BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(p))).Replace("-","").ToLowerInvariant()).ToArray();
             string manifest=string.Join("\n",entries)+"\n";

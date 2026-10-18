@@ -10,3 +10,5 @@ Observed 2026-10-18 using the supported native Chrome workflow at https://studio
 The [Tripo terms](https://www.tripo3d.ai/terms), section 5.2, distinguish free-user and paid-user output rights. Current project inclusion requires verified rights for each actual asset, not an assumption from a file being downloadable. This is a provenance gate, not a claim that existing assets are prohibited.
 
 Planned first request after export access and budget approval: one original four-legged charcoal basalt dragon with distinct folded copper membrane wings, crown-like broken ivory horns, long articulated neck and tail, separate planted feet, neutral riggable pose, no base or background geometry. Validate one result before any batch. Final prompt, selected settings, exact cost and output provenance must be saved.
+
+The exact 861-character text prompt is saved in `ArtSource/tripo-dragon-prompt.txt` and was filled into the browser form without submission. H3.1 remained selected with displayed cost55 credits. Generate has not been clicked.

@@ -1,6 +1,6 @@
 # Veyr, the Cinder Warden — combat specification
 
-Status: original design proposal, not measured gameplay or an implemented-feature claim. Reference access and research limitations are recorded in [references.md](references.md). Ship one excellent phase before adding another.
+Status: original design proposal; current measured implementation outcomes are recorded in [validation.md](validation.md). Values below are initial design targets, not a claim that every target is implemented. Reference access and research limitations are recorded in [references.md](references.md). Ship one excellent phase before adding another.
 
 ## Identity and arena
 
@@ -76,3 +76,7 @@ Free camera is default; optional lock-on targets a low chest point (about 3 m), 
 | Complete three learned fights | Report each duration, frame settings, actual frame-time measurement and failure notes; median target 180–300 s |
 
 Save native rendered gameplay, matching-build screenshots, and a source commit/build identifier beside the recordings. Developer console checks and compilation support these tests but cannot replace them. Label temporary models until the Tripo/Blender asset and animation pipeline is actually integrated and visually reviewed.
+
+## Measured balance update
+
+Native build004’s efficient input replay defeated2800HP in65.25s, below the180–300s goal. The next build tests8400HP with unchanged attack, dodge and head-damage timing. This is a measured starting adjustment, not accepted final balance until a complete native run passes.

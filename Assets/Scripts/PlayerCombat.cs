@@ -13,11 +13,23 @@ public sealed class PlayerCombat : MonoBehaviour
     public string ActionLabel { get; private set; } = "Ready";
     public int Dodges, Swings, HitsTaken, DodgedHits;
     public bool ReplayEnabled;
+    // Read-only presentation contract. Combat remains the sole owner of these clocks.
+    public float AttackElapsed => attackTime;
+    public float DodgeElapsed => dodgeTime;
+    public float HealElapsed => healTime;
+    public float HurtRemaining => Mathf.Max(0, hurtTime);
+    public float DeathElapsed => deathTime;
+    public float VisualClock => visualClock;
+    public Transform TemporaryVisual => visual;
+    public bool HasAuthoredVisual => authoredVisual && authoredVisual.IsReady;
+    public Vector3 PlanarVelocity { get { var velocity = controller ? controller.velocity : Vector3.zero; velocity.y = 0; return velocity; } }
     Vector3 replayMove; bool replayAttack,replayDodge,replayHeal;
     public void SetReplayInput(Vector3 worldMove,bool attack,bool dodge,bool heal){replayMove=worldMove;replayAttack=attack;replayDodge=dodge;replayHeal=heal;}
     CharacterController controller;
     Transform visual, swordPivot, leftLeg, rightLeg;
     TrailRenderer trail;
+    AuthoredKnightVisual authoredVisual;
+    float deathTime, visualClock;
     float attackTime=-1, dodgeTime=-1, healTime=-1, regenDelay, hurtTime, bufferedAttack;
     int swingId;
     Vector3 dodgeDir;
@@ -50,16 +62,18 @@ public sealed class PlayerCombat : MonoBehaviour
         var tip=new GameObject("Sword trail");tip.transform.SetParent(swordPivot,false);tip.transform.localPosition=Vector3.up*1.5f;
         trail=tip.AddComponent<TrailRenderer>();trail.time=.16f;trail.startWidth=.17f;trail.endWidth=0;trail.minVertexDistance=.03f;
         trail.material=new Material(Shader.Find("Sprites/Default"));trail.startColor=new Color(1,.77f,.4f,.75f);trail.endColor=new Color(1,.4f,.1f,0);trail.emitting=false;
+        authoredVisual = gameObject.AddComponent<AuthoredKnightVisual>();
+        authoredVisual.Initialize(this);
     }
     static Material Mat(string n,Color c,float metal){var m=new Material(Shader.Find("Standard"));m.name=n;m.color=c;m.SetFloat("_Metallic",metal);m.SetFloat("_Glossiness",.48f);return m;}
     static Transform Part(string n,PrimitiveType p,Vector3 pos,Vector3 scale,Material m,Transform parent){var g=GameObject.CreatePrimitive(p);g.name=n;g.transform.SetParent(parent,false);g.transform.localPosition=pos;g.transform.localScale=scale;g.GetComponent<Renderer>().sharedMaterial=m;Destroy(g.GetComponent<Collider>());return g.transform;}
     void Update()
     {
         if(!controller||!View)return;
-        float dt=Time.deltaTime;regenDelay-=dt;hurtTime-=dt;bufferedAttack-=dt;
+        float dt=Time.deltaTime;regenDelay-=dt;hurtTime-=dt;bufferedAttack-=dt;visualClock+=dt;
         if(Input.GetKeyDown(KeyCode.Tab))LockedOn=!LockedOn;
-        if(IsDead){ActionLabel="Fallen";visual.localRotation=Quaternion.Slerp(visual.localRotation,Quaternion.Euler(0,0,85),dt*5);trail.emitting=false;return;}
-        if(Boss&&Boss.IsDead){ActionLabel="Victory";trail.emitting=false;return;}
+        if(IsDead){ActionLabel="Fallen";deathTime+=dt;if(!HasAuthoredVisual)visual.localRotation=Quaternion.Slerp(visual.localRotation,Quaternion.Euler(0,0,85),dt*5);trail.emitting=false;UpdateAuthoredVisual(dt);return;}
+        if(Boss&&Boss.IsDead){ActionLabel="Victory";trail.emitting=false;UpdateAuthoredVisual(dt);return;}
         Vector3 forward=View.transform.forward;forward.y=0;forward.Normalize();
         Vector3 right=View.transform.right;right.y=0;right.Normalize();
         Vector3 movement=Vector3.ClampMagnitude(forward*Input.GetAxisRaw("Vertical")+right*Input.GetAxisRaw("Horizontal"),1);
@@ -77,12 +91,12 @@ public sealed class PlayerCombat : MonoBehaviour
         if(attackTime>=0){
             attackTime+=dt;speed=1.4f;ActionLabel="Sword";
             float pose=Mathf.Clamp01(attackTime/.67f);
-            swordPivot.localRotation=Quaternion.Euler(Mathf.Sin(pose*Mathf.PI)*-70,Mathf.Lerp(-105,100,Mathf.SmoothStep(0,1,pose)),35);
-            trail.emitting=attackTime>.17f&&attackTime<.39f;
+            if(!HasAuthoredVisual)swordPivot.localRotation=Quaternion.Euler(Mathf.Sin(pose*Mathf.PI)*-70,Mathf.Lerp(-105,100,Mathf.SmoothStep(0,1,pose)),35);
+            trail.emitting=!HasAuthoredVisual&&attackTime>.17f&&attackTime<.39f;
             if(attackTime>=.23f&&!hitSent){hitSent=true;if(Boss)Boss.ReceiveSword(transform.position,transform.forward,swingId);}
             if(attackTime>.65f){attackTime=-1;trail.emitting=false;}
-        }else swordPivot.localRotation=Quaternion.Slerp(swordPivot.localRotation,Quaternion.Euler(20,0,-15),dt*12);
-        if(dodgeTime>=0){dodgeTime+=dt;ActionLabel="Dodge";movement=dodgeDir;speed=11.8f;visual.localRotation=Quaternion.Euler(Mathf.Clamp01(dodgeTime/.58f)*360,0,0);if(dodgeTime>.58f){dodgeTime=-1;visual.localRotation=Quaternion.identity;}}
+        }else if(!HasAuthoredVisual)swordPivot.localRotation=Quaternion.Slerp(swordPivot.localRotation,Quaternion.Euler(20,0,-15),dt*12);
+        if(dodgeTime>=0){dodgeTime+=dt;ActionLabel="Dodge";movement=dodgeDir;speed=11.8f;if(!HasAuthoredVisual)visual.localRotation=Quaternion.Euler(Mathf.Clamp01(dodgeTime/.58f)*360,0,0);if(dodgeTime>.58f){dodgeTime=-1;visual.localRotation=Quaternion.identity;}}
         else if(healTime>=0){healTime+=dt;ActionLabel="Healing";speed=1.2f;if(healTime>=.85f&&!healed){Health=Mathf.Min(100,Health+55);healed=true;}if(healTime>1.25f)healTime=-1;}
         else if(attackTime<0)ActionLabel="Ready";
         if(hurtTime>0)speed*=.45f;
@@ -92,8 +106,10 @@ public sealed class PlayerCombat : MonoBehaviour
         controller.Move((movement*speed+Vector3.down*9)*dt);
         var pos=transform.position;if(new Vector2(pos.x,pos.z).magnitude>36){pos=new Vector3(pos.x,0,pos.z).normalized*36;controller.enabled=false;transform.position=pos;controller.enabled=true;}
         if(regenDelay<=0&&attackTime<0&&dodgeTime<0&&healTime<0)Stamina=Mathf.Min(100,Stamina+29*dt);
-        float walk=Mathf.Sin(Time.time*12)*movement.magnitude*26;leftLeg.localRotation=Quaternion.Euler(walk,0,0);rightLeg.localRotation=Quaternion.Euler(-walk,0,0);
+        if(!HasAuthoredVisual){float walk=Mathf.Sin(Time.time*12)*movement.magnitude*26;leftLeg.localRotation=Quaternion.Euler(walk,0,0);rightLeg.localRotation=Quaternion.Euler(-walk,0,0);}
+        UpdateAuthoredVisual(dt);
     }
+    void UpdateAuthoredVisual(float dt){if(HasAuthoredVisual)authoredVisual.EvaluatePose(dt);}
     public void TakeDamage(float damage,Vector3 source)
     {
         if(IsDead||Boss&&Boss.IsDead)return;

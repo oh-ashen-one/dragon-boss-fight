@@ -13,7 +13,7 @@ public sealed class DragonBoss : MonoBehaviour
     public enum CombatState { Idle, Reposition, Windup, Active, Recovery, Buckle, Collapse, Exposed, Rise, Dead }
     enum Move { None, Stomp, Breath, Tail, Bite, Lunge }
 
-    [SerializeField] float maxHealth = 2800f;
+    [SerializeField] float maxHealth = 8400f;
     public float Health { get; private set; }
     public float MaxHealth { get { return maxHealth; } }
     public string StateLabel { get; private set; }

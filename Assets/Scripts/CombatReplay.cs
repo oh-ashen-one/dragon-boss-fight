@@ -6,7 +6,7 @@ using UnityEngine;
 
 /// <summary>
 /// Native, real-time input replay. No health writes, teleports, time scaling or
-/// direct attack calls. Run with --replay combat|death|victory|avoidance --capture-dir PATH.
+/// direct attack calls. Run with --replay combat|death|victory|avoidance|legregions|healing --capture-dir PATH.
 /// Decisions are deterministic; wall-clock timings remain subject to frame rate.
 /// </summary>
 [DefaultExecutionOrder(-100)]
@@ -15,11 +15,28 @@ public sealed class CombatReplay : MonoBehaviour
     [Serializable] public sealed class Observation
     {
         public float seconds, playerHealth, stamina, bossHealth;
-        public int frame, swings, dodges, hitsTaken, dodgedHits, collapses, lastHitRegion;
+        public int frame, swings, dodges, hitsTaken, dodgedHits, collapses, lastHitRegion, flasks;
         public string name, state, playerAction, bossMove;
         public Vector3 playerPosition, playerForward, headPosition;
         public float headDistanceFromSwordOrigin, headHorizontalDistance, headVerticalOffset, headFacingDot, headWindowRemaining;
         public bool headExposed;
+        public float[] legStagger;
+    }
+    [Serializable] public sealed class HealingTrial
+    {
+        public int ordinal, chargesBefore, chargesAfter;
+        public float healthBefore, expectedHealth, maximumObservedHealth;
+        public Observation request, accepted, completed;
+        public string outcome = "in_progress";
+        public bool successful, interrupted;
+    }
+    [Serializable] public sealed class LegRegionContact
+    {
+        public int intendedRegion, actualRegion;
+        public Observation before, after;
+        public float[] staggerBefore, staggerAfter;
+        public float bossDamage;
+        public bool targetMatched, contactedMeterIncreased, otherMetersUnchanged, independentRegionVerified;
     }
     [Serializable] public sealed class AttackTrial
     {
@@ -57,6 +74,11 @@ public sealed class CombatReplay : MonoBehaviour
         public int width, height;
         public bool legDamage, buckle, collapse, exposed, headDamage, rise, dodgePerformed, dodgeContact, playerDeath, bossDefeat, restart;
         public string avoidanceMethod = "Movement-only bait and escape, no forced boss attacks. Threat footprint is a source-derived ground model recorded per trial; avoidance also requires actual full attack progression, movement and no damage/hit-count increase.";
+        public int initialHealingCharges, successfulHeals, emptyHealInputRequests;
+        public bool healingCapObserved, healingHealthNeverExceededCap, emptyChargesRejected;
+        public Observation emptyHealStart, emptyHealEnd;
+        public List<HealingTrial> healingTrials = new List<HealingTrial>();
+        public List<LegRegionContact> legRegionContacts = new List<LegRegionContact>();
         public List<AttackTrial> attackTrials = new List<AttackTrial>();
         public List<Observation> observations = new List<Observation>();
         public List<InputSample> inputs = new List<InputSample>();
@@ -83,6 +105,16 @@ public sealed class CombatReplay : MonoBehaviour
     readonly HashSet<string> avoidedMoves = new HashSet<string>();
     AttackTrial avoidanceTrial;
     Vector3 avoidanceBossOrigin, avoidanceBossForward, avoidanceBossRight, avoidanceRefuge;
+    static readonly int[] LegVisitOrder = { 0, 2, 3, 1 };
+    readonly bool[] verifiedLegRegions = new bool[4];
+    Observation priorLegObservation;
+    int legSwingTarget = -1;
+    bool healingInitialized;
+    string healingPhase = "bait";
+    int healingDamageBaseline;
+    float healingPhaseStarted, nextEmptyHealInput, emptyPriorHealth;
+    Vector3 healingRefuge;
+    HealingTrial healingTrial;
     const float Timeout = 300f;
     float Elapsed => Time.realtimeSinceStartup - started;
 
@@ -106,8 +138,8 @@ public sealed class CombatReplay : MonoBehaviour
         prefix = "replay-" + report.mode + "-" + report.runId;
         try { Directory.CreateDirectory(directory); }
         catch (Exception e) { Debug.LogError("Replay cannot create capture directory: " + e.GetType().Name); Application.Quit(2); enabled = false; return; }
-        if (report.mode != "combat" && report.mode != "death" && report.mode != "victory" && report.mode != "avoidance")
-        { Finish(false, "Unknown replay mode; expected combat, death, victory or avoidance."); return; }
+        if (report.mode != "combat" && report.mode != "death" && report.mode != "victory" && report.mode != "avoidance" && report.mode != "legregions" && report.mode != "healing")
+        { Finish(false, "Unknown replay mode; expected combat, death, victory, avoidance, legregions or healing."); return; }
         Save();
     }
 
@@ -126,6 +158,7 @@ public sealed class CombatReplay : MonoBehaviour
         player = encounter.Player; boss = encounter.Boss; player.ReplayEnabled = true;
         previousState = boss.CurrentState; stateStarted = Time.realtimeSinceStartup;
         priorBossHealth = boss.Health;
+        priorLegObservation = Snapshot("leg-region-baseline");
         return true;
     }
 
@@ -141,6 +174,7 @@ public sealed class CombatReplay : MonoBehaviour
         }
         if (player == null || boss == null) { Finish(false, "Encounter objects disappeared unexpectedly."); return; }
         ObserveChanges();
+        if (finishing) return;
         if (Elapsed >= nextSave) { nextSave = Elapsed + 2; Save(); }
         if (player.IsDead)
         {
@@ -171,6 +205,8 @@ public sealed class CombatReplay : MonoBehaviour
             return;
         }
         if (report.mode == "avoidance") { DriveAvoidance(); return; }
+        if (report.mode == "legregions") { DriveLegRegions(); return; }
+        if (report.mode == "healing") { DriveHealing(); return; }
         if (report.mode == "combat" && CombatPassed())
         { Finish(true, "Observed leg damage, buckle, collapse, exposed head damage, rise and a damaging contact avoided by dodge."); return; }
         DriveCombat();
@@ -216,6 +252,7 @@ public sealed class CombatReplay : MonoBehaviour
             if (region >= 0 && region < 4) { milestone = !report.legDamage; report.legDamage = true; }
             if (region == 4 && boss.HeadExposed) { milestone = !report.headDamage; report.headDamage = true; }
             Observe("sword-contact-region-" + region, milestone);
+            RecordLegRegionContact(region);
         }
         priorBossHealth = boss.Health;
         if (boss.HeadExposed && Elapsed >= nextHeadAimObservation)
@@ -225,6 +262,190 @@ public sealed class CombatReplay : MonoBehaviour
         }
         if (player.Dodges > 0 && !report.dodgePerformed) { report.dodgePerformed = true; Observe("dodge-input-accepted", true); }
         if (player.DodgedHits > 0 && !report.dodgeContact) { report.dodgeContact = true; Observe("dodge-avoided-contact", true); }
+        if (report.mode == "legregions") priorLegObservation = Snapshot("leg-region-prior-frame");
+    }
+
+    void DriveHealing()
+    {
+        if (!healingInitialized)
+        {
+            healingInitialized = true;
+            report.initialHealingCharges = player.Flasks;
+            healingDamageBaseline = player.HitsTaken;
+            report.healingHealthNeverExceededCap = player.Health <= 100.001f;
+            if (player.Flasks != 4) { Finish(false, "Healing scenario expected exactly four initial charges."); return; }
+        }
+        if (player.Health > 100.001f)
+        {
+            report.healingHealthNeverExceededCap = false;
+            Finish(false, "Player health exceeded the 100 HP healing cap."); return;
+        }
+        if (player.Flasks < 0) { Finish(false, "Healing charges became negative."); return; }
+        Vector3 position = Flat(player.transform.position);
+        bool danger = boss.CurrentState == DragonBoss.CombatState.Windup || boss.CurrentState == DragonBoss.CombatState.Active;
+        if (healingPhase == "bait")
+        {
+            if (player.HitsTaken > healingDamageBaseline && player.Health < 99.99f)
+            {
+                healingPhase = "escape";
+                healingRefuge = avoidanceTrial != null ? avoidanceRefuge : Flat(boss.transform.TransformPoint(new Vector3(-8, 0, 0)));
+                Observe("healing-real-damage-" + report.successfulHeals, true);
+            }
+            else
+            {
+                var visual = boss.GetComponent<AuthoredDragonVisual>();
+                Vector3 foot = visual != null && visual.IsReady ? visual.GetFootPosition(0) : boss.LegPositions[0];
+                Vector3 delta = Flat(foot) - position;
+                Send(delta.magnitude > .3f ? delta.normalized : Vector3.zero, false, false, false);
+                return;
+            }
+        }
+        if (healingPhase == "escape")
+        {
+            if (danger && avoidanceTrial != null) healingRefuge = avoidanceRefuge;
+            Vector3 escape = healingRefuge - position;
+            if (escape.magnitude > .35f || danger || player.ActionLabel != "Ready")
+            { Send(escape.magnitude > .35f ? escape.normalized : Vector3.zero, false, false, false); return; }
+            if (report.successfulHeals == 4)
+            {
+                if (player.Flasks != 0) { Finish(false, "Four successful heals did not exhaust all four charges."); return; }
+                healingPhase = "empty"; healingPhaseStarted = Elapsed; nextEmptyHealInput = Elapsed;
+                emptyPriorHealth = player.Health;
+                report.emptyHealStart = Snapshot("healing-empty-start");
+                Observe("healing-empty-start", true);
+            }
+            else
+            {
+                healingTrial = new HealingTrial {
+                    ordinal = report.successfulHeals + 1, request = Snapshot("heal-input-request"),
+                    chargesBefore = player.Flasks, healthBefore = player.Health,
+                    expectedHealth = Mathf.Min(100, player.Health + 55), maximumObservedHealth = player.Health
+                };
+                report.healingTrials.Add(healingTrial);
+                healingPhase = "healing"; healingPhaseStarted = Elapsed;
+                Observe("healing-input-" + healingTrial.ordinal, true);
+                Send(Vector3.zero, false, false, true);
+                return;
+            }
+        }
+        if (healingPhase == "healing")
+        {
+            healingTrial.maximumObservedHealth = Mathf.Max(healingTrial.maximumObservedHealth, player.Health);
+            healingTrial.chargesAfter = player.Flasks;
+            if (player.Flasks != healingTrial.chargesBefore - 1)
+            { healingTrial.outcome = "incorrect-charge-decrement"; Finish(false, "A heal input did not consume exactly one charge."); return; }
+            if (healingTrial.accepted == null)
+            { healingTrial.accepted = Snapshot("heal-charge-consumed"); Observe("healing-charge-consumed-" + healingTrial.ordinal, false); }
+            if (player.HitsTaken > healingTrial.request.hitsTaken)
+            {
+                healingTrial.interrupted = true; healingTrial.outcome = "interrupted-by-damage";
+                healingTrial.completed = Snapshot("heal-interrupted");
+                Finish(false, "Damage interrupted a planned safe heal; no successful heal credited."); return;
+            }
+            Vector3 escape = danger && avoidanceTrial != null ? avoidanceRefuge - position : Vector3.zero;
+            Send(escape.magnitude > .35f ? escape.normalized : Vector3.zero, false, false, false);
+            if (Elapsed - healingPhaseStarted < 1.5f) return;
+            healingTrial.completed = Snapshot("heal-complete");
+            healingTrial.successful = Mathf.Abs(player.Health - healingTrial.expectedHealth) < .05f &&
+                player.Health > healingTrial.healthBefore && player.Flasks == healingTrial.chargesBefore - 1 && player.Health <= 100.001f;
+            healingTrial.outcome = healingTrial.successful ? "successful" : "incorrect-health-restoration";
+            if (!healingTrial.successful) { Finish(false, "A heal did not restore the expected 55 HP capped at 100."); return; }
+            report.successfulHeals++;
+            if (healingTrial.healthBefore + 55 > 100 && Mathf.Abs(player.Health - 100) < .05f) report.healingCapObserved = true;
+            Observe("healing-complete-" + healingTrial.ordinal, true);
+            healingTrial = null; healingPhase = "bait"; healingDamageBaseline = player.HitsTaken;
+            return;
+        }
+        if (healingPhase == "empty")
+        {
+            if (player.Flasks != 0 || player.Health > emptyPriorHealth + .001f || player.ActionLabel == "Healing")
+            { Finish(false, "Healing input with zero charges changed health, charges or entered the healing action."); return; }
+            emptyPriorHealth = player.Health;
+            Vector3 escape = danger && avoidanceTrial != null ? avoidanceRefuge - position : Vector3.zero;
+            bool request = Elapsed >= nextEmptyHealInput;
+            if (request) { nextEmptyHealInput = Elapsed + .25f; report.emptyHealInputRequests++; }
+            Send(escape.magnitude > .35f ? escape.normalized : Vector3.zero, false, false, request);
+            if (Elapsed - healingPhaseStarted < 2) return;
+            report.emptyHealEnd = Snapshot("healing-empty-complete");
+            report.emptyChargesRejected = report.emptyHealInputRequests >= 4 && player.Flasks == 0 &&
+                player.Health <= report.emptyHealStart.playerHealth && report.emptyHealStart.playerHealth < 100;
+            Observe("healing-empty-complete", true);
+            Finish(report.successfulHeals == 4 && report.healingCapObserved && report.healingHealthNeverExceededCap && report.emptyChargesRejected,
+                "Four heals consumed exactly four charges; damaged empty-flask input observed for 2 seconds. See healingTrials and cap/empty-charge assertions.");
+        }
+    }
+
+    bool LegRegionsPassed()
+    {
+        for (int i = 0; i < 4; i++) if (!verifiedLegRegions[i]) return false;
+        return true;
+    }
+
+    void RecordLegRegionContact(int region)
+    {
+        if (report.mode != "legregions" || priorLegObservation == null) return;
+        Observation after = Snapshot("leg-region-contact-" + region);
+        var contact = new LegRegionContact {
+            intendedRegion = legSwingTarget, actualRegion = region,
+            before = priorLegObservation, after = after,
+            staggerBefore = (float[])priorLegObservation.legStagger.Clone(),
+            staggerAfter = (float[])after.legStagger.Clone(),
+            bossDamage = priorLegObservation.bossHealth - after.bossHealth,
+            targetMatched = legSwingTarget == region
+        };
+        bool otherMetersUnchanged = true;
+        for (int i = 0; i < 4; i++)
+            if (i != region && Mathf.Abs(contact.staggerAfter[i] - contact.staggerBefore[i]) > .001f) otherMetersUnchanged = false;
+        contact.contactedMeterIncreased = region >= 0 && region < 4 && contact.staggerAfter[region] > contact.staggerBefore[region] + .001f;
+        contact.otherMetersUnchanged = otherMetersUnchanged;
+        contact.independentRegionVerified = contact.targetMatched && contact.bossDamage > 0 && contact.contactedMeterIncreased && otherMetersUnchanged;
+        report.legRegionContacts.Add(contact);
+        Observe("leg-region-evidence-" + region, true);
+        if (contact.independentRegionVerified) verifiedLegRegions[region] = true;
+        if (!otherMetersUnchanged)
+            Finish(false, "A sword contact changed a stagger meter belonging to another leg; inspect legRegionContacts before/after arrays.");
+        else if (region >= 0 && region < 4 && !contact.contactedMeterIncreased)
+            Finish(false, "Leg damage occurred without increasing its stagger meter during the independent-region scenario.");
+    }
+
+    void DriveLegRegions()
+    {
+        if (LegRegionsPassed())
+        { Finish(true, "Each of the four intended leg regions took sword damage and increased only its own stagger meter; no collapse required."); return; }
+        if (boss.CollapseCount > 0)
+        { Finish(false, "Unexpected collapse before all four independent leg regions were verified."); return; }
+        for (int i = 0; i < 4; i++)
+            if (boss.LegStagger[i] >= 75)
+            { Finish(false, "Repeated unintended contacts approached a collapse threshold; stopped rather than resetting the boss or obscuring evidence."); return; }
+        Vector3 position = Flat(player.transform.position);
+        if ((boss.CurrentState == DragonBoss.CombatState.Windup || boss.CurrentState == DragonBoss.CombatState.Active) && avoidanceTrial != null)
+        {
+            Vector3 escape = avoidanceRefuge - position;
+            Send(escape.magnitude > .25f ? escape.normalized : Vector3.zero, false, false, false);
+            return;
+        }
+        int targetRegion = 0;
+        foreach (int region in LegVisitOrder) if (!verifiedLegRegions[region]) { targetRegion = region; break; }
+        Vector3 target = Flat(boss.LegPositions[targetRegion]);
+        Vector3 outward = Flat(target - boss.transform.position).normalized;
+        if (outward.sqrMagnitude < .01f) outward = boss.transform.right * (targetRegion % 2 == 0 ? -1 : 1);
+        Vector3 stand = target + outward * 1.6f;
+        Vector3 toStand = stand - position;
+        Vector3 toLeg = target - position;
+        bool atStand = toStand.magnitude < .4f;
+        Vector3 movement = !atStand ? toStand.normalized : toLeg.normalized * .06f;
+        bool aligned = toLeg.sqrMagnitude < .16f || Vector3.Dot(player.transform.forward, toLeg.normalized) > .85f;
+        Vector3 swordOrigin = player.transform.position + Vector3.up * 1.1f;
+        float targetScore = Mathf.Max(0, Vector3.Distance(swordOrigin, boss.LegPositions[targetRegion]) - .75f);
+        bool uniquelyClosest = true;
+        for (int i = 0; i < 4; i++)
+            if (i != targetRegion && Mathf.Max(0, Vector3.Distance(swordOrigin, boss.LegPositions[i]) - .75f) <= targetScore + .1f) uniquelyClosest = false;
+        if (boss.HeadTarget != null && Mathf.Max(0, Vector3.Distance(swordOrigin, boss.HeadTarget.position) - 1) <= targetScore + .1f) uniquelyClosest = false;
+        bool heal = player.Health <= 55 && player.Flasks > 0 && boss.CurrentState == DragonBoss.CombatState.Recovery;
+        bool attack = !heal && atStand && aligned && uniquelyClosest && targetScore < 2.5f &&
+            player.Stamina >= 22 && player.ActionLabel == "Ready" && Elapsed >= nextSwing;
+        if (attack) { nextSwing = Elapsed + .9f; legSwingTarget = targetRegion; Observe("leg-region-input-" + targetRegion, false); }
+        Send(movement, attack, false, heal);
     }
 
     bool AvoidancePassed()
@@ -235,7 +456,7 @@ public sealed class CombatReplay : MonoBehaviour
 
     void ObserveAvoidanceTransition(DragonBoss.CombatState state)
     {
-        if (report.mode != "avoidance") return;
+        if (report.mode != "avoidance" && report.mode != "legregions" && report.mode != "healing") return;
         if (state == DragonBoss.CombatState.Windup)
         {
             if (avoidanceTrial != null && !avoidanceTrial.recoveryObserved)
@@ -486,11 +707,12 @@ public sealed class CombatReplay : MonoBehaviour
             name = name, seconds = Elapsed, frame = Time.frameCount, playerHealth = player.Health, stamina = player.Stamina,
             bossHealth = boss.Health, state = boss.CurrentState.ToString(), playerPosition = player.transform.position,
             swings = player.Swings, dodges = player.Dodges, hitsTaken = player.HitsTaken, dodgedHits = player.DodgedHits,
-            collapses = boss.CollapseCount, lastHitRegion = boss.LastHitRegion,
+            collapses = boss.CollapseCount, lastHitRegion = boss.LastHitRegion, flasks = player.Flasks,
             bossMove = boss.CurrentMoveName, playerAction = player.ActionLabel, playerForward = player.transform.forward, headPosition = headPosition,
             headDistanceFromSwordOrigin = headDelta.magnitude, headHorizontalDistance = flatHeadDelta.magnitude,
             headVerticalOffset = headDelta.y, headFacingDot = flatHeadDelta.sqrMagnitude > .0001f ? Vector3.Dot(player.transform.forward, flatHeadDelta.normalized) : 1,
-            headWindowRemaining = boss.HeadWindowRemaining, headExposed = boss.HeadExposed
+            headWindowRemaining = boss.HeadWindowRemaining, headExposed = boss.HeadExposed,
+            legStagger = (float[])boss.LegStagger.Clone()
         };
     }
 
@@ -593,6 +815,23 @@ public sealed class CombatReplay : MonoBehaviour
                     name = "avoidance_" + move.ToLowerInvariant(), status = avoidedMoves.Contains(move) ? "observed" : "not_observed",
                     detail = "Requires windup/active/recovery, inside modeled threat at windup, escape movement >0.75m, no health loss and no hit-counter increase. See attackTrials."
                 });
+        }
+        if (report.mode == "legregions")
+        {
+            for (int i = 0; i < 4; i++)
+                report.assertions.Add(new Assertion {
+                    name = "independent_leg_region_" + i, status = verifiedLegRegions[i] ? "observed" : "not_observed",
+                    detail = "Requires intended and actual sword region match, boss health decreases, corresponding stagger meter increases and the other three remain unchanged. See legRegionContacts."
+                });
+            AddAssertion("legregions_no_collapse", boss != null && boss.CollapseCount == 0);
+        }
+        if (report.mode == "healing")
+        {
+            AddAssertion("healing_four_initial_charges", report.initialHealingCharges == 4);
+            AddAssertion("healing_four_successful_exact_decrements", report.successfulHeals == 4);
+            AddAssertion("healing_overflow_capped_at_100", report.healingCapObserved);
+            AddAssertion("healing_health_never_exceeded_100", report.healingHealthNeverExceededCap);
+            AddAssertion("healing_empty_charges_rejected_while_damaged", report.emptyChargesRejected);
         }
         Save(); StartCoroutine(CompleteAfterCapture(success));
     }
