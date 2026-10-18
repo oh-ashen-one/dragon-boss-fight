@@ -6,6 +6,9 @@
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/GameViewportClient.h"
+#include "Engine/World.h"
+#include "UnrealClient.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -235,6 +238,7 @@ void AVeyrKnight::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     if (DeltaSeconds <= 0.f) return;
+    UpdateMouseCapture();
     // Keep replay press alive until CharacterMovement has actually consumed it.
     // Jump followed by StopJumping in one actor tick cancels the jump entirely.
     if (bReplayJumpHeld && !IsGrounded()) { StopJumping(); bReplayJumpHeld = false; }
@@ -246,6 +250,7 @@ void AVeyrKnight::Tick(float DeltaSeconds)
         (FRotationMatrix(ViewYaw).GetUnitAxis(EAxis::X) * (float(bForwardHeld) - float(bBackHeld)) +
          FRotationMatrix(ViewYaw).GetUnitAxis(EAxis::Y) * (float(bRightHeld) - float(bLeftHeld))).GetClampedToMaxSize(1.f);
     MoveIntent.Z = 0.f;
+    if (!bReplayControlled && !bMouseCaptured) MoveIntent = FVector::ZeroVector;
     if (bReplayControlled)
     {
         SetGuard(bReplayGuard);
@@ -296,6 +301,12 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
 {
     if (IsTerminal()) return;
     UCharacterMovementComponent* Movement = GetCharacterMovement();
+    if (!bReplayControlled && !bMouseCaptured)
+    {
+        ConsumeMovementInputVector();
+        Movement->Velocity.X = Movement->Velocity.Y = 0.f;
+        return;
+    }
     const bool bAttack = Action == EVeyrKnightAction::LightAttack || Action == EVeyrKnightAction::HeavyAttack;
     Movement->bOrientRotationToMovement = !bLockedOn && !bAttack && Action != EVeyrKnightAction::Roll && Action != EVeyrKnightAction::Guard;
     if (Action == EVeyrKnightAction::Roll)
@@ -334,7 +345,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         // grounded combat region nearby, blend toward the head at range and on
         // collapse, and solve from the pivot rather than the lagged camera.
         const float BossRange = FVector::Dist2D(GetActorLocation(), Boss->GetActorLocation());
-        const float HeadWeight = Boss->IsHeadExposed() ? 1.f : FMath::Clamp((BossRange - 700.f) / 700.f, 0.f, 1.f);
+        const bool bHeadApproach = Boss->State == EVeyrDragonState::Buckle || Boss->State == EVeyrDragonState::Collapse || Boss->IsHeadExposed();
+        const float HeadWeight = bHeadApproach ? 1.f : FMath::Clamp((BossRange - 700.f) / 700.f, 0.f, 1.f);
         LockHeadBlend = FMath::FInterpTo(LockHeadBlend, HeadWeight, DeltaSeconds, 4.f);
         const FVector GroundFocus(Boss->GetActorLocation().X, Boss->GetActorLocation().Y, GetFootLocation().Z + 230.f);
         const FVector Focus = FMath::Lerp(GroundFocus, Boss->GetHeadLocation(), LockHeadBlend);
@@ -343,7 +355,9 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         FRotator Desired = Current;
         // Retain azimuth when walking directly beneath the target. Otherwise a
         // few centimetres crossing its axis can request a sudden 180-degree turn.
-        if (ToFocus.Size2D() > 240.f) Desired.Yaw = ToFocus.Rotation().Yaw;
+        // Head punish range is about 205cm: the body dead zone must not freeze
+        // the view while the player walks beside the exposed crown.
+        if (ToFocus.Size2D() > (bHeadApproach ? 60.f : 240.f)) Desired.Yaw = ToFocus.Rotation().Yaw;
         Desired.Pitch = FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(ToFocus.Z,
             FMath::Max(300.f, static_cast<float>(ToFocus.Size2D()))))) - 8.f, -28.f, 18.f);
         Desired.Roll = 0.f;
@@ -484,25 +498,89 @@ void AVeyrKnight::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::S, IE_Pressed, this, &AVeyrKnight::BackPressed); Input->BindKey(EKeys::S, IE_Released, this, &AVeyrKnight::BackReleased);
     Input->BindKey(EKeys::A, IE_Pressed, this, &AVeyrKnight::LeftPressed); Input->BindKey(EKeys::A, IE_Released, this, &AVeyrKnight::LeftReleased);
     Input->BindKey(EKeys::D, IE_Pressed, this, &AVeyrKnight::RightPressed); Input->BindKey(EKeys::D, IE_Released, this, &AVeyrKnight::RightReleased);
-    Input->BindKey(EKeys::J, IE_Pressed, this, &AVeyrKnight::TryLightAttack); Input->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AVeyrKnight::TryLightAttack);
-    Input->BindKey(EKeys::K, IE_Pressed, this, &AVeyrKnight::TryHeavyAttack);
-    Input->BindKey(EKeys::LeftShift, IE_Pressed, this, &AVeyrKnight::TryRoll);
-    Input->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AVeyrKnight::TryGroundedJump); Input->BindKey(EKeys::SpaceBar, IE_Released, this, &AVeyrKnight::JumpReleased);
+    Input->BindKey(EKeys::J, IE_Pressed, this, &AVeyrKnight::LightPressed); Input->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AVeyrKnight::CaptureMouseOrAttack);
+    Input->BindKey(EKeys::K, IE_Pressed, this, &AVeyrKnight::HeavyPressed);
+    Input->BindKey(EKeys::LeftShift, IE_Pressed, this, &AVeyrKnight::RollPressed);
+    Input->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AVeyrKnight::JumpPressed); Input->BindKey(EKeys::SpaceBar, IE_Released, this, &AVeyrKnight::JumpReleased);
     Input->BindKey(EKeys::F, IE_Pressed, this, &AVeyrKnight::GuardPressed); Input->BindKey(EKeys::F, IE_Released, this, &AVeyrKnight::GuardReleased);
     Input->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AVeyrKnight::GuardPressed); Input->BindKey(EKeys::RightMouseButton, IE_Released, this, &AVeyrKnight::GuardReleased);
-    Input->BindKey(EKeys::Q, IE_Pressed, this, &AVeyrKnight::TryHeal); Input->BindKey(EKeys::Tab, IE_Pressed, this, &AVeyrKnight::ToggleLockOn);
+    Input->BindKey(EKeys::Q, IE_Pressed, this, &AVeyrKnight::HealPressed); Input->BindKey(EKeys::Tab, IE_Pressed, this, &AVeyrKnight::LockPressed);
     Input->BindKey(EKeys::R, IE_Pressed, this, &AVeyrKnight::RestartIfTerminal);
+    Input->BindKey(EKeys::Escape, IE_Pressed, this, &AVeyrKnight::ReleaseMouse).bExecuteWhenPaused = true;
     Input->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AVeyrKnight::ZoomIn); Input->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AVeyrKnight::ZoomOut);
     Input->BindAxisKey(EKeys::MouseX, this, &AVeyrKnight::LookYaw); Input->BindAxisKey(EKeys::MouseY, this, &AVeyrKnight::LookPitch);
 }
-void AVeyrKnight::LookYaw(float Value) { if (!bLockedOn) AddControllerYawInput(Value * .7f); }
-void AVeyrKnight::LookPitch(float Value) { if (!bLockedOn) AddControllerPitchInput(-Value * .6f); }
-void AVeyrKnight::ZoomIn() { CameraDistance = FMath::Clamp(CameraDistance - 65.f, 300.f, 1100.f); }
-void AVeyrKnight::ZoomOut() { CameraDistance = FMath::Clamp(CameraDistance + 65.f, 300.f, 1100.f); }
-void AVeyrKnight::GuardPressed() { SetGuard(true); }
-void AVeyrKnight::GuardReleased() { SetGuard(false); }
-void AVeyrKnight::JumpReleased() { StopJumping(); }
-void AVeyrKnight::ForwardPressed() { bForwardHeld = true; } void AVeyrKnight::ForwardReleased() { bForwardHeld = false; }
-void AVeyrKnight::BackPressed() { bBackHeld = true; } void AVeyrKnight::BackReleased() { bBackHeld = false; }
-void AVeyrKnight::LeftPressed() { bLeftHeld = true; } void AVeyrKnight::LeftReleased() { bLeftHeld = false; }
-void AVeyrKnight::RightPressed() { bRightHeld = true; } void AVeyrKnight::RightReleased() { bRightHeld = false; }
+void AVeyrKnight::UpdateMouseCapture()
+{
+    APlayerController* Player = Cast<APlayerController>(Controller);
+    if (!Player || !Player->IsLocalController()) return;
+    if (MouseInputController.Get() != Player)
+    {
+        MouseInputController = Player;
+        ReleaseMouse(); // New world/possession starts with an explicitly free cursor.
+    }
+    if (bMouseCaptured)
+    {
+        UGameViewportClient* Viewport = GetWorld()->GetGameViewport();
+        if (Viewport && Viewport->Viewport && (!Viewport->Viewport->HasFocus() || !Viewport->Viewport->IsForegroundWindow())) ReleaseMouse();
+    }
+}
+
+void AVeyrKnight::CaptureMouseOrAttack()
+{
+    if (bMouseCaptured) { LightPressed(); return; }
+    APlayerController* Player = Cast<APlayerController>(Controller);
+    if (!Player || !Player->IsLocalController() || bReplayControlled) return;
+    UGameViewportClient* Viewport = GetWorld()->GetGameViewport();
+    if (!Viewport || !Viewport->Viewport || !Viewport->Viewport->IsForegroundWindow()) return;
+    FInputModeGameOnly Mode;
+    Mode.SetConsumeCaptureMouseDown(true);
+    Player->SetInputMode(Mode);
+    Player->SetShowMouseCursor(false);
+    MouseInputController = Player;
+    bMouseCaptured = true;
+    bHasEverCapturedMouse = true;
+    // The deliberate capture click never doubles as a sword swing.
+}
+
+void AVeyrKnight::ReleaseMouse()
+{
+    bMouseCaptured = false;
+    bForwardHeld = bBackHeld = bLeftHeld = bRightHeld = false;
+    if (!bReplayControlled)
+    {
+        SetGuard(false); StopJumping();
+        MoveIntent = FVector::ZeroVector;
+        ConsumeMovementInputVector();
+        GetCharacterMovement()->Velocity.X = GetCharacterMovement()->Velocity.Y = 0.f;
+    }
+    if (APlayerController* Player = Cast<APlayerController>(Controller))
+    {
+        if (!Player->IsLocalController()) return;
+        FInputModeGameAndUI Mode;
+        Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        Mode.SetHideCursorDuringCapture(false);
+        Player->SetInputMode(Mode);
+        Player->SetShowMouseCursor(true);
+        if (UGameViewportClient* Viewport = GetWorld()->GetGameViewport()) Viewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+        Player->FlushPressedKeys();
+    }
+}
+
+void AVeyrKnight::LightPressed() { if (HumanInputEnabled()) TryLightAttack(); }
+void AVeyrKnight::HeavyPressed() { if (HumanInputEnabled()) TryHeavyAttack(); }
+void AVeyrKnight::RollPressed() { if (HumanInputEnabled()) TryRoll(); }
+void AVeyrKnight::HealPressed() { if (HumanInputEnabled()) TryHeal(); }
+void AVeyrKnight::JumpPressed() { if (HumanInputEnabled()) TryGroundedJump(); }
+void AVeyrKnight::LockPressed() { if (HumanInputEnabled()) ToggleLockOn(); }
+void AVeyrKnight::LookYaw(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerYawInput(Value * .7f); }
+void AVeyrKnight::LookPitch(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerPitchInput(-Value * .6f); }
+void AVeyrKnight::ZoomIn() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance - 65.f, 300.f, 1100.f); }
+void AVeyrKnight::ZoomOut() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance + 65.f, 300.f, 1100.f); }
+void AVeyrKnight::GuardPressed() { if (HumanInputEnabled()) SetGuard(true); }
+void AVeyrKnight::GuardReleased() { if (!bReplayControlled) SetGuard(false); }
+void AVeyrKnight::JumpReleased() { if (!bReplayControlled) StopJumping(); }
+void AVeyrKnight::ForwardPressed() { bForwardHeld = HumanInputEnabled(); } void AVeyrKnight::ForwardReleased() { bForwardHeld = false; }
+void AVeyrKnight::BackPressed() { bBackHeld = HumanInputEnabled(); } void AVeyrKnight::BackReleased() { bBackHeld = false; }
+void AVeyrKnight::LeftPressed() { bLeftHeld = HumanInputEnabled(); } void AVeyrKnight::LeftReleased() { bLeftHeld = false; }
+void AVeyrKnight::RightPressed() { bRightHeld = HumanInputEnabled(); } void AVeyrKnight::RightReleased() { bRightHeld = false; }

@@ -27,3 +27,6 @@ Unreal/**/*.xcodeproj/
 # Local Python tooling caches
 __pycache__/
 *.pyc
+
+# Unreal-generated Mac packaging templates and local version counter
+Unreal/**/Build/Mac/

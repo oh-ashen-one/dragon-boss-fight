@@ -1,6 +1,6 @@
 # Customuse capability and rights inspection
 
-Checked 2026-10-18 through the connected Customuse catalog, supported authenticated browser controls and current first-party documentation. No generation, rigging, animation, export, purchase, workflow edit, provider change or publication was submitted. Existing workflow content and settings were preserved. Private account, session, workflow and asset identifiers are excluded.
+Checked 2026-10-18 through the connected Customuse catalog, supported authenticated browser controls and current first-party documentation. No generation, rigging run, animation run, export, purchase or publication was submitted. Existing workflow content and settings were preserved. A separately authorized follow-up created one isolated, unpublished task-owned configuration probe with no source asset, then selected Tripo/Quadruped and connected an unrun animation node. Private account, session, workflow and asset identifiers are excluded.
 
 ## Mesh quote verified
 
@@ -20,17 +20,30 @@ An existing humanoid workflow provided a read-only inspection point without payi
 
 | Operation | Direct website evidence | Limit |
 | --- | --- | --- |
-| Auto Rig | Palette describes a skeleton operation using Tripo or Cartwheel. Existing Rigging node has Cartwheel selected. Provider menu lists Cartwheel and Tripo. | No provider switched or rig generated. Tripo-specific body options remain uninspected. |
+| Auto Rig | Palette describes a skeleton operation using Tripo or Cartwheel. Existing Rigging node has Cartwheel selected. Provider menu lists Cartwheel and Tripo. | No existing workflow provider was switched or rig generated. The isolated Tripo probe below verifies additional body options. |
 | Cartwheel body type | Expanded body menu contains Humanoid only. Existing node displays Run: 8 credits. | Context-specific quote on an existing humanoid mesh, not a Veyr quote. No quadruped/wing/tail support established. |
 | Humanoid Animation | Palette describes Cartwheel animation from text or reference video. Existing node connects an Auto Rig output and Text Prompt. Expanded input menu lists Text to motion and Video to motion. | Historical output is visible; no motion generated or evaluated for this fight. |
 | Animation settings | Existing node shows Simple, Keep rig, duration 5s, Loop checked and Run: 33 credits. | Quote for those existing settings, not an approved Veyr operation or universal per-clip price. |
 | Rigged and animated export | Both corresponding dialogs offer GLB/FBX; JPG/PNG/TIFF/EXR textures; 1K/2K/4K/8K; separate Export Models and Export Textures actions. | No export triggered. Menu presence does not establish bone/weight/clip preservation or free conversion. |
 | Unreal transfer | Palette lists Send to Unreal for a prepared mesh and optional PBR overrides. | Not invoked; no skeletal/animation import verified. |
-| Creature workflow | Inspected animation palette lists Humanoid Animation and Roblox Animation. No quadruped/dragon animation action shown. | Absence in this palette does not prove service-wide impossibility; four legs plus separate wings, tail and jaw remain unverified. |
+| Creature workflow | Inspected animation palette lists Humanoid Animation and Roblox Animation. No quadruped/dragon animation action shown. | Basic quadruped rig configuration is verified below; four legs plus separate wings, tail and jaw, and usable creature animation remain unverified. |
 
 Source: authenticated [Nodes Editor](https://customuse.com/nodes-editor), existing Auto Rig/Humanoid Animation controls, node palette and export dialogs. No asset from another project was copied or reused.
 
 The [official rigging guide](https://customuse.com/learn/what-is-3d-model-rigging) distinguishes standard humanoid auto-rigging from creature rigging and warns that fused parts and poor deformation topology can make generated meshes unsuitable. The [export guide](https://customuse.com/learn/glb-vs-fbx-for-ai-3d-assets) describes GLB review and FBX animation paths. These are documentation claims; direct UI observations above are narrower. The [studio offering](https://customuse.com/use-cases/game-development-studios) advertises custom workflows and proprietary-rig support through a pilot, which does not establish access under the current self-service plan.
+
+## Isolated Tripo creature capability probe
+
+A follow-up used a new task-owned, unpublished workflow named **Veyr - rig capability probe - no runs**. It contains only configuration nodes, no uploaded/generated mesh and no prompt. No run, export or Publish action was pressed; the visible credit balance was unchanged.
+
+- Selecting **Tripo** on the isolated Auto Rig node exposes **Auto, Humanoid, Quadruped, Hexapod, Octopod, Avian, Serpentine and Aquatic**. Quadruped was selected. Its disabled Run action displayed **33 credits** without a source mesh; this is a configuration estimate, not a final quote or completed rig.
+- Adding Humanoid Animation from the rig output's context palette created a visible connection. The receiving node explicitly lists **Auto Rig → Character**. Therefore the UI accepts the generic model connection even while the upstream rig is configured as Quadruped.
+- That connection is **not evidence of animation compatibility**. Both nodes have no model/result. The receiving operation is still Cartwheel **Humanoid Animation**, with Text to motion, Detailed, Keep rig, 5s, Loop off and a disabled **Run: 98** action. No body-type validation or deformation has run. Its default placeholder mentions a cartwheel, not a creature motion.
+- No inspected option promises simultaneous four-leg, two-wing, jaw and tail preservation. **Hexapod does not establish a winged-dragon skeleton.** No documented dragon attack/flight animation authoring path was found in this bounded inspection.
+
+The provider's [official Tripo schema](https://platform.tripo3d.ai/docs/schema) independently lists quadruped rig support and a quadruped walk preset for rig v2.5. It does not establish that Customuse exposes that retarget operation, nor that it preserves wings/jaw or supplies the required breath, bite, claw, stomp, tail, collapse and flight motions. Standalone provider APIs are not an approved alternate workflow.
+
+**Answer to the dragon pipeline question:** Customuse exposes a supported quadruped rig configuration. A complete dragon rig plus appropriate animation and faithful export inside Customuse remains **unverified**, not proven impossible. The remaining gate is narrower than before: combined anatomy/deformation and creature animation, rather than basic quadruped option availability. Preserve this no-run probe for a future authorized model test.
 
 ## Existing proposal visual readiness
 

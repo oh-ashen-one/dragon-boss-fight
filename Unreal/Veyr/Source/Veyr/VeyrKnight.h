@@ -42,7 +42,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 SuccessfulHeals = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 SuccessfulJumps = 0;
     /** Sampled from the preceding resolved spring-arm frame; walls may legitimately compress it. */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraResolvedDistance = 650.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraResolvedDistance = 720.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraSeverelyCompressedSeconds = 0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 CameraHiddenProxyParts = 0;
 
@@ -56,6 +56,9 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") float GetPlanarSpeed() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetFootLocation() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetRollDirection() const { return RollDirection; }
+    UFUNCTION(BlueprintPure, Category="Input") bool IsMouseCaptured() const { return bMouseCaptured; }
+    UFUNCTION(BlueprintPure, Category="Input") bool IsReplayControlled() const { return bReplayControlled; }
+    UFUNCTION(BlueprintPure, Category="Input") bool HasEnteredEncounter() const { return bHasEverCapturedMouse || bReplayControlled; }
     UFUNCTION(BlueprintCallable, Category="Combat") void ApplyBossDamage(float Amount, const FVector& Source, bool bUnblockable = false);
     UFUNCTION(BlueprintCallable, Category="Combat") void TryLightAttack();
     UFUNCTION(BlueprintCallable, Category="Combat") void TryHeavyAttack();
@@ -90,10 +93,11 @@ private:
     float RegenDelay = 0.f;
     float DamageGrace = 0.f;
     float VisualClock = 0.f;
-    float CameraDistance = 650.f;
+    float CameraDistance = 720.f;
     float LockHeadBlend = 0.f;
     TWeakObjectPtr<APlayerController> OcclusionController;
     TMap<TWeakObjectPtr<UPrimitiveComponent>, float> CameraHiddenParts;
+    TWeakObjectPtr<APlayerController> MouseInputController;
     int32 SwingId = 0;
     bool bContactSent = false;
     bool bHealGranted = false;
@@ -101,6 +105,8 @@ private:
     bool bGuardBroken = false;
     bool bForwardHeld = false, bBackHeld = false, bLeftHeld = false, bRightHeld = false;
     bool bReplayControlled = false;
+    bool bMouseCaptured = false;
+    bool bHasEverCapturedMouse = false;
     bool bReplayJumpHeld = false;
     bool bReplayLight = false, bReplayHeavy = false, bReplayRoll = false, bReplayHeal = false, bReplayJump = false, bReplayGuard = false;
     FVector ReplayMove = FVector::ZeroVector;
@@ -129,4 +135,10 @@ private:
     void BackPressed(); void BackReleased();
     void LeftPressed(); void LeftReleased();
     void RightPressed(); void RightReleased();
+    bool HumanInputEnabled() const { return bMouseCaptured && !bReplayControlled; }
+    void UpdateMouseCapture();
+    void CaptureMouseOrAttack();
+    void ReleaseMouse();
+    void LightPressed(); void HeavyPressed(); void RollPressed();
+    void HealPressed(); void JumpPressed(); void LockPressed();
 };

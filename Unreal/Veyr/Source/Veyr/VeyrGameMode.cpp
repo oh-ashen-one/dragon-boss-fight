@@ -4,6 +4,7 @@
 #include "VeyrKnight.h"
 #include "VeyrHUD.h"
 #include "VeyrReplay.h"
+#include "VeyrAudio.h"
 #include "VeyrIdentity.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
@@ -42,6 +43,8 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         Knight->GetCharacterMovement()->StopMovementImmediately();
         Knight->Boss=Dragon;
         if(Dragon)Dragon->Target=Knight;
+        Audio=GetWorld()->SpawnActor<AVeyrAudio>();
+        if(Audio)Audio->Initialize(Knight,Dragon);
         bPawnPositioned=true;
         FString ReplayMode,EvidenceDirectory;
         if(FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayMode))
@@ -54,7 +57,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
             }
         }
     }
-    if(Knight&&Dragon)
+    if(Knight&&Dragon&&Knight->HasEnteredEncounter())
     {
         EncounterSeconds+=DeltaSeconds;
         if(Dragon->IsDead()&&VictorySeconds<0)

@@ -6,6 +6,7 @@ class AVeyrArena;
 class AVeyrDragon;
 class AVeyrKnight;
 class AVeyrReplay;
+class AVeyrAudio;
 
 UCLASS()
 class VEYR_API AVeyrGameMode : public AGameModeBase
@@ -19,6 +20,7 @@ public:
     UPROPERTY(BlueprintReadOnly) TObjectPtr<AVeyrDragon> Dragon;
     UPROPERTY(BlueprintReadOnly) TObjectPtr<AVeyrKnight> Knight;
     UPROPERTY() TObjectPtr<AVeyrReplay> Replay;
+    UPROPERTY(BlueprintReadOnly) TObjectPtr<AVeyrAudio> Audio;
     UPROPERTY(BlueprintReadOnly) float EncounterSeconds=0;
     UPROPERTY(BlueprintReadOnly) float VictorySeconds=-1;
 private:

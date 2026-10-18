@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "VeyrHUD.generated.h"
+class AVeyrDragon;
 UCLASS()
 class VEYR_API AVeyrHUD : public AHUD
 {
@@ -11,5 +12,6 @@ public:
 private:
     void Bar(float X,float Y,float W,float H,float Ratio,const FLinearColor& Color);
     void Label(const FString& Text,float X,float Y,float Size,const FLinearColor& Color=FLinearColor(.88f,.86f,.78f));
+    void DrawExposedHeadMarker(const AVeyrDragon* Dragon);
     float ScaleX=1,ScaleY=1;
 };

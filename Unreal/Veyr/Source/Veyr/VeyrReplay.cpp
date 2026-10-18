@@ -6,9 +6,15 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Engine/GameViewportClient.h"
+#include "HAL/IConsoleManager.h"
+#include "ImageUtils.h"
+#include "Async/Async.h"
+#include "Modules/ModuleManager.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
+#include "Policies/CondensedJsonPrintPolicy.h"
 #include "Engine/World.h"
 #include "UnrealClient.h"
 #include "HAL/FileManager.h"
@@ -92,6 +98,20 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         }
         ScreenshotIndex=CaptureFiles.Num();
         RestartLoadSeconds=FPlatformTime::Seconds()-RestartRequestedWallTime;
+        const TSharedPtr<FJsonObject>* SavedVideo=nullptr;
+        if(Saved->TryGetObjectField(TEXT("nativeVideo"),SavedVideo))
+        {
+            VideoFrameIndex=(*SavedVideo)->GetNumberField(TEXT("requestedFrames"));
+            VideoFramesSaved=(*SavedVideo)->GetNumberField(TEXT("savedFrames"));
+            VideoSkippedSlots=(*SavedVideo)->GetNumberField(TEXT("skippedSlots"));
+            VideoFailedFrames=(*SavedVideo)->GetNumberField(TEXT("failedFrames"));
+            VideoWorldIndex=(*SavedVideo)->GetNumberField(TEXT("worldIndex"))+1;
+            VideoWriteSeconds=(*SavedVideo)->GetNumberField(TEXT("pngWriteSeconds"));
+            (*SavedVideo)->TryGetNumberField(TEXT("pixelCopySeconds"),VideoPixelCopySeconds);
+            VideoStartedWallTime=FPlatformTime::Seconds()-(*SavedVideo)->GetNumberField(TEXT("elapsedWallSeconds"))-RestartLoadSeconds;
+            bVideoStopped=(*SavedVideo)->GetBoolField(TEXT("stopped"));
+            VideoStopReason=(*SavedVideo)->GetStringField(TEXT("stopReason"));
+        }
         PendingRestartEvidence.Reset();PendingRestartDirectory.Reset();
         bRestartVerification=true;RestartOrigin=Knight->GetFootLocation();
         bFreshResourcesVerified=FMath::IsNearlyEqual(Knight->Health,100.f)&&FMath::IsNearlyEqual(Knight->Stamina,100.f)&&Knight->HealingCharges==4&&
@@ -110,6 +130,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
     DurationLimit=ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:ReplayMode==TEXT("avoidance")?240.f:bLegIsolation?120.f:180.f;
+    InitializeVideo();
     if(!Knight->bLockedOn)Knight->ToggleLockOn();
     Event(bResume?TEXT("restart_world_loaded"):TEXT("start")); SaveEvidence(false);
     if(bResume&&!bFreshResourcesVerified)Finish(false,TEXT("restart resource reset failed"));
@@ -147,6 +168,12 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("struckLeg"),Dragon->GetStruckLegIndex());
     O->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
     O->SetNumberField(TEXT("controlStage"),ControlStage);
+    O->SetBoolField(TEXT("controlJumpAirborneObserved"),bControlJumpAirborne);
+    O->SetBoolField(TEXT("controlJumpLandingObserved"),bControlJumpLanded);
+    O->SetNumberField(TEXT("controlJumpMaximumRiseCm"),ControlJumpMaximumRise);
+    O->SetNumberField(TEXT("desiredAvoidanceMove"),DesiredAvoidanceMove);
+    O->SetBoolField(TEXT("avoidanceGoalInReachableRegion"),bAvoidanceGoalAvailable);
+    O->SetArrayField(TEXT("avoidanceGoal"),VectorJson(AvoidanceGoal));
     TArray<TSharedPtr<FJsonValue>> MoveCoverage;
     for(int32 I=0;I<6;++I)
     {
@@ -170,6 +197,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         Metrics->SetNumberField(TEXT("requestedArmCm"),Knight->CameraBoom->TargetArmLength);
         Metrics->SetNumberField(TEXT("pivotDistanceCm"),FVector::Distance(Pivot,Camera));
         Metrics->SetBoolField(TEXT("collisionFixApplied"),Knight->CameraBoom->IsCollisionFixApplied());
+        Metrics->SetNumberField(TEXT("hiddenProxyParts"),Knight->CameraHiddenProxyParts);
+        Metrics->SetNumberField(TEXT("severelyCompressedSeconds"),Knight->CameraSeverelyCompressedSeconds);
         FHitResult Hit;
         FCollisionQueryParams Query(SCENE_QUERY_STAT(VeyrReplayCamera),false,Knight);
         const bool bOccluded=GetWorld()->LineTraceSingleByChannel(Hit,Camera,Knight->GetActorLocation(),ECC_Camera,Query);
@@ -279,9 +308,44 @@ bool AVeyrReplay::DriveScenarioInputs()
     };
     if(ReplayMode==TEXT("avoidance"))
     {
-        int32 DesiredMove=0;while(DesiredMove<6&&AvoidedMoves[DesiredMove]>0)++DesiredMove;
         const FVector Positions[6]={FVector(1300,0,0),FVector(2000,0,0),FVector(0,600,0),FVector(-280,-400,0),FVector(-900,0,0),FVector(850,0,0)};
-        if(DesiredMove<6)Toward(Dragon->GetActorTransform().TransformPosition(Positions[DesiredMove]));
+        // Search inside the authored obstacle-free center instead of clamping a
+        // transformed goal: clamping can silently change which attack region it is in.
+        // Periodic flight/reposition and anti-repeat policy may still override a
+        // positional choice. Actual observed attacks alone establish coverage.
+        auto PositionalMove=[](const FVector& Local)
+        {
+            const float Distance=Local.Size2D();
+            if(Distance>1750.f)return 1;
+            if(Local.X<-350.f&&Distance<1300.f)return 4;
+            if(Local.X<-80.f&&Distance<850.f)return 3;
+            if(Distance<850.f&&FMath::Abs(Local.Y)>180.f)return 2;
+            if(Local.X>350.f&&Local.X<1050.f&&FMath::Abs(Local.Y)<320.f)return 5;
+            if(Local.X>0.f)return 0;
+            return Distance<850.f?3:-1;
+        };
+        bAvoidanceGoalAvailable=false;DesiredAvoidanceMove=-1;
+        for(int32 DesiredMove=0;DesiredMove<6&&!bAvoidanceGoalAvailable;++DesiredMove)
+        {
+            if(AvoidedMoves[DesiredMove]>0)continue;
+            float BestScore=TNumericLimits<float>::Max();
+            auto Consider=[&](const FVector& Local)
+            {
+                if(PositionalMove(Local)!=DesiredMove)return;
+                FVector Candidate=Dragon->GetActorTransform().TransformPosition(Local);Candidate.Z=0;
+                if(Candidate.Size2D()>3100.f)return;
+                const float Score=FVector::Dist2D(Local,Positions[DesiredMove])+.15f*FVector::Dist2D(Feet,Candidate);
+                if(Score<BestScore){BestScore=Score;AvoidanceGoal=Candidate;bAvoidanceGoalAvailable=true;DesiredAvoidanceMove=DesiredMove;}
+            };
+            Consider(Positions[DesiredMove]);
+            for(int32 Radius=500;Radius<=2000;Radius+=150)
+                for(int32 Angle=0;Angle<360;Angle+=15)
+                    Consider(FVector(Radius,0,0).RotateAngleAxis(Angle,FVector::UpVector));
+        }
+        // A constrained orientation can offer no reachable untested region.
+        // Returning inward may provoke normal repositioning; it is not coverage.
+        if(!bAvoidanceGoalAvailable)AvoidanceGoal=FVector::ZeroVector;
+        Toward(AvoidanceGoal);
         if(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)
         {
             if(Contains(Dragon->GetWarningFootprint(),Feet,65.f))
@@ -312,13 +376,20 @@ bool AVeyrReplay::DriveScenarioInputs()
                 {
                     bFullHealthHealRejected=Knight->Health==100.f&&Knight->HealingCharges==4&&Knight->SuccessfulHeals==0&&Knight->Action!=EVeyrKnightAction::Heal;
                     if(!bFullHealthHealRejected){Finish(false,TEXT("full health heal consumed a charge or entered heal"));return true;}
-                    Knight->ToggleLockOn();bLockOffObserved=!Knight->bLockedOn;Next();
+                    Knight->ToggleLockOn();bLockOffObserved=!Knight->bLockedOn;
+                    ControlJumpStartFootZ=Feet.Z;Next();
                 }
                 break;
             case 2:
                 Movement=FVector(0,1,0);bJump=Knight->SuccessfulJumps==0&&Knight->IsGrounded();
                 bControlMovement|=FVector::Dist2D(Feet,ControlOrigin)>100.f;
-                if(bControlMovement&&Knight->SuccessfulJumps>0&&Knight->IsGrounded())
+                if(Knight->SuccessfulJumps>0&&!Knight->IsGrounded())
+                {
+                    ControlJumpMaximumRise=FMath::Max(ControlJumpMaximumRise,static_cast<float>(Feet.Z-ControlJumpStartFootZ));
+                    bControlJumpAirborne|=ControlJumpMaximumRise>10.f;
+                }
+                bControlJumpLanded|=bControlJumpAirborne&&Knight->IsGrounded();
+                if(bControlMovement&&Knight->SuccessfulJumps>0&&bControlJumpAirborne&&bControlJumpLanded)
                 {
                     Knight->ToggleLockOn();bLockOnObserved=Knight->bLockedOn;Next();
                 }
@@ -448,12 +519,186 @@ void AVeyrReplay::DriveInputs()
 
 void AVeyrReplay::ServiceCapture()
 {
-    if(CaptureQueue.IsEmpty()||CaptureClock<.30f||FScreenshotRequest::IsScreenshotRequested())return;
-    CaptureClock=0; const FString Name=CaptureQueue[0]; CaptureQueue.RemoveAt(0);
-    const FString File=FPaths::Combine(RunDirectory,FString::Printf(TEXT("frame-%04d-%s.png"),++ScreenshotIndex,*Name));
-    CaptureNames.Add(Name); CaptureFiles.Add(File); CaptureTimes.Add(Elapsed);
-    CaptureTriggerTimes.Add(PendingCaptureTriggerTime);CaptureStates.Add(MakeShared<FJsonValueObject>(Snapshot()));
-    FScreenshotRequest::RequestScreenshot(File,true,false);
+    if(!CaptureQueue.IsEmpty()&&CaptureClock>=.30f&&!FScreenshotRequest::IsScreenshotRequested()&&PendingVideoFile.IsEmpty())
+    {
+        CaptureClock=0; const FString Name=CaptureQueue[0]; CaptureQueue.RemoveAt(0);
+        const FString File=FPaths::Combine(RunDirectory,FString::Printf(TEXT("frame-%04d-%s.png"),++ScreenshotIndex,*Name));
+        CaptureNames.Add(Name); CaptureFiles.Add(File); CaptureTimes.Add(Elapsed);
+        CaptureTriggerTimes.Add(PendingCaptureTriggerTime);CaptureStates.Add(MakeShared<FJsonValueObject>(Snapshot()));
+        FScreenshotRequest::RequestScreenshot(File,true,false);
+    }
+    ServiceVideoCapture();
+}
+
+bool AVeyrReplay::AppendVideoRecord(const TSharedRef<FJsonObject>& Record)
+{
+    FString Line;
+    const TSharedRef<TJsonWriter<TCHAR,TCondensedJsonPrintPolicy<TCHAR>>> Writer=TJsonWriterFactory<TCHAR,TCondensedJsonPrintPolicy<TCHAR>>::Create(&Line);
+    if(!FJsonSerializer::Serialize(Record,Writer))return false;
+    Line+=TEXT("\n");
+    return FFileHelper::SaveStringToFile(Line,*FPaths::Combine(VideoDirectory,TEXT("frames.jsonl")),FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM,&IFileManager::Get(),FILEWRITE_Append);
+}
+
+void AVeyrReplay::InitializeVideo()
+{
+    int32 RequestedFPS=0;
+    if(!FParse::Value(FCommandLine::Get(),TEXT("VeyrVideoFPS="),RequestedFPS))return;
+    if(RequestedFPS<1||RequestedFPS>15)
+    {
+        bVideoStopped=true;VideoStopReason=TEXT("invalid FPS: accepted range is 1 through 15");
+        UE_LOG(LogTemp,Warning,TEXT("VEYR_VIDEO_DISABLED %s"),*VideoStopReason);return;
+    }
+    VideoFPS=RequestedFPS;VideoDirectory=FPaths::Combine(RunDirectory,TEXT("native-video"));
+    if(VideoStartedWallTime<=0)VideoStartedWallTime=FPlatformTime::Seconds();
+    VideoNextWallTime=FPlatformTime::Seconds();
+    if(bVideoStopped)return;
+    if(!IFileManager::Get().MakeDirectory(*VideoDirectory,true))
+    {
+        bVideoStopped=true;VideoStopReason=TEXT("cannot create video directory");return;
+    }
+    // ImageUtils supports worker compression only after ImageWrapper is loaded
+    // on the game thread. Never attempt module loading from the encoder job.
+    if(!FModuleManager::Get().LoadModule(FName(TEXT("ImageWrapper"))))
+    {
+        bVideoStopped=true;VideoStopReason=TEXT("ImageWrapper unavailable for background PNG encoding");return;
+    }
+    // This completion delegate does not suppress normal screenshot writing.
+    VideoProcessedHandle=FScreenshotRequest::OnScreenshotRequestProcessed().AddUObject(this,&AVeyrReplay::OnVideoRequestProcessed);
+    TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();
+    Record->SetStringField(TEXT("type"),TEXT("world_start"));Record->SetNumberField(TEXT("worldIndex"),VideoWorldIndex);
+    Record->SetStringField(TEXT("sourceId"),VEYR_SOURCE_ID);Record->SetNumberField(TEXT("requestedFPS"),VideoFPS);
+    Record->SetNumberField(TEXT("wallSeconds"),FPlatformTime::Seconds()-VideoStartedWallTime);
+    Record->SetStringField(TEXT("timing"),TEXT("monotonic screenshot pixel-callback time; one background PNG job; native readback and pixel copy remain on game thread; real game timestep unchanged; silent"));
+    if(!AppendVideoRecord(Record))StopVideoCapture(TEXT("manifest write failed"));
+}
+
+void AVeyrReplay::ServiceVideoCapture()
+{
+    if(VideoFPS<=0||bVideoStopped||bAwaitingReload)return;
+    const double Now=FPlatformTime::Seconds();
+    if(Now-VideoStartedWallTime>=600.||VideoFrameIndex>=6000)
+    {
+        StopVideoCapture(TEXT("bounded capture limit reached"));return;
+    }
+    if(Now<VideoNextWallTime)return;
+    const double Interval=1./VideoFPS;
+    const int32 Missed=FMath::Max(0,FMath::FloorToInt((Now-VideoNextWallTime)/Interval));
+    VideoNextWallTime=Now+Interval; // Never issue catch-up captures after a slow frame.
+    const IConsoleVariable* ScreenshotDelegate=IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenshotDelegate"));
+    FString SkipReason;
+    if(FScreenshotRequest::IsScreenshotRequested()||!PendingVideoFile.IsEmpty())SkipReason=TEXT("screenshot busy or event priority");
+    else if(VideoWriteFuture.IsValid())SkipReason=TEXT("background PNG job busy; no queue");
+    else if(UGameViewportClient::OnScreenshotCaptured().IsBound())SkipReason=TEXT("another pixel callback owns capture");
+    else if(!ScreenshotDelegate||ScreenshotDelegate->GetInt()==0)SkipReason=TEXT("native screenshot callback disabled");
+    if(Missed>0||!SkipReason.IsEmpty())
+    {
+        const int32 Skipped=Missed+(SkipReason.IsEmpty()?0:1);VideoSkippedSlots+=Skipped;
+        TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();Record->SetStringField(TEXT("type"),TEXT("skip"));
+        Record->SetNumberField(TEXT("wallSeconds"),Now-VideoStartedWallTime);Record->SetNumberField(TEXT("slots"),Skipped);
+        Record->SetStringField(TEXT("reason"),SkipReason.IsEmpty()?TEXT("late tick; no catch-up"):SkipReason);
+        if(!AppendVideoRecord(Record)){StopVideoCapture(TEXT("manifest write failed"));return;}
+    }
+    if(!SkipReason.IsEmpty())return;
+    PendingVideoFile=FPaths::Combine(VideoDirectory,FString::Printf(TEXT("frame-%06d.png"),++VideoFrameIndex));
+    if(IFileManager::Get().FileExists(*PendingVideoFile)){StopVideoCapture(TEXT("refusing to overwrite existing video frame"));return;}
+    VideoRequestWallTime=Now;VideoRequestGameTime=Elapsed;bVideoPixelsReceived=false;
+    // Bind only for this exact owned request. UE suppresses its default writer
+    // while this delegate is bound, so OnVideoPixels owns saving this PNG.
+    VideoPixelsHandle=UGameViewportClient::OnScreenshotCaptured().AddUObject(this,&AVeyrReplay::OnVideoPixels);
+    FScreenshotRequest::RequestScreenshot(PendingVideoFile,true,false,false,FIntRect(),true);
+}
+
+void AVeyrReplay::OnVideoPixels(int32 Width,int32 Height,const TArray<FColor>& Pixels)
+{
+    const double Captured=FPlatformTime::Seconds();
+    if(PendingVideoFile.IsEmpty()||FScreenshotRequest::GetFilename()!=PendingVideoFile)return;
+    if(VideoWriteFuture.IsValid())return; // Never replace an owned in-flight job.
+    bVideoPixelsReceived=true;
+    FVeyrVideoWriteResult Request;
+    Request.File=PendingVideoFile;Request.SourceId=VEYR_SOURCE_ID;
+    Request.Index=VideoFrameIndex;Request.WorldIndex=VideoWorldIndex;
+    Request.Width=Width;Request.Height=Height;
+    Request.CapturedWallSeconds=Captured-VideoStartedWallTime;
+    Request.RequestedWallSeconds=VideoRequestWallTime-VideoStartedWallTime;
+    Request.RequestedGameSeconds=VideoRequestGameTime;
+    // At most one copied frame, capped at 64 MiB of pixels. Invalid/oversized
+    // frames produce a failed result without allocating a large worker copy.
+    TArray<FColor> PixelCopy;
+    if(Width>0&&Height>0&&static_cast<int64>(Width)*Height==Pixels.Num()&&Pixels.Num()<=16*1024*1024)
+        PixelCopy=Pixels;
+    Request.PixelCopySeconds=FPlatformTime::Seconds()-Captured;
+    VideoWriteFuture=Async(EAsyncExecution::ThreadPool,[Request=MoveTemp(Request),PixelCopy=MoveTemp(PixelCopy)]()
+    {
+        // Captures are immutable values. No this pointer, actor access, delegate,
+        // manifest append or game-thread callback is needed to finish the job.
+        FVeyrVideoWriteResult Result=Request;
+        const double WriteStarted=FPlatformTime::Seconds();
+        TArray64<uint8> PNG;
+        if(!PixelCopy.IsEmpty())
+            FImageUtils::PNGCompressImageArray(Request.Width,Request.Height,TArrayView64<const FColor>(PixelCopy.GetData(),PixelCopy.Num()),PNG);
+        Result.bSaved=!PNG.IsEmpty()&&FFileHelper::SaveArrayToFile(PNG,*Request.File);
+        Result.PNGWriteSeconds=FPlatformTime::Seconds()-WriteStarted;
+        return Result;
+    });
+}
+
+void AVeyrReplay::ConsumeVideoWrite(bool bWait)
+{
+    if(!VideoWriteFuture.IsValid()||(!bWait&&!VideoWriteFuture.IsReady()))return;
+    // Normal ticks only consume ready work. Shutdown/reload may wait for this
+    // one owned task; its worker never waits for the game thread.
+    const FVeyrVideoWriteResult Result=VideoWriteFuture.Consume();
+    VideoWriteSeconds+=Result.PNGWriteSeconds;VideoPixelCopySeconds+=Result.PixelCopySeconds;
+    if(Result.bSaved)++VideoFramesSaved;else ++VideoFailedFrames;
+    TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();Record->SetStringField(TEXT("type"),Result.bSaved?TEXT("frame"):TEXT("failed_frame"));
+    Record->SetStringField(TEXT("file"),FPaths::GetCleanFilename(Result.File));Record->SetNumberField(TEXT("index"),Result.Index);
+    Record->SetStringField(TEXT("sourceId"),Result.SourceId);Record->SetNumberField(TEXT("worldIndex"),Result.WorldIndex);
+    Record->SetNumberField(TEXT("width"),Result.Width);Record->SetNumberField(TEXT("height"),Result.Height);
+    Record->SetNumberField(TEXT("wallSeconds"),Result.CapturedWallSeconds);
+    Record->SetNumberField(TEXT("requestedWallSeconds"),Result.RequestedWallSeconds);
+    Record->SetNumberField(TEXT("requestedGameSeconds"),Result.RequestedGameSeconds);
+    Record->SetNumberField(TEXT("pngWriteSeconds"),Result.PNGWriteSeconds);
+    Record->SetNumberField(TEXT("pixelCopySeconds"),Result.PixelCopySeconds);
+    Record->SetBoolField(TEXT("backgroundPNG"),true);
+    if(!Result.bSaved)Record->SetStringField(TEXT("reason"),TEXT("invalid/oversized pixels or PNG encode/write failure"));
+    if(!AppendVideoRecord(Record)){bVideoStopped=true;VideoStopReason=TEXT("manifest write failed");}
+}
+
+void AVeyrReplay::OnVideoRequestProcessed()
+{
+    if(PendingVideoFile.IsEmpty())return; // Event screenshots are never video frames.
+    if(VideoPixelsHandle.IsValid()){UGameViewportClient::OnScreenshotCaptured().Remove(VideoPixelsHandle);VideoPixelsHandle.Reset();}
+    if(!bVideoPixelsReceived)
+    {
+        ++VideoFailedFrames;
+        TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();Record->SetStringField(TEXT("type"),TEXT("failed_frame"));
+        Record->SetStringField(TEXT("file"),FPaths::GetCleanFilename(PendingVideoFile));
+        Record->SetNumberField(TEXT("wallSeconds"),FPlatformTime::Seconds()-VideoStartedWallTime);
+        Record->SetStringField(TEXT("reason"),TEXT("owned pixel callback absent or filename mismatched"));
+        if(!AppendVideoRecord(Record)){bVideoStopped=true;VideoStopReason=TEXT("manifest write failed");}
+    }
+    PendingVideoFile.Reset();bVideoPixelsReceived=false;
+}
+
+void AVeyrReplay::StopVideoCapture(const FString& Reason)
+{
+    if(VideoPixelsHandle.IsValid()){UGameViewportClient::OnScreenshotCaptured().Remove(VideoPixelsHandle);VideoPixelsHandle.Reset();}
+    if(VideoProcessedHandle.IsValid()){FScreenshotRequest::OnScreenshotRequestProcessed().Remove(VideoProcessedHandle);VideoProcessedHandle.Reset();}
+    if(!PendingVideoFile.IsEmpty())
+    {
+        if(FScreenshotRequest::GetFilename()==PendingVideoFile)FScreenshotRequest::Reset();
+        if(!bVideoPixelsReceived)++VideoFailedFrames;
+        PendingVideoFile.Reset();
+    }
+    ConsumeVideoWrite(true);
+    if(VideoFPS>0&&!VideoDirectory.IsEmpty())
+    {
+        TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();Record->SetStringField(TEXT("type"),TEXT("world_end"));
+        Record->SetNumberField(TEXT("wallSeconds"),FPlatformTime::Seconds()-VideoStartedWallTime);
+        Record->SetNumberField(TEXT("worldIndex"),VideoWorldIndex);Record->SetStringField(TEXT("reason"),Reason);
+        AppendVideoRecord(Record);
+    }
+    bVideoStopped=true;if(VideoStopReason.IsEmpty())VideoStopReason=Reason;
 }
 
 void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
@@ -481,6 +726,7 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
         // Leave enough time for the requested terminal screenshot to reach disk.
         if(TerminalClock>=4.5f&&!FScreenshotRequest::IsScreenshotRequested())
         {
+            ConsumeVideoWrite(true); // Include the last frame before copying restart evidence.
             bAwaitingReload=true;bTerminalSettling=false;Event(TEXT("restart_requested"),false);SaveEvidence(false);
             PendingRestartEvidence=LastEvidence;PendingRestartDirectory=RunDirectory;RestartRequestedWallTime=FPlatformTime::Seconds();
             Knight->RestartIfTerminal();
@@ -509,6 +755,19 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
 void AVeyrReplay::SaveEvidence(bool bFinal)
 {
     TSharedPtr<FJsonObject> Root=MakeShared<FJsonObject>();
+    TSharedPtr<FJsonObject> Video=MakeShared<FJsonObject>();
+    Video->SetNumberField(TEXT("requestedFPS"),VideoFPS);Video->SetNumberField(TEXT("requestedFrames"),VideoFrameIndex);
+    Video->SetNumberField(TEXT("savedFrames"),VideoFramesSaved);Video->SetNumberField(TEXT("failedFrames"),VideoFailedFrames);
+    Video->SetNumberField(TEXT("skippedSlots"),VideoSkippedSlots);Video->SetNumberField(TEXT("worldIndex"),VideoWorldIndex);
+    Video->SetNumberField(TEXT("pngWriteSeconds"),VideoWriteSeconds);
+    Video->SetNumberField(TEXT("pixelCopySeconds"),VideoPixelCopySeconds);
+    Video->SetBoolField(TEXT("backgroundPNGJobInFlight"),VideoWriteFuture.IsValid());
+    Video->SetNumberField(TEXT("maximumBackgroundPNGJobs"),1);
+    Video->SetNumberField(TEXT("elapsedWallSeconds"),VideoStartedWallTime>0?FPlatformTime::Seconds()-VideoStartedWallTime:0);
+    Video->SetBoolField(TEXT("stopped"),bVideoStopped);Video->SetStringField(TEXT("stopReason"),VideoStopReason);
+    Video->SetStringField(TEXT("manifest"),VideoFPS>0?TEXT("native-video/frames.jsonl"):TEXT(""));
+    Video->SetStringField(TEXT("scope"),TEXT("silent native viewport; wall-clock pixel timestamps; 6000 requests and 600 wall-second bounds; one background PNG job; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"));
+    Root->SetObjectField(TEXT("nativeVideo"),Video);
     Root->SetStringField(TEXT("mode"),ReplayMode); Root->SetStringField(TEXT("engine"),FEngineVersion::Current().ToString());
     Root->SetStringField(TEXT("sourceId"),VEYR_SOURCE_ID);
     Root->SetStringField(TEXT("artStatus"),TEXT("temporary original rule-test primitives; Customuse assets and authored animation pending"));
@@ -528,6 +787,9 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetBoolField(TEXT("lockOffObserved"),bLockOffObserved);
     Root->SetBoolField(TEXT("lockOnObserved"),bLockOnObserved);
     Root->SetBoolField(TEXT("controlMovementObserved"),bControlMovement);
+    Root->SetBoolField(TEXT("controlJumpAirborneObserved"),bControlJumpAirborne);
+    Root->SetBoolField(TEXT("controlJumpLandingObserved"),bControlJumpLanded);
+    Root->SetNumberField(TEXT("controlJumpMaximumRiseCm"),ControlJumpMaximumRise);
     Root->SetBoolField(TEXT("controlStaminaSpent"),bControlStaminaSpent);
     Root->SetBoolField(TEXT("controlStaminaRecovered"),bControlStaminaRecovered);
     Root->SetBoolField(TEXT("allSixMovesAvoided"),AllMovesAvoided());
@@ -571,17 +833,19 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
 void AVeyrReplay::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);if(!bInitialized||bFinalSaved)return;
+    ConsumeVideoWrite();
     const double Now=FPlatformTime::Seconds();
     if(LastWallFrameTime>0)WallFrameIntervals.Add(Now-LastWallFrameTime);LastWallFrameTime=Now;
     if(!IsValid(Knight)||!IsValid(Dragon))
     {
-        bFinished=true;bPassed=false;OutcomeReason=TEXT("encounter actors lost");SaveEvidence(true);bFinalSaved=true;return;
+        bFinished=true;bPassed=false;OutcomeReason=TEXT("encounter actors lost");StopVideoCapture(OutcomeReason);SaveEvidence(true);bFinalSaved=true;return;
     }
     CaptureClock+=DeltaSeconds;
     if(bFinished)
     {
-        FinishClock+=DeltaSeconds;ServiceCapture();
-        if(FinishClock>3.f){SaveEvidence(true);bFinalSaved=true;if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Veyr replay completed"));}
+        FinishClock+=DeltaSeconds;
+        if(FinishClock>3.f){StopVideoCapture(TEXT("replay completed"));SaveEvidence(true);bFinalSaved=true;if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Veyr replay completed"));}
+        else ServiceCapture();
         return;
     }
     Elapsed+=DeltaSeconds;++FrameCount;MaximumFrameSeconds=FMath::Max(MaximumFrameSeconds,DeltaSeconds);
@@ -594,7 +858,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     else if(bLegIsolation&&bIsolationViolated)Finish(false,TEXT("leg isolation failed: contact or stagger changed a different region"));
     else if(bLegIsolation&&bLightLegContact&&bHeavyLegContact&&bIsolatedStagger&&bCorrectLegBuckle&&Dragon->State==EVeyrDragonState::Collapse)
         Finish(true,FString::Printf(TEXT("leg %d isolated light/heavy stagger, correct buckle and collapse observed; other three legs unchanged"),TargetLeg));
-    else if(ReplayMode==TEXT("controls")&&ControlStage>=9&&bFullHealthHealRejected&&bLockOffObserved&&bLockOnObserved&&bControlMovement&&bControlStaminaSpent&&bControlStaminaRecovered&&Knight->SuccessfulJumps>0&&Knight->LightAttacks>0&&Knight->HeavyAttacks>0&&Knight->Rolls>0&&Knight->GuardedHits>0&&Knight->SuccessfulHeals>0)
+    else if(ReplayMode==TEXT("controls")&&ControlStage>=9&&bFullHealthHealRejected&&bLockOffObserved&&bLockOnObserved&&bControlMovement&&bControlJumpAirborne&&bControlJumpLanded&&bControlStaminaSpent&&bControlStaminaRecovered&&Knight->SuccessfulJumps>0&&Knight->LightAttacks>0&&Knight->HeavyAttacks>0&&Knight->Rolls>0&&Knight->GuardedHits>0&&Knight->SuccessfulHeals>0)
         Finish(true,TEXT("movement jump attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed"));
     else if(ReplayMode==TEXT("avoidance")&&AllMovesAvoided())
         Finish(true,TEXT("all six naturally selected moves threatened the player in windup and completed recovery without a damaging hit"));
@@ -607,6 +871,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
 
 void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    StopVideoCapture(bAwaitingReload?TEXT("world reload"):TEXT("world ended"));
     if(bInitialized&&!bFinalSaved&&!bAwaitingReload)
     {
         if(!bFinished){bFinished=true;bPassed=false;OutcomeReason=TEXT("run interrupted before objectives");}

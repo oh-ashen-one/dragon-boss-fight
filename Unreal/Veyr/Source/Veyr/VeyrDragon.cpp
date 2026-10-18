@@ -112,6 +112,9 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     if(DeltaSeconds<=0)return;
     if(!IsValid(Target))Target=Cast<AVeyrKnight>(UGameplayStatics::GetPlayerCharacter(this,0));
+    // A freshly opened window cannot attack a player who has not clicked to
+    // begin. Once engaged, releasing the mouse does not pause the encounter.
+    if(IsValid(Target)&&!Target->HasEnteredEncounter())return;
     Clock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
     StaggerProtection=FMath::Max(0.f,StaggerProtection-DeltaSeconds);
     for(float& Flash:LegFlash)Flash=FMath::Max(0.f,Flash-DeltaSeconds*4.f);
