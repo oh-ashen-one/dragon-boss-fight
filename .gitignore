@@ -39,3 +39,6 @@ Unreal/Veyr/Config/DefaultEditor.ini
 Unreal/Veyr/Content/Veyr/FX/Failed/
 # Superseded material namespace retained privately after redirector validation failure
 Unreal/Veyr/Content/Veyr/FX/M_VeyrBreath*.uasset
+# Preserved failed and superseded stone material candidates
+Unreal/Veyr/Content/Veyr/Materials/Failed/
+Unreal/Veyr/Content/Veyr/Materials/M_CathedralStone_v2.uasset

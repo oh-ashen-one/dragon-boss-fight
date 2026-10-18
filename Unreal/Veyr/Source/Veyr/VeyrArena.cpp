@@ -36,26 +36,33 @@ AVeyrArena::AVeyrArena()
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderAsset(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Cone(TEXT("/Engine/BasicShapes/Cone.Cone"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sky(TEXT("/Engine/EngineSky/SM_SkySphere.SM_SkySphere"));
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> Base(TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> AuthoredStone(
+        TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> SkyMaterial(TEXT("/Engine/EngineSky/M_Sky_Panning_Clouds2.M_Sky_Panning_Clouds2"));
     static ConstructorHelpers::FObjectFinder<UTextureCube> CubeMap(TEXT("/Engine/EngineMaterials/DefaultCubemap.DefaultCubemap"));
-    CubeMesh = Cube.Object; CylinderMesh = CylinderAsset.Object; SphereMesh = Sphere.Object;
-    SkyMesh = Sky.Object; StoneParent = Base.Object; SkyParent = SkyMaterial.Object; AmbientCube = CubeMap.Object;
+    CubeMesh = Cube.Object; CylinderMesh = CylinderAsset.Object; SphereMesh = Sphere.Object; ConeMesh = Cone.Object;
+    PlainParent=Base.Object;StoneParent=AuthoredStone.Get()?AuthoredStone.Get():Base.Object.Get();
+    SkyMesh = Sky.Object; SkyParent = SkyMaterial.Object; AmbientCube = CubeMap.Object;
 }
 
 void AVeyrArena::BeginPlay()
 {
     Super::BeginPlay();
-    if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !StoneParent) return;
+    if(UMaterialInterface* Authored=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),nullptr,LOAD_Quiet|LOAD_NoWarn))StoneParent=Authored;
+    if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !ConeMesh || !StoneParent || !PlainParent) return;
     bBuilt = true;
     auto* Ashlar = MakeMaterial(TEXT("PrototypeAshlar"), FLinearColor(.17f, .195f, .22f), .78f);
     auto* Limestone = MakeMaterial(TEXT("PrototypeLimestone"), FLinearColor(.255f, .27f, .275f), .76f);
     auto* Flagstone = MakeMaterial(TEXT("PrototypeDampFlagstone"), FLinearColor(.085f, .108f, .13f), .70f);
     auto* FlagstoneLight = MakeMaterial(TEXT("PrototypeFlagstoneVariation"), FLinearColor(.100f, .122f, .145f), .72f);
-    auto* OldBronze = MakeMaterial(TEXT("PrototypeAncientBronze"), FLinearColor(.23f, .145f, .055f), .64f);
-    auto* Basalt = MakeMaterial(TEXT("PrototypeDarkBasalt"), FLinearColor(.065f, .085f, .11f), .82f);
-    auto* Coal = MakeMaterial(TEXT("PrototypeBrazierCoal"), FLinearColor(.65f, .19f, .035f), .92f);
+    auto* OldBronze = MakeMaterial(TEXT("PrototypeAncientBronze"), FLinearColor(.23f, .145f, .055f), .64f,true,.72f);
+    // Background masses stay broad, dark and fogged, without close-view stone
+    // grain that would emphasize their engine-primitive shape and false scale.
+    auto* Basalt = MakeMaterial(TEXT("PrototypeDarkBasalt"), FLinearColor(.028f, .039f, .055f), .94f,false);
+    auto* Coal = MakeMaterial(TEXT("PrototypeBrazierCoal"), FLinearColor(.65f, .19f, .035f), .92f,true,0.f,1.5f);
     Stone = MakeBatch(TEXT("PROTO_OriginalAshlarLayout"), CubeMesh, Ashlar);
     Trim = MakeBatch(TEXT("PROTO_OriginalLimestoneTracery"), CubeMesh, Limestone);
     Floor = MakeBatch(TEXT("PROTO_FlagstonePavers"), CubeMesh, Flagstone);
@@ -64,7 +71,9 @@ void AVeyrArena::BeginPlay()
     Columns = MakeBatch(TEXT("PROTO_ClusteredPillarCores"), CylinderMesh, Ashlar);
     ColumnTrim = MakeBatch(TEXT("PROTO_ColonettesAndCapitals"), CylinderMesh, Limestone);
     DarkDisks = MakeBatch(TEXT("PROTO_FloorFoundationAndMoat"), CylinderMesh, Basalt);
-    Rocks = MakeBatch(TEXT("PROTO_DistantRockMasses"), SphereMesh, Basalt);
+    Rocks = MakeBatch(TEXT("PROTO_DistantBasaltCliffMasses"), CubeMesh, Basalt);
+    RockSpurs = MakeBatch(TEXT("PROTO_DistantBasaltCrestFragments"), ConeMesh, Basalt);
+    Rocks->SetCastShadow(false);RockSpurs->SetCastShadow(false);
     Embers = MakeBatch(TEXT("PROTO_BrazierEmberBeds"), SphereMesh, Coal);
     BuildFloor();
     BuildCathedral();
@@ -72,14 +81,19 @@ void AVeyrArena::BeginPlay()
     BuildLighting();
     BuildCollision();
     UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY native prototype: radius=3600cm floorZ=0; %d instanced groups; original layout, engine primitive dependencies."), Batches.Num());
+    UE_LOG(LogTemp,Display,TEXT("VEYR_ARENA_MATERIAL stone=%s backdrop=%s"),*StoneParent->GetPathName(),*PlainParent->GetPathName());
 }
 
-UMaterialInstanceDynamic* AVeyrArena::MakeMaterial(const FName Name, const FLinearColor Color, float Roughness)
+UMaterialInstanceDynamic* AVeyrArena::MakeMaterial(const FName Name, const FLinearColor Color, float Roughness,
+    bool bUseAuthoredStone, float Metallic, float Emission)
 {
-    UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(StoneParent, this, Name);
-    // Parameters verified in the installed UE5.8 BasicShapeMaterial asset.
+    UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(bUseAuthoredStone?StoneParent:PlainParent, this, Name);
+    // Color/Roughness also work with the installed BasicShapeMaterial fallback;
+    // Metallic/Emission are authored parameters on the optional stone parent.
     Material->SetVectorParameterValue(TEXT("Color"), Color);
     Material->SetScalarParameterValue(TEXT("Roughness"), Roughness);
+    Material->SetScalarParameterValue(TEXT("Metallic"), Metallic);
+    Material->SetScalarParameterValue(TEXT("Emission"), Emission);
     Materials.Add(Material);
     return Material;
 }
@@ -260,12 +274,26 @@ void AVeyrArena::BuildCathedral()
 void AVeyrArena::BuildDistance()
 {
     FRandomStream Random(6194);
-    for (int32 I = 0; I < 28; ++I)
+    for (int32 I = 0; I < 23; ++I)
     {
-        const float Angle = I * PI * 2.f / 28.f;
-        const FVector P = Radial(Angle, Random.FRandRange(8500, 13000), -500);
-        const FVector Size(Random.FRandRange(2600, 4200), Random.FRandRange(2300, 3800), Random.FRandRange(2300, 4900));
-        Box(Rocks, P + FVector(0, 0, Size.Z * .35f), Size, FRotator(Random.FRandRange(-12, 12), Random.FRandRange(0, 180), Random.FRandRange(-12, 12)));
+        const float Angle=(I+Random.FRandRange(-.25f,.25f))*2.f*PI/23.f;
+        const float Yaw=FMath::RadiansToDegrees(Angle);
+        const FVector P=Radial(Angle,Random.FRandRange(13500,16500),-500);
+        const float Height=Random.FRandRange(1500,2900);
+        // Overlapping tilted slabs form an irregular cliff shoulder rather
+        // than a smooth dome. All stay well outside the cathedral/play space.
+        Box(Rocks,P+FVector(0,0,Height*.5f),FVector(Random.FRandRange(1500,2100),Random.FRandRange(2300,3400),Height),
+            FRotator(Random.FRandRange(-14,9),Yaw+Random.FRandRange(-16,16),Random.FRandRange(-13,13)));
+        const FVector Shoulder=P+Radial(Angle+PI*.5f,Random.FRandRange(700,1200),Height*.26f);
+        Box(Rocks,Shoulder,FVector(Random.FRandRange(1100,1700),Random.FRandRange(900,1600),Height*.75f),
+            FRotator(Random.FRandRange(-18,14),Yaw+Random.FRandRange(-30,30),Random.FRandRange(-22,18)));
+        if(I%3==0)
+        {
+            const float SpurHeight=Random.FRandRange(550,900);
+            Box(RockSpurs,P+Radial(Angle+PI*.5f,Random.FRandRange(-500,500),Height+SpurHeight*.15f),
+                FVector(Random.FRandRange(280,430),Random.FRandRange(400,650),SpurHeight),
+                FRotator(Random.FRandRange(-20,16),Yaw,Random.FRandRange(-18,20)));
+        }
     }
     for (int32 I = 0; I < 90; ++I)
     {
@@ -302,13 +330,13 @@ void AVeyrArena::BuildLighting()
     // Only the moon drives forward/translucent lighting. Keeping priorities
     // distinct avoids the competing-directional-lights warning seen in PIE001.
     Moon->SetForwardShadingPriority(1);
-    Moon->SetIntensity(2.6f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
-    Moon->SetCastShadows(true); Moon->SetLightSourceAngle(3.f); Moon->SetSpecularScale(.35f); Moon->RegisterComponent();
+    Moon->SetIntensity(3.4f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
+    Moon->SetCastShadows(true); Moon->SetLightSourceAngle(3.f); Moon->SetSpecularScale(.75f); Moon->RegisterComponent();
     auto* Fill = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeNeutralFrontFill"));
     AddInstanceComponent(Fill); Fill->SetupAttachment(GetRootComponent()); Fill->SetMobility(EComponentMobility::Movable);
     Fill->SetForwardShadingPriority(0);
-    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(1.1f);
-    Fill->SetLightColor(FLinearColor(.80f, .87f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.08f); Fill->RegisterComponent();
+    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(2.4f);
+    Fill->SetLightColor(FLinearColor(.80f, .87f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.6f); Fill->RegisterComponent();
 
     if (SkyMesh && SkyParent)
     {
@@ -336,7 +364,7 @@ void AVeyrArena::BuildLighting()
     auto* Ambient = NewObject<USkyLightComponent>(this, TEXT("PrototypeGentleSkyBounce"));
     AddInstanceComponent(Ambient); Ambient->SetupAttachment(GetRootComponent()); Ambient->SetMobility(EComponentMobility::Movable);
     if (AmbientCube) { Ambient->SourceType = SLS_SpecifiedCubemap; Ambient->SetCubemap(AmbientCube); }
-    Ambient->SetIntensity(.4f); Ambient->SetLightColor(FLinearColor(.52f, .60f, .72f));
+    Ambient->SetIntensity(.7f); Ambient->SetLightColor(FLinearColor(.52f, .60f, .72f));
     Ambient->SetLowerHemisphereColor(FLinearColor(.10f, .12f, .15f)); Ambient->RegisterComponent();
 
     auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("PrototypeDrownedCathedralMist"));

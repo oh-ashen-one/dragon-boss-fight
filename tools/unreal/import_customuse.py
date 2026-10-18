@@ -293,6 +293,7 @@ def run(plan_file):
             for field, default in (("start_seconds", 0), ("end_seconds", -1), ("impact_seconds", -1), ("loop", False)):
                 entry.set_editor_property(field, specification.get(field, default))
             clips[specification["name"]] = entry
+            receipt.setdefault("clipLengthsSeconds", {})[specification["name"]] = float(sequence.get_editor_property("sequence_length"))
         definition.set_editor_property("clips", clips)
         errors = list(definition.validate_definition(False))
         receipt["definitionErrors"] = errors

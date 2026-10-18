@@ -27,8 +27,10 @@ private:
     UPROPERTY() TObjectPtr<UStaticMesh> CubeMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> CylinderMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> SphereMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> ConeMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> SkyMesh;
     UPROPERTY() TObjectPtr<UMaterialInterface> StoneParent;
+    UPROPERTY() TObjectPtr<UMaterialInterface> PlainParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> SkyParent;
     UPROPERTY() TObjectPtr<UTextureCube> AmbientCube;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
@@ -43,10 +45,12 @@ private:
     UInstancedStaticMeshComponent* ColumnTrim = nullptr;
     UInstancedStaticMeshComponent* DarkDisks = nullptr;
     UInstancedStaticMeshComponent* Rocks = nullptr;
+    UInstancedStaticMeshComponent* RockSpurs = nullptr;
     UInstancedStaticMeshComponent* Embers = nullptr;
     bool bBuilt = false;
 
-    UMaterialInstanceDynamic* MakeMaterial(const FName Name, const FLinearColor Color, float Roughness);
+    UMaterialInstanceDynamic* MakeMaterial(const FName Name, const FLinearColor Color, float Roughness,
+        bool bUseAuthoredStone=true, float Metallic=0.f, float Emission=0.f);
     UInstancedStaticMeshComponent* MakeBatch(const FName Name, UStaticMesh* Mesh, UMaterialInterface* Material);
     void Box(UInstancedStaticMeshComponent* Batch, const FVector& Position, const FVector& Size, const FRotator& Rotation = FRotator::ZeroRotator);
     void Beam(UInstancedStaticMeshComponent* Batch, const FVector& A, const FVector& B, float Width);

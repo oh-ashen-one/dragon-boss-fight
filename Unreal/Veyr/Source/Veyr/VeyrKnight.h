@@ -88,6 +88,13 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bPresentationUsingFallback=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName RequestedPresentationClip=NAME_None;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FString PresentationDiagnostic;
+    /** Native centimeters/second represented by each authored locomotion clip. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Presentation") TMap<FName,float> PresentationNominalSpeeds;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName RequestedLowerPresentationClip=NAME_None;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float PresentationLowerWeight=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float PresentationJumpPhase=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bHealFlaskVisible=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FString HealFlaskDiagnostic;
 
 protected:
     virtual void BeginPlay() override;
@@ -99,14 +106,20 @@ private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> LeftLeg;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> RightLeg;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ProxyParts;
+    UPROPERTY() TObjectPtr<USceneComponent> HealFlaskRoot;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> HealFlaskParts;
 
     float ActionElapsed = 0.f;
     float ActionDuration = 0.f;
     float RegenDelay = 0.f;
     float DamageGrace = 0.f;
     float VisualClock = 0.f;
-    float PresentationAirTime = 0.f;
     float PresentationLocomotionTime = 0.f;
+    float PresentationLowerTime = 0.f;
+    float PresentationJumpLaunchSpeed = 580.f;
+    float PresentationRollYaw = 0.f;
+    FName PresentationLowerClip=NAME_None;
+    FName PresentationTransitionLowerClip=NAME_None;
     FName FailedPresentationClip=NAME_None;
     FString FailedPresentationReason;
     bool bIdleFallbackRejected=false;
@@ -148,7 +161,9 @@ private:
     void UpdateCameraOcclusion(float DeltaSeconds);
     void RestoreCameraOcclusion();
     void UpdateTemporaryPresentation(float DeltaSeconds);
-    void UpdateImportedPresentation();
+    void UpdateImportedPresentation(float DeltaSeconds=0.f);
+    FName SelectDirectionalLocomotion(bool bAllowRun) const;
+    void UpdateHealFlask();
     void SetPresentationDiagnostic(const FString& Diagnostic);
     UStaticMeshComponent* CreateProxyPart(const TCHAR* Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location, const FVector& Size);
     void LookYaw(float Value);

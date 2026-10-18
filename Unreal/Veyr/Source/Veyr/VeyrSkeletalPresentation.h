@@ -58,12 +58,30 @@ public:
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     bool SampleClipPhaseBlended(FName ClipName, float Phase, float Alpha);
 
+    /** Explicit lower-body overlay, then the frozen whole-pose transition.
+     * Times are seconds relative to each clip's trimmed start. Hips and both
+     * leg subtrees use LowerClip; upper local bones and curves use UpperClip.
+     * Caller selects directional clips and owns both clocks and [0,1] weights.
+     * Missing clips/mask fail even at weight zero. TransitionAlpha < 1 requires
+     * BeginTransition. All ordinary sample APIs clear this lower-body layer.
+     */
+    UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
+    bool SampleLayeredClips(FName UpperClip, float UpperElapsedSeconds, FName LowerClip,
+        float LowerElapsedSeconds, float LowerWeight, float TransitionAlpha);
+
     /** Offset is applied in bone-local space: LocalOffset * BoneWorldTransform.
      * Requires a successful sample; missing/unevaluated bones fail with Identity
      * output, never a socket fallback to component origin. Check the bool result.
      */
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     bool GetBoneTargetWorldTransform(FName TargetName, FTransform& OutWorldTransform);
+
+    /** Copy of the actual evaluated bone-local transforms, keyed by mesh bone
+     * name. Empty with a diagnostic unless a complete current sample exists.
+     * Does not evaluate, advance time, or reconstruct transforms from targets.
+     */
+    UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
+    TMap<FName,FTransform> GetEvaluatedLocalPose();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") TObjectPtr<UVeyrVisualDefinition> VisualDefinition;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") FName CurrentClip=NAME_None;
@@ -74,6 +92,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") bool bPoseEvaluated=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") bool bTransitionSourceCaptured=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") float CurrentTransitionAlpha=1.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") FName CurrentLowerClip=NAME_None;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") float CurrentLowerSequenceSeconds=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") float CurrentLowerWeight=0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") int32 SuccessfulPoseEvaluations=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") int32 FailedRequests=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") FString LastError;
@@ -84,5 +105,5 @@ private:
     bool CheckReady();
     bool ResolveClip(FName ClipName, const FVeyrVisualClip*& OutClip, float& OutEnd);
     bool EvaluatePoseSynchronously();
-    bool SampleClipTimeInternal(FName ClipName, float ElapsedSeconds, float Alpha, bool bBlend);
+    bool SampleClipTimeInternal(FName ClipName, float ElapsedSeconds, float Alpha, bool bBlend, bool bKeepLowerLayer=false);
 };

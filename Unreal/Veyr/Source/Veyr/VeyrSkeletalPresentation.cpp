@@ -108,6 +108,8 @@ bool UVeyrSkeletalPresentation::SampleReferencePose()
     HandleExistingParallelEvaluationTask(true,true);
     UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
     Instance->ClearTransitionSource();
+    Instance->ClearExplicitLowerBody();
+    CurrentLowerClip=NAME_None;CurrentLowerSequenceSeconds=CurrentLowerWeight=0.f;
     bTransitionSourceCaptured=false;CurrentTransitionAlpha=1.f;
     Instance->SetAnimationAsset(nullptr,false,0.f);
     // Native single-node evaluation with no asset produces the reference pose
@@ -164,7 +166,7 @@ bool UVeyrSkeletalPresentation::BeginTransition()
     return true;
 }
 
-bool UVeyrSkeletalPresentation::SampleClipTimeInternal(FName ClipName, float ElapsedSeconds, float Alpha, bool bBlend)
+bool UVeyrSkeletalPresentation::SampleClipTimeInternal(FName ClipName, float ElapsedSeconds, float Alpha, bool bBlend, bool bKeepLowerLayer)
 {
     if(!IsInGameThread())return false;
     if(!FMath::IsFinite(ElapsedSeconds)||ElapsedSeconds<0.f)return Fail(TEXT("Clip elapsed time must be finite and nonnegative"));
@@ -176,6 +178,11 @@ bool UVeyrSkeletalPresentation::SampleClipTimeInternal(FName ClipName, float Ela
     const float SequenceTime=Clip->StartSeconds+Trimmed;
     HandleExistingParallelEvaluationTask(true,true);
     UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    if(!bKeepLowerLayer)
+    {
+        Instance->ClearExplicitLowerBody();
+        CurrentLowerClip=NAME_None;CurrentLowerSequenceSeconds=CurrentLowerWeight=0.f;
+    }
     if(!bBlend)Instance->ClearTransitionSource();
     bTransitionSourceCaptured=Instance->HasTransitionSource();
     if(!Instance->SetExplicitTransitionAlpha(Alpha))return Fail(TEXT("Blended sample requires BeginTransition before alpha < 1"));
@@ -191,6 +198,40 @@ bool UVeyrSkeletalPresentation::SampleClipTimeInternal(FName ClipName, float Ela
     CurrentPhase=Trimmed/Duration;
     bCurrentClipLoops=Clip->bLoop;
     CurrentTransitionAlpha=Alpha;
+    return true;
+}
+
+bool UVeyrSkeletalPresentation::SampleLayeredClips(FName UpperClip, float UpperElapsedSeconds,
+    FName LowerClip, float LowerElapsedSeconds, float LowerWeight, float TransitionAlpha)
+{
+    if(!IsInGameThread())return false;
+    if(!FMath::IsFinite(UpperElapsedSeconds)||UpperElapsedSeconds<0.f||
+        !FMath::IsFinite(LowerElapsedSeconds)||LowerElapsedSeconds<0.f)
+        return Fail(TEXT("Layered clip times must be finite and nonnegative"));
+    if(!FMath::IsFinite(LowerWeight)||LowerWeight<0.f||LowerWeight>1.f||
+        !FMath::IsFinite(TransitionAlpha)||TransitionAlpha<0.f||TransitionAlpha>1.f)
+        return Fail(TEXT("Layer and transition weights must be finite within [0,1]"));
+    const FVeyrVisualClip* Upper=nullptr;float UpperEnd=0.f;
+    const FVeyrVisualClip* Lower=nullptr;float LowerEnd=0.f;
+    // Validate both inputs before installing a layer, including when either
+    // weight is zero. No directional clip is silently substituted here.
+    if(!ResolveClip(UpperClip,Upper,UpperEnd)||!ResolveClip(LowerClip,Lower,LowerEnd))return false;
+    HandleExistingParallelEvaluationTask(true,true);
+    UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    if(TransitionAlpha<1.f&&!Instance->HasTransitionSource())
+        return Fail(TEXT("Layered transition requires BeginTransition before alpha < 1"));
+    const float Duration=LowerEnd-Lower->StartSeconds;
+    const float Trimmed=Lower->bLoop?FMath::Fmod(LowerElapsedSeconds,Duration):FMath::Min(LowerElapsedSeconds,Duration);
+    const float SequenceTime=Lower->StartSeconds+Trimmed;
+    if(!Instance->SetExplicitLowerBody(Lower->Sequence,SequenceTime,LowerWeight))
+        return Fail(TEXT("Native lower-body sample configuration was rejected"));
+    if(!SampleClipTimeInternal(UpperClip,UpperElapsedSeconds,TransitionAlpha,true,true))
+    {
+        Instance->ClearExplicitLowerBody();
+        CurrentLowerClip=NAME_None;CurrentLowerSequenceSeconds=CurrentLowerWeight=0.f;
+        return false;
+    }
+    CurrentLowerClip=LowerClip;CurrentLowerSequenceSeconds=SequenceTime;CurrentLowerWeight=LowerWeight;
     return true;
 }
 
@@ -212,6 +253,33 @@ bool UVeyrSkeletalPresentation::SampleClipPhaseBlended(FName ClipName, float Pha
     if(!ResolveClip(ClipName,Clip,End))return false;
     const float Normalized=Clip->bLoop?FMath::Fmod(Phase,1.f):FMath::Min(Phase,1.f);
     return SampleClipTimeBlended(ClipName,Normalized*(End-Clip->StartSeconds),Alpha);
+}
+
+TMap<FName,FTransform> UVeyrSkeletalPresentation::GetEvaluatedLocalPose()
+{
+    TMap<FName,FTransform> Result;
+    if(!IsInGameThread())return Result;
+    if(!bPoseEvaluated)
+    {
+        Fail(TEXT("Local pose requested without a successful current sample"));return Result;
+    }
+    if(!CheckReady())return Result;
+    const TArray<FTransform> LocalTransforms=GetBoneSpaceTransforms();
+    const FReferenceSkeleton& Reference=GetSkeletalMeshAsset()->GetRefSkeleton();
+    if(LocalTransforms.Num()!=Reference.GetNum())
+    {
+        Fail(TEXT("Evaluated local pose does not contain the complete LOD0 bone layout"));return Result;
+    }
+    for(int32 Index=0;Index<LocalTransforms.Num();++Index)
+    {
+        if(LocalTransforms[Index].ContainsNaN())
+        {
+            Fail(TEXT("Evaluated local pose contains a non-finite transform"));return {};
+        }
+        Result.Add(Reference.GetBoneName(Index),LocalTransforms[Index]);
+    }
+    LastError.Reset();
+    return Result;
 }
 
 bool UVeyrSkeletalPresentation::GetBoneTargetWorldTransform(FName TargetName, FTransform& OutWorldTransform)

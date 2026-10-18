@@ -69,6 +69,11 @@ AVeyrKnight::AVeyrKnight()
     static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> KnightDefinition(
         TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
     CustomuseVisualDefinition = KnightDefinition.Get();
+    PresentationNominalSpeeds.Add(TEXT("Walk"),107.405f);
+    PresentationNominalSpeeds.Add(TEXT("Run"),580.f);
+    PresentationNominalSpeeds.Add(TEXT("StrafeLeft"),240.f);
+    PresentationNominalSpeeds.Add(TEXT("StrafeRight"),240.f);
+    PresentationNominalSpeeds.Add(TEXT("Backpedal"),180.f);
 
     // Original engine primitives are a visible verification proxy, not Customuse art.
     TemporaryVisual = CreateDefaultSubobject<USceneComponent>(TEXT("TEMP original primitive knight pending Customuse"));
@@ -76,6 +81,29 @@ AVeyrKnight::AVeyrKnight()
     TemporaryVisual->SetRelativeLocation(FVector(0, 0, -122));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+    HealFlaskRoot=CreateDefaultSubobject<USceneComponent>(TEXT("Original Ember Draught"));
+    HealFlaskRoot->SetupAttachment(GetCapsuleComponent());
+    HealFlaskRoot->SetAbsolute(false,false,true);
+    HealFlaskRoot->SetVisibility(false,true);
+    if(Sphere.Succeeded()&&Cylinder.Succeeded())
+    {
+        // Original proportions in fractions of the measured grip-to-spout
+        // distance. Root receives that world-space length once, after sampling.
+        auto AddFlaskPart=[&](const TCHAR* Name,UStaticMesh* Mesh,const FVector& Position,const FVector& Size)
+        {
+            UStaticMeshComponent* Part=CreateDefaultSubobject<UStaticMeshComponent>(Name);
+            Part->SetupAttachment(HealFlaskRoot);Part->SetStaticMesh(Mesh);
+            Part->SetRelativeLocation(Position);Part->SetRelativeScale3D(Size/100.f);
+            Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            Part->SetGenerateOverlapEvents(false);Part->SetCanEverAffectNavigation(false);
+            Part->CastShadow=false;Part->SetVisibility(false);
+            HealFlaskParts.Add(Part);
+        };
+        AddFlaskPart(TEXT("Ember Draught amber body"),Sphere.Object,FVector(0,0,.10f),FVector(.62f,.62f,.90f));
+        AddFlaskPart(TEXT("Ember Draught neck"),Cylinder.Object,FVector(0,0,.67f),FVector(.23f,.23f,.36f));
+        AddFlaskPart(TEXT("Ember Draught brass lip"),Cylinder.Object,FVector(0,0,.94f),FVector(.30f,.30f,.12f));
+    }
     if (Sphere.Succeeded() && Cube.Succeeded())
     {
         CreateProxyPart(TEXT("TEMP cuirass"), Sphere.Object, TemporaryVisual, FVector(0,0,161), FVector(49,76,83));
@@ -115,6 +143,12 @@ UStaticMeshComponent* AVeyrKnight::CreateProxyPart(const TCHAR* Name, UStaticMes
 void AVeyrKnight::BeginPlay()
 {
     Super::BeginPlay();
+    for(UStaticMeshComponent* Part:HealFlaskParts)
+    {
+        if(UMaterialInstanceDynamic* Material=Part->CreateAndSetMaterialInstanceDynamic(0))
+            Material->SetVectorParameterValue(TEXT("Color"),Part->GetName().Contains(TEXT("body"))?
+                FLinearColor(.62f,.13f,.025f):FLinearColor(.35f,.22f,.055f));
+    }
     for (UStaticMeshComponent* Part : ProxyParts)
     {
         if (!Part) continue;
@@ -128,10 +162,14 @@ void AVeyrKnight::BeginPlay()
         }
     }
     if (Controller) Controller->SetControlRotation(FRotator(-12.f, GetActorRotation().Yaw, 0.f));
+    if(!CustomuseVisualDefinition)CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
+        TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if (CustomuseVisualDefinition) ApplyCustomuseVisual(CustomuseVisualDefinition);
     else SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported visual definition unavailable"));
-    UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_READY collisionHeight=244cm art=%s light=.23/.65 heavy=.55/1.15 roll=.08-.44/.58"),
-        bImportedPresentationActive ? TEXT("imported_definition_acceptance_pending") : TEXT("TEMP_original_primitives_pending_Customuse"));
+    UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_READY collisionHeight=244cm art=%s light=%.3f/%.3f heavy=%.3f/%.3f roll=.08-.44/%.2f"),
+        bImportedPresentationActive ? TEXT("imported_definition_acceptance_pending") : TEXT("TEMP_original_primitives_pending_Customuse"),
+        GetAttackContactTime(false),GetAttackDuration(false),GetAttackContactTime(true),GetAttackDuration(true),
+        bImportedPresentationActive?.78f:.58f);
 }
 
 bool AVeyrKnight::IsGrounded() const { return GetCharacterMovement() && GetCharacterMovement()->IsMovingOnGround(); }
@@ -176,7 +214,7 @@ void AVeyrKnight::TryRoll()
     Stamina -= 25.f; RegenDelay = .7f; ++Rolls;
     RollDirection = MoveIntent.GetSafeNormal2D();
     if (RollDirection.IsNearlyZero()) RollDirection = GetActorForwardVector().GetSafeNormal2D();
-    BeginAction(EVeyrKnightAction::Roll, .58f);
+    BeginAction(EVeyrKnightAction::Roll, bImportedPresentationActive?.78f:.58f);
 }
 
 void AVeyrKnight::TryHeal()
@@ -196,6 +234,7 @@ void AVeyrKnight::TryGroundedJump()
 void AVeyrKnight::OnJumped_Implementation()
 {
     Super::OnJumped_Implementation();
+    PresentationJumpLaunchSpeed=FMath::Max(1.f,FMath::Max(GetVelocity().Z,GetCharacterMovement()->JumpZVelocity));
     ++SuccessfulJumps;
     UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_JUMP count=%d footZ=%.2f"), SuccessfulJumps, GetFootLocation().Z);
 }
@@ -261,8 +300,6 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     // Jump followed by StopJumping in one actor tick cancels the jump entirely.
     if (bReplayJumpHeld && !IsGrounded()) { StopJumping(); bReplayJumpHeld = false; }
     VisualClock += DeltaSeconds;
-    PresentationAirTime = IsGrounded() ? 0.f : PresentationAirTime + DeltaSeconds;
-    if (IsGrounded()) PresentationLocomotionTime += DeltaSeconds * FMath::Clamp(GetPlanarSpeed()/580.f,0.f,1.f);
     RegenDelay = FMath::Max(0.f, RegenDelay - DeltaSeconds);
     DamageGrace = FMath::Max(0.f, DamageGrace - DeltaSeconds);
     const FRotator ViewYaw(0.f, Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw, 0.f);
@@ -282,9 +319,10 @@ void AVeyrKnight::Tick(float DeltaSeconds)
         bReplayLight = bReplayHeavy = bReplayRoll = bReplayHeal = bReplayJump = false;
     }
     UpdateMovement(DeltaSeconds);
-    if (IsDead()) { ActionElapsed += DeltaSeconds; UpdateImportedPresentation(); }
+    if (IsDead()) { ActionElapsed += DeltaSeconds; UpdateImportedPresentation(DeltaSeconds); }
     else if (!IsTerminal()) AdvanceCombat(DeltaSeconds);
-    else { GetCharacterMovement()->StopMovementImmediately(); bLockedOn = false; UpdateImportedPresentation(); }
+    else { GetCharacterMovement()->StopMovementImmediately(); bLockedOn = false; UpdateImportedPresentation(DeltaSeconds); }
+    UpdateHealFlask();
     UpdateCamera(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
 }
@@ -294,7 +332,7 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
     ActionElapsed += DeltaSeconds;
     // Evaluate the strike at the UPDATED action time, synchronously, before
     // gameplay resolves contact. Imported strikes use evaluated blade sweeps.
-    UpdateImportedPresentation();
+    UpdateImportedPresentation(DeltaSeconds);
     if (Action == EVeyrKnightAction::LightAttack || Action == EVeyrKnightAction::HeavyAttack)
     {
         const bool bHeavy=Action==EVeyrKnightAction::HeavyAttack;
@@ -377,9 +415,12 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     Movement->bOrientRotationToMovement = !bLockedOn && !bAttack && Action != EVeyrKnightAction::Roll && Action != EVeyrKnightAction::Guard;
     if (Action == EVeyrKnightAction::Roll)
     {
-        Movement->MaxWalkSpeed = 1180.f;
-        Movement->Velocity.X = RollDirection.X * 1180.f;
-        Movement->Velocity.Y = RollDirection.Y * 1180.f;
+        // Preserve the original 684.4cm intended travel while giving the
+        // imported .78s roll its full action window. Invulnerability is unchanged.
+        const float RollSpeed=1180.f*.58f/FMath::Max(.001f,ActionDuration);
+        Movement->MaxWalkSpeed = RollSpeed;
+        Movement->Velocity.X = RollDirection.X * RollSpeed;
+        Movement->Velocity.Y = RollDirection.Y * RollSpeed;
         AddMovementInput(RollDirection, 1.f);
     }
     else
@@ -441,6 +482,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 
 void AVeyrKnight::RestoreCameraOcclusion()
 {
+    if(IsValid(Boss))Boss->SetViewOcclusion(FVector::ZeroVector,FVector::ZeroVector,false);
     if (APlayerController* Player = OcclusionController.Get())
         for (const auto& Pair : CameraHiddenParts) Player->HiddenPrimitiveComponents.Remove(Pair.Key);
     CameraHiddenParts.Empty();
@@ -456,6 +498,15 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
     if (Player != OcclusionController.Get()) RestoreCameraOcclusion();
     if (!Player || !Player->IsLocalController() || !IsValid(Boss)) { RestoreCameraOcclusion(); return; }
     OcclusionController = Player;
+    if(Boss->bUsingCustomuseVisual)
+    {
+        for(const auto& Pair:CameraHiddenParts)Player->HiddenPrimitiveComponents.Remove(Pair.Key);
+        CameraHiddenParts.Empty();CameraHiddenProxyParts=0;
+        const FVector Chest=GetFootLocation()+FVector(0,0,160.f);
+        const FVector Focus=Boss->IsHeadExposed()?FMath::Lerp(Chest,Boss->GetHeadLocation(),.8f):Chest;
+        Boss->SetViewOcclusion(CombatCamera->GetComponentLocation(),Focus,true);
+        return;
+    }
 
     // Temporary proxy-only visibility aid. Hide individual intersecting pieces
     // in this player's view; keep collisions, danger indicators and every
@@ -524,6 +575,10 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     PresentationTransitionClip=NAME_None;
     PresentationPreviousActionElapsed=-1.f;
     bPresentationTransitionActive=false;
+    PresentationLowerClip=PresentationTransitionLowerClip=RequestedLowerPresentationClip=NAME_None;
+    PresentationLowerWeight=PresentationLowerTime=PresentationLocomotionTime=PresentationRollYaw=0.f;
+    if(HealFlaskRoot)HealFlaskRoot->SetVisibility(false,true);
+    bHealFlaskVisible=false;
     if (ImportedPresentation)
     {
         ImportedPresentation->SetVisibility(false,true);
@@ -551,12 +606,44 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     return true;
 }
 
-void AVeyrKnight::UpdateImportedPresentation()
+FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
+{
+    const FVector Direction=GetVelocity().GetSafeNormal2D();
+    const float Forward=FVector::DotProduct(Direction,GetActorForwardVector());
+    const float Right=FVector::DotProduct(Direction,GetActorRightVector());
+    if(FMath::Abs(Right)>FMath::Abs(Forward))return Right<0.f?FName(TEXT("StrafeLeft")):FName(TEXT("StrafeRight"));
+    if(Forward<0.f)return TEXT("Backpedal");
+    return bAllowRun&&GetPlanarSpeed()>360.f?FName(TEXT("Run")):FName(TEXT("Walk"));
+}
+
+void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
 {
     if (!bImportedPresentationActive || !ImportedPresentation || !CustomuseVisualDefinition) return;
+    const float Speed=GetPlanarSpeed();
+    const bool bMoving=IsGrounded()&&Speed>8.f;
+    const bool bLayerAction=Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal;
+    const FName DesiredLower=bLayerAction&&bMoving?SelectDirectionalLocomotion(false):NAME_None;
+    if(!DesiredLower.IsNone())PresentationLowerClip=DesiredLower;
+    PresentationLowerWeight=FMath::FInterpConstantTo(PresentationLowerWeight,
+        !DesiredLower.IsNone()?1.f:0.f,DeltaSeconds,1.f/.12f);
+    // Other actions already use the full-pose transition. Never carry a leg
+    // overlay into attacks, jumping, rolls, stagger or death.
+    if(!bLayerAction)PresentationLowerWeight=0.f;
+    if(PresentationLowerWeight<=0.f&&DesiredLower.IsNone())PresentationLowerClip=NAME_None;
+    RequestedLowerPresentationClip=PresentationLowerClip;
+
+    // Turn only the imported visual toward the roll vector, leaving gameplay
+    // facing, collision, lock-on and the movement direction untouched.
+    const float DesiredRollYaw=Action==EVeyrKnightAction::Roll?
+        FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw):0.f;
+    PresentationRollYaw=FMath::RInterpTo(FRotator(0,PresentationRollYaw,0),
+        FRotator(0,DesiredRollYaw,0),DeltaSeconds,20.f).Yaw;
+    const FQuat BaseRotation=CustomuseVisualDefinition->MeshRelativeTransform.GetRotation();
+    ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*BaseRotation);
+
     FName Clip=TEXT("Idle");
-    bool bUsePhase=false;
-    float Time=VisualClock;
+    bool bUsePhase=false,bJumpPose=false;
+    float Time=VisualClock,Phase=FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f);
     switch (Action)
     {
         case EVeyrKnightAction::LightAttack: Clip=TEXT("LightAttack"); bUsePhase=true; break;
@@ -567,56 +654,76 @@ void AVeyrKnight::UpdateImportedPresentation()
         case EVeyrKnightAction::Dead: Clip=TEXT("Death"); bUsePhase=true; break;
         case EVeyrKnightAction::Guard: Clip=TEXT("Guard"); Time=ActionElapsed; break;
         default:
-            if (!IsGrounded()) { Clip=TEXT("Jump"); Time=PresentationAirTime; }
-            else if (GetPlanarSpeed()>8.f)
+            if (!IsGrounded())
             {
-                Clip=GetPlanarSpeed()>360.f ? TEXT("Run") : TEXT("Walk");
+                Clip=TEXT("Jump");bUsePhase=bJumpPose=true;
+                // Authored jump has its apex at phase .5, with ballistic root
+                // translation removed. Follow actual vertical motion, not time.
+                Phase=FMath::Clamp(.5f-.5f*GetVelocity().Z/FMath::Max(1.f,PresentationJumpLaunchSpeed),0.f,1.f);
+                PresentationJumpPhase=Phase;
+            }
+            else if (bMoving)
+            {
+                Clip=bLockedOn?SelectDirectionalLocomotion(true):(Speed>360.f?FName(TEXT("Run")):FName(TEXT("Walk")));
+                const float* Nominal=PresentationNominalSpeeds.Find(Clip);
+                if(Nominal&&FMath::IsFinite(*Nominal)&&*Nominal>0.f)
+                    PresentationLocomotionTime+=DeltaSeconds*Speed/(*Nominal);
                 Time=PresentationLocomotionTime;
             }
             break;
     }
+    if(IsGrounded())PresentationJumpPhase=0.f;
     RequestedPresentationClip=Clip;
     const FVeyrVisualClip* Config=CustomuseVisualDefinition->Clips.Find(Clip);
+    const FVeyrVisualClip* Lower=PresentationLowerClip.IsNone()?nullptr:CustomuseVisualDefinition->Clips.Find(PresentationLowerClip);
     FString Error;
     bool bSampled=false;
+    const bool bLocomotion=Action==EVeyrKnightAction::Ready&&bMoving;
+    const float* Nominal=PresentationNominalSpeeds.Find(bLocomotion?Clip:PresentationLowerClip);
     if (!Config || !Config->Sequence) Error=TEXT("Requested imported clip is missing: ")+Clip.ToString();
+    else if (!PresentationLowerClip.IsNone()&&(!Lower||!Lower->Sequence))
+        Error=TEXT("Requested directional lower clip is missing: ")+PresentationLowerClip.ToString();
+    else if ((bLocomotion||!PresentationLowerClip.IsNone())&&(!Nominal||!FMath::IsFinite(*Nominal)||*Nominal<=0.f))
+        Error=TEXT("Missing or invalid nominal speed for locomotion clip: ")+(bLocomotion?Clip:PresentationLowerClip).ToString();
     else if (FailedPresentationClip==Clip) Error=FailedPresentationReason;
     else
     {
-        const bool bActionRestarted=bUsePhase&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
+        if(Lower)PresentationLowerTime+=DeltaSeconds*Speed/(*Nominal);
+        const bool bActionRestarted=bUsePhase&&!bJumpPose&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
         const float ClipEnd=Config->EndSeconds<0.f?Config->Sequence->GetPlayLength():Config->EndSeconds;
         const float ClipDuration=ClipEnd-Config->StartSeconds;
         const bool bLoopWrapped=!bUsePhase&&Config->bLoop&&ClipDuration>0.f&&ImportedPresentation->CurrentClip==Clip&&
             FMath::Fmod(Time,ClipDuration)+.0001f<ImportedPresentation->CurrentTrimmedSeconds;
-        if(Clip!=PresentationTransitionClip||bActionRestarted||bLoopWrapped)
+        if(Clip!=PresentationTransitionClip||PresentationLowerClip!=PresentationTransitionLowerClip||bActionRestarted||bLoopWrapped)
         {
-            // Capture the most recently evaluated (possibly already blended)
-            // pose. Gameplay owns the 120ms ramp; the proxy advances no clock.
             bPresentationTransitionActive=ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
             PresentationTransitionStarted=VisualClock;
             PresentationTransitionClip=Clip;
+            PresentationTransitionLowerClip=PresentationLowerClip;
         }
         const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/.12f,0.f,1.f):1.f;
-        bSampled=bUsePhase ? ImportedPresentation->SampleClipPhaseBlended(Clip,FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f),Alpha) :
-            ImportedPresentation->SampleClipTimeBlended(Clip,Time,Alpha);
+        if(Lower)
+            bSampled=ImportedPresentation->SampleLayeredClips(Clip,bUsePhase?Phase*ClipDuration:Time,
+                PresentationLowerClip,PresentationLowerTime,PresentationLowerWeight,Alpha);
+        else
+            bSampled=bUsePhase?ImportedPresentation->SampleClipPhaseBlended(Clip,Phase,Alpha):
+                ImportedPresentation->SampleClipTimeBlended(Clip,Time,Alpha);
         if(Alpha>=1.f)bPresentationTransitionActive=false;
         if (!bSampled)
         {
-            // Avoid repeating the same invalid-asset diagnostic every tick.
-            // Reapply the definition after editing/reimporting such a clip.
-            FailedPresentationClip=Clip;
-            FailedPresentationReason=ImportedPresentation->LastError;
-            Error=FailedPresentationReason;
+            // A lower-layer rejection must not blacklist the stationary upper
+            // Guard/Heal clip. Missing directions remain explicit diagnostics.
+            if(!Lower) { FailedPresentationClip=Clip;FailedPresentationReason=ImportedPresentation->LastError; }
+            Error=ImportedPresentation->LastError;
         }
     }
     bRequestedPresentationClipSampled=bSampled;
     bPresentationUsingFallback=!bSampled;
-    PresentationPreviousActionElapsed=bUsePhase?ActionElapsed:-1.f;
+    PresentationPreviousActionElapsed=bUsePhase&&!bJumpPose?ActionElapsed:-1.f;
     if (bSampled) { SetPresentationDiagnostic(FString()); return; }
 
     bPresentationTransitionActive=false;
-    PresentationTransitionClip=NAME_None;
-
+    PresentationTransitionClip=PresentationTransitionLowerClip=NAME_None;
     const FVeyrVisualClip* Idle=CustomuseVisualDefinition->Clips.Find(TEXT("Idle"));
     bool bHeldIdle=false;
     if (Idle && Idle->Sequence && !bIdleFallbackRejected && FailedPresentationClip!=FName(TEXT("Idle")))
@@ -635,6 +742,38 @@ void AVeyrKnight::UpdateImportedPresentation()
     ImportedPresentation->SetHiddenInGame(true,true);
     if (TemporaryVisual) TemporaryVisual->SetVisibility(true,true);
     SetPresentationDiagnostic(Error+TEXT("; fallback evaluation failed, temporary primitives restored"));
+}
+
+void AVeyrKnight::UpdateHealFlask()
+{
+    bHealFlaskVisible=false;
+    if(HealFlaskRoot)HealFlaskRoot->SetVisibility(false,true);
+    if(Action!=EVeyrKnightAction::Heal||!bImportedPresentationActive||!bRequestedPresentationClipSampled)
+    {
+        HealFlaskDiagnostic.Reset();return;
+    }
+    FTransform Grip,Spout;
+    FString Error;
+    if(!HealFlaskRoot||HealFlaskParts.Num()!=3)Error=TEXT("Original Ember Draught primitives unavailable");
+    else if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("flask_grip"),Grip)||
+        !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("flask_spout"),Spout))
+        Error=TEXT("Ember Draught requires evaluated flask_grip/LeftHand and flask_spout targets: ")+ImportedPresentation->LastError;
+    else
+    {
+        const FVector Axis=Spout.GetLocation()-Grip.GetLocation();
+        const float Length=Axis.Size();
+        if(!FMath::IsFinite(Length)||Length<1.f||Length>40.f)Error=TEXT("Ember Draught grip-to-spout distance is outside [1,40]cm");
+        else
+        {
+            // Capsule-attached prop receives an already-scaled world distance;
+            // never inherit the skeletal mesh's import scale a second time.
+            HealFlaskRoot->SetWorldLocationAndRotation(Grip.GetLocation(),FRotationMatrix::MakeFromZ(Axis).ToQuat());
+            HealFlaskRoot->SetWorldScale3D(FVector(Length));
+            HealFlaskRoot->SetVisibility(true,true);bHealFlaskVisible=true;
+        }
+    }
+    if(Error!=HealFlaskDiagnostic&&!Error.IsEmpty())UE_LOG(LogTemp,Warning,TEXT("VEYR_HEAL_FLASK %s"),*Error);
+    HealFlaskDiagnostic=Error;
 }
 
 void AVeyrKnight::UpdateTemporaryPresentation(float DeltaSeconds)

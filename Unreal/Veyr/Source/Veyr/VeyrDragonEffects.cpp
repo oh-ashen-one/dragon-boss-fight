@@ -90,14 +90,18 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     if(!bEffectsReady||!IsValid(Dragon)||Dragon->IsDead()||Dragon->IsEncounterStopped()||Dragon->Move!=EVeyrDragonMove::Fire)
     {HideEffects();return;}
+    if(Dragon->bUsingCustomuseVisual&&!Dragon->HasValidImportedCombatPose()){HideEffects();return;}
     const bool bWindup=Dragon->State==EVeyrDragonState::Windup;
     const FVeyrDragonFootprint Footprint=Dragon->GetActiveFootprint();
-    const bool bActive=Dragon->State==EVeyrDragonState::Active&&Footprint.bDamaging&&Footprint.Shape==EVeyrDangerShape::Sector;
+    const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
+    const bool bImported=Dragon->bUsingCustomuseVisual;
+    const bool bActive=Dragon->State==EVeyrDragonState::Active&&
+        (bImported?Beam.bDamaging:(Footprint.bDamaging&&Footprint.Shape==EVeyrDangerShape::Sector));
     if(!bWindup&&!bActive){HideEffects();return;}
     APlayerController* Player=UGameplayStatics::GetPlayerController(this,0);
     if(!Player){HideEffects();return;}
     FVector Camera;FRotator View;Player->GetPlayerViewPoint(Camera,View);
-    const FVector Mouth=Dragon->GetHeadLocation();
+    const FVector Mouth=Dragon->GetMouthLocation();
     const float Clock=Dragon->GetStateElapsed();
     Core->SetVisibility(true);Flame->SetVisibility(bActive);Smoke->SetVisibility(bActive);
     ++PresentationUpdates;
@@ -112,6 +116,43 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
             Sprite(Core,I,Mouth+Offset,Camera,9.f+Phase*13.f,I<16?(1.f-Phase)*(.16f+.30f*Anticipation):0.f,Phase);
         }
         Core->MarkRenderStateDirty();VisibleSpriteCount=16;return;
+    }
+    if(bImported)
+    {
+        // This is the same finite 3D cone used against the knight capsule.
+        // Every flame/core position starts at the actual muzzle and travels
+        // forward; no connector can run back toward the actor origin.
+        const FVector Axis=Beam.Direction.GetSafeNormal();
+        FVector Side=FVector::CrossProduct(Axis,FVector::UpVector).GetSafeNormal();
+        if(Side.IsNearlyZero())Side=FVector::RightVector;
+        const FVector Up=FVector::CrossProduct(Side,Axis).GetSafeNormal();
+        const float Spread=FMath::Tan(FMath::DegreesToRadians(Beam.HalfAngleDegrees));
+        auto Point=[&](float U,float SideAmount,float UpAmount)
+        {
+            const float Distance=Beam.Length*U,Radius=Distance*Spread;
+            return Beam.Origin+Axis*Distance+Side*(SideAmount*Radius)+Up*(UpAmount*Radius);
+        };
+        for(int32 I=0;I<CoreCount;++I)
+        {
+            const float U=I/static_cast<float>(CoreCount-1),Seed=FMath::Frac(I*.618034f);
+            Sprite(Core,I,Point(U,.04f*FMath::Sin(Clock*14+I),0),Camera,24.f+U*45.f,.24f,Seed);
+        }
+        for(int32 I=0;I<FlameCount;++I)
+        {
+            const float U=(I+.5f)/FlameCount,Seed=FMath::Frac(I*.618034f);
+            const float Angle=Clock*4+I*2.399963f,Radial=.75f*FMath::Sqrt(Seed);
+            Sprite(Flame,I,Point(U,FMath::Cos(Angle)*Radial,FMath::Sin(Angle)*Radial),Camera,
+                55.f+100.f*U,.12f+.08f*FMath::Square(FMath::Sin(Clock*15+I)),Seed);
+        }
+        for(int32 I=0;I<SmokeCount;++I)
+        {
+            const float U=.3f+.7f*(I+.5f)/SmokeCount,Seed=FMath::Frac(I*.618034f);
+            const float Drift=FMath::Frac(Clock*.8f+Seed);
+            Sprite(Smoke,I,Point(U,(Seed-.5f)*1.1f,.25f)+FVector::UpVector*(70+Drift*130),Camera,
+                95.f+95.f*Drift,.035f*(1-Drift),Seed);
+        }
+        Core->MarkRenderStateDirty();Flame->MarkRenderStateDirty();Smoke->MarkRenderStateDirty();
+        VisibleSpriteCount=CoreCount+FlameCount+SmokeCount;return;
     }
     const FVector Forward=Footprint.Forward.GetSafeNormal2D();
     const FVector Side=FVector::CrossProduct(FVector::UpVector,Forward);

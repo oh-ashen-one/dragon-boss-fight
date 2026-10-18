@@ -53,6 +53,24 @@ namespace
         const float ExtraAngle=FMath::RadiansToDegrees(FMath::Atan2(Margin,FMath::Max(1.f,static_cast<float>(R))));
         return FVector::DotProduct(D.GetSafeNormal(),F.Forward.GetSafeNormal2D())>=FMath::Cos(FMath::DegreesToRadians(FMath::Min(180.f,F.HalfAngleDegrees+ExtraAngle)));
     }
+    bool Contains(const TArray<FVeyrDragonFootprint>& Shapes,const FVector& P,float Margin=0)
+    {
+        for(const auto& F:Shapes)if(Contains(F,P,Margin))return true;
+        return false;
+    }
+    TArray<TSharedPtr<FJsonValue>> FootprintsJson(const TArray<FVeyrDragonFootprint>& Shapes)
+    {
+        TArray<TSharedPtr<FJsonValue>> Values;
+        for(const auto& F:Shapes)
+        {
+            auto O=MakeShared<FJsonObject>();O->SetNumberField(TEXT("shape"),static_cast<int32>(F.Shape));
+            O->SetArrayField(TEXT("origin"),VectorJson(F.Origin));O->SetArrayField(TEXT("end"),VectorJson(F.End));
+            O->SetArrayField(TEXT("forward"),VectorJson(F.Forward));O->SetNumberField(TEXT("innerRadius"),F.InnerRadius);
+            O->SetNumberField(TEXT("outerRadius"),F.OuterRadius);O->SetNumberField(TEXT("halfAngleDegrees"),F.HalfAngleDegrees);
+            O->SetBoolField(TEXT("damaging"),F.bDamaging);Values.Add(MakeShared<FJsonValueObject>(O));
+        }
+        return Values;
+    }
 }
 
 AVeyrReplay::AVeyrReplay()
@@ -94,6 +112,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         Elapsed=Saved->GetNumberField(TEXT("durationSeconds"));TerminalSeconds=Saved->GetNumberField(TEXT("terminalSeconds"));
         FrameCount=Saved->GetNumberField(TEXT("frameCount"));MaximumFrameSeconds=Saved->GetNumberField(TEXT("maximumFrameSeconds"));
         Samples=Saved->GetArrayField(TEXT("samples"));Events=Saved->GetArrayField(TEXT("events"));
+        double SavedFailures=0;if(Saved->TryGetNumberField(TEXT("warningContainmentFailures"),SavedFailures))ObservedWarningContainmentFailures=SavedFailures;
         bLightLegContact=Saved->GetBoolField(TEXT("lightLegContact"));bHeavyLegContact=Saved->GetBoolField(TEXT("heavyLegContact"));
         bSawRise=Saved->GetBoolField(TEXT("riseObserved"));bRiseCompleted=Saved->GetBoolField(TEXT("riseCompleted"));
         for(const TSharedPtr<FJsonValue>& V:Saved->GetArrayField(TEXT("wallFrameIntervalsSeconds")))WallFrameIntervals.Add(V->AsNumber());
@@ -163,6 +182,15 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetArrayField(TEXT("bossPosition"),VectorJson(Dragon->GetActorLocation())); O->SetArrayField(TEXT("headPosition"),VectorJson(Dragon->GetHeadLocation()));
     O->SetBoolField(TEXT("grounded"),Knight->IsGrounded()); O->SetBoolField(TEXT("invulnerable"),Knight->IsRollingInvulnerable());
     O->SetBoolField(TEXT("insideWarning"),Dragon->IsPointInsideWarning(Knight->GetFootLocation()));
+    O->SetArrayField(TEXT("warningFootprints"),FootprintsJson(Dragon->GetWarningFootprints()));
+    O->SetArrayField(TEXT("activeFootprints"),FootprintsJson(Dragon->GetActiveFootprints()));
+    O->SetNumberField(TEXT("warningContainmentFailures"),Dragon->WarningContainmentFailures);
+    O->SetStringField(TEXT("importedCombatDiagnostic"),Dragon->ImportedCombatDiagnostic);
+    O->SetBoolField(TEXT("importedCombatPoseValid"),Dragon->HasValidImportedCombatPose());
+    const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
+    O->SetArrayField(TEXT("mouth"),VectorJson(Dragon->GetMouthLocation()));
+    O->SetArrayField(TEXT("flameDirection"),VectorJson(Beam.Direction));
+    O->SetBoolField(TEXT("flameDamaging"),Beam.bDamaging);
     O->SetBoolField(TEXT("insideActiveDanger"),Dragon->IsPointInsideActiveDanger(Knight->GetFootLocation()));
     O->SetNumberField(TEXT("lightAttacks"),Knight->LightAttacks); O->SetNumberField(TEXT("heavyAttacks"),Knight->HeavyAttacks);
     O->SetNumberField(TEXT("rolls"),Knight->Rolls); O->SetNumberField(TEXT("dodgedHits"),Knight->DodgedHits);
@@ -240,6 +268,7 @@ void AVeyrReplay::Event(const FString& Name, bool bScreenshot)
 
 void AVeyrReplay::Observe()
 {
+    ObservedWarningContainmentFailures=FMath::Max(ObservedWarningContainmentFailures,Dragon->WarningContainmentFailures);
     ObserveScenarios();
     const int32 State=static_cast<int32>(Dragon->State), Action=static_cast<int32>(Knight->Action);
     if(State!=PreviousDragonState)
@@ -467,17 +496,6 @@ bool AVeyrReplay::DriveScenarioInputs()
         // transformed goal: clamping can silently change which attack region it is in.
         // Periodic flight/reposition and anti-repeat policy may still override a
         // positional choice. Actual observed attacks alone establish coverage.
-        auto PositionalMove=[](const FVector& Local)
-        {
-            const float Distance=Local.Size2D();
-            if(Distance>1750.f)return 1;
-            if(Local.X<-350.f&&Distance<1300.f)return 4;
-            if(Local.X<-80.f&&Distance<850.f)return 3;
-            if(Distance<850.f&&FMath::Abs(Local.Y)>180.f)return 2;
-            if(Local.X>350.f&&Local.X<1050.f&&FMath::Abs(Local.Y)<320.f)return 5;
-            if(Local.X>0.f)return 0;
-            return Distance<850.f?3:-1;
-        };
         bAvoidanceGoalAvailable=false;DesiredAvoidanceMove=-1;
         for(int32 DesiredMove=0;DesiredMove<6&&!bAvoidanceGoalAvailable;++DesiredMove)
         {
@@ -485,8 +503,8 @@ bool AVeyrReplay::DriveScenarioInputs()
             float BestScore=TNumericLimits<float>::Max();
             auto Consider=[&](const FVector& Local)
             {
-                if(PositionalMove(Local)!=DesiredMove)return;
                 FVector Candidate=Dragon->GetActorTransform().TransformPosition(Local);Candidate.Z=0;
+                if(Dragon->PredictPositionalMove(Candidate)!=DesiredMove)return;
                 if(Candidate.Size2D()>3100.f)return;
                 const float Score=FVector::Dist2D(Local,Positions[DesiredMove])+.15f*FVector::Dist2D(Feet,Candidate);
                 if(Score<BestScore){BestScore=Score;AvoidanceGoal=Candidate;bAvoidanceGoalAvailable=true;DesiredAvoidanceMove=DesiredMove;}
@@ -502,7 +520,7 @@ bool AVeyrReplay::DriveScenarioInputs()
         Toward(AvoidanceGoal);
         if(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)
         {
-            if(Contains(Dragon->GetWarningFootprint(),Feet,65.f))
+            if(Contains(Dragon->GetWarningFootprints(),Feet,65.f))
             {
                 Movement=EscapeDirection();
                 bRoll=bAvailable&&Knight->Stamina>=25.f&&(Dragon->State==EVeyrDragonState::Active||Remaining<.32f);
@@ -590,8 +608,9 @@ bool AVeyrReplay::DriveScenarioInputs()
 FVector AVeyrReplay::EscapeDirection() const
 {
     const FVector Feet=Knight->GetFootLocation();
-    const FVeyrDragonFootprint Warning=Dragon->GetWarningFootprint();
-    FVector Best=(Feet-Warning.Origin).GetSafeNormal2D(); float BestScore=-1.e9f;
+    const TArray<FVeyrDragonFootprint> Warning=Dragon->GetWarningFootprints();
+    const FVector WarningOrigin=Warning.IsEmpty()?Dragon->GetActorLocation():Warning[0].Origin;
+    FVector Best=(Feet-WarningOrigin).GetSafeNormal2D(); float BestScore=-1.e9f;
     for(int32 I=0;I<24;++I)
     {
         const FVector D=FVector::ForwardVector.RotateAngleAxis(I*15.f,FVector::UpVector);
@@ -599,7 +618,7 @@ FVector AVeyrReplay::EscapeDirection() const
         if(Candidate.Size2D()>3100)continue;
         const bool bSafe=!Contains(Warning,Candidate,75.f);
         float Score=bSafe?10000.f:0.f;
-        Score+=static_cast<float>(FVector::Dist2D(Candidate,Warning.Origin))*.1f;
+        Score+=static_cast<float>(FVector::Dist2D(Candidate,WarningOrigin))*.1f;
         // Prefer routes that exit the telegraph early, not ones crossing its whole interior.
         for(int32 Step=1;Step<=5;++Step)if(!Contains(Warning,Feet+D*(Step*100.f),45.f))Score+=100.f;
         if(Score>BestScore){BestScore=Score;Best=D;}
@@ -637,7 +656,7 @@ void AVeyrReplay::DriveInputs()
         }
         const float GoalDistance=static_cast<float>(FVector::Dist2D(Feet,Goal));
         if(GoalDistance>45.f)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
-        const bool bThreat=Contains(Dragon->GetWarningFootprint(),Feet,65.f);
+        const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
         const bool bDodgeExercise=ReplayMode==TEXT("core")&&Knight->DodgedHits==0&&Dragon->Move==EVeyrDragonMove::BackStomp;
         if(bDodgeExercise&&Dragon->State==EVeyrDragonState::Windup&&bThreat)
         {
@@ -858,10 +877,12 @@ void AVeyrReplay::StopVideoCapture(const FString& Reason)
 void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
 {
     if(bFinished)return;
-    bFinished=true;bPassed=bSuccess;OutcomeReason=Reason;FinishClock=0;
+    if(ObservedWarningContainmentFailures>0)bSuccess=false;
+    bFinished=true;bPassed=bSuccess;OutcomeReason=ObservedWarningContainmentFailures>0?
+        TEXT("Bone contact escaped committed warning; damage was suppressed"):Reason;FinishClock=0;
     Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
     CaptureQueue.Reset(); Event(bSuccess?TEXT("result_pass"):TEXT("result_fail")); SaveEvidence(false);
-    UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_RESULT pass=%d seconds=%.3f reason=%s"),bPassed,Elapsed,*Reason);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_RESULT pass=%d seconds=%.3f reason=%s"),bPassed,Elapsed,*OutcomeReason);
 }
 
 void AVeyrReplay::BeginTerminalVerification()
@@ -909,6 +930,7 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
 void AVeyrReplay::SaveEvidence(bool bFinal)
 {
     TSharedPtr<FJsonObject> Root=MakeShared<FJsonObject>();
+    Root->SetNumberField(TEXT("warningContainmentFailures"),ObservedWarningContainmentFailures);
     TSharedPtr<FJsonObject> Video=MakeShared<FJsonObject>();
     Video->SetNumberField(TEXT("requestedFPS"),VideoFPS);Video->SetNumberField(TEXT("requestedFrames"),VideoFrameIndex);
     Video->SetNumberField(TEXT("savedFrames"),VideoFramesSaved);Video->SetNumberField(TEXT("failedFrames"),VideoFailedFrames);

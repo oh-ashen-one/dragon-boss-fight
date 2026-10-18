@@ -4,12 +4,14 @@
 #include "Animation/AnimSequence.h"
 #include "VeyrSkeletalPresentation.h"
 #include "Components/SceneComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialParameters.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -39,6 +41,10 @@ AVeyrDragon::AVeyrDragon()
     ImportedPresentation=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("CustomuseDragonPresentation"));
     ImportedPresentation->SetupAttachment(SceneRoot);
     ImportedPresentation->SetVisibility(false);
+    AttackPoseProbe=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("HiddenAttackEnvelopeProbe"));
+    AttackPoseProbe->SetupAttachment(SceneRoot);
+    AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
+    AttackPoseProbe->SetCastShadow(false);AttackPoseProbe->SetRenderInMainPass(false);
     static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> ImportedDefinition(TEXT("/Game/Characters/Customuse/Runtime/DA_Dragon.DA_Dragon"));
     VisualDefinition=ImportedDefinition.Get();
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
@@ -113,6 +119,8 @@ void AVeyrDragon::BeginPlay()
         WarningLines->SetMaterial(0,WarningMaterial); DangerLines->SetMaterial(0,DangerMaterial);
     }
     UpdateTemporaryPresentation(0); EnterState(EVeyrDragonState::Idle,2.2f);
+    if(!VisualDefinition)VisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
+        TEXT("/Game/Characters/Customuse/Runtime/DA_Dragon.DA_Dragon"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(VisualDefinition)ApplyCustomuseVisual(VisualDefinition);
 }
 
@@ -148,7 +156,9 @@ void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
             State==EVeyrDragonState::Collapse?1-Ease(StateElapsed/StateDuration):0.f;
     }
     State=Next; StateElapsed=0; StateDuration=Duration;
-    WarningLines->ClearInstances(); DangerLines->ClearInstances(); VisualAccumulator=.04f;
+    bPreviousContactPoseValid=false;PreviousContacts.Reset();
+    if(Next!=EVeyrDragonState::Windup&&Next!=EVeyrDragonState::Active)CommittedWarning.Reset();
+    WarningLines->ClearInstances(); DangerLines->ClearInstances(); VisualAccumulator=.04f;bWarningDrawn=false;
 }
 
 void AVeyrDragon::AdvanceState(float DeltaSeconds)
@@ -209,6 +219,19 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
 
 void AVeyrDragon::ChooseAttack()
 {
+    if(bUsingCustomuseVisual)
+    {
+        if(!bImportedTargetsValid||!bImportedAttackCacheReady)
+        {EnterState(EVeyrDragonState::Idle,1.f);return;}
+        const int32 Positional=PredictPositionalMove(Target->GetFootLocation());
+        if(Positional<0){BeginReposition();return;}
+        EVeyrDragonMove Next=static_cast<EVeyrDragonMove>(Positional);
+        if(TotalAttacks%6==5)Next=EVeyrDragonMove::FlyAway;
+        if(Next==LastMove&&RepeatedMoveCount>=2){BeginReposition();return;}
+        if(Next==EVeyrDragonMove::ClawSwipe)
+            ClawLeg=CachedWarningContains(ImportedMoveClip(Next,0,TEXT("Active")),Target->GetFootLocation())?0:1;
+        BeginAttack(Next);return;
+    }
     const FVector Offset=Ground(Target->GetActorLocation()-GetActorLocation());
     const FVector Local=GetActorTransform().InverseTransformVectorNoScale(Offset);
     const float Distance=static_cast<float>(Offset.Size());
@@ -274,10 +297,12 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
             AttackOrigin=Ground(GetActorTransform().TransformPosition(FVector(300,0,0))); break;
     }
     EnterState(EVeyrDragonState::Windup,WindupDuration);
+    if(bUsingCustomuseVisual)CommitImportedWarning();
 }
 
 FVeyrDragonFootprint AVeyrDragon::GetWarningFootprint() const
 {
+    if(bUsingCustomuseVisual){const auto All=GetWarningFootprints();return All.IsEmpty()?FVeyrDragonFootprint():All[0];}
     FVeyrDragonFootprint F;
     if(bEncounterStopped||(State!=EVeyrDragonState::Windup&&State!=EVeyrDragonState::Active))return F;
     F.Origin=AttackOrigin; F.Forward=AttackForward;
@@ -295,6 +320,7 @@ FVeyrDragonFootprint AVeyrDragon::GetWarningFootprint() const
 
 FVeyrDragonFootprint AVeyrDragon::GetActiveFootprint() const
 {
+    if(bUsingCustomuseVisual){const auto All=GetActiveFootprints();return All.IsEmpty()?FVeyrDragonFootprint():All[0];}
     FVeyrDragonFootprint F;
     if(State!=EVeyrDragonState::Active||bEncounterStopped)return F;
     if(Move==EVeyrDragonMove::FlyAway&&StateElapsed<FlightSeconds)return F;
@@ -320,12 +346,63 @@ bool AVeyrDragon::ContainsPoint(const FVeyrDragonFootprint& F,const FVector& Poi
     return Cos>=FMath::Cos(FMath::DegreesToRadians(F.HalfAngleDegrees));
 }
 
-bool AVeyrDragon::IsPointInsideWarning(const FVector& Point) const {return ContainsPoint(GetWarningFootprint(),Point);}
-bool AVeyrDragon::IsPointInsideActiveDanger(const FVector& Point) const {return ContainsPoint(GetActiveFootprint(),Point);}
+bool AVeyrDragon::IsPointInsideWarning(const FVector& Point) const {return ContainsAny(GetWarningFootprints(),Point);}
+bool AVeyrDragon::IsPointInsideActiveDanger(const FVector& Point) const {return ContainsAny(GetActiveFootprints(),Point);}
 
 void AVeyrDragon::TryDamageTarget()
 {
     if(bContactConsumed||!IsValid(Target)||Target->IsDead()||IsDead())return;
+    if(bUsingCustomuseVisual)
+    {
+        if(!bImportedTargetsValid||!bImportedAttackCacheReady||!MissingVisualClip.IsNone())return;
+        const TArray<FVeyrDragonContact> Contacts=GetImportedContacts();
+        bool bHit=false;
+        if(Move==EVeyrDragonMove::Fire)
+        {
+            const FVeyrDragonFlameBeam Beam=GetActiveFlameBeam();bHit=FlameHitsKnight(Beam);
+            if(bPreviousContactPoseValid&&PreviousFlame.bDamaging)
+                for(int32 Step=1;Step<16&&!bHit;++Step)
+                {
+                    FVeyrDragonFlameBeam Between=Beam;const float A=Step/16.f;
+                    Between.Origin=FMath::Lerp(PreviousFlame.Origin,Beam.Origin,A);
+                    Between.Direction=FMath::Lerp(PreviousFlame.Direction,Beam.Direction,A).GetSafeNormal();
+                    bHit=FlameHitsKnight(Between);
+                }
+            PreviousFlame=Beam;
+        }
+        else if(Move==EVeyrDragonMove::FlyAway)
+            bHit=StateElapsed>=FlightSeconds&&ContainsAny(GetActiveFootprints(),Target->GetFootLocation());
+        else
+        {
+            bHit=ImportedContactHitsKnight(Contacts);
+            // Sweep sampled bone contacts, not an unrelated proxy arc. Dense
+            // bounded intermediate capsules prevent a stalled frame tunnelling.
+            if(bPreviousContactPoseValid&&PreviousContacts.Num()==Contacts.Num())
+                for(int32 Step=1;Step<16&&!bHit;++Step)
+                {
+                    TArray<FVeyrDragonContact> Between;
+                    for(int32 I=0;I<Contacts.Num();++I)
+                    {
+                        FVeyrDragonContact C=Contacts[I];const float A=Step/16.f;
+                        C.Start=FMath::Lerp(PreviousContacts[I].Start,C.Start,A);
+                        C.End=FMath::Lerp(PreviousContacts[I].End,C.End,A);Between.Add(C);
+                    }
+                    bHit=ImportedContactHitsKnight(Between);
+                }
+        }
+        PreviousContacts=Contacts;bPreviousContactPoseValid=true;
+        if(!bHit)return;
+        // A committed warning is an absolute promise, including interpolation
+        // and transition poses. Fail closed and expose any envelope miss.
+        if(!ContainsAny(CommittedWarning,Target->GetFootLocation()))
+        {++WarningContainmentFailures;ImportedCombatDiagnostic=TEXT("Active contact escaped committed warning; damage suppressed");return;}
+        bContactConsumed=true;++DamageContactCount;const float Before=Target->Health;
+        const FVector Source=Move==EVeyrDragonMove::Fire||Move==EVeyrDragonMove::Bite?GetMouthLocation():
+            Contacts.IsEmpty()?AttackOrigin:Contacts[0].Start;
+        Target->ApplyBossDamage(AttackDamage,Source,false);
+        if(Target->Health>=Before-.001f)++AvoidedContactCount;
+        return;
+    }
     const FVeyrDragonFootprint Footprint=GetActiveFootprint();
     if(!Footprint.bDamaging||!ContainsPoint(Footprint,Target->GetActorLocation()))return;
     bContactConsumed=true; ++DamageContactCount;
@@ -344,7 +421,8 @@ bool AVeyrDragon::SwordContact(const FVector& Origin,const FVector& Forward,cons
 
 void AVeyrDragon::ReceiveSword(const FVector& Origin,const FVector& Forward,bool bHeavy,int32 SwingId)
 {
-    if(IsDead()||bEncounterStopped||IsAirborne()||AcceptedSwings.Contains(SwingId)||Ground(Forward).IsNearlyZero())return;
+    if(IsDead()||bEncounterStopped||IsAirborne()||AcceptedSwings.Contains(SwingId)||Ground(Forward).IsNearlyZero()||
+       (bUsingCustomuseVisual&&!bImportedTargetsValid))return;
     int32 Region=-1; float Best=TNumericLimits<float>::Max();
     for(int32 I=0;I<4;++I)
     {
@@ -360,7 +438,8 @@ void AVeyrDragon::ReceiveSword(const FVector& Origin,const FVector& Forward,bool
 bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& PreviousTip,
                                   const FVector& CurrentBase,const FVector& CurrentTip,bool bHeavy,int32 SwingId)
 {
-    if(IsDead()||bEncounterStopped||IsAirborne()||AcceptedSwings.Contains(SwingId))return false;
+    if(IsDead()||bEncounterStopped||IsAirborne()||AcceptedSwings.Contains(SwingId)||
+       (bUsingCustomuseVisual&&!bImportedTargetsValid))return false;
     if(PreviousBase.ContainsNaN()||PreviousTip.ContainsNaN()||CurrentBase.ContainsNaN()||CurrentTip.ContainsNaN())return false;
     if(FVector::DistSquared(CurrentBase,CurrentTip)<1.f)return false;
     // Two triangles cover the swept blade quadrilateral. A small blade radius
@@ -409,8 +488,9 @@ bool AVeyrDragon::CanStagger() const
 {
     return StaggerProtection<=0&&State!=EVeyrDragonState::Buckle&&State!=EVeyrDragonState::Collapse&&State!=EVeyrDragonState::Exposed&&State!=EVeyrDragonState::Rise&&State!=EVeyrDragonState::Dead;
 }
-FVector AVeyrDragon::GetHeadLocation() const {return bImportedTargetsValid?ImportedHeadWorld:GetActorTransform().TransformPosition(HeadLocal);}
-FVector AVeyrDragon::GetLegLocation(int32 Index) const {const int32 I=FMath::Clamp(Index,0,3);return bImportedTargetsValid?ImportedFeetWorld[I]:GetActorTransform().TransformPosition(LegLocal[I]);}
+FVector AVeyrDragon::GetMouthLocation() const {return bUsingCustomuseVisual?ImportedMouthWorld:GetHeadLocation();}
+FVector AVeyrDragon::GetHeadLocation() const {return bUsingCustomuseVisual?ImportedHeadWorld:GetActorTransform().TransformPosition(HeadLocal);}
+FVector AVeyrDragon::GetLegLocation(int32 Index) const {const int32 I=FMath::Clamp(Index,0,3);return bUsingCustomuseVisual?ImportedFeetWorld[I]:GetActorTransform().TransformPosition(LegLocal[I]);}
 float AVeyrDragon::GetLegStagger(int32 Index) const {return LegStagger[FMath::Clamp(Index,0,3)];}
 float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,7.f-StateElapsed):0.f;}
 bool AVeyrDragon::IsAirborne() const {return State==EVeyrDragonState::Active&&Move==EVeyrDragonMove::FlyAway&&StateElapsed<FlightSeconds;}
@@ -542,14 +622,35 @@ void AVeyrDragon::AddGroundLine(UInstancedStaticMeshComponent* Lines,const FVect
     Lines->AddInstance(FTransform(Delta.Rotation(),(Start+End)*.5,FVector(Delta.Size()/100,Width/100,6.f/100)),true);
 }
 
-void AVeyrDragon::DrawFootprint(UInstancedStaticMeshComponent* Lines,const FVeyrDragonFootprint& F,bool bBright)
+void AVeyrDragon::DrawFootprint(UInstancedStaticMeshComponent* Lines,const FVeyrDragonFootprint& F,bool bBright,const TArray<FVeyrDragonFootprint>* Union,int32 OwnIndex)
 {
     if(F.Shape==EVeyrDangerShape::None)return;
     const float Width=bBright?22.f:13.f;
+    auto Line=[&](const FVector& A,const FVector& B,float W)
+    {
+        const int32 Pieces=Union&&Union->Num()>1?FMath::Max(1,FMath::CeilToInt(FVector::Dist(A,B)/40.f)):1;
+        for(int32 Piece=0;Piece<Pieces;++Piece)
+        {
+            const FVector Start=FMath::Lerp(A,B,Piece/static_cast<float>(Pieces));
+            const FVector End=FMath::Lerp(A,B,(Piece+1.f)/Pieces);bool Interior=false;
+            if(Union)for(int32 I=0;I<Union->Num();++I)
+                if(I!=OwnIndex&&ContainsPoint((*Union)[I],(Start+End)*.5f)){Interior=true;break;}
+            if(!Interior)AddGroundLine(Lines,Start,End,W);
+        }
+    };
     if(F.Shape==EVeyrDangerShape::Capsule)
     {
         const FVector D=Ground(F.End-F.Origin).GetSafeNormal();const FVector Side=FVector::CrossProduct(FVector::UpVector,D)*F.OuterRadius;
-        AddGroundLine(Lines,F.Origin+Side,F.End+Side,Width);AddGroundLine(Lines,F.Origin-Side,F.End-Side,Width);
+        Line(F.Origin+Side,F.End+Side,Width);Line(F.Origin-Side,F.End-Side,Width);
+        const FVector Axis=D.IsNearlyZero()?FVector::ForwardVector:D;
+        for(int32 I=0;I<12;++I)
+        {
+            const float A=-90.f+I*15.f,B=A+15.f;
+            Line(F.End+Axis.RotateAngleAxis(A,FVector::UpVector)*F.OuterRadius,
+                F.End+Axis.RotateAngleAxis(B,FVector::UpVector)*F.OuterRadius,Width);
+            Line(F.Origin-Axis.RotateAngleAxis(A,FVector::UpVector)*F.OuterRadius,
+                F.Origin-Axis.RotateAngleAxis(B,FVector::UpVector)*F.OuterRadius,Width);
+        }
         return;
     }
     const float Half=F.Shape==EVeyrDangerShape::Circle?180.f:F.HalfAngleDegrees;
@@ -558,22 +659,29 @@ void AVeyrDragon::DrawFootprint(UInstancedStaticMeshComponent* Lines,const FVeyr
     {
         const FVector A=F.Forward.RotateAngleAxis(FMath::Lerp(-Half,Half,I/static_cast<float>(Segments)),FVector::UpVector);
         const FVector B=F.Forward.RotateAngleAxis(FMath::Lerp(-Half,Half,(I+1.f)/Segments),FVector::UpVector);
-        AddGroundLine(Lines,F.Origin+A*F.OuterRadius,F.Origin+B*F.OuterRadius,Width);
-        if(F.InnerRadius>0)AddGroundLine(Lines,F.Origin+A*F.InnerRadius,F.Origin+B*F.InnerRadius,Width);
-        if(bBright&&I%2==0)AddGroundLine(Lines,F.Origin+A*F.InnerRadius,F.Origin+A*F.OuterRadius,Width*.65f);
+        Line(F.Origin+A*F.OuterRadius,F.Origin+B*F.OuterRadius,Width);
+        if(F.InnerRadius>0)Line(F.Origin+A*F.InnerRadius,F.Origin+B*F.InnerRadius,Width);
+        if(bBright&&I%2==0)Line(F.Origin+A*F.InnerRadius,F.Origin+A*F.OuterRadius,Width*.65f);
     }
     if(Half<179)
         for(int32 Side=-1;Side<=1;Side+=2)
         {
             const FVector Ray=F.Forward.RotateAngleAxis(Half*Side,FVector::UpVector);
-            AddGroundLine(Lines,F.Origin+Ray*F.InnerRadius,F.Origin+Ray*F.OuterRadius,Width);
+            Line(F.Origin+Ray*F.InnerRadius,F.Origin+Ray*F.OuterRadius,Width);
         }
 }
 
 void AVeyrDragon::UpdateTelegraphs()
 {
-    WarningLines->ClearInstances(); DangerLines->ClearInstances();
-    DrawFootprint(WarningLines,GetWarningFootprint(),false);DrawFootprint(DangerLines,GetActiveFootprint(),true);
+    DangerLines->ClearInstances();
+    if(!bWarningDrawn)
+    {
+        WarningLines->ClearInstances();const auto Warning=GetWarningFootprints();
+        for(int32 I=0;I<Warning.Num();++I)DrawFootprint(WarningLines,Warning[I],false,&Warning,I);
+        bWarningDrawn=true;
+    }
+    const auto Active=GetActiveFootprints();
+    for(int32 I=0;I<Active.Num();++I)DrawFootprint(DangerLines,Active[I],true,&Active,I);
 }
 
 FVector AVeyrDragon::ClampArena(const FVector& V,float Radius)
@@ -586,10 +694,12 @@ FVector AVeyrDragon::ClampArena(const FVector& V,float Radius)
 
 bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
-    if(!Definition||!ImportedPresentation||!ImportedPresentation->SetVisualDefinition(Definition,false))return false;
+    if(!Definition||!ImportedPresentation)return false;
+    ResetCameraOcclusionMaterials();
+    if(!ImportedPresentation->SetVisualDefinition(Definition,false))return false;
     // A valid measured head and four feet are mandatory before hiding proxies.
     FTransform TargetPose;
-    for(FName Name:{FName(TEXT("head")),FName(TEXT("leg0")),FName(TEXT("leg1")),FName(TEXT("leg2")),FName(TEXT("leg3"))})
+    for(FName Name:{FName(TEXT("head")),FName(TEXT("leg0")),FName(TEXT("leg1")),FName(TEXT("leg2")),FName(TEXT("leg3")),FName(TEXT("mouth")),FName(TEXT("mouth_aim")),FName(TEXT("foot0")),FName(TEXT("foot1")),FName(TEXT("foot2")),FName(TEXT("foot3")),FName(TEXT("tail0")),FName(TEXT("tail1")),FName(TEXT("tail2")),FName(TEXT("tail3")),FName(TEXT("tail_tip"))})
         if(!ImportedPresentation->GetBoneTargetWorldTransform(Name,TargetPose))
         {
             bUsingCustomuseVisual=false;bImportedTargetsValid=false;
@@ -601,7 +711,10 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     for(UStaticMeshComponent* Part:TemporaryParts)if(Part)Part->SetVisibility(false);
     ImportedPresentation->SetVisibility(true);
     TemporaryLabel->SetText(FText::FromString(TEXT("CUSTOMUSE DRAGON — MOTION INTEGRATION PREVIEW")));
+    bImportedAttackCacheReady=AttackPoseProbe->SetVisualDefinition(Definition,false)&&CacheImportedAttackWarnings();
+    AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
     UpdateImportedPresentation();
+    InitializeCameraOcclusionMaterials();
     return true;
 }
 
@@ -618,12 +731,14 @@ void AVeyrDragon::UpdateImportedPresentation()
         case EVeyrDragonState::Collapse:Name=TEXT("Collapse");break;
         case EVeyrDragonState::Exposed:Name=TEXT("Exposed");break;
         case EVeyrDragonState::Rise:Name=TEXT("Rise");break;
-        case EVeyrDragonState::Dead:Name=TEXT("Death");break;
+        case EVeyrDragonState::Dead:Name=DeathStartDown>.5f?TEXT("DeathDown"):TEXT("Death");break;
         default:
         {
             static const TCHAR* Moves[]={TEXT("Fire"),TEXT("Flight"),TEXT("Claw"),TEXT("Stomp"),TEXT("Tail"),TEXT("Bite")};
             Name=Moves[static_cast<int32>(Move)];
             if(Move==EVeyrDragonMove::BackStomp)Name+=FString::FromInt(StompLeg);
+            if(Move==EVeyrDragonMove::ClawSwipe)
+                Name=ImportedMoveClip(Move,ClawLeg,TEXT("")).ToString();
             Name+=State==EVeyrDragonState::Windup?TEXT("Windup"):State==EVeyrDragonState::Active?TEXT("Active"):TEXT("Recovery");
             break;
         }
@@ -659,5 +774,415 @@ void AVeyrDragon::UpdateImportedPresentation()
         if(!ImportedPresentation->GetBoneTargetWorldTransform(FName(*FString::Printf(TEXT("leg%d"),I)),Feet[I]))return;
     ImportedHeadWorld=Head.GetLocation();
     for(int32 I=0;I<4;++I)ImportedFeetWorld[I]=Feet[I].GetLocation();
-    bImportedTargetsValid=true;
+    FTransform Mouth,Aim,Foot,Tail;
+    if(!Sampled||!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("mouth"),Mouth)||
+       !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("mouth_aim"),Aim))return;
+    ImportedMouthWorld=Mouth.GetLocation();ImportedMouthAimWorld=Aim.GetLocation();
+    for(int32 I=0;I<4;++I)
+    {
+        if(!ImportedPresentation->GetBoneTargetWorldTransform(FName(*FString::Printf(TEXT("foot%d"),I)),Foot)||
+           !ImportedPresentation->GetBoneTargetWorldTransform(FName(*FString::Printf(TEXT("tail%d"),I)),Tail))return;
+        ImportedContactFeetWorld[I]=Foot.GetLocation();ImportedTailWorld[I]=Tail.GetLocation();
+    }
+    if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("tail_tip"),Tail))return;
+    bImportedTargetsValid=!ImportedMouthWorld.Equals(ImportedMouthAimWorld,.01f);
+}
+
+FName AVeyrDragon::ImportedMoveClip(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Suffix) const
+{
+    static const TCHAR* Names[]={TEXT("Fire"),TEXT("Flight"),TEXT("Claw"),TEXT("Stomp"),TEXT("Tail"),TEXT("Bite")};
+    FString Name=Names[static_cast<int32>(Attack)];
+    if(Attack==EVeyrDragonMove::BackStomp)Name+=FString::FromInt(Leg);
+    if(Attack==EVeyrDragonMove::ClawSwipe)
+    {
+        const FString Numbered=Name+FString::FromInt(Leg);
+        if(Leg==1||(VisualDefinition&&VisualDefinition->Clips.Contains(FName(*(Numbered+TEXT("Active"))))))Name=Numbered;
+    }
+    return FName(*(Name+Suffix));
+}
+
+bool AVeyrDragon::ContainsAny(const TArray<FVeyrDragonFootprint>& Footprints,const FVector& Point)
+{
+    for(const auto& F:Footprints)if(ContainsPoint(F,Point))return true;
+    return false;
+}
+
+bool AVeyrDragon::ReadImportedContactPose(UVeyrSkeletalPresentation* Presentation,EVeyrDragonMove Attack,int32 Leg,
+    TArray<FVeyrDragonContact>& OutContacts,FVeyrDragonFlameBeam& OutBeam) const
+{
+    OutContacts.Reset();OutBeam.bDamaging=false;
+    if(!Presentation||!Presentation->bPoseEvaluated)return false;
+    auto Point=[&](const FName Name,FVector& P)
+    {FTransform T;if(!Presentation->GetBoneTargetWorldTransform(Name,T))return false;P=T.GetLocation();return true;};
+    auto Contact=[&](FVector A,FVector B,float Radius)
+    {FVeyrDragonContact C;C.Start=A;C.End=B;C.Radius=Radius;OutContacts.Add(C);};
+    FVector A,B;
+    switch(Attack)
+    {
+        case EVeyrDragonMove::Fire:
+            if(!Point(TEXT("mouth"),A)||!Point(TEXT("mouth_aim"),B)||(B-A).IsNearlyZero())return false;
+            OutBeam.Origin=A;OutBeam.Direction=(B-A).GetSafeNormal();OutBeam.bDamaging=true;return true;
+        case EVeyrDragonMove::Bite:
+            if(!Point(TEXT("head"),A)||!Point(TEXT("mouth"),B))return false;
+            Contact(A,B,100.f);return true;
+        case EVeyrDragonMove::ClawSwipe:
+        case EVeyrDragonMove::BackStomp:
+            if(!Point(FName(*FString::Printf(TEXT("foot%d"),Leg)),A))return false;
+            // Stomp includes its visible ground impact; claw follows the actual paw.
+            Contact(A,A,Attack==EVeyrDragonMove::BackStomp?230.f:115.f);return true;
+        case EVeyrDragonMove::TailSmack:
+        {
+            const float Radii[]={130.f,95.f,65.f};
+            if(!Point(TEXT("tail0"),A))return false;
+            for(int32 I=1;I<4;++I)
+            {
+                if(!Point(FName(*FString::Printf(TEXT("tail%d"),I)),B))return false;
+                Contact(A,B,Radii[I-1]);A=B;
+            }
+            if(!Point(TEXT("tail_tip"),B))return false;
+            Contact(A,B,35.f);
+            return true;
+        }
+        case EVeyrDragonMove::FlyAway:return true;
+    }
+    return false;
+}
+
+TArray<FVeyrDragonContact> AVeyrDragon::GetImportedContacts() const
+{
+    TArray<FVeyrDragonContact> Contacts;FVeyrDragonFlameBeam Beam;
+    if(bImportedTargetsValid)ReadImportedContactPose(ImportedPresentation,Move,
+        Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,Contacts,Beam);
+    return Contacts;
+}
+
+FVeyrDragonFlameBeam AVeyrDragon::GetActiveFlameBeam() const
+{
+    FVeyrDragonFlameBeam Beam;
+    if(!bUsingCustomuseVisual||!bImportedTargetsValid||!bImportedAttackCacheReady||
+       State!=EVeyrDragonState::Active||Move!=EVeyrDragonMove::Fire||bEncounterStopped||!MissingVisualClip.IsNone())return Beam;
+    Beam.Origin=ImportedMouthWorld;Beam.Direction=(ImportedMouthAimWorld-ImportedMouthWorld).GetSafeNormal();
+    Beam.bDamaging=!Beam.Direction.IsNearlyZero();return Beam;
+}
+
+FVeyrDragonFootprint AVeyrDragon::ProjectFlameToGround(const FVeyrDragonFlameBeam& Beam,float Padding) const
+{
+    FVeyrDragonFootprint F;
+    if(!Beam.bDamaging)return F;
+    const float Radius=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleRadius():40.f;
+    const float HalfHeight=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleHalfHeight():122.f;
+    const float K=FMath::Tan(FMath::DegreesToRadians(Beam.HalfAngleDegrees));
+    // Cover the finite cone by bounded axial balls. Each ball includes the
+    // interval between samples, so this conservative ground projection has no
+    // sampling holes. Intersect height with the actual upright knight capsule.
+    const int32 Steps=32;const float Step=Beam.Length/Steps;
+    bool Found=false;float MaximumRadius=0.f;
+    for(int32 I=0;I<=Steps;++I)
+    {
+        const float Along=I*Step;const FVector P=Beam.Origin+Beam.Direction*Along;
+        const float R=Along*K+Radius+Padding+Step*.5f*(1.f+K);
+        const float Dz=FMath::Max(0.f,FMath::Max(static_cast<float>(Radius-P.Z),static_cast<float>(P.Z-(2.f*HalfHeight-Radius))));
+        if(Dz>R)continue;
+        const float GroundRadius=FMath::Sqrt(FMath::Max(0.f,R*R-Dz*Dz));
+        if(!Found){F.Origin=Ground(P);Found=true;}
+        F.End=Ground(P);MaximumRadius=FMath::Max(MaximumRadius,GroundRadius);
+    }
+    if(Found){F.Shape=EVeyrDangerShape::Capsule;F.Forward=Beam.Direction.GetSafeNormal2D();F.OuterRadius=MaximumRadius;F.bDamaging=true;}
+    return F;
+}
+
+bool AVeyrDragon::CacheImportedAttackWarnings()
+{
+    LocalAttackWarnings.Reset();
+    const FTransform Actor=GetActorTransform();
+    const float KnightRadius=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleRadius():40.f;
+    for(EVeyrDragonMove Attack:{EVeyrDragonMove::Fire,EVeyrDragonMove::ClawSwipe,EVeyrDragonMove::BackStomp,EVeyrDragonMove::TailSmack,EVeyrDragonMove::Bite})
+    {
+        const int32 First=Attack==EVeyrDragonMove::BackStomp?2:0;
+        const int32 Count=Attack==EVeyrDragonMove::BackStomp||Attack==EVeyrDragonMove::ClawSwipe?2:1;
+        for(int32 Leg=First;Leg<First+Count;++Leg)
+        {
+            const FName Clip=ImportedMoveClip(Attack,Leg,TEXT("Active"));
+            if(!VisualDefinition->Clips.Contains(Clip))
+            {
+                if(Attack==EVeyrDragonMove::ClawSwipe&&Leg==1)continue;
+                ImportedCombatDiagnostic=TEXT("Attack envelope clip missing: ")+Clip.ToString();return false;
+            }
+            TArray<FVeyrDragonFootprint> Envelope;
+            TArray<FVeyrDragonContact> Previous;
+            // Computed once per definition on a hidden non-ticking CPU pose
+            // component. No gameplay actor pose/state/physics is changed.
+            for(int32 I=0;I<=32;++I)
+            {
+                if(!AttackPoseProbe->SampleClipPhase(Clip,I/32.f))
+                {ImportedCombatDiagnostic=AttackPoseProbe->LastError;return false;}
+                TArray<FVeyrDragonContact> Contacts;FVeyrDragonFlameBeam Beam;
+                if(!ReadImportedContactPose(AttackPoseProbe,Attack,Leg,Contacts,Beam))
+                {ImportedCombatDiagnostic=TEXT("Attack envelope semantic target missing");return false;}
+                TArray<FVeyrDragonFootprint> Sample;
+                if(Attack==EVeyrDragonMove::Fire)
+                {
+                    // Adjacent fire yaw steps are4 degrees. Extra100cm covers
+                    // the far-edge chord and mouth translation between poses.
+                    auto F=ProjectFlameToGround(Beam,100.f);if(F.Shape!=EVeyrDangerShape::None)Sample.Add(F);
+                }
+                else for(int32 J=0;J<Contacts.Num();++J)
+                {
+                    const auto& C=Contacts[J];FVeyrDragonFootprint F;
+                    F.Shape=EVeyrDangerShape::Capsule;F.Origin=Ground(C.Start);F.End=Ground(C.End);
+                    F.OuterRadius=C.Radius+KnightRadius+35.f;
+                    if(Previous.IsValidIndex(J))F.OuterRadius+=FMath::Max(FVector::Dist(C.Start,Previous[J].Start),FVector::Dist(C.End,Previous[J].End));
+                    Sample.Add(F);
+                }
+                for(auto& F:Sample)
+                {
+                    F.Origin=Actor.InverseTransformPosition(F.Origin);F.End=Actor.InverseTransformPosition(F.End);
+                    F.Forward=Actor.InverseTransformVectorNoScale(F.Forward);F.bDamaging=false;
+                    // Stationary bite/stomp samples need no duplicated rings.
+                    bool Duplicate=false;
+                    for(const auto& Existing:Envelope)
+                        if(Existing.Shape==F.Shape&&Existing.Origin.Equals(F.Origin,2.f)&&Existing.End.Equals(F.End,2.f)&&FMath::IsNearlyEqual(Existing.OuterRadius,F.OuterRadius,2.f)){Duplicate=true;break;}
+                    if(!Duplicate)Envelope.Add(F);
+                }
+                Previous=Contacts;
+            }
+            if(Envelope.IsEmpty()){ImportedCombatDiagnostic=TEXT("Attack has no reachable ground warning: ")+Clip.ToString();return false;}
+            LocalAttackWarnings.Add(Clip,MoveTemp(Envelope));
+        }
+    }
+    ImportedCombatDiagnostic=TEXT("Bone attack envelopes cached; native visual/contact verification pending");return true;
+}
+
+void AVeyrDragon::CommitImportedWarning()
+{
+    CommittedWarning.Reset();
+    if(!bImportedAttackCacheReady)return;
+    if(Move==EVeyrDragonMove::FlyAway)
+    {
+        FVeyrDragonFootprint F;F.Shape=EVeyrDangerShape::Circle;F.Origin=MoveEnd;F.OuterRadius=600.f;CommittedWarning.Add(F);return;
+    }
+    const auto* Local=LocalAttackWarnings.Find(ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Active")));
+    if(!Local)return;
+    const FTransform Committed=GetActorTransform();
+    for(auto F:*Local)
+    {
+        F.Origin=Committed.TransformPosition(F.Origin);F.End=Committed.TransformPosition(F.End);
+        F.Forward=Committed.TransformVectorNoScale(F.Forward);CommittedWarning.Add(F);
+    }
+    if(!CommittedWarning.IsEmpty())AttackOrigin=CommittedWarning[0].Origin;
+}
+
+TArray<FVeyrDragonFootprint> AVeyrDragon::GetWarningFootprints() const
+{
+    if(bUsingCustomuseVisual)
+        return !bEncounterStopped&&(State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active)?CommittedWarning:TArray<FVeyrDragonFootprint>();
+    const auto F=GetWarningFootprint();return F.Shape==EVeyrDangerShape::None?TArray<FVeyrDragonFootprint>():TArray<FVeyrDragonFootprint>{F};
+}
+
+TArray<FVeyrDragonFootprint> AVeyrDragon::GetActiveFootprints() const
+{
+    if(!bUsingCustomuseVisual)
+    {const auto F=GetActiveFootprint();return F.Shape==EVeyrDangerShape::None?TArray<FVeyrDragonFootprint>():TArray<FVeyrDragonFootprint>{F};}
+    TArray<FVeyrDragonFootprint> Result;
+    if(State!=EVeyrDragonState::Active||bEncounterStopped||!bImportedTargetsValid||!bImportedAttackCacheReady||!MissingVisualClip.IsNone())return Result;
+    if(Move==EVeyrDragonMove::Fire)
+    {auto F=ProjectFlameToGround(GetActiveFlameBeam());if(F.Shape!=EVeyrDangerShape::None)Result.Add(F);return Result;}
+    if(Move==EVeyrDragonMove::FlyAway)
+    {if(StateElapsed>=FlightSeconds){Result=CommittedWarning;for(auto& F:Result)F.bDamaging=true;}return Result;}
+    const float KnightRadius=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleRadius():40.f;
+    for(const auto& C:GetImportedContacts())
+    {
+        FVeyrDragonFootprint F;F.Shape=EVeyrDangerShape::Capsule;F.Origin=Ground(C.Start);F.End=Ground(C.End);
+        F.OuterRadius=C.Radius+KnightRadius;F.bDamaging=true;Result.Add(F);
+    }
+    return Result;
+}
+
+bool AVeyrDragon::CachedWarningContains(FName Clip,const FVector& WorldPoint) const
+{
+    const auto* Shapes=LocalAttackWarnings.Find(Clip);
+    return Shapes&&ContainsAny(*Shapes,GetActorTransform().InverseTransformPosition(WorldPoint));
+}
+
+int32 AVeyrDragon::PredictPositionalMove(const FVector& Point) const
+{
+    const FVector Local=GetActorTransform().InverseTransformPosition(Point);const float Distance=Local.Size2D();
+    if(!bUsingCustomuseVisual)
+    {
+        if(Distance>1750)return 1;
+        if(Local.X<-350&&Distance<1300)return 4;
+        if(Local.X<-80&&Distance<850)return 3;
+        if(Distance<850&&FMath::Abs(Local.Y)>180)return 2;
+        if(Local.X>350&&Local.X<1050&&FMath::Abs(Local.Y)<320)return 5;
+        if(Local.X>0)return 0;
+        return Distance<850?3:-1;
+    }
+    if(!bImportedAttackCacheReady)return -1;
+    // Nearest anatomical zone wins: rear foot3 is ahead of the old X=-80
+    // proxy cutoff, and neither front paw may threaten the opposite leg.
+    const float Rear=FMath::Min(FVector::Dist2D(Point,GetLegLocation(2)),FVector::Dist2D(Point,GetLegLocation(3)));
+    const float Front=FMath::Min(FVector::Dist2D(Point,GetLegLocation(0)),FVector::Dist2D(Point,GetLegLocation(1)));
+    auto Reach=[&](EVeyrDragonMove Attack,int32 Leg=0){return CachedWarningContains(ImportedMoveClip(Attack,Leg,TEXT("Active")),Point);};
+    if(Rear<Front&&(Reach(EVeyrDragonMove::BackStomp,2)||Reach(EVeyrDragonMove::BackStomp,3)))return 3;
+    if(Reach(EVeyrDragonMove::ClawSwipe,0)||Reach(EVeyrDragonMove::ClawSwipe,1))return 2;
+    if(Reach(EVeyrDragonMove::Bite))return 5;
+    if(Reach(EVeyrDragonMove::TailSmack))return 4;
+    if(Reach(EVeyrDragonMove::BackStomp,2)||Reach(EVeyrDragonMove::BackStomp,3))return 3;
+    if(Reach(EVeyrDragonMove::Fire))return 0;
+    return Distance>1750?1:-1;
+}
+
+bool AVeyrDragon::ImportedContactHitsKnight(const TArray<FVeyrDragonContact>& Contacts) const
+{
+    if(!IsValid(Target))return false;
+    const UCapsuleComponent* Capsule=Target->GetCapsuleComponent();
+    const float R=Capsule->GetScaledCapsuleRadius(),Half=Capsule->GetScaledCapsuleHalfHeight();
+    const FVector Center=Capsule->GetComponentLocation(),Up=Capsule->GetUpVector();
+    const FVector A=Center-Up*(Half-R),B=Center+Up*(Half-R);
+    for(const auto& C:Contacts)
+    {
+        FVector P,Q;FMath::SegmentDistToSegmentSafe(A,B,C.Start,C.End,P,Q);
+        if(FVector::DistSquared(P,Q)<=FMath::Square(C.Radius+R))return true;
+    }
+    return false;
+}
+
+bool AVeyrDragon::FlameHitsKnight(const FVeyrDragonFlameBeam& Beam) const
+{
+    if(!Beam.bDamaging||!IsValid(Target))return false;
+    const UCapsuleComponent* Capsule=Target->GetCapsuleComponent();
+    const float R=Capsule->GetScaledCapsuleRadius(),Half=Capsule->GetScaledCapsuleHalfHeight();
+    const FVector A=Capsule->GetComponentLocation()-Capsule->GetUpVector()*(Half-R);
+    const FVector B=Capsule->GetComponentLocation()+Capsule->GetUpVector()*(Half-R);
+    const double K=FMath::Tan(FMath::DegreesToRadians(Beam.HalfAngleDegrees));
+    // Rotational symmetry reduces point-to-finite-solid-cone distance to the
+    // axial/radial triangle. Minimize this convex distance along capsule spine.
+    auto Distance=[&](double T)
+    {
+        const FVector P=FMath::Lerp(A,B,T)-Beam.Origin;const double X=FVector::DotProduct(P,Beam.Direction);
+        const double Y=(P-Beam.Direction*X).Size(),L=Beam.Length;
+        if(X>=0&&X<=L&&Y<=X*K)return 0.;
+        auto Segment=[&](double X0,double Y0,double X1,double Y1)
+        {
+            const double Dx=X1-X0,Dy=Y1-Y0;
+            const double U=FMath::Clamp(((X-X0)*Dx+(Y-Y0)*Dy)/(Dx*Dx+Dy*Dy),0.,1.);
+            return FMath::Square(X-X0-U*Dx)+FMath::Square(Y-Y0-U*Dy);
+        };
+        return FMath::Min(Segment(0,0,L,L*K),Segment(L,0,L,L*K));
+    };
+    double Lo=0,Hi=1;
+    for(int32 I=0;I<32;++I)
+    {const double T1=Lo+(Hi-Lo)/3,T2=Hi-(Hi-Lo)/3;if(Distance(T1)<Distance(T2))Hi=T2;else Lo=T1;}
+    const double D=FMath::Min(Distance((Lo+Hi)*.5),FMath::Min(Distance(0),Distance(1)));
+    return D<=R*R;
+}
+
+
+void AVeyrDragon::ResetCameraOcclusionMaterials()
+{
+    bCameraOcclusionReady=false;bCameraOcclusionEnabled=false;
+    for(int32 Slot=0;Slot<CameraOcclusionMaterials.Num();++Slot)
+        if(UMaterialInstanceDynamic* Material=CameraOcclusionMaterials[Slot])
+        {
+            Material->SetScalarParameterValue(TEXT("VeyrOcclusionEnabled"),0.f);
+            // Remove only our own overrides. A later definition must resolve
+            // its own mesh material, not inherit an old actor-owned MID.
+            if(ImportedPresentation&&ImportedPresentation->GetMaterial(Slot)==Material)
+                ImportedPresentation->SetMaterial(Slot,nullptr);
+        }
+    CameraOcclusionMaterials.Reset();
+    CameraOcclusionDiagnostic=TEXT("Camera occlusion material parameters are not bound");
+}
+
+bool AVeyrDragon::InitializeCameraOcclusionMaterials()
+{
+    bCameraOcclusionReady=false;bCameraOcclusionEnabled=false;
+    if(!bUsingCustomuseVisual||!ImportedPresentation||ImportedPresentation->GetNumMaterials()<1)
+    {CameraOcclusionDiagnostic=TEXT("Imported mesh has no camera-occlusion material slots");return false;}
+    TArray<UMaterialInterface*> Parents;
+    // Validate every slot before assigning any MID. An opaque or partial
+    // shader must not be reported as a functioning visibility tunnel.
+    for(int32 Slot=0;Slot<ImportedPresentation->GetNumMaterials();++Slot)
+    {
+        UMaterialInterface* Parent=ImportedPresentation->GetMaterial(Slot);
+        FString Missing;
+        if(!Parent)Missing=TEXT("material");
+        else if(Parent->GetBlendMode()!=BLEND_Masked)Missing=TEXT("masked surface shader");
+        else
+        {
+            for(const TCHAR* Name:{TEXT("VeyrOcclusionRadius"),TEXT("VeyrProtectedHeadRadius"),TEXT("VeyrOcclusionEnabled")})
+            {float Value=0;if(!Parent->GetScalarParameterValue(FHashedMaterialParameterInfo(Name),Value)){Missing=Name;break;}}
+            if(Missing.IsEmpty())
+                for(const TCHAR* Name:{TEXT("VeyrCameraStart"),TEXT("VeyrPlayerFocus"),TEXT("VeyrProtectedHead")})
+                {FLinearColor Value;if(!Parent->GetVectorParameterValue(FHashedMaterialParameterInfo(Name),Value)){Missing=Name;break;}}
+        }
+        if(!Missing.IsEmpty())
+        {
+            CameraOcclusionDiagnostic=FString::Printf(TEXT("Camera occlusion unavailable: slot %d missing %s; camera fade disabled"),Slot,*Missing);
+            UE_LOG(LogTemp,Warning,TEXT("VEYR_CAMERA_OCCLUSION_UNAVAILABLE %s"),*CameraOcclusionDiagnostic);return false;
+        }
+        Parents.Add(Parent);
+    }
+    for(UMaterialInterface* Parent:Parents)
+    {
+        UMaterialInstanceDynamic* Material=UMaterialInstanceDynamic::Create(Parent,this);
+        if(!Material)
+        {ResetCameraOcclusionMaterials();CameraOcclusionDiagnostic=TEXT("Camera occlusion transient MID creation failed");return false;}
+        Material->SetFlags(RF_Transient);
+        Material->SetScalarParameterValue(TEXT("VeyrOcclusionEnabled"),0.f);
+        Material->SetScalarParameterValue(TEXT("VeyrOcclusionRadius"),100.f);
+        Material->SetScalarParameterValue(TEXT("VeyrProtectedHeadRadius"),180.f);
+        CameraOcclusionMaterials.Add(Material);
+    }
+    for(int32 Slot=0;Slot<CameraOcclusionMaterials.Num();++Slot)
+        ImportedPresentation->SetMaterial(Slot,CameraOcclusionMaterials[Slot]);
+    bCameraOcclusionReady=true;
+    CameraOcclusionDiagnostic=TEXT("All camera-occlusion parameters bound; disabled until a valid view update; rendered verification pending");
+    return true;
+}
+
+bool AVeyrDragon::SetViewOcclusion(const FVector& CameraWorld,const FVector& FocusWorld,bool bEnabled)
+{
+    auto Disable=[&]()
+    {
+        for(UMaterialInstanceDynamic* Material:CameraOcclusionMaterials)
+            if(Material)Material->SetScalarParameterValue(TEXT("VeyrOcclusionEnabled"),0.f);
+        bCameraOcclusionEnabled=false;
+    };
+    if(!bCameraOcclusionReady||!ImportedPresentation){Disable();return false;}
+    if(ImportedPresentation->GetNumMaterials()!=CameraOcclusionMaterials.Num())
+    {
+        Disable();bCameraOcclusionReady=false;
+        CameraOcclusionDiagnostic=TEXT("Camera occlusion disabled: material slot count changed after binding");return false;
+    }
+    for(int32 Slot=0;Slot<CameraOcclusionMaterials.Num();++Slot)
+        if(!CameraOcclusionMaterials[Slot]||ImportedPresentation->GetMaterial(Slot)!=CameraOcclusionMaterials[Slot])
+        {
+            Disable();bCameraOcclusionReady=false;
+            CameraOcclusionDiagnostic=TEXT("Camera occlusion disabled: material slot changed after binding");return false;
+        }
+    const FVector HeadWorld=GetHeadLocation();
+    if(CameraWorld.ContainsNaN()||FocusWorld.ContainsNaN()||HeadWorld.ContainsNaN()||
+       !FMath::IsFinite(CameraOcclusionRadius)||!FMath::IsFinite(CameraProtectedHeadRadius)||
+       !bUsingCustomuseVisual||!bImportedTargetsValid)
+    {
+        Disable();CameraOcclusionDiagnostic=TEXT("Camera occlusion disabled: invalid view, radius or evaluated head pose");return false;
+    }
+    const bool Enable=bEnabled&&FVector::DistSquared(CameraWorld,FocusWorld)>1.f;
+    const FLinearColor Camera(CameraWorld.X,CameraWorld.Y,CameraWorld.Z,0.f);
+    const FLinearColor Focus(FocusWorld.X,FocusWorld.Y,FocusWorld.Z,0.f);
+    const FLinearColor Head(HeadWorld.X,HeadWorld.Y,HeadWorld.Z,0.f);
+    for(UMaterialInstanceDynamic* Material:CameraOcclusionMaterials)
+    {
+        Material->SetVectorParameterValue(TEXT("VeyrCameraStart"),Camera);
+        Material->SetVectorParameterValue(TEXT("VeyrPlayerFocus"),Focus);
+        Material->SetVectorParameterValue(TEXT("VeyrProtectedHead"),Head);
+        Material->SetScalarParameterValue(TEXT("VeyrOcclusionRadius"),FMath::Max(1.f,CameraOcclusionRadius));
+        Material->SetScalarParameterValue(TEXT("VeyrProtectedHeadRadius"),FMath::Max(0.f,CameraProtectedHeadRadius));
+        Material->SetScalarParameterValue(TEXT("VeyrOcclusionEnabled"),Enable?1.f:0.f);
+    }
+    bCameraOcclusionEnabled=Enable;
+    CameraOcclusionDiagnostic=Enable?TEXT("View parameters applied to transient MIDs; native rendered acceptance pending"):
+        TEXT("Camera occlusion disabled; transient MIDs remain bound");
+    return true;
 }

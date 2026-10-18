@@ -33,6 +33,24 @@ struct FVeyrDragonFootprint
     UPROPERTY(BlueprintReadOnly) bool bDamaging = false;
 };
 
+/** The visible finite cone and damaging flame use this identical world-space beam. */
+USTRUCT(BlueprintType)
+struct FVeyrDragonFlameBeam
+{
+    GENERATED_BODY()
+    UPROPERTY(BlueprintReadOnly) FVector Origin=FVector::ZeroVector;
+    UPROPERTY(BlueprintReadOnly) FVector Direction=FVector::ForwardVector;
+    UPROPERTY(BlueprintReadOnly) float Length=1750.f;
+    UPROPERTY(BlueprintReadOnly) float HalfAngleDegrees=12.f;
+    UPROPERTY(BlueprintReadOnly) bool bDamaging=false;
+};
+
+struct FVeyrDragonContact
+{
+    FVector Start=FVector::ZeroVector, End=FVector::ZeroVector;
+    float Radius=0.f;
+};
+
 /** Original native encounter rules. Primitive presentation is temporary, not Customuse art. */
 UCLASS()
 class VEYR_API AVeyrDragon : public AActor
@@ -47,6 +65,15 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bUsingCustomuseVisual=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FName MissingVisualClip=NAME_None;
     UFUNCTION(BlueprintCallable, Category="Presentation") bool ApplyCustomuseVisual(UVeyrVisualDefinition* Definition);
+    /** Parameter binding readiness; rendered mask acceptance is a separate gate. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") bool bCameraOcclusionReady=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") bool bCameraOcclusionEnabled=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") FString CameraOcclusionDiagnostic;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Presentation|Camera",meta=(ClampMin="1.0")) float CameraOcclusionRadius=100.f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Presentation|Camera",meta=(ClampMin="0.0")) float CameraProtectedHeadRadius=180.f;
+    /** World centimetres. Changes only this actor's transient material instances. */
+    UFUNCTION(BlueprintCallable, Category="Presentation|Camera")
+    bool SetViewOcclusion(const FVector& CameraWorld,const FVector& FocusWorld,bool bEnabled);
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 8400.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 8400.f;
@@ -57,6 +84,8 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return State == EVeyrDragonState::Dead; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadExposed() const { return State == EVeyrDragonState::Exposed; }
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetHeadLocation() const;
+    UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
+    bool HasValidImportedCombatPose() const {return bImportedTargetsValid&&bImportedAttackCacheReady&&MissingVisualClip.IsNone();}
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetLegLocation(int32 Index) const;
     UFUNCTION(BlueprintPure, Category="Combat") float GetLegStagger(int32 Index) const;
     /** Origin is already the world sword/contact center (no extra torso offset). */
@@ -84,6 +113,13 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FText GetStateLabel() const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVeyrDragonFootprint GetWarningFootprint() const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVeyrDragonFootprint GetActiveFootprint() const;
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") TArray<FVeyrDragonFootprint> GetWarningFootprints() const;
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") TArray<FVeyrDragonFootprint> GetActiveFootprints() const;
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVeyrDragonFlameBeam GetActiveFlameBeam() const;
+    /** Positional policy only; repetition and periodic flight can still override it. */
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") int32 PredictPositionalMove(const FVector& Point) const;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") FString ImportedCombatDiagnostic;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 WarningContainmentFailures=0;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointInsideWarning(const FVector& Point) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointInsideActiveDanger(const FVector& Point) const;
 
@@ -112,7 +148,32 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> DangerMaterial;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> LegMaterials;
 
+    UPROPERTY(Transient) TArray<TObjectPtr<UMaterialInstanceDynamic>> CameraOcclusionMaterials;
+    void ResetCameraOcclusionMaterials();
+    bool InitializeCameraOcclusionMaterials();
+    UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> AttackPoseProbe;
     bool bImportedTargetsValid=false;
+    bool bImportedAttackCacheReady=false;
+    bool bPreviousContactPoseValid=false;
+    bool bWarningDrawn=false;
+    int32 ClawLeg=0;
+    FVector ImportedMouthWorld=FVector::ZeroVector, ImportedMouthAimWorld=FVector::ZeroVector;
+    FVector ImportedContactFeetWorld[4], ImportedTailWorld[4];
+    TMap<FName,TArray<FVeyrDragonFootprint>> LocalAttackWarnings;
+    TArray<FVeyrDragonFootprint> CommittedWarning;
+    TArray<FVeyrDragonContact> PreviousContacts;
+    FVeyrDragonFlameBeam PreviousFlame;
+    FName ImportedMoveClip(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Suffix) const;
+    bool CacheImportedAttackWarnings();
+    bool ReadImportedContactPose(UVeyrSkeletalPresentation* Presentation,EVeyrDragonMove Attack,int32 Leg,
+        TArray<FVeyrDragonContact>& OutContacts,FVeyrDragonFlameBeam& OutBeam) const;
+    TArray<FVeyrDragonContact> GetImportedContacts() const;
+    FVeyrDragonFootprint ProjectFlameToGround(const FVeyrDragonFlameBeam& Beam,float Padding=0.f) const;
+    bool ImportedContactHitsKnight(const TArray<FVeyrDragonContact>& Contacts) const;
+    bool FlameHitsKnight(const FVeyrDragonFlameBeam& Beam) const;
+    void CommitImportedWarning();
+    bool CachedWarningContains(FName Clip,const FVector& WorldPoint) const;
+    static bool ContainsAny(const TArray<FVeyrDragonFootprint>& Footprints,const FVector& Point);
     bool bImportedTransitionReady=false;
     FName LastImportedClip=NAME_None;
     EVeyrDragonState LastImportedState=EVeyrDragonState::Idle;
@@ -153,7 +214,8 @@ private:
     float GetDownAmount() const;
     void UpdateTemporaryPresentation(float DeltaSeconds);
     void UpdateTelegraphs();
-    void DrawFootprint(UInstancedStaticMeshComponent* Lines, const FVeyrDragonFootprint& Footprint, bool bBright);
+    void DrawFootprint(UInstancedStaticMeshComponent* Lines, const FVeyrDragonFootprint& Footprint, bool bBright,
+        const TArray<FVeyrDragonFootprint>* Union=nullptr,int32 OwnIndex=-1);
     void AddGroundLine(UInstancedStaticMeshComponent* Lines, const FVector& A, const FVector& B, float Width);
     UStaticMeshComponent* CreateTemporaryPart(FName Name, UStaticMesh* Mesh, const FVector& Scale);
     static void SetSegment(UStaticMeshComponent* Part, const FVector& A, const FVector& B, float Width);

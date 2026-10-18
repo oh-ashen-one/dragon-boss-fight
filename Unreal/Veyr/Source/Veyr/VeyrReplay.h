@@ -44,6 +44,7 @@ private:
     float Elapsed=0, SampleClock=0, SaveClock=0, CaptureClock=0, FinishClock=0;
     float DurationLimit=180, MaximumFrameSeconds=0;
     int32 FrameCount=0, ScreenshotIndex=0, TargetLeg=2;
+    int32 ObservedWarningContainmentFailures=0;
     int32 PreviousDragonState=-1, PreviousKnightAction=-1, PreviousContacts=0;
     int32 PreviousDodges=0, PreviousDamage=0, PreviousHeals=0, PreviousJumps=0;
     bool bLegIsolation=false, bIsolationViolated=false, bIsolatedStagger=false, bCorrectLegBuckle=false;
