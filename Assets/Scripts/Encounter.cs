@@ -11,8 +11,21 @@ public sealed class Encounter:MonoBehaviour
     float hurtFlash, started, nextCapture; int frame; GUIStyle label,title,small;
     readonly List<float> frameMs=new List<float>();
     string captureDir;
+    bool restartRequested;
+    // RuntimeInitialize callbacks run once per application startup. The empty
+    // bootstrap scene also needs reconstruction after each ordinary scene reload.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    static void RegisterSceneBootstrap(){
+        SceneManager.sceneLoaded-=OnSceneLoaded;
+        SceneManager.sceneLoaded+=OnSceneLoaded;
+    }
+    static void OnSceneLoaded(Scene scene,LoadSceneMode mode){StartGame();}
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void StartGame(){if(!FindFirstObjectByType<Encounter>())new GameObject("Veyr Encounter").AddComponent<Encounter>();}
+    static void StartGame(){
+        var existing=FindFirstObjectByType<Encounter>();
+        if(existing){Instance=existing;return;}
+        new GameObject("Veyr Encounter").AddComponent<Encounter>();
+    }
     void Awake(){
         Instance=this;Application.targetFrameRate=60;QualitySettings.vSyncCount=0;
         QualitySettings.antiAliasing=4;QualitySettings.shadowDistance=95;
@@ -20,7 +33,7 @@ public sealed class Encounter:MonoBehaviour
         Player=new GameObject("Knight").AddComponent<PlayerCombat>();Player.transform.position=new Vector3(0,.05f,-16);Player.Initialize();
         Boss=new GameObject("Veyr — Cinder Warden").AddComponent<DragonBoss>();Boss.transform.position=new Vector3(0,0,5);Boss.Initialize(Player);Player.Boss=Boss;
         var cameraObj=new GameObject("Combat Camera");var cam=cameraObj.AddComponent<Camera>();cam.tag="MainCamera";cam.fieldOfView=60;cam.nearClipPlane=.15f;cam.farClipPlane=450;cam.allowHDR=true;
-        cameraObj.AddComponent<AudioListener>();cameraObj.transform.position=Player.transform.position+new Vector3(0,4,-8);
+        cameraObj.AddComponent<AudioListener>();cameraObj.AddComponent<NativeAtmosphere>();cameraObj.transform.position=Player.transform.position+new Vector3(0,4,-8);
         CombatAudio.Initialize();
         var follow=cameraObj.AddComponent<CombatCamera>();follow.Player=Player;follow.Boss=Boss;Player.View=cam;
         Cursor.lockState=CursorLockMode.None;Cursor.visible=true;started=Time.time;
@@ -36,7 +49,14 @@ public sealed class Encounter:MonoBehaviour
         if(captureDir!=null&&Time.time-started>=nextCapture){Capture();nextCapture+=5;}
     }
     public void FlashDamage(){hurtFlash=.45f;}
-    public void RestartEncounter(){if(Player.IsDead||Boss.IsDead)SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);}
+    public void RestartEncounter(){
+        if(restartRequested||!Player||!Boss||(!Player.IsDead&&!Boss.IsDead))return;
+        int sceneIndex=SceneManager.GetActiveScene().buildIndex;
+        if(sceneIndex<0){Debug.LogError("Cannot restart: active encounter scene is absent from build settings.");return;}
+        restartRequested=true;
+        SceneManager.LoadScene(sceneIndex);
+    }
+    void OnDestroy(){if(Instance==this)Instance=null;}
     void Capture(){
         if(captureDir==null)captureDir=Path.Combine(Application.persistentDataPath,"captures");Directory.CreateDirectory(captureDir);
         ScreenCapture.CaptureScreenshot(Path.Combine(captureDir,"gameplay-"+frame.ToString("D06")+".png"));

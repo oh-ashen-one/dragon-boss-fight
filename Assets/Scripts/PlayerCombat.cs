@@ -88,7 +88,7 @@ public sealed class PlayerCombat : MonoBehaviour
         if(hurtTime>0)speed*=.45f;
         Vector3 facing=movement;
         if(LockedOn&&Boss){facing=Boss.transform.position-transform.position;facing.y=0;}
-        if(facing.sqrMagnitude>.01f&&attackTime<.15f&&dodgeTime<0)transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(facing),dt*13);
+        if(facing.sqrMagnitude>.0001f&&attackTime<.15f&&dodgeTime<0)transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.LookRotation(facing),dt*13);
         controller.Move((movement*speed+Vector3.down*9)*dt);
         var pos=transform.position;if(new Vector2(pos.x,pos.z).magnitude>36){pos=new Vector3(pos.x,0,pos.z).normalized*36;controller.enabled=false;transform.position=pos;controller.enabled=true;}
         if(regenDelay<=0&&attackTime<0&&dodgeTime<0&&healTime<0)Stamina=Mathf.Min(100,Stamina+29*dt);

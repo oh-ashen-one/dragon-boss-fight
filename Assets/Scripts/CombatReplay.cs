@@ -6,7 +6,7 @@ using UnityEngine;
 
 /// <summary>
 /// Native, real-time input replay. No health writes, teleports, time scaling or
-/// direct attack calls. Run with --replay combat|death|victory --capture-dir PATH.
+/// direct attack calls. Run with --replay combat|death|victory|avoidance --capture-dir PATH.
 /// Decisions are deterministic; wall-clock timings remain subject to frame rate.
 /// </summary>
 [DefaultExecutionOrder(-100)]
@@ -16,8 +16,19 @@ public sealed class CombatReplay : MonoBehaviour
     {
         public float seconds, playerHealth, stamina, bossHealth;
         public int frame, swings, dodges, hitsTaken, dodgedHits, collapses, lastHitRegion;
-        public string name, state;
-        public Vector3 playerPosition;
+        public string name, state, playerAction, bossMove;
+        public Vector3 playerPosition, playerForward, headPosition;
+        public float headDistanceFromSwordOrigin, headHorizontalDistance, headVerticalOffset, headFacingDot, headWindowRemaining;
+        public bool headExposed;
+    }
+    [Serializable] public sealed class AttackTrial
+    {
+        public string move, footprint, outcome = "in_progress";
+        public Observation windup, active, recovery;
+        public Vector3 groundOrigin, escapeTarget;
+        public float healthAtWindup, minimumHealth, damageTaken, escapeDistance;
+        public int hitsAtWindup, hitsTaken;
+        public bool windupObserved, activeObserved, recoveryObserved, initiallyThreatened, avoided;
     }
     [Serializable] public sealed class ScreenshotRecord
     {
@@ -45,6 +56,8 @@ public sealed class CombatReplay : MonoBehaviour
         public string victoryDurationDefinition = "Real-time seconds from initial encounter binding to observed boss defeat, excluding restart and capture flush. Required range: 180 through 300 inclusive.";
         public int width, height;
         public bool legDamage, buckle, collapse, exposed, headDamage, rise, dodgePerformed, dodgeContact, playerDeath, bossDefeat, restart;
+        public string avoidanceMethod = "Movement-only bait and escape, no forced boss attacks. Threat footprint is a source-derived ground model recorded per trial; avoidance also requires actual full attack progression, movement and no damage/hit-count increase.";
+        public List<AttackTrial> attackTrials = new List<AttackTrial>();
         public List<Observation> observations = new List<Observation>();
         public List<InputSample> inputs = new List<InputSample>();
         public List<Assertion> assertions = new List<Assertion>();
@@ -65,7 +78,11 @@ public sealed class CombatReplay : MonoBehaviour
     readonly Queue<ScreenshotRecord> captureQueue = new Queue<ScreenshotRecord>();
     bool captureInProgress;
     int lastCapturedFrame = -1;
-    float fightStarted;
+    float fightStarted, nextHeadAimObservation;
+    static readonly string[] AvoidanceMoves = { "Lunge", "Stomp", "Bite", "Tail", "Breath" };
+    readonly HashSet<string> avoidedMoves = new HashSet<string>();
+    AttackTrial avoidanceTrial;
+    Vector3 avoidanceBossOrigin, avoidanceBossForward, avoidanceBossRight, avoidanceRefuge;
     const float Timeout = 300f;
     float Elapsed => Time.realtimeSinceStartup - started;
 
@@ -89,8 +106,8 @@ public sealed class CombatReplay : MonoBehaviour
         prefix = "replay-" + report.mode + "-" + report.runId;
         try { Directory.CreateDirectory(directory); }
         catch (Exception e) { Debug.LogError("Replay cannot create capture directory: " + e.GetType().Name); Application.Quit(2); enabled = false; return; }
-        if (report.mode != "combat" && report.mode != "death" && report.mode != "victory")
-        { Finish(false, "Unknown replay mode; expected combat, death or victory."); return; }
+        if (report.mode != "combat" && report.mode != "death" && report.mode != "victory" && report.mode != "avoidance")
+        { Finish(false, "Unknown replay mode; expected combat, death, victory or avoidance."); return; }
         Save();
     }
 
@@ -153,6 +170,7 @@ public sealed class CombatReplay : MonoBehaviour
             Send(delta.magnitude > .65f ? delta.normalized : Vector3.zero, false, false, false);
             return;
         }
+        if (report.mode == "avoidance") { DriveAvoidance(); return; }
         if (report.mode == "combat" && CombatPassed())
         { Finish(true, "Observed leg damage, buckle, collapse, exposed head damage, rise and a damaging contact avoided by dodge."); return; }
         DriveCombat();
@@ -166,6 +184,12 @@ public sealed class CombatReplay : MonoBehaviour
 
     void ObserveChanges()
     {
+        if (avoidanceTrial != null)
+        {
+            avoidanceTrial.minimumHealth = Mathf.Min(avoidanceTrial.minimumHealth, player.Health);
+            avoidanceTrial.damageTaken = Mathf.Max(0, avoidanceTrial.healthAtWindup - avoidanceTrial.minimumHealth);
+            avoidanceTrial.hitsTaken = player.HitsTaken - avoidanceTrial.hitsAtWindup;
+        }
         if (boss.CurrentState != previousState)
         {
             previousState = boss.CurrentState; stateStarted = Time.realtimeSinceStartup;
@@ -183,6 +207,7 @@ public sealed class CombatReplay : MonoBehaviour
             if (previousState == DragonBoss.CombatState.Exposed) { milestone = !report.exposed; report.exposed = true; }
             if (previousState == DragonBoss.CombatState.Rise) { milestone = !report.rise; report.rise = true; }
             Observe("state-" + previousState.ToString().ToLowerInvariant(), milestone);
+            ObserveAvoidanceTransition(previousState);
         }
         if (boss.Health < priorBossHealth)
         {
@@ -193,8 +218,150 @@ public sealed class CombatReplay : MonoBehaviour
             Observe("sword-contact-region-" + region, milestone);
         }
         priorBossHealth = boss.Health;
+        if (boss.HeadExposed && Elapsed >= nextHeadAimObservation)
+        {
+            nextHeadAimObservation = Elapsed + .5f;
+            Observe("exposed-head-aim", false);
+        }
         if (player.Dodges > 0 && !report.dodgePerformed) { report.dodgePerformed = true; Observe("dodge-input-accepted", true); }
         if (player.DodgedHits > 0 && !report.dodgeContact) { report.dodgeContact = true; Observe("dodge-avoided-contact", true); }
+    }
+
+    bool AvoidancePassed()
+    {
+        foreach (string move in AvoidanceMoves) if (!avoidedMoves.Contains(move)) return false;
+        return true;
+    }
+
+    void ObserveAvoidanceTransition(DragonBoss.CombatState state)
+    {
+        if (report.mode != "avoidance") return;
+        if (state == DragonBoss.CombatState.Windup)
+        {
+            if (avoidanceTrial != null && !avoidanceTrial.recoveryObserved)
+                avoidanceTrial.outcome = "interrupted-before-recovery";
+            avoidanceBossOrigin = Flat(boss.transform.position);
+            avoidanceBossForward = -boss.transform.forward;
+            avoidanceBossRight = boss.transform.right;
+            string move = boss.CurrentMoveName;
+            avoidanceTrial = new AttackTrial {
+                move = move, windup = Snapshot("avoidance-windup-" + move),
+                healthAtWindup = player.Health, minimumHealth = player.Health, hitsAtWindup = player.HitsTaken,
+                windupObserved = true
+            };
+            Vector3 position = Flat(player.transform.position);
+            Vector3 local = boss.transform.InverseTransformPoint(position);
+            Vector3 origin = avoidanceBossOrigin;
+            if (move == "Stomp")
+            {
+                var visual = boss.GetComponent<AuthoredDragonVisual>();
+                int leg = boss.StompLegIndex;
+                origin = visual != null && visual.IsReady ? Flat(visual.GetFootPosition(leg)) :
+                    Flat(boss.transform.TransformPoint(new Vector3(leg % 2 == 0 ? -3 : 3, 0, leg < 2 ? -2 : 2)));
+                avoidanceTrial.initiallyThreatened = Vector3.Distance(position, origin) < 2.45f;
+                Vector3 away = position - origin;
+                if (away.sqrMagnitude < .01f) away = -avoidanceBossRight;
+                avoidanceRefuge = origin + away.normalized * 4;
+                avoidanceTrial.footprint = "Stomp ground circle radius2.45, live selected foot anchor at observed windup.";
+            }
+            else if (move == "Bite")
+            {
+                origin += avoidanceBossForward * 3;
+                avoidanceTrial.initiallyThreatened = InsideSector(position, origin, avoidanceBossForward, .55f, 4.45f, 30);
+                avoidanceRefuge = position + avoidanceBossRight * (local.x > 0 ? 5 : -5);
+                avoidanceTrial.footprint = "Bite ground sector: origin3m forward, radii0.55–4.45m, half-angle30deg.";
+            }
+            else if (move == "Tail")
+            {
+                avoidanceTrial.initiallyThreatened = InsideSector(position, origin, -avoidanceBossForward, 4.15f, 9.85f, 125);
+                avoidanceRefuge = avoidanceBossOrigin; // The inner safe area is reachable during anticipation.
+                avoidanceTrial.footprint = "Tail swept ground union: radii4.15–9.85m, rear half-angle125deg.";
+            }
+            else if (move == "Breath")
+            {
+                origin += avoidanceBossForward * 4.4f;
+                avoidanceTrial.initiallyThreatened = InsideSector(position, origin, avoidanceBossForward, .8f, 16.85f, 78);
+                avoidanceRefuge = avoidanceBossOrigin + avoidanceBossRight * (local.x > 0 ? 8 : -8);
+                avoidanceTrial.footprint = "Breath swept ground union: origin4.4m forward, radii0.8–16.85m, half-angle78deg.";
+            }
+            else if (move == "Lunge")
+            {
+                Vector3 end = Vector3.ClampMagnitude(avoidanceBossOrigin + avoidanceBossForward * 8, 30) + avoidanceBossForward * 4.8f;
+                origin += avoidanceBossForward * 4.8f;
+                avoidanceTrial.initiallyThreatened = DistanceToSegment(position, origin, end) < 2.55f;
+                avoidanceRefuge = position + avoidanceBossRight * (local.x > 0 ? 5 : -5);
+                avoidanceTrial.footprint = "Lunge swept ground capsule radius2.55m from4.8m forward to clamped8m travel+4.8m.";
+            }
+            avoidanceTrial.groundOrigin = origin;
+            avoidanceTrial.escapeTarget = avoidanceRefuge;
+            report.attackTrials.Add(avoidanceTrial);
+            Observe("avoidance-windup-" + move.ToLowerInvariant(), true);
+        }
+        else if (state == DragonBoss.CombatState.Active && avoidanceTrial != null)
+        {
+            avoidanceTrial.activeObserved = true;
+            avoidanceTrial.active = Snapshot("avoidance-active-" + avoidanceTrial.move);
+        }
+        else if (state == DragonBoss.CombatState.Recovery && avoidanceTrial != null)
+        {
+            avoidanceTrial.recoveryObserved = true;
+            avoidanceTrial.recovery = Snapshot("avoidance-recovery-" + avoidanceTrial.move);
+            avoidanceTrial.damageTaken = Mathf.Max(0, avoidanceTrial.healthAtWindup - avoidanceTrial.minimumHealth);
+            avoidanceTrial.hitsTaken = player.HitsTaken - avoidanceTrial.hitsAtWindup;
+            avoidanceTrial.escapeDistance = Flat(player.transform.position - avoidanceTrial.windup.playerPosition).magnitude;
+            avoidanceTrial.avoided = avoidanceTrial.initiallyThreatened && avoidanceTrial.activeObserved &&
+                avoidanceTrial.hitsTaken == 0 && avoidanceTrial.damageTaken < .001f && avoidanceTrial.escapeDistance > .75f;
+            avoidanceTrial.outcome = avoidanceTrial.avoided ? "avoided" : !avoidanceTrial.initiallyThreatened ? "not-threatened-at-windup" : "avoidance-not-proven";
+            if (avoidanceTrial.avoided) avoidedMoves.Add(avoidanceTrial.move);
+            Observe("avoidance-result-" + avoidanceTrial.move.ToLowerInvariant(), avoidanceTrial.avoided);
+            avoidanceTrial = null;
+        }
+    }
+
+    void DriveAvoidance()
+    {
+        if (AvoidancePassed())
+        { Finish(true, "All five attacks observed through windup, active and recovery; escaped each initial threat footprint without taking damage."); return; }
+        Vector3 position = Flat(player.transform.position);
+        bool danger = boss.CurrentState == DragonBoss.CombatState.Windup || boss.CurrentState == DragonBoss.CombatState.Active;
+        if (danger && avoidanceTrial != null)
+        {
+            Vector3 escape = avoidanceRefuge - position;
+            Send(escape.magnitude > .25f ? escape.normalized : Vector3.zero, false, false, false);
+            return;
+        }
+        string desired = "Lunge";
+        foreach (string move in AvoidanceMoves) if (!avoidedMoves.Contains(move)) { desired = move; break; }
+        Vector3 localTarget;
+        switch (desired)
+        {
+            case "Stomp":
+                var visual = boss.GetComponent<AuthoredDragonVisual>();
+                Vector3 foot = visual != null && visual.IsReady ? visual.GetFootPosition(0) : boss.LegPositions[0];
+                Vector3 toFoot = Flat(foot) - position;
+                Send(toFoot.magnitude > .3f ? toFoot.normalized : Vector3.zero, false, false,
+                    player.Health <= 55 && boss.CurrentState == DragonBoss.CombatState.Recovery);
+                return;
+            case "Bite": localTarget = new Vector3(0, 0, -6.5f); break;
+            case "Tail": localTarget = new Vector3(0, 0, 6); break;
+            case "Breath": localTarget = new Vector3(-6, 0, -8); break;
+            default: localTarget = new Vector3(0, 0, -15); break;
+        }
+        Vector3 delta = Flat(boss.transform.TransformPoint(localTarget)) - position;
+        bool heal = player.Health <= 55 && player.Flasks > 0 && boss.CurrentState == DragonBoss.CombatState.Recovery;
+        Send(delta.magnitude > .3f ? delta.normalized : Vector3.zero, false, false, heal);
+    }
+
+    static bool InsideSector(Vector3 point, Vector3 origin, Vector3 forward, float inner, float outer, float halfAngle)
+    {
+        Vector3 delta = Flat(point - origin);
+        return delta.magnitude >= inner && delta.magnitude <= outer && Vector3.Angle(forward, delta) <= halfAngle;
+    }
+    static float DistanceToSegment(Vector3 point, Vector3 a, Vector3 b)
+    {
+        Vector3 delta = b - a;
+        float t = delta.sqrMagnitude > .0001f ? Mathf.Clamp01(Vector3.Dot(point - a, delta) / delta.sqrMagnitude) : 0;
+        return Vector3.Distance(point, a + delta * t);
     }
 
     void DriveCombat()
@@ -261,7 +428,7 @@ public sealed class CombatReplay : MonoBehaviour
             (state == DragonBoss.CombatState.Recovery || falling || state == DragonBoss.CombatState.Rise);
         // Stay inside sword range, with a small movement to establish facing
         // using precisely the same turn response as ordinary movement input.
-        Vector3 move = distance > 1.8f ? toTarget.normalized : distance > .5f ? toTarget.normalized * .06f : Vector3.zero;
+        Vector3 move = distance > 1.8f ? toTarget.normalized : distance > .05f ? toTarget.normalized * .06f : Vector3.zero;
         bool aligned = distance < .4f || Vector3.Dot(player.transform.forward, toTarget.normalized) > .85f;
         bool attack = !safeHeal && !falling && distance < 2.8f && aligned &&
             player.Stamina >= (boss.HeadExposed ? 22 : 28) && Elapsed >= nextSwing;
@@ -312,11 +479,18 @@ public sealed class CombatReplay : MonoBehaviour
     Observation Snapshot(string name)
     {
         if (player == null || boss == null) return null;
+        Vector3 headPosition = boss.HeadTarget != null ? boss.HeadTarget.position : boss.transform.position;
+        Vector3 headDelta = headPosition - (player.transform.position + Vector3.up * 1.1f);
+        Vector3 flatHeadDelta = Flat(headDelta);
         return new Observation {
             name = name, seconds = Elapsed, frame = Time.frameCount, playerHealth = player.Health, stamina = player.Stamina,
             bossHealth = boss.Health, state = boss.CurrentState.ToString(), playerPosition = player.transform.position,
             swings = player.Swings, dodges = player.Dodges, hitsTaken = player.HitsTaken, dodgedHits = player.DodgedHits,
-            collapses = boss.CollapseCount, lastHitRegion = boss.LastHitRegion
+            collapses = boss.CollapseCount, lastHitRegion = boss.LastHitRegion,
+            bossMove = boss.CurrentMoveName, playerAction = player.ActionLabel, playerForward = player.transform.forward, headPosition = headPosition,
+            headDistanceFromSwordOrigin = headDelta.magnitude, headHorizontalDistance = flatHeadDelta.magnitude,
+            headVerticalOffset = headDelta.y, headFacingDot = flatHeadDelta.sqrMagnitude > .0001f ? Vector3.Dot(player.transform.forward, flatHeadDelta.normalized) : 1,
+            headWindowRemaining = boss.HeadWindowRemaining, headExposed = boss.HeadExposed
         };
     }
 
@@ -384,6 +558,8 @@ public sealed class CombatReplay : MonoBehaviour
     {
         if (finishing) return;
         finishing = true;
+        if (avoidanceTrial != null && !avoidanceTrial.recoveryObserved)
+            avoidanceTrial.outcome = "scenario-ended-before-recovery";
         Send(Vector3.zero, false, false, false);
         if (report.mode == "victory" && report.bossDefeat && !report.victoryDurationInRange)
         {
@@ -393,7 +569,7 @@ public sealed class CombatReplay : MonoBehaviour
         report.status = success ? "passed" : "failed"; report.reason = reason;
         Observe("final-" + report.status, true);
         report.assertions.Clear();
-        if (report.mode != "death")
+        if (report.mode == "combat" || report.mode == "victory")
         {
             AddAssertion("leg_damage", report.legDamage); AddAssertion("buckle", report.buckle);
             AddAssertion("collapse", report.collapse); AddAssertion("head_exposed", report.exposed);
@@ -409,7 +585,15 @@ public sealed class CombatReplay : MonoBehaviour
                 detail = report.bossDefeat ? "Measured spawn-to-defeat duration: " + report.victoryDurationSeconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + " seconds." : "No boss defeat observed; no victory duration inferred."
             });
         }
-        if (report.mode != "combat") AddAssertion("restart_and_movement", report.restart);
+        if (report.mode == "death" || report.mode == "victory") AddAssertion("restart_and_movement", report.restart);
+        if (report.mode == "avoidance")
+        {
+            foreach (string move in AvoidanceMoves)
+                report.assertions.Add(new Assertion {
+                    name = "avoidance_" + move.ToLowerInvariant(), status = avoidedMoves.Contains(move) ? "observed" : "not_observed",
+                    detail = "Requires windup/active/recovery, inside modeled threat at windup, escape movement >0.75m, no health loss and no hit-counter increase. See attackTrials."
+                });
+        }
         Save(); StartCoroutine(CompleteAfterCapture(success));
     }
 

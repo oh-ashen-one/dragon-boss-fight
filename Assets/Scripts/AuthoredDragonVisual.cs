@@ -22,7 +22,8 @@ public sealed class AuthoredDragonVisual : MonoBehaviour
     readonly Transform[] lower = new Transform[4], feet = new Transform[4], upper = new Transform[4];
     readonly string[] mappedLegIds = new string[4];
     readonly Quaternion[] restUpper = new Quaternion[4], restLower = new Quaternion[4];
-    Transform fit, modelRoot, head, jaw;
+    Transform fit, modelRoot, head, jaw, rigRoot;
+    Vector3 rootRestPosition, authoredRootAxis;
     Transform[] sampledTransforms;
     Vector3[] blendPositions;
     Quaternion[] blendRotations;
@@ -59,7 +60,8 @@ public sealed class AuthoredDragonVisual : MonoBehaviour
         { animation.Stop(); animation.playAutomatically = false; animation.enabled = false; }
         foreach (var animator in modelRoot.GetComponentsInChildren<Animator>(true)) animator.enabled = false;
         foreach (var t in modelRoot.GetComponentsInChildren<Transform>(true)) named[t.name] = t;
-        if (!named.TryGetValue("head", out head) || !named.TryGetValue("jaw", out jaw) || !named.ContainsKey("body"))
+        if (!named.TryGetValue("head", out head) || !named.TryGetValue("jaw", out jaw) ||
+            !named.TryGetValue("root", out rigRoot) || !named.ContainsKey("body"))
             return Fail("Required head/body bones missing.");
         foreach (string leg in LegIds)
             if (!named.ContainsKey(leg + "_upper") || !named.ContainsKey(leg + "_lower") || !named.ContainsKey(leg + "_foot"))
@@ -90,6 +92,14 @@ public sealed class AuthoredDragonVisual : MonoBehaviour
         BindPair("hind_L", "hind_R", 2);
         for (int i = 0; i < 4; i++)
         { restUpper[i] = upper[i].localRotation; restLower[i] = lower[i].localRotation; }
+        // The TEMP Blender author keyed local Z as intended vertical translation,
+        // but the root bone's local Y points upward. Discover that exported axis
+        // from the known -1.55m Collapse endpoint rather than guessing FBX axes.
+        rootRestPosition = rigRoot.localPosition;
+        clips["Collapse"].SampleAnimation(modelRoot.gameObject, clips["Collapse"].length);
+        authoredRootAxis = (rigRoot.localPosition - rootRestPosition) / -1.55f;
+        clips["Idle"].SampleAnimation(modelRoot.gameObject, 0);
+        Debug.Log("VEYR_ROOT_TRANSLATION_AXIS worldDirection=" + rigRoot.parent.TransformVector(authoredRootAxis).normalized);
         sampledTransforms = modelRoot.GetComponentsInChildren<Transform>(true);
         blendPositions = new Vector3[sampledTransforms.Length];
         blendRotations = new Quaternion[sampledTransforms.Length];
@@ -169,6 +179,7 @@ public sealed class AuthoredDragonVisual : MonoBehaviour
         clips[clipName].SampleAnimation(modelRoot.gameObject, CurrentClipTime);
 
         if (clipName == "Stomp") RetargetStomp(Mathf.Clamp(boss.StompLegIndex, 0, 3));
+        CorrectTemporaryRootTranslation();
         // A small transition blend handles interruptions; attack phase boundaries use
         // exact matching authored frames and must not lag the damage clock.
         bool blend = state == DragonBoss.CombatState.Buckle || state == DragonBoss.CombatState.Collapse ||
@@ -193,6 +204,45 @@ public sealed class AuthoredDragonVisual : MonoBehaviour
     }
 
     static float Frame(float frame) { return (frame - 1) / 30f; }
+
+    void CorrectTemporaryRootTranslation()
+    {
+        if (authoredRootAxis.sqrMagnitude < .000001f || !rigRoot.parent) return;
+        Vector3 animatedOffset = rigRoot.localPosition - rootRestPosition;
+        float meters = Vector3.Dot(animatedOffset, authoredRootAxis) / authoredRootAxis.sqrMagnitude;
+        Vector3 importedUp = rigRoot.parent.TransformVector(authoredRootAxis).normalized;
+        Vector3 correctedOffset = Quaternion.FromToRotation(importedUp, Vector3.up) * rigRoot.parent.TransformVector(animatedOffset);
+        // Version 2 sources already have vertical displacement, so this rotation
+        // is identity and their intentional horizontal anticipation is preserved.
+        Vector3 newRootPosition = rigRoot.parent.TransformPoint(rootRestPosition) + correctedOffset;
+        rigRoot.position = newRootPosition;
+        if (meters > -.35f || !named.ContainsKey("neck_01") || !named.ContainsKey("neck_02")) return;
+
+        // Lowering the torso correctly must not drive the long neck/skull under
+        // the floor. Bend the actual two neck joints to retain an accessible head;
+        // targets are read only after this deformation, so no invisible weakpoint.
+        Vector3 target = head.position;
+        float minimumHeight = transform.position.y + 1.65f;
+        if (target.y >= minimumHeight) return;
+        target.y = minimumHeight;
+        Quaternion headOrientation = head.rotation;
+        for (int pass = 0; pass < 6; pass++)
+        {
+            LiftNeckJoint(named["neck_02"], target);
+            LiftNeckJoint(named["neck_01"], target);
+        }
+        head.rotation = headOrientation;
+    }
+
+    void LiftNeckJoint(Transform joint, Vector3 target)
+    {
+        Vector3 current = head.position - joint.position;
+        Vector3 desired = target - joint.position;
+        if (current.sqrMagnitude < .001f || desired.sqrMagnitude < .001f) return;
+        Quaternion adjustment = Quaternion.FromToRotation(current, desired);
+        adjustment = Quaternion.RotateTowards(Quaternion.identity, adjustment, 8);
+        joint.rotation = adjustment * joint.rotation;
+    }
 
     static void MapAttack(string move, DragonBoss.CombatState state, float p, out string clip, out float time)
     {

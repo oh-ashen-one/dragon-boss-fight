@@ -28,13 +28,15 @@ public static class VeyrBuild
         var input=settings.FindProperty("activeInputHandler");if(input!=null){input.intValue=0;settings.ApplyModifiedPropertiesWithoutUndo();}
         AssetDatabase.SaveAssets();
         using(var sha=SHA256.Create()){
-            var entries=Directory.GetFiles("Assets","*",SearchOption.AllDirectories).Where(p=>p.EndsWith(".cs")||p.EndsWith(".fbx")).OrderBy(p=>p).Select(p=>p.Replace('\\','/')+" "+System.BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(p))).Replace("-","").ToLowerInvariant()).ToArray();
+            var entries=Directory.GetFiles("Assets","*",SearchOption.AllDirectories).Where(p=>p.EndsWith(".cs")||p.EndsWith(".fbx")||p.EndsWith(".shader")||p.EndsWith(".mat")||p.EndsWith(".unity")||p.EndsWith(".png")).OrderBy(p=>p).Select(p=>p.Replace('\\','/')+" "+System.BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(p))).Replace("-","").ToLowerInvariant()).ToArray();
             string manifest=string.Join("\n",entries)+"\n";
             File.WriteAllText("Assets/Resources/SourceManifest.txt",manifest);
             AssetDatabase.Refresh();
             File.WriteAllText("Builds/source-manifest.txt",manifest);
         }
-        var result=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/Cathedral.unity"},locationPathName="Builds/Veyr.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.None});
+        var result=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/Cathedral.unity"},locationPathName="Builds/Veyr.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.CleanBuildCache});
+        Directory.CreateDirectory("Local");
+        File.WriteAllLines("Local/build-messages.txt",result.steps.SelectMany(s=>s.messages).Where(m=>m.type==LogType.Error||m.type==LogType.Exception).Select(m=>m.content));
         Debug.Log("VEYR_BUILD_RESULT "+result.summary.result+" errors="+result.summary.totalErrors);
         if(result.summary.result!=BuildResult.Succeeded)throw new System.Exception("Native build failed");
     }

@@ -443,6 +443,7 @@
     ]
   },
   "space": "meters; Blender Z up and -Y forward",
+  "root_translation_version": 2,
   "license_mesh_animation": "CC0-1.0",
   "license_script": "MIT"
 }

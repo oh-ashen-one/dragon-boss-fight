@@ -14,5 +14,5 @@ for i,f in enumerate(frames):
     if i+1<len(frames):lines.append('duration '+str(max(.001,frames[i+1]['seconds']-f['seconds'])))
 concat=root/'concat.txt';concat.write_text('\n'.join(lines)+'\n')
 out=root/'native-gameplay.mp4'
-subprocess.run(['ffmpeg','-n','-f','concat','-safe','0','-i',str(concat),'-fps_mode','vfr','-c:v','libx264','-crf','19','-pix_fmt','yuv420p','-movflags','+faststart',str(out)],check=True)
+subprocess.run(['ffmpeg','-n','-f','concat','-safe','0','-i',str(concat),'-fps_mode','vfr','-c:v','libx264','-threads','2','-crf','19','-pix_fmt','yuv420p','-movflags','+faststart',str(out)],check=True)
 print(out)

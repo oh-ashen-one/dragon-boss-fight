@@ -145,7 +145,10 @@ def pose(frame, rotations=None, root=(0,0,0)):
     rotations=rotations or {}
     for p in rig.pose.bones:
         p.rotation_euler=tuple(math.radians(v) for v in rotations.get(p.name,(0,0,0)))
-        p.location=root if p.name=='root' else (0,0,0)
+        # Root offsets are authored in Blender world axes. The root bone's local
+        # Y, not local Z, points vertically; convert instead of keying world Z
+        # directly into pose-local Z (which made collapse translate horizontally).
+        p.location=p.bone.matrix_local.to_3x3().inverted() @ Vector(root) if p.name=='root' else (0,0,0)
         p.keyframe_insert('rotation_euler',frame=frame,group=p.name)
         p.keyframe_insert('location',frame=frame,group=p.name)
 
@@ -197,6 +200,7 @@ scene.frame_start=1;scene.frame_end=130;scene.frame_set(1)
 bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);mesh.select_set(True)
 bpy.context.view_layer.objects.active=rig
 rig['forward_axis']='Blender -Y; FBX export -Z forward / Y up'
+rig['root_translation_version']=2
 rig['license']='Original procedural blockout and animations: CC0-1.0. Code: MIT.'
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'Veyr_TEMP_Rig.blend'))
 bpy.ops.export_scene.fbx(filepath=str(OUT/'Veyr_TEMP_Rig.fbx'),use_selection=True,object_types={'ARMATURE','MESH'},add_leaf_bones=False,axis_forward='-Z',axis_up='Y',bake_anim=True,bake_anim_use_all_actions=True,bake_anim_use_nla_strips=False,bake_anim_simplify_factor=.2)
@@ -213,6 +217,6 @@ if padding >= 2:
     replacement=prefix+public_path
     assert len(replacement)==len(private_path)
     fbx_path.write_bytes(fbx.replace(private_path,replacement))
-manifest={'status':'TEMPORARY BLOCKOUT; final Tripo mesh pending','mesh_vertices':len(mesh.data.vertices),'mesh_triangles':sum(len(p.vertices)-2 for p in mesh.data.polygons),'bones':len(bone_defs),'fps':30,'actions':actions,'bone_rest':bone_defs,'space':'meters; Blender Z up and -Y forward','license_mesh_animation':'CC0-1.0','license_script':'MIT'}
+manifest={'status':'TEMPORARY BLOCKOUT; final Tripo mesh pending','mesh_vertices':len(mesh.data.vertices),'mesh_triangles':sum(len(p.vertices)-2 for p in mesh.data.polygons),'bones':len(bone_defs),'fps':30,'actions':actions,'bone_rest':bone_defs,'space':'meters; Blender Z up and -Y forward','root_translation_version':2,'license_mesh_animation':'CC0-1.0','license_script':'MIT'}
 (OUT/'veyr-rig-manifest.json').write_text(json.dumps(manifest,indent=2))
 print('VEYR_EXPORT_SUCCESS '+json.dumps({k:manifest[k] for k in ['mesh_vertices','mesh_triangles','bones']}))

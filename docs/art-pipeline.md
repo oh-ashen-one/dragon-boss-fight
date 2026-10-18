@@ -56,6 +56,14 @@ The script clears only the newly started Blender document, creates native geomet
 
 ## Validation and failure record
 
+### Root-axis correction after native gameplay inspection
+
+The initial export keyed intended world-space vertical movement directly into the root bone's local Z. Because the upright root bone uses local Y for vertical, the collapse's intended 1.55m drop instead moved horizontally. Native exposed-state screenshots made the defect visible: the neck lowered but the torso remained too high.
+
+`build_veyr.py` now converts authored world offsets into root-bone local coordinates and records `root_translation_version: 2`. The `.blend` and both FBX copies were regenerated through the shared slot on 2026-10-18, with version 2 recorded in the manifest. Export succeeded; a pre-existing Blender add-on emitted an unregister warning on shutdown.
+
+For current verification, `AuthoredDragonVisual` derives the imported displacement axis by comparing the Collapse endpoint with Idle, redirects that scalar to world vertical, and bends the real neck bones when needed to keep the fallen head above the floor. The hit target is evaluated after deformation. This correction also accepts a regenerated vertical-axis source without doubling the drop. The regenerated collapse/death poses still require native visual review; the runtime neck-floor adjustment is temporary pending authored pose refinement.
+
 - First sandboxed Blender background launch exited 139 during Metal capability initialization **before script execution**. The sanitized failure location was `supports_barycentric_whitelist` / `metal_is_supported`; no generated artifact was claimed from it.
 - Read-only process listing was denied by the sandbox. No bypass or unrelated process control was attempted.
 - The exact two-thread background export was then run through the supported approval mechanism and completed with exit 0. Native source and FBX were saved; the exporter printed success. No render job was launched.

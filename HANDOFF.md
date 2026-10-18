@@ -1,28 +1,29 @@
 # Veyr implementation handoff
 
-## Current state
-
 Public repository: https://github.com/oh-ashen-one/veyr-cinder-warden
 
-Active branch: `feat/first-playable`. First complete build source checkpoint: `577481f`.
+Active branch: `feat/first-playable`. Rigged native milestone: `978bb24`, build 003, capture `combat-20261018T040013325Z`. This is an early playable, not visual completion.
 
-Unity 6000.3.20f1 generated the project settings and built the native macOS app with zero errors. The first rendered run failed because runtime-only shaders were stripped; explicit shader resource assets fixed this in build 002.
+## Verified and preserved
 
-Native input replay 002 observed leg damage, independent leg buckle, collapse, seven-second exposed head, increased head damage, rise, and a real contact avoided during dodge. Its overall result remains FAILED because multiple screenshot requests in one frame were not all saved. The capture queue is being repaired. Death, victory, restart and full fight duration remain to be validated.
+- Unity 6000.3.20f1 native macOS build 002 compiled with zero errors after fixing runtime shader stripping. Build 003 ran successfully but its report contained 56 duplicate TypeDB registration errors; a clean-cache rebuild is pending to resolve and verify those.
+- Native input replay 003 PASSED leg damage, buckle, collapse, exposed-head bonus damage, rise, dodge and contact avoidance, with all ten required screenshots. Actual native backbuffer recording saved a 31-second clip; captures are not concept renders.
+- Replay 002's overall FAILED result remains preserved: the game mechanics passed, but simultaneous screenshot requests overwrote captures. The queued capture implementation corrected this in 003.
+- Death test 003 reached player death, then FAILED restart: the bootstrap initializer did not run on scene reload. The actual lifecycle bug is corrected in source; native retest pending.
+- Original arena and procedural audio are implemented. Temporary original Blender dragon has 28 bones and fourteen authored clips. Regenerated version 2 corrects root translation axes; native collapse/death visual review pending.
+- Public footage of Kalameet, Sinh and Midir was inspected; timestamped observations and their limits are in `docs/references.md`.
 
-All current character geometry is temporary. Original arena, combat and procedural audio are implemented. A native Blender rig and fourteen animation clips are saved; authored rig integration is in progress. No Tripo credit was spent. The inspected profile shows 55 credits per H3.1 model and an export upgrade gate; subscribed-profile clarification and concrete generation approval remain pending.
+## Current work and gates
 
-## Remaining work
+1. Rebuild and validate death/restart, full victory/restart, a 180–300 second fight and each attack's avoidance.
+2. Validate camera framing and player visibility near/under the giant.
+3. Refine original environmental lighting/materials and authored impact/contact poses against native captures.
+4. Replace temporary main characters through the requested Tripo workflow, then Blender cleanup, rig/weights and animation refinement. The inspected profile displays 55 credits per H3.1 model and an export upgrade gate; subscribed-profile clarification and applicable generation budget remain pending. No Tripo credits spent.
 
-1. Complete replay capture reliability and validate death/restart/victory.
-2. Integrate temporary Blender clips with accurate contact timings and bone-linked targets.
-3. Improve environmental materials and lighting against actual gameplay captures.
-4. Obtain approved Tripo assets, verify distribution rights, clean/rig/weight/refine in Blender.
-5. Watch the cited public gameplay sources directly; current research clearly labels playback unverified.
-6. Measure a full 3–5 minute fight, camera behavior, native frame timing and source/build-matched screenshots/video.
+A separately saved generated image is art direction only (`ArtSource/Concept`). It is not gameplay or a replacement for the Tripo main-model requirement.
 
-No performance claim: shared GPU usage was nonzero; replay timing is not an exclusive performance benchmark. No unrelated processes were stopped, and Ghostty was not used.
+No performance claim: shared GPU use and capture overhead make current measurements nonexclusive. No unrelated processes were stopped; Ghostty was not used. Machine logs and failure evidence remain local and excluded from Git.
 
 ## Ownership
 
-Root integrates and exclusively runs Unity. Separate workers own arena/audio, dragon state machine, Blender importer/visual sampling, and input replay source. Shared GPU slot protocol applies to tool launches. Preserve existing artifacts and failure reports; do not treat compilation as polished completion.
+Root exclusively integrates and runs Unity through the shared GPU slot. Workers own arena/camera, reference research, Blender source/importer and input replay. Preserve failure reports; compilation and a short replay are not polished completion.
