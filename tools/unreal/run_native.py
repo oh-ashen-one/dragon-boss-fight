@@ -16,10 +16,13 @@ runtime.add_argument('--engine', type=Path)
 runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
 p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard'], required=True)
+p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--video-fps', type=int, choices=range(1,16), help='Optional native capture cadence; adds measurable overhead')
 p.add_argument('--width', type=int, default=1280)
 p.add_argument('--height', type=int, default=720)
 a = p.parse_args()
+if not 30 <= a.slot_wait_seconds <= 3600:
+    p.error('--slot-wait-seconds must be between 30 and 3600')
 if (ROOT / 'Local/ENGINE_LAUNCH_HOLD.json').exists():
     p.error('Engine launches are held after two crashes; obtain owner approval before clearing the task-local hold.')
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
@@ -49,7 +52,7 @@ else:
 if not executable.is_file():
     p.error('Runtime executable is missing')
 (run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':True},indent=2)+'\n')
-cmd = [str(a.gpu_slot), 'capture', '--label', 'veyr-' + a.mode, '--timeout', '180', '--json', str(run/'gpu.json'), '--', *launch, '-RenderOffScreen', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
+cmd = [str(a.gpu_slot), 'capture', '--label', 'veyr-' + a.mode, '--timeout', str(a.slot_wait_seconds), '--json', str(run/'gpu.json'), '--', *launch, '-RenderOffScreen', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
 if a.video_fps:
     cmd.append('-VeyrVideoFPS='+str(a.video_fps))
 print('Native run:', run, flush=True)

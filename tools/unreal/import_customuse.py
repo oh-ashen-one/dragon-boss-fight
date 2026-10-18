@@ -7,7 +7,8 @@ Build VeyrVisualDefinition first. Interchange must already be available.
 Plan schema (all sources remain under Local/CustomuseAssets):
   character: KnightB or DragonV3B; version: a fresh identifier, e.g. v001
   rig: {file: absolute GLB, sha256: exact digest}
-  bones: {head: imported/source bone name, ...}; required_bones: [head, ...]
+  bones: {head: bone name or {bone: name, translation_cm:[x,y,z]}, ...}
+  required_bones: [head, ...]
   required_clips: [Idle, Walk, ...]
   target_height_cm: optional positive height; otherwise mesh_scale defaults 1
   mesh_translation_cm: [0,0,0]; mesh_rotation_deg: [pitch,yaw,roll]
@@ -226,9 +227,17 @@ def run(plan_file):
                 raise ValueError("Cannot uniquely resolve imported bone: " + source_name)
             return candidates[0]
         targets = {}
-        for key, name in plan["bones"].items():
+        for key, specification in plan["bones"].items():
+            name = specification if isinstance(specification, str) else specification["bone"]
             target = unreal.VeyrVisualBoneTarget()
             target.set_editor_property("bone_name", resolve_bone(name))
+            if isinstance(specification, dict):
+                offset = specification.get("translation_cm", [0, 0, 0])
+                if len(offset) != 3 or not all(math.isfinite(float(value)) for value in offset):
+                    raise ValueError("Bone-local target offset must contain three finite values")
+                transform = unreal.Transform()
+                transform.translation = unreal.Vector(*offset)
+                target.set_editor_property("local_offset", transform)
             targets[key] = target
         definition.set_editor_property("bone_targets", targets)
         definition.set_editor_property("required_bone_targets", plan.get("required_bones", list(targets)))

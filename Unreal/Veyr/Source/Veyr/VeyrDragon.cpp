@@ -1,5 +1,7 @@
 #include "VeyrDragon.h"
 #include "VeyrKnight.h"
+#include "VeyrVisualDefinition.h"
+#include "VeyrSkeletalPresentation.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -33,6 +35,11 @@ AVeyrDragon::AVeyrDragon()
 {
     PrimaryActorTick.bCanEverTick=true;
     SceneRoot=CreateDefaultSubobject<USceneComponent>(TEXT("DragonRulesRoot")); SetRootComponent(SceneRoot);
+    ImportedPresentation=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("CustomuseDragonPresentation"));
+    ImportedPresentation->SetupAttachment(SceneRoot);
+    ImportedPresentation->SetVisibility(false);
+    static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> ImportedDefinition(TEXT("/Game/Characters/Customuse/Runtime/DA_Dragon.DA_Dragon"));
+    VisualDefinition=ImportedDefinition.Get();
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
@@ -105,6 +112,7 @@ void AVeyrDragon::BeginPlay()
         WarningLines->SetMaterial(0,WarningMaterial); DangerLines->SetMaterial(0,DangerMaterial);
     }
     UpdateTemporaryPresentation(0); EnterState(EVeyrDragonState::Idle,2.2f);
+    if(VisualDefinition)ApplyCustomuseVisual(VisualDefinition);
 }
 
 void AVeyrDragon::Tick(float DeltaSeconds)
@@ -124,6 +132,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     }
     if(!bEncounterStopped||IsDead())AdvanceState(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
+    UpdateImportedPresentation();
     VisualAccumulator+=DeltaSeconds;
     // Active sweep geometry must use the same current clock as damaging contact.
     if(State==EVeyrDragonState::Active||VisualAccumulator>=.04f) { VisualAccumulator=0; UpdateTelegraphs(); }
@@ -166,6 +175,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 FVector Position=FMath::Lerp(MoveStart,MoveEnd,Ease(T)); Position.Z+=FMath::Sin(T*PI)*1400.f;
                 SetActorLocation(Position);
             }
+            UpdateImportedPresentation();
             TryDamageTarget();
             if(StateElapsed>=StateDuration)
             {
@@ -362,8 +372,8 @@ bool AVeyrDragon::CanStagger() const
 {
     return StaggerProtection<=0&&State!=EVeyrDragonState::Buckle&&State!=EVeyrDragonState::Collapse&&State!=EVeyrDragonState::Exposed&&State!=EVeyrDragonState::Rise&&State!=EVeyrDragonState::Dead;
 }
-FVector AVeyrDragon::GetHeadLocation() const {return GetActorTransform().TransformPosition(HeadLocal);}
-FVector AVeyrDragon::GetLegLocation(int32 Index) const {return GetActorTransform().TransformPosition(LegLocal[FMath::Clamp(Index,0,3)]);}
+FVector AVeyrDragon::GetHeadLocation() const {return bImportedTargetsValid?ImportedHeadWorld:GetActorTransform().TransformPosition(HeadLocal);}
+FVector AVeyrDragon::GetLegLocation(int32 Index) const {const int32 I=FMath::Clamp(Index,0,3);return bImportedTargetsValid?ImportedFeetWorld[I]:GetActorTransform().TransformPosition(LegLocal[I]);}
 float AVeyrDragon::GetLegStagger(int32 Index) const {return LegStagger[FMath::Clamp(Index,0,3)];}
 float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,7.f-StateElapsed):0.f;}
 bool AVeyrDragon::IsAirborne() const {return State==EVeyrDragonState::Active&&Move==EVeyrDragonMove::FlyAway&&StateElapsed<FlightSeconds;}
@@ -534,4 +544,68 @@ FVector AVeyrDragon::ClampArena(const FVector& V,float Radius)
     FVector P=Ground(V);
     if(P.SizeSquared()>Radius*Radius)P=P.GetSafeNormal()*Radius;
     return P;
+}
+
+
+bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
+{
+    if(!Definition||!ImportedPresentation||!ImportedPresentation->SetVisualDefinition(Definition,false))return false;
+    // A valid measured head and four feet are mandatory before hiding proxies.
+    FTransform TargetPose;
+    for(FName Name:{FName(TEXT("head")),FName(TEXT("leg0")),FName(TEXT("leg1")),FName(TEXT("leg2")),FName(TEXT("leg3"))})
+        if(!ImportedPresentation->GetBoneTargetWorldTransform(Name,TargetPose))
+        {
+            bUsingCustomuseVisual=false;bImportedTargetsValid=false;
+            ImportedPresentation->SetVisibility(false);
+            for(UStaticMeshComponent* Part:TemporaryParts)if(Part)Part->SetVisibility(true);
+            return false;
+        }
+    VisualDefinition=Definition;bUsingCustomuseVisual=true;
+    for(UStaticMeshComponent* Part:TemporaryParts)if(Part)Part->SetVisibility(false);
+    ImportedPresentation->SetVisibility(true);
+    TemporaryLabel->SetText(FText::FromString(TEXT("CUSTOMUSE DRAGON — MOTION INTEGRATION PREVIEW")));
+    UpdateImportedPresentation();
+    return true;
+}
+
+void AVeyrDragon::UpdateImportedPresentation()
+{
+    if(!bUsingCustomuseVisual||!VisualDefinition||!ImportedPresentation)return;
+    bImportedTargetsValid=false;
+    FString Name;
+    switch(State)
+    {
+        case EVeyrDragonState::Idle:Name=TEXT("Idle");break;
+        case EVeyrDragonState::Reposition:Name=TEXT("Walk");break;
+        case EVeyrDragonState::Buckle:Name=FString::Printf(TEXT("Buckle%d"),StruckLeg);break;
+        case EVeyrDragonState::Collapse:Name=TEXT("Collapse");break;
+        case EVeyrDragonState::Exposed:Name=TEXT("Exposed");break;
+        case EVeyrDragonState::Rise:Name=TEXT("Rise");break;
+        case EVeyrDragonState::Dead:Name=TEXT("Death");break;
+        default:
+        {
+            static const TCHAR* Moves[]={TEXT("Fire"),TEXT("Flight"),TEXT("Claw"),TEXT("Stomp"),TEXT("Tail"),TEXT("Bite")};
+            Name=Moves[static_cast<int32>(Move)];
+            if(Move==EVeyrDragonMove::BackStomp)Name+=FString::FromInt(StompLeg);
+            Name+=State==EVeyrDragonState::Windup?TEXT("Windup"):State==EVeyrDragonState::Active?TEXT("Active"):TEXT("Recovery");
+            break;
+        }
+    }
+    const FName Clip(*Name);
+    bool Sampled=false;
+    if(VisualDefinition->Clips.Contains(Clip))
+    {
+        const bool Loop=VisualDefinition->Clips[Clip].bLoop;
+        Sampled=Loop?ImportedPresentation->SampleClipTime(Clip,Clock):
+            ImportedPresentation->SampleClipPhase(Clip,StateElapsed/FMath::Max(.001f,StateDuration));
+    }
+    MissingVisualClip=Sampled?NAME_None:Clip;
+    if(!Sampled&&!ImportedPresentation->SampleReferencePose())return;
+    FTransform Head,Feet[4];
+    if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),Head))return;
+    for(int32 I=0;I<4;++I)
+        if(!ImportedPresentation->GetBoneTargetWorldTransform(FName(*FString::Printf(TEXT("leg%d"),I)),Feet[I]))return;
+    ImportedHeadWorld=Head.GetLocation();
+    for(int32 I=0;I<4;++I)ImportedFeetWorld[I]=Feet[I].GetLocation();
+    bImportedTargetsValid=true;
 }

@@ -13,6 +13,8 @@ class UStaticMeshComponent;
 class USceneComponent;
 class UPrimitiveComponent;
 class APlayerController;
+class UVeyrSkeletalPresentation;
+class UVeyrVisualDefinition;
 
 /** Native combat owner. Primitive presentation is explicitly temporary pending Customuse. */
 UCLASS()
@@ -53,6 +55,8 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") float GetActionElapsed() const { return ActionElapsed; }
     UFUNCTION(BlueprintPure, Category="Combat") float GetActionDuration() const { return ActionDuration; }
     UFUNCTION(BlueprintPure, Category="Combat") float GetSwordContactTime() const;
+    UFUNCTION(BlueprintPure, Category="Combat") float GetAttackDuration(bool bHeavy) const;
+    UFUNCTION(BlueprintPure, Category="Combat") float GetAttackContactTime(bool bHeavy) const;
     UFUNCTION(BlueprintPure, Category="Combat") float GetPlanarSpeed() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetFootLocation() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetRollDirection() const { return RollDirection; }
@@ -68,6 +72,7 @@ public:
     UFUNCTION(BlueprintCallable, Category="Combat") void SetGuard(bool bHeld);
     UFUNCTION(BlueprintCallable, Category="Combat") void ToggleLockOn();
     UFUNCTION(BlueprintCallable, Category="Combat") void RestartIfTerminal();
+    UFUNCTION(BlueprintCallable, Category="Presentation") bool ApplyCustomuseVisual(UVeyrVisualDefinition* Definition);
 
     /** Input-level test hook; never writes health, action clocks, position or boss state. */
     void SetReplayInput(const FVector& WorldMove, bool bLight, bool bHeavy, bool bRoll, bool bHeal, bool bJump, bool bGuard);
@@ -76,6 +81,13 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera") TObjectPtr<USpringArmComponent> CameraBoom;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera") TObjectPtr<UCameraComponent> CombatCamera;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Temporary Art") TObjectPtr<USceneComponent> TemporaryVisual;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrSkeletalPresentation> ImportedPresentation;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrVisualDefinition> CustomuseVisualDefinition;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bImportedPresentationActive=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bRequestedPresentationClipSampled=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bPresentationUsingFallback=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName RequestedPresentationClip=NAME_None;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FString PresentationDiagnostic;
 
 protected:
     virtual void BeginPlay() override;
@@ -93,6 +105,11 @@ private:
     float RegenDelay = 0.f;
     float DamageGrace = 0.f;
     float VisualClock = 0.f;
+    float PresentationAirTime = 0.f;
+    float PresentationLocomotionTime = 0.f;
+    FName FailedPresentationClip=NAME_None;
+    FString FailedPresentationReason;
+    bool bIdleFallbackRejected=false;
     float CameraDistance = 720.f;
     float LockHeadBlend = 0.f;
     TWeakObjectPtr<APlayerController> OcclusionController;
@@ -125,6 +142,8 @@ private:
     void UpdateCameraOcclusion(float DeltaSeconds);
     void RestoreCameraOcclusion();
     void UpdateTemporaryPresentation(float DeltaSeconds);
+    void UpdateImportedPresentation();
+    void SetPresentationDiagnostic(const FString& Diagnostic);
     UStaticMeshComponent* CreateProxyPart(const TCHAR* Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location, const FVector& Size);
     void LookYaw(float Value);
     void LookPitch(float Value);

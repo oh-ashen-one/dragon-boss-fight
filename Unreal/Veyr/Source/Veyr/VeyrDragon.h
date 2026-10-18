@@ -12,6 +12,8 @@ class UStaticMeshComponent;
 class UInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
 class UTextRenderComponent;
+class UVeyrVisualDefinition;
+class UVeyrSkeletalPresentation;
 
 UENUM(BlueprintType)
 enum class EVeyrDangerShape : uint8 { None, Circle, Sector, Capsule };
@@ -39,6 +41,12 @@ class VEYR_API AVeyrDragon : public AActor
 public:
     AVeyrDragon();
     virtual void Tick(float DeltaSeconds) override;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrSkeletalPresentation> ImportedPresentation;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrVisualDefinition> VisualDefinition;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bUsingCustomuseVisual=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FName MissingVisualClip=NAME_None;
+    UFUNCTION(BlueprintCallable, Category="Presentation") bool ApplyCustomuseVisual(UVeyrVisualDefinition* Definition);
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 8400.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 8400.f;
@@ -101,6 +109,11 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> WarningMaterial;
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> DangerMaterial;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> LegMaterials;
+
+    bool bImportedTargetsValid=false;
+    FVector ImportedHeadWorld=FVector::ZeroVector;
+    FVector ImportedFeetWorld[4];
+    void UpdateImportedPresentation();
 
     float LegStagger[4] = {0,0,0,0};
     float LegFlash[4] = {0,0,0,0};

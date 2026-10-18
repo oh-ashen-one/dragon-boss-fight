@@ -64,7 +64,17 @@ Signed/extracted packaged source `c8c59add517853a71c3924153649a855c4b297d3dc3503
 
 Later editor source `555a679b9decdec627bde5f9caa0124bc0058bcd6d269deb41aae1a15afbc441` compiled successfully. It fixes uncaptured LMB dispatch, adds Enter-to-begin and checks actual native capture before engagement. Physical PIE input confirmed native capture, movement, light/heavy attacks, jump and lock-on. Physical roll, guarded contact, healing and packaged Escape/reacquisition still require final validation. New healing/guard boundary replay modes compile but have not run.
 
-`VeyrVisualDefinition` and the native Interchange importer are integration foundations. Neither final character is wired into gameplay yet. Character assets are deliberately ignored by Git; source receipts and private import evidence preserve lineage. No accepted final-art build exists.
+`VeyrVisualDefinition`, the native Interchange importer and deterministic `VeyrSkeletalPresentation` now support both actors through optional stable runtime definitions. Those definitions have not been activated in a game yet; gameplay evidence still shows primitives. Character assets are deliberately ignored by Git; source receipts and private import evidence preserve lineage. No accepted final-art build exists.
+
+## Current integration checkpoint
+
+Editor source `b6cb077f370a3398e6c22b3cacd3276ca7d35ca4f6d3bc01fd3574dea25e6c22` compiled successfully with unchanged source. This adds explicit synchronous skeletal sampling and optional knight/dragon runtime presentation. Missing clips remain explicit diagnostics, and successful reference-pose sampling is not animation acceptance. The earlier protected animation-status API compile error was corrected through the public compressed-data readiness check.
+
+Fresh native knight v006 imports all four normalized clips on one skeleton. Dragon v001 imports the normalized 40-bone rig with coherent bounds and names. The knight sword is a closed disconnected surface of 1,048 triangles/1,245 vertices; native highlighted-mask review confirmed blade, guard, grip and pommel without fingers. New rigid RightHand-weight derivatives preserve all nonweapon skinning exactly and remain rigid through sampled poses. They are prepared for native import/QA, not yet accepted. Original assets and failed imports remain intact.
+
+CPU motion analysis identifies useful attack trims and actual blade endpoints. Old light contact precedes the visible stroke. Root-locking also removes vertical bob; controlled horizontal-only in-place derivatives are being prepared. No timing/health balancing change has been accepted yet.
+
+The first new healing run timed out after 180 seconds in the shared GPU queue without launching. This is resource contention, not a crash or gameplay failure. A single subsequent run is queued with a 30-minute bounded slot wait while CPU/source work continues. Root owns no running editor at this checkpoint. Respect both foreign reservations; do not bypass the two-renderer limit.
 
 ## Next work
 

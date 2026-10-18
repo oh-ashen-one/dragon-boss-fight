@@ -1,5 +1,7 @@
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
+#include "VeyrSkeletalPresentation.h"
+#include "VeyrVisualDefinition.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -56,6 +58,16 @@ AVeyrKnight::AVeyrKnight()
     CombatCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     CombatCamera->bUsePawnControlRotation = false;
     CombatCamera->FieldOfView = 72.f;
+
+    ImportedPresentation = CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("ImportedPresentation"));
+    ImportedPresentation->SetupAttachment(GetCapsuleComponent());
+    ImportedPresentation->SetVisibility(false);
+    ImportedPresentation->SetHiddenInGame(true);
+    // Optional until the stable native data asset is authored. The definition
+    // supplies imported orientation, scale and the capsule-to-feet offset.
+    static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> KnightDefinition(
+        TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
+    CustomuseVisualDefinition = KnightDefinition.Get();
 
     // Original engine primitives are a visible verification proxy, not Customuse art.
     TemporaryVisual = CreateDefaultSubobject<USceneComponent>(TEXT("TEMP original primitive knight pending Customuse"));
@@ -115,14 +127,19 @@ void AVeyrKnight::BeginPlay()
         }
     }
     if (Controller) Controller->SetControlRotation(FRotator(-12.f, GetActorRotation().Yaw, 0.f));
-    UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_READY collisionHeight=244cm art=TEMP_original_primitives_pending_Customuse light=.23/.65 heavy=.55/1.15 roll=.08-.44/.58"));
+    if (CustomuseVisualDefinition) ApplyCustomuseVisual(CustomuseVisualDefinition);
+    else SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported visual definition unavailable"));
+    UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_READY collisionHeight=244cm art=%s light=.23/.65 heavy=.55/1.15 roll=.08-.44/.58"),
+        bImportedPresentationActive ? TEXT("imported_definition_acceptance_pending") : TEXT("TEMP_original_primitives_pending_Customuse"));
 }
 
 bool AVeyrKnight::IsGrounded() const { return GetCharacterMovement() && GetCharacterMovement()->IsMovingOnGround(); }
 bool AVeyrKnight::IsRollingInvulnerable() const { return Action == EVeyrKnightAction::Roll && ActionElapsed > .08f && ActionElapsed < .44f; }
 float AVeyrKnight::GetPlanarSpeed() const { return GetVelocity().Size2D(); }
 FVector AVeyrKnight::GetFootLocation() const { return GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()); }
-float AVeyrKnight::GetSwordContactTime() const { return Action == EVeyrKnightAction::HeavyAttack ? .55f : Action == EVeyrKnightAction::LightAttack ? .23f : -1.f; }
+float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return bHeavy ? 1.15f : .65f; }
+float AVeyrKnight::GetAttackContactTime(bool bHeavy) const { return bHeavy ? .55f : .23f; }
+float AVeyrKnight::GetSwordContactTime() const { return Action == EVeyrKnightAction::HeavyAttack ? GetAttackContactTime(true) : Action == EVeyrKnightAction::LightAttack ? GetAttackContactTime(false) : -1.f; }
 bool AVeyrKnight::IsTerminal() const { return IsDead() || (IsValid(Boss) && Boss->IsDead()); }
 bool AVeyrKnight::CanStartGroundedAction() const { return !IsTerminal() && IsGrounded() && !bPressedJump && (Action == EVeyrKnightAction::Ready || Action == EVeyrKnightAction::Guard); }
 
@@ -142,14 +159,14 @@ void AVeyrKnight::TryLightAttack()
 {
     if (!CanStartGroundedAction() || Stamina < 22.f) return;
     Stamina -= 22.f; RegenDelay = .75f; ++SwingId; ++LightAttacks;
-    BeginAction(EVeyrKnightAction::LightAttack, .65f);
+    BeginAction(EVeyrKnightAction::LightAttack, GetAttackDuration(false));
 }
 
 void AVeyrKnight::TryHeavyAttack()
 {
     if (!CanStartGroundedAction() || Stamina < 38.f) return;
     Stamina -= 38.f; RegenDelay = 1.05f; ++SwingId; ++HeavyAttacks;
-    BeginAction(EVeyrKnightAction::HeavyAttack, 1.15f);
+    BeginAction(EVeyrKnightAction::HeavyAttack, GetAttackDuration(true));
 }
 
 void AVeyrKnight::TryRoll()
@@ -243,6 +260,8 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     // Jump followed by StopJumping in one actor tick cancels the jump entirely.
     if (bReplayJumpHeld && !IsGrounded()) { StopJumping(); bReplayJumpHeld = false; }
     VisualClock += DeltaSeconds;
+    PresentationAirTime = IsGrounded() ? 0.f : PresentationAirTime + DeltaSeconds;
+    if (IsGrounded()) PresentationLocomotionTime += DeltaSeconds * FMath::Clamp(GetPlanarSpeed()/580.f,0.f,1.f);
     RegenDelay = FMath::Max(0.f, RegenDelay - DeltaSeconds);
     DamageGrace = FMath::Max(0.f, DamageGrace - DeltaSeconds);
     const FRotator ViewYaw(0.f, Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw, 0.f);
@@ -261,9 +280,9 @@ void AVeyrKnight::Tick(float DeltaSeconds)
         else if (bReplayLight) TryLightAttack();
         bReplayLight = bReplayHeavy = bReplayRoll = bReplayHeal = bReplayJump = false;
     }
-    if (IsDead()) ActionElapsed += DeltaSeconds;
+    if (IsDead()) { ActionElapsed += DeltaSeconds; UpdateImportedPresentation(); }
     else if (!IsTerminal()) AdvanceCombat(DeltaSeconds);
-    else { GetCharacterMovement()->StopMovementImmediately(); bLockedOn = false; }
+    else { GetCharacterMovement()->StopMovementImmediately(); bLockedOn = false; UpdateImportedPresentation(); }
     UpdateMovement(DeltaSeconds);
     UpdateCamera(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
@@ -272,6 +291,9 @@ void AVeyrKnight::Tick(float DeltaSeconds)
 void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
 {
     ActionElapsed += DeltaSeconds;
+    // Evaluate the strike at the UPDATED action time, synchronously, before
+    // gameplay resolves contact. Cone damage stays authoritative in this phase.
+    UpdateImportedPresentation();
     if (Action == EVeyrKnightAction::LightAttack || Action == EVeyrKnightAction::HeavyAttack)
     {
         if (!bContactSent && ActionElapsed >= GetSwordContactTime())
@@ -440,9 +462,117 @@ void AVeyrKnight::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Super::EndPlay(EndPlayReason);
 }
 
+void AVeyrKnight::SetPresentationDiagnostic(const FString& Diagnostic)
+{
+    if (PresentationDiagnostic == Diagnostic) return;
+    PresentationDiagnostic = Diagnostic;
+    if (!Diagnostic.IsEmpty()) UE_LOG(LogTemp, Warning, TEXT("VEYR_KNIGHT_PRESENTATION %s"), *Diagnostic);
+}
+
+bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
+{
+    CustomuseVisualDefinition = Definition;
+    bImportedPresentationActive = bRequestedPresentationClipSampled = bPresentationUsingFallback = false;
+    RequestedPresentationClip = FailedPresentationClip = NAME_None;
+    FailedPresentationReason.Reset();
+    bIdleFallbackRejected=false;
+    if (ImportedPresentation)
+    {
+        ImportedPresentation->SetVisibility(false,true);
+        ImportedPresentation->SetHiddenInGame(true,true);
+    }
+    if (TemporaryVisual) TemporaryVisual->SetVisibility(true,true);
+    if (!ImportedPresentation || !Definition)
+    {
+        SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported component or definition missing"));
+        return false;
+    }
+    if (!ImportedPresentation->SetVisualDefinition(Definition,false))
+    {
+        SetPresentationDiagnostic(TEXT("Imported definition rejected; temporary primitives retained: ")+ImportedPresentation->LastError);
+        return false;
+    }
+    bImportedPresentationActive = true;
+    UpdateImportedPresentation();
+    if (!bImportedPresentationActive || !ImportedPresentation->bPoseEvaluated) return false;
+    ImportedPresentation->SetVisibility(true,true);
+    ImportedPresentation->SetHiddenInGame(false,true);
+    if (TemporaryVisual) TemporaryVisual->SetVisibility(false,true);
+    // True means this definition produced an explicit pose, not that every clip
+    // exists or that its imported art/animation has passed native acceptance.
+    return true;
+}
+
+void AVeyrKnight::UpdateImportedPresentation()
+{
+    if (!bImportedPresentationActive || !ImportedPresentation || !CustomuseVisualDefinition) return;
+    FName Clip=TEXT("Idle");
+    bool bUsePhase=false;
+    float Time=VisualClock;
+    switch (Action)
+    {
+        case EVeyrKnightAction::LightAttack: Clip=TEXT("LightAttack"); bUsePhase=true; break;
+        case EVeyrKnightAction::HeavyAttack: Clip=TEXT("HeavyAttack"); bUsePhase=true; break;
+        case EVeyrKnightAction::Roll: Clip=TEXT("Roll"); bUsePhase=true; break;
+        case EVeyrKnightAction::Heal: Clip=TEXT("Heal"); bUsePhase=true; break;
+        case EVeyrKnightAction::Stagger: Clip=TEXT("Stagger"); bUsePhase=true; break;
+        case EVeyrKnightAction::Dead: Clip=TEXT("Death"); bUsePhase=true; break;
+        case EVeyrKnightAction::Guard: Clip=TEXT("Guard"); Time=ActionElapsed; break;
+        default:
+            if (!IsGrounded()) { Clip=TEXT("Jump"); Time=PresentationAirTime; }
+            else if (GetPlanarSpeed()>8.f)
+            {
+                Clip=GetPlanarSpeed()>360.f ? TEXT("Run") : TEXT("Walk");
+                Time=PresentationLocomotionTime;
+            }
+            break;
+    }
+    RequestedPresentationClip=Clip;
+    const FVeyrVisualClip* Config=CustomuseVisualDefinition->Clips.Find(Clip);
+    FString Error;
+    bool bSampled=false;
+    if (!Config || !Config->Sequence) Error=TEXT("Requested imported clip is missing: ")+Clip.ToString();
+    else if (FailedPresentationClip==Clip) Error=FailedPresentationReason;
+    else
+    {
+        bSampled=bUsePhase ? ImportedPresentation->SampleClipPhase(Clip,FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f)) :
+            ImportedPresentation->SampleClipTime(Clip,Time);
+        if (!bSampled)
+        {
+            // Avoid repeating the same invalid-asset diagnostic every tick.
+            // Reapply the definition after editing/reimporting such a clip.
+            FailedPresentationClip=Clip;
+            FailedPresentationReason=ImportedPresentation->LastError;
+            Error=FailedPresentationReason;
+        }
+    }
+    bRequestedPresentationClipSampled=bSampled;
+    bPresentationUsingFallback=!bSampled;
+    if (bSampled) { SetPresentationDiagnostic(FString()); return; }
+
+    const FVeyrVisualClip* Idle=CustomuseVisualDefinition->Clips.Find(TEXT("Idle"));
+    bool bHeldIdle=false;
+    if (Idle && Idle->Sequence && !bIdleFallbackRejected && FailedPresentationClip!=FName(TEXT("Idle")))
+    {
+        bHeldIdle=ImportedPresentation->SampleClipTime(TEXT("Idle"),0.f);
+        bIdleFallbackRejected=!bHeldIdle;
+    }
+    if (bHeldIdle || ImportedPresentation->SampleReferencePose())
+    {
+        SetPresentationDiagnostic(Error+(bHeldIdle ? TEXT("; holding Idle fallback (action animation unverified)") :
+            TEXT("; holding reference pose fallback (action animation unavailable)")));
+        return;
+    }
+    bImportedPresentationActive=false;
+    ImportedPresentation->SetVisibility(false,true);
+    ImportedPresentation->SetHiddenInGame(true,true);
+    if (TemporaryVisual) TemporaryVisual->SetVisibility(true,true);
+    SetPresentationDiagnostic(Error+TEXT("; fallback evaluation failed, temporary primitives restored"));
+}
+
 void AVeyrKnight::UpdateTemporaryPresentation(float DeltaSeconds)
 {
-    if (!TemporaryVisual) return;
+    if (!TemporaryVisual || bImportedPresentationActive) return;
     // Explicit proxy pose cues only: no authored animation asset or Customuse claim.
     FRotator BodyRotation = FRotator::ZeroRotator;
     if (Action == EVeyrKnightAction::Roll) BodyRotation.Pitch = FMath::Clamp(ActionElapsed / .58f, 0.f, 1.f) * 360.f;
