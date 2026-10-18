@@ -73,3 +73,38 @@ Unity Issue Tracker searches were attempted for TypeDB/duplicate-registration er
 | Player/TypeDb-All 3.json | `a6a03a6fd8cbb2b96208d6a4ca55061490547b7745dec31d33a75395bb8ac806` |
 | Player/RuntimeInitializeOnLoads 2.json | `5fccc43a6ffcfc1eaf2ed3001914bd31a7e82a09a1a0fd2bd7887f5ed29e91c6` |
 | Player/RuntimeInitializeOnLoads 3.json | `5fccc43a6ffcfc1eaf2ed3001914bd31a7e82a09a1a0fd2bd7887f5ed29e91c6` |
+
+## Build 008 follow-up: recurrence and exact accounting
+
+Read-only follow-up on 2026-10-18. The build 004 observations above are historical. Numbered metadata has since reappeared; this follow-up did not move, delete or regenerate any cache file, launch an engine, or inspect processes.
+
+`Local/build-008.log:5823` reports `VEYR_BUILD_RESULT Succeeded errors=182`. All **182** extracted messages are duplicate TypeDB registrations. The complete assembly/class multiset matches the four numbered TypeDB files exactly, with no unmatched entries in either direction. `Local/build-messages.txt` has the same error multiset. The errors comprise **118 Assembly-CSharp** and **64 Unity.Multiplayer.Center.Common** registrations, across 46 distinct types.
+
+| Metadata snapshot | Editor types | Player types | Combined duplicate registrations |
+| --- | ---: | ---: | ---: |
+| TypeDb-All 2.json | 45 (29 game + 16 package) | 45 (29 game + 16 package) | 90 |
+| TypeDb-All 3.json | 46 (30 game + 16 package) | 46 (30 game + 16 package) | 92 |
+| Total numbered files | 91 | 91 | 182 |
+
+Each folder's canonical `TypeDb-All.json` contains 46 types. Every numbered type is already in that canonical file. In both folders the only type added from snapshot 2 to snapshot 3 is `CombatReplay+HealingTrial`. Both snapshot-3 TypeDB files are **byte-identical to their respective current canonical files**. All three Player `RuntimeInitializeOnLoads` JSON files are also byte-identical. This accounts for the larger error total without attributing the recurrence to duplicated source definitions.
+
+All six reappeared numbered files have different SHA-256 hashes from the corresponding preserved build-004 quarantine files. Consequently, these are not simply the original quarantined bytes returned unchanged. This does not identify who wrote or copied them. Modification times are older than the current canonical generation; times below are explicitly UTC and should not be confused with a shell/UI local-time display.
+
+| Reappeared path under Library/BuildPlayerData | Modification time UTC | SHA-256 |
+| --- | --- | --- |
+| Editor/TypeDb-All 2.json | 2026-10-18T04:16:19+00:00 | `f1c3ccf96f856ddb0ddf2ba884968f1d639bc0bdbfcbb0a5d549a2857eb6b73f` |
+| Editor/TypeDb-All 3.json | 2026-10-18T04:21:29+00:00 | `a5052fdc1f90aba839041d6723094f3b6048d9463165ab166396c173b6dc2a36` |
+| Player/RuntimeInitializeOnLoads 2.json | 2026-10-18T04:16:21+00:00 | `d90e1bc7ca67be33cb81ee3b1bb967e9519022e06ee7306db7f887a9f9942862` |
+| Player/RuntimeInitializeOnLoads 3.json | 2026-10-18T04:21:30+00:00 | `d90e1bc7ca67be33cb81ee3b1bb967e9519022e06ee7306db7f887a9f9942862` |
+| Player/TypeDb-All 2.json | 2026-10-18T04:16:21+00:00 | `d1d7512cb58219dce83aa50552ffc94b9bce8e821135f2efb598fff60b579e8f` |
+| Player/TypeDb-All 3.json | 2026-10-18T04:21:30+00:00 | `1f5569f43c86063be25a04dd8a45c6dbce7fc28a58ff69bfe9b8c28292a41bcf` |
+
+Private evidence is preserved in `Local/type-db-008-evidence.json`: nanosecond modification/change times, birth times where available, sizes, hashes, per-file type membership, quarantine comparisons, complete error multiplicities, log hashes and line numbers. A second read verified that all nine inspected metadata hashes remained unchanged during this investigation. The manifest contains no copied raw log text beyond the build-result line and is intended to remain local.
+
+Build-008 log anchors: canonical Editor metadata generation at line 694; first duplicate at 698; canonical Player initialization metadata generation at 1820; last duplicate at 2812; `CleanBuildCache` message at 2823; successful-but-182-error summary at 5823. The named generator outputs are canonical paths; these log lines do not establish a writer for numbered files.
+
+### Next bounded verification
+
+The implementation owner is preparing a separate clean source snapshot under `/tmp`, with its own generated Library and build output, after the owned native build-008 test completes. This is the appropriate changed experiment after recurrence: preserve the original project, its cache/quarantine, build 008 and evidence; do not repeat deletion/rebuild cycles in the same cache. Copy only the intended source/configuration and preserve the package lock and Unity version. The snapshot must not inherit Library, Temp, Obj, old build output or private Local evidence.
+
+For the new build, record the source snapshot identity, Unity version, options and result; enumerate generated metadata and compare duplicate error count. Zero errors and no numbered files would show that the isolated source snapshot builds cleanly under those conditions, **not** identify the original writer. Reappearance in the isolated snapshot would be a distinct reproducible observation to preserve before further changes. Separately verify native bootstrap/combat/restart; a clean BuildReport cannot establish playability. No build-009 outcome is asserted by this follow-up.

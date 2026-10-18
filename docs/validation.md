@@ -22,6 +22,8 @@ These are real-time native Unity runs using `PlayerCombat.SetReplayInput` throug
 | 007 / healing | PASSED,31.06s | Four real damage/heal cycles consumed4→0 charges, each capped at100HP; eight injured empty-flask requests caused no healing. |
 | 007 / death | PASSED,38.42s | Authored death allowed to settle before capture; terminal health remained stable; fresh responsive restart. |
 
+| 008 / build | NOT accepted,182errors | Unity reported Succeeded but six numbered generated metadata files reappeared. Their type multiset accounts for all182 errors. Fresh source/cache verification is being prepared; native output/evidence retained. |
+
 ## Capture and performance conditions
 
 Native1280×720 window, target60fps,4×MSAA, linear HDR,95m shadow distance. JPEG backbuffer recording preserves actual frame timestamps and is encoded as variable-frame-rate H.264. Screenshot and video content comes from the executable, never from the separate concept image. Per-build SHA256 source manifests are retained beside tests.

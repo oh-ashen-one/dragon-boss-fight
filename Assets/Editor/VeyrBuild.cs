@@ -39,6 +39,7 @@ public static class VeyrBuild
         Directory.CreateDirectory("Local");
         File.WriteAllLines("Local/build-messages.txt",result.steps.SelectMany(s=>s.messages).Where(m=>m.type==LogType.Error||m.type==LogType.Exception).Select(m=>m.content));
         Debug.Log("VEYR_BUILD_RESULT "+result.summary.result+" errors="+result.summary.totalErrors);
-        if(result.summary.result!=BuildResult.Succeeded)throw new System.Exception("Native build failed");
+        if(result.summary.result!=BuildResult.Succeeded||result.summary.totalErrors>0)
+            throw new System.Exception("Native build rejected: result="+result.summary.result+", errors="+result.summary.totalErrors);
     }
 }

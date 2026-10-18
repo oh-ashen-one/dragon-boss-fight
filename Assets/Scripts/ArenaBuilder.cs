@@ -48,7 +48,9 @@ public sealed class ArenaBuilder : MonoBehaviour
                 material.SetFloat("_BumpScale", masonry ? .40f : .35f);
                 material.EnableKeyword("_NORMALMAP");
                 material.SetTexture("_MetallicGlossMap", masonry ? masonryWetness : basaltWetness);
-                material.SetFloat("_GlossMapScale", .9f);
+                // Wet stone retains broad highlights, without the near-mirror
+                // response that previously blew out the moon's floor reflection.
+                material.SetFloat("_GlossMapScale", masonry ? .72f : .67f);
                 material.EnableKeyword("_METALLICGLOSSMAP");
             }
             var geometry = new Geometry(name, material);
@@ -61,12 +63,14 @@ public sealed class ArenaBuilder : MonoBehaviour
             root = new GameObject("Drowned Reliquary — original procedural environment").transform;
             CreateBasaltTextures();
             CreateMasonryTextures();
-            stone = Batch("Rain-dark cathedral ashlar", new Color(.29f, .295f, .29f), .48f, .04f);
-            paleStone = Batch("Worn cathedral limestone", new Color(.37f, .365f, .345f), .42f, .04f);
-            floorStone = Batch("Rain-polished flagstones", new Color(.235f, .255f, .265f), .72f, .04f);
-            floorLight = Batch("Silver flagstone variation", new Color(.285f, .30f, .30f), .72f, .04f);
-            darkStone = Batch("Obsidian recesses", new Color(.11f, .13f, .145f), .7f, .05f);
-            rubble = Batch("Distant weathered masonry", new Color(.20f, .235f, .25f), .33f);
+            // Base tint is multiplied by the authored albedo map. Keep plausible
+            // visible reflectance after both factors and linear-space conversion.
+            stone = Batch("Rain-dark cathedral ashlar", new Color(.48f, .49f, .48f), .42f, .04f);
+            paleStone = Batch("Worn cathedral limestone", new Color(.59f, .58f, .55f), .38f, .04f);
+            floorStone = Batch("Rain-polished flagstones", new Color(.34f, .36f, .37f), .55f, .04f);
+            floorLight = Batch("Silver flagstone variation", new Color(.39f, .405f, .41f), .55f, .04f);
+            darkStone = Batch("Obsidian recesses", new Color(.23f, .25f, .26f), .45f, .05f);
+            rubble = Batch("Distant weathered masonry", new Color(.35f, .38f, .39f), .33f);
             bronze = Batch("Tarnished ancient bronze", new Color(.24f, .175f, .075f), .66f, .78f);
             inlay = Batch("Faded moonstone seams", new Color(.16f, .18f, .18f), .58f, .32f);
             water = Batch("Black reflecting moat", new Color(.018f, .032f, .041f), .88f, .18f);
@@ -496,29 +500,35 @@ public sealed class ArenaBuilder : MonoBehaviour
         void CreateLighting()
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(.205f, .235f, .275f);
-            RenderSettings.ambientEquatorColor = new Color(.105f, .12f, .14f);
-            RenderSettings.ambientGroundColor = new Color(.045f, .054f, .065f);
+            RenderSettings.ambientSkyColor = new Color(.31f, .34f, .38f);
+            RenderSettings.ambientEquatorColor = new Color(.23f, .25f, .28f);
+            RenderSettings.ambientGroundColor = new Color(.14f, .15f, .17f);
             RenderSettings.ambientIntensity = 1;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogColor = new Color(.035f, .052f, .071f);
             RenderSettings.fogDensity = .0068f;
             CreateStormSky();
-            var moonlight = Light("Cold moon key", LightType.Directional, new Color(.71f, .81f, .94f), 1.08f, Vector3.zero);
+            // The scene is built at runtime, so do not depend on a baked ambient
+            // probe or asynchronous sky refresh for the first playable frame.
+            var ambient = new SphericalHarmonicsL2();
+            ambient.AddAmbientLight(new Color(.22f, .245f, .28f));
+            RenderSettings.ambientProbe = ambient;
+            var moonlight = Light("Cold moon key", LightType.Directional, new Color(.74f, .82f, .92f), .58f, Vector3.zero);
             moonlight.transform.rotation = Quaternion.LookRotation(-new Vector3(.32f, .43f, .91f).normalized);
             moonlight.shadows = LightShadows.Soft;
-            moonlight.shadowStrength = .83f;
+            moonlight.shadowStrength = .65f;
             moonlight.shadowBias = .035f;
             moonlight.shadowNormalBias = .2f;
             RenderSettings.sun = moonlight;
-            var fill = Light("Soft horizon fill", LightType.Directional, new Color(.52f, .59f, .66f), .38f, Vector3.zero);
-            fill.transform.rotation = Quaternion.Euler(24, -25, 0);
+            var fill = Light("Soft front-sky fill", LightType.Directional, new Color(.82f, .85f, .89f), 1.05f, Vector3.zero);
+            fill.transform.rotation = Quaternion.Euler(16, -12, 0);
             fill.shadows = LightShadows.None;
+            fill.renderMode = LightRenderMode.ForcePixel;
             flame = new Material(Shader.Find("Standard")) { name = "Original ember cores", color = new Color(1, .35f, .06f) };
             flame.EnableKeyword("_EMISSION");
             flame.SetColor("_EmissionColor", new Color(3.6f, .72f, .1f));
-            var shaft = Light("Moon opening over the fighting floor", LightType.Spot, new Color(.65f, .77f, .9f), 4.2f, new Vector3(-22, 38, 15));
+            var shaft = Light("Moon opening over the fighting floor", LightType.Spot, new Color(.65f, .77f, .9f), .9f, new Vector3(-22, 38, 15));
             shaft.transform.rotation = Quaternion.LookRotation(new Vector3(6, 0, 1) - shaft.transform.position);
             shaft.range = 72; shaft.spotAngle = 65; shaft.innerSpotAngle = 32;
             shaft.shadows = LightShadows.None;
@@ -599,7 +609,7 @@ public sealed class ArenaBuilder : MonoBehaviour
             RenderSettings.skybox = sky;
             RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
             RenderSettings.customReflectionTexture = cubemap;
-            RenderSettings.reflectionIntensity = .65f;
+            RenderSettings.reflectionIntensity = .32f;
         }
 
         static float Cloud(Vector3 p)

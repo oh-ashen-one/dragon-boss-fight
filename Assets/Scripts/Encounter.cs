@@ -63,9 +63,9 @@ public sealed class Encounter:MonoBehaviour
         if(captureDir==null)captureDir=Path.Combine(Application.persistentDataPath,"captures");Directory.CreateDirectory(captureDir);
         SaveSourceManifest();
         ScreenCapture.CaptureScreenshot(Path.Combine(captureDir,"gameplay-"+capturePrefix+"-"+frame.ToString("D06")+".png"));
-        File.WriteAllText(Path.Combine(captureDir,"state.json"),JsonUtility.ToJson(new Snapshot{frame=frame,elapsed=Time.time-started,playerHealth=Player.Health,stamina=Player.Stamina,bossHealth=Boss.Health,bossState=Boss.StateLabel,headExposed=Boss.HeadExposed,swings=Player.Swings,dodges=Player.Dodges,hitsTaken=Player.HitsTaken,dodgedHits=Player.DodgedHits,width=Screen.width,height=Screen.height},true));
+        File.WriteAllText(Path.Combine(captureDir,"state.json"),JsonUtility.ToJson(new Snapshot{frame=frame,elapsed=Time.time-started,playerHealth=Player.Health,stamina=Player.Stamina,bossHealth=Boss.Health,bossState=Boss.StateLabel,headExposed=Boss.HeadExposed,swings=Player.Swings,dodges=Player.Dodges,hitsTaken=Player.HitsTaken,dodgedHits=Player.DodgedHits,width=Screen.width,height=Screen.height,lockedOn=Player.LockedOn,playerPosition=Player.transform.position,cameraPosition=Player.View.transform.position,cameraEuler=Player.View.transform.eulerAngles},true));
     }
-    [Serializable]class Snapshot{public int frame,swings,dodges,hitsTaken,dodgedHits,width,height;public float elapsed,playerHealth,stamina,bossHealth;public string bossState;public bool headExposed;}
+    [Serializable]class Snapshot{public int frame,swings,dodges,hitsTaken,dodgedHits,width,height;public float elapsed,playerHealth,stamina,bossHealth;public string bossState;public bool headExposed,lockedOn;public Vector3 playerPosition,cameraPosition,cameraEuler;}
     void SaveSourceManifest(){
         var manifest=Resources.Load<TextAsset>("SourceManifest");
         if(manifest)File.WriteAllText(Path.Combine(captureDir,"source-manifest-"+capturePrefix+".txt"),manifest.text);
