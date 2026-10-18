@@ -108,3 +108,12 @@ Build-008 log anchors: canonical Editor metadata generation at line 694; first d
 The implementation owner is preparing a separate clean source snapshot under `/tmp`, with its own generated Library and build output, after the owned native build-008 test completes. This is the appropriate changed experiment after recurrence: preserve the original project, its cache/quarantine, build 008 and evidence; do not repeat deletion/rebuild cycles in the same cache. Copy only the intended source/configuration and preserve the package lock and Unity version. The snapshot must not inherit Library, Temp, Obj, old build output or private Local evidence.
 
 For the new build, record the source snapshot identity, Unity version, options and result; enumerate generated metadata and compare duplicate error count. Zero errors and no numbered files would show that the isolated source snapshot builds cleanly under those conditions, **not** identify the original writer. Reappearance in the isolated snapshot would be a distinct reproducible observation to preserve before further changes. Separately verify native bootstrap/combat/restart; a clean BuildReport cannot establish playability. No build-009 outcome is asserted by this follow-up.
+
+
+## Build009 independent-cache result
+
+The implementation owner created a source-only snapshot of commit `c3c2e16` with its own initially absent Library/output. Unity6000.3.20f1 produced **Succeeded,0errors** with the stricter nonzero-error rejection enabled. Generated metadata contains only canonical Editor/Player TypeDb-All and Player RuntimeInitializeOnLoads files; no numbered metadata was present. Every file in the embedded source manifest matches the committed source bytes.
+
+This confirms that the source builds cleanly in an independent cache. It does not identify the writer that reintroduced numbered files in the original cache. The original cache and build008 output remain preserved. For reproduction, use a fresh clone/import; do not treat repeated cleaning of the original cache as a validated remedy.
+
+Build009 native core replay passed20.38s; a real Tab key enabled lock-on during the collapse/head-window portion. Full-fight verification is recorded separately in `validation.md`.

@@ -24,15 +24,20 @@ These are real-time native Unity runs using `PlayerCombat.SetReplayInput` throug
 
 | 008 / build | NOT accepted,182errors | Unity reported Succeeded but six numbered generated metadata files reappeared. Their type multiset accounts for all182 errors. Fresh source/cache verification is being prepared; native output/evidence retained. |
 
+| 008 / victory | PASSED,191.77s fight | Accepted knight, eleven collapses, settled dragon death and fresh responsive restart. This gameplay pass does not waive the182-error build report. |
+| 009 / build | Succeeded,0errors | Fresh source-only import with independent cache; all embedded manifest files match sourcec3c2e16. Original cache/build preserved. |
+| 009 / core and lock | PASSED,20.38s | Real Tab key enabled lock-on during collapse/head approach, verified in native capture state. Head attack and dodge-contact checks passed. This is partial lock-on coverage, not RMB orbit acceptance. |
+
+| 009 / victory | PASSED,188.22s fight | Sourcec3c2e16; accepted knight, leg-collapse/head loop, dodge contact, settled dragon death, fresh responsive restart. Full native recording retained. |
+
 ## Capture and performance conditions
 
 Native1280×720 window, target60fps,4×MSAA, linear HDR,95m shadow distance. JPEG backbuffer recording preserves actual frame timestamps and is encoded as variable-frame-rate H.264. Screenshot and video content comes from the executable, never from the separate concept image. Per-build SHA256 source manifests are retained beside tests.
 
-Build007 healing recorded1591 frames after startup: median16.67ms,p95 16.98ms,p99 66.27ms. These include screenshot stalls and are measured frame intervals, not GPU timing. The shared-slot reports mark runs nonexclusive. Capture overhead also changes frame times. No exclusive performance benchmark or guaranteed frame-rate claim is made.
+Build009 full fight recorded10,140 frame intervals after startup: median16.67ms,p95 33.17ms,p99 33.34ms. These include video/screenshot overhead and are measured frame intervals, not GPU timing. The shared-slot reports mark runs nonexclusive. Capture overhead also changes frame times. No exclusive performance benchmark or guaranteed frame-rate claim is made.
 
 ## Still required
 
-- Repeat the full180–300s victory with the accepted authored player and revised arena.
-- Complete manual orbit/lock-on camera review near and under the giant. Camera silhouette and wheel zoom have been observed; no claim of full manual camera acceptance.
+- Complete manual orbit/lock-on camera review near and under the giant. Camera silhouette, wheel zoom and a real Tab toggle during the head window have been observed; no claim of full manual camera acceptance.
 - Final approved Tripo main meshes, Blender cleanup/weights/animation refinement and native visual review.
 - Source/build/capture-matched final handoff. Current captures are explicitly temporary art.
