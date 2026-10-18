@@ -2,28 +2,36 @@
 
 Public repository: https://github.com/oh-ashen-one/veyr-cinder-warden
 
-Active branch: `feat/first-playable`. Rigged native milestone: `978bb24`, build 003, capture `combat-20261018T040013325Z`. This is an early playable, not visual completion.
+Active branch: `feat/first-playable`. Latest verified native milestone: source `6b39ddc`, build007, capture `combat-20261018T043138906Z`. This is an early playable, not visual completion. A further original arena art pass is in progress.
 
 ## Verified and preserved
 
-- Unity 6000.3.20f1 native macOS build 002 compiled with zero errors after fixing runtime shader stripping. Build 003 ran successfully but its report contained 56 duplicate TypeDB registration errors; a clean-cache rebuild is pending to resolve and verify those.
-- Native input replay 003 PASSED leg damage, buckle, collapse, exposed-head bonus damage, rise, dodge and contact avoidance, with all ten required screenshots. Actual native backbuffer recording saved a 31-second clip; captures are not concept renders.
-- Replay 002's overall FAILED result remains preserved: the game mechanics passed, but simultaneous screenshot requests overwrote captures. The queued capture implementation corrected this in 003.
-- Death test 003 reached player death, then FAILED restart: the bootstrap initializer did not run on scene reload. The actual lifecycle bug is corrected in source; native retest pending.
-- Original arena and procedural audio are implemented. Temporary original Blender dragon has 28 bones and fourteen authored clips. Regenerated version 2 corrects root translation axes; native collapse/death visual review pending.
-- Public footage of Kalameet, Sinh and Midir was inspected; timestamped observations and their limits are in `docs/references.md`.
+- Unity6000.3.20f1 native macOS builds005–007 compile with zero errors. Exact stale generated TypeDB/runtime initialization duplicates were quarantined with hashes; prior failed reports remain local.
+- Build007 accepted the original27-bone8-clip knight and28-bone14-clip dragon. Both are temporary art. Native core20.31s passed leg damage, buckle, collapse, exposed-head bonus damage, rise and damaging contact avoided by dodge.
+- Build007 healing31.06s passed four charges,100HP cap and injured empty-flask rejection. Death38.42s passed settled death pose and fresh responsive restart.
+- Build006 full fight passed at194.08s, eleven collapses and victory/restart. It used the earlier knight visual fallback; the same combat tuning must still be checked with the accepted rig and revised arena.
+- Build005 four-leg isolation passed. Physical keyboard input exercised movement, sword, dodge, zoom and restart. Full manual camera acceptance remains pending.
+- Native screenshot and20-second silent clip were uploaded to the user's Library with SHA256 source/build/capture identity. These are real executable frames, not concept renders.
+- Public footage of Kalameet, Sinh and Midir was inspected; observations and limits are in `docs/references.md`. No footage or game assets are included.
 
 ## Current work and gates
 
-1. Rebuild and validate death/restart, full victory/restart, a 180–300 second fight and each attack's avoidance.
-2. Validate camera framing and player visibility near/under the giant.
-3. Refine original environmental lighting/materials and authored impact/contact poses against native captures.
-4. Replace temporary main characters through the requested Tripo workflow, then Blender cleanup, rig/weights and animation refinement. The inspected profile displays 55 credits per H3.1 model and an export upgrade gate; subscribed-profile clarification and applicable generation budget remain pending. No Tripo credits spent.
+1. Finish original arena lighting/material/composition refinement; inspect native frames.
+2. Validate full fight and complete camera review with the current art/build.
+3. Replace temporary main characters through requested Tripo workflow, then Blender cleanup, rig/weights and animation refinement.
 
-A separately saved generated image is art direction only (`ArtSource/Concept`). It is not gameplay or a replacement for the Tripo main-model requirement.
+Concrete Tripo proposal: one original quadruped basalt/copper dragon, H3.1 Best Quality,55 existing credits. The inspected profile displays200 credits but locks model export behind an upgrade. Generate in Parts and8K are off. The exact prepared prompt is `ArtSource/tripo-dragon-prompt.txt`; no generation submitted. Required user action: identify an existing export-capable subscribed Chrome profile and approve up to55 existing credits for this one dragon. No purchase or subscription change is proposed. General permissions are not treated as a spending budget.
 
-No performance claim: shared GPU use and capture overhead make current measurements nonexclusive. No unrelated processes were stopped; Ghostty was not used. Machine logs and failure evidence remain local and excluded from Git.
+The separately generated `ArtSource/Concept` image is art direction only. It does not replace the Tripo requirement.
+
+## Evidence access
+
+- Screenshot: https://chatgpt.com/api/library/files/libfile_b70d95e144a881919c8a70c9e586c429/download
+- Clip: https://chatgpt.com/api/library/files/libfile_9d03e08ff3708191b3f5774ad0937f7e/download
+- Identity: https://chatgpt.com/api/library/files/libfile_26308253fd8c8191b3b6e6c3c1587212/download
+
+Local evidence, logs and generated builds are excluded from public Git. Shared GPU/capture overhead makes measurements nonexclusive; no guaranteed frame-rate claim. Only verified owned Veyr processes were managed. Ghostty and unrelated workloads were not controlled.
 
 ## Ownership
 
-Root exclusively integrates and runs Unity through the shared GPU slot. Workers own arena/camera, reference research, Blender source/importer and input replay. Preserve failure reports; compilation and a short replay are not polished completion.
+Root integrates and runs Unity through the shared GPU slot. Independent workers own arena art, reference research, Blender source/importer and replay tests. Preserve failed evidence. The task remains active; it has not reached polished completion.

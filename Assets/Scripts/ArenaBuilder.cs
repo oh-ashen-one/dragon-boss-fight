@@ -20,9 +20,13 @@ public sealed class ArenaBuilder : MonoBehaviour
         readonly System.Random random = new System.Random(3187);
         readonly List<Geometry> batches = new List<Geometry>();
         Transform root;
-        Geometry stone, paleStone, darkStone, rubble, bronze, inlay, water;
+        Geometry stone, paleStone, floorStone, floorLight, darkStone, rubble, bronze, inlay, water;
         Material flame, ember;
         Texture2D basaltAlbedo, basaltNormal, basaltWetness;
+        Texture2D masonryAlbedo, masonryNormal, masonryWetness;
+        static Texture2D cachedBasaltAlbedo, cachedBasaltNormal, cachedBasaltWetness;
+        static Texture2D cachedMasonryAlbedo, cachedMasonryNormal, cachedMasonryWetness;
+        static Cubemap cachedStormSky;
         float Rand(float a, float b) { return a + (float)random.NextDouble() * (b - a); }
         static Vector3 Radial(float angle, float radius, float y = 0)
         {
@@ -38,11 +42,12 @@ public sealed class ArenaBuilder : MonoBehaviour
             material.SetFloat("_Metallic", metallic);
             if (basaltAlbedo && metallic < .3f && name != "Black reflecting moat")
             {
-                material.SetTexture("_MainTex", basaltAlbedo);
-                material.SetTexture("_BumpMap", basaltNormal);
-                material.SetFloat("_BumpScale", .75f);
+                bool masonry = name.Contains("cathedral");
+                material.SetTexture("_MainTex", masonry ? masonryAlbedo : basaltAlbedo);
+                material.SetTexture("_BumpMap", masonry ? masonryNormal : basaltNormal);
+                material.SetFloat("_BumpScale", masonry ? .40f : .35f);
                 material.EnableKeyword("_NORMALMAP");
-                material.SetTexture("_MetallicGlossMap", basaltWetness);
+                material.SetTexture("_MetallicGlossMap", masonry ? masonryWetness : basaltWetness);
                 material.SetFloat("_GlossMapScale", .9f);
                 material.EnableKeyword("_METALLICGLOSSMAP");
             }
@@ -55,12 +60,15 @@ public sealed class ArenaBuilder : MonoBehaviour
         {
             root = new GameObject("Drowned Reliquary — original procedural environment").transform;
             CreateBasaltTextures();
-            stone = Batch("Rain-dark basalt", new Color(.27f, .295f, .31f), .67f, .06f);
-            paleStone = Batch("Worn silver stone", new Color(.34f, .355f, .36f), .52f, .06f);
+            CreateMasonryTextures();
+            stone = Batch("Rain-dark cathedral ashlar", new Color(.29f, .295f, .29f), .48f, .04f);
+            paleStone = Batch("Worn cathedral limestone", new Color(.37f, .365f, .345f), .42f, .04f);
+            floorStone = Batch("Rain-polished flagstones", new Color(.235f, .255f, .265f), .72f, .04f);
+            floorLight = Batch("Silver flagstone variation", new Color(.285f, .30f, .30f), .72f, .04f);
             darkStone = Batch("Obsidian recesses", new Color(.11f, .13f, .145f), .7f, .05f);
             rubble = Batch("Distant weathered masonry", new Color(.20f, .235f, .25f), .33f);
             bronze = Batch("Tarnished ancient bronze", new Color(.24f, .175f, .075f), .66f, .78f);
-            inlay = Batch("Faded moonstone seams", new Color(.31f, .36f, .355f), .74f, .48f);
+            inlay = Batch("Faded moonstone seams", new Color(.16f, .18f, .18f), .58f, .32f);
             water = Batch("Black reflecting moat", new Color(.018f, .032f, .041f), .88f, .18f);
             CreateFloor();
             CreateArchitecture();
@@ -76,6 +84,8 @@ public sealed class ArenaBuilder : MonoBehaviour
         // below keep their density consistent on pavers and monumental masonry.
         void CreateBasaltTextures()
         {
+            if (cachedBasaltAlbedo && cachedBasaltNormal && cachedBasaltWetness)
+            { basaltAlbedo = cachedBasaltAlbedo; basaltNormal = cachedBasaltNormal; basaltWetness = cachedBasaltWetness; return; }
             const int size = 512;
             float[] heights = new float[size * size];
             Color[] colors = new Color[heights.Length];
@@ -101,15 +111,15 @@ public sealed class ArenaBuilder : MonoBehaviour
                             if (distance < first) { second = first; first = distance; plate = hx; }
                             else if (distance < second) second = distance;
                         }
-                    float crack = 1 - Smooth01(0, .065f, second - first);
-                    float vein = Mathf.Pow(1 - Mathf.Abs(n * 2 - 1), 18) * .07f;
-                    float pit = Smooth01(.65f, .85f, fleck) * .18f;
+                    float crack = 1 - Smooth01(0, .027f, second - first);
+                    float vein = Mathf.Pow(1 - Mathf.Abs(n * 2 - 1), 18) * .014f;
+                    float pit = Smooth01(.67f, .87f, fleck) * .045f;
                     int index = x + y * size;
-                    heights[index] = .48f + (n - .5f) * .28f + (grain - .5f) * .1f + plate * .07f - crack * .24f - pit;
-                    float tone = .42f + n * .23f + grain * .16f + plate * .11f - crack * .25f - pit + vein;
+                    heights[index] = .48f + (n - .5f) * .075f + (grain - .5f) * .035f + plate * .02f - crack * .075f - pit;
+                    float tone = .59f + (n - .5f) * .09f + (grain - .5f) * .045f + plate * .035f - crack * .085f - pit + vein;
                     colors[index] = new Color(tone * .96f, tone, tone * 1.015f, 1);
                     float wet = Smooth01(.32f, .69f, TileNoise(u, v, 4, 72.1f));
-                    wetness[index] = new Color(.035f, .035f, .035f, Mathf.Lerp(.34f, .88f, wet) * (1 - crack * .35f));
+                    wetness[index] = new Color(.025f, .025f, .025f, Mathf.Lerp(.48f, .89f, wet) * (1 - crack * .2f));
                 }
             Color[] normals = new Color[heights.Length];
             for (int y = 0; y < size; y++)
@@ -123,6 +133,46 @@ public sealed class ArenaBuilder : MonoBehaviour
             basaltAlbedo = Texture("Original rain-worn basalt albedo", size, colors, false);
             basaltNormal = Texture("Original carved basalt tangent normals", size, normals, true);
             basaltWetness = Texture("Original basalt variable rain polish", size, wetness, true);
+            cachedBasaltAlbedo = basaltAlbedo; cachedBasaltNormal = basaltNormal; cachedBasaltWetness = basaltWetness;
+        }
+
+        void CreateMasonryTextures()
+        {
+            if (cachedMasonryAlbedo && cachedMasonryNormal && cachedMasonryWetness)
+            { masonryAlbedo = cachedMasonryAlbedo; masonryNormal = cachedMasonryNormal; masonryWetness = cachedMasonryWetness; return; }
+            const int size = 512;
+            Color[] colors = new Color[size * size], polish = new Color[size * size], normals = new Color[size * size];
+            float[] heights = new float[size * size];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float u = x / (float)size, v = y / (float)size;
+                    int row = Mathf.FloorToInt(v * 8);
+                    float brickX = u * 5 + (row % 2) * .5f;
+                    float bx = Mathf.Repeat(brickX, 1), by = Mathf.Repeat(v * 8, 1);
+                    float edge = Mathf.Min(Mathf.Min(bx, 1 - bx) * .6f, Mathf.Min(by, 1 - by));
+                    float mortar = 1 - Smooth01(.005f, .032f, edge);
+                    float n = TileNoise(u, v, 18, 6.2f), grain = TileNoise(u, v, 97, 52.6f);
+                    float block = Hash(Mathf.FloorToInt(brickX) % 5, row);
+                    float stain = TileNoise(u, v, 3, 44.1f) * .06f;
+                    float tone = .61f + (block - .5f) * .065f + (n - .5f) * .055f + (grain - .5f) * .025f - mortar * .10f - stain;
+                    int index = x + y * size;
+                    colors[index] = new Color(tone, tone * .98f, tone * .95f, 1);
+                    heights[index] = .5f - mortar * .10f + (n - .5f) * .03f + (grain - .5f) * .02f;
+                    polish[index] = new Color(.02f, .02f, .02f, .32f + n * .19f - mortar * .12f);
+                }
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = heights[(x + 1) % size + y * size] - heights[(x + size - 1) % size + y * size];
+                    float dy = heights[x + (y + 1) % size * size] - heights[x + (y + size - 1) % size * size];
+                    Vector3 n = new Vector3(-dx * 4, -dy * 4, 1).normalized;
+                    normals[x + y * size] = new Color(n.x * .5f + .5f, n.y * .5f + .5f, n.z * .5f + .5f, 1);
+                }
+            masonryAlbedo = Texture("Original restrained cathedral ashlar", size, colors, false);
+            masonryNormal = Texture("Original recessed ashlar joints", size, normals, true);
+            masonryWetness = Texture("Original rain-dark limestone polish", size, polish, true);
+            cachedMasonryAlbedo = masonryAlbedo; cachedMasonryNormal = masonryNormal; cachedMasonryWetness = masonryWetness;
         }
 
         static Texture2D Texture(string name, int size, Color[] colors, bool linear)
@@ -165,10 +215,10 @@ public sealed class ArenaBuilder : MonoBehaviour
                 float offset = ring % 2 == 0 ? 0 : Mathf.PI / count;
                 for (int i = 0; i < count; i++)
                 {
-                    float a = offset + i * Mathf.PI * 2 / count + .002f;
-                    float b = offset + (i + 1) * Mathf.PI * 2 / count - .002f;
-                    Geometry material = random.NextDouble() < .13 ? paleStone : stone;
-                    material.Wedge(radii[ring] + .035f, radii[ring + 1] - .035f, a, b, -.008f, .08f, 4);
+                    float a = offset + i * Mathf.PI * 2 / count + .0007f;
+                    float b = offset + (i + 1) * Mathf.PI * 2 / count - .0007f;
+                    Geometry material = random.NextDouble() < .16 ? floorLight : floorStone;
+                    material.Wedge(radii[ring] + .018f, radii[ring + 1] - .018f, a, b, -.008f, .08f, 4);
                 }
             }
             // A restrained compass pattern gives orientation without resembling
@@ -181,10 +231,7 @@ public sealed class ArenaBuilder : MonoBehaviour
                 float a = i * Mathf.PI / 6;
                 Vector3 p = Radial(a, 11.9f, .012f);
                 bronze.Box(p, new Vector3(.085f, .014f, 7.1f), Quaternion.Euler(0, a * Mathf.Rad2Deg, 0));
-                Vector3 inner = Radial(a, 4.05f, .012f);
-                Vector3 outer = Radial(a, i % 3 == 0 ? 7.9f : 6.4f, .012f);
-                Vector3 side = Radial(a + Mathf.PI / 2, .23f);
-                inlay.Quad(inner - side, outer, inner + side, inner, Vector3.up);
+                inlay.Box(Radial(a, 4.25f, .009f), new Vector3(.065f, .01f, .46f), Quaternion.Euler(0, a * Mathf.Rad2Deg, 0));
             }
             // Narrow outer curb and deep black water frame the playable circle.
             paleStone.Annulus(Vector3.zero, 38, 39.1f, .18f, .8f, 128);
@@ -201,69 +248,170 @@ public sealed class ArenaBuilder : MonoBehaviour
 
         void CreateArchitecture()
         {
-            const int bays = 16;
-            const float radius = 43.8f;
+            // Broken cloister bays establish rhythm, but the surviving transept
+            // owns the composition. The open eastern bays frame moon and cliffs.
+            const int bays = 12;
+            const float radius = 45.5f;
             float step = Mathf.PI * 2 / bays;
             for (int i = 0; i < bays; i++)
             {
                 float a = i * step;
                 Vector3 p = Radial(a, radius);
                 Quaternion q = Quaternion.Euler(0, a * Mathf.Rad2Deg, 0);
-                float height = i == 0 || i == 1 || i == 15 ? 19 : Rand(10.5f, 17);
-                stone.Box(p + Vector3.up * 1.1f, new Vector3(4.9f, 2.2f, 5), q);
-                paleStone.Box(p + Vector3.up * 2.25f, new Vector3(4.4f, .32f, 4.5f), q);
-                stone.Box(p + Vector3.up * (height * .5f + 2.4f), new Vector3(2.8f, height, 3.3f), q);
-                for (int k = -1; k <= 1; k++)
+                bool broken = i == 1 || i == 4 || i == 8;
+                float height = broken ? 6.5f + i * .28f : 13.2f;
+                stone.Box(p + Vector3.up * .55f, new Vector3(4, 1.1f, 4), q);
+                paleStone.Box(p + Vector3.up * 1.14f, new Vector3(3.45f, .18f, 3.45f), q);
+                stone.Cylinder(p + Vector3.up * (height * .5f + 1.25f), 1.1f, .98f, height, 12);
+                for (int k = 0; k < 6; k++)
                 {
-                    Vector3 local = q * new Vector3(k * 1.06f, height * .5f + 2.4f, -1.63f);
-                    paleStone.Cylinder(p + local, .22f, .22f, height, 8);
+                    Vector3 offset = Radial(k * Mathf.PI / 3, 1.02f);
+                    paleStone.Cylinder(p + offset + Vector3.up * (height * .5f + 1.25f), .25f, .22f, height, 8);
+                    paleStone.Cylinder(p + offset + Vector3.up * 1.45f, .36f, .30f, .35f, 8);
+                    if (!broken) paleStone.Cylinder(p + offset + Vector3.up * (height + 1.1f), .28f, .39f, .48f, 8);
                 }
-                paleStone.Box(p + Vector3.up * (height + 2.5f), new Vector3(3.7f, .48f, 4.1f), q);
-                for (float course = 3.2f; course < height + 1; course += 1.6f)
-                    darkStone.Box(p + Vector3.up * course, new Vector3(2.84f, .045f, 3.34f), q);
-                bronze.Box(p + q * new Vector3(0, 5.5f, -1.72f), new Vector3(.12f, 4.3f, .13f), q);
-                stone.Box(p + Radial(a, 2.6f, 5.1f), new Vector3(2.3f, 10.2f, 3), q);
-                paleStone.Cylinder(p + Vector3.up * (height + 4.35f), .9f, .05f, 3.3f, 5);
+                if (!broken)
+                {
+                    paleStone.Box(p + Vector3.up * (height + 1.45f), new Vector3(2.7f, .24f, 2.7f), q);
+                    stone.Box(p + Vector3.up * (height + 1.85f), new Vector3(2.25f, .48f, 2.25f), q);
+                }
+                else
+                    rubble.Rock(p + Vector3.up * (height + 1), new Vector3(2.2f, .7f, 2.1f), 190 + i);
+                stone.Beam(p + Radial(a, 1.5f, 8.2f), p + Radial(a, 5.4f, .6f), 1.25f);
+                stone.Box(p + Radial(a, 5.2f, 1.1f), new Vector3(2.3f, 2.2f, 2.8f), q);
 
-                // Pointed vault ribs. Alternating missing spans leave an irregular,
-                // open sky rather than a regular colonnade of identical arches.
-                if (i % 5 != 3)
+                if (i != 0 && i != 1 && i != 4 && i != 8 && i != 11)
                 {
                     Vector3 next = Radial(a + step, radius);
-                    int leftSegments = i % 4 == 2 ? 4 : 10;
-                    int rightSegments = i % 4 == 2 ? 2 : 10;
-                    Arch(p, next, 11.2f, 24.5f, 1.3f, leftSegments, rightSegments, stone);
-                    Arch(p + Radial(a, -1.55f), next + Radial(a + step, -1.55f), 11.2f, 23.2f, .30f, leftSegments, rightSegments, paleStone);
-                    if (i % 3 != 1)
-                        Arch(p, next, 3.3f, 11.5f, .65f, 10, 10, stone);
+                    int left = i == 3 || i == 7 ? 5 : 10;
+                    int right = i == 3 || i == 7 ? 2 : 10;
+                    Arch(p, next, 14.1f, 29.4f, .95f, left, right, stone);
+                    Arch(p + Radial(a, -.7f), next + Radial(a + step, -.7f), 14.1f, 28.7f, .19f, left, right, paleStone);
+                    if (i == 2 || i == 5 || i == 9)
+                    {
+                        for (int bay = 0; bay < 3; bay++)
+                        {
+                            Vector3 l = Vector3.Lerp(p, next, bay / 3f);
+                            Vector3 r = Vector3.Lerp(p, next, (bay + 1) / 3f);
+                            Arch(l, r, 4.2f, 9.8f, .48f, 10, 10, stone);
+                            paleStone.Cylinder(l + Vector3.up * 2.2f, .3f, .24f, 4.4f, 10);
+                        }
+                    }
                 }
-                if (i % 4 == 1)
-                    Banner(p + q * new Vector3(0, 13, -1.85f), q, 2.0f, 6.7f);
+                if (i == 3 || i == 9) Banner(p + Radial(a, -1.3f, 11.6f), q, 1.25f, 5.8f);
             }
-
-            // The far end's taller altar gives the arena an unmistakable heading.
-            Vector3 altar = new Vector3(0, 0, 48);
-            for (int s = 0; s < 4; s++)
-                stone.Box(altar + Vector3.up * (s * .55f), new Vector3(21 - s * 2, .7f, 10 - s), Quaternion.identity);
-            Arch(new Vector3(-11, 0, 49), new Vector3(11, 0, 49), 17, 34, 1.2f, 10, 10, paleStone);
-            for (int i = -1; i <= 1; i += 2)
-            {
-                stone.Box(new Vector3(i * 11, 10, 49), new Vector3(3.4f, 20, 4), Quaternion.identity);
-                paleStone.Cylinder(new Vector3(i * 11, 25, 49), 2.3f, .1f, 10, 6);
-                bronze.Box(new Vector3(i * 11, 11, 46.9f), new Vector3(.12f, 12, .15f), Quaternion.identity);
-            }
-            darkStone.Cylinder(new Vector3(0, 6, 50), 5, 4, 8, 7);
-            paleStone.Cylinder(new Vector3(0, 12, 50), 4, .1f, 8, 7);
-
+            CreateTransept();
             for (int i = 0; i < 8; i++)
             {
                 float a = (i + .5f) * Mathf.PI / 4;
                 Vector3 p = Radial(a, 39.1f);
-                stone.Cylinder(p + Vector3.up * .6f, 1.25f, 1.08f, 1.2f, 8);
-                bronze.Cylinder(p + Vector3.up * 1.5f, .75f, .95f, .6f, 10);
-                darkStone.Cylinder(p + Vector3.up * 1.82f, .8f, .8f, .1f, 10);
+                stone.Cylinder(p + Vector3.up * .56f, 1.14f, 1.03f, 1.12f, 12);
+                paleStone.Cylinder(p + Vector3.up * 1.14f, 1.1f, 1.16f, .16f, 12);
+                bronze.Cylinder(p + Vector3.up * 1.5f, .68f, .95f, .6f, 16);
+                darkStone.Cylinder(p + Vector3.up * 1.82f, .8f, .8f, .1f, 16);
                 for (int k = 0; k < 6; k++)
-                    bronze.Beam(p + Radial(k * Mathf.PI / 3, .75f, 1.4f), p + Radial(k * Mathf.PI / 3, 1.05f, 2.5f), .1f);
+                    bronze.Beam(p + Radial(k * Mathf.PI / 3, .75f, 1.4f), p + Radial(k * Mathf.PI / 3, 1.05f, 2.35f), .065f);
+            }
+        }
+
+        void CreateTransept()
+        {
+            Vector3 center = new Vector3(-16, 0, 55);
+            // Wide weathered foundations anchor this surviving wall in the moat.
+            for (int step = 0; step < 5; step++)
+                stone.Box(center + new Vector3(0, step * .32f, -1), new Vector3(37 - step * 1.1f, .45f, 9 - step * .6f), Quaternion.identity);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Vector3 pier = center + new Vector3(side * 12.5f, 0, 0);
+                stone.Box(pier + Vector3.up * 18, new Vector3(3.7f, 36, 3.2f), Quaternion.identity);
+                stone.Box(center + new Vector3(side * 8.2f, 4.3f, -.1f), new Vector3(9.2f, 8.6f, 3), Quaternion.identity);
+                paleStone.Box(center + new Vector3(side * 8.2f, 8.7f, -.3f), new Vector3(9.5f, .34f, 3.4f), Quaternion.identity);
+                for (int flute = -1; flute <= 1; flute++)
+                    paleStone.Cylinder(pier + new Vector3(flute * .72f, 18.1f, -1.72f), .19f, .17f, 33.8f, 10);
+                for (int level = 0; level < 4; level++)
+                {
+                    float y = 9.2f + level * 7.2f;
+                    paleStone.Box(pier + new Vector3(0, y, -.25f), new Vector3(4.05f, .21f, 3.65f), Quaternion.identity);
+                }
+                Vector3 tower = center + new Vector3(side * 16.1f, 0, 1.2f);
+                float h = side < 0 ? 42 : 30.5f;
+                stone.Box(tower + Vector3.up * h * .5f, new Vector3(3.8f, h, 5.4f), Quaternion.identity);
+                for (int edge = -1; edge <= 1; edge += 2)
+                    paleStone.Cylinder(tower + new Vector3(edge * 1.65f, h * .5f, -2.62f), .22f, .18f, h, 8);
+                paleStone.Box(tower + Vector3.up * (h - .4f), new Vector3(4.2f, .32f, 5.8f), Quaternion.identity);
+                if (side < 0)
+                {
+                    stone.Cylinder(tower + Vector3.up * (h + 2.1f), 2.3f, .32f, 4.2f, 8);
+                    paleStone.Cylinder(tower + Vector3.up * (h + 4.6f), .12f, .06f, 1.2f, 8);
+                }
+                else
+                    for (int k = 0; k < 6; k++)
+                        rubble.Box(tower + new Vector3(Rand(-1.5f, 1.5f), h + Rand(-.4f, .5f), Rand(-2, 2)), new Vector3(.8f, Rand(.4f, 1.1f), .8f), Quaternion.Euler(0, Rand(-20, 20), Rand(-12, 12)));
+                // Blind lancet niches and small projecting capitals break scale.
+                for (int level = 0; level < (side < 0 ? 4 : 3); level++)
+                {
+                    float y = 3 + level * 8;
+                    Vector3 niche = tower + new Vector3(0, y, -2.76f);
+                    darkStone.Box(niche + Vector3.up * 2, new Vector3(1.35f, 4, .06f), Quaternion.identity);
+                    Arch(niche + Vector3.left * .83f, niche + Vector3.right * .83f, 3.9f, 5.3f, .15f, 10, 10, paleStone);
+                    for (int edge = -1; edge <= 1; edge += 2)
+                        paleStone.Cylinder(niche + new Vector3(edge * .83f, 1.95f, -.06f), .12f, .12f, 3.9f, 8);
+                }
+            }
+            Vector3 facade = center + new Vector3(0, 0, -1.9f);
+            for (int layer = 0; layer < 3; layer++)
+            {
+                float half = 10.6f - layer * .57f;
+                Arch(facade + Vector3.left * half + Vector3.back * layer * .26f,
+                    facade + Vector3.right * half + Vector3.back * layer * .26f,
+                    15.5f, 37.5f - layer * .68f, layer == 0 ? 1.05f : .22f, 10, 10, layer == 0 ? stone : paleStone);
+            }
+            // Front door below the great window, with repeated recessed mouldings.
+            for (int layer = 0; layer < 3; layer++)
+            {
+                float half = 3.4f - layer * .35f;
+                Vector3 door = facade + Vector3.back * layer * .18f;
+                Arch(door + Vector3.left * half, door + Vector3.right * half, 4.4f, 10.2f - layer * .45f, layer == 0 ? .62f : .16f, 10, 10, paleStone);
+                for (int side = -1; side <= 1; side += 2)
+                    paleStone.Cylinder(door + new Vector3(side * half, 2.5f, 0), .17f, .17f, 5, 10);
+            }
+            for (int mullion = -2; mullion <= 2; mullion++)
+            {
+                float x = mullion * 3.9f;
+                float h = mullion == 0 ? 14.5f : 10.7f;
+                paleStone.Cylinder(facade + new Vector3(x, 9 + h * .5f, -.25f), .18f, .14f, h, 10);
+                if (mullion < 2)
+                    Arch(facade + new Vector3(x, 0, -.25f), facade + new Vector3(x + 3.9f, 0, -.25f), 18.8f, 23.4f, .17f, 10, 10, paleStone);
+            }
+            Vector3 rose = facade + new Vector3(0, 28.25f, -.28f);
+            Circle(rose, 5.05f, .25f, paleStone, 72);
+            Circle(rose + Vector3.back * .12f, 4.62f, .12f, paleStone, 72);
+            Circle(rose, 1.03f, .15f, paleStone, 40);
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * Mathf.PI / 4;
+                Vector3 direction = new Vector3(Mathf.Sin(a), Mathf.Cos(a), 0);
+                paleStone.Beam(rose + direction * 1.05f, rose + direction * 4.65f, .13f);
+                Circle(rose + direction * 2.67f, 1.55f, .105f, paleStone, 40);
+            }
+            // One surviving gable side and a fractured opposite edge avoid a
+            // pristine symmetric facade. Fragments sit directly on existing wall.
+            stone.Beam(facade + new Vector3(-13, 35.2f, .8f), facade + new Vector3(0, 43.2f, .8f), 1.0f);
+            paleStone.Beam(facade + new Vector3(-13, 35.8f, .25f), facade + new Vector3(0, 43.8f, .25f), .21f);
+            stone.Beam(facade + new Vector3(0, 43.2f, .8f), facade + new Vector3(5.6f, 39.8f, .8f), .95f);
+            stone.Quad(facade + new Vector3(-12.5f, 34.8f, .4f), facade + new Vector3(-12.5f, 35.7f, .4f),
+                facade + new Vector3(0, 43.2f, .4f), facade + new Vector3(0, 38.1f, .4f));
+            stone.Quad(facade + new Vector3(0, 38.1f, .4f), facade + new Vector3(0, 43.2f, .4f),
+                facade + new Vector3(5.6f, 39.8f, .4f), facade + new Vector3(5.6f, 36.9f, .4f));
+        }
+
+        void Circle(Vector3 center, float radius, float thickness, Geometry geometry, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float a = i * Mathf.PI * 2 / count, b = (i + 1) * Mathf.PI * 2 / count;
+                geometry.Beam(center + new Vector3(Mathf.Sin(a), Mathf.Cos(a), 0) * radius,
+                    center + new Vector3(Mathf.Sin(b), Mathf.Cos(b), 0) * radius, thickness);
             }
         }
 
@@ -286,20 +434,21 @@ public sealed class ArenaBuilder : MonoBehaviour
 
         void Arch(Vector3 left, Vector3 right, float spring, float apex, float thickness, int leftCount, int rightCount, Geometry geometry)
         {
-            Vector3 mid = (left + right) * .5f + Vector3.up * apex;
-            Vector3 startLeft = left + Vector3.up * spring;
-            Vector3 startRight = right + Vector3.up * spring;
+            Vector3 axis = (right - left).normalized;
+            float half = Vector3.Distance(left, right) * .5f;
+            float rise = apex - spring;
+            float radius = (half * half + rise * rise) / (2 * half);
+            float sweep = Mathf.Atan2(rise, radius - half);
             for (int side = 0; side < 2; side++)
             {
-                Vector3 start = side == 0 ? startLeft : startRight;
+                Vector3 start = (side == 0 ? left : right) + Vector3.up * spring;
+                Vector3 toward = side == 0 ? axis : -axis;
                 int count = side == 0 ? leftCount : rightCount;
                 for (int s = 0; s < count; s++)
                 {
-                    float t0 = s / 10f, t1 = (s + 1) / 10f;
-                    Vector3 a = Vector3.Lerp(start, mid, t0);
-                    Vector3 b = Vector3.Lerp(start, mid, t1);
-                    a.y = spring + (apex - spring) * Mathf.Sin(t0 * Mathf.PI * .5f);
-                    b.y = spring + (apex - spring) * Mathf.Sin(t1 * Mathf.PI * .5f);
+                    float t0 = s / 10f * sweep, t1 = (s + 1) / 10f * sweep;
+                    Vector3 a = start + toward * (radius * (1 - Mathf.Cos(t0))) + Vector3.up * (radius * Mathf.Sin(t0));
+                    Vector3 b = start + toward * (radius * (1 - Mathf.Cos(t1))) + Vector3.up * (radius * Mathf.Sin(t1));
                     geometry.Beam(a, b, thickness);
                 }
             }
@@ -310,29 +459,30 @@ public sealed class ArenaBuilder : MonoBehaviour
             // Ground the ruins in an overlapping, uneven shoreline. These masses
             // replace the disconnected square wall panels visible in early builds.
             darkStone.Annulus(Vector3.zero, 51, 68, -.34f, 5, 96);
-            for (int i = 0; i < 47; i++)
+            for (int i = 0; i < 29; i++)
             {
-                float a = i * Mathf.PI * 2 / 47;
-                Vector3 p = Radial(a, Rand(53, 61), -1.3f);
-                rubble.Rock(p, new Vector3(Rand(7, 11), Rand(3, 9), Rand(6, 13)), i * 13 + 9);
+                float a = i * Mathf.PI * 2 / 29;
+                Vector3 p = Radial(a, Rand(56, 65), -1.3f);
+                rubble.Rock(p, new Vector3(Rand(10, 17), Rand(2.5f, 5.2f), Rand(8, 15)), i * 13 + 9);
             }
-            for (int i = 0; i < 26; i++)
+            for (int i = 0; i < 19; i++)
             {
-                float a = i * Mathf.PI * 2 / 26 + .03f;
-                Vector3 p = Radial(a, Rand(85, 116), -5);
-                float h = 25 + 22 * Mathf.PerlinNoise(i * .43f, 7.8f);
-                darkStone.Rock(p, new Vector3(Rand(22, 39), h, Rand(20, 35)), 157 + i * 7);
-                rubble.Rock(p + Radial(a, 6), new Vector3(Rand(16, 26), h * 1.4f, Rand(15, 24)), 91 + i * 11);
-            }
-            for (int i = 0; i < 31; i++)
-            {
-                float a = Rand(0, Mathf.PI * 2), r = Rand(70, 120);
-                float h = Rand(12, 40);
-                Vector3 p = Radial(a, r);
-                rubble.Cylinder(p + Vector3.up * h * .5f, Rand(3, 5.5f), Rand(2, 3), h, 6);
-                darkStone.Cylinder(p + Vector3.up * (h + 6), 3.6f, .06f, 12, 6);
+                float a = i * Mathf.PI * 2 / 19 + .03f;
+                Vector3 p = Radial(a, Rand(110, 150), -5);
+                float h = 20 + 22 * Mathf.PerlinNoise(i * .43f, 7.8f);
+                darkStone.Rock(p, new Vector3(Rand(25, 40), h, Rand(24, 36)), 157 + i * 7);
                 if (i % 3 == 0)
-                    paleStone.Cylinder(p + Vector3.up * (h + 12.7f), .12f, .08f, 2.5f, 4);
+                    rubble.Rock(p + Radial(a, 13), new Vector3(Rand(14, 21), h * 1.45f, Rand(15, 22)), 91 + i * 11);
+            }
+            for (int i = 0; i < 9; i++)
+            {
+                float a = Rand(0, Mathf.PI * 2), r = Rand(92, 145);
+                float h = Rand(12, 25);
+                Vector3 p = Radial(a, r);
+                stone.Box(p + Vector3.up * h * .5f, new Vector3(4, h, 6), Quaternion.Euler(0, a * Mathf.Rad2Deg, 0));
+                darkStone.Cylinder(p + Vector3.up * (h + 1.8f), 3.2f, .36f, 3.6f, 8);
+                if (i % 3 == 0)
+                    paleStone.Cylinder(p + Vector3.up * (h + 4), .10f, .06f, 1.2f, 6);
             }
             // Collapsed arch stones and rubble remain outside the playable curb.
             for (int i = 0; i < 86; i++)
@@ -346,24 +496,24 @@ public sealed class ArenaBuilder : MonoBehaviour
         void CreateLighting()
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(.18f, .225f, .28f);
-            RenderSettings.ambientEquatorColor = new Color(.09f, .115f, .145f);
+            RenderSettings.ambientSkyColor = new Color(.205f, .235f, .275f);
+            RenderSettings.ambientEquatorColor = new Color(.105f, .12f, .14f);
             RenderSettings.ambientGroundColor = new Color(.045f, .054f, .065f);
             RenderSettings.ambientIntensity = 1;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(.025f, .037f, .052f);
-            RenderSettings.fogDensity = .0075f;
+            RenderSettings.fogColor = new Color(.035f, .052f, .071f);
+            RenderSettings.fogDensity = .0068f;
             CreateStormSky();
             var moonlight = Light("Cold moon key", LightType.Directional, new Color(.71f, .81f, .94f), 1.08f, Vector3.zero);
-            moonlight.transform.rotation = Quaternion.Euler(43, -34, 0);
+            moonlight.transform.rotation = Quaternion.LookRotation(-new Vector3(.32f, .43f, .91f).normalized);
             moonlight.shadows = LightShadows.Soft;
             moonlight.shadowStrength = .83f;
             moonlight.shadowBias = .035f;
             moonlight.shadowNormalBias = .2f;
             RenderSettings.sun = moonlight;
-            var fill = Light("Soft horizon fill", LightType.Directional, new Color(.44f, .54f, .65f), .28f, Vector3.zero);
-            fill.transform.rotation = Quaternion.Euler(18, 145, 0);
+            var fill = Light("Soft horizon fill", LightType.Directional, new Color(.52f, .59f, .66f), .38f, Vector3.zero);
+            fill.transform.rotation = Quaternion.Euler(24, -25, 0);
             fill.shadows = LightShadows.None;
             flame = new Material(Shader.Find("Standard")) { name = "Original ember cores", color = new Color(1, .35f, .06f) };
             flame.EnableKeyword("_EMISSION");
@@ -391,14 +541,15 @@ public sealed class ArenaBuilder : MonoBehaviour
 
         void CreateStormSky()
         {
+            if (cachedStormSky) { ApplyStormSky(cachedStormSky); return; }
             // A generated directional cubemap avoids the daytime atmospheric
             // scattering/white horizon of Unity's procedural daylight skybox.
-            const int size = 256;
+            const int size = 512;
             var cubemap = new Cubemap(size, TextureFormat.RGBA32, true);
             cubemap.name = "Original painted storm and moon cubemap";
             cubemap.wrapMode = TextureWrapMode.Clamp;
             cubemap.filterMode = FilterMode.Trilinear;
-            Vector3 moonDirection = new Vector3(-.38f, .52f, .76f).normalized;
+            Vector3 moonDirection = new Vector3(.32f, .19f, .93f).normalized;
             for (int face = 0; face < 6; face++)
             {
                 Color[] pixels = new Color[size * size];
@@ -417,23 +568,32 @@ public sealed class ArenaBuilder : MonoBehaviour
                             default: d = new Vector3(-u, -v, -1); break;
                         }
                         d.Normalize();
-                        float cloud = Cloud(d * 4.8f) * .62f + Cloud(d * 11.7f) * .26f + Cloud(d * 27) * .12f;
+                        Vector3 wind = new Vector3(d.x * 1.2f, d.y * .65f, d.z * 1.2f);
+                        float cloud = Cloud(wind * 5.1f) * .62f + Cloud(wind * 12.7f) * .26f + Cloud(wind * 29) * .12f;
+                        cloud = Smooth01(.36f, .64f, cloud);
                         float height = Mathf.Clamp01(d.y * 1.3f);
-                        Color color = Color.Lerp(new Color(.035f, .048f, .063f), new Color(.013f, .020f, .035f), height);
+                        Color color = Color.Lerp(new Color(.020f, .033f, .050f), new Color(.006f, .012f, .024f), height);
                         float moonDot = Mathf.Clamp01(Vector3.Dot(d, moonDirection));
-                        float halo = Mathf.Pow(moonDot, 95);
-                        float silver = Mathf.Pow(Mathf.Clamp01(cloud - .27f) * 1.45f, 1.6f);
-                        color += new Color(.047f, .058f, .071f) * silver * (.25f + halo * 1.5f);
-                        color += new Color(.12f, .145f, .17f) * halo * .3f;
-                        float disc = Smooth01(.9981f, .9987f, moonDot);
-                        float veil = Mathf.Lerp(.95f, .30f, Smooth01(.43f, .68f, cloud));
-                        color = Color.Lerp(color, new Color(.62f, .69f, .72f) * veil, disc);
+                        float halo = Mathf.Pow(moonDot, 65);
+                        float silver = Mathf.Pow(cloud, 1.6f);
+                        color += new Color(.056f, .067f, .082f) * silver * (.48f + halo * 1.8f);
+                        color += new Color(.12f, .15f, .18f) * halo * .26f;
+                        float disc = Smooth01(.9971f, .9979f, moonDot);
+                        float veil = Mathf.Lerp(.95f, .42f, Smooth01(.46f, .90f, cloud));
+                        float crater = disc > 0 ? .78f + Cloud(d * 173) * .22f : 1;
+                        color = Color.Lerp(color, new Color(.58f, .65f, .70f) * veil * crater, disc);
                         if (d.y < -.02f) color = Color.Lerp(color, new Color(.014f, .023f, .032f), Mathf.Clamp01(-d.y * 4));
                         pixels[x + y * size] = color;
                     }
                 cubemap.SetPixels(pixels, (CubemapFace)face);
             }
             cubemap.Apply(true, true);
+            cachedStormSky = cubemap;
+            ApplyStormSky(cubemap);
+        }
+
+        void ApplyStormSky(Cubemap cubemap)
+        {
             var sky = new Material(Shader.Find("Skybox/Cubemap")) { name = "Original drowned cathedral storm sky" };
             sky.SetTexture("_Tex", cubemap); sky.SetColor("_Tint", new Color(.5f, .5f, .5f)); sky.SetFloat("_Exposure", 1);
             RenderSettings.skybox = sky;
@@ -471,7 +631,9 @@ public sealed class ArenaBuilder : MonoBehaviour
                 {
                     float radius = Vector2.Distance(new Vector2(x, y), new Vector2(15.5f, 15.5f)) / 15.5f;
                     float alpha = Mathf.Pow(Mathf.Clamp01(1 - radius), 2);
-                    texture.SetPixel(x, y, new Color(1, 1, 1, alpha));
+                    // Multiplying RGB as well as alpha keeps the sprite soft
+                    // under both supported additive particle shader variants.
+                    texture.SetPixel(x, y, new Color(alpha, alpha, alpha, alpha));
                 }
             texture.Apply();
             ember.mainTexture = texture;
@@ -541,7 +703,7 @@ public sealed class ArenaBuilder : MonoBehaviour
     }
 
     // Batched, flat-shaded masonry keeps hundreds of authored architectural forms
-    // to eight static renderers, with no Update methods or per-block GameObjects.
+    // to nine static renderers, with no Update methods or per-block GameObjects.
     sealed class Geometry
     {
         readonly string name; readonly Material material;
@@ -583,30 +745,31 @@ public sealed class ArenaBuilder : MonoBehaviour
         }
         public void Rock(Vector3 basePosition, Vector3 size, int seed)
         {
-            const int sides = 9;
-            Vector3[,] rings = new Vector3[3, sides];
-            for (int ring = 0; ring < 3; ring++)
+            const int sides = 13, levels = 6;
+            float[] profiles = { 1, .96f, .82f, .78f, .64f, .43f };
+            Vector3[,] rings = new Vector3[levels, sides];
+            for (int ring = 0; ring < levels; ring++)
                 for (int i = 0; i < sides; i++)
                 {
                     float angle = i * Mathf.PI * 2 / sides;
-                    float irregularity = .82f + .18f * Mathf.Sin(seed * .71f + i * 2.17f + ring * 1.43f);
-                    float profile = ring == 0 ? 1 : ring == 1 ? .86f : .42f;
-                    float height = ring == 0 ? 0 : ring == 1 ? .45f : .84f;
-                    float offset = ring * .065f;
+                    float irregularity = .87f + .13f * Mathf.Sin(seed * .71f + i * 2.17f + ring * .53f);
+                    float profile = profiles[ring];
+                    float height = ring / 5f * .92f;
+                    float offset = Mathf.Sin(seed + ring * .8f) * .12f;
                     rings[ring, i] = basePosition + new Vector3(
                         (Mathf.Sin(angle) * profile * irregularity + offset) * size.x * .5f,
-                        (height + (ring == 0 ? 0 : Mathf.Sin(i * 2.7f + seed) * .065f)) * size.y,
+                        (height + (ring == 0 ? 0 : Mathf.Sin(i * 2.7f + seed + ring * .4f) * .045f)) * size.y,
                         (Mathf.Cos(angle) * profile * irregularity - offset) * size.z * .5f);
                 }
-            for (int ring = 0; ring < 2; ring++)
+            for (int ring = 0; ring < levels - 1; ring++)
                 for (int i = 0; i < sides; i++)
                 {
                     int next = (i + 1) % sides;
                     Quad(rings[ring, i], rings[ring, next], rings[ring + 1, next], rings[ring + 1, i]);
                 }
-            Vector3 summit = basePosition + new Vector3(size.x * .07f, size.y, -size.z * .07f);
+            Vector3 summit = basePosition + new Vector3(size.x * .025f, size.y * .94f, -size.z * .025f);
             for (int i = 0; i < sides; i++)
-                Quad(rings[2, i], rings[2, (i + 1) % sides], summit, summit);
+                Quad(rings[levels - 1, i], rings[levels - 1, (i + 1) % sides], summit, summit);
         }
         public void Cylinder(Vector3 center, float bottomRadius, float topRadius, float height, int sides)
         {

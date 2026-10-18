@@ -39,6 +39,7 @@ public sealed class Encounter:MonoBehaviour
         var follow=cameraObj.AddComponent<CombatCamera>();follow.Player=Player;follow.Boss=Boss;Player.View=cam;
         Cursor.lockState=CursorLockMode.None;Cursor.visible=true;started=Time.time;
         var args=Environment.GetCommandLineArgs();for(int i=0;i<args.Length-1;i++)if(args[i]=="--capture-dir"){captureDir=Path.GetFullPath(args[i+1]);Directory.CreateDirectory(captureDir);nextCapture=3;}
+        if(captureDir!=null)SaveSourceManifest();
         if(Array.IndexOf(args,"--replay")>=0){Application.runInBackground=true;new GameObject("Combat Replay Driver").AddComponent<CombatReplay>();}
         for(int i=0;i<args.Length-1;i++)if(args[i]=="--record-dir")new GameObject("Native Gameplay Recorder").AddComponent<NativeRecorder>().Initialize(args[i+1]);
     }
@@ -60,10 +61,15 @@ public sealed class Encounter:MonoBehaviour
     void OnDestroy(){SaveFrameReport();if(Instance==this)Instance=null;}
     void Capture(){
         if(captureDir==null)captureDir=Path.Combine(Application.persistentDataPath,"captures");Directory.CreateDirectory(captureDir);
+        SaveSourceManifest();
         ScreenCapture.CaptureScreenshot(Path.Combine(captureDir,"gameplay-"+capturePrefix+"-"+frame.ToString("D06")+".png"));
         File.WriteAllText(Path.Combine(captureDir,"state.json"),JsonUtility.ToJson(new Snapshot{frame=frame,elapsed=Time.time-started,playerHealth=Player.Health,stamina=Player.Stamina,bossHealth=Boss.Health,bossState=Boss.StateLabel,headExposed=Boss.HeadExposed,swings=Player.Swings,dodges=Player.Dodges,hitsTaken=Player.HitsTaken,dodgedHits=Player.DodgedHits,width=Screen.width,height=Screen.height},true));
     }
     [Serializable]class Snapshot{public int frame,swings,dodges,hitsTaken,dodgedHits,width,height;public float elapsed,playerHealth,stamina,bossHealth;public string bossState;public bool headExposed;}
+    void SaveSourceManifest(){
+        var manifest=Resources.Load<TextAsset>("SourceManifest");
+        if(manifest)File.WriteAllText(Path.Combine(captureDir,"source-manifest-"+capturePrefix+".txt"),manifest.text);
+    }
     void OnApplicationQuit(){SaveFrameReport();}
     void SaveFrameReport(){if(captureDir!=null&&frameMs.Count>0){frameMs.Sort();File.WriteAllText(Path.Combine(captureDir,"frame-times-"+capturePrefix+".json"),JsonUtility.ToJson(new FrameReport{samples=frameMs.Count,p50=frameMs[frameMs.Count/2],p95=frameMs[(int)(frameMs.Count*.95f)],p99=frameMs[(int)(frameMs.Count*.99f)],width=Screen.width,height=Screen.height,note="Native gameplay unscaled frame times, saved per encounter including restart. Shared-GPU contamination must be checked externally; not a GPU timing measurement."},true));}}
     [Serializable]class FrameReport{public int samples,width,height;public float p50,p95,p99;public string note;}

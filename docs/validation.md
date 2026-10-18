@@ -9,20 +9,28 @@ These are real-time native Unity runs using `PlayerCombat.SetReplayInput` throug
 | 003 / death | FAILED | Death observed; scene reload did not reconstruct encounter. Actual lifecycle fixed. |
 | 004 / core | PASSED,20.47s | Reachable corrected collapsed head and visible amber player silhouette. No player damage. Sourced2b458c. |
 | 004 / death | PASSED,38.08s | Death, fresh health/boss reset and movement after restart. |
-| 004 / victory | FAILED duration | Defeat at65.25s and fresh responsive restart observed; target180–300s not met. Boss health adjusted from2800 to8400 for retest, not yet accepted as balanced. |
+| 004 / victory | FAILED duration | Defeat at65.25s and fresh responsive restart observed; target180–300s not met. Boss health adjusted from2800 to8400; build006 subsequently met duration target. |
 | 004 / avoidance | PASSED,30.21s | All five moves observed windup→active→recovery, initially threatened player escaped by movement without damage. One incidental unthreatened stomp correctly did not count. |
 | 005 / build | Succeeded,0errors | Six exact duplicate generated TypeDB/runtime initialization files quarantined; no source deletion. |
 | 005 / core | PASSED,20.34s | Core rules preserved. Knight clip-duration guard triggered explicit visual fallback; authored knight not accepted yet. |
+
+| 005 / four legs | PASSED,13.85s | Four distinct contact regions each increased only its own stagger meter; no premature collapse. |
+| 005 / physical keyboard | Observed | Native CUA input exercised movement, sword, dodge, wheel zoom, death and R restart. Q arrived after death, so did not verify healing. RMB orbit remains unverified. |
+| 006 / victory | PASSED,194.08s fight | Eleven collapses, real boss defeat and fresh responsive restart;197.35s including capture/restart. Earlier knight visual fallback remained active. |
+| 007 / build | Succeeded,0errors | Accepted27-bone,8-clip knight after correcting yaw-only model fitting. All embedded manifest files match source6b39ddc. |
+| 007 / core | PASSED,20.31s | Accepted knight visibly slashes and rolls; leg damage, buckle, collapse,120HP exposed-head hit, rise and dodge contact. Native clip preserved and delivered. |
+| 007 / healing | PASSED,31.06s | Four real damage/heal cycles consumed4→0 charges, each capped at100HP; eight injured empty-flask requests caused no healing. |
+| 007 / death | PASSED,38.42s | Authored death allowed to settle before capture; terminal health remained stable; fresh responsive restart. |
 
 ## Capture and performance conditions
 
 Native1280×720 window, target60fps,4×MSAA, linear HDR,95m shadow distance. JPEG backbuffer recording preserves actual frame timestamps and is encoded as variable-frame-rate H.264. Screenshot and video content comes from the executable, never from the separate concept image. Per-build SHA256 source manifests are retained beside tests.
 
-The shared-slot reports mark runs nonexclusive. Capture overhead also changes frame times. No exclusive performance benchmark or guaranteed frame-rate claim is made.
+Build007 healing recorded1591 frames after startup: median16.67ms,p95 16.98ms,p99 66.27ms. These include screenshot stalls and are measured frame intervals, not GPU timing. The shared-slot reports mark runs nonexclusive. Capture overhead also changes frame times. No exclusive performance benchmark or guaranteed frame-rate claim is made.
 
 ## Still required
 
-- Tuned full180–300s victory, death and restart with accepted authored player.
-- Four-region isolation test, keyboard controls, healing/limited-flask behavior and manual camera inspection.
+- Repeat the full180–300s victory with the accepted authored player and revised arena.
+- Complete manual orbit/lock-on camera review near and under the giant. Camera silhouette and wheel zoom have been observed; no claim of full manual camera acceptance.
 - Final approved Tripo main meshes, Blender cleanup/weights/animation refinement and native visual review.
 - Source/build/capture-matched final handoff. Current captures are explicitly temporary art.
