@@ -296,7 +296,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     if (IsTerminal()) return;
     UCharacterMovementComponent* Movement = GetCharacterMovement();
     const bool bAttack = Action == EVeyrKnightAction::LightAttack || Action == EVeyrKnightAction::HeavyAttack;
-    Movement->bOrientRotationToMovement = !bLockedOn && !bAttack && Action != EVeyrKnightAction::Roll;
+    Movement->bOrientRotationToMovement = !bLockedOn && !bAttack && Action != EVeyrKnightAction::Roll && Action != EVeyrKnightAction::Guard;
     if (Action == EVeyrKnightAction::Roll)
     {
         Movement->MaxWalkSpeed = 1180.f;
@@ -314,6 +314,12 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     {
         const FVector Toward = (Boss->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
         if (!Toward.IsNearlyZero()) SetActorRotation(FMath::RInterpTo(GetActorRotation(), Toward.Rotation(), DeltaSeconds, 10.f));
+    }
+    else if (Action == EVeyrKnightAction::Guard && Controller)
+    {
+        // Backpedaling while guarding preserves the direction the player is looking.
+        const FRotator Facing(0.f, Controller->GetControlRotation().Yaw, 0.f);
+        SetActorRotation(FMath::RInterpTo(GetActorRotation(), Facing, DeltaSeconds, 10.f));
     }
 }
 

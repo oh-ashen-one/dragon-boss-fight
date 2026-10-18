@@ -6,6 +6,8 @@ An original single-arena dragon boss fight, currently migrating to Unreal Engine
 
 The Unreal project is `Unreal/Veyr/Veyr.uproject`, with native C++ encounter code. Current branch: `feat/unreal-migration`. Planned controls are WASD movement, Space jump, Shift roll, J/LMB light attack, K heavy attack, F/RMB guard, Q healing, Tab lock-on and R terminal restart. These are implementation targets until tested natively.
 
+Build the native module with `python3 tools/unreal/build.py --engine <installed-engine-root>`. This records a source hash and local receipt without launching the editor. See [Unreal validation](docs/unreal-validation.md) for current evidence and remaining acceptance checks.
+
 ## Preserved Unity prototype
 
 WASD move; mouse while right button held rotates camera; left click or J attacks; Space dodges; Q heals; Tab toggles lock-on; R restarts after death or victory; Escape releases the pointer.

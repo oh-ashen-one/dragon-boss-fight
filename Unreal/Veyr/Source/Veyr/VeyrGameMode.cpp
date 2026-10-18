@@ -3,11 +3,15 @@
 #include "VeyrDragon.h"
 #include "VeyrKnight.h"
 #include "VeyrHUD.h"
+#include "VeyrReplay.h"
+#include "VeyrIdentity.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/App.h"
 #include "Misc/EngineVersion.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 
 AVeyrGameMode::AVeyrGameMode()
 {
@@ -23,6 +27,7 @@ void AVeyrGameMode::StartPlay()
     Arena=GetWorld()->SpawnActor<AVeyrArena>(FVector::ZeroVector,FRotator::ZeroRotator,Params);
     Dragon=GetWorld()->SpawnActor<AVeyrDragon>(FVector(500,0,0),FRotator(0,180,0),Params);
     UE_LOG(LogTemp,Display,TEXT("VEYR_UNREAL_ENCOUNTER_STARTED project=%s engine=%s"),FApp::GetProjectName(),*FEngineVersion::Current().ToString());
+    UE_LOG(LogTemp,Display,TEXT("VEYR_SOURCE_ID %s"),VEYR_SOURCE_ID);
 }
 void AVeyrGameMode::Tick(float DeltaSeconds)
 {
@@ -38,6 +43,16 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         Knight->Boss=Dragon;
         if(Dragon)Dragon->Target=Knight;
         bPawnPositioned=true;
+        FString ReplayMode,EvidenceDirectory;
+        if(FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayMode))
+        {
+            FParse::Value(FCommandLine::Get(),TEXT("VeyrEvidence="),EvidenceDirectory);
+            Replay=GetWorld()->SpawnActor<AVeyrReplay>();
+            if(Replay&&!Replay->Initialize(ReplayMode,EvidenceDirectory))
+            {
+                Replay->Destroy(); Replay=nullptr;
+            }
+        }
     }
     if(Knight&&Dragon)
     {

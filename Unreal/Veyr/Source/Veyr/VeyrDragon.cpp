@@ -40,6 +40,15 @@ AVeyrDragon::AVeyrDragon()
     ChestMesh=CreateTemporaryPart(TEXT("TEMP_ShoulderMass_RulesOnly"),Sphere.Object,FVector(5.8,6.8,5.2));
     HeadMesh=CreateTemporaryPart(TEXT("TEMP_Head_RulesOnly"),Sphere.Object,FVector(3.3,2.2,2.1));
     JawMesh=CreateTemporaryPart(TEXT("TEMP_Jaw_RulesOnly"),Cube.Object,FVector(2.6,1.7,.65));
+    // Deliberate camera-only occluders follow the visible masses through collapse.
+    // They do not obstruct the player's access to separate leg hit regions.
+    for(UStaticMeshComponent* Mass : {BodyMesh.Get(),ChestMesh.Get(),HeadMesh.Get()})
+    {
+        Mass->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        Mass->SetCollisionResponseToAllChannels(ECR_Ignore);
+        Mass->SetCollisionResponseToChannel(ECC_Camera,ECR_Block);
+        Mass->SetGenerateOverlapEvents(false);
+    }
     for(int32 I=0;I<4;++I)
     {
         UpperLegMeshes.Add(CreateTemporaryPart(FName(*FString::Printf(TEXT("TEMP_UpperLeg_%d"),I)),Cylinder.Object,FVector::OneVector));
@@ -113,7 +122,8 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     if(!bEncounterStopped||IsDead())AdvanceState(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
     VisualAccumulator+=DeltaSeconds;
-    if(VisualAccumulator>=.04f) { VisualAccumulator=0; UpdateTelegraphs(); }
+    // Active sweep geometry must use the same current clock as damaging contact.
+    if(State==EVeyrDragonState::Active||VisualAccumulator>=.04f) { VisualAccumulator=0; UpdateTelegraphs(); }
 }
 
 void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)

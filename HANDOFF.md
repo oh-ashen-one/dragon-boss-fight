@@ -22,6 +22,10 @@ Active branch: `feat/unreal-migration`. The user changed the target engine to Un
 4. No Blender fallback is approved under the revised request. The former Tripo Studio proposal is superseded. Do not spend its55-credit proposal or treat earlier Unity art as the final Customuse assets.
 5. Establish official native MCP project/world identity, save an owned Unreal level, and run native combat/camera/transition tests before claiming Unreal playability. Unity evidence cannot establish this.
 
+The second native C++ build passed with source identity `55b42197e9c8487eb78f78602e6bcaba77eabe87b5345c344c91c91ffc6c8bf4`, including input-only core/death/victory replay and source stamping. Its receipt confirms no source drift during compilation. The replay implements terminal settling/restart checks but has not run. Launch helper flags verified against installed source include `-notraceserver` and `-NoZenAutoLaunch`; use a project-local filesystem DDC graph when constructing the launch to avoid starting optional listeners. Native MCP remains on-demand localhost18773, pending host safety clearance and verified project identity.
+
+Free dragon previews were reviewed in three preserved sets. The original frontal images had cropped wings and apparent tail ambiguity. A revised prompt and then a fresh general-asset session improved some proportions but still did not fully resolve framing. No production-art acceptance or paid mesh submission followed. Customuse website rigging, animation and raw-asset redistribution remain unverified; see `docs/customuse-capabilities.md`.
+
 Private preview identifiers and account diagnostics remain in ignored local records.
 
 The separately generated `ArtSource/Concept` image is art direction only. It does not replace the requested main-model pipeline.

@@ -10,6 +10,10 @@ The installed5.8 toolchain still names its local executor UBA when `-NoUBA` is s
 
 No editor, renderer or native Unreal gameplay run has occurred. No Unreal frame-rate, visual quality, fight duration or control claim is verified yet. Main characters currently use explicitly labeled engine primitive proxies pending Customuse assets.
 
+The second compile also passed after adding camera-only body collision, frame-synchronous active telegraphs, view-facing unlocked guard, and the input-only replay recorder. Embedded native source identity: `55b42197e9c8487eb78f78602e6bcaba77eabe87b5345c344c91c91ffc6c8bf4`. The receipt verifies source files remained unchanged during the build.
+
+`tools/unreal/build.py --engine <installed-engine-root>` creates a unique local log/receipt and embeds the native source/config/content manifest hash. `-VeyrReplay=core|death|victory -VeyrEvidence=<absolute-output-directory> -VeyrReplayQuit` enables the optional native recorder after normal encounter initialization. It issues player inputs and records observed state; it does not set health, position, action clocks or boss state. Death/victory predicates include settled terminal pose, ordinary restart, fresh resources, movement and attack acceptance. The replay policy remains untested and must be tuned from real runs.
+
 ## Required native acceptance
 
 - Confirm task-owned project/world through Epic's native MCP, create/save the owned level and verify spawn/collision.
