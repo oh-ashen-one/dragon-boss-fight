@@ -713,6 +713,7 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     TemporaryLabel->SetText(FText::FromString(TEXT("CUSTOMUSE DRAGON — MOTION INTEGRATION PREVIEW")));
     bImportedAttackCacheReady=AttackPoseProbe->SetVisualDefinition(Definition,false)&&CacheImportedAttackWarnings();
     AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
+    LastImportedClip=NAME_None;bImportedTransitionReady=false;
     UpdateImportedPresentation();
     InitializeCameraOcclusionMaterials();
     return true;
@@ -754,7 +755,9 @@ void AVeyrDragon::UpdateImportedPresentation()
             FMath::Fmod(Clock,Duration)+.0001f<ImportedPresentation->CurrentTrimmedSeconds;
         if(LastImportedClip!=Clip||LastImportedState!=State||bLoopWrapped)
         {
-            bImportedTransitionReady=ImportedPresentation->BeginTransition();
+            // Definition activation starts in the authored pose immediately;
+            // do not freeze a blend from the bind pose before encounter input.
+            bImportedTransitionReady=!LastImportedClip.IsNone()&&ImportedPresentation->BeginTransition();
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
         }
         const float Alpha=bImportedTransitionReady?FMath::Clamp((Clock-ImportedTransitionStarted)/.12f,0.f,1.f):1.f;

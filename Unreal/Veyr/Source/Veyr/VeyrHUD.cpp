@@ -87,11 +87,12 @@ void AVeyrHUD::DrawHUD()
     if(!Knight->IsReplayControlled())Label(Knight->IsMouseCaptured()?TEXT("ESC RELEASES MOUSE"):
         Knight->HasEnteredEncounter()?TEXT("CLICK / ENTER TO CONTROL | ESC RELEASES MOUSE"):TEXT("CLICK / ENTER TO BEGIN | ESC RELEASES MOUSE"),36,118,.85f);
     Label(TEXT("VEYR / THE CINDER WARDEN"),930,29,1.f);
-    Label(TEXT("UNREAL PROTOTYPE / TEMPORARY ART"),900,50,.8f);
+    if(!Knight->bImportedPresentationActive||!Dragon->bUsingCustomuseVisual)
+        Label(TEXT("PROTOTYPE / TEMPORARY CHARACTER ART"),900,50,.8f);
     Label(TEXT("V E Y R ,  T H E  C I N D E R  W A R D E N"),422,630,1.f);
     Bar(230,651,820,10,Dragon->Health/Dragon->MaxHealth,FLinearColor(.58f,.2f,.13f));
     for(int32 I=0;I<4;++I)Bar(450+I*98,669,85,4,Dragon->GetLegStagger(I)/100.f,FLinearColor(.83f,.58f,.23f));
-    Label(Dragon->IsHeadExposed()?TEXT("CROWN EXPOSED - STRIKE THE HEAD"):StaticEnum<EVeyrDragonState>()->GetNameStringByValue(static_cast<int64>(Dragon->State)),486,680,.85f);
+    Label(Dragon->GetStateLabel().ToString(),486,680,.85f);
     if(!Knight->IsDead())DrawExposedHeadMarker(Dragon);
     Label(TEXT("WASD move | Space jump | Shift roll | J/LMB strike | K heavy"),24,698,.8f);
     Label(TEXT("F/RMB guard | Q heal | Tab lock | R restart after death/victory"),710,698,.8f);

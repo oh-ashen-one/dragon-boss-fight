@@ -76,7 +76,8 @@ def validate_lower_layers(presentation, clips, receipt):
     receipt['lowerLayerChecks'] = {'lowerBones': lower_bones, 'upperBones': upper_bones, 'cases': checks}
     # Test every supplied directional locomotion clip without inventing a
     # forward substitute when a requested direction is absent.
-    lower_names = sorted(name for name in names if name.startswith(('Walk', 'Run')))
+    lower_names = sorted(name for name in names if name in
+                         ('Walk', 'Run', 'StrafeLeft', 'StrafeRight', 'Backpedal'))
     for upper_name in ['Guard', 'Heal']:
         upper_time = elapsed(upper_name, .41)
         for lower_name in lower_names:

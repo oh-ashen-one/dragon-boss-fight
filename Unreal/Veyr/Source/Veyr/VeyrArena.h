@@ -19,12 +19,14 @@ class VEYR_API AVeyrArena : public AActor
 public:
     AVeyrArena();
     static constexpr float CombatRadius = 3600.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingBasaltCliff=false;
 
 protected:
     virtual void BeginPlay() override;
 
 private:
     UPROPERTY() TObjectPtr<UStaticMesh> CubeMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> BasaltCliffMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> CylinderMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> SphereMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> ConeMesh;

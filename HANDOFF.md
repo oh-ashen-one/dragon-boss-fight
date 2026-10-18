@@ -106,3 +106,17 @@ Earlier source `60be518f2633e758f6a3c9cb95ae5d50ef477db4d05254e57428e9d6216ae3aa
 Thirty-eight original dragon motion clips and five revised knight action clips have CPU deformation/IK evidence and are ready for native import. No claim of native animation acceptance follows from CPU checks. The final directional gait work remains in progress.
 
 The prior owned editor reached the shared coordinator's 2,400-second maximum hold and was terminated by the coordinator. This was not an observed gameplay crash. Its report and exit-124 receipt are preserved privately. The owned crash reporter failed to exit after SIGTERM and more than 60 seconds, so root terminated that exact reporter as a last resort. Future native authoring batches must close normally well before the lease limit, with CPU authoring performed while the editor is closed.
+
+## Native import correction and checks
+
+The normalized dragon v006 fixes an Unreal Interchange disagreement between bind and animation transforms. Folding the canceling scene-parent translation preserves all 3,635 sampled reference/key/midpoint poses exactly, with zero skinned-vertex difference. Native v006 then passed 190 samples across all 38 clips: deterministic targets, independent claw/stomp feet, downward two-sided fire sweep and bite contact height. Camera material parameter binding is verified after assigning the copied masked material through the skeletal-material array correctly. Native rendering confirms the previous roughly 525 cm sinking is corrected; original v005 is preserved.
+
+Knight v011 passed 84 native pose samples plus all ten guard/heal lower-layer combinations, including left/right/backward gaits, with zero blend boundary/repeat error. Native static pose views of idle, roll, healing gesture, light contact and settled death are preserved privately. Full runtime feel remains open.
+
+The first imported-art core run failed with player death and zero sword contacts. It also suffered the editor's background 3 Hz throttle. Native endpoint measurements confirm the original provider light strike reaches mostly sideways and heavy strikes behind the knight at the configured contact time. Correct frontal strike derivatives are being authored; no gameplay radius inflation is approved or needed. This failed run must not be counted as a pass.
+
+For subsequent owned-editor validation, root transiently disabled the actual CDO property `bThrottleCPUWhenNotForeground`, without saving configuration. Restore the previous True value before normal editor shutdown. The native source now avoids blending from the bind pose during first visual activation and preserves the imported 4.4-second death duration. These source corrections still require a new build.
+
+An original deterministic 680-triangle basalt cliff mesh imported with exact centered 100 cm bounds; its source generator and native importer are reproducible. New Arena source uses it in place of distant cube silhouettes, retaining the previous floor, cathedral and collision. Native environment rendering after rebuild remains pending.
+
+The subsequent actual imported-art controls run passed in 18.543 game seconds with mean simulation step 0.01291 seconds after the transient throttle correction. It exercised movement, jump, light/heavy action input, roll, stamina recovery, lock toggles, actual guarded contact, healing and full-health healing rejection. It does not prove successful sword hits. The normalizer, material binding and native pose receipts remain separate evidence.

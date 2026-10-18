@@ -34,6 +34,8 @@ AVeyrArena::AVeyrArena()
     // These are Unreal Engine resources, not original mesh/texture deliverables.
     // Hard constructor references make the prototype dependencies cookable.
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
+    static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> BasaltCliff(
+        TEXT("/Game/Veyr/Environment/SM_BasaltCliff.SM_BasaltCliff"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderAsset(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cone(TEXT("/Engine/BasicShapes/Cone.Cone"));
@@ -43,6 +45,7 @@ AVeyrArena::AVeyrArena()
         TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> SkyMaterial(TEXT("/Engine/EngineSky/M_Sky_Panning_Clouds2.M_Sky_Panning_Clouds2"));
     static ConstructorHelpers::FObjectFinder<UTextureCube> CubeMap(TEXT("/Engine/EngineMaterials/DefaultCubemap.DefaultCubemap"));
+    BasaltCliffMesh=BasaltCliff.Get();
     CubeMesh = Cube.Object; CylinderMesh = CylinderAsset.Object; SphereMesh = Sphere.Object; ConeMesh = Cone.Object;
     PlainParent=Base.Object;StoneParent=AuthoredStone.Get()?AuthoredStone.Get():Base.Object.Get();
     SkyMesh = Sky.Object; SkyParent = SkyMaterial.Object; AmbientCube = CubeMap.Object;
@@ -51,6 +54,10 @@ AVeyrArena::AVeyrArena()
 void AVeyrArena::BeginPlay()
 {
     Super::BeginPlay();
+    // Retry the exact owned import path if the CDO predates native import.
+    if(!BasaltCliffMesh)BasaltCliffMesh=LoadObject<UStaticMesh>(nullptr,
+        TEXT("/Game/Veyr/Environment/SM_BasaltCliff.SM_BasaltCliff"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    bUsingBasaltCliff=BasaltCliffMesh!=nullptr;
     if(UMaterialInterface* Authored=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),nullptr,LOAD_Quiet|LOAD_NoWarn))StoneParent=Authored;
     if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !ConeMesh || !StoneParent || !PlainParent) return;
     bBuilt = true;
@@ -71,8 +78,10 @@ void AVeyrArena::BeginPlay()
     Columns = MakeBatch(TEXT("PROTO_ClusteredPillarCores"), CylinderMesh, Ashlar);
     ColumnTrim = MakeBatch(TEXT("PROTO_ColonettesAndCapitals"), CylinderMesh, Limestone);
     DarkDisks = MakeBatch(TEXT("PROTO_FloorFoundationAndMoat"), CylinderMesh, Basalt);
-    Rocks = MakeBatch(TEXT("PROTO_DistantBasaltCliffMasses"), CubeMesh, Basalt);
-    RockSpurs = MakeBatch(TEXT("PROTO_DistantBasaltCrestFragments"), ConeMesh, Basalt);
+    Rocks = MakeBatch(bUsingBasaltCliff?TEXT("OriginalBasaltCliffMasses"):TEXT("PROTO_DistantBasaltCliffMasses"),
+        bUsingBasaltCliff?BasaltCliffMesh.Get():CubeMesh.Get(),Basalt);
+    RockSpurs = MakeBatch(bUsingBasaltCliff?TEXT("OriginalBasaltCrestFragments"):TEXT("PROTO_DistantBasaltCrestFragments"),
+        bUsingBasaltCliff?BasaltCliffMesh.Get():ConeMesh.Get(),Basalt);
     Rocks->SetCastShadow(false);RockSpurs->SetCastShadow(false);
     Embers = MakeBatch(TEXT("PROTO_BrazierEmberBeds"), SphereMesh, Coal);
     BuildFloor();
@@ -82,6 +91,8 @@ void AVeyrArena::BeginPlay()
     BuildCollision();
     UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY native prototype: radius=3600cm floorZ=0; %d instanced groups; original layout, engine primitive dependencies."), Batches.Num());
     UE_LOG(LogTemp,Display,TEXT("VEYR_ARENA_MATERIAL stone=%s backdrop=%s"),*StoneParent->GetPathName(),*PlainParent->GetPathName());
+    UE_LOG(LogTemp,Display,TEXT("VEYR_ARENA_BASALT imported=%d mesh=%s; native silhouette review required"),
+        bUsingBasaltCliff,BasaltCliffMesh?*BasaltCliffMesh->GetPathName():TEXT("engine primitive fallback"));
 }
 
 UMaterialInstanceDynamic* AVeyrArena::MakeMaterial(const FName Name, const FLinearColor Color, float Roughness,
@@ -280,19 +291,22 @@ void AVeyrArena::BuildDistance()
         const float Yaw=FMath::RadiansToDegrees(Angle);
         const FVector P=Radial(Angle,Random.FRandRange(13500,16500),-500);
         const float Height=Random.FRandRange(1500,2900);
-        // Overlapping tilted slabs form an irregular cliff shoulder rather
-        // than a smooth dome. All stay well outside the cathedral/play space.
+        // Original unit-bounds basalt is centered at its pivot, matching the
+        // existing cube's100cm sizing contract. Rotate the asymmetric crest
+        // through several views without changing the deterministic layout.
+        const float CrestYaw=bUsingBasaltCliff?(I%4)*90.f:0.f;
+        // All backdrop instances stay outside the cathedral and play space.
         Box(Rocks,P+FVector(0,0,Height*.5f),FVector(Random.FRandRange(1500,2100),Random.FRandRange(2300,3400),Height),
-            FRotator(Random.FRandRange(-14,9),Yaw+Random.FRandRange(-16,16),Random.FRandRange(-13,13)));
+            FRotator(Random.FRandRange(-14,9),Yaw+CrestYaw+Random.FRandRange(-16,16),Random.FRandRange(-13,13)));
         const FVector Shoulder=P+Radial(Angle+PI*.5f,Random.FRandRange(700,1200),Height*.26f);
         Box(Rocks,Shoulder,FVector(Random.FRandRange(1100,1700),Random.FRandRange(900,1600),Height*.75f),
-            FRotator(Random.FRandRange(-18,14),Yaw+Random.FRandRange(-30,30),Random.FRandRange(-22,18)));
+            FRotator(Random.FRandRange(-18,14),Yaw-CrestYaw+Random.FRandRange(-30,30),Random.FRandRange(-22,18)));
         if(I%3==0)
         {
             const float SpurHeight=Random.FRandRange(550,900);
             Box(RockSpurs,P+Radial(Angle+PI*.5f,Random.FRandRange(-500,500),Height+SpurHeight*.15f),
                 FVector(Random.FRandRange(280,430),Random.FRandRange(400,650),SpurHeight),
-                FRotator(Random.FRandRange(-20,16),Yaw,Random.FRandRange(-18,20)));
+                FRotator(Random.FRandRange(-20,16),Yaw+CrestYaw,Random.FRandRange(-18,20)));
         }
     }
     for (int32 I = 0; I < 90; ++I)

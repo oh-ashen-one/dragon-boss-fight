@@ -69,11 +69,11 @@ AVeyrKnight::AVeyrKnight()
     static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> KnightDefinition(
         TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
     CustomuseVisualDefinition = KnightDefinition.Get();
-    PresentationNominalSpeeds.Add(TEXT("Walk"),107.405f);
-    PresentationNominalSpeeds.Add(TEXT("Run"),580.f);
-    PresentationNominalSpeeds.Add(TEXT("StrafeLeft"),240.f);
-    PresentationNominalSpeeds.Add(TEXT("StrafeRight"),240.f);
-    PresentationNominalSpeeds.Add(TEXT("Backpedal"),180.f);
+    PresentationNominalSpeeds.Add(TEXT("Walk"),123.6f);
+    PresentationNominalSpeeds.Add(TEXT("Run"),822.8f);
+    PresentationNominalSpeeds.Add(TEXT("StrafeLeft"),170.28f);
+    PresentationNominalSpeeds.Add(TEXT("StrafeRight"),163.19f);
+    PresentationNominalSpeeds.Add(TEXT("Backpedal"),105.38f);
 
     // Original engine primitives are a visible verification proxy, not Customuse art.
     TemporaryVisual = CreateDefaultSubobject<USceneComponent>(TEXT("TEMP original primitive knight pending Customuse"));
@@ -277,7 +277,19 @@ void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnb
     if (IsDead())
     {
         bGuardRequested = false; bLockedOn = false;
-        BeginAction(EVeyrKnightAction::Dead, 2.f);
+        float DeathDuration=bImportedPresentationActive?4.4f:2.f;
+        if(bImportedPresentationActive&&CustomuseVisualDefinition)
+        {
+            const FVeyrVisualClip* Death=CustomuseVisualDefinition->Clips.Find(TEXT("Death"));
+            if(Death&&Death->Sequence)
+            {
+                const float End=Death->EndSeconds<0.f?Death->Sequence->GetPlayLength():Death->EndSeconds;
+                if(FMath::IsFinite(Death->StartSeconds)&&FMath::IsFinite(End)&&Death->StartSeconds>=0.f&&
+                    End>Death->StartSeconds&&End<=Death->Sequence->GetPlayLength())
+                    DeathDuration=End-Death->StartSeconds;
+            }
+        }
+        BeginAction(EVeyrKnightAction::Dead, DeathDuration);
         GetCharacterMovement()->StopMovementImmediately();
         UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_DEAD"));
         return;
@@ -427,6 +439,16 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     {
         Movement->MaxWalkSpeed = Action == EVeyrKnightAction::Guard ? 240.f : Action == EVeyrKnightAction::Heal ? 120.f :
             Action == EVeyrKnightAction::HeavyAttack ? 75.f : bAttack ? 140.f : Action == EVeyrKnightAction::Stagger ? 0.f : 580.f;
+        if(bImportedPresentationActive&&bLockedOn&&Action==EVeyrKnightAction::Ready)
+        {
+            const FVector Direction=MoveIntent.GetSafeNormal2D();
+            const float Forward=FVector::DotProduct(Direction,GetActorForwardVector());
+            const float Right=FVector::DotProduct(Direction,GetActorRightVector());
+            // A locked combat step is deliberate; free movement and forward
+            // running retain full speed, and rolls retain their original travel.
+            if(FMath::Abs(Right)>FMath::Abs(Forward))Movement->MaxWalkSpeed=300.f;
+            else if(Forward<0.f)Movement->MaxWalkSpeed=240.f;
+        }
         if (Action != EVeyrKnightAction::Stagger) AddMovementInput(MoveIntent, 1.f);
     }
     if (bLockedOn && IsValid(Boss) && !bAttack && Action != EVeyrKnightAction::Roll && Action != EVeyrKnightAction::Stagger)
@@ -696,7 +718,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
             FMath::Fmod(Time,ClipDuration)+.0001f<ImportedPresentation->CurrentTrimmedSeconds;
         if(Clip!=PresentationTransitionClip||PresentationLowerClip!=PresentationTransitionLowerClip||bActionRestarted||bLoopWrapped)
         {
-            bPresentationTransitionActive=ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
+            bPresentationTransitionActive=!PresentationTransitionClip.IsNone()&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
             PresentationTransitionStarted=VisualClock;
             PresentationTransitionClip=Clip;
             PresentationTransitionLowerClip=PresentationLowerClip;
