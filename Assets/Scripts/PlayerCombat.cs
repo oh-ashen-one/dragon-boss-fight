@@ -12,6 +12,9 @@ public sealed class PlayerCombat : MonoBehaviour
     public Camera View;
     public string ActionLabel { get; private set; } = "Ready";
     public int Dodges, Swings, HitsTaken, DodgedHits;
+    public bool ReplayEnabled;
+    Vector3 replayMove; bool replayAttack,replayDodge,replayHeal;
+    public void SetReplayInput(Vector3 worldMove,bool attack,bool dodge,bool heal){replayMove=worldMove;replayAttack=attack;replayDodge=dodge;replayHeal=heal;}
     CharacterController controller;
     Transform visual, swordPivot, leftLeg, rightLeg;
     TrailRenderer trail;
@@ -60,11 +63,16 @@ public sealed class PlayerCombat : MonoBehaviour
         Vector3 forward=View.transform.forward;forward.y=0;forward.Normalize();
         Vector3 right=View.transform.right;right.y=0;right.Normalize();
         Vector3 movement=Vector3.ClampMagnitude(forward*Input.GetAxisRaw("Vertical")+right*Input.GetAxisRaw("Horizontal"),1);
-        if(Input.GetMouseButtonDown(0)||Input.GetKeyDown(KeyCode.J))bufferedAttack=.2f;
+        if(ReplayEnabled)movement=Vector3.ClampMagnitude(replayMove,1);
+        bool attackPressed=ReplayEnabled?replayAttack:Input.GetMouseButtonDown(0)||Input.GetKeyDown(KeyCode.J);
+        bool dodgePressed=ReplayEnabled?replayDodge:Input.GetKeyDown(KeyCode.Space);
+        bool healPressed=ReplayEnabled?replayHeal:Input.GetKeyDown(KeyCode.Q);
+        replayAttack=replayDodge=replayHeal=false;
+        if(attackPressed)bufferedAttack=.2f;
         bool free=attackTime<0&&dodgeTime<0&&healTime<0;
-        if(free&&Input.GetKeyDown(KeyCode.Space)&&Stamina>=25){dodgeTime=0;Stamina-=25;regenDelay=.65f;dodgeDir=movement.sqrMagnitude>.01f?movement:transform.forward;Dodges++;}
-        else if(free&&Input.GetKeyDown(KeyCode.Q)&&Flasks>0&&Health<100){healTime=0;healed=false;Flasks--;}
-        else if(free&&bufferedAttack>0&&Stamina>=22){attackTime=0;Stamina-=22;regenDelay=.75f;hitSent=false;swingId++;Swings++;bufferedAttack=0;}
+        if(free&&dodgePressed&&Stamina>=25){dodgeTime=0;Stamina-=25;regenDelay=.65f;dodgeDir=movement.sqrMagnitude>.01f?movement:transform.forward;Dodges++;}
+        else if(free&&healPressed&&Flasks>0&&Health<100){healTime=0;healed=false;Flasks--;}
+        else if(free&&bufferedAttack>0&&Stamina>=22){attackTime=0;Stamina-=22;regenDelay=.75f;hitSent=false;swingId++;Swings++;bufferedAttack=0;CombatAudio.PlaySword();}
         float speed=5.8f;
         if(attackTime>=0){
             attackTime+=dt;speed=1.4f;ActionLabel="Sword";

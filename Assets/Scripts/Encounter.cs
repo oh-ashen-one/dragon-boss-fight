@@ -21,18 +21,21 @@ public sealed class Encounter:MonoBehaviour
         Boss=new GameObject("Veyr — Cinder Warden").AddComponent<DragonBoss>();Boss.transform.position=new Vector3(0,0,5);Boss.Initialize(Player);Player.Boss=Boss;
         var cameraObj=new GameObject("Combat Camera");var cam=cameraObj.AddComponent<Camera>();cam.tag="MainCamera";cam.fieldOfView=60;cam.nearClipPlane=.15f;cam.farClipPlane=450;cam.allowHDR=true;
         cameraObj.AddComponent<AudioListener>();cameraObj.transform.position=Player.transform.position+new Vector3(0,4,-8);
+        CombatAudio.Initialize();
         var follow=cameraObj.AddComponent<CombatCamera>();follow.Player=Player;follow.Boss=Boss;Player.View=cam;
         Cursor.lockState=CursorLockMode.None;Cursor.visible=true;started=Time.time;
         var args=Environment.GetCommandLineArgs();for(int i=0;i<args.Length-1;i++)if(args[i]=="--capture-dir"){captureDir=Path.GetFullPath(args[i+1]);Directory.CreateDirectory(captureDir);nextCapture=3;}
+        if(Array.IndexOf(args,"--replay")>=0){Application.runInBackground=true;new GameObject("Combat Replay Driver").AddComponent<CombatReplay>();}
     }
     void Update(){
         hurtFlash=Mathf.Max(0,hurtFlash-Time.deltaTime*1.7f);frame++;
         if(Time.time-started>3&&frameMs.Count<60000)frameMs.Add(Time.unscaledDeltaTime*1000);
-        if(Input.GetKeyDown(KeyCode.R)&&(Player.IsDead||Boss.IsDead))SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        if(Input.GetKeyDown(KeyCode.R))RestartEncounter();
         if(Input.GetKeyDown(KeyCode.F12))Capture();
         if(captureDir!=null&&Time.time-started>=nextCapture){Capture();nextCapture+=5;}
     }
     public void FlashDamage(){hurtFlash=.45f;}
+    public void RestartEncounter(){if(Player.IsDead||Boss.IsDead)SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);}
     void Capture(){
         if(captureDir==null)captureDir=Path.Combine(Application.persistentDataPath,"captures");Directory.CreateDirectory(captureDir);
         ScreenCapture.CaptureScreenshot(Path.Combine(captureDir,"gameplay-"+frame.ToString("D06")+".png"));

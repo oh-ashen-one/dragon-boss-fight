@@ -7,6 +7,12 @@ public static class VeyrBuild
 {
     public static void Build(){
         Directory.CreateDirectory("Assets/Scenes");Directory.CreateDirectory("Builds");
+        Directory.CreateDirectory("Assets/Resources/ShaderKeep");
+        foreach(var shaderName in new[]{"Standard","Sprites/Default","Unlit/Color","Skybox/Procedural","Particles/Standard Unlit","Legacy Shaders/Particles/Additive"}){
+            var shader=Shader.Find(shaderName);if(!shader)throw new System.Exception("Required shader missing: "+shaderName);
+            string path="Assets/Resources/ShaderKeep/"+shaderName.Replace('/','_')+".mat";
+            if(!AssetDatabase.LoadAssetAtPath<Material>(path))AssetDatabase.CreateAsset(new Material(shader),path);
+        }
         var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
         EditorSceneManager.SaveScene(scene,"Assets/Scenes/Cathedral.unity");
         PlayerSettings.companyName="Veyr";PlayerSettings.productName="Veyr - The Cinder Warden";
@@ -16,7 +22,7 @@ public static class VeyrBuild
         var settings=new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
         var input=settings.FindProperty("activeInputHandler");if(input!=null){input.intValue=0;settings.ApplyModifiedPropertiesWithoutUndo();}
         AssetDatabase.SaveAssets();
-        var result=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/Cathedral.unity"},locationPathName="Builds/Veyr.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.Development});
+        var result=BuildPipeline.BuildPlayer(new BuildPlayerOptions{scenes=new[]{"Assets/Scenes/Cathedral.unity"},locationPathName="Builds/Veyr.app",target=BuildTarget.StandaloneOSX,options=BuildOptions.None});
         Debug.Log("VEYR_BUILD_RESULT "+result.summary.result+" errors="+result.summary.totalErrors);
         if(result.summary.result!=BuildResult.Succeeded)throw new System.Exception("Native build failed");
     }
