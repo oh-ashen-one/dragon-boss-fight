@@ -40,13 +40,13 @@ AVeyrDragon::AVeyrDragon()
     ChestMesh=CreateTemporaryPart(TEXT("TEMP_ShoulderMass_RulesOnly"),Sphere.Object,FVector(5.8,6.8,5.2));
     HeadMesh=CreateTemporaryPart(TEXT("TEMP_Head_RulesOnly"),Sphere.Object,FVector(3.3,2.2,2.1));
     JawMesh=CreateTemporaryPart(TEXT("TEMP_Jaw_RulesOnly"),Cube.Object,FVector(2.6,1.7,.65));
-    // Deliberate camera-only occluders follow the visible masses through collapse.
-    // They do not obstruct the player's access to separate leg hit regions.
+    // The giant must not collapse the camera arm into the knight. World
+    // geometry still blocks the camera; the knight handles local boss occlusion.
     for(UStaticMeshComponent* Mass : {BodyMesh.Get(),ChestMesh.Get(),HeadMesh.Get()})
     {
         Mass->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
         Mass->SetCollisionResponseToAllChannels(ECR_Ignore);
-        Mass->SetCollisionResponseToChannel(ECC_Camera,ECR_Block);
+        Mass->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
         Mass->SetGenerateOverlapEvents(false);
     }
     for(int32 I=0;I<4;++I)

@@ -11,6 +11,8 @@ class USpringArmComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 class USceneComponent;
+class UPrimitiveComponent;
+class APlayerController;
 
 /** Native combat owner. Primitive presentation is explicitly temporary pending Customuse. */
 UCLASS()
@@ -39,6 +41,10 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 GuardBreaks = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 SuccessfulHeals = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 SuccessfulJumps = 0;
+    /** Sampled from the preceding resolved spring-arm frame; walls may legitimately compress it. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraResolvedDistance = 650.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraSeverelyCompressedSeconds = 0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 CameraHiddenProxyParts = 0;
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return Health <= 0.f; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsGrounded() const;
@@ -71,6 +77,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void OnJumped_Implementation() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
     UPROPERTY() TObjectPtr<USceneComponent> SwordPivot;
@@ -84,6 +91,9 @@ private:
     float DamageGrace = 0.f;
     float VisualClock = 0.f;
     float CameraDistance = 650.f;
+    float LockHeadBlend = 0.f;
+    TWeakObjectPtr<APlayerController> OcclusionController;
+    TMap<TWeakObjectPtr<UPrimitiveComponent>, float> CameraHiddenParts;
     int32 SwingId = 0;
     bool bContactSent = false;
     bool bHealGranted = false;
@@ -104,6 +114,8 @@ private:
     void AdvanceCombat(float DeltaSeconds);
     void UpdateMovement(float DeltaSeconds);
     void UpdateCamera(float DeltaSeconds);
+    void UpdateCameraOcclusion(float DeltaSeconds);
+    void RestoreCameraOcclusion();
     void UpdateTemporaryPresentation(float DeltaSeconds);
     UStaticMeshComponent* CreateProxyPart(const TCHAR* Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location, const FVector& Size);
     void LookYaw(float Value);

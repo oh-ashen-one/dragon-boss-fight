@@ -3,6 +3,9 @@
 #include "VeyrDragon.h"
 #include "VeyrGameMode.h"
 #include "VeyrIdentity.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
@@ -56,9 +59,10 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
 {
     if(bInitialized)return false;
     ReplayMode=Mode.ToLower();
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory"))||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -66,6 +70,8 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED initialize only after knight and dragon are ready")); return false;
     }
     Knight=ModeActor->Knight; Dragon=ModeActor->Dragon;
+    if(bLegIsolation)TargetLeg=FCString::Atoi(*ReplayMode.Right(1));
+    ControlOrigin=Knight->GetFootLocation();
     const bool bResume=PendingRestartEvidence.IsValid()&&PendingRestartEvidence->GetStringField(TEXT("mode"))==ReplayMode;
     if(bResume)
     {
@@ -102,7 +108,8 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     }
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
     LastWallFrameTime=FPlatformTime::Seconds();
-    DurationLimit=ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:180.f;
+    StartedWallTime=LastWallFrameTime;
+    DurationLimit=ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:ReplayMode==TEXT("avoidance")?240.f:bLegIsolation?120.f:180.f;
     if(!Knight->bLockedOn)Knight->ToggleLockOn();
     Event(bResume?TEXT("restart_world_loaded"):TEXT("start")); SaveEvidence(false);
     if(bResume&&!bFreshResourcesVerified)Finish(false,TEXT("restart resource reset failed"));
@@ -136,6 +143,48 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("lastHitRegion"),Dragon->GetLastHitRegion()); O->SetNumberField(TEXT("lastSwordDamage"),Dragon->GetLastSwordDamage());
     O->SetNumberField(TEXT("collapses"),Dragon->GetCollapseCount()); O->SetNumberField(TEXT("headBonusHits"),Dragon->GetHeadBonusHitCount());
     O->SetNumberField(TEXT("headWindow"),Dragon->GetHeadWindowRemaining());
+    O->SetNumberField(TEXT("targetLeg"),TargetLeg);
+    O->SetNumberField(TEXT("struckLeg"),Dragon->GetStruckLegIndex());
+    O->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
+    O->SetNumberField(TEXT("controlStage"),ControlStage);
+    TArray<TSharedPtr<FJsonValue>> MoveCoverage;
+    for(int32 I=0;I<6;++I)
+    {
+        const EVeyrDragonMove Move=static_cast<EVeyrDragonMove>(I);
+        TSharedPtr<FJsonObject> Coverage=MakeShared<FJsonObject>();
+        Coverage->SetStringField(TEXT("move"),StaticEnum<EVeyrDragonMove>()->GetNameStringByValue(I));
+        Coverage->SetNumberField(TEXT("started"),Dragon->GetAttackCount(Move));
+        Coverage->SetNumberField(TEXT("completed"),Dragon->GetCompletedAttackCount(Move));
+        Coverage->SetNumberField(TEXT("threatenedWindupAvoidedThroughRecovery"),AvoidedMoves[I]);
+        MoveCoverage.Add(MakeShared<FJsonValueObject>(Coverage));
+    }
+    O->SetArrayField(TEXT("moveCoverage"),MoveCoverage);
+    if(Knight->CombatCamera&&Knight->CameraBoom)
+    {
+        const FVector Camera=Knight->CombatCamera->GetComponentLocation();
+        const FVector Pivot=Knight->CameraBoom->GetComponentLocation();
+        TSharedPtr<FJsonObject> Metrics=MakeShared<FJsonObject>();
+        Metrics->SetArrayField(TEXT("position"),VectorJson(Camera));
+        Metrics->SetNumberField(TEXT("pitch"),Knight->CombatCamera->GetComponentRotation().Pitch);
+        Metrics->SetNumberField(TEXT("yaw"),Knight->CombatCamera->GetComponentRotation().Yaw);
+        Metrics->SetNumberField(TEXT("requestedArmCm"),Knight->CameraBoom->TargetArmLength);
+        Metrics->SetNumberField(TEXT("pivotDistanceCm"),FVector::Distance(Pivot,Camera));
+        Metrics->SetBoolField(TEXT("collisionFixApplied"),Knight->CameraBoom->IsCollisionFixApplied());
+        FHitResult Hit;
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(VeyrReplayCamera),false,Knight);
+        const bool bOccluded=GetWorld()->LineTraceSingleByChannel(Hit,Camera,Knight->GetActorLocation(),ECC_Camera,Query);
+        Metrics->SetBoolField(TEXT("lineToPlayerCameraChannelBlocked"),bOccluded);
+        Metrics->SetBoolField(TEXT("blockerIsDragon"),bOccluded&&Hit.GetActor()==Dragon);
+        FVector2D Screen;
+        if(const APlayerController* PC=Cast<APlayerController>(Knight->GetController()))
+        {
+            int32 Width=0,Height=0;PC->GetViewportSize(Width,Height);
+            const bool bProjected=PC->ProjectWorldLocationToScreen(Knight->GetActorLocation(),Screen);
+            Metrics->SetBoolField(TEXT("playerCenterWithinViewport"),bProjected&&Width>0&&Height>0&&Screen.X>=0&&Screen.Y>=0&&Screen.X<Width&&Screen.Y<Height);
+        }
+        Metrics->SetStringField(TEXT("scope"),TEXT("geometric diagnostics only; visual readability requires rendered review"));
+        O->SetObjectField(TEXT("camera"),Metrics);
+    }
     TArray<TSharedPtr<FJsonValue>> Staggers; for(int32 I=0;I<4;++I)Staggers.Add(MakeShared<FJsonValueNumber>(Dragon->GetLegStagger(I)));
     O->SetArrayField(TEXT("legStagger"),Staggers);
     return O;
@@ -152,6 +201,7 @@ void AVeyrReplay::Event(const FString& Name, bool bScreenshot)
 
 void AVeyrReplay::Observe()
 {
+    ObserveScenarios();
     const int32 State=static_cast<int32>(Dragon->State), Action=static_cast<int32>(Knight->Action);
     if(State!=PreviousDragonState)
     {
@@ -178,6 +228,140 @@ void AVeyrReplay::Observe()
     if(Knight->SuccessfulJumps!=PreviousJumps){Event(TEXT("jump_confirmed"));PreviousJumps=Knight->SuccessfulJumps;}
 }
 
+bool AVeyrReplay::AllMovesAvoided() const
+{
+    for(int32 Count:AvoidedMoves)if(Count==0)return false;
+    return true;
+}
+
+void AVeyrReplay::ObserveScenarios()
+{
+    if(bLegIsolation)
+    {
+        for(int32 I=0;I<4;++I)
+            if(I!=TargetLeg&&Dragon->GetLegStagger(I)>.001f)bIsolationViolated=true;
+        if(Dragon->GetSwordContactCount()!=PreviousContacts&&Dragon->GetLastHitRegion()!=TargetLeg)bIsolationViolated=true;
+        bIsolatedStagger|=Dragon->GetLegStagger(TargetLeg)>0;
+        if(Dragon->State==EVeyrDragonState::Buckle)
+        {
+            bCorrectLegBuckle|=Dragon->GetStruckLegIndex()==TargetLeg;
+            bIsolationViolated|=Dragon->GetStruckLegIndex()!=TargetLeg;
+        }
+    }
+    if(Dragon->State==EVeyrDragonState::Windup&&PreviousDragonState!=static_cast<int32>(EVeyrDragonState::Windup))
+    {
+        ObservedAttack=static_cast<int32>(Dragon->Move);ObservedAttackHits=Knight->HitsTaken;bAvoidanceThreatObserved=false;
+    }
+    if(Dragon->State==EVeyrDragonState::Windup&&Dragon->IsPointInsideWarning(Knight->GetFootLocation()))bAvoidanceThreatObserved=true;
+    if(PreviousDragonState==static_cast<int32>(EVeyrDragonState::Recovery)&&Dragon->State==EVeyrDragonState::Idle&&ObservedAttack>=0)
+    {
+        if(bAvoidanceThreatObserved&&Knight->HitsTaken==ObservedAttackHits)
+        {
+            ++AvoidedMoves[ObservedAttack];
+            Event(TEXT("avoidance_verified_")+StaticEnum<EVeyrDragonMove>()->GetNameStringByValue(ObservedAttack));
+        }
+        ObservedAttack=-1;
+    }
+}
+
+bool AVeyrReplay::DriveScenarioInputs()
+{
+    if(ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance"))return false;
+    FVector Movement=FVector::ZeroVector;
+    bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false,bGuard=false;
+    const FVector Feet=Knight->GetFootLocation();
+    const bool bAvailable=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
+    const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
+    auto Toward=[&](const FVector& Goal)
+    {
+        const float Distance=FVector::Dist2D(Feet,Goal);
+        if(Distance>35.f)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(Distance/140.f,.2f,1.f);
+    };
+    if(ReplayMode==TEXT("avoidance"))
+    {
+        int32 DesiredMove=0;while(DesiredMove<6&&AvoidedMoves[DesiredMove]>0)++DesiredMove;
+        const FVector Positions[6]={FVector(1300,0,0),FVector(2000,0,0),FVector(0,600,0),FVector(-280,-400,0),FVector(-900,0,0),FVector(850,0,0)};
+        if(DesiredMove<6)Toward(Dragon->GetActorTransform().TransformPosition(Positions[DesiredMove]));
+        if(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)
+        {
+            if(Contains(Dragon->GetWarningFootprint(),Feet,65.f))
+            {
+                Movement=EscapeDirection();
+                bRoll=bAvailable&&Knight->Stamina>=25.f&&(Dragon->State==EVeyrDragonState::Active||Remaining<.32f);
+            }
+            else Movement=FVector::ZeroVector; // Do not step back into a read telegraph.
+        }
+        if(Knight->Health<65.f&&Knight->HealingCharges>0&&Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.3f&&bAvailable)
+        {
+            bHeal=true;Movement=FVector::ZeroVector;
+        }
+    }
+    else
+    {
+        auto Next=[&]() { ++ControlStage;ControlStageStarted=Elapsed;Event(FString::Printf(TEXT("controls_stage_%d"),ControlStage)); };
+        switch(ControlStage)
+        {
+            case 0:
+                if(bAvailable&&Knight->IsGrounded())
+                {
+                    bHeal=true;bFullHealthHealRequested=true;Next();
+                }
+                break;
+            case 1:
+                if(Elapsed-ControlStageStarted>.2f)
+                {
+                    bFullHealthHealRejected=Knight->Health==100.f&&Knight->HealingCharges==4&&Knight->SuccessfulHeals==0&&Knight->Action!=EVeyrKnightAction::Heal;
+                    if(!bFullHealthHealRejected){Finish(false,TEXT("full health heal consumed a charge or entered heal"));return true;}
+                    Knight->ToggleLockOn();bLockOffObserved=!Knight->bLockedOn;Next();
+                }
+                break;
+            case 2:
+                Movement=FVector(0,1,0);bJump=Knight->SuccessfulJumps==0&&Knight->IsGrounded();
+                bControlMovement|=FVector::Dist2D(Feet,ControlOrigin)>100.f;
+                if(bControlMovement&&Knight->SuccessfulJumps>0&&Knight->IsGrounded())
+                {
+                    Knight->ToggleLockOn();bLockOnObserved=Knight->bLockedOn;Next();
+                }
+                break;
+            case 3:
+                bLight=Knight->LightAttacks==0;
+                if(Knight->LightAttacks>0&&bAvailable)Next();
+                break;
+            case 4:
+                bHeavy=Knight->HeavyAttacks==0;
+                if(Knight->HeavyAttacks>0&&bAvailable)Next();
+                break;
+            case 5:
+                Movement=EscapeDirection();bRoll=Knight->Rolls==0;
+                if(Knight->Rolls>0&&bAvailable)
+                {
+                    ControlStaminaBefore=Knight->Stamina;bControlStaminaSpent=Knight->Stamina<90.f;Next();
+                }
+                break;
+            case 6:
+                bControlStaminaRecovered|=Knight->Stamina>ControlStaminaBefore+10.f;
+                if(bControlStaminaRecovered&&Knight->Stamina>80.f)Next();
+                break;
+            case 7:
+                Toward(Dragon->GetActorTransform().TransformPosition(FVector(850,0,0)));
+                bGuard=Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active;
+                if(Knight->GuardedHits>0)Next();
+                break;
+            case 8:
+                bGuard=Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active;
+                if(Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.3f&&bAvailable&&Knight->Health<100.f)
+                {
+                    bGuard=false;bHeal=true;
+                }
+                if(Knight->SuccessfulHeals>0)Next();
+                break;
+            default:break;
+        }
+    }
+    Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,bGuard);
+    return true;
+}
+
 FVector AVeyrReplay::EscapeDirection() const
 {
     const FVector Feet=Knight->GetFootLocation();
@@ -200,6 +384,7 @@ FVector AVeyrReplay::EscapeDirection() const
 
 void AVeyrReplay::DriveInputs()
 {
+    if(DriveScenarioInputs())return;
     FVector Movement=FVector::ZeroVector;
     bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false;
     const FVector Feet=Knight->GetFootLocation();
@@ -251,7 +436,7 @@ void AVeyrReplay::DriveInputs()
             {
                 Movement=FVector::ZeroVector;
                 const float SafeTime=Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:20.f;
-                const bool bNeedLight=ReplayMode==TEXT("core")&&!bLightLegContact&&!bDown;
+                const bool bNeedLight=(ReplayMode==TEXT("core")||bLegIsolation)&&!bLightLegContact&&!bDown;
                 const float Reserve=bDown?0.f:25.f;
                 bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>1.15f&&(!bDown||Dragon->IsHeadExposed());
                 bLight=!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>.65f&&(!bDown||Dragon->IsHeadExposed());
@@ -330,6 +515,24 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetStringField(TEXT("policy"),TEXT("input-only provisional navigation; runtime tuning required"));
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);
+    Root->SetNumberField(TEXT("scenarioLimitGameSeconds"),DurationLimit);
+    Root->SetNumberField(TEXT("worldWallElapsedSeconds"),FPlatformTime::Seconds()-StartedWallTime);
+    Root->SetStringField(TEXT("worldWallElapsedScope"),TEXT("current world only; resets on restart; includes rendering, capture and evidence I/O"));
+    Root->SetBoolField(TEXT("legIsolationScenario"),bLegIsolation);
+    Root->SetNumberField(TEXT("targetLeg"),TargetLeg);
+    Root->SetBoolField(TEXT("otherRegionContactOrStaggerObserved"),bIsolationViolated);
+    Root->SetBoolField(TEXT("targetLegStaggerObserved"),bIsolatedStagger);
+    Root->SetBoolField(TEXT("correctLegBuckleObserved"),bCorrectLegBuckle);
+    Root->SetBoolField(TEXT("fullHealthHealRequested"),bFullHealthHealRequested);
+    Root->SetBoolField(TEXT("fullHealthHealRejected"),bFullHealthHealRejected);
+    Root->SetBoolField(TEXT("lockOffObserved"),bLockOffObserved);
+    Root->SetBoolField(TEXT("lockOnObserved"),bLockOnObserved);
+    Root->SetBoolField(TEXT("controlMovementObserved"),bControlMovement);
+    Root->SetBoolField(TEXT("controlStaminaSpent"),bControlStaminaSpent);
+    Root->SetBoolField(TEXT("controlStaminaRecovered"),bControlStaminaRecovered);
+    Root->SetBoolField(TEXT("allSixMovesAvoided"),AllMovesAvoided());
+    Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));
+    Root->SetStringField(TEXT("avoidanceCoverageDefinition"),TEXT("inside actual warning at least once during windup, then no HitsTaken increase through completed recovery; no boss move forcing"));
     Root->SetNumberField(TEXT("terminalSeconds"),TerminalSeconds);
     Root->SetBoolField(TEXT("victoryWithinThreeToFiveMinutes"),ReplayMode==TEXT("victory")&&TerminalSeconds>=180.f&&TerminalSeconds<=300.f);
     Root->SetBoolField(TEXT("restartRequested"),bAwaitingReload||bRestartVerification);Root->SetBoolField(TEXT("restartResourcesVerified"),bFreshResourcesVerified);
@@ -388,6 +591,13 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     else if(ReplayMode==TEXT("death")&&Knight->IsDead())BeginTerminalVerification();
     else if(Knight->IsDead())Finish(false,TEXT("player died before objectives"));
     else if(ReplayMode==TEXT("victory")&&Dragon->IsDead())BeginTerminalVerification();
+    else if(bLegIsolation&&bIsolationViolated)Finish(false,TEXT("leg isolation failed: contact or stagger changed a different region"));
+    else if(bLegIsolation&&bLightLegContact&&bHeavyLegContact&&bIsolatedStagger&&bCorrectLegBuckle&&Dragon->State==EVeyrDragonState::Collapse)
+        Finish(true,FString::Printf(TEXT("leg %d isolated light/heavy stagger, correct buckle and collapse observed; other three legs unchanged"),TargetLeg));
+    else if(ReplayMode==TEXT("controls")&&ControlStage>=9&&bFullHealthHealRejected&&bLockOffObserved&&bLockOnObserved&&bControlMovement&&bControlStaminaSpent&&bControlStaminaRecovered&&Knight->SuccessfulJumps>0&&Knight->LightAttacks>0&&Knight->HeavyAttacks>0&&Knight->Rolls>0&&Knight->GuardedHits>0&&Knight->SuccessfulHeals>0)
+        Finish(true,TEXT("movement jump attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed"));
+    else if(ReplayMode==TEXT("avoidance")&&AllMovesAvoided())
+        Finish(true,TEXT("all six naturally selected moves threatened the player in windup and completed recovery without a damaging hit"));
     else if(ReplayMode==TEXT("core")&&Knight->SuccessfulJumps>0&&bLightLegContact&&bHeavyLegContact&&Dragon->GetCollapseCount()>0&&Dragon->GetHeadBonusHitCount()>0&&bRiseCompleted&&Knight->DodgedHits>0)
         Finish(true,TEXT("jump light heavy collapse head bonus completed rise and dodge contact observed"));
     else if(Elapsed>DurationLimit)Finish(false,TEXT("objective timeout; inspect event history and policy"));

@@ -49,10 +49,10 @@ void AVeyrArena::BeginPlay()
     Super::BeginPlay();
     if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !StoneParent) return;
     bBuilt = true;
-    auto* Ashlar = MakeMaterial(TEXT("PrototypeAshlar"), FLinearColor(.20f, .22f, .24f), .74f);
-    auto* Limestone = MakeMaterial(TEXT("PrototypeLimestone"), FLinearColor(.32f, .33f, .32f), .72f);
-    auto* Flagstone = MakeMaterial(TEXT("PrototypeDampFlagstone"), FLinearColor(.105f, .125f, .145f), .60f);
-    auto* FlagstoneLight = MakeMaterial(TEXT("PrototypeFlagstoneVariation"), FLinearColor(.145f, .16f, .175f), .64f);
+    auto* Ashlar = MakeMaterial(TEXT("PrototypeAshlar"), FLinearColor(.17f, .195f, .22f), .78f);
+    auto* Limestone = MakeMaterial(TEXT("PrototypeLimestone"), FLinearColor(.255f, .27f, .275f), .76f);
+    auto* Flagstone = MakeMaterial(TEXT("PrototypeDampFlagstone"), FLinearColor(.085f, .108f, .13f), .70f);
+    auto* FlagstoneLight = MakeMaterial(TEXT("PrototypeFlagstoneVariation"), FLinearColor(.100f, .122f, .145f), .72f);
     auto* OldBronze = MakeMaterial(TEXT("PrototypeAncientBronze"), FLinearColor(.23f, .145f, .055f), .64f);
     auto* Basalt = MakeMaterial(TEXT("PrototypeDarkBasalt"), FLinearColor(.065f, .085f, .11f), .82f);
     auto* Coal = MakeMaterial(TEXT("PrototypeBrazierCoal"), FLinearColor(.65f, .19f, .035f), .92f);
@@ -160,7 +160,7 @@ void AVeyrArena::BuildFloor()
         {
             const FVector P(Row * 180.f, Col * 180.f + (Row % 2) * 90.f, -5.f);
             if (P.Size2D() > CombatRadius - 130.f) continue;
-            Box(Random.FRand() < .20f ? FloorLight : Floor, P, FVector(177, 177, 10));
+            Box(Random.FRand() < .12f ? FloorLight : Floor, P, FVector(177, 177, 10));
         }
     for (const float Radius : { 380.f, 900.f, 1850.f, 3140.f, 3570.f })
     {
@@ -299,12 +299,16 @@ void AVeyrArena::BuildLighting()
     auto* Moon = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeSoftMoonKey"));
     AddInstanceComponent(Moon); Moon->SetupAttachment(GetRootComponent()); Moon->SetMobility(EComponentMobility::Movable);
     Moon->SetRelativeRotation(FRotator(-38, -150, 0));
-    Moon->SetIntensity(4.f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
+    // Only the moon drives forward/translucent lighting. Keeping priorities
+    // distinct avoids the competing-directional-lights warning seen in PIE001.
+    Moon->SetForwardShadingPriority(1);
+    Moon->SetIntensity(2.6f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
     Moon->SetCastShadows(true); Moon->SetLightSourceAngle(3.f); Moon->SetSpecularScale(.35f); Moon->RegisterComponent();
     auto* Fill = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeNeutralFrontFill"));
     AddInstanceComponent(Fill); Fill->SetupAttachment(GetRootComponent()); Fill->SetMobility(EComponentMobility::Movable);
-    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(2.8f);
-    Fill->SetLightColor(FLinearColor(.92f, .95f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.12f); Fill->RegisterComponent();
+    Fill->SetForwardShadingPriority(0);
+    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(1.1f);
+    Fill->SetLightColor(FLinearColor(.80f, .87f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.08f); Fill->RegisterComponent();
 
     if (SkyMesh && SkyParent)
     {
@@ -332,7 +336,7 @@ void AVeyrArena::BuildLighting()
     auto* Ambient = NewObject<USkyLightComponent>(this, TEXT("PrototypeGentleSkyBounce"));
     AddInstanceComponent(Ambient); Ambient->SetupAttachment(GetRootComponent()); Ambient->SetMobility(EComponentMobility::Movable);
     if (AmbientCube) { Ambient->SourceType = SLS_SpecifiedCubemap; Ambient->SetCubemap(AmbientCube); }
-    Ambient->SetIntensity(.8f); Ambient->SetLightColor(FLinearColor(.52f, .60f, .72f));
+    Ambient->SetIntensity(.4f); Ambient->SetLightColor(FLinearColor(.52f, .60f, .72f));
     Ambient->SetLowerHemisphereColor(FLinearColor(.10f, .12f, .15f)); Ambient->RegisterComponent();
 
     auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("PrototypeDrownedCathedralMist"));
@@ -348,7 +352,9 @@ void AVeyrArena::BuildLighting()
     AddInstanceComponent(Grade); Grade->SetupAttachment(GetRootComponent()); Grade->bUnbound = true;
     Grade->Settings.bOverride_AutoExposureMethod = true; Grade->Settings.AutoExposureMethod = AEM_Manual;
     Grade->Settings.bOverride_AutoExposureApplyPhysicalCameraExposure = true; Grade->Settings.AutoExposureApplyPhysicalCameraExposure = false;
-    Grade->Settings.bOverride_AutoExposureBias = true; Grade->Settings.AutoExposureBias = 0;
+    // Restrained fixed exposure preserves the night palette without pumping
+    // when fire or the giant fills the frame. Verify this balance in native PIE.
+    Grade->Settings.bOverride_AutoExposureBias = true; Grade->Settings.AutoExposureBias = -.25f;
     Grade->Settings.bOverride_BloomIntensity = true; Grade->Settings.BloomIntensity = .18f;
     Grade->Settings.bOverride_VignetteIntensity = true; Grade->Settings.VignetteIntensity = .12f;
     Grade->RegisterComponent();

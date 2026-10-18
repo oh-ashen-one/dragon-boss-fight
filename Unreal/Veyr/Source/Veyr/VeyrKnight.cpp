@@ -46,6 +46,7 @@ AVeyrKnight::AVeyrKnight()
     CameraBoom->bEnableCameraLag = true;
     CameraBoom->CameraLagSpeed = 14.f;
     CameraBoom->CameraLagMaxDistance = 65.f;
+    CameraBoom->bUseCameraLagSubstepping = true;
     CameraBoom->bEnableCameraRotationLag = true;
     CameraBoom->CameraRotationLagSpeed = 18.f;
     CombatCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Combat Camera"));
@@ -326,13 +327,28 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
 void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 {
     CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, CameraDistance, DeltaSeconds, 12.f);
-    if (!Controller) return;
+    if (!Controller) { RestoreCameraOcclusion(); return; }
     if (bLockedOn && IsValid(Boss) && !Boss->IsDead())
     {
-        const FVector Focus = FMath::Lerp(GetActorLocation() + FVector(0,0,60), Boss->GetHeadLocation(), .68f);
-        FRotator Desired = (Focus - CombatCamera->GetComponentLocation()).Rotation();
-        Desired.Pitch = FMath::Clamp(Desired.Pitch, -35.f, 42.f); Desired.Roll = 0.f;
-        Controller->SetControlRotation(FMath::RInterpTo(Controller->GetControlRotation(), Desired, DeltaSeconds, 5.f));
+        // The standing head is far above a player fighting the legs. Frame the
+        // grounded combat region nearby, blend toward the head at range and on
+        // collapse, and solve from the pivot rather than the lagged camera.
+        const float BossRange = FVector::Dist2D(GetActorLocation(), Boss->GetActorLocation());
+        const float HeadWeight = Boss->IsHeadExposed() ? 1.f : FMath::Clamp((BossRange - 700.f) / 700.f, 0.f, 1.f);
+        LockHeadBlend = FMath::FInterpTo(LockHeadBlend, HeadWeight, DeltaSeconds, 4.f);
+        const FVector GroundFocus(Boss->GetActorLocation().X, Boss->GetActorLocation().Y, GetFootLocation().Z + 230.f);
+        const FVector Focus = FMath::Lerp(GroundFocus, Boss->GetHeadLocation(), LockHeadBlend);
+        const FVector ToFocus = Focus - CameraBoom->GetComponentLocation();
+        FRotator Current = Controller->GetControlRotation().GetNormalized();
+        FRotator Desired = Current;
+        // Retain azimuth when walking directly beneath the target. Otherwise a
+        // few centimetres crossing its axis can request a sudden 180-degree turn.
+        if (ToFocus.Size2D() > 240.f) Desired.Yaw = ToFocus.Rotation().Yaw;
+        Desired.Pitch = FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(ToFocus.Z,
+            FMath::Max(300.f, static_cast<float>(ToFocus.Size2D()))))) - 8.f, -28.f, 18.f);
+        Desired.Roll = 0.f;
+        const FRotator Smoothed = FMath::RInterpTo(Current, Desired, DeltaSeconds, 5.f);
+        Controller->SetControlRotation(FMath::RInterpConstantTo(Current, Smoothed, DeltaSeconds, 100.f));
     }
     else
     {
@@ -340,6 +356,74 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         Look.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch), -55.f, 45.f); Look.Roll = 0.f;
         Controller->SetControlRotation(Look);
     }
+    UpdateCameraOcclusion(DeltaSeconds);
+}
+
+void AVeyrKnight::RestoreCameraOcclusion()
+{
+    if (APlayerController* Player = OcclusionController.Get())
+        for (const auto& Pair : CameraHiddenParts) Player->HiddenPrimitiveComponents.Remove(Pair.Key);
+    CameraHiddenParts.Empty();
+    OcclusionController.Reset();
+    CameraHiddenProxyParts = 0;
+}
+
+void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
+{
+    CameraResolvedDistance = FVector::Distance(CameraBoom->GetComponentLocation(), CombatCamera->GetComponentLocation());
+    if (CameraResolvedDistance < 180.f) CameraSeverelyCompressedSeconds += DeltaSeconds;
+    APlayerController* Player = Cast<APlayerController>(Controller);
+    if (Player != OcclusionController.Get()) RestoreCameraOcclusion();
+    if (!Player || !Player->IsLocalController() || !IsValid(Boss)) { RestoreCameraOcclusion(); return; }
+    OcclusionController = Player;
+
+    // Temporary proxy-only visibility aid. Hide individual intersecting pieces
+    // in this player's view; keep collisions, danger indicators and every
+    // other view unchanged. Final Customuse art needs its own material
+    // fade/outline treatment and a fresh visual acceptance pass.
+    for (auto& Pair : CameraHiddenParts) Pair.Value -= DeltaSeconds;
+    const FVector CameraLocation = CombatCamera->GetComponentLocation();
+    const FVector Foot = GetFootLocation();
+    const FVector Side = CombatCamera->GetRightVector() * 28.f;
+    const FVector Samples[] = {Foot + FVector(0,0,215), Foot + FVector(0,0,145) + Side,
+        Foot + FVector(0,0,145) - Side, Foot + FVector(0,0,65)};
+    TInlineComponentArray<UStaticMeshComponent*> Parts;
+    Boss->GetComponents(Parts);
+    for (UStaticMeshComponent* Part : Parts)
+    {
+        if (!Part || !Part->GetStaticMesh() || !Part->GetName().StartsWith(TEXT("TEMP_"))) continue;
+        const FTransform Transform = Part->GetComponentTransform();
+        const FVector Start = Transform.InverseTransformPosition(CameraLocation);
+        const float Margin = 12.f / FMath::Max(.01f, static_cast<float>(Transform.GetScale3D().GetAbsMin()));
+        const FBox Box = Part->GetStaticMesh()->GetBoundingBox().ExpandBy(Margin);
+        bool bOccludes = Box.IsInsideOrOn(Start);
+        for (const FVector& Sample : Samples)
+        {
+            const FVector End = Transform.InverseTransformPosition(Sample);
+            bOccludes |= FMath::LineBoxIntersection(Box, Start, End, End - Start);
+        }
+        if (!bOccludes) continue;
+        const TWeakObjectPtr<UPrimitiveComponent> Key(Part);
+        // Never take ownership of a component another system already hid.
+        if (!CameraHiddenParts.Contains(Key) && Player->HiddenPrimitiveComponents.Contains(Key)) continue;
+        Player->HiddenPrimitiveComponents.AddUnique(Key);
+        CameraHiddenParts.FindOrAdd(Key) = .12f;
+    }
+    for (auto It = CameraHiddenParts.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid() || It.Value() <= 0.f)
+        {
+            Player->HiddenPrimitiveComponents.Remove(It.Key());
+            It.RemoveCurrent();
+        }
+    }
+    CameraHiddenProxyParts = CameraHiddenParts.Num();
+}
+
+void AVeyrKnight::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    RestoreCameraOcclusion();
+    Super::EndPlay(EndPlayReason);
 }
 
 void AVeyrKnight::UpdateTemporaryPresentation(float DeltaSeconds)

@@ -23,3 +23,7 @@ Unreal/**/.vs/
 Unreal/**/.idea/
 Unreal/**/*.xcworkspace/
 Unreal/**/*.xcodeproj/
+
+# Local Python tooling caches
+__pycache__/
+*.pyc
