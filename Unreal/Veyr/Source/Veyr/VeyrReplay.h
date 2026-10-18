@@ -57,6 +57,14 @@ private:
     int32 AvoidedMoves[6]={0,0,0,0,0,0};
     float ControlStageStarted=0, ControlStaminaBefore=100;
     FVector ControlOrigin=FVector::ZeroVector;
+    int32 BoundaryStage=0, VerifiedHealCharges=0, TrialCharges=0, TrialHeals=0, TrialHits=0;
+    float BoundaryStageStarted=0, TrialHealth=0;
+    bool bHealCapVerified=false, bEmptyHealRejected=false;
+    bool bFrontGuardVerified=false, bRearGuardVerified=false, bGuardBreakVerified=false;
+    bool bGuardSampleValid=false, bGuardSampleHeld=false, bGuardSampleGrounded=false;
+    float GuardSampleHealth=100, GuardSampleStamina=100, GuardSampleFacing=0;
+    int32 GuardSampleHits=0, GuardSampleBlocks=0, GuardSampleBreaks=0;
+    TArray<TSharedPtr<FJsonValue>> BoundaryTrials;
     TArray<TSharedPtr<FJsonValue>> Samples, Events;
     TArray<TSharedPtr<FJsonValue>> CaptureStates;
     TArray<FString> CaptureQueue, CaptureNames, CaptureFiles;
@@ -78,6 +86,7 @@ private:
     void Observe();
     void DriveInputs();
     bool DriveScenarioInputs();
+    bool DriveBoundaryInputs();
     void ObserveScenarios();
     bool AllMovesAvoided() const;
     void Event(const FString& Name, bool bScreenshot=true);

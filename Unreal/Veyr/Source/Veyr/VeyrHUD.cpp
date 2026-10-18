@@ -85,7 +85,7 @@ void AVeyrHUD::DrawHUD()
     Label(FString::Printf(TEXT("EMBER DRAUGHTS  %d"),Knight->HealingCharges),36,76,1.f);
     Label(Knight->bLockedOn?TEXT("LOCK ON"):TEXT("FREE CAMERA"),36,99,.85f);
     if(!Knight->IsReplayControlled())Label(Knight->IsMouseCaptured()?TEXT("ESC RELEASES MOUSE"):
-        Knight->HasEnteredEncounter()?TEXT("CLICK TO CONTROL | ESC RELEASES MOUSE"):TEXT("CLICK TO BEGIN | ESC RELEASES MOUSE"),36,118,.85f);
+        Knight->HasEnteredEncounter()?TEXT("CLICK / ENTER TO CONTROL | ESC RELEASES MOUSE"):TEXT("CLICK / ENTER TO BEGIN | ESC RELEASES MOUSE"),36,118,.85f);
     Label(TEXT("VEYR / THE CINDER WARDEN"),930,29,1.f);
     Label(TEXT("UNREAL PROTOTYPE / TEMPORARY ART"),900,50,.8f);
     Label(TEXT("V E Y R ,  T H E  C I N D E R  W A R D E N"),422,630,1.f);

@@ -507,6 +507,7 @@ void AVeyrKnight::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::Q, IE_Pressed, this, &AVeyrKnight::HealPressed); Input->BindKey(EKeys::Tab, IE_Pressed, this, &AVeyrKnight::LockPressed);
     Input->BindKey(EKeys::R, IE_Pressed, this, &AVeyrKnight::RestartIfTerminal);
     Input->BindKey(EKeys::Escape, IE_Pressed, this, &AVeyrKnight::ReleaseMouse).bExecuteWhenPaused = true;
+    Input->BindKey(EKeys::Enter, IE_Pressed, this, &AVeyrKnight::BeginControlFromKeyboard);
     Input->BindKey(EKeys::MouseScrollUp, IE_Pressed, this, &AVeyrKnight::ZoomIn); Input->BindKey(EKeys::MouseScrollDown, IE_Pressed, this, &AVeyrKnight::ZoomOut);
     Input->BindAxisKey(EKeys::MouseX, this, &AVeyrKnight::LookYaw); Input->BindAxisKey(EKeys::MouseY, this, &AVeyrKnight::LookPitch);
 }
@@ -522,7 +523,32 @@ void AVeyrKnight::UpdateMouseCapture()
     if (bMouseCaptured)
     {
         UGameViewportClient* Viewport = GetWorld()->GetGameViewport();
-        if (Viewport && Viewport->Viewport && (!Viewport->Viewport->HasFocus() || !Viewport->Viewport->IsForegroundWindow())) ReleaseMouse();
+        if (Viewport && Viewport->Viewport)
+        {
+            const bool bFocused = Viewport->Viewport->HasFocus(), bForeground = Viewport->Viewport->IsForegroundWindow();
+            if (!bFocused || !bForeground)
+            {
+                UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_RELEASE reason=focus_loss focused=%d foreground=%d nativeCapture=%d"),
+                    bFocused, bForeground, Viewport->Viewport->HasMouseCapture());
+                ReleaseMouse();
+            }
+            else if (bMouseCaptureConfirmationPending && Viewport->Viewport->HasMouseCapture())
+            {
+                bMouseCaptureConfirmationPending = false;
+                bHasEverCapturedMouse = true;
+                UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_CONFIRMED focused=1 foreground=1 nativeCapture=1 local=%d replay=%d"),Player->IsLocalController(),bReplayControlled);
+            }
+            else if (bMouseCaptureConfirmationPending && GetWorld()->GetTimeSeconds() - MouseCaptureRequestedAt > .5f)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("VEYR_MOUSE_CAPTURE_REJECTED reason=native_capture_timeout focused=%d foreground=%d nativeCapture=0"),bFocused,bForeground);
+                ReleaseMouse();
+            }
+            else if (!bMouseCaptureConfirmationPending && !Viewport->Viewport->HasMouseCapture())
+            {
+                UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_RELEASE reason=native_capture_lost focused=%d foreground=%d"),bFocused,bForeground);
+                ReleaseMouse();
+            }
+        }
     }
 }
 
@@ -530,22 +556,43 @@ void AVeyrKnight::CaptureMouseOrAttack()
 {
     if (bMouseCaptured) { LightPressed(); return; }
     APlayerController* Player = Cast<APlayerController>(Controller);
-    if (!Player || !Player->IsLocalController() || bReplayControlled) return;
     UGameViewportClient* Viewport = GetWorld()->GetGameViewport();
-    if (!Viewport || !Viewport->Viewport || !Viewport->Viewport->IsForegroundWindow()) return;
+    const bool bLocal = Player && Player->IsLocalController();
+    const bool bFocused = Viewport && Viewport->Viewport && Viewport->Viewport->HasFocus();
+    const bool bForeground = Viewport && Viewport->Viewport && Viewport->Viewport->IsForegroundWindow();
+    UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_INPUT local=%d replay=%d focused=%d foreground=%d nativeCapture=%d"),
+        bLocal,bReplayControlled,bFocused,bForeground,Viewport && Viewport->Viewport && Viewport->Viewport->HasMouseCapture());
+    if (!bLocal || bReplayControlled || !bForeground)
+    {
+        UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_REJECTED reason=input_context"));
+        return;
+    }
     FInputModeGameOnly Mode;
     Mode.SetConsumeCaptureMouseDown(true);
     Player->SetInputMode(Mode);
     Player->SetShowMouseCursor(false);
     MouseInputController = Player;
     bMouseCaptured = true;
-    bHasEverCapturedMouse = true;
+    bMouseCaptureConfirmationPending = true;
+    MouseCaptureRequestedAt = GetWorld()->GetTimeSeconds();
+    UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_REQUESTED awaiting_native_confirmation=1"));
     // The deliberate capture click never doubles as a sword swing.
+}
+
+void AVeyrKnight::BeginControlFromKeyboard()
+{
+    // Enter is an accessibility route into controls, never a sword binding.
+    if (bMouseCaptured) return;
+    UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_INPUT_ROUTE key=Enter"));
+    CaptureMouseOrAttack();
 }
 
 void AVeyrKnight::ReleaseMouse()
 {
+    UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_RELEASE_INPUT captured=%d confirmationPending=%d replay=%d"),
+        bMouseCaptured,bMouseCaptureConfirmationPending,bReplayControlled);
     bMouseCaptured = false;
+    bMouseCaptureConfirmationPending = false;
     bForwardHeld = bBackHeld = bLeftHeld = bRightHeld = false;
     if (!bReplayControlled)
     {
@@ -562,7 +609,11 @@ void AVeyrKnight::ReleaseMouse()
         Mode.SetHideCursorDuringCapture(false);
         Player->SetInputMode(Mode);
         Player->SetShowMouseCursor(true);
-        if (UGameViewportClient* Viewport = GetWorld()->GetGameViewport()) Viewport->SetMouseCaptureMode(EMouseCaptureMode::NoCapture);
+        // Retain GameAndUI's CaptureDuringMouseDown with a visible, unlocked
+        // cursor. UE5.8 FSceneViewport drops IE_Pressed for an uncaptured game
+        // viewport in NoCapture mode, preventing the deliberate first click.
+        // Startup capture remains disabled; permanent capture needs that click
+        // (or Enter), and Escape immediately releases it again.
         Player->FlushPressedKeys();
     }
 }

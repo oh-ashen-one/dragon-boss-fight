@@ -30,3 +30,6 @@ __pycache__/
 
 # Unreal-generated Mac packaging templates and local version counter
 Unreal/**/Build/Mac/
+
+# Generated character derivatives remain private pending redistribution clearance
+Unreal/**/Content/Characters/Customuse/

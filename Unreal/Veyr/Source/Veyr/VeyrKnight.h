@@ -107,6 +107,8 @@ private:
     bool bReplayControlled = false;
     bool bMouseCaptured = false;
     bool bHasEverCapturedMouse = false;
+    bool bMouseCaptureConfirmationPending = false;
+    float MouseCaptureRequestedAt = 0.f;
     bool bReplayJumpHeld = false;
     bool bReplayLight = false, bReplayHeavy = false, bReplayRoll = false, bReplayHeal = false, bReplayJump = false, bReplayGuard = false;
     FVector ReplayMove = FVector::ZeroVector;
@@ -138,6 +140,7 @@ private:
     bool HumanInputEnabled() const { return bMouseCaptured && !bReplayControlled; }
     void UpdateMouseCapture();
     void CaptureMouseOrAttack();
+    void BeginControlFromKeyboard();
     void ReleaseMouse();
     void LightPressed(); void HeavyPressed(); void RollPressed();
     void HealPressed(); void JumpPressed(); void LockPressed();

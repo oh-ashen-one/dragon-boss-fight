@@ -66,9 +66,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(bInitialized)return false;
     ReplayMode=Mode.ToLower();
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -168,6 +168,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("struckLeg"),Dragon->GetStruckLegIndex());
     O->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
     O->SetNumberField(TEXT("controlStage"),ControlStage);
+    O->SetNumberField(TEXT("boundaryStage"),BoundaryStage);
+    O->SetNumberField(TEXT("verifiedHealCharges"),VerifiedHealCharges);
     O->SetBoolField(TEXT("controlJumpAirborneObserved"),bControlJumpAirborne);
     O->SetBoolField(TEXT("controlJumpLandingObserved"),bControlJumpLanded);
     O->SetNumberField(TEXT("controlJumpMaximumRiseCm"),ControlJumpMaximumRise);
@@ -293,8 +295,152 @@ void AVeyrReplay::ObserveScenarios()
     }
 }
 
+bool AVeyrReplay::DriveBoundaryInputs()
+{
+    if(ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard"))return false;
+    const FVector Feet=Knight->GetFootLocation();
+    const bool bAvailable=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
+    const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
+    const bool bSafeRecovery=Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.35f;
+    FVector Movement=FVector::ZeroVector;
+    bool bHeal=false,bGuard=false;
+    auto Next=[&](int32 Stage,const TCHAR* Name)
+    {
+        BoundaryStage=Stage;BoundaryStageStarted=Elapsed;Event(Name);
+    };
+    // Approach a natural bite region without moving actors or forcing attacks.
+    // A flight/turn can relocate the goal; only seek positions inside the clear
+    // arena center, falling back inward to allow normal boss repositioning.
+    FVector Goal=FVector::ZeroVector;
+    for(float Distance:{850.f,700.f,550.f})
+    {
+        const FVector Candidate=Dragon->GetActorTransform().TransformPosition(FVector(Distance,0,0));
+        if(Candidate.Size2D()<2950.f){Goal=Candidate;break;}
+    }
+    const float DistanceToGoal=FVector::Dist2D(Feet,Goal);
+    if(DistanceToGoal>40.f)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(DistanceToGoal/140.f,.2f,1.f);
+
+    if(ReplayMode==TEXT("healing"))
+    {
+        if(Knight->Health>100.01f){Finish(false,TEXT("healing exceeded 100 HP cap"));return true;}
+        if(BoundaryStage==0&&Knight->Health<99.99f&&bAvailable&&Knight->IsGrounded()&&bSafeRecovery)
+        {
+            TrialHealth=Knight->Health;TrialCharges=Knight->HealingCharges;
+            TrialHeals=Knight->SuccessfulHeals;TrialHits=Knight->HitsTaken;
+            Movement=FVector::ZeroVector;bHeal=true;
+            Next(TrialCharges>0?1:3,TrialCharges>0?TEXT("healing_charge_requested"):TEXT("injured_empty_flask_requested"));
+        }
+        else if(BoundaryStage==1)
+        {
+            Movement=FVector::ZeroVector;
+            if(Knight->HitsTaken!=TrialHits){Finish(false,TEXT("healing trial interrupted by damage; cap comparison invalid"));return true;}
+            if(Knight->SuccessfulHeals==TrialHeals+1)
+            {
+                const float Expected=FMath::Min(100.f,TrialHealth+55.f);
+                if(Knight->HealingCharges!=TrialCharges-1||!FMath::IsNearlyEqual(Knight->Health,Expected,.02f))
+                {Finish(false,TEXT("completed heal did not consume exactly one charge and restore capped 55 HP"));return true;}
+                TSharedPtr<FJsonObject> Trial=MakeShared<FJsonObject>();
+                Trial->SetStringField(TEXT("kind"),TEXT("completed_heal"));Trial->SetNumberField(TEXT("seconds"),Elapsed);
+                Trial->SetNumberField(TEXT("healthBefore"),TrialHealth);Trial->SetNumberField(TEXT("healthAfter"),Knight->Health);
+                Trial->SetNumberField(TEXT("expectedHealth"),Expected);Trial->SetNumberField(TEXT("chargesBefore"),TrialCharges);
+                Trial->SetNumberField(TEXT("chargesAfter"),Knight->HealingCharges);Trial->SetNumberField(TEXT("actualCompletionCount"),Knight->SuccessfulHeals);
+                BoundaryTrials.Add(MakeShared<FJsonValueObject>(Trial));
+                bHealCapVerified|=TrialHealth>45.f&&FMath::IsNearlyEqual(Knight->Health,100.f,.02f);
+                ++VerifiedHealCharges;Next(2,TEXT("healing_charge_verified"));
+            }
+            else if(Knight->SuccessfulHeals>TrialHeals+1||Elapsed-BoundaryStageStarted>1.8f)
+            {Finish(false,TEXT("requested heal did not complete exactly once within its action duration"));return true;}
+        }
+        else if(BoundaryStage==2)
+        {
+            Movement=FVector::ZeroVector;
+            if(bAvailable)Next(0,TEXT("healing_seek_next_natural_injury"));
+        }
+        else if(BoundaryStage==3)
+        {
+            Movement=FVector::ZeroVector;
+            if(Knight->Action==EVeyrKnightAction::Heal||Knight->HealingCharges!=0||Knight->SuccessfulHeals!=TrialHeals||
+                Knight->HitsTaken!=TrialHits||!FMath::IsNearlyEqual(Knight->Health,TrialHealth,.02f))
+            {Finish(false,TEXT("injured empty-flask trial changed action/resources/health or was contaminated by damage"));return true;}
+            if(Elapsed-BoundaryStageStarted>=1.4f)
+            {
+                bEmptyHealRejected=TrialHealth<100.f&&TrialCharges==0&&TrialHits>0;
+                TSharedPtr<FJsonObject> Trial=MakeShared<FJsonObject>();
+                Trial->SetStringField(TEXT("kind"),TEXT("injured_empty_flask_rejected"));Trial->SetNumberField(TEXT("injuredHealth"),TrialHealth);
+                Trial->SetNumberField(TEXT("observedSeconds"),Elapsed-BoundaryStageStarted);Trial->SetNumberField(TEXT("successfulHealsUnchanged"),Knight->SuccessfulHeals);
+                BoundaryTrials.Add(MakeShared<FJsonValueObject>(Trial));
+                const bool bPass=VerifiedHealCharges==4&&Knight->SuccessfulHeals==4&&Knight->HealingCharges==0&&bHealCapVerified&&bEmptyHealRejected;
+                Finish(bPass,bPass?TEXT("four real heal completions consumed four charges; 100 HP cap and injured empty-flask rejection verified"):
+                    TEXT("healing boundary evidence incomplete after empty-flask trial"));return true;
+            }
+        }
+    }
+    else
+    {
+        // Compare actual contact outcomes with the preceding frame's guard,
+        // grounded state and facing. Requesting guard alone proves nothing.
+        if(bGuardSampleValid&&Knight->HitsTaken>GuardSampleHits)
+        {
+            const float Lost=GuardSampleHealth-Knight->Health;
+            const int32 Blocks=Knight->GuardedHits-GuardSampleBlocks,Breaks=Knight->GuardBreaks-GuardSampleBreaks;
+            TSharedPtr<FJsonObject> Trial=MakeShared<FJsonObject>();
+            Trial->SetStringField(TEXT("kind"),TEXT("guard_contact"));Trial->SetNumberField(TEXT("seconds"),Elapsed);
+            Trial->SetNumberField(TEXT("stage"),BoundaryStage);Trial->SetBoolField(TEXT("guardHeldBefore"),bGuardSampleHeld);
+            Trial->SetBoolField(TEXT("groundedBefore"),bGuardSampleGrounded);Trial->SetNumberField(TEXT("facingDotBefore"),GuardSampleFacing);
+            Trial->SetNumberField(TEXT("healthBefore"),GuardSampleHealth);Trial->SetNumberField(TEXT("healthAfter"),Knight->Health);
+            Trial->SetNumberField(TEXT("staminaBefore"),GuardSampleStamina);Trial->SetNumberField(TEXT("staminaAfter"),Knight->Stamina);
+            Trial->SetNumberField(TEXT("actualHitDelta"),Knight->HitsTaken-GuardSampleHits);Trial->SetNumberField(TEXT("guardedDelta"),Blocks);
+            Trial->SetNumberField(TEXT("guardBreakDelta"),Breaks);
+            Trial->SetStringField(TEXT("move"),StaticEnum<EVeyrDragonMove>()->GetNameStringByValue(static_cast<int64>(Dragon->Move)));
+            Trial->SetStringField(TEXT("actionAfter"),StaticEnum<EVeyrKnightAction>()->GetNameStringByValue(static_cast<int64>(Knight->Action)));
+            BoundaryTrials.Add(MakeShared<FJsonValueObject>(Trial));
+            const bool bSingle=Knight->HitsTaken==GuardSampleHits+1&&bGuardSampleHeld&&bGuardSampleGrounded;
+            if(BoundaryStage==0&&bSingle&&GuardSampleFacing>.75f&&GuardSampleStamina>=40.f&&Blocks==1&&Breaks==0&&
+                Lost>0.f&&Lost<=10.f&&GuardSampleStamina-Knight->Stamina>=10.f)
+            {bFrontGuardVerified=true;Next(1,TEXT("front_guard_chip_and_stamina_verified"));}
+            else if(BoundaryStage==1&&bSingle&&GuardSampleFacing<-.5f&&GuardSampleStamina>=40.f&&Blocks==0&&Breaks==0&&Lost>=20.f)
+            {bRearGuardVerified=true;Next(2,TEXT("rear_guard_full_damage_verified"));}
+            else if(BoundaryStage==2&&bSingle&&GuardSampleFacing>.75f&&GuardSampleStamina>0.f&&GuardSampleStamina<35.f&&
+                Blocks==0&&Breaks==1&&Lost>=20.f&&Knight->Stamina<.5f&&Knight->IsGuardBroken()&&Knight->Action==EVeyrKnightAction::Stagger)
+            {
+                bGuardBreakVerified=true;Finish(bFrontGuardVerified&&bRearGuardVerified,
+                    TEXT("front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified"));return true;
+            }
+        }
+        const bool bRear=BoundaryStage==1;
+        if(Knight->bLockedOn==bRear)Knight->ToggleLockOn();
+        bGuard=true;
+        if(bRear)
+        {
+            if(APlayerController* Player=Cast<APlayerController>(Knight->GetController()))
+            {
+                const FVector Source=(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)?
+                    Dragon->GetWarningFootprint().Origin:Dragon->GetActorLocation();
+                const float AwayYaw=(Knight->GetActorLocation()-Source).Rotation().Yaw;
+                const float Error=FMath::FindDeltaAngleDegrees(Player->GetControlRotation().Yaw,AwayYaw);
+                // Normal controller look input; never SetActor/ControlRotation.
+                Player->AddYawInput(FMath::Clamp(Error*.1f,-6.f,6.f));
+            }
+        }
+        // Permit ordinary recovery healing to survive the natural sequence;
+        // it neither replenishes stamina nor contributes guard coverage.
+        if(Knight->Health<45.f&&Knight->HealingCharges>0&&bAvailable&&bSafeRecovery)
+        {bGuard=false;bHeal=true;Movement=FVector::ZeroVector;}
+        GuardSampleHealth=Knight->Health;GuardSampleStamina=Knight->Stamina;
+        GuardSampleHits=Knight->HitsTaken;GuardSampleBlocks=Knight->GuardedHits;GuardSampleBreaks=Knight->GuardBreaks;
+        bGuardSampleHeld=Knight->Action==EVeyrKnightAction::Guard;bGuardSampleGrounded=Knight->IsGrounded();
+        const FVector Threat=(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)?
+            Dragon->GetWarningFootprint().Origin:Dragon->GetActorLocation();
+        GuardSampleFacing=FVector::DotProduct(Knight->GetActorForwardVector(),(Threat-Knight->GetActorLocation()).GetSafeNormal2D());
+        bGuardSampleValid=true;
+    }
+    Knight->SetReplayInput(Movement,false,false,false,bHeal,false,bGuard);
+    return true;
+}
+
 bool AVeyrReplay::DriveScenarioInputs()
 {
+    if(DriveBoundaryInputs())return true;
     if(ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance"))return false;
     FVector Movement=FVector::ZeroVector;
     bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false,bGuard=false;
@@ -793,6 +939,15 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetBoolField(TEXT("controlStaminaSpent"),bControlStaminaSpent);
     Root->SetBoolField(TEXT("controlStaminaRecovered"),bControlStaminaRecovered);
     Root->SetBoolField(TEXT("allSixMovesAvoided"),AllMovesAvoided());
+    Root->SetNumberField(TEXT("boundaryStage"),BoundaryStage);
+    Root->SetNumberField(TEXT("verifiedHealCharges"),VerifiedHealCharges);
+    Root->SetBoolField(TEXT("healCapVerified"),bHealCapVerified);
+    Root->SetBoolField(TEXT("injuredEmptyFlaskRejected"),bEmptyHealRejected);
+    Root->SetBoolField(TEXT("frontGuardVerified"),bFrontGuardVerified);
+    Root->SetBoolField(TEXT("rearGuardVerified"),bRearGuardVerified);
+    Root->SetBoolField(TEXT("staminaGuardBreakVerified"),bGuardBreakVerified);
+    Root->SetArrayField(TEXT("boundaryTrials"),BoundaryTrials);
+    Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for 1.4s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; natural attacks and normal controller yaw input only"));
     Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));
     Root->SetStringField(TEXT("avoidanceCoverageDefinition"),TEXT("inside actual warning at least once during windup, then no HitsTaken increase through completed recovery; no boss move forcing"));
     Root->SetNumberField(TEXT("terminalSeconds"),TerminalSeconds);
