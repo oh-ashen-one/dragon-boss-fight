@@ -59,7 +59,7 @@ TArray<FString> UVeyrVisualDefinition::ValidateDefinition(bool bRequireCompleteM
             Errors.Add(TEXT("Clip uses a different skeleton: ")+Entry.Key.ToString());
         const float End=Clip.EndSeconds<0?Clip.Sequence->GetPlayLength():Clip.EndSeconds;
         if(!FMath::IsFinite(Clip.StartSeconds)||!FMath::IsFinite(Clip.EndSeconds)||!FMath::IsFinite(Clip.ImpactSeconds)||
-           Clip.StartSeconds<0||End<=Clip.StartSeconds||End>Clip.Sequence->GetPlayLength()+.001f||
+           Clip.StartSeconds<0||End<=Clip.StartSeconds||End>Clip.Sequence->GetPlayLength()||
            (Clip.ImpactSeconds>=0&&(Clip.ImpactSeconds<Clip.StartSeconds||Clip.ImpactSeconds>End)))
             Errors.Add(TEXT("Clip timing invalid: ")+Entry.Key.ToString());
     }

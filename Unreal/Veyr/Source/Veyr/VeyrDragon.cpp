@@ -177,7 +177,14 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             break;
         }
         case EVeyrDragonState::Windup:
-            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Active,ActiveDuration);
+            if(StateElapsed>=StateDuration)
+            {
+                EnterState(EVeyrDragonState::Active,ActiveDuration);
+                // Capture the visible phase-zero contacts immediately so the
+                // first active interval participates in the subsequent sweep.
+                UpdateImportedPresentation();
+                if(bUsingCustomuseVisual)TryDamageTarget();
+            }
             break;
         case EVeyrDragonState::Active:
             if(Move==EVeyrDragonMove::FlyAway)
@@ -710,7 +717,7 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     VisualDefinition=Definition;bUsingCustomuseVisual=true;
     for(UStaticMeshComponent* Part:TemporaryParts)if(Part)Part->SetVisibility(false);
     ImportedPresentation->SetVisibility(true);
-    TemporaryLabel->SetText(FText::FromString(TEXT("CUSTOMUSE DRAGON — MOTION INTEGRATION PREVIEW")));
+    TemporaryLabel->SetVisibility(false);
     bImportedAttackCacheReady=AttackPoseProbe->SetVisualDefinition(Definition,false)&&CacheImportedAttackWarnings();
     AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
     LastImportedClip=NAME_None;bImportedTransitionReady=false;

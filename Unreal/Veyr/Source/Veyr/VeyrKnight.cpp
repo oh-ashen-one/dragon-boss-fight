@@ -161,7 +161,7 @@ void AVeyrKnight::BeginPlay()
             Material->SetVectorParameterValue(TEXT("Color"), bBlade ? FLinearColor(.62f,.68f,.72f) : bBrass ? FLinearColor(.48f,.31f,.09f) : bDark ? FLinearColor(.045f,.055f,.07f) : FLinearColor(.19f,.25f,.30f));
         }
     }
-    if (Controller) Controller->SetControlRotation(FRotator(-12.f, GetActorRotation().Yaw, 0.f));
+    if (Controller) Controller->SetControlRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
     if(!CustomuseVisualDefinition)CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
         TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if (CustomuseVisualDefinition) ApplyCustomuseVisual(CustomuseVisualDefinition);

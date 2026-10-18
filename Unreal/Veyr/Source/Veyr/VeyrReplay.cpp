@@ -676,7 +676,7 @@ void AVeyrReplay::DriveInputs()
         {
             const bool bSafeHeal=(Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.35f)||bDown;
             if(Knight->Health<48.f&&Knight->HealingCharges>0&&bSafeHeal){bHeal=true;Movement=FVector::ZeroVector;}
-            else if(GoalDistance<95.f&&!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Rise&&Dragon->State!=EVeyrDragonState::Reposition)
+            else if(GoalDistance<45.f&&!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Rise&&Dragon->State!=EVeyrDragonState::Reposition)
             {
                 Movement=FVector::ZeroVector;
                 const float SafeTime=Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:20.f;

@@ -120,3 +120,13 @@ For subsequent owned-editor validation, root transiently disabled the actual CDO
 An original deterministic 680-triangle basalt cliff mesh imported with exact centered 100 cm bounds; its source generator and native importer are reproducible. New Arena source uses it in place of distant cube silhouettes, retaining the previous floor, cathedral and collision. Native environment rendering after rebuild remains pending.
 
 The subsequent actual imported-art controls run passed in 18.543 game seconds with mean simulation step 0.01291 seconds after the transient throttle correction. It exercised movement, jump, light/heavy action input, roll, stamina recovery, lock toggles, actual guarded contact, healing and full-health healing rejection. It does not prove successful sword hits. The normalizer, material binding and native pose receipts remain separate evidence.
+
+## Final-art candidate activation
+
+Knight v012 contains corrected original frontal light/heavy strikes, the longer left/right combat steps and grounded Run derivative. It passes all 84 native pose samples and ten guard/heal movement-layer cases. Native blade endpoints now match the intended frontal contact path; measured active-window target probes use the existing combat radii. Native strike and strafe pose images were reviewed. The Run correction preserves original rotations/horizontal stride and removes the previous foot penetration; its small original rotational loop seam uses the existing transition.
+
+Private stable runtime definitions now reference Knight v012 and Dragon v006. A fresh PIE session automatically loaded both and reported no knight presentation diagnostic, no missing dragon clip and ready camera material parameters. This activates the assets for final gameplay validation; it does not mark the full fight accepted.
+
+Source additionally uses a level initial camera pitch (rendered review keeps the entire standing dragon in frame), hides the internal imported-preview label, requires the replay to approach within 45 cm of its intended stand-off, and records the phase-zero dragon contact pose on Active entry. Complete authored clips use native sequence end times; definition validation now matches the runtime strict interval check.
+
+Both latest editor sessions ended normally with exit 0; the temporary background-throttle override was restored before shutdown. Root is packaging the standalone candidate next. Earlier failed core evidence remains preserved. Full packaged contacts, pacing, attack coverage, camera, restart and physical controls remain acceptance gates.
