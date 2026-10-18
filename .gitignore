@@ -1,0 +1,15 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+UserSettings/
+Builds/
+Evidence/
+*.log
+*.csproj
+*.sln
+.DS_Store
+CHECKPOINT-001.md
+ArtSource/CHECKPOINT-ART-001.md
+*.blend1
+Local/
