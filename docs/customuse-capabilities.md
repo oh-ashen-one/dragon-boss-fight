@@ -1,6 +1,16 @@
 # Customuse capability and rights inspection
 
-Checked 2026-10-18 through the connected Customuse catalog, supported authenticated browser controls and current first-party documentation. No generation, rigging run, animation run, export, purchase or publication was submitted. Existing workflow content and settings were preserved. A separately authorized follow-up created one isolated, unpublished task-owned configuration probe with no source asset, then selected Tripo/Quadruped and connected an unrun animation node. Private account, session, workflow and asset identifiers are excluded.
+Initial no-spend inspection, followed by authorized mesh completion on 2026-10-18. The completion section below supersedes earlier pending-budget statements. Inspected through the connected Customuse catalog, supported authenticated browser controls and current first-party documentation. During the initial capability inspection, no generation, rigging run, animation run, export, purchase or publication was submitted. Existing unrelated workflow content and settings were preserved. A separately authorized follow-up created one isolated, unpublished task-owned configuration probe with no source asset, then selected Tripo/Quadruped and connected an unrun animation node. Private account, session, workflow and asset identifiers are excluded.
+
+## Authorized mesh completion and actual rig quotes
+
+The owner subsequently approved two meshes each for knight and dragon, up to 640 credits total. Four distinct ready previews were checked for existing tasks before sequential submission. Each receipt reports 160 credits; all four tasks completed, and all four actual GLBs were downloaded to ignored storage with hashes and inspection receipts. No automatic retry or additional paid operation occurred.
+
+Actual geometry: knight A 28,263 triangles; knight B 26,885; dragon V2-B 57,269; dragon V3-B 59,736. Each has one mesh primitive, one material and three 4096×4096 texture maps. None has skins, joint attributes or animations. The dragon outputs exceed the requested 50,000 polygon setting. The generated asset metadata identifies Tripo as generator but contains no embedded license notice.
+
+Actual output pages show AI generated, PBR, P2 and requested polygon settings. No output-specific raw redistribution grant was found in the inspected output page or embedded metadata. The general terms analysis below remains applicable; raw publication is not cleared.
+
+The selected real knight B and dragon V3-B files were loaded into the separate task-owned configuration workflow. Enabled rig actions display **8 credits for Cartwheel/Humanoid knight B** and **33 credits for Tripo/Quadruped dragon V3-B**, totaling **41 credits for two single rig attempts**. Neither was run. No animation is included or approved. The earlier empty Humanoid Animation test node was removed to keep the prepared rig branches free of downstream paid motion operations. Dragon V2-B remains as a disconnected comparison-only upload. Both dragon meshes were viewed in the website fullscreen viewer; V3-B has the broader chest/forelegs and heavier head posture, while V2-B has a slimmer, more upright long neck.
 
 ## Mesh quote verified
 
@@ -12,7 +22,7 @@ Checked 2026-10-18 through the connected Customuse catalog, supported authentica
 
 The current connector catalog independently reports P2 at 160 credits, with a maximum of 50,000 triangle faces or 25,000 quad faces. Both asset categories support P2. Catalog prices are estimates, not reserved quotes or enforced spending ceilings. Recheck the exact selected action immediately before any authorized submission. The unrelated 65-credit composer action is P1, not the saved P2 quote. No tier or topology was changed.
 
-One mesh for each main character is **320 credits for meshes only**. This remains a proposal without spending approval. It excludes rigging, motion generation, retries and other processing. Sources: [Generate 3D](https://customuse.com/generate-3d) saved asset controls and `customuse_list_generation_options(kind="3d")`.
+One mesh for each main character is **320 credits for meshes only**. This was the original two-mesh proposal; the later four-mesh authorization and completed 640-credit spend above supersede its pending status. Mesh pricing excludes rigging, motion generation, retries and other processing. Sources: [Generate 3D](https://customuse.com/generate-3d) saved asset controls and `customuse_list_generation_options(kind="3d")`.
 
 ## Website rigging and animation directly verified
 
@@ -45,11 +55,11 @@ The provider's [official Tripo schema](https://platform.tripo3d.ai/docs/schema) 
 
 **Answer to the dragon pipeline question:** Customuse exposes a supported quadruped rig configuration. A complete dragon rig plus appropriate animation and faithful export inside Customuse remains **unverified**, not proven impossible. The remaining gate is narrower than before: combined anatomy/deformation and creature animation, rather than basic quadruped option availability. Preserve this no-run probe for a future authorized model test.
 
-## Existing proposal visual readiness
+## Historical preview concerns retained for deformation review
 
 The two knight previews show full armored bodies and swords, but neither follows the requested clear A-pose: arms lie near the torso and the sword crosses the legs. They are plausible concept choices but carry separation/skinning risk. They have not been accepted as final production references.
 
-The latest dragon revision was inspected in its expanded image viewer. It remains a compact, upright three-quarter creature rather than the requested long, low side-profile silhouette; outer wing silhouettes meet the image boundary. Its second preview has a clearer apparent single-tail reading, but this does not resolve the design mismatch or establish four independent leg chains in a future mesh. Earlier framing/tail concerns remain valid. No candidate is accepted as final production art. Knight B is the recommended bounded mesh-feasibility candidate; see the separate cost decision. Dragon spending remains deferred.
+The latest dragon revision was inspected in its expanded image viewer. It remains a compact, upright three-quarter creature rather than the requested long, low side-profile silhouette; outer wing silhouettes meet the image boundary. Its second preview has a clearer apparent single-tail reading, but this does not resolve the design mismatch or establish four independent leg chains in a future mesh. Earlier framing/tail concerns remain valid. No candidate is accepted as final production art. The owner subsequently authorized all four mesh attempts, which completed. Actual model comparison now recommends Knight B and Dragon V3-B for bounded rigging tests; see the separate cost decision. Earlier preview concerns remain inspection targets, not a current mesh-spending hold.
 
 ## Redistribution rights
 
@@ -57,12 +67,12 @@ The [Consumer Terms](https://customuse.com/terms), updated 19 June 2026, section
 
 The [Business Terms](https://customuse.com/business-terms), also updated 19 June 2026, section 4 expressly includes reproducing, modifying, publishing, distributing, selling and licensing outputs, subject to feature/plan/asset/provider/order-form exceptions. Their introduction determines when they apply; consumer terms point business/entity uses to them. This is stronger evidence for redistribution than a generic commercial-use claim, but the previously inspected Legacy Pro label alone does not settle which exceptions govern these mesh and motion operations.
 
-**Publication gate:** record applicable plan/feature/provider notices for actual generated meshes, textures, skeletons and motions; establish permission for public raw-file distribution and the chosen asset license. A standalone provider site's subscription terms do not automatically apply to its Customuse integration. Generic commercial-use wording does not itself grant recipients a broad open-source asset license. Keep code and asset licensing separate. No raw Customuse file is cleared for publication by this inspection.
+**Publication gate:** record applicable plan/feature/provider notices for actual generated meshes, textures, skeletons and motions; establish permission for public raw-file distribution and the chosen asset license. A standalone provider site's subscription terms do not automatically apply to its Customuse integration. Generic commercial-use wording does not itself grant recipients a broad open-source asset license. Keep code and asset licensing separate. No raw Customuse file is cleared for public redistribution by this inspection; the generated files remain in ignored storage.
 
 ## Remaining gates
 
-1. Select production references meeting knight/dragon design and rigging requirements; existing previews remain unaccepted concepts.
-2. Obtain explicit approval for a freshly checked credit total before any paid operation. The 320-credit proposal is not permission.
+1. Validate the selected actual meshes against design, separation and rigging requirements before production acceptance.
+2. Obtain separate explicit approval for the freshly checked 41-credit rig proposal or other downstream paid processing. The completed 640-credit approval covered only four meshes.
 3. Establish a supported four-legged dragon rig/animation route with independent wings, tail and jaw. Humanoid auto-rigging is insufficient evidence.
-4. After authorized generation, inspect actual topology, part separation, skeleton, weights and exported clips. Test deformation, scale, orientation, materials and motion in the owned Unreal project.
+4. After separately authorized rigging, inspect actual topology, part separation, skeleton, weights and exported clips. Test deformation, scale, orientation, materials and motion in the owned Unreal project.
 5. Complete asset-specific rights checks before publishing source assets. No alternate generator or Blender fallback is approved.

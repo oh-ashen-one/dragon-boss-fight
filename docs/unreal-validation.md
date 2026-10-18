@@ -37,3 +37,11 @@ A later compile including head guidance, mouse-safe click-to-begin, stronger rep
 Standalone C++ linked, but nested UBA/.NET Xcode finalization failed to launch `/bin/sh` with a bad file descriptor. Direct task-local Xcode finalization with valid stdin and local unsigned packaging succeeded. No engine installation, account or global security settings were changed. Cook/archive and packaged-game validation remain separate gates.
 
 The subsequent compile-only source `c8c59add517853a71c3924153649a855c4b297d3dc35031e1b0c78e3bf9d3871` passed with unchanged source. It replaces synchronous video PNG writes with one bounded background task and explicitly bypasses Zen for cooking. Both changes require an approved runtime check. Engine launches are held after the two recorded crashes; the task-local launchers enforce that hold.
+
+## Resumed packaging verification
+
+The owner approved bounded validation with a stop on the next crash. Corrected filesystem cooking and archive creation succeeded. The first packaged-app launch then aborted in dyld before Unreal initialized because the raw archive omitted its entire `Contents/UE` payload, including runtime libraries. The launch hold was reinstated; no automatic retry occurred.
+
+A copy-only repair restores the matching staged payload and a verified ONNX install-name alias. The signed ZIP passes CRC and full extracted-file manifest comparison; its extracted app passes strict ad-hoc signature verification and a recursive audit of 15 Mach-O images with zero unresolved imports, including weak imports. The staged manifest includes `VeyrArena.umap`. Game UUID and code/string-section identity are unchanged, and embedded source matches `c8c59add517853a71c3924153649a855c4b297d3dc35031e1b0c78e3bf9d3871`. ZIP SHA256: `ad1427ca33e67e731eb5d8ac5994906c7da7e5f68e605cd70782c094f22a89ee`.
+
+Documents FileProvider recreates Finder metadata on loose apps and interferes with strict signing. The durable artifact is a ZIP created from a verified private signing copy; a fresh extraction outside FileProvider also passed verification. No quarantine attribute, signing account or global security setting was changed. Native launch, physical controls and the newer gameplay regression remain unverified pending fresh approval.

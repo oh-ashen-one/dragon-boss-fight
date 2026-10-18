@@ -3,12 +3,17 @@
 import argparse
 import datetime
 import json
+import hashlib
+import os
+import plistlib
 from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser(description=__doc__)
-p.add_argument('--engine', type=Path, required=True)
+runtime = p.add_mutually_exclusive_group(required=True)
+runtime.add_argument('--engine', type=Path)
+runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
 p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance'], required=True)
 p.add_argument('--video-fps', type=int, choices=range(1,16), help='Optional native capture cadence; adds measurable overhead')
@@ -21,13 +26,37 @@ stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 run = ROOT / 'Evidence' / ('native-' + a.mode + '-' + stamp)
 run.mkdir(parents=True)
 project = ROOT / 'Unreal/Veyr/Veyr.uproject'
-engine = a.engine / 'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
-cmd = [str(a.gpu_slot), 'capture', '--label', 'veyr-' + a.mode, '--timeout', '180', '--json', str(run/'gpu.json'), '--', str(engine), str(project), '/Game/Maps/VeyrArena', '-game', '-RenderOffScreen', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
+if a.app:
+    app = a.app.resolve()
+    info = plistlib.loads((app/'Contents/Info.plist').read_bytes())
+    name = info['CFBundleExecutable']
+    if Path(name).name != name:
+        p.error('Invalid executable name in app bundle')
+    executable = app/'Contents/MacOS'/name
+    from audit_bundle import audit_bundle
+    preflight = audit_bundle(app)
+    preflight['cookedPayloadPresent'] = (app/'Contents/UE').is_dir()
+    signature = subprocess.run(['/usr/bin/codesign', '--verify', '--deep', '--strict', str(app)],
+                               stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    preflight['signatureVerified'] = signature.returncode == 0
+    (run/'bundle-preflight.json').write_text(json.dumps(preflight,indent=2)+'\n')
+    if not (preflight['staticDependencyAuditPassed'] and preflight['cookedPayloadPresent'] and preflight['signatureVerified']):
+        p.error('Packaged app failed dependency, payload or signature preflight; no game was launched')
+    launch = [str(executable), '/Game/Maps/VeyrArena']
+else:
+    executable = a.engine / 'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
+    launch = [str(executable), str(project), '/Game/Maps/VeyrArena', '-game']
+if not executable.is_file():
+    p.error('Runtime executable is missing')
+(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':True},indent=2)+'\n')
+cmd = [str(a.gpu_slot), 'capture', '--label', 'veyr-' + a.mode, '--timeout', '180', '--json', str(run/'gpu.json'), '--', *launch, '-RenderOffScreen', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
 if a.video_fps:
     cmd.append('-VeyrVideoFPS='+str(a.video_fps))
 print('Native run:', run, flush=True)
 with (run/'launcher.log').open('w') as output:
-    result = subprocess.run(cmd, cwd=ROOT, stdout=output, stderr=subprocess.STDOUT)
+    environment = os.environ.copy()
+    environment['GPU_SLOT_CAPTURE_SLOTS'] = '2'
+    result = subprocess.run(cmd, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
 print('Process exit:', result.returncode, 'Evidence:', run, flush=True)
 if result.returncode:
     raise SystemExit(result.returncode)

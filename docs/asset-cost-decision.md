@@ -1,29 +1,32 @@
-# Main-character asset decision
+# Main-character asset spending and next decision
 
-Prepared 2026-10-18. Status: **no spending approval; no paid submission**.
+Updated 2026-10-18. The owner approved **two knight and two dragon P2 mesh attempts**, at 160 credits each and a total cap of 640 credits. All four completed successfully. Four individual receipts each report 160 credits: **640 credits actually charged**. No paid retry, rigging or animation operation was run.
 
-The live Customuse website and connector catalog agree on **160 credits for one selected P2 mesh**, or **320 credits for one knight and one dragon mesh**. Original saved settings are private PBR assets, 30,000 knight faces and 50,000 dragon faces; saved preview records request 4K textures. Recheck the selected action before submission. Catalog estimates are not enforced spending ceilings.
+## Completed meshes
 
-This buys two mesh-generation attempts, not a finished animated encounter. A read-only humanoid workflow inspection showed an 8-credit Cartwheel Auto Rig action and a 33-credit 5-second Simple/Keep rig/Loop humanoid animation action. These are context-specific observations, not Veyr quotes. No complete animation-set total or supported quadruped-plus-wing workflow is established.
+All were requested through Customuse with P2, Private, PBR and 4K textures. Knight polygon setting was 30,000; dragon setting was 50,000. Actual decoded GLB triangle counts differ from requested settings.
 
-## Recommendation
+| Saved candidate | Actual triangles | File size | Skeleton / animations |
+| --- | ---: | ---: | --- |
+| Knight A | 28,263 | 12,996,084 bytes | None / none |
+| Knight B | 26,885 | 11,363,296 bytes | None / none |
+| Dragon V2-B | 57,269 | 13,724,092 bytes | None / none |
+| Dragon V3-B | 59,736 | 14,179,368 bytes | None / none |
 
-**Recommend one knight-first feasibility attempt, capped at 160 credits, using knight B (the right-hand image in the original saved knight set). Defer the dragon.** This is a proposal for explicit owner approval, not spending authorization.
+Each file has one mesh primitive, one material, and three embedded 4096×4096 textures: base color, normal and metallic/roughness. Every file's hash and inspection receipt are preserved privately. The completed assets are candidate meshes, not rigged or integrated final characters.
 
-Knight B has the stronger broad armored silhouette, a fully framed body and an imposing broad sword. Its arms remain close to the torso and the sword crosses the legs, so the paid result must be checked for fused geometry and skinning suitability. The result is an experiment toward final art, not guaranteed production acceptance. The exact saved reference is privately preserved as `knight-b.webp`; display that existing image with the decision. The live quote is P2, 30,000 polycount, PBR, Private, 160 credits; the saved request specifies 4K textures.
+## Proposed next paid step — not approved
 
-This first mesh would allow direct inspection of the actual knight geometry and its available downstream rig/export controls. The website humanoid route and GLB/FBX export menus are now verified on an existing unrelated humanoid workflow, without generating, exporting or reusing that asset. Rigging and animation themselves require separate exact quotes and approval; neither is included in the proposed 160 credits.
+A task-owned, unpublished Customuse workflow contains the actual selected GLBs connected to separate rig nodes. The enabled per-node actions were inspected without pressing Run:
 
-Defer dragon spending: its latest second preview has a clearer apparent single tail, but retains a compact upright silhouette and clipped outer wings rather than the intended colossal low dragon. Customuse now demonstrably exposes Tripo Quadruped rig configuration, but a combined quadruped-plus-wing skeleton and working creature-animation route remain unverified. An isolated no-run graph accepts a connection to Humanoid Animation; that generic connection is not proof of creature compatibility. Buying both meshes now would spend another 160 credits without resolving those gates.
+| Actual input | Selected rig operation | Displayed price |
+| --- | --- | ---: |
+| Knight B | Cartwheel / Humanoid | 8 credits |
+| Dragon V3-B | Tripo / Quadruped | 33 credits |
+| **Two single rig attempts** | **No animation, no retry** | **41 credits** |
 
-Suggested combined decision wording: “Approve the shown knight B concept for one Customuse P2 mesh feasibility attempt, up to 160 credits, with no automatic retries or paid rigging/animation; keep the dragon deferred?” Recheck the cost immediately before submission and stop if it exceeds the approved cap. No price-reservation or tool-enforced ceiling is claimed.
+These quotes now use the real chosen models rather than the earlier unrelated humanoid or empty-node probes. No rig output exists yet. The unused empty Humanoid Animation node was removed from this task-owned graph, so there is no downstream animation node in the prepared rig branches. Recheck price before any separately authorized run; displayed estimates are not enforced spending ceilings.
 
-## Present once to the owner
+Knight B is the recommended humanoid candidate: its actual PBR model retains broad armor and a substantial sword, with fewer triangles than A. After comparing both actual meshes in the website fullscreen viewer, Dragon V3-B is the recommended rig candidate for its broader chest/forelegs and lower, heavier head posture. V2-B has a slimmer, more upright long neck and slightly fewer triangles. Their current rest poses, metal roughness, weapon separation and deformation still require assessment after rigging and in Unreal. The dragon's four legs plus independent wings, tail and jaw are not guaranteed by the generic Quadruped choice. No creature combat-animation route has been validated.
 
-- The actual saved concept images, labelled as concepts rather than completed meshes.
-- The selected image, exact Customuse tier/settings and current action price.
-- The bounded deliverable: one or two mesh attempts, without automatic retries or rigging/animation spending.
-- The unresolved creature-body support and raw redistribution conditions.
-- One combined decision: approve the named references and exact attempt budget, or continue reference/capability investigation while gameplay development proceeds.
-
-Use private saved records to recover identifiers; never copy them into public documentation. The [capability report](customuse-capabilities.md) records evidence and sources. All final main meshes must originate in Customuse. No generator substitution or Blender workflow is approved.
+The 640-credit mesh approval does **not** authorize these 41 credits, motion generation, additional meshes or retries. Keep all raw files in ignored local storage until the applicable output/provider notices and raw redistribution rights are resolved. The [capability report](customuse-capabilities.md) separates observed controls from validated results.

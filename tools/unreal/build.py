@@ -65,6 +65,66 @@ def finalize_standalone(build_tool, configuration, evidence):
     return result
 
 
+def standalone_bundle(configuration):
+    executable = "Veyr" if configuration == "Development" else "Veyr-Mac-Shipping"
+    return PROJECT / "Binaries/Mac" / (executable + ".app"), executable
+
+
+def sign_local_bundle(configuration, evidence):
+    """Ad-hoc seal this generated app for local UAT staging, without accounts.
+
+    Remove only the two Finder metadata attributes that codesign rejects. Never
+    clear all attributes, remove quarantine, or follow a link outside the app.
+    """
+    app, _ = standalone_bundle(configuration)
+    result = {"success": False, "identity": "ad-hoc", "timestamped": False,
+              "bundle": str(app.relative_to(PROJECT)), "signExitCode": None,
+              "verifyExitCode": None, "attributeCleanupExitCodes": {}, "codeResourcesSHA256": None}
+    expected = PROJECT.resolve() / "Binaries/Mac" / app.name
+    if not app.is_dir() or app.is_symlink() or app.resolve() != expected:
+        result["reason"] = "expected task-owned generated app is missing or redirected"
+        return result
+    attributes = ("com.apple.FinderInfo", "com.apple.ResourceFork")
+    try:
+        # Validate the complete path set before modifying anything. Internal
+        # framework symlinks are allowed only when their targets remain owned.
+        paths = [app]
+        for directory, directories, files in os.walk(app, followlinks=False):
+            paths.extend(Path(directory) / name for name in directories + files)
+        for path in paths:
+            if not path.resolve().is_relative_to(app.resolve()):
+                raise ValueError("generated bundle contains a path outside its owned directory")
+    except (OSError, ValueError, RuntimeError) as error:
+        result["reason"] = "generated bundle metadata preparation failed: " + str(error)
+        return result
+    # macOS Python does not expose os.removexattr. Native xattr -dr is idempotent
+    # when the named attribute is absent; never use -c or remove any other name.
+    for name in attributes:
+        status = run_logged(["/usr/bin/xattr", "-dr", name, str(app)],
+                            evidence / ("bundle-xattr-" + name.rsplit(".", 1)[-1] + ".log"))
+        result["attributeCleanupExitCodes"][name] = status
+        if status != 0:
+            result["reason"] = "generated bundle metadata cleanup failed for " + name
+            return result
+    result["signExitCode"] = run_logged(
+        ["/usr/bin/codesign", "--force", "--deep", "--sign", "-", "--timestamp=none", str(app)],
+        evidence / "bundle-sign.log")
+    if result["signExitCode"] != 0:
+        result["reason"] = "local ad-hoc bundle signing failed"
+        return result
+    result["verifyExitCode"] = run_logged(
+        ["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
+        evidence / "bundle-verify.log")
+    resources = app / "Contents/_CodeSignature/CodeResources"
+    if result["verifyExitCode"] != 0 or not resources.is_file():
+        result["reason"] = "local bundle signature verification failed or CodeResources missing"
+        return result
+    result["codeResourcesSHA256"] = hashlib.sha256(resources.read_bytes()).hexdigest()
+    result["success"] = True
+    result["reason"] = "local ad-hoc bundle signature verified; no distribution signing or notarization"
+    return result
+
+
 def snapshot():
     files = [PROJECT / "Veyr.uproject"]
     for name in ("Source", "Config", "Content"):
@@ -109,17 +169,21 @@ def main():
     compile_success = compile_exit == 0 and "Result: Succeeded" in text
     unchanged_after_compile = snapshot() == before
     finalization = None
+    local_signature = None
     if args.target == "Veyr" and compile_success and unchanged_after_compile:
         finalization = finalize_standalone(build_tool, args.configuration, evidence)
+        if finalization["success"] and snapshot() == before:
+            local_signature = sign_local_bundle(args.configuration, evidence)
     unchanged = snapshot() == before
     success = compile_success and unchanged
     if args.target == "VeyrEditor":
         binary_paths = list((PROJECT / "Binaries/Mac").glob("libUnrealEditor-Veyr*.dylib"))
     else:
-        success = success and finalization is not None and finalization["success"]
+        success = (success and finalization is not None and finalization["success"] and
+                   local_signature is not None and local_signature["success"])
         # Do not accidentally accept an older Development .app for Shipping.
-        executable = "Veyr" if args.configuration == "Development" else "Veyr-Mac-Shipping"
-        binary_paths = [PROJECT / "Binaries/Mac" / (executable + ".app") / "Contents/MacOS" / executable]
+        app, executable = standalone_bundle(args.configuration)
+        binary_paths = [app / "Contents/MacOS" / executable]
     binaries = {str(p.relative_to(PROJECT)): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in sorted(binary_paths) if p.is_file()}
     success = success and bool(binaries)
@@ -129,6 +193,7 @@ def main():
                "compileExitCode": compile_exit, "compileSucceeded": compile_success,
                "sourceUnchangedAfterCompile": unchanged_after_compile,
                "standaloneFinalization": finalization,
+               "localBundleSignature": local_signature,
                "success": bool(success), "binaryHashes": binaries,
                "editorLaunched": False, "nativeGameplayVerified": False}
     with os.fdopen(os.open(evidence / "receipt.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as stream:

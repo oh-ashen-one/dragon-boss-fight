@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from audit_bundle import repair_copy
 
 ROOT = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser(description=__doc__)
@@ -32,8 +33,27 @@ command = [str(engine/'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', '-pr
 with (receipt_dir/'package.log').open('w') as output:
     result = subprocess.run(command, cwd=ROOT, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
 apps = list(archive.rglob('Veyr.app')) if archive.exists() else []
-success = result.returncode == 0 and bool(apps)
-receipt = {'packagingSucceeded':success, 'exitCode':result.returncode, 'apps':[str(x) for x in apps], 'nativePackagedGameplayVerified':False}
+uat_success = result.returncode == 0 and bool(apps)
+repairs = []
+if uat_success:
+    for app in apps:
+        try:
+            # Preserve UAT's raw archive for diagnosis. UE's Mac archive can
+            # omit Contents/UE even though staging succeeded; never accept the
+            # existence of a .app as evidence of a self-contained package.
+            repaired = archive / 'Repaired' / app.relative_to(archive)
+            repairs.append(repair_copy(app, project.parent/'Saved/StagedBuilds/Mac/Veyr.app',
+                                       repaired, project.parent/'Binaries/Mac/Veyr.target', engine))
+        except (OSError, ValueError, KeyError) as error:
+            repairs.append({'sourceApp':str(app), 'packagingSucceeded':False, 'error':str(error)})
+success = uat_success and bool(repairs) and all(item['packagingSucceeded'] for item in repairs)
+receipt = {'packagingSucceeded':success, 'uatSucceeded':uat_success, 'uatExitCode':result.returncode,
+           'exitCode':0 if success else result.returncode or 1,
+           'originalArchives':[str(x) for x in apps], 'bundleRepairs':repairs,
+           'apps':[item['signature']['verifiedRuntimeApp'] for item in repairs if item['packagingSucceeded']],
+           'signedArchives':[{'path':item['signature']['signedZip'], 'sha256':item['signature']['archiveSHA256']}
+                             for item in repairs if item['packagingSucceeded']],
+           'nativePackagedGameplayVerified':False}
 (receipt_dir/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
 print(json.dumps(receipt), flush=True)
 raise SystemExit(0 if success else 1)

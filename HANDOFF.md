@@ -1,68 +1,60 @@
 # Veyr implementation handoff
 
 Public repository: https://github.com/oh-ashen-one/veyr-cinder-warden
+Active branch: `feat/unreal-migration`.
 
-Active branch: `feat/unreal-migration`. The user changed the target engine to Unreal and main-model provider to Customuse. Unreal native C++ compiled successfully on 2026-10-18; the first PIE ran and exposed camera obstruction and competing lights. A corrected source-stamped build and native core replay are now under validation. The preserved Unity branch is `checkpoint/unity-native-009`, commit `1382c42`. Latest verified historical Unity milestone: gameplay source `c3c2e16`, build009. Core capture `combat-20261018T044000328Z`; full victory capture `victory-20261018T044050061Z`. This is an early playable, not visual completion. Original arena composition and lighting were revised and reviewed natively.
+## Objective and current truth
 
-## Verified and preserved
+Finish the original single-arena Unreal dragon encounter with a roughly 3–5 minute fight, four independent leg staggers and a collapsed-head punish window, responsive knight controls, readable attacks, reliable camera, death/victory/restart and final Customuse knight/dragon art. The goal is not complete. Native gameplay has passed on a primitive-art checkpoint; the newest source and packaged app still need acceptance. No second phase is warranted before the core quality bar is met.
 
-- Unity6000.3.20f1 native macOS build009 compiles with zero errors in an independent source-only snapshot/cache. Build008 reproduced182 duplicate generated-metadata errors; original cache, hashes and native output remain preserved. The writer is unproven. Fresh clones/imports build cleanly under the verified conditions.
-- Build007 accepted the original27-bone8-clip knight and28-bone14-clip dragon. Both are temporary art. Native core20.31s passed leg damage, buckle, collapse, exposed-head bonus damage, rise and damaging contact avoided by dodge.
-- Build007 healing31.06s passed four charges,100HP cap and injured empty-flask rejection. Death38.42s passed settled death pose and fresh responsive restart.
-- Build009 full fight passed at188.22s with accepted knight and revised arena, settled boss death and fresh responsive restart. The core20.38s pass included a real Tab lock-on toggle during collapse/head approach. Earlier006/008 full runs are also preserved.
-- Build005 four-leg isolation passed. Physical keyboard input exercised movement, sword, dodge, zoom and restart. Full manual camera acceptance remains pending.
-- Native screenshots and silent clips are delivered through the user's Library with SHA256 source/build/capture identity. These are real executable frames, not concept renders. Full native recordings and test JSON remain local under Evidence.
-- Public footage of Kalameet, Sinh and Midir was inspected; observations and limits are in `docs/references.md`. No footage or game assets are included.
+The historical Unity branch `checkpoint/unity-native-009` and captures are preserved. Unity build009's 188.22-second victory is historical evidence, not Unreal acceptance.
 
-## Current work and gates
+## Owner authorization
 
-1. Implement the bounded encounter natively in Unreal5.8.3 at `Unreal/Veyr/Veyr.uproject`. Source workers separately own knight, dragon and arena; root owns integration, builds, official native MCP connection and gameplay evidence. Jump, roll, light/heavy attack and guard are required. Dragon fire, flight/reposition/landing, claw, rear stomp and tail attacks retain the four-leg collapse loop.
-2. The user confirmed no unresolved desktop dialog and authorized continuation. The task-owned Unreal editor has been launched through the shared GPU capture slot. Native MCP project/world identity was verified; the first PIE screenshot is preserved. The previous owner is idle and this goal session continues the explicit user handoff. Trace server and Zen autolaunch are disabled, with a task-local filesystem cache. An unrelated Blender instance was observed and left untouched.
-3. Customuse is connected. Two free previews each are ready for the original knight and dragon. Proposed P2 mesh generation is160 credits each,320 total; no paid generation or numeric spending approval has occurred. Preview selection also remains pending. Website login succeeded; rigging and animation beyond the MCP's mesh-generation APIs remain under inspection. The generic unauthenticated65-credit website button refers to P1 and is not the prepared P2 quote.
-4. No Blender fallback is approved under the revised request. The former Tripo Studio proposal is superseded. Do not spend its55-credit proposal or treat earlier Unity art as the final Customuse assets.
-5. Native MCP identity is established. A fresh headless Python commandlet created and saved `/Game/Maps/VeyrArena`; a second idempotent commandlet run exited successfully. Run native combat/camera/transition tests before claiming Unreal playability. Unity evidence cannot establish this.
+- Customuse: two P2 mesh attempts each for knight and dragon, at the quoted 160 credits each; four attempts, 640 credits total. All four returned definite receipts and completed, charging exactly 640 credits. No retry, rigging or animation purchase is authorized.
+- Engine: the owner approved bounded validation after the first two crashes, with an immediate stop on the next crash. That resumed attempt has now aborted during packaged-app loading, so further engine/app launches are held again. A fresh explicit approval is required; do not reinterpret automatic goal continuation as approval.
+- Preserve Pocket Planet Argon, Ghostty, foreign locks and unrelated processes. Ghostty control remains denied. Root alone controls this task's engine and integration. All renders use the shared slot protocol and the hard two-renderer limit.
+- Push sanitized task-branch checkpoints to the existing repository; no merge to main, duplicate repository, secret/private-log publication or raw asset publication without rights verification.
 
-The second native C++ build passed with source identity `55b42197e9c8487eb78f78602e6bcaba77eabe87b5345c344c91c91ffc6c8bf4`, including input-only core/death/victory replay and source stamping. Its receipt confirms no source drift during compilation. The replay implements terminal settling/restart checks but has not run. Launch helper flags verified against installed source include `-notraceserver` and `-NoZenAutoLaunch`; use a project-local filesystem DDC graph when constructing the launch to avoid starting optional listeners. Native MCP remains on-demand localhost18773, host safety clearance granted, with project identity verification pending.
+## Verified native milestones
 
-Free dragon previews were reviewed in three preserved sets. The original frontal images had cropped wings and apparent tail ambiguity. A revised prompt and then a fresh general-asset session improved some proportions but still did not fully resolve framing. No production-art acceptance or paid mesh submission followed. Customuse website rigging, animation and raw-asset redistribution remain unverified; see `docs/customuse-capabilities.md`.
+Checkpoint `85686c4`, embedded source `0431ad5fa32fc53e01c25779b4721bdee61476dcb2493df9a4943100b46cab17`:
 
-Private preview identifiers and account diagnostics remain in ignored local records.
+- Core passed in 37.95 game seconds: jump, light/heavy contacts, leg buckle/collapse, five head bonus hits, completed rise and invulnerable dodge contact.
+- Independent leg0–leg3 passed in 28.29, 30.88, 27.55 and 28.77 seconds. Each selected leg staggered and buckled while the other three remained unchanged.
+- Player death/restart passed: terminal presentation, fresh resources, movement and attack.
+- Full victory occurred at 182.38 seconds (3:02), followed by fresh resources, movement and attack after restart. Total scenario time was 188.09 seconds.
 
-The separately generated `ArtSource/Concept` image is art direction only. It does not replace the requested main-model pipeline.
+These were real rendered native runs at 1280×720, 100 percent screen resolution and a 60 FPS cap, with screenshots/evidence overhead and shared workloads. They are not exclusive performance measurements or physical-key acceptance. See `docs/native-test-results.md`.
 
-Local evidence, logs and generated builds are excluded from public Git. Shared GPU/capture overhead makes measurements nonexclusive; no guaranteed frame-rate claim. Only verified owned Veyr processes were managed. Ghostty and unrelated workloads were not controlled.
+## Newer source and evidence limits
 
-## Ownership
+Later source adds close-lock head guidance, a projected/edge head marker, compact HUD, click-to-begin and Escape/focus-loss mouse release, original procedural audio, stronger jump/avoidance assertions and continuous timestamped video recording. The knight is 244 cm tall. The encounter waits for first capture/replay input; releasing the mouse after engagement does not pause it.
 
-Root integrates and runs task-owned engines through the shared GPU slot. This goal session used disjoint knight/camera, replay and Customuse research workers; their current patches are integrated. No worker controls an engine. Unity feature work is stopped and its evidence preserved. Preserve failed evidence. The task remains active; it has not reached polished completion.
+Recorded source `dfcf89ae79be8a72455f7be5a1fbb843f614704ae1efa3a29ff34d0f4676cf20` FAILED core at 180.02 seconds: no invulnerable dodge contact was observed despite jump, eight collapses, 37 head bonus hits and boss defeat. Preserve this failure. It saved 979 native frames with zero failed writes, skipped 500 capture slots and spent 78.49 seconds writing PNGs over 184.49 wall seconds. Silent VFR encoding passed per-frame timestamp verification.
 
-## Goal continuation checkpoint — 2026-10-18
+The bounded background PNG writer and filesystem-cook configuration compiled successfully with unchanged source: `c8c59add517853a71c3924153649a855c4b297d3dc35031e1b0c78e3bf9d3871`. Their recorded regression is still unverified. The image critic found improved destination/feet visibility but the head surface still disappears in some proxy-occlusion views. Audio compilation does not establish acoustic quality.
 
-- Integrated distinct directional-light priorities and restrained night lighting from the previous worker.
-- Dragon proxies no longer compress the camera spring arm; close lock-on focus and local, selective proxy occlusion handling preserve player visibility for testing. Binary proxy hiding is temporary and requires rendered review; final Customuse art will need a suitable fade/outline treatment.
-- Added independent input-only `leg0`–`leg3`, `controls`, and `avoidance` scenarios alongside `core`, `death`, and `victory`. Source review found additional jump-airborne and arena-boundary policy checks still desirable; geometric camera diagnostics do not prove rendered visibility.
-- Native asset duplication of the engine Entry world reported success but retained invalid cross-world references. A subsequent map change crashed the owned editor once. Failed logs remain preserved locally. Do not repeat this method. The fresh null-RHI `tools/unreal/create_map.py` path succeeded. No further renderer relaunch was attempted without a changed strategy.
-- Added the GameFeatureData asset-manager rule required by enabled native toolsets. Disabled unused AndroidFileServer to avoid generated machine-local security settings entering public source.
-- Latest verified compile source identity: `0431ad5fa32fc53e01c25779b4721bdee61476dcb2493df9a4943100b46cab17`. Build receipt verifies source unchanged during compilation. Native core replay passed in 37.95 game seconds: jump, light/heavy contacts, collapse, five head bonus hits, completed rise and dodge contact. All four leg-isolation scenarios passed (28.29, 30.88, 27.55 and 28.77 seconds). Death/restart passed. Full victory occurred at 182.38 seconds, then fresh resources, movement and attack were verified after restart. See `docs/native-test-results.md`.
-- Customuse website research now verifies humanoid rigging and animated/rigged GLB/FBX export choices. Dragon quadruped/wing/tail support remains unverified. One knight B P2 attempt was quoted at 160 credits and requested for approval; no spending authorized or submitted. See `docs/asset-cost-decision.md`.
-- Do not claim polished completion: both main characters remain explicitly temporary primitives, full native encounter testing and final art integration are open.
+## Packaging and launch hold
 
-The native image critic observed preserved knight visibility in close-leg frames but poor head-target framing during exposure. A follow-up head reticle/edge arrow and earlier head tracking are implemented but await a rebuilt native review. Replay airborne-height verification, reachable avoidance destinations and optional native video recording are being integrated for the next build. These newer source edits are not covered by the first core result.
+1. Generic native duplication of the engine Entry world reported success but retained cross-world references, crashing on map change. Do not repeat it. Fresh null-RHI `tools/unreal/create_map.py` successfully created `/Game/Maps/VeyrArena`; idempotent verification exited 0.
+2. Initial cook crashed in Zen storage. Project `bUseZenStore=False`, explicit cooker `-SkipZenStore` and corrected cache-path quoting fixed that path. The resumed cook and archive completed successfully.
+3. The first resumed packaged-app launch aborted with exit134 in dyld, before Unreal initialization: `libtbb.12.dylib` was missing. Static inspection found the archive omitted its entire `Contents/UE` payload even though the staged app contains it. Further launches are held under the owner's stop-on-next-crash condition.
 
-Standalone C++ compilation for the newer source succeeded, but Xcode app finalization failed in its generated pre-action. This is a packaging blocker, not a native editor-play failure. The failed log is private because Unreal automatically dumped its build environment on retry. Do not publish it.
+`Local/ENGINE_LAUNCH_HOLD.json` is enforced by replay/packaging launchers. Keep it until fresh owner approval. Original failed archives/logs remain preserved. A signed ZIP and fresh extracted runtime now pass recursive dependency, cooked-map, ZIP-manifest and strict signature checks without executing the app. The audit covers 15 Mach-O images with zero unresolved imports. ZIP SHA256: `ad1427ca33e67e731eb5d8ac5994906c7da7e5f68e605cd70782c094f22a89ee`. Documents FileProvider reattaches Finder metadata to loose apps, so the durable artifact is a ZIP and the verified execution copy is task-owned temporary storage. Do not call static audit a runtime pass.
 
-## Engine launch hold and next decisions
+Standalone C++ and direct Xcode finalization succeeded. `tools/unreal/build.py` avoids the nested UBA bad-file-descriptor failure, finalizes directly with valid stdin, and now prepares/verifies a local ad-hoc app signature. Only benign FinderInfo/ResourceFork metadata is removed from the task-built app. No signing account, provisioning update, engine installation or global security setting changes are authorized. Private build logs may contain automatically dumped environment data; never publish them.
 
-Two owned Unreal processes crashed: the Entry-world duplication/map-change path, then the null-RHI cook's default Zen storage path. Per shared operating rules, all further engine launches are stopped pending fresh owner approval. A local ignored `ENGINE_LAUNCH_HOLD.json` is enforced by the replay and packaging launchers. Do not clear it without the owner's answer. The currently active goal is not completed.
+## Customuse models
 
-The packaging correction is prepared: project packaging sets `bUseZenStore=False`, cooker explicitly receives `-SkipZenStore`, and trailing command-line quoting is corrected. Installed engine source confirms the skip flag. No retry has run. Direct standalone Xcode finalization with valid stdin succeeded, and the source-stamped standalone app build succeeded; cooking/archive and packaged runtime remain unverified. No shared server, engine installation, account or security setting was changed.
+All four generated GLBs are preserved privately under `Local/CustomuseAssets`: knight A/B and dragon v2-B/v3-B. Copies and checksums are in this chat's user-facing output directory. They are mesh candidates, not accepted final animated characters. All contain 4K PBR textures and no skins/animation clips. Actual triangles: knight A 28,263; knight B 26,885; dragon v2-B 57,269; dragon v3-B 59,736. The dragon requests used the provider's 50K polygon setting; record actual triangle counts when budgeting runtime.
 
-The recorded regression of source `dfcf89ae79be8a72455f7be5a1fbb843f614704ae1efa3a29ff34d0f4676cf20` failed the core dodge-contact requirement at 180 seconds despite recording jump, collapses, head strikes and boss defeat. Keep it as failed evidence. It saved 979 native frames, skipped 500 capture slots and spent 78.49 seconds writing PNGs over 184.49 wall seconds. Silent VFR encoding passed per-frame timing verification. This motivated a bounded asynchronous PNG writer; source compilation and a fresh approved native rerun are required.
+The website exposes humanoid rigging/animation and Tripo Quadruped configuration. A generic graph connection to Humanoid Animation does not prove winged-dragon compatibility. Actual-model rig quotes are verified: Knight B with Cartwheel/Humanoid, 8 credits; Dragon V3-B with Tripo/Quadruped, 33 credits. A revised 41-credit approval question explicitly naming V3-B supersedes the earlier unanswered V2-B proposal. No rig job has run. Raw-asset redistribution has not been cleared, so keep models out of public Git. See `docs/customuse-capabilities.md` and `docs/asset-cost-decision.md`; private receipts/identifiers never belong in those documents.
 
-The head marker and compact HUD improve finding the destination and seeing the knight's feet. The critic still sees the head surface vanish in some close frames; proxy occlusion is not final-model acceptance.
+## Next work
 
-Pending owner decisions: (1) one knight B Customuse P2 mesh feasibility attempt, maximum 160 credits, no retries/rigging/animation/dragon spend; (2) resume bounded native validation after the two-crash stop, stopping on another crash. No answer has been received and no paid operation occurred. Customuse Tripo exposes Quadruped, but the task-owned no-run probe only establishes a generic connection to Humanoid Animation, not winged-dragon motion compatibility.
-
-Final compile-only checkpoint: source `c8c59add517853a71c3924153649a855c4b297d3dc35031e1b0c78e3bf9d3871` compiled successfully with unchanged source, including the bounded background PNG writer and filesystem-cook configuration. It has not been run because the engine-launch hold remains pending approval. The seven earlier passing native scenarios and the later recorded failure are preserved separately.
-
-Resume only after resolving the appropriate owner gates: retain the local engine hold until fresh launch approval; then run recorded core, controls and avoidance, complete cooking/packaged physical-input checks, and rerun final pacing/restart. The knight mesh spend is a separate decision. No final model or polished build is claimed.
+- Await applicable approval for the two single rig attempts, Knight B plus Dragon V3-B at 41 credits total; no animation or retries. Do not act on an ambiguous reply to the older V2-B question.
+- Await fresh launch approval for the concrete signed ZIP/extraction; the static repair and signature checks are complete. Stop further launches on another crash.
+- After approval, run packaged recorded core, controls and all-move avoidance; verify physical mouse/keyboard input, healing boundaries, rear guard/guard break, camera/head surface, audio, full-fight pacing and restart. Stop on another crash.
+- Integrate and validate final Customuse models/rigs/animations; retain temporary-art disclosure until actually replaced and visually accepted.
+- Keep one rolling handoff, failed evidence and exact build/source receipts. Sanitize and push task-branch changes. Do not claim polished completion from compilation, a viewer or the old passing checkpoint.
