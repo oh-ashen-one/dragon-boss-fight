@@ -27,6 +27,7 @@ class VEYR_API AVeyrReplay : public AActor
 public:
     AVeyrReplay();
     bool Initialize(const FString& Mode, const FString& EvidenceDirectory);
+    static bool GetPendingRestartRequest(FString& OutMode, FString& OutEvidenceDirectory);
     virtual void Tick(float DeltaSeconds) override;
 protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

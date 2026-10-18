@@ -74,7 +74,7 @@ Fresh native knight v006 imports all four normalized clips on one skeleton. Drag
 
 CPU motion analysis identifies useful attack trims and actual blade endpoints. Old light contact precedes the visible stroke. Root-locking also removes vertical bob; controlled horizontal-only in-place derivatives are being prepared. No timing/health balancing change has been accepted yet.
 
-The first new healing run timed out after 180 seconds in the shared GPU queue without launching. This is resource contention, not a crash or gameplay failure. A single subsequent run is queued with a 30-minute bounded slot wait while CPU/source work continues. Root owns no running editor at this checkpoint. Respect both foreign reservations; do not bypass the two-renderer limit.
+The first new healing run timed out after 180 seconds in the shared GPU queue without launching. This is resource contention, not a crash or gameplay failure. The subsequent bounded-queue run acquired a slot and passed all four-charge/cap/empty-flask assertions on source b6cb077f; process exit 0. The guard boundary run also passed (front chip, rear full damage with ample stamina, and real exhausted guard break) in 21.389 game seconds; exit 0. Root owns no running editor at this checkpoint. Respect both foreign reservations; do not bypass the two-renderer limit.
 
 ## Next work
 
@@ -83,3 +83,14 @@ The first new healing run timed out after 180 seconds in the shared GPU queue wi
 - Integrate both Customuse characters, accurate attack/target transforms and complete motion states before removing the temporary-art disclosure.
 - Run healing/guard boundary replays, then rebuild/package the latest source and validate physical controls, camera, audio, pacing and restart with actual native evidence.
 - Keep the rolling handoff and exact source/build receipts current; sanitize and push checkpoints. Do not infer polished completion from compilation or asset previews.
+
+
+## Later integration work awaiting native acceptance
+
+All eleven knight motion candidates now exist; total paid debit is 1,044 credits, with 1,552 remaining at the last verified balance. Native v009 imports all eleven clips; corrected Idle/Walk still intersect the legs and are not accepted. Topology analysis found three isolated tabard/hem surfaces with erroneous arm influences; corrective weights and a reachable front-right sword hold are being authored. Original exports and failed candidates remain intact.
+
+Dragon v4 is a 51-joint candidate with independent wings and an articulated jaw. Its oral seam duplicates 55 boundary vertices while preserving all original triangles/face attributes; the underside hinge remains continuous. CPU opening/wing probes pass, and root reviewed the actual diagnostic images. Native animation acceptance remains pending.
+
+The edeb344a editor build compiled but source review caught a missing movement update; it is explicitly NOT an accepted gameplay checkpoint. Root restored exactly one movement update before pose/contact, added missing endpoint trajectory tests for collinear blade sweeps, cleared cached blade poses on definition replacement and rejected validation starts in already-played worlds. Corrected editor source `60be518f2633e758f6a3c9cb95ae5d50ef477db4d05254e57428e9d6216ae3aa` compiled successfully with unchanged source; native regression remains pending. Source/native-pose validation cannot be inferred from the earlier compile.
+
+The editor closed through normal QUIT_EDITOR during the initial pose-check attempt; PIE had already ended, so that attempt reported zero PIE worlds and did not test the component. No crash occurred. All imported assets were saved. Fire material generation compiled three graphs, but revalidation exposed old-path redirectors from preserved partial attempts; the new recipe uses a fresh v2 namespace and verifies the saved object path/metadata before reporting success. No native fire-quality acceptance yet.

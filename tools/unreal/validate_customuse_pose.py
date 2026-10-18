@@ -68,6 +68,39 @@ def run(definition_path):
                 receipt['samples'].append({"clip": str(clip_name), "phase": phase,
                     "sequenceSeconds": presentation.get_editor_property('current_sequence_seconds'),
                     "repeatMaxTransformError": error, "weaponHandWorld": first_transform})
+        names = list(clips.keys())
+        if len(names) >= 2:
+            source_name, destination_name = names[0], names[1]
+            def hand():
+                result = presentation.get_bone_target_world_transform('weapon_hand')
+                if not result[0]:
+                    raise RuntimeError('Blend target evaluation unavailable')
+                return transform_data(result[1])
+            def require(result, message):
+                if not result:
+                    raise RuntimeError(message)
+            require(presentation.sample_clip_phase(source_name, .25), 'Blend source rejected')
+            source_pose = hand()
+            require(presentation.begin_transition(), 'Cannot capture evaluated blend source')
+            require(presentation.sample_clip_phase_blended(destination_name, .75, 0.0), 'Alpha zero rejected')
+            zero_error = maximum_difference(source_pose, hand())
+            require(presentation.sample_clip_phase_blended(destination_name, .75, 1.0), 'Alpha one rejected')
+            endpoint = hand()
+            require(presentation.sample_clip_phase(destination_name, .75), 'Plain destination rejected')
+            one_error = maximum_difference(endpoint, hand())
+            require(presentation.sample_clip_phase(source_name, .25), 'Second blend source rejected')
+            require(presentation.begin_transition(), 'Second transition capture rejected')
+            require(presentation.sample_clip_phase_blended(destination_name, .75, .5), 'Midblend rejected')
+            middle = hand()
+            require(presentation.sample_clip_phase_blended(destination_name, .75, .5), 'Repeated midblend rejected')
+            repeat_error = maximum_difference(middle, hand())
+            require(presentation.begin_transition(), 'Interrupted blend capture rejected')
+            require(presentation.sample_clip_phase_blended(source_name, .8, 0.0), 'Interrupted blend alpha zero rejected')
+            interrupt_error = maximum_difference(middle, hand())
+            receipt['blendChecks'] = {'alphaZeroMaxError': zero_error, 'alphaOneMaxError': one_error,
+                                     'repeatedMiddleMaxError': repeat_error, 'interruptedMaxError': interrupt_error}
+            if max(zero_error, one_error, repeat_error, interrupt_error) > .00001:
+                raise RuntimeError('Native blend boundary or deterministic sampling mismatch')
         if presentation.sample_clip_time('__VeyrMissingClipValidation__', 0.0):
             raise RuntimeError('Missing clip unexpectedly accepted')
         missing = presentation.get_bone_target_world_transform('weapon_hand')

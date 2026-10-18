@@ -105,6 +105,7 @@ def component_stats(g, p, positions, triangles, groups, inverse, hand):
 def highlight(g, p, triangle_mask, output):
     derived = GLB(g.bytes())
     node, _, _, triangles = primitive(derived)
+    triangles = triangles.copy()  # Never retain a bytearray-backed view across buffer growth.
     attrs = copy.deepcopy(p['attributes'])
     original_binary = bytes(g.binary)
     material_index = len(derived.json.get('materials', []))
@@ -243,7 +244,7 @@ def main():
             ax.scatter(rest[vertices,a], rest[vertices,b], s=1.5, c='#ff3b16', alpha=.8, linewidths=0)
             ax.set(xlabel=names2[0], ylabel=names2[1], aspect='equal')
             ax.grid(alpha=.2)
-        fig.suptitle('Candidate connected surface 196 (red) — unchanged geometry, no weight repair\nOrthographic CPU bind-pose projections; full GLB visual review still required')
+        fig.suptitle(f'Candidate connected surface {args.candidate_component} (red) — unchanged geometry, no weight repair\nOrthographic CPU bind-pose projections; full GLB visual review still required')
         fig.tight_layout()
         fig.savefig(out/'candidate-projections.png', dpi=160)
         plt.close(fig)

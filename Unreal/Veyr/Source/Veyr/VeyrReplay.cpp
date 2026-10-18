@@ -61,6 +61,14 @@ AVeyrReplay::AVeyrReplay()
     PrimaryActorTick.TickGroup=TG_PostPhysics;
 }
 
+bool AVeyrReplay::GetPendingRestartRequest(FString& OutMode,FString& OutEvidenceDirectory)
+{
+    if(!PendingRestartEvidence.IsValid()||PendingRestartDirectory.IsEmpty())return false;
+    OutMode=PendingRestartEvidence->GetStringField(TEXT("mode"));
+    OutEvidenceDirectory=PendingRestartDirectory;
+    return true;
+}
+
 bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirectory)
 {
     if(bInitialized)return false;
@@ -115,7 +123,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         PendingRestartEvidence.Reset();PendingRestartDirectory.Reset();
         bRestartVerification=true;RestartOrigin=Knight->GetFootLocation();
         bFreshResourcesVerified=FMath::IsNearlyEqual(Knight->Health,100.f)&&FMath::IsNearlyEqual(Knight->Stamina,100.f)&&Knight->HealingCharges==4&&
-            FMath::IsNearlyEqual(Dragon->Health,8400.f)&&!Knight->IsDead()&&!Dragon->IsDead()&&Knight->LightAttacks==0;
+            FMath::IsNearlyEqual(Dragon->Health,Dragon->MaxHealth)&&!Knight->IsDead()&&!Dragon->IsDead()&&Knight->LightAttacks==0;
     }
     else
     {
@@ -655,8 +663,8 @@ void AVeyrReplay::DriveInputs()
                 const float SafeTime=Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:20.f;
                 const bool bNeedLight=(ReplayMode==TEXT("core")||bLegIsolation)&&!bLightLegContact&&!bDown;
                 const float Reserve=bDown?0.f:25.f;
-                bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>1.15f&&(!bDown||Dragon->IsHeadExposed());
-                bLight=!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>.65f&&(!bDown||Dragon->IsHeadExposed());
+                bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>Knight->GetAttackDuration(true)&&(!bDown||Dragon->IsHeadExposed());
+                bLight=!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false)&&(!bDown||Dragon->IsHeadExposed());
             }
         }
     }
@@ -1026,6 +1034,11 @@ void AVeyrReplay::Tick(float DeltaSeconds)
 
 void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    if(EndPlayReason==EEndPlayReason::EndPlayInEditor||EndPlayReason==EEndPlayReason::Quit)
+    {
+        PendingRestartEvidence.Reset();PendingRestartDirectory.Reset();
+        bAwaitingReload=false;
+    }
     StopVideoCapture(bAwaitingReload?TEXT("world reload"):TEXT("world ended"));
     if(bInitialized&&!bFinalSaved&&!bAwaitingReload)
     {

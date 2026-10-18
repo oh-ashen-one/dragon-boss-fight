@@ -1,4 +1,5 @@
 #include "VeyrSkeletalPresentation.h"
+#include "VeyrSingleNodeInstance.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Engine/SkeletalMesh.h"
@@ -36,8 +37,8 @@ bool UVeyrSkeletalPresentation::CheckReady()
 #if WITH_EDITOR
     if(GetSkeletalMeshAsset()->IsCompiling())return Fail(TEXT("Skeletal mesh compilation is still in progress"));
 #endif
-    if(GetAnimationMode()!=EAnimationMode::AnimationSingleNode||!GetSingleNodeInstance())
-        return Fail(TEXT("Explicit sampling requires a native AnimSingleNodeInstance"));
+    if(!Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance()))
+        return Fail(TEXT("Explicit sampling requires the Veyr native single-node instance"));
     return true;
 }
 
@@ -58,7 +59,9 @@ bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDef
     SetSkeletalMesh(InDefinition->SkeletalMesh,true);
     SetRelativeTransform(InDefinition->MeshRelativeTransform);
     SetLeaderPoseComponent(nullptr);
-    SetAnimationMode(EAnimationMode::AnimationSingleNode);
+    // This setter selects AnimationBlueprint mode internally, but instantiates
+    // our native SingleNode subclass. No animation blueprint asset is involved.
+    SetAnimInstanceClass(UVeyrSingleNodeInstance::StaticClass());
     SetDisablePostProcessBlueprint(true);
     SetEnableAnimation(true);
     SetSimulatePhysics(false);
@@ -75,17 +78,21 @@ bool UVeyrSkeletalPresentation::EvaluatePoseSynchronously()
     // Join any prior task before changing/evaluating this pose. Passing nullptr
     // to RefreshBoneTransforms prevents a new parallel evaluation in UE5.8.
     HandleExistingParallelEvaluationTask(true,true);
-    UAnimSingleNodeInstance* Instance=GetSingleNodeInstance();
+    UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
     Instance->bUseMultiThreadedAnimationUpdate=false;
     Instance->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
     Instance->SetPlaying(false);
     Instance->SetPlayRate(0.f);
     Instance->SetLooping(false); // Trimmed looping is resolved by this component.
+    const uint64 PreviousEvaluation=Instance->GetExplicitEvaluationSerial();
     TickAnimation(0.f,false);
     RefreshBoneTransforms(nullptr);
     Instance->ConsumeExtractedRootMotion(1.f); // Never feed presentation root motion into gameplay.
     if(IsRunningParallelEvaluation()||GetNumComponentSpaceTransforms()!=GetSkeletalMeshAsset()->GetRefSkeleton().GetNum())
         return Fail(TEXT("Synchronous evaluation did not produce the complete component-space pose"));
+    if(Instance->GetExplicitEvaluationSerial()==PreviousEvaluation)return Fail(TEXT("Native proxy did not evaluate the requested pose"));
+    const FString EvaluationError=Instance->GetExplicitEvaluationError();
+    if(!EvaluationError.IsEmpty())return Fail(EvaluationError);
     UpdateBounds();
     MarkRenderTransformDirty();
     MarkRenderDynamicDataDirty();
@@ -99,8 +106,13 @@ bool UVeyrSkeletalPresentation::SampleReferencePose()
 {
     if(!CheckReady())return false;
     HandleExistingParallelEvaluationTask(true,true);
-    GetSingleNodeInstance()->SetAnimationAsset(nullptr,false,0.f);
-    SetForceRefPose(true);
+    UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    Instance->ClearTransitionSource();
+    bTransitionSourceCaptured=false;CurrentTransitionAlpha=1.f;
+    Instance->SetAnimationAsset(nullptr,false,0.f);
+    // Native single-node evaluation with no asset produces the reference pose
+    // and lets our proxy retain it as a valid future transition source.
+    SetForceRefPose(false);
     if(!EvaluatePoseSynchronously())return false;
     CurrentClip=NAME_None;
     CurrentSequenceSeconds=CurrentTrimmedSeconds=CurrentPhase=0.f;
@@ -132,15 +144,41 @@ bool UVeyrSkeletalPresentation::ResolveClip(FName ClipName, const FVeyrVisualCli
 
 bool UVeyrSkeletalPresentation::SampleClipTime(FName ClipName, float ElapsedSeconds)
 {
+    return SampleClipTimeInternal(ClipName,ElapsedSeconds,1.f,false);
+}
+
+bool UVeyrSkeletalPresentation::SampleClipTimeBlended(FName ClipName, float ElapsedSeconds, float Alpha)
+{
+    return SampleClipTimeInternal(ClipName,ElapsedSeconds,Alpha,true);
+}
+
+bool UVeyrSkeletalPresentation::BeginTransition()
+{
+    if(!IsInGameThread())return false;
+    if(!bPoseEvaluated)return Fail(TEXT("Transition requires a successfully sampled source pose"));
+    if(!CheckReady())return false;
+    HandleExistingParallelEvaluationTask(true,true);
+    bTransitionSourceCaptured=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance())->CaptureTransitionSource();
+    if(!bTransitionSourceCaptured)return Fail(TEXT("Native proxy has no valid published source pose"));
+    LastError.Reset();
+    return true;
+}
+
+bool UVeyrSkeletalPresentation::SampleClipTimeInternal(FName ClipName, float ElapsedSeconds, float Alpha, bool bBlend)
+{
     if(!IsInGameThread())return false;
     if(!FMath::IsFinite(ElapsedSeconds)||ElapsedSeconds<0.f)return Fail(TEXT("Clip elapsed time must be finite and nonnegative"));
+    if(!FMath::IsFinite(Alpha)||Alpha<0.f||Alpha>1.f)return Fail(TEXT("Transition alpha must be finite within [0,1]"));
     const FVeyrVisualClip* Clip=nullptr;float End=0.f;
     if(!ResolveClip(ClipName,Clip,End))return false;
     const float Duration=End-Clip->StartSeconds;
     const float Trimmed=Clip->bLoop?FMath::Fmod(ElapsedSeconds,Duration):FMath::Min(ElapsedSeconds,Duration);
     const float SequenceTime=Clip->StartSeconds+Trimmed;
     HandleExistingParallelEvaluationTask(true,true);
-    UAnimSingleNodeInstance* Instance=GetSingleNodeInstance();
+    UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    if(!bBlend)Instance->ClearTransitionSource();
+    bTransitionSourceCaptured=Instance->HasTransitionSource();
+    if(!Instance->SetExplicitTransitionAlpha(Alpha))return Fail(TEXT("Blended sample requires BeginTransition before alpha < 1"));
     if(Instance->GetAnimationAsset()!=Clip->Sequence)Instance->SetAnimationAsset(Clip->Sequence,false,0.f);
     SetForceRefPose(false);
     Instance->SetPositionWithPreviousTime(SequenceTime,SequenceTime,false);
@@ -152,6 +190,7 @@ bool UVeyrSkeletalPresentation::SampleClipTime(FName ClipName, float ElapsedSeco
     CurrentTrimmedSeconds=Trimmed;
     CurrentPhase=Trimmed/Duration;
     bCurrentClipLoops=Clip->bLoop;
+    CurrentTransitionAlpha=Alpha;
     return true;
 }
 
@@ -163,6 +202,16 @@ bool UVeyrSkeletalPresentation::SampleClipPhase(FName ClipName, float Phase)
     if(!ResolveClip(ClipName,Clip,End))return false;
     const float Normalized=Clip->bLoop?FMath::Fmod(Phase,1.f):FMath::Min(Phase,1.f);
     return SampleClipTime(ClipName,Normalized*(End-Clip->StartSeconds));
+}
+
+bool UVeyrSkeletalPresentation::SampleClipPhaseBlended(FName ClipName, float Phase, float Alpha)
+{
+    if(!IsInGameThread())return false;
+    if(!FMath::IsFinite(Phase)||Phase<0.f)return Fail(TEXT("Clip phase must be finite and nonnegative"));
+    const FVeyrVisualClip* Clip=nullptr;float End=0.f;
+    if(!ResolveClip(ClipName,Clip,End))return false;
+    const float Normalized=Clip->bLoop?FMath::Fmod(Phase,1.f):FMath::Min(Phase,1.f);
+    return SampleClipTimeBlended(ClipName,Normalized*(End-Clip->StartSeconds),Alpha);
 }
 
 bool UVeyrSkeletalPresentation::GetBoneTargetWorldTransform(FName TargetName, FTransform& OutWorldTransform)

@@ -61,6 +61,8 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") float GetLegStagger(int32 Index) const;
     /** Origin is already the world sword/contact center (no extra torso offset). */
     void ReceiveSword(const FVector& Origin, const FVector& Forward, bool bHeavy, int32 SwingId);
+    bool ReceiveSwordSweep(const FVector& PreviousBase, const FVector& PreviousTip,
+                           const FVector& CurrentBase, const FVector& CurrentTip, bool bHeavy, int32 SwingId);
 
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetStateElapsed() const { return StateElapsed; }
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetStateDuration() const { return StateDuration; }
@@ -111,6 +113,10 @@ private:
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> LegMaterials;
 
     bool bImportedTargetsValid=false;
+    bool bImportedTransitionReady=false;
+    FName LastImportedClip=NAME_None;
+    EVeyrDragonState LastImportedState=EVeyrDragonState::Idle;
+    float ImportedTransitionStarted=0.f;
     FVector ImportedHeadWorld=FVector::ZeroVector;
     FVector ImportedFeetWorld[4];
     void UpdateImportedPresentation();
@@ -143,6 +149,7 @@ private:
     void AdvanceState(float DeltaSeconds);
     void TryDamageTarget();
     bool CanStagger() const;
+    void ApplySwordRegion(int32 Region, bool bHeavy, int32 SwingId);
     float GetDownAmount() const;
     void UpdateTemporaryPresentation(float DeltaSeconds);
     void UpdateTelegraphs();

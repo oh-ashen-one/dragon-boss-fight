@@ -110,6 +110,10 @@ private:
     FName FailedPresentationClip=NAME_None;
     FString FailedPresentationReason;
     bool bIdleFallbackRejected=false;
+    FName PresentationTransitionClip=NAME_None;
+    float PresentationTransitionStarted=0.f;
+    float PresentationPreviousActionElapsed=-1.f;
+    bool bPresentationTransitionActive=false;
     float CameraDistance = 720.f;
     float LockHeadBlend = 0.f;
     TWeakObjectPtr<APlayerController> OcclusionController;
@@ -117,6 +121,8 @@ private:
     TWeakObjectPtr<APlayerController> MouseInputController;
     int32 SwingId = 0;
     bool bContactSent = false;
+    bool bPreviousBladePoseValid=false;
+    FVector PreviousBladeBase=FVector::ZeroVector, PreviousBladeTip=FVector::ZeroVector;
     bool bHealGranted = false;
     bool bGuardRequested = false;
     bool bGuardBroken = false;

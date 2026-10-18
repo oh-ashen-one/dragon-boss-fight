@@ -274,15 +274,20 @@ def run(plan_file):
             if len(sequences) != 1 or sequences[0].get_editor_property("skeleton") != skeleton:
                 raise RuntimeError("Clip did not bind exclusively to the canonical skeleton")
             sequence = sequences[0]
-            if specification.get("root_motion_policy", "preserve") == "lock_root":
+            root_policy = specification.get("root_motion_policy", "preserve")
+            if root_policy not in ("preserve", "lock_root"):
+                raise ValueError("Unknown root-motion policy")
+            sequence.set_editor_property("enable_root_motion", False)
+            sequence.set_editor_property("force_root_lock", root_policy == "lock_root")
+            if root_policy == "lock_root":
                 expected = plan.get("root_motion_bone")
                 if not expected or not imported_names or resolve_bone(expected) != imported_names[0]:
                     raise ValueError("Root lock requires the expected imported root, not a guessed pelvis/extra scene root")
                 sequence.set_editor_property("enable_root_motion", False)
                 sequence.set_editor_property("force_root_lock", True)
                 sequence.set_editor_property("root_motion_root_lock", unreal.RootMotionRootLock.ANIM_FIRST_FRAME)
-                if not unreal.EditorAssetLibrary.save_loaded_asset(sequence, False):
-                    raise RuntimeError("Saving root-lock policy failed")
+            if not unreal.EditorAssetLibrary.save_loaded_asset(sequence, False):
+                raise RuntimeError("Saving explicit root-motion policy failed")
             entry = unreal.VeyrVisualClip()
             entry.set_editor_property("sequence", sequence)
             for field, default in (("start_seconds", 0), ("end_seconds", -1), ("impact_seconds", -1), ("loop", False)):

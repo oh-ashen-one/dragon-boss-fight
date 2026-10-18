@@ -42,6 +42,22 @@ public:
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     bool SampleClipPhase(FName ClipName, float Phase);
 
+    /** Freeze the current successfully evaluated pose (including a partial
+     * transition). Caller owns the next alpha ramp; this starts no clock.
+     */
+    UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
+    bool BeginTransition();
+
+    /** Alpha 0 reproduces the frozen source exactly; 1 is the unblended target.
+     * Alpha < 1 requires BeginTransition. Missing clips still fail at any alpha.
+     * Plain SampleClipTime/Phase and reference-pose sampling cancel transitions.
+     */
+    UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
+    bool SampleClipTimeBlended(FName ClipName, float ElapsedSeconds, float Alpha);
+
+    UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
+    bool SampleClipPhaseBlended(FName ClipName, float Phase, float Alpha);
+
     /** Offset is applied in bone-local space: LocalOffset * BoneWorldTransform.
      * Requires a successful sample; missing/unevaluated bones fail with Identity
      * output, never a socket fallback to component origin. Check the bool result.
@@ -56,6 +72,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") float CurrentPhase=0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") bool bCurrentClipLoops=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") bool bPoseEvaluated=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") bool bTransitionSourceCaptured=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") float CurrentTransitionAlpha=1.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") int32 SuccessfulPoseEvaluations=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") int32 FailedRequests=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") FString LastError;
@@ -66,4 +84,5 @@ private:
     bool CheckReady();
     bool ResolveClip(FName ClipName, const FVeyrVisualClip*& OutClip, float& OutEnd);
     bool EvaluatePoseSynchronously();
+    bool SampleClipTimeInternal(FName ClipName, float ElapsedSeconds, float Alpha, bool bBlend);
 };

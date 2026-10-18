@@ -1,6 +1,7 @@
 #include "VeyrDragon.h"
 #include "VeyrKnight.h"
 #include "VeyrVisualDefinition.h"
+#include "Animation/AnimSequence.h"
 #include "VeyrSkeletalPresentation.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -353,6 +354,42 @@ void AVeyrDragon::ReceiveSword(const FVector& Origin,const FVector& Forward,bool
     float Score;
     if(SwordContact(Origin,Forward,GetHeadLocation(),100.f,Score)&&Score<Best){Best=Score;Region=4;}
     if(Region<0)return;
+    ApplySwordRegion(Region,bHeavy,SwingId);
+}
+
+bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& PreviousTip,
+                                  const FVector& CurrentBase,const FVector& CurrentTip,bool bHeavy,int32 SwingId)
+{
+    if(IsDead()||bEncounterStopped||IsAirborne()||AcceptedSwings.Contains(SwingId))return false;
+    if(PreviousBase.ContainsNaN()||PreviousTip.ContainsNaN()||CurrentBase.ContainsNaN()||CurrentTip.ContainsNaN())return false;
+    if(FVector::DistSquared(CurrentBase,CurrentTip)<1.f)return false;
+    // Two triangles cover the swept blade quadrilateral. A small blade radius
+    // complements the measured anatomical target radii; no facing cone is used.
+    auto Distance=[&](const FVector& Point)
+    {
+        float D=FMath::Min(FMath::PointDistToSegment(Point,CurrentBase,CurrentTip),FMath::PointDistToSegment(Point,PreviousBase,PreviousTip));
+        D=FMath::Min(D,static_cast<float>(FMath::PointDistToSegment(Point,PreviousBase,CurrentBase)));
+        D=FMath::Min(D,static_cast<float>(FMath::PointDistToSegment(Point,PreviousTip,CurrentTip)));
+        if(FVector::CrossProduct(CurrentTip-CurrentBase,PreviousTip-CurrentBase).SizeSquared()>1.e-4f)
+            D=FMath::Min(D,static_cast<float>(FVector::Dist(Point,FMath::ClosestPointOnTriangleToPoint(Point,CurrentBase,CurrentTip,PreviousTip))));
+        if(FVector::CrossProduct(PreviousTip-CurrentBase,PreviousBase-CurrentBase).SizeSquared()>1.e-4f)
+            D=FMath::Min(D,static_cast<float>(FVector::Dist(Point,FMath::ClosestPointOnTriangleToPoint(Point,CurrentBase,PreviousTip,PreviousBase))));
+        return D;
+    };
+    int32 Region=-1;float Best=TNumericLimits<float>::Max();
+    for(int32 I=0;I<5;++I)
+    {
+        const float Radius=I<4?75.f:100.f;
+        const float D=Distance(I<4?GetLegLocation(I):GetHeadLocation());
+        if(D<=Radius+8.f&&D-Radius<Best){Best=D-Radius;Region=I;}
+    }
+    if(Region<0)return false;
+    ApplySwordRegion(Region,bHeavy,SwingId);
+    return true;
+}
+
+void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId)
+{
     AcceptedSwings.Add(SwingId); RecentSwings.Add(SwingId);
     if(RecentSwings.Num()>512){AcceptedSwings.Remove(RecentSwings[0]);RecentSwings.RemoveAt(0);}
     LastHitRegion=Region; ++SwordContactCount;
@@ -593,14 +630,29 @@ void AVeyrDragon::UpdateImportedPresentation()
     }
     const FName Clip(*Name);
     bool Sampled=false;
-    if(VisualDefinition->Clips.Contains(Clip))
+    if(VisualDefinition->Clips.Contains(Clip)&&VisualDefinition->Clips[Clip].Sequence)
     {
+        const FVeyrVisualClip& Config=VisualDefinition->Clips[Clip];
+        const float End=Config.EndSeconds<0.f?Config.Sequence->GetPlayLength():Config.EndSeconds;
+        const float Duration=End-Config.StartSeconds;
+        const bool bLoopWrapped=Config.bLoop&&Duration>0.f&&ImportedPresentation->CurrentClip==Clip&&
+            FMath::Fmod(Clock,Duration)+.0001f<ImportedPresentation->CurrentTrimmedSeconds;
+        if(LastImportedClip!=Clip||LastImportedState!=State||bLoopWrapped)
+        {
+            bImportedTransitionReady=ImportedPresentation->BeginTransition();
+            ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
+        }
+        const float Alpha=bImportedTransitionReady?FMath::Clamp((Clock-ImportedTransitionStarted)/.12f,0.f,1.f):1.f;
         const bool Loop=VisualDefinition->Clips[Clip].bLoop;
-        Sampled=Loop?ImportedPresentation->SampleClipTime(Clip,Clock):
-            ImportedPresentation->SampleClipPhase(Clip,StateElapsed/FMath::Max(.001f,StateDuration));
+        Sampled=Loop?ImportedPresentation->SampleClipTimeBlended(Clip,Clock,Alpha):
+            ImportedPresentation->SampleClipPhaseBlended(Clip,StateElapsed/FMath::Max(.001f,StateDuration),Alpha);
     }
     MissingVisualClip=Sampled?NAME_None:Clip;
-    if(!Sampled&&!ImportedPresentation->SampleReferencePose())return;
+    if(!Sampled)
+    {
+        LastImportedClip=NAME_None;bImportedTransitionReady=false;
+        if(!ImportedPresentation->SampleReferencePose())return;
+    }
     FTransform Head,Feet[4];
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),Head))return;
     for(int32 I=0;I<4;++I)

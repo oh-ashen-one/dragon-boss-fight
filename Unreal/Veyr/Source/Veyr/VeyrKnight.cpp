@@ -2,6 +2,7 @@
 #include "VeyrDragon.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrVisualDefinition.h"
+#include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -137,8 +138,8 @@ bool AVeyrKnight::IsGrounded() const { return GetCharacterMovement() && GetChara
 bool AVeyrKnight::IsRollingInvulnerable() const { return Action == EVeyrKnightAction::Roll && ActionElapsed > .08f && ActionElapsed < .44f; }
 float AVeyrKnight::GetPlanarSpeed() const { return GetVelocity().Size2D(); }
 FVector AVeyrKnight::GetFootLocation() const { return GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()); }
-float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return bHeavy ? 1.15f : .65f; }
-float AVeyrKnight::GetAttackContactTime(bool bHeavy) const { return bHeavy ? .55f : .23f; }
+float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return bImportedPresentationActive?(bHeavy?1.20f:.85f):(bHeavy?1.15f:.65f); }
+float AVeyrKnight::GetAttackContactTime(bool bHeavy) const { return bImportedPresentationActive?(bHeavy?.617f:.522f):(bHeavy?.55f:.23f); }
 float AVeyrKnight::GetSwordContactTime() const { return Action == EVeyrKnightAction::HeavyAttack ? GetAttackContactTime(true) : Action == EVeyrKnightAction::LightAttack ? GetAttackContactTime(false) : -1.f; }
 bool AVeyrKnight::IsTerminal() const { return IsDead() || (IsValid(Boss) && Boss->IsDead()); }
 bool AVeyrKnight::CanStartGroundedAction() const { return !IsTerminal() && IsGrounded() && !bPressedJump && (Action == EVeyrKnightAction::Ready || Action == EVeyrKnightAction::Guard); }
@@ -146,7 +147,7 @@ bool AVeyrKnight::CanStartGroundedAction() const { return !IsTerminal() && IsGro
 void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction, float Duration)
 {
     Action = NewAction; ActionElapsed = 0.f; ActionDuration = Duration;
-    bContactSent = false; bHealGranted = false;
+    bContactSent = false; bHealGranted = false; bPreviousBladePoseValid=false;
 }
 
 void AVeyrKnight::FinishAction()
@@ -280,10 +281,10 @@ void AVeyrKnight::Tick(float DeltaSeconds)
         else if (bReplayLight) TryLightAttack();
         bReplayLight = bReplayHeavy = bReplayRoll = bReplayHeal = bReplayJump = false;
     }
+    UpdateMovement(DeltaSeconds);
     if (IsDead()) { ActionElapsed += DeltaSeconds; UpdateImportedPresentation(); }
     else if (!IsTerminal()) AdvanceCombat(DeltaSeconds);
     else { GetCharacterMovement()->StopMovementImmediately(); bLockedOn = false; UpdateImportedPresentation(); }
-    UpdateMovement(DeltaSeconds);
     UpdateCamera(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
 }
@@ -292,14 +293,57 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
 {
     ActionElapsed += DeltaSeconds;
     // Evaluate the strike at the UPDATED action time, synchronously, before
-    // gameplay resolves contact. Cone damage stays authoritative in this phase.
+    // gameplay resolves contact. Imported strikes use evaluated blade sweeps.
     UpdateImportedPresentation();
     if (Action == EVeyrKnightAction::LightAttack || Action == EVeyrKnightAction::HeavyAttack)
     {
-        if (!bContactSent && ActionElapsed >= GetSwordContactTime())
+        const bool bHeavy=Action==EVeyrKnightAction::HeavyAttack;
+        if(bImportedPresentationActive)
+        {
+            FTransform BasePose,TipPose;
+            // A visible imported sword resolves contact only from its evaluated
+            // blade. Missing targets cannot silently fall back to proxy damage.
+            const bool bBladeReady=bRequestedPresentationClipSampled&&
+                ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_base"),BasePose)&&
+                ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_tip"),TipPose);
+            if(bBladeReady)
+            {
+                const FVector Base=BasePose.GetLocation(),Tip=TipPose.GetLocation();
+                const float Start=bHeavy?.53f:.425f,End=bHeavy?.73f:.664f;
+                if(!bContactSent&&ActionElapsed>=Start&&ActionElapsed-DeltaSeconds<=End&&IsValid(Boss))
+                {
+                    FVector FromBase=bPreviousBladePoseValid?PreviousBladeBase:Base;
+                    FVector FromTip=bPreviousBladePoseValid?PreviousBladeTip:Tip;
+                    FVector ToBase=Base,ToTip=Tip;
+                    const float Alpha=ImportedPresentation->CurrentTransitionAlpha;
+                    bool bResampled=false,bWindowValid=true;
+                    auto SampleBoundary=[&](float Time,FVector& OutBase,FVector& OutTip)
+                    {
+                        bResampled=true;
+                        if(!ImportedPresentation->SampleClipPhaseBlended(RequestedPresentationClip,Time/ActionDuration,Alpha))return false;
+                        FTransform A,B;
+                        if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_base"),A)||
+                           !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_tip"),B))return false;
+                        OutBase=A.GetLocation();OutTip=B.GetLocation();return true;
+                    };
+                    // Clip collision to the actual active interval even when a
+                    // slow frame crosses its beginning or end; never include
+                    // windup/recovery merely because an entire frame was long.
+                    if(ActionElapsed-DeltaSeconds<Start||!bPreviousBladePoseValid)
+                        bWindowValid=SampleBoundary(FMath::Max(Start,ActionElapsed-DeltaSeconds),FromBase,FromTip);
+                    if(ActionElapsed>End)bWindowValid=SampleBoundary(End,ToBase,ToTip)&&bWindowValid;
+                    if(bResampled)bWindowValid=ImportedPresentation->SampleClipPhaseBlended(RequestedPresentationClip,
+                        FMath::Clamp(ActionElapsed/ActionDuration,0.f,1.f),Alpha)&&bWindowValid;
+                    if(bWindowValid)bContactSent=Boss->ReceiveSwordSweep(FromBase,FromTip,ToBase,ToTip,bHeavy,SwingId);
+                }
+                PreviousBladeBase=Base;PreviousBladeTip=Tip;bPreviousBladePoseValid=true;
+            }
+            else bPreviousBladePoseValid=false;
+        }
+        else if (!bContactSent && ActionElapsed >= GetSwordContactTime())
         {
             bContactSent = true;
-            if (IsValid(Boss)) Boss->ReceiveSword(GetFootLocation() + FVector(0,0,125), GetActorForwardVector(), Action == EVeyrKnightAction::HeavyAttack, SwingId);
+            if (IsValid(Boss)) Boss->ReceiveSword(GetFootLocation() + FVector(0,0,125), GetActorForwardVector(), bHeavy, SwingId);
         }
     }
     else if (Action == EVeyrKnightAction::Heal && !bHealGranted && ActionElapsed >= .85f)
@@ -472,10 +516,14 @@ void AVeyrKnight::SetPresentationDiagnostic(const FString& Diagnostic)
 bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
     CustomuseVisualDefinition = Definition;
+    bPreviousBladePoseValid=false;
     bImportedPresentationActive = bRequestedPresentationClipSampled = bPresentationUsingFallback = false;
     RequestedPresentationClip = FailedPresentationClip = NAME_None;
     FailedPresentationReason.Reset();
     bIdleFallbackRejected=false;
+    PresentationTransitionClip=NAME_None;
+    PresentationPreviousActionElapsed=-1.f;
+    bPresentationTransitionActive=false;
     if (ImportedPresentation)
     {
         ImportedPresentation->SetVisibility(false,true);
@@ -535,8 +583,23 @@ void AVeyrKnight::UpdateImportedPresentation()
     else if (FailedPresentationClip==Clip) Error=FailedPresentationReason;
     else
     {
-        bSampled=bUsePhase ? ImportedPresentation->SampleClipPhase(Clip,FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f)) :
-            ImportedPresentation->SampleClipTime(Clip,Time);
+        const bool bActionRestarted=bUsePhase&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
+        const float ClipEnd=Config->EndSeconds<0.f?Config->Sequence->GetPlayLength():Config->EndSeconds;
+        const float ClipDuration=ClipEnd-Config->StartSeconds;
+        const bool bLoopWrapped=!bUsePhase&&Config->bLoop&&ClipDuration>0.f&&ImportedPresentation->CurrentClip==Clip&&
+            FMath::Fmod(Time,ClipDuration)+.0001f<ImportedPresentation->CurrentTrimmedSeconds;
+        if(Clip!=PresentationTransitionClip||bActionRestarted||bLoopWrapped)
+        {
+            // Capture the most recently evaluated (possibly already blended)
+            // pose. Gameplay owns the 120ms ramp; the proxy advances no clock.
+            bPresentationTransitionActive=ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
+            PresentationTransitionStarted=VisualClock;
+            PresentationTransitionClip=Clip;
+        }
+        const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/.12f,0.f,1.f):1.f;
+        bSampled=bUsePhase ? ImportedPresentation->SampleClipPhaseBlended(Clip,FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f),Alpha) :
+            ImportedPresentation->SampleClipTimeBlended(Clip,Time,Alpha);
+        if(Alpha>=1.f)bPresentationTransitionActive=false;
         if (!bSampled)
         {
             // Avoid repeating the same invalid-asset diagnostic every tick.
@@ -548,7 +611,11 @@ void AVeyrKnight::UpdateImportedPresentation()
     }
     bRequestedPresentationClipSampled=bSampled;
     bPresentationUsingFallback=!bSampled;
+    PresentationPreviousActionElapsed=bUsePhase?ActionElapsed:-1.f;
     if (bSampled) { SetPresentationDiagnostic(FString()); return; }
+
+    bPresentationTransitionActive=false;
+    PresentationTransitionClip=NAME_None;
 
     const FVeyrVisualClip* Idle=CustomuseVisualDefinition->Clips.Find(TEXT("Idle"));
     bool bHeldIdle=false;

@@ -38,3 +38,11 @@ Actual signed/extracted packaged source `c8c59add517853a71c3924153649a855c4b297d
 Recorded core saved 350 actual native frames, skipped 26 capture slots and had zero failed writes. Pixel copying totaled 0.0767 seconds; PNG compression/writes used 27.12 seconds on a worker over 43.43 wall seconds. This is not an exclusive frame-rate benchmark. Video is silent, timestamp-preserving and contains no synthesized frames.
 
 Later editor source `555a679b9decdec627bde5f9caa0124bc0058bcd6d269deb41aae1a15afbc441` fixes initial physical mouse capture and adds healing/guard boundary tests. Physical PIE capture, movement, light/heavy, jump and lock-on were observed. The new boundary modes and full physical-key coverage remain pending. Both gameplay characters remain primitives; successful standalone gameplay does not establish final animation, art, sound or camera quality.
+
+
+## Healing boundary regression
+
+Editor-game source `b6cb077f370a3398e6c22b3cacd3276ca7d35ca4f6d3bc01fd3574dea25e6c22` (source checkpoint `3dfca14`) passed the healing boundary scenario. Four actual healing completions each consumed exactly one charge and capped health at 100: 70→100, then three 66→100 recoveries. After another natural injury to 66 HP with zero charges, a heal request left health, completion count and action unchanged for 1.458 seconds. The process exited normally. This validates gameplay rules with primitive presentation; imported-character motion and physical-key acceptance are separate.
+
+
+The same source passed the guard boundary scenario in 21.389 game seconds. A front Fire contact reduced health by 4.5 and consumed guard stamina. A rear Bite with 42.81 stamina dealt the full 34 damage, with no block or guard break. Later, a front Bite against 1.06 stamina dealt full damage, depleted stamina to zero, incremented guard-break count and entered Stagger. All cases used preceding-frame guard/facing/grounded evidence and actual contact counters; process exit was 0.
