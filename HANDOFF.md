@@ -2,7 +2,7 @@
 
 Public repository: https://github.com/oh-ashen-one/veyr-cinder-warden
 
-Active branch: `feat/first-playable`. Latest verified native milestone: gameplay source `c3c2e16`, build009. Core capture `combat-20261018T044000328Z`; full victory capture `victory-20261018T044050061Z`. This is an early playable, not visual completion. Original arena composition and lighting were revised and reviewed natively.
+Active branch: `feat/unreal-migration`. The user changed the target engine to Unreal and main-model provider to Customuse. Unreal native C++ compiled successfully on2026-10-18; the editor/game has not run yet. The preserved Unity branch is `checkpoint/unity-native-009`, commit `1382c42`. Latest verified historical Unity milestone: gameplay source `c3c2e16`, build009. Core capture `combat-20261018T044000328Z`; full victory capture `victory-20261018T044050061Z`. This is an early playable, not visual completion. Original arena composition and lighting were revised and reviewed natively.
 
 ## Verified and preserved
 
@@ -16,16 +16,18 @@ Active branch: `feat/first-playable`. Latest verified native milestone: gameplay
 
 ## Current work and gates
 
-1. Replace temporary main characters through requested Tripo workflow, then Blender cleanup, rig/weights and animation refinement.
-2. Refine final character/arena composition together and complete manual camera review, including RMB orbit.
-3. Repeat affected native checks and deliver the polished runnable handoff. Current standalone app is Builds/Veyr.app; build008 is preserved separately.
+1. Implement the bounded encounter natively in Unreal5.8.3 at `Unreal/Veyr/Veyr.uproject`. Source workers separately own knight, dragon and arena; root owns integration, builds, official native MCP connection and gameplay evidence. Jump, roll, light/heavy attack and guard are required. Dragon fire, flight/reposition/landing, claw, rear stomp and tail attacks retain the four-leg collapse loop.
+2. No Unreal editor has been launched. Shared GPU safety requires confirmation that no unresolved system permission/crash dialog is present before launch. Computer-use inspection of the notification surface was denied; that denial is respected. Source preparation continues independently.
+3. Customuse is connected. Two free previews each are ready for the original knight and dragon. Proposed P2 mesh generation is160 credits each,320 total; no paid generation or numeric spending approval has occurred. Preview selection also remains pending. Website login succeeded; rigging and animation beyond the MCP's mesh-generation APIs remain under inspection. The generic unauthenticated65-credit website button refers to P1 and is not the prepared P2 quote.
+4. No Blender fallback is approved under the revised request. The former Tripo Studio proposal is superseded. Do not spend its55-credit proposal or treat earlier Unity art as the final Customuse assets.
+5. Establish official native MCP project/world identity, save an owned Unreal level, and run native combat/camera/transition tests before claiming Unreal playability. Unity evidence cannot establish this.
 
-Concrete Tripo proposal: one original quadruped basalt/copper dragon, H3.1 Best Quality,55 existing credits. The inspected profile displays200 credits but locks model export behind an upgrade. Generate in Parts and8K are off. The exact prepared prompt is `ArtSource/tripo-dragon-prompt.txt`; no generation submitted. Required user action: identify an existing export-capable subscribed Chrome profile and approve up to55 existing credits for this one dragon. No purchase or subscription change is proposed. General permissions are not treated as a spending budget.
+Private preview identifiers and account diagnostics remain in ignored local records.
 
-The separately generated `ArtSource/Concept` image is art direction only. It does not replace the Tripo requirement.
+The separately generated `ArtSource/Concept` image is art direction only. It does not replace the requested main-model pipeline.
 
 Local evidence, logs and generated builds are excluded from public Git. Shared GPU/capture overhead makes measurements nonexclusive; no guaranteed frame-rate claim. Only verified owned Veyr processes were managed. Ghostty and unrelated workloads were not controlled.
 
 ## Ownership
 
-Root integrates and runs Unity through the shared GPU slot. Independent workers own arena art, reference research, Blender source/importer and replay tests. Preserve failed evidence. The task remains active; it has not reached polished completion.
+Root integrates and runs task-owned engines through the shared GPU slot. Current workers own native Unreal arena, knight, dragon, and Customuse website research. Unity feature work is stopped and its evidence preserved. Preserve failed evidence. The task remains active; it has not reached polished completion.

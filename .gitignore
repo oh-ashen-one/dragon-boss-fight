@@ -15,3 +15,11 @@ ArtSource/CHECKPOINT-ART-001.md
 Local/
 generated_images/
 Deliverables/
+Unreal/**/Binaries/
+Unreal/**/Intermediate/
+Unreal/**/Saved/
+Unreal/**/DerivedDataCache/
+Unreal/**/.vs/
+Unreal/**/.idea/
+Unreal/**/*.xcworkspace/
+Unreal/**/*.xcodeproj/

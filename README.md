@@ -1,16 +1,18 @@
 # Veyr — The Cinder Warden
 
-An original single-arena dragon boss fight in Unity 6. The knight severs the dragon's balance by attacking four independent legs, then punishes its exposed head during a short collapse.
+An original single-arena dragon boss fight, currently migrating to Unreal Engine 5.8. The knight breaks the dragon's balance by attacking four independent legs, then punishes its exposed head during a short collapse.
 
-**Status: native early playable with passing automated combat checks; not visually complete.** Character geometry is explicitly temporary. The intended final asset pipeline is Tripo → Blender cleanup, rigging and authored animation → Unity. No reference-game assets are included.
+**Status: Unreal C++ build succeeds; no Unreal gameplay verification yet.** The previous Unity prototype is preserved at `checkpoint/unity-native-009`. Its results below are historical Unity evidence. Character geometry is explicitly temporary. The requested final models are being prepared in Customuse; website rigging, animation and redistribution capabilities remain under inspection. No paid generation has been submitted, and no reference-game assets are included.
 
-## Controls
+The Unreal project is `Unreal/Veyr/Veyr.uproject`, with native C++ encounter code. Current branch: `feat/unreal-migration`. Planned controls are WASD movement, Space jump, Shift roll, J/LMB light attack, K heavy attack, F/RMB guard, Q healing, Tab lock-on and R terminal restart. These are implementation targets until tested natively.
+
+## Preserved Unity prototype
 
 WASD move; mouse while right button held rotates camera; left click or J attacks; Space dodges; Q heals; Tab toggles lock-on; R restarts after death or victory; Escape releases the pointer.
 
 ## Source and assets
 
-New C# and Python code: MIT (LICENSE). Original procedural meshes and authored temporary rig/animation: CC0-1.0 (ASSET-LICENSE.md). Tripo assets are not included pending generation approval and redistribution verification. Gameplay reference links are research citations only.
+Original project C++, C# and Python code: MIT (LICENSE). Original procedural meshes and authored temporary rig/animation: CC0-1.0 (ASSET-LICENSE.md). Unreal Engine resources remain subject to Epic's license and are not relicensed by this project. Customuse assets are not included pending generation approval and redistribution verification. Gameplay reference links are research citations only.
 
 Unity 6000.3.20f1. Open this directory as a Unity project, or invoke that editor with `-batchmode -nographics -projectPath <this-directory> -executeMethod VeyrBuild.Build -quit`. It creates the native macOS build at `Builds/Veyr.app`. Run its executable `Builds/Veyr.app/Contents/MacOS/Veyr - The Cinder Warden` (quote the path in a shell).
 
