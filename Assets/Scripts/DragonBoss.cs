@@ -27,6 +27,12 @@ public sealed class DragonBoss : MonoBehaviour
     public int LastHitRegion { get; private set; } = -1; // 0..3 legs, 4 head, 5 body
     public int CollapseCount { get; private set; }
     public Transform TemporaryVisual { get; private set; }
+    public float StateElapsed => stateTime;
+    public float StateDuration => duration;
+    public string CurrentMoveName => move.ToString();
+    public int StruckLegIndex => struckLeg;
+    public int StompLegIndex => stompLeg;
+    public float VisualClock => poseClock;
 
     static readonly Vector3[] Feet = {
         new Vector3(-3, .8f, -2), new Vector3(3, .8f, -2),
@@ -58,6 +64,7 @@ public sealed class DragonBoss : MonoBehaviour
     int struckLeg, stompLeg, attackCount, repeatCount;
     bool ready, touchedThisAttack, encounterStopped, justRepositioned;
     GroundShape warning, activeShape;
+    AuthoredDragonVisual authored;
 
     public void Initialize(PlayerCombat combatPlayer)
     {
@@ -81,6 +88,7 @@ public sealed class DragonBoss : MonoBehaviour
         CancelDanger();
         Enter(CombatState.Idle, 2.2f, "VEYR AWAKENS");
         UpdatePose(0);
+        if(!authored){authored=gameObject.AddComponent<AuthoredDragonVisual>();authored.Initialize(this);}
     }
 
     void Update()
@@ -239,7 +247,7 @@ public sealed class DragonBoss : MonoBehaviour
                     float d = Flat(player.transform.position - LegPositions[i]).sqrMagnitude;
                     if (d < closest) { closest = d; stompLeg = i; }
                 }
-                attackOrigin = Flat(transform.TransformPoint(Feet[stompLeg]));
+                attackOrigin = Flat(authored&&authored.IsReady?authored.GetFootPosition(stompLeg):transform.TransformPoint(Feet[stompLeg]));
                 farRadius = 2.6f;
                 break;
             case Move.Breath:
@@ -520,9 +528,10 @@ public sealed class DragonBoss : MonoBehaviour
             hitSpark.localScale = Vector3.one * Mathf.Lerp(.25f, 1.1f, age);
             SetGlow(sparkRenderer, Color.Lerp(Color.white, new Color(1, .26f, .02f), age), (1 - age) * 4);
         }
+        if(authored&&authored.IsReady)authored.EvaluatePose();
         if (state == CombatState.Active && move == Move.Breath && !encounterStopped)
         {
-            Vector3 muzzle = head.TransformPoint(new Vector3(0, -.2f, -1.5f));
+            Vector3 muzzle = authored&&authored.IsReady?authored.MuzzlePosition:head.TransformPoint(new Vector3(0, -.2f, -1.5f));
             Vector3 destination = attackOrigin + SweepDirection() * farRadius + Vector3.up * .3f;
             breathParticles.transform.position = muzzle;
             breathParticles.transform.rotation = Quaternion.LookRotation(destination - muzzle);

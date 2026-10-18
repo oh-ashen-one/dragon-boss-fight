@@ -19,6 +19,13 @@ public sealed class CombatReplay : MonoBehaviour
         public string name, state;
         public Vector3 playerPosition;
     }
+    [Serializable] public sealed class ScreenshotRecord
+    {
+        public string filename, status = "queued", error = "";
+        public Observation originEvent, renderedSnapshot;
+        public float capturedSeconds = -1, queueDelaySeconds = -1;
+        public int capturedFrame = -1;
+    }
     [Serializable] public sealed class InputSample
     {
         public float seconds;
@@ -33,12 +40,15 @@ public sealed class CombatReplay : MonoBehaviour
     {
         public string mode, runId, status = "running", reason = "", unityVersion, applicationVersion;
         public string method = "Real-time native gameplay through PlayerCombat.SetReplayInput; no health/state writes, teleports or time scaling. State-reactive deterministic policy; frame timing can affect outcomes.";
-        public float elapsedSeconds;
+        public float elapsedSeconds, victoryDurationSeconds = -1;
+        public bool victoryDurationInRange;
+        public string victoryDurationDefinition = "Real-time seconds from initial encounter binding to observed boss defeat, excluding restart and capture flush. Required range: 180 through 300 inclusive.";
         public int width, height;
         public bool legDamage, buckle, collapse, exposed, headDamage, rise, dodgePerformed, dodgeContact, playerDeath, bossDefeat, restart;
         public List<Observation> observations = new List<Observation>();
         public List<InputSample> inputs = new List<InputSample>();
         public List<Assertion> assertions = new List<Assertion>();
+        public List<ScreenshotRecord> captures = new List<ScreenshotRecord>();
         public List<string> screenshotRequests = new List<string>();
         public List<string> screenshotsWritten = new List<string>();
     }
@@ -52,6 +62,10 @@ public sealed class CombatReplay : MonoBehaviour
     DragonBoss.CombatState previousState;
     bool initialized, finishing, restarting, windupDodgeSent, reachedLeg;
     Vector3 fixedStompCenter;
+    readonly Queue<ScreenshotRecord> captureQueue = new Queue<ScreenshotRecord>();
+    bool captureInProgress;
+    int lastCapturedFrame = -1;
+    float fightStarted;
     const float Timeout = 300f;
     float Elapsed => Time.realtimeSinceStartup - started;
 
@@ -101,12 +115,12 @@ public sealed class CombatReplay : MonoBehaviour
     void Update()
     {
         if (active != this || finishing) return;
-        if (Elapsed >= Timeout) { Finish(false, "Scenario exceeded 300 real-time seconds."); return; }
+        if (!restarting && Elapsed >= Timeout) { Finish(false, "Scenario exceeded 300 real-time seconds."); return; }
         if (restarting) return;
         if (!initialized)
         {
             if (!Bind()) return;
-            initialized = true; Observe("spawn", true);
+            initialized = true; fightStarted = Elapsed; Observe("spawn", true);
         }
         if (player == null || boss == null) { Finish(false, "Encounter objects disappeared unexpectedly."); return; }
         ObserveChanges();
@@ -120,7 +134,13 @@ public sealed class CombatReplay : MonoBehaviour
         }
         if (boss.IsDead)
         {
-            if (!report.bossDefeat) { report.bossDefeat = true; Observe("boss-defeat", true); }
+            if (!report.bossDefeat)
+            {
+                report.bossDefeat = true;
+                report.victoryDurationSeconds = Elapsed - fightStarted;
+                report.victoryDurationInRange = report.victoryDurationSeconds >= 180 && report.victoryDurationSeconds <= 300;
+                Observe("boss-defeat", true);
+            }
             if (report.mode == "victory") StartCoroutine(CheckRestart());
             else Finish(CombatPassed(), "Boss defeated while running combat proof.");
             return;
@@ -289,21 +309,75 @@ public sealed class CombatReplay : MonoBehaviour
         Finish(goal && report.restart, report.restart ? "Terminal state and fresh input-responsive restart observed." : "Restart state or input-response assertion failed.");
     }
 
-    void Observe(string name, bool screenshot)
+    Observation Snapshot(string name)
     {
-        if (player == null || boss == null) return;
-        report.observations.Add(new Observation {
+        if (player == null || boss == null) return null;
+        return new Observation {
             name = name, seconds = Elapsed, frame = Time.frameCount, playerHealth = player.Health, stamina = player.Stamina,
             bossHealth = boss.Health, state = boss.CurrentState.ToString(), playerPosition = player.transform.position,
             swings = player.Swings, dodges = player.Dodges, hitsTaken = player.HitsTaken, dodgedHits = player.DodgedHits,
             collapses = boss.CollapseCount, lastHitRegion = boss.LastHitRegion
-        });
+        };
+    }
+
+    void Observe(string name, bool screenshot)
+    {
+        Observation observation = Snapshot(name);
+        if (observation == null) return;
+        report.observations.Add(observation);
         if (screenshot && directory != null)
         {
             string filename = prefix + "-" + report.observations.Count.ToString("D03") + "-" + name + ".png";
+            var request = new ScreenshotRecord { filename = filename, originEvent = observation };
             report.screenshotRequests.Add(filename);
-            ScreenCapture.CaptureScreenshot(Path.Combine(directory, filename));
+            report.captures.Add(request);
+            captureQueue.Enqueue(request);
         }
+    }
+
+    void LateUpdate()
+    {
+        // Remains active during finalization and scene restart. Consume at most
+        // one semantic request per rendered frame, including simultaneous events.
+        if (active == this && captureQueue.Count > 0 && !captureInProgress && lastCapturedFrame != Time.frameCount)
+        {
+            captureInProgress = true;
+            StartCoroutine(CaptureRenderedFrame());
+        }
+    }
+
+    IEnumerator CaptureRenderedFrame()
+    {
+        yield return new WaitForEndOfFrame();
+        ScreenshotRecord request = captureQueue.Dequeue();
+        lastCapturedFrame = Time.frameCount;
+        request.capturedFrame = Time.frameCount;
+        request.capturedSeconds = Elapsed;
+        request.queueDelaySeconds = request.capturedSeconds - request.originEvent.seconds;
+        request.renderedSnapshot = Snapshot("render-for-" + request.originEvent.name);
+        Texture2D pixels = null;
+        try
+        {
+            // Read the completed native frame directly. Unlike deferred filename
+            // requests, this cannot be replaced by Encounter's periodic captures.
+            pixels = ScreenCapture.CaptureScreenshotAsTexture();
+            if (pixels == null) throw new InvalidOperationException("Native frame readback returned no pixels.");
+            byte[] png = pixels.EncodeToPNG();
+            if (png == null || png.Length == 0) throw new InvalidOperationException("Native frame PNG encoding returned no bytes.");
+            File.WriteAllBytes(Path.Combine(directory, request.filename), png);
+            request.status = "written";
+        }
+        catch (Exception e)
+        {
+            request.status = "failed"; request.error = e.GetType().Name;
+            Debug.LogError("Replay milestone capture failed: " + request.error);
+        }
+        finally
+        {
+            if (pixels != null) Destroy(pixels);
+            captureInProgress = false;
+        }
+        Save();
     }
 
     void Finish(bool success, string reason)
@@ -311,6 +385,11 @@ public sealed class CombatReplay : MonoBehaviour
         if (finishing) return;
         finishing = true;
         Send(Vector3.zero, false, false, false);
+        if (report.mode == "victory" && report.bossDefeat && !report.victoryDurationInRange)
+        {
+            success = false;
+            reason += " Measured victory duration " + report.victoryDurationSeconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + "s is outside the required 180–300s range.";
+        }
         report.status = success ? "passed" : "failed"; report.reason = reason;
         Observe("final-" + report.status, true);
         report.assertions.Clear();
@@ -322,7 +401,14 @@ public sealed class CombatReplay : MonoBehaviour
             AddAssertion("dodge_action", report.dodgePerformed); AddAssertion("dodge_avoided_contact", report.dodgeContact);
         }
         if (report.mode == "death") AddAssertion("player_death", report.playerDeath);
-        if (report.mode == "victory") AddAssertion("boss_defeat", report.bossDefeat);
+        if (report.mode == "victory")
+        {
+            AddAssertion("boss_defeat", report.bossDefeat);
+            report.assertions.Add(new Assertion {
+                name = "victory_duration_180_to_300_seconds", status = !report.bossDefeat ? "not_observed" : report.victoryDurationInRange ? "passed" : "failed",
+                detail = report.bossDefeat ? "Measured spawn-to-defeat duration: " + report.victoryDurationSeconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + " seconds." : "No boss defeat observed; no victory duration inferred."
+            });
+        }
         if (report.mode != "combat") AddAssertion("restart_and_movement", report.restart);
         Save(); StartCoroutine(CompleteAfterCapture(success));
     }
@@ -334,11 +420,16 @@ public sealed class CombatReplay : MonoBehaviour
 
     IEnumerator CompleteAfterCapture(bool success)
     {
-        // CaptureScreenshot writes after the frame; leave a bounded flush window.
-        yield return new WaitForSecondsRealtime(2);
+        // Drain every semantic request, still at one per rendered frame. Bound
+        // this separately from the fight so a terminal event cannot lose evidence.
+        float flushDeadline = Time.realtimeSinceStartup + 10;
+        while ((captureQueue.Count > 0 || captureInProgress) && Time.realtimeSinceStartup < flushDeadline)
+            yield return null;
         Save();
-        bool capturesWritten = report.screenshotRequests.Count > 0 &&
+        bool capturesWritten = captureQueue.Count == 0 && !captureInProgress && report.screenshotRequests.Count > 0 &&
             report.screenshotsWritten.Count == report.screenshotRequests.Count;
+        foreach (ScreenshotRecord capture in report.captures)
+            if (capture.status != "written") capturesWritten = false;
         AddAssertion("milestone_screenshots_written", capturesWritten);
         if (!capturesWritten)
         {
@@ -356,7 +447,10 @@ public sealed class CombatReplay : MonoBehaviour
         report.elapsedSeconds = Elapsed;
         report.screenshotsWritten.Clear();
         foreach (string filename in report.screenshotRequests)
-            if (File.Exists(Path.Combine(directory, filename))) report.screenshotsWritten.Add(filename);
+        {
+            string path = Path.Combine(directory, filename);
+            if (File.Exists(path) && new FileInfo(path).Length > 0) report.screenshotsWritten.Add(filename);
+        }
         try { File.WriteAllText(Path.Combine(directory, prefix + "-results.json"), JsonUtility.ToJson(report, true)); }
         catch (Exception e) { Debug.LogError("Replay result write failed: " + e.GetType().Name); }
     }

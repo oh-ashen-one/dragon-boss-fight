@@ -22,6 +22,7 @@ public sealed class ArenaBuilder : MonoBehaviour
         Transform root;
         Geometry stone, paleStone, darkStone, rubble, bronze, inlay, water;
         Material flame, ember;
+        Texture2D basaltAlbedo, basaltNormal, basaltWetness;
         float Rand(float a, float b) { return a + (float)random.NextDouble() * (b - a); }
         static Vector3 Radial(float angle, float radius, float y = 0)
         {
@@ -35,6 +36,16 @@ public sealed class ArenaBuilder : MonoBehaviour
             material.color = color;
             material.SetFloat("_Glossiness", smoothness);
             material.SetFloat("_Metallic", metallic);
+            if (basaltAlbedo && metallic < .3f && name != "Black reflecting moat")
+            {
+                material.SetTexture("_MainTex", basaltAlbedo);
+                material.SetTexture("_BumpMap", basaltNormal);
+                material.SetFloat("_BumpScale", .75f);
+                material.EnableKeyword("_NORMALMAP");
+                material.SetTexture("_MetallicGlossMap", basaltWetness);
+                material.SetFloat("_GlossMapScale", .9f);
+                material.EnableKeyword("_METALLICGLOSSMAP");
+            }
             var geometry = new Geometry(name, material);
             batches.Add(geometry);
             return geometry;
@@ -43,13 +54,14 @@ public sealed class ArenaBuilder : MonoBehaviour
         public void Build()
         {
             root = new GameObject("Drowned Reliquary — original procedural environment").transform;
-            stone = Batch("Rain-dark basalt", new Color(.105f, .135f, .155f), .67f, .12f);
-            paleStone = Batch("Worn silver stone", new Color(.22f, .255f, .27f), .52f, .1f);
-            darkStone = Batch("Obsidian recesses", new Color(.045f, .061f, .075f), .7f, .15f);
-            rubble = Batch("Distant weathered masonry", new Color(.12f, .16f, .185f), .33f);
+            CreateBasaltTextures();
+            stone = Batch("Rain-dark basalt", new Color(.27f, .295f, .31f), .67f, .06f);
+            paleStone = Batch("Worn silver stone", new Color(.34f, .355f, .36f), .52f, .06f);
+            darkStone = Batch("Obsidian recesses", new Color(.11f, .13f, .145f), .7f, .05f);
+            rubble = Batch("Distant weathered masonry", new Color(.20f, .235f, .25f), .33f);
             bronze = Batch("Tarnished ancient bronze", new Color(.24f, .175f, .075f), .66f, .78f);
             inlay = Batch("Faded moonstone seams", new Color(.31f, .36f, .355f), .74f, .48f);
-            water = Batch("Black reflecting moat", new Color(.028f, .065f, .083f), .96f, .6f);
+            water = Batch("Black reflecting moat", new Color(.018f, .032f, .041f), .88f, .18f);
             CreateFloor();
             CreateArchitecture();
             CreateSilhouette();
@@ -59,21 +71,103 @@ public sealed class ArenaBuilder : MonoBehaviour
             CreateCollision();
         }
 
+        // Original, seamless pixel maps: irregular stone plates, hairline cracks,
+        // mineral speckling, pores and rain-polished high spots. World-scaled UVs
+        // below keep their density consistent on pavers and monumental masonry.
+        void CreateBasaltTextures()
+        {
+            const int size = 512;
+            float[] heights = new float[size * size];
+            Color[] colors = new Color[heights.Length];
+            Color[] wetness = new Color[heights.Length];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float u = x / (float)size, v = y / (float)size;
+                    float n = TileNoise(u, v, 8, 17.2f);
+                    float grain = TileNoise(u, v, 57, 38.4f);
+                    float fleck = TileNoise(u, v, 119, 91.7f);
+                    float cx = u * 7, cy = v * 7;
+                    int ix = Mathf.FloorToInt(cx), iy = Mathf.FloorToInt(cy);
+                    float first = 100, second = 100, plate = 0;
+                    for (int j = -1; j <= 1; j++)
+                        for (int i = -1; i <= 1; i++)
+                        {
+                            int px = ix + i, py = iy + j;
+                            int wx = (px + 7) % 7, wy = (py + 7) % 7;
+                            float hx = Hash(wx, wy), hy = Hash(wx + 23, wy + 19);
+                            float dx = px + .18f + hx * .64f - cx, dy = py + .18f + hy * .64f - cy;
+                            float distance = dx * dx + dy * dy;
+                            if (distance < first) { second = first; first = distance; plate = hx; }
+                            else if (distance < second) second = distance;
+                        }
+                    float crack = 1 - Smooth01(0, .065f, second - first);
+                    float vein = Mathf.Pow(1 - Mathf.Abs(n * 2 - 1), 18) * .07f;
+                    float pit = Smooth01(.65f, .85f, fleck) * .18f;
+                    int index = x + y * size;
+                    heights[index] = .48f + (n - .5f) * .28f + (grain - .5f) * .1f + plate * .07f - crack * .24f - pit;
+                    float tone = .42f + n * .23f + grain * .16f + plate * .11f - crack * .25f - pit + vein;
+                    colors[index] = new Color(tone * .96f, tone, tone * 1.015f, 1);
+                    float wet = Smooth01(.32f, .69f, TileNoise(u, v, 4, 72.1f));
+                    wetness[index] = new Color(.035f, .035f, .035f, Mathf.Lerp(.34f, .88f, wet) * (1 - crack * .35f));
+                }
+            Color[] normals = new Color[heights.Length];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = heights[(x + 1) % size + y * size] - heights[(x + size - 1) % size + y * size];
+                    float dy = heights[x + (y + 1) % size * size] - heights[x + (y + size - 1) % size * size];
+                    Vector3 n = new Vector3(-dx * 5, -dy * 5, 1).normalized;
+                    normals[x + y * size] = new Color(n.x * .5f + .5f, n.y * .5f + .5f, n.z * .5f + .5f, 1);
+                }
+            basaltAlbedo = Texture("Original rain-worn basalt albedo", size, colors, false);
+            basaltNormal = Texture("Original carved basalt tangent normals", size, normals, true);
+            basaltWetness = Texture("Original basalt variable rain polish", size, wetness, true);
+        }
+
+        static Texture2D Texture(string name, int size, Color[] colors, bool linear)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, true, linear);
+            texture.name = name; texture.wrapMode = TextureWrapMode.Repeat;
+            texture.filterMode = FilterMode.Trilinear; texture.anisoLevel = 8;
+            texture.SetPixels(colors); texture.Apply(true, true);
+            return texture;
+        }
+        static float Hash(int x, int y)
+        {
+            uint h = unchecked((uint)(x * 374761393 + y * 668265263));
+            h = (h ^ (h >> 13)) * 1274126177u;
+            return (h & 0x00ffffff) / 16777215f;
+        }
+        static float Smooth01(float low, float high, float value)
+        {
+            float t = Mathf.InverseLerp(low, high, value);
+            return t * t * (3 - 2 * t);
+        }
+        static float TileNoise(float u, float v, float scale, float offset)
+        {
+            float a = Mathf.PerlinNoise(u * scale + offset, v * scale + offset);
+            float b = Mathf.PerlinNoise((u - 1) * scale + offset, v * scale + offset);
+            float c = Mathf.PerlinNoise(u * scale + offset, (v - 1) * scale + offset);
+            float d = Mathf.PerlinNoise((u - 1) * scale + offset, (v - 1) * scale + offset);
+            return Mathf.Lerp(Mathf.Lerp(a, b, u), Mathf.Lerp(c, d, u), v);
+        }
+
         void CreateFloor()
         {
             // Slightly separated blocks reveal dark mortar; collider is a single
             // mathematically flat plane so decorative seams cannot snag the player.
             darkStone.Annulus(Vector3.zero, 0, 38.8f, -.035f, .5f, 128);
-            float[] radii = { 0, 3.9f, 8.5f, 13.6f, 19.4f, 25.6f, 31.8f, 37.8f };
+            float[] radii = { 0, 3.9f, 6.2f, 8.5f, 11, 13.6f, 16.4f, 19.4f, 22.5f, 25.6f, 28.7f, 31.8f, 34.8f, 37.8f };
             for (int ring = 0; ring < radii.Length - 1; ring++)
             {
-                int count = 16 + ring * 8;
+                int count = Mathf.Max(12, Mathf.RoundToInt((radii[ring] + radii[ring + 1]) * Mathf.PI / 2.4f));
                 float offset = ring % 2 == 0 ? 0 : Mathf.PI / count;
                 for (int i = 0; i < count; i++)
                 {
                     float a = offset + i * Mathf.PI * 2 / count + .002f;
                     float b = offset + (i + 1) * Mathf.PI * 2 / count - .002f;
-                    Geometry material = random.NextDouble() < .19 ? paleStone : stone;
+                    Geometry material = random.NextDouble() < .13 ? paleStone : stone;
                     material.Wedge(radii[ring] + .035f, radii[ring + 1] - .035f, a, b, -.008f, .08f, 4);
                 }
             }
@@ -125,6 +219,8 @@ public sealed class ArenaBuilder : MonoBehaviour
                     paleStone.Cylinder(p + local, .22f, .22f, height, 8);
                 }
                 paleStone.Box(p + Vector3.up * (height + 2.5f), new Vector3(3.7f, .48f, 4.1f), q);
+                for (float course = 3.2f; course < height + 1; course += 1.6f)
+                    darkStone.Box(p + Vector3.up * course, new Vector3(2.84f, .045f, 3.34f), q);
                 bronze.Box(p + q * new Vector3(0, 5.5f, -1.72f), new Vector3(.12f, 4.3f, .13f), q);
                 stone.Box(p + Radial(a, 2.6f, 5.1f), new Vector3(2.3f, 10.2f, 3), q);
                 paleStone.Cylinder(p + Vector3.up * (height + 4.35f), .9f, .05f, 3.3f, 5);
@@ -136,8 +232,10 @@ public sealed class ArenaBuilder : MonoBehaviour
                     Vector3 next = Radial(a + step, radius);
                     int leftSegments = i % 4 == 2 ? 4 : 10;
                     int rightSegments = i % 4 == 2 ? 2 : 10;
-                    Arch(p, next, 11.2f, 24.5f, .72f, leftSegments, rightSegments, stone);
-                    Arch(p + Radial(a, -1.55f), next + Radial(a + step, -1.55f), 11.2f, 23.2f, .22f, leftSegments, rightSegments, paleStone);
+                    Arch(p, next, 11.2f, 24.5f, 1.3f, leftSegments, rightSegments, stone);
+                    Arch(p + Radial(a, -1.55f), next + Radial(a + step, -1.55f), 11.2f, 23.2f, .30f, leftSegments, rightSegments, paleStone);
+                    if (i % 3 != 1)
+                        Arch(p, next, 3.3f, 11.5f, .65f, 10, 10, stone);
                 }
                 if (i % 4 == 1)
                     Banner(p + q * new Vector3(0, 13, -1.85f), q, 2.0f, 6.7f);
@@ -209,6 +307,23 @@ public sealed class ArenaBuilder : MonoBehaviour
 
         void CreateSilhouette()
         {
+            // Ground the ruins in an overlapping, uneven shoreline. These masses
+            // replace the disconnected square wall panels visible in early builds.
+            darkStone.Annulus(Vector3.zero, 51, 68, -.34f, 5, 96);
+            for (int i = 0; i < 47; i++)
+            {
+                float a = i * Mathf.PI * 2 / 47;
+                Vector3 p = Radial(a, Rand(53, 61), -1.3f);
+                rubble.Rock(p, new Vector3(Rand(7, 11), Rand(3, 9), Rand(6, 13)), i * 13 + 9);
+            }
+            for (int i = 0; i < 26; i++)
+            {
+                float a = i * Mathf.PI * 2 / 26 + .03f;
+                Vector3 p = Radial(a, Rand(85, 116), -5);
+                float h = 25 + 22 * Mathf.PerlinNoise(i * .43f, 7.8f);
+                darkStone.Rock(p, new Vector3(Rand(22, 39), h, Rand(20, 35)), 157 + i * 7);
+                rubble.Rock(p + Radial(a, 6), new Vector3(Rand(16, 26), h * 1.4f, Rand(15, 24)), 91 + i * 11);
+            }
             for (int i = 0; i < 31; i++)
             {
                 float a = Rand(0, Mathf.PI * 2), r = Rand(70, 120);
@@ -219,61 +334,44 @@ public sealed class ArenaBuilder : MonoBehaviour
                 if (i % 3 == 0)
                     paleStone.Cylinder(p + Vector3.up * (h + 12.7f), .12f, .08f, 2.5f, 4);
             }
-            // Uneven outer ruined retaining walls, entirely beyond combat bounds.
-            for (int i = 0; i < 35; i++)
+            // Collapsed arch stones and rubble remain outside the playable curb.
+            for (int i = 0; i < 86; i++)
             {
-                float a = i * Mathf.PI * 2 / 35;
-                float h = Rand(2, 7);
-                rubble.Box(Radial(a, 57, h * .5f - .4f), new Vector3(7.5f, h, 2.7f), Quaternion.Euler(0, a * Mathf.Rad2Deg, 0));
+                float a = Rand(0, Mathf.PI * 2), r = Rand(41.5f, 52);
+                Vector3 size = new Vector3(Rand(.8f, 2.5f), Rand(.65f, 2.1f), Rand(.7f, 2.4f));
+                rubble.Box(Radial(a, r, size.y * .18f - .25f), size, Quaternion.Euler(Rand(-22, 22), Rand(0, 180), Rand(-18, 18)));
             }
         }
 
         void CreateLighting()
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(.22f, .31f, .40f);
-            RenderSettings.ambientEquatorColor = new Color(.13f, .18f, .22f);
-            RenderSettings.ambientGroundColor = new Color(.07f, .085f, .10f);
+            RenderSettings.ambientSkyColor = new Color(.18f, .225f, .28f);
+            RenderSettings.ambientEquatorColor = new Color(.09f, .115f, .145f);
+            RenderSettings.ambientGroundColor = new Color(.045f, .054f, .065f);
             RenderSettings.ambientIntensity = 1;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(.055f, .092f, .13f);
-            RenderSettings.fogDensity = .0085f;
-            Shader skyShader = Shader.Find("Skybox/Procedural");
-            if (skyShader)
-            {
-                var sky = new Material(skyShader) { name = "Reliquary storm sky" };
-                sky.SetColor("_SkyTint", new Color(.12f, .19f, .27f));
-                sky.SetColor("_GroundColor", new Color(.035f, .05f, .07f));
-                sky.SetFloat("_Exposure", .55f);
-                sky.SetFloat("_AtmosphereThickness", .7f);
-                sky.SetFloat("_SunDisk", 0);
-                RenderSettings.skybox = sky;
-            }
-            var moonlight = Light("Cold moon key", LightType.Directional, new Color(.60f, .76f, 1), 1.0f, Vector3.zero);
+            RenderSettings.fogColor = new Color(.025f, .037f, .052f);
+            RenderSettings.fogDensity = .0075f;
+            CreateStormSky();
+            var moonlight = Light("Cold moon key", LightType.Directional, new Color(.71f, .81f, .94f), 1.08f, Vector3.zero);
             moonlight.transform.rotation = Quaternion.Euler(43, -34, 0);
             moonlight.shadows = LightShadows.Soft;
             moonlight.shadowStrength = .83f;
             moonlight.shadowBias = .035f;
             moonlight.shadowNormalBias = .2f;
             RenderSettings.sun = moonlight;
-            var fill = Light("Soft horizon fill", LightType.Directional, new Color(.28f, .44f, .57f), .42f, Vector3.zero);
+            var fill = Light("Soft horizon fill", LightType.Directional, new Color(.44f, .54f, .65f), .28f, Vector3.zero);
             fill.transform.rotation = Quaternion.Euler(18, 145, 0);
             fill.shadows = LightShadows.None;
             flame = new Material(Shader.Find("Standard")) { name = "Original ember cores", color = new Color(1, .35f, .06f) };
             flame.EnableKeyword("_EMISSION");
             flame.SetColor("_EmissionColor", new Color(3.6f, .72f, .1f));
-            var moonMaterial = new Material(Shader.Find("Unlit/Color"));
-            moonMaterial.name = "Cloud-pale moon";
-            moonMaterial.color = new Color(.72f, .83f, .88f);
-            var moon = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            moon.name = "Moon beyond broken vaults";
-            moon.transform.SetParent(root);
-            moon.transform.position = new Vector3(-66, 109, 105);
-            moon.transform.localScale = Vector3.one * 15;
-            RemoveCollider(moon);
-            moon.GetComponent<Renderer>().sharedMaterial = moonMaterial;
-            moon.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            var shaft = Light("Moon opening over the fighting floor", LightType.Spot, new Color(.65f, .77f, .9f), 4.2f, new Vector3(-22, 38, 15));
+            shaft.transform.rotation = Quaternion.LookRotation(new Vector3(6, 0, 1) - shaft.transform.position);
+            shaft.range = 72; shaft.spotAngle = 65; shaft.innerSpotAngle = 32;
+            shaft.shadows = LightShadows.None;
             for (int i = 0; i < 8; i++)
             {
                 Vector3 p = Radial((i + .5f) * Mathf.PI / 4, 39.1f, 2.1f);
@@ -284,11 +382,70 @@ public sealed class ArenaBuilder : MonoBehaviour
                 fire.transform.localScale = new Vector3(1.38f, .16f, 1.38f);
                 RemoveCollider(fire);
                 fire.GetComponent<Renderer>().sharedMaterial = flame;
-                var light = Light("Amber brazier " + i, LightType.Point, new Color(1, .35f, .08f), 3.7f, p + Vector3.up * .6f);
-                light.range = 15;
+                var light = Light("Amber brazier " + i, LightType.Point, new Color(1, .46f, .19f), 2.1f, p + Vector3.up * .6f);
+                light.range = 12;
                 light.shadows = LightShadows.None;
                 light.renderMode = LightRenderMode.ForcePixel;
             }
+        }
+
+        void CreateStormSky()
+        {
+            // A generated directional cubemap avoids the daytime atmospheric
+            // scattering/white horizon of Unity's procedural daylight skybox.
+            const int size = 256;
+            var cubemap = new Cubemap(size, TextureFormat.RGBA32, true);
+            cubemap.name = "Original painted storm and moon cubemap";
+            cubemap.wrapMode = TextureWrapMode.Clamp;
+            cubemap.filterMode = FilterMode.Trilinear;
+            Vector3 moonDirection = new Vector3(-.38f, .52f, .76f).normalized;
+            for (int face = 0; face < 6; face++)
+            {
+                Color[] pixels = new Color[size * size];
+                for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
+                    {
+                        float u = (x + .5f) / size * 2 - 1, v = (y + .5f) / size * 2 - 1;
+                        Vector3 d;
+                        switch (face)
+                        {
+                            case 0: d = new Vector3(1, -v, -u); break;
+                            case 1: d = new Vector3(-1, -v, u); break;
+                            case 2: d = new Vector3(u, 1, v); break;
+                            case 3: d = new Vector3(u, -1, -v); break;
+                            case 4: d = new Vector3(u, -v, 1); break;
+                            default: d = new Vector3(-u, -v, -1); break;
+                        }
+                        d.Normalize();
+                        float cloud = Cloud(d * 4.8f) * .62f + Cloud(d * 11.7f) * .26f + Cloud(d * 27) * .12f;
+                        float height = Mathf.Clamp01(d.y * 1.3f);
+                        Color color = Color.Lerp(new Color(.035f, .048f, .063f), new Color(.013f, .020f, .035f), height);
+                        float moonDot = Mathf.Clamp01(Vector3.Dot(d, moonDirection));
+                        float halo = Mathf.Pow(moonDot, 95);
+                        float silver = Mathf.Pow(Mathf.Clamp01(cloud - .27f) * 1.45f, 1.6f);
+                        color += new Color(.047f, .058f, .071f) * silver * (.25f + halo * 1.5f);
+                        color += new Color(.12f, .145f, .17f) * halo * .3f;
+                        float disc = Smooth01(.9981f, .9987f, moonDot);
+                        float veil = Mathf.Lerp(.95f, .30f, Smooth01(.43f, .68f, cloud));
+                        color = Color.Lerp(color, new Color(.62f, .69f, .72f) * veil, disc);
+                        if (d.y < -.02f) color = Color.Lerp(color, new Color(.014f, .023f, .032f), Mathf.Clamp01(-d.y * 4));
+                        pixels[x + y * size] = color;
+                    }
+                cubemap.SetPixels(pixels, (CubemapFace)face);
+            }
+            cubemap.Apply(true, true);
+            var sky = new Material(Shader.Find("Skybox/Cubemap")) { name = "Original drowned cathedral storm sky" };
+            sky.SetTexture("_Tex", cubemap); sky.SetColor("_Tint", new Color(.5f, .5f, .5f)); sky.SetFloat("_Exposure", 1);
+            RenderSettings.skybox = sky;
+            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
+            RenderSettings.customReflectionTexture = cubemap;
+            RenderSettings.reflectionIntensity = .65f;
+        }
+
+        static float Cloud(Vector3 p)
+        {
+            return (Mathf.PerlinNoise(p.x + 41.7f, p.y + 13.2f) + Mathf.PerlinNoise(p.y + 9.3f, p.z + 68.5f)
+                + Mathf.PerlinNoise(p.z + 81.1f, p.x + 25.6f)) / 3;
         }
 
         Light Light(string name, LightType type, Color color, float intensity, Vector3 position)
@@ -399,9 +556,16 @@ public sealed class ArenaBuilder : MonoBehaviour
             int index = vertices.Count;
             vertices.Add(a); vertices.Add(b); vertices.Add(c); vertices.Add(d);
             for (int k = 0; k < 4; k++) normals.Add(normal);
-            uv.Add(Vector2.zero); uv.Add(Vector2.right); uv.Add(Vector2.one); uv.Add(Vector2.up);
+            uv.Add(ProjectUV(a, normal)); uv.Add(ProjectUV(b, normal));
+            uv.Add(ProjectUV(c, normal)); uv.Add(ProjectUV(d, normal));
             indices.Add(index); indices.Add(index + 1); indices.Add(index + 2);
             indices.Add(index); indices.Add(index + 2); indices.Add(index + 3);
+        }
+        static Vector2 ProjectUV(Vector3 p, Vector3 normal)
+        {
+            if (Mathf.Abs(normal.y) > .6f) return new Vector2(p.x, p.z) * .22f;
+            if (Mathf.Abs(normal.x) > Mathf.Abs(normal.z)) return new Vector2(p.z, p.y) * .22f;
+            return new Vector2(p.x, p.y) * .22f;
         }
         public void Box(Vector3 center, Vector3 size, Quaternion rotation)
         {
@@ -416,6 +580,33 @@ public sealed class ArenaBuilder : MonoBehaviour
         {
             Vector3 delta = end - start;
             Box((start + end) * .5f, new Vector3(thickness, delta.magnitude + .09f, thickness), Quaternion.FromToRotation(Vector3.up, delta.normalized));
+        }
+        public void Rock(Vector3 basePosition, Vector3 size, int seed)
+        {
+            const int sides = 9;
+            Vector3[,] rings = new Vector3[3, sides];
+            for (int ring = 0; ring < 3; ring++)
+                for (int i = 0; i < sides; i++)
+                {
+                    float angle = i * Mathf.PI * 2 / sides;
+                    float irregularity = .82f + .18f * Mathf.Sin(seed * .71f + i * 2.17f + ring * 1.43f);
+                    float profile = ring == 0 ? 1 : ring == 1 ? .86f : .42f;
+                    float height = ring == 0 ? 0 : ring == 1 ? .45f : .84f;
+                    float offset = ring * .065f;
+                    rings[ring, i] = basePosition + new Vector3(
+                        (Mathf.Sin(angle) * profile * irregularity + offset) * size.x * .5f,
+                        (height + (ring == 0 ? 0 : Mathf.Sin(i * 2.7f + seed) * .065f)) * size.y,
+                        (Mathf.Cos(angle) * profile * irregularity - offset) * size.z * .5f);
+                }
+            for (int ring = 0; ring < 2; ring++)
+                for (int i = 0; i < sides; i++)
+                {
+                    int next = (i + 1) % sides;
+                    Quad(rings[ring, i], rings[ring, next], rings[ring + 1, next], rings[ring + 1, i]);
+                }
+            Vector3 summit = basePosition + new Vector3(size.x * .07f, size.y, -size.z * .07f);
+            for (int i = 0; i < sides; i++)
+                Quad(rings[2, i], rings[2, (i + 1) % sides], summit, summit);
         }
         public void Cylinder(Vector3 center, float bottomRadius, float topRadius, float height, int sides)
         {
@@ -454,7 +645,8 @@ public sealed class ArenaBuilder : MonoBehaviour
         {
             var go = new GameObject(name); go.transform.SetParent(parent); go.isStatic = true;
             var mesh = new Mesh { name = name + " authored mesh", indexFormat = IndexFormat.UInt32 };
-            mesh.SetVertices(vertices); mesh.SetNormals(normals); mesh.SetUVs(0, uv); mesh.SetTriangles(indices, 0); mesh.RecalculateBounds();
+            mesh.SetVertices(vertices); mesh.SetNormals(normals); mesh.SetUVs(0, uv); mesh.SetTriangles(indices, 0);
+            mesh.RecalculateBounds(); mesh.RecalculateTangents();
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             go.AddComponent<MeshRenderer>().sharedMaterial = material;
         }

@@ -26,6 +26,7 @@ public sealed class Encounter:MonoBehaviour
         Cursor.lockState=CursorLockMode.None;Cursor.visible=true;started=Time.time;
         var args=Environment.GetCommandLineArgs();for(int i=0;i<args.Length-1;i++)if(args[i]=="--capture-dir"){captureDir=Path.GetFullPath(args[i+1]);Directory.CreateDirectory(captureDir);nextCapture=3;}
         if(Array.IndexOf(args,"--replay")>=0){Application.runInBackground=true;new GameObject("Combat Replay Driver").AddComponent<CombatReplay>();}
+        for(int i=0;i<args.Length-1;i++)if(args[i]=="--record-dir")new GameObject("Native Gameplay Recorder").AddComponent<NativeRecorder>().Initialize(args[i+1]);
     }
     void Update(){
         hurtFlash=Mathf.Max(0,hurtFlash-Time.deltaTime*1.7f);frame++;
