@@ -10,7 +10,7 @@ public sealed class Encounter:MonoBehaviour
     public PlayerCombat Player;public DragonBoss Boss;
     float hurtFlash, started, nextCapture; int frame; GUIStyle label,title,small;
     readonly List<float> frameMs=new List<float>();
-    string captureDir;
+    string captureDir, capturePrefix;
     bool restartRequested;
     // RuntimeInitialize callbacks run once per application startup. The empty
     // bootstrap scene also needs reconstruction after each ordinary scene reload.
@@ -27,6 +27,7 @@ public sealed class Encounter:MonoBehaviour
         new GameObject("Veyr Encounter").AddComponent<Encounter>();
     }
     void Awake(){
+        capturePrefix=DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ");
         Instance=this;Application.targetFrameRate=60;QualitySettings.vSyncCount=0;
         QualitySettings.antiAliasing=4;QualitySettings.shadowDistance=95;
         ArenaBuilder.Build();
@@ -56,14 +57,15 @@ public sealed class Encounter:MonoBehaviour
         restartRequested=true;
         SceneManager.LoadScene(sceneIndex);
     }
-    void OnDestroy(){if(Instance==this)Instance=null;}
+    void OnDestroy(){SaveFrameReport();if(Instance==this)Instance=null;}
     void Capture(){
         if(captureDir==null)captureDir=Path.Combine(Application.persistentDataPath,"captures");Directory.CreateDirectory(captureDir);
-        ScreenCapture.CaptureScreenshot(Path.Combine(captureDir,"gameplay-"+frame.ToString("D06")+".png"));
+        ScreenCapture.CaptureScreenshot(Path.Combine(captureDir,"gameplay-"+capturePrefix+"-"+frame.ToString("D06")+".png"));
         File.WriteAllText(Path.Combine(captureDir,"state.json"),JsonUtility.ToJson(new Snapshot{frame=frame,elapsed=Time.time-started,playerHealth=Player.Health,stamina=Player.Stamina,bossHealth=Boss.Health,bossState=Boss.StateLabel,headExposed=Boss.HeadExposed,swings=Player.Swings,dodges=Player.Dodges,hitsTaken=Player.HitsTaken,dodgedHits=Player.DodgedHits,width=Screen.width,height=Screen.height},true));
     }
     [Serializable]class Snapshot{public int frame,swings,dodges,hitsTaken,dodgedHits,width,height;public float elapsed,playerHealth,stamina,bossHealth;public string bossState;public bool headExposed;}
-    void OnApplicationQuit(){if(captureDir!=null&&frameMs.Count>0){frameMs.Sort();File.WriteAllText(Path.Combine(captureDir,"frame-times.json"),JsonUtility.ToJson(new FrameReport{samples=frameMs.Count,p50=frameMs[frameMs.Count/2],p95=frameMs[(int)(frameMs.Count*.95f)],p99=frameMs[(int)(frameMs.Count*.99f)],width=Screen.width,height=Screen.height,note="Native gameplay unscaled frame times. Shared-GPU contamination must be checked externally; not a GPU timing measurement."},true));}}
+    void OnApplicationQuit(){SaveFrameReport();}
+    void SaveFrameReport(){if(captureDir!=null&&frameMs.Count>0){frameMs.Sort();File.WriteAllText(Path.Combine(captureDir,"frame-times-"+capturePrefix+".json"),JsonUtility.ToJson(new FrameReport{samples=frameMs.Count,p50=frameMs[frameMs.Count/2],p95=frameMs[(int)(frameMs.Count*.95f)],p99=frameMs[(int)(frameMs.Count*.99f)],width=Screen.width,height=Screen.height,note="Native gameplay unscaled frame times, saved per encounter including restart. Shared-GPU contamination must be checked externally; not a GPU timing measurement."},true));}}
     [Serializable]class FrameReport{public int samples,width,height;public float p50,p95,p99;public string note;}
     void Styles(){if(label!=null)return;label=new GUIStyle(GUI.skin.label){fontSize=17};label.normal.textColor=new Color(.9f,.88f,.8f);title=new GUIStyle(label){fontSize=32,alignment=TextAnchor.MiddleCenter};small=new GUIStyle(label){fontSize=12};}
     void OnGUI(){

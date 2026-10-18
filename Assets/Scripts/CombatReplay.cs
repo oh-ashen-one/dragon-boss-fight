@@ -671,7 +671,13 @@ public sealed class CombatReplay : MonoBehaviour
     IEnumerator CheckRestart()
     {
         restarting = true; Send(Vector3.zero, false, false, false); Save();
-        yield return new WaitForSecondsRealtime(2);
+        float terminalHealth=player.Health;
+        yield return new WaitForSecondsRealtime(boss.IsDead ? 3.65f : 2.2f);
+        if(Mathf.Abs(player.Health-terminalHealth)>.001f)
+        {Finish(false,"Player health changed after the terminal encounter state.");yield break;}
+        Observe("terminal-settled-pose",true);
+        float poseCaptureDeadline=Time.realtimeSinceStartup+3;
+        while((captureQueue.Count>0||captureInProgress)&&Time.realtimeSinceStartup<poseCaptureDeadline)yield return null;
         int oldPlayerId = player.GetInstanceID();
         Encounter.Instance.RestartEncounter();
         float until = Time.realtimeSinceStartup + 10;
