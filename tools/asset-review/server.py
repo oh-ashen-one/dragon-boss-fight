@@ -11,6 +11,7 @@ import argparse
 import json
 import os
 import shlex
+import struct
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,7 @@ from urllib.parse import unquote, urlsplit
 
 HERE = Path(__file__).resolve().parent
 CACHE = HERE / ".asset-cache"
+REVIEW = CACHE / "review"
 REMOTE_CATALOG = r'''
 import json, struct, sys
 from pathlib import Path
@@ -81,6 +83,30 @@ def catalog_from_studio(host: str, root: Path) -> list[dict]:
     return items
 
 
+def local_review_items() -> list[dict]:
+    """Expose only explicit, locally authored review clips; never alter Studio assets."""
+    items = []
+    for path in sorted(REVIEW.glob("IdleOneHand_Breathing_v*.glb")):
+        with path.open("rb") as stream:
+            header = stream.read(20)
+            if len(header) < 20 or header[:4] != b"glTF":
+                continue
+            json_size, chunk_type = struct.unpack_from("<II", header, 12)
+            if chunk_type != 0x4E4F534A:
+                continue
+            document = json.loads(stream.read(json_size))
+        items.append({
+            "id": f"review/{path.name}",
+            "group": "knight",
+            "name": path.stem,
+            "file": path.name,
+            "bytes": path.stat().st_size,
+            "animationNames": [a.get("name", "Clip") for a in document.get("animations", [])],
+            "localPath": str(path),
+        })
+    return items
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(HERE), **kwargs)
@@ -91,7 +117,7 @@ class Handler(SimpleHTTPRequestHandler):
             payload = json.dumps({
                 "build": "9b185634",
                 "source": "Knight v015 · Dragon v007 · cathedral pass",
-                "items": [{key: value for key, value in item.items() if key != "remotePath"}
+                "items": [{key: value for key, value in item.items() if key not in {"remotePath", "localPath"}}
                           for item in self.server.catalog],
             }).encode("utf-8")
             self.send_response(HTTPStatus.OK)
@@ -119,7 +145,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def serve_asset(self, item: dict):
         group, filename = item["group"], item["file"]
-        target = CACHE / group / filename
+        target = Path(item["localPath"]) if "localPath" in item else CACHE / group / filename
         target.parent.mkdir(parents=True, exist_ok=True)
         if target.is_file() and target.stat().st_size == item["bytes"]:
             self.send_response(HTTPStatus.OK)
@@ -174,7 +200,7 @@ def main():
     parser.add_argument("--studio-root", required=True, type=Path)
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
-    catalog = catalog_from_studio(args.studio_host, args.studio_root)
+    catalog = local_review_items() + catalog_from_studio(args.studio_host, args.studio_root)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     server.catalog = catalog
     server.assets = {item["id"]: item for item in catalog}
