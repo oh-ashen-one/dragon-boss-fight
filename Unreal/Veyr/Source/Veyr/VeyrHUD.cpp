@@ -86,6 +86,7 @@ void AVeyrHUD::Meter(float X,float Y,float Width,float Height,float Value,float 
 
 void AVeyrHUD::SwordIcon(float X,float Y)
 {
+    const float SavedUnit=Unit;Unit*=.75f;X/=.75f;Y/=.75f;
     // A broad wooden hull, tapered bow, keel and longitudinal planks. The
     // equipment icon describes the new boat-shaped greatsword, not a steel blade.
     const TArray<FVector2D> Hull={{X,Y-36},{X+12,Y-22},{X+17,Y-2},{X+13,Y+16},
@@ -104,10 +105,12 @@ void AVeyrHUD::SwordIcon(float X,float Y)
     Line(X-10,Y+28,X+10,Y+28,Ivory,2.f);
     for(int32 I=0;I<3;++I)Line(X-3,Y+32+I*4,X+3,Y+34+I*4,Ink,.8f);
     Diamond(X,Y+48,3,Bronze,true);
+    Unit=SavedUnit;
 }
 
 void AVeyrHUD::FlaskIcon(float X,float Y,bool bEmpty)
 {
+    const float SavedUnit=Unit;Unit*=.75f;X/=.75f;Y/=.75f;
     const FLinearColor Glass=bEmpty?FLinearColor(.22f,.25f,.25f):FLinearColor(.53f,.24f,.07f);
     Polygon({{X-7,Y-10},{X+7,Y-10},{X+13,Y},{X+10,Y+17},{X-10,Y+17},{X-13,Y}},Ink);
     Polygon({{X-6,Y-7},{X+6,Y-7},{X+10,Y+1},{X+8,Y+14},{X-8,Y+14},{X-10,Y+1}},Glass);
@@ -118,6 +121,7 @@ void AVeyrHUD::FlaskIcon(float X,float Y,bool bEmpty)
     }
     Rect(X-4,Y-18,8,9,Glass);Rect(X-6,Y-21,12,4,Bronze);
     Line(X-9,Y+17,X+9,Y+17,Pewter);
+    Unit=SavedUnit;
 }
 
 void AVeyrHUD::Keycap(const FString& Key,float X,float Y)
@@ -130,7 +134,7 @@ void AVeyrHUD::Keycap(const FString& Key,float X,float Y)
 void AVeyrHUD::DrawHUD()
 {
     Super::DrawHUD();
-    if(!Canvas||!GEngine||Canvas->SizeX<1||Canvas->SizeY<1)return;
+    if(!bShowHUD||!Canvas||!GEngine||Canvas->SizeX<1||Canvas->SizeY<1)return;
     const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!Mode||!Mode->Knight||!Mode->Dragon)return;
     const AVeyrKnight* Knight=Mode->Knight;const AVeyrDragon* Dragon=Mode->Dragon;
@@ -164,20 +168,20 @@ void AVeyrHUD::DrawHUD()
 
     // Only equipped items occupy the lower-left corner. A few short etched
     // strokes replace large inventory tiles and leave the central floor clear.
-    const float EquipmentX=Margin+27,EquipmentY=H-169;
-    Rect(Margin-5,EquipmentY-43,61,96,FLinearColor(.012f,.017f,.022f,.42f));
-    Line(Margin-5,EquipmentY-43,Margin+9,EquipmentY-43,Pewter);
-    Line(Margin-5,EquipmentY-43,Margin-5,EquipmentY-31,Pewter);
-    Line(Margin+56,EquipmentY+53,Margin+42,EquipmentY+53,Pewter);
+    const float EquipmentX=Margin+20,EquipmentY=H-132;
+    Rect(Margin-4,EquipmentY-32,46,72,FLinearColor(.012f,.017f,.022f,.35f));
+    Line(Margin-4,EquipmentY-32,Margin+7,EquipmentY-32,Pewter);
+    Line(Margin-4,EquipmentY-32,Margin-4,EquipmentY-23,Pewter);
+    Line(Margin+42,EquipmentY+40,Margin+32,EquipmentY+40,Pewter);
     SwordIcon(EquipmentX,EquipmentY);
-    Text(TEXT("TIMBER GREATSWORD"),Margin+75,EquipmentY-14,14,Ivory);
-    Text(Knight->IsTwoHanded()?TEXT("TWO-HANDED"):TEXT("ONE-HANDED"),Margin+75,EquipmentY+11,12,Quiet);
-    Keycap(TEXT("E"),Margin+181,EquipmentY+9);
-    const float FlaskY=H-83;
+    Text(TEXT("TIMBER GREATSWORD"),Margin+59,EquipmentY-10,12,Ivory);
+    Text(Knight->IsTwoHanded()?TEXT("TWO-HANDED"):TEXT("ONE-HANDED"),Margin+59,EquipmentY+12,11.5f,Quiet);
+    Keycap(TEXT("E"),Margin+154,EquipmentY+8);
+    const float FlaskY=H-68;
     FlaskIcon(EquipmentX,FlaskY,Knight->HealingCharges<=0);
-    Text(FString::FromInt(Knight->HealingCharges),Margin+47,FlaskY+2,18,Ivory);
-    Text(TEXT("EMBER DRAUGHT"),Margin+75,FlaskY-12,14,Ivory);
-    Keycap(TEXT("Q"),Margin+75,FlaskY+11);
+    Text(FString::FromInt(Knight->HealingCharges),Margin+40,FlaskY-12,26,Ivory);
+    Text(TEXT("EMBER DRAUGHT"),Margin+75,FlaskY-10,11.5f,Quiet);
+    Keycap(TEXT("Q"),Margin+75,FlaskY+8);
 
     const float BossWidth=FMath::Min(660.f,W*.56f);
     const float BossX=(W-BossWidth)*.5f;

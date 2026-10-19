@@ -110,6 +110,9 @@ protected:
 private:
     UPROPERTY() TObjectPtr<USceneComponent> SwordPivot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> BoatWeapon;
+    bool bBoatReleased=false;
+    float BoatReleaseTime=0.f;
+    FTransform BoatReleaseStart,BoatReleaseRest;
     bool GetWeaponSweep(FVector& Base,FVector& Tip);
     void UpdateEquippedWeapon();
     UPROPERTY() TObjectPtr<UStaticMeshComponent> LeftLeg;

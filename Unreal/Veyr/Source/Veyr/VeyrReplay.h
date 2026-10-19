@@ -75,6 +75,8 @@ private:
     float StanceRequestedAt=0,StanceSwitchAt=-1,StanceBossHealthBefore=0,StanceStaminaBefore=0;
     float StanceDamage[4]={0,0,0,0},StanceDurations[4]={0,0,0,0},StanceRollDurations[2]={0,0};
     bool bStanceIdleVerified=false,bStancePending=false,bStanceActionObserved=false,bStanceContactVerified=false;
+    FBox StanceIdleDragonHeadBounds=FBox(ForceInit),StanceIdleKnightHeadBounds=FBox(ForceInit);
+    int32 StanceIdlePoseSamples=0;
     bool bStanceSwitchBlocked=false,bStanceRollInvulnerable=false,bStanceRollRecovery=false;
     bool bStanceInterrupted=false,bStancePassed=false;
     TSharedPtr<FJsonObject> StanceCurrentTrial;

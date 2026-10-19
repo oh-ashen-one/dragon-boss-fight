@@ -1,6 +1,7 @@
 #include "VeyrReplay.h"
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
+#include "VeyrSkeletalPresentation.h"
 #include "VeyrGameMode.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
@@ -367,12 +368,28 @@ bool AVeyrReplay::DriveStanceInputs()
     if(ReplayMode!=TEXT("stance"))return false;
     // No lock toggle or replay-control input before this interval: the fresh
     // pawn/dragon remain in their ordinary unengaged idle state for capture.
-    if(Elapsed<2.f)return true;
+    if(Elapsed<8.5f)
+    {
+        if(Elapsed>.5f&&Dragon->bUsingCustomuseVisual&&Knight->ImportedPresentation)
+        {
+            FTransform KnightHead;
+            if(Knight->ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),KnightHead))
+            {
+                StanceIdleDragonHeadBounds+=Dragon->GetHeadLocation();
+                StanceIdleKnightHeadBounds+=KnightHead.GetLocation();
+                ++StanceIdlePoseSamples;
+            }
+        }
+        return true;
+    }
     if(!bStanceIdleVerified)
     {
         bStanceIdleVerified=!Knight->HasEnteredEncounter()&&Knight->Action==EVeyrKnightAction::Ready&&
             Knight->LightAttacks==0&&Knight->HeavyAttacks==0&&Knight->Rolls==0;
         if(!bStanceIdleVerified){Finish(false,TEXT("stance idle interval was contaminated by prior input"));return true;}
+        if(StanceIdlePoseSamples<20||!StanceIdleDragonHeadBounds.IsValid||!StanceIdleKnightHeadBounds.IsValid||
+           StanceIdleDragonHeadBounds.GetSize().GetMax()<20.f||StanceIdleKnightHeadBounds.GetSize().GetMax()<.25f)
+        {Finish(false,TEXT("native idle pose targets did not move through a full breathing cycle"));return true;}
         Event(TEXT("stance_idle_interval_verified"));
     }
     const bool Available=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
@@ -1263,7 +1280,10 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     TSharedPtr<FJsonObject> Stance=MakeShared<FJsonObject>();
     Stance->SetBoolField(TEXT("passed"),bStancePassed);
     Stance->SetBoolField(TEXT("idleBeforeFirstInputVerified"),bStanceIdleVerified);
-    Stance->SetNumberField(TEXT("idleCaptureIntervalSeconds"),2.f);
+    Stance->SetNumberField(TEXT("idleCaptureIntervalSeconds"),8.5f);
+    Stance->SetNumberField(TEXT("idlePoseSamples"),StanceIdlePoseSamples);
+    Stance->SetNumberField(TEXT("idleDragonHeadMaxAxisTravelCm"),StanceIdleDragonHeadBounds.IsValid?StanceIdleDragonHeadBounds.GetSize().GetMax():0.f);
+    Stance->SetNumberField(TEXT("idleKnightHeadMaxAxisTravelCm"),StanceIdleKnightHeadBounds.IsValid?StanceIdleKnightHeadBounds.GetSize().GetMax():0.f);
     Stance->SetNumberField(TEXT("trialIndex"),StanceTrialIndex);
     Stance->SetNumberField(TEXT("successfulSafeGripSwitches"),StanceSafeSwitches);
     Stance->SetArrayField(TEXT("trials"),StanceTrials);
@@ -1273,7 +1293,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Stance->SetNumberField(TEXT("oneHandLightDuration"),StanceDurations[0]);Stance->SetNumberField(TEXT("oneHandHeavyDuration"),StanceDurations[1]);
     Stance->SetNumberField(TEXT("twoHandLightDuration"),StanceDurations[2]);Stance->SetNumberField(TEXT("twoHandHeavyDuration"),StanceDurations[3]);
     Stance->SetNumberField(TEXT("oneHandRollDuration"),StanceRollDurations[0]);Stance->SetNumberField(TEXT("twoHandRollDuration"),StanceRollDurations[1]);
-    Stance->SetStringField(TEXT("coverage"),TEXT("Two seconds without replay/lock input; actual accepted light/heavy duration and exactly one leg contact per grip corroborated by boss HP loss; active ToggleGrip rejection; valid switches to two-hand and back; roll duration .78 imported/.58 proxy, 25 stamina and .08-.44 immunity/recovery in both grips. Input handlers only; E hardware binding and visual pose acceptance require separate native review."));
+    Stance->SetStringField(TEXT("coverage"),TEXT("8.5 seconds without replay/lock input, with sampled native knight/dragon head motion; actual accepted light/heavy duration and exactly one leg contact per grip corroborated by boss HP loss; active ToggleGrip rejection; valid switches to two-hand and back; roll duration .78 imported/.58 proxy, 25 stamina and .08-.44 immunity/recovery in both grips. Input handlers only; E hardware binding and visual pose acceptance require separate native review."));
     Root->SetObjectField(TEXT("stance"),Stance);
     Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for 1.4s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; rear trial recharges with guard released to75 then arms (48reserve hysteresis, >=40contact qualifier); break requires precontact stamina below max(12,0.9*observed nonlethal full damage); natural attacks and normal controller yaw input only"));
     Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));

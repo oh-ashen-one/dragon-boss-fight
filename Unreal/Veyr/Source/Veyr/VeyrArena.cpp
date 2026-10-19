@@ -48,7 +48,10 @@ AVeyrArena::AVeyrArena()
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Facade(TEXT("/Game/ArtPass/Tripo/CathedralFacade_v001/SM_CathedralFacade_v001.SM_CathedralFacade_v001"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Wall(TEXT("/Game/ArtPass/Tripo/CathedralWall_v001/SM_CathedralWall_v001.SM_CathedralWall_v001"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> GothicArch(TEXT("/Game/ArtPass/Tripo/CathedralArch_v001/SM_CathedralArch_v001.SM_CathedralArch_v001"),LOAD_Quiet|LOAD_NoWarn);
-    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Night(TEXT("/Game/ArtPass/Sky/M_CathedralNight_v002.M_CathedralNight_v002"),LOAD_Quiet|LOAD_NoWarn);
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Night(TEXT("/Game/ArtPass/Sky/M_CathedralNight_v003.M_CathedralNight_v003"),LOAD_Quiet|LOAD_NoWarn);
+    static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Brazier(TEXT("/Game/ArtPass/Tripo/CathedralBrazier_v001/SM_CathedralBrazier_v001.SM_CathedralBrazier_v001"),LOAD_Quiet|LOAD_NoWarn);
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> FloorMaterial(TEXT("/Game/ArtPass/Floor/M_CathedralFloor_v001.M_CathedralFloor_v001"),LOAD_Quiet|LOAD_NoWarn);
+    CathedralBrazierMesh=Brazier.Get();CathedralFloorParent=FloorMaterial.Get();
     CathedralFacadeMesh=Facade.Get();CathedralWallMesh=Wall.Get();CathedralArchMesh=GothicArch.Get();NightSkyParent=Night.Get();
     BasaltCliffMesh=BasaltCliff.Get();
     CubeMesh = Cube.Object; CylinderMesh = CylinderAsset.Object; SphereMesh = Sphere.Object; ConeMesh = Cone.Object;
@@ -66,8 +69,11 @@ void AVeyrArena::BeginPlay()
     if(!CathedralFacadeMesh)CathedralFacadeMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralFacade_v001/SM_CathedralFacade_v001.SM_CathedralFacade_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralWallMesh)CathedralWallMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralWall_v001/SM_CathedralWall_v001.SM_CathedralWall_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralArchMesh)CathedralArchMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralArch_v001/SM_CathedralArch_v001.SM_CathedralArch_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
-    if(!NightSkyParent)NightSkyParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Sky/M_CathedralNight_v002.M_CathedralNight_v002"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!NightSkyParent)NightSkyParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Sky/M_CathedralNight_v003.M_CathedralNight_v003"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     bUsingAuthoredNightSky=NightSkyParent!=nullptr;
+    if(!CathedralBrazierMesh)CathedralBrazierMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralBrazier_v001/SM_CathedralBrazier_v001.SM_CathedralBrazier_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!CathedralFloorParent)CathedralFloorParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Floor/M_CathedralFloor_v001.M_CathedralFloor_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    bUsingAuthoredFloor=CathedralFloorParent!=nullptr;bUsingImportedBraziers=CathedralBrazierMesh!=nullptr;
     if(UMaterialInterface* Authored=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),nullptr,LOAD_Quiet|LOAD_NoWarn))StoneParent=Authored;
     if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !ConeMesh || !StoneParent || !PlainParent) return;
     bBuilt = true;
@@ -86,6 +92,13 @@ void AVeyrArena::BeginPlay()
     Floor = MakeBatch(TEXT("PROTO_FlagstonePavers"), CubeMesh, Flagstone);
     FloorLight = MakeBatch(TEXT("PROTO_FlagstonePaversLight"), CubeMesh, FlagstoneLight);
     FloorWet = MakeBatch(TEXT("OriginalBroadWetPaverAreas"), CubeMesh, WetStone);
+    UMaterialInterface* FloorMaterial=CathedralFloorParent?CathedralFloorParent.Get():Flagstone;
+    FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
+    Foundations=MakeBatch(TEXT("ConnectedCathedralFoundations"),CubeMesh,FloorMaterial);
+    auto* CutStone=MakeMaterial(TEXT("RestrainedFloorCarving"),FLinearColor(.045f,.050f,.054f),.9f,false);
+    FloorCarvings=MakeBatch(TEXT("SubtleStoneCarvedRings"),CubeMesh,CutStone);
+    auto* ParapetStone=MakeMaterial(TEXT("DarkWeatheredParapetStone"),FLinearColor(.055f,.064f,.072f),.92f);
+    BoundaryStone=MakeBatch(TEXT("GroundedDarkStoneBoundary"),CubeMesh,ParapetStone);
     Bronze = MakeBatch(TEXT("PROTO_AncientFloorInlay"), CubeMesh, OldBronze);
     Columns = MakeBatch(TEXT("PROTO_ClusteredPillarCores"), CylinderMesh, Ashlar);
     ColumnTrim = MakeBatch(TEXT("PROTO_ColonettesAndCapitals"), CylinderMesh, Limestone);
@@ -192,46 +205,33 @@ void AVeyrArena::RoseRing(const FVector& Center, float Radius, float Width)
 
 void AVeyrArena::BuildFloor()
 {
-    Cylinder(DarkDisks, FVector(0, 0, -45), CombatRadius + 90.f, 90);
-    Cylinder(DarkDisks, FVector(0, 0, -190), 16000, 50); // dark moat, no collision
-    FRandomStream Random(3187);
-    for (int32 Row = -12; Row <= 12; ++Row)
-    {
-        const float Y=Row*280.f,Radius=CombatRadius-130.f;
-        const float HalfRow=FMath::Sqrt(FMath::Max(0.f,Radius*Radius-Y*Y));
-        float X=-HalfRow;
-        while(X<HalfRow-60.f)
+    // A single continuous rendered circle replaces the oversized cube grid.
+    // The generated albedo tiles in world XY at400cm; collision remains Z0.
+    Cylinder(FloorSurface,FVector(0,0,-4.8f),CombatRadius+80.f,10.f);
+    Cylinder(FloorSurface,FVector(0,0,-121.f),7500.f,240.f);
+    Cylinder(DarkDisks,FVector(0,0,-250.f),32000.f,80.f);
+    for(float Radius:{900.f,3140.f})
+        for(int32 I=0;I<128;++I)
         {
-            const float Span=FMath::Min(Random.FRandRange(310.f,530.f),HalfRow-X);
-            const FVector P(X+Span*.5f,Y,-5.f);
-            // Coherent meter-scale weathering regions, not checkerboard
-            // random colors. Decorative surfaces still meet the flat Z0 floor.
-            const float Damp=FMath::PerlinNoise2D(FVector2D(P.X+617.f,P.Y-231.f)/1150.f);
-            const float Wear=FMath::PerlinNoise2D(FVector2D(P.X-1200.f,P.Y+500.f)/1700.f);
-            UInstancedStaticMeshComponent* Batch=Damp>.15f?FloorWet:Wear<-.18f?FloorLight:Floor;
-            Box(Batch,P,FVector(Span-Random.FRandRange(4.f,8.f),273.f,10.f));
-            X+=Span;
+            const float Angle=(I+.5f)*2.f*PI/128.f;
+            Box(FloorCarvings,Radial(Angle,Radius,.3f),FVector(1.6f,Radius*2.f*PI/128.f+.5f,.25f),FRotator(0,FMath::RadiansToDegrees(Angle),0));
         }
-    }
-    for (const float Radius : { 380.f, 900.f, 1850.f, 3140.f, 3570.f })
+    // Four broad remnants read as the former nave boundary, not scattered props.
+    for(float Side:{-1.f,1.f})for(float X:{-1800.f,1800.f})
+        Box(BoundaryStone,FVector(X,Side*3900.f,55.f),FVector(1900.f,170.f,110.f));
+    // A dark, grounded low parapet replaces the bright unbroken curb strip.
+    // Few broad segments have narrow joints; the collision boundary is unchanged.
+    for(int32 I=0;I<32;++I)
     {
-        const int32 Segments = 128;
-        for (int32 I = 0; I < Segments; ++I)
-        {
-            const float Angle = (I + .5f) * 2.f * PI / Segments;
-            Box(Bronze, Radial(Angle, Radius, .8f), FVector(3.5f, Radius * 2.f * PI / Segments + 1.f, 1.6f), FRotator(0, FMath::RadiansToDegrees(Angle), 0));
-        }
+        const float Angle=I*2.f*PI/32.f;
+        const float Height=(I%7==0)?68.f:94.f;
+        Box(BoundaryStone,Radial(Angle,3635.f,Height*.5f),FVector(105.f,2.f*PI*3635.f/32.f-20.f,Height),
+            FRotator(0,FMath::RadiansToDegrees(Angle),0));
     }
-    // Low stone coping makes the bounded play space legible. No obstacles are
-    // placed inside the circle: flight landings and leg approaches stay clear.
-    for (int32 I = 0; I < 96; ++I)
-    {
-        const float Angle = I * 2.f * PI / 96.f;
-        Box(Trim, Radial(Angle, 3635.f, 16.f), FVector(90, 242, 32), FRotator(0, FMath::RadiansToDegrees(Angle), 0));
-    }
+
 }
 
-void AVeyrArena::ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector& Position,float Height,float Yaw)
+void AVeyrArena::ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector& Position,float Height,float Yaw,bool bArchitecture)
 {
     if(!Mesh)return;
     const FBox Bounds=Mesh->GetBoundingBox();
@@ -247,24 +247,37 @@ void AVeyrArena::ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector&
     const float RadialDepth=FMath::Abs(FVector::DotProduct(Facing.RotateVector(FVector(Extent.X,0,0)),Outward))+
         FMath::Abs(FVector::DotProduct(Facing.RotateVector(FVector(0,Extent.Y,0)),Outward));
     const float CenterOffset=FVector::DotProduct(Facing.RotateVector(Bounds.GetCenter()*Scale),Outward);
-    const float PushOut=FMath::Max(0.f,CombatRadius+450.f+RadialDepth-static_cast<float>(Position.Size2D())-CenterOffset);
-    Piece->SetRelativeLocation(Position+Outward*PushOut-FVector(0,0,Bounds.Min.Z*Scale));
+    const float PushOut=bArchitecture?FMath::Max(0.f,CombatRadius+450.f+RadialDepth-static_cast<float>(Position.Size2D())-CenterOffset):0.f;
+    const FVector BasePosition=Position+Outward*PushOut-FVector(0,0,Bounds.Min.Z*Scale);
+    Piece->SetRelativeLocation(BasePosition);
+    if(bArchitecture&&Foundations)
+    {
+        FVector PlinthCenter=BasePosition+Facing.RotateVector(Bounds.GetCenter()*Scale);PlinthCenter.Z=-120.f;
+        const FVector Support(Bounds.GetSize().X*Scale+220.f,Bounds.GetSize().Y*Scale+220.f,240.f);
+        Box(Foundations,PlinthCenter,Support,Facing);
+        const float Reach=PlinthCenter.Size2D();
+        FVector Connector=Outward*(Reach*.5f);Connector.Z=-120.5f;
+        Box(Foundations,Connector,FVector(Reach+100.f,1400.f,240.f),Outward.Rotation());
+    }
     Piece->SetRelativeRotation(Facing);Piece->SetRelativeScale3D(FVector(Scale));
     Piece->SetCollisionEnabled(ECollisionEnabled::NoCollision);Piece->SetGenerateOverlapEvents(false);
-    Piece->SetCanEverAffectNavigation(false);Piece->RegisterComponent();++ImportedArchitecturePieces;
+    Piece->SetCanEverAffectNavigation(false);Piece->RegisterComponent();if(bArchitecture)++ImportedArchitecturePieces;
 }
 
 bool AVeyrArena::BuildImportedCathedral()
 {
-    ImportedPiece(CathedralFacadeMesh,TEXT("TripoCathedralFacade"),FVector(5400,0,0),3200,CathedralFacingYawOffset);
-    for(int32 I=0;I<4;++I)
+    // Reveal the rose/portal beside the boss silhouette, opposite the moon.
+    ImportedPiece(CathedralFacadeMesh,TEXT("TripoCathedralFacade"),FVector(5000,-1100,0),3200,CathedralFacingYawOffset);
+    // Repeated wall bays and arches share two nave lines, with one terminal
+    // facade. Eleven major meshes replace the disconnected radial display.
+    int32 Index=0;
+    for(float Side:{-1.f,1.f})
     {
-        const float Angle=FMath::DegreesToRadians(I==0?70.f:I==1?-70.f:I==2?140.f:-140.f);
-        ImportedPiece(CathedralWallMesh,FName(*FString::Printf(TEXT("TripoCathedralWall%d"),I)),Radial(Angle,5200),2000,
-            FMath::RadiansToDegrees(Angle)+CathedralFacingYawOffset);
-        const float ArchAngle=FMath::DegreesToRadians(I==0?35.f:I==1?-35.f:I==2?110.f:-110.f);
-        ImportedPiece(CathedralArchMesh,FName(*FString::Printf(TEXT("TripoCathedralArch%d"),I)),Radial(ArchAngle,4500),1600,
-            FMath::RadiansToDegrees(ArchAngle)+CathedralFacingYawOffset);
+        const float FacingYaw=CathedralFacingYawOffset+(Side>0.f?90.f:-90.f)-Side*20.f;
+        for(float X:{700.f,3200.f})
+            ImportedPiece(CathedralWallMesh,FName(*FString::Printf(TEXT("TripoNaveWall%d"),Index++)),FVector(X,Side*4100.f,0),2000,FacingYaw);
+        for(float X:{-1200.f,1800.f,4200.f})
+            ImportedPiece(CathedralArchMesh,FName(*FString::Printf(TEXT("TripoNaveArch%d"),Index++)),FVector(X,Side*3900.f,0),1600,FacingYaw);
     }
     return ImportedArchitecturePieces>0;
 }
@@ -349,29 +362,20 @@ void AVeyrArena::BuildCathedral()
 void AVeyrArena::BuildDistance()
 {
     FRandomStream Random(6194);
-    for (int32 I = 0; I < 23; ++I)
+    for(int32 I=0;I<16;++I)
     {
-        const float Angle=(I+Random.FRandRange(-.25f,.25f))*2.f*PI/23.f;
+        const float Angle=(I+Random.FRandRange(-.2f,.2f))*2.f*PI/16.f;
         const float Yaw=FMath::RadiansToDegrees(Angle);
-        const FVector P=Radial(Angle,Random.FRandRange(13500,16500),-500);
-        const float Height=Random.FRandRange(1500,2900);
-        // Original unit-bounds basalt is centered at its pivot, matching the
-        // existing cube's100cm sizing contract. Rotate the asymmetric crest
-        // through several views without changing the deterministic layout.
+        const FVector P=Radial(Angle,Random.FRandRange(22000.f,28000.f),-600.f);
+        const float Height=Random.FRandRange(900.f,1600.f);
         const float CrestYaw=bUsingBasaltCliff?(I%4)*90.f:0.f;
-        // All backdrop instances stay outside the cathedral and play space.
-        Box(Rocks,P+FVector(0,0,Height*.5f),FVector(Random.FRandRange(1500,2100),Random.FRandRange(2300,3400),Height),
-            FRotator(Random.FRandRange(-14,9),Yaw+CrestYaw+Random.FRandRange(-16,16),Random.FRandRange(-13,13)));
-        const FVector Shoulder=P+Radial(Angle+PI*.5f,Random.FRandRange(700,1200),Height*.26f);
-        Box(Rocks,Shoulder,FVector(Random.FRandRange(1100,1700),Random.FRandRange(900,1600),Height*.75f),
-            FRotator(Random.FRandRange(-18,14),Yaw-CrestYaw+Random.FRandRange(-30,30),Random.FRandRange(-22,18)));
-        if(I%3==0)
-        {
-            const float SpurHeight=Random.FRandRange(550,900);
-            Box(RockSpurs,P+Radial(Angle+PI*.5f,Random.FRandRange(-500,500),Height+SpurHeight*.15f),
-                FVector(Random.FRandRange(280,430),Random.FRandRange(400,650),SpurHeight),
-                FRotator(Random.FRandRange(-20,16),Yaw+CrestYaw,Random.FRandRange(-18,20)));
-        }
+        // Low distant ridges occupy the haze band. Tall near-black geometric
+        // needles no longer compete with the imported Gothic architecture.
+        Box(Rocks,P+FVector(0,0,Height*.5f),FVector(Random.FRandRange(4000.f,6500.f),Random.FRandRange(5000.f,7500.f),Height),
+            FRotator(Random.FRandRange(-4.f,4.f),Yaw+CrestYaw,Random.FRandRange(-3.f,3.f)));
+        Box(Rocks,P+Radial(Angle+PI*.5f,2100.f,Height*.22f),FVector(3500,4400,Height*.55f),FRotator(0,Yaw-CrestYaw,0));
+        if(I%2==0)
+            Box(Rocks,Radial(Angle,27000.f,-50.f),FVector(6500,14000,850),FRotator(0,Yaw,0));
     }
     for (int32 I = 0; I < 24; ++I)
     {
@@ -384,18 +388,31 @@ void AVeyrArena::BuildDistance()
     {
         const float Angle = (I + .5f) * PI / 4.f;
         const FVector P = Radial(Angle, 3740);
-        Cylinder(Columns, P + FVector(0, 0, 60), 105, 120);
-        Cylinder(ColumnTrim, P + FVector(0, 0, 126), 110, 20);
-        Box(Embers, P + FVector(0, 0, 159), FVector(132, 132, 28));
-        for (int32 Tine = 0; Tine < 6; ++Tine)
-            Beam(Bronze, P + Radial(Tine * PI / 3.f, 68, 132), P + Radial(Tine * PI / 3.f, 85, 225), 7);
+        if(CathedralBrazierMesh)
+        {
+            ImportedPiece(CathedralBrazierMesh,FName(*FString::Printf(TEXT("TripoCathedralBrazier%d"),I)),P,180.f,
+                FMath::RadiansToDegrees(Angle),false);
+            Box(Embers,P+FVector(0,0,164),FVector(60,60,9));
+            // Small native ember tongues sit within the imported bowl; the
+            // authored brazier remains the visible structure and keeps its PBR.
+            for(int32 Flame=0;Flame<3;++Flame)
+                Box(Embers,P+FVector((Flame-1)*14.f,0,176.f+Flame*3),FVector(8,8,20+Flame*5),FRotator(0,0,(Flame-1)*12.f));
+        }
+        else
+        {
+            Cylinder(Columns,P+FVector(0,0,60),105,120);
+            Cylinder(ColumnTrim,P+FVector(0,0,126),110,20);
+            Box(Embers,P+FVector(0,0,159),FVector(132,132,28));
+            for(int32 Tine=0;Tine<6;++Tine)
+                Beam(Bronze,P+Radial(Tine*PI/3.f,68,132),P+Radial(Tine*PI/3.f,85,225),7);
+        }
         auto* Light = NewObject<UPointLightComponent>(this, *FString::Printf(TEXT("PrototypeAmberBrazier%d"), I));
         AddInstanceComponent(Light); Light->SetupAttachment(GetRootComponent());
         Light->SetMobility(EComponentMobility::Movable);
         Light->SetRelativeLocation(P + FVector(0, 0, 205));
-        Light->SetIntensityUnits(ELightUnits::Candelas); Light->SetIntensity(380.f);
-        Light->SetLightColor(FLinearColor(1.f, .37f, .10f), false);
-        Light->SetAttenuationRadius(1050); Light->SetSourceRadius(45);
+        Light->SetIntensityUnits(ELightUnits::Candelas); Light->SetIntensity(220.f);
+        Light->SetLightColor(FLinearColor(1.f, .44f, .17f), false);
+        Light->SetAttenuationRadius(650); Light->SetSourceRadius(60);
         Light->SetCastShadows(false); Light->SetSpecularScale(.55f); Light->RegisterComponent();
     }
 }
@@ -406,17 +423,17 @@ void AVeyrArena::BuildLighting()
     AddInstanceComponent(Moon); Moon->SetupAttachment(GetRootComponent()); Moon->SetMobility(EComponentMobility::Movable);
     // The visible disc and lighting share this direction. A low moon remains
     // in the playable camera's upper sky without violating floor framing.
-    Moon->SetRelativeRotation(FRotator(-18, -155, 0));
+    Moon->SetRelativeRotation(FRotator(-14, -155, 0));
     // Only the moon drives forward/translucent lighting. Keeping priorities
     // distinct avoids the competing-directional-lights warning seen in PIE001.
     Moon->SetForwardShadingPriority(1);
-    Moon->SetIntensity(3.4f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
-    Moon->SetCastShadows(true); Moon->SetLightSourceAngle(3.f); Moon->SetSpecularScale(.75f); Moon->RegisterComponent();
+    Moon->SetIntensity(3.f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
+    Moon->SetCastShadows(true); Moon->SetLightSourceAngle(8.f); Moon->SetSpecularScale(.65f); Moon->RegisterComponent();
     auto* Fill = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeNeutralFrontFill"));
     AddInstanceComponent(Fill); Fill->SetupAttachment(GetRootComponent()); Fill->SetMobility(EComponentMobility::Movable);
     Fill->SetForwardShadingPriority(0);
-    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(2.4f);
-    Fill->SetLightColor(FLinearColor(.80f, .87f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.6f); Fill->RegisterComponent();
+    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(2.7f);
+    Fill->SetLightColor(FLinearColor(.86f, .90f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.45f); Fill->RegisterComponent();
 
     if (SkyMesh && (NightSkyParent||SkyParent))
     {
@@ -430,6 +447,11 @@ void AVeyrArena::BuildLighting()
         Materials.Add(Material);
         const FVector MoonDirection=-Moon->GetForwardVector();
         Material->SetVectorParameterValue(TEXT("MoonDirection"),FLinearColor(MoonDirection.X,MoonDirection.Y,MoonDirection.Z,0));
+        Material->SetScalarParameterValue(TEXT("CloudOpacity"),.95f);
+        Material->SetScalarParameterValue(TEXT("CloudSpeed"),.02f);
+        Material->SetScalarParameterValue(TEXT("StarBrightness"),.32f);
+        Material->SetVectorParameterValue(TEXT("CloudColor"),FLinearColor(.30f,.35f,.42f));
+        Material->SetVectorParameterValue(TEXT("HorizonColor"),FLinearColor(.035f,.048f,.068f));
         Material->SetVectorParameterValue(TEXT("Zenith Color"), FLinearColor(.018f, .030f, .060f));
         Material->SetVectorParameterValue(TEXT("Horizon color"), FLinearColor(.065f, .090f, .13f));
         Material->SetVectorParameterValue(TEXT("Cloud color"), FLinearColor(.12f, .15f, .19f));
@@ -446,15 +468,20 @@ void AVeyrArena::BuildLighting()
     auto* Ambient = NewObject<USkyLightComponent>(this, TEXT("PrototypeGentleSkyBounce"));
     AddInstanceComponent(Ambient); Ambient->SetupAttachment(GetRootComponent()); Ambient->SetMobility(EComponentMobility::Movable);
     if (AmbientCube) { Ambient->SourceType = SLS_SpecifiedCubemap; Ambient->SetCubemap(AmbientCube); }
-    Ambient->SetIntensity(.7f); Ambient->SetLightColor(FLinearColor(.52f, .60f, .72f));
+    Ambient->SetIntensity(.85f); Ambient->SetLightColor(FLinearColor(.58f, .64f, .74f));
     Ambient->SetLowerHemisphereColor(FLinearColor(.10f, .12f, .15f)); Ambient->RegisterComponent();
 
     auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("PrototypeDrownedCathedralMist"));
     AddInstanceComponent(Fog); Fog->SetupAttachment(GetRootComponent());
     Fog->SetRelativeLocation(FVector(0, 0, -150));
-    Fog->SetFogDensity(.009f); Fog->SetFogHeightFalloff(.22f);
-    Fog->SetFogInscatteringColor(FLinearColor(.065f, .09f, .13f));
-    Fog->SetStartDistance(2200); Fog->SetFogMaxOpacity(.65f);
+    Fog->SetFogDensity(.018f); Fog->SetFogHeightFalloff(.35f);
+    Fog->SetFogInscatteringColor(FLinearColor(.038f, .050f, .065f));
+    Fog->SetStartDistance(3600); Fog->SetFogMaxOpacity(.82f);
+    // A restrained low layer on the existing fog component softens the distant
+    // platform/ridge join. The inner fight stays ahead of the fog start plane.
+    Fog->SetSecondFogDensity(.008f);
+    Fog->SetSecondFogHeightOffset(240.f);
+    Fog->SetSecondFogHeightFalloff(1.2f);
     Fog->SetVolumetricFog(false); // native layout baseline; no unmeasured volume cost
     Fog->RegisterComponent();
 

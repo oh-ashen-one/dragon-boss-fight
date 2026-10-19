@@ -2,7 +2,7 @@
 
 Source preparation only; root invokes run() through native Unreal Python/MCP.
 Never launches an editor or replaces existing assets. Matching owned assets may
-be reused read-only; mismatched/partial assets are preserved; repaired material uses fresh v002.
+be reused read-only; mismatched/partial assets are preserved; repaired material uses fresh v003.
 """
 import datetime
 import hashlib
@@ -13,9 +13,9 @@ import unreal
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'Local/art-pass-20261019/references/moon-disc-v1.png'
 DEST = '/Game/ArtPass/Sky'
-MATERIAL = DEST + '/M_CathedralNight_v002'
+MATERIAL = DEST + '/M_CathedralNight_v003'
 TEXTURE = DEST + '/T_MoonDisc_v001'
-OWNER = 'Veyr.original-cathedral-night.v002'
+OWNER = 'Veyr.original-cathedral-night.v003'
 TEXTURE_OWNER = 'Veyr.original-cathedral-night.v001'
 
 # Pixel shader work is bounded: five cloud-noise octaves, one moon texture
@@ -28,19 +28,28 @@ float elevation = saturate(D.z);
 float3 sky = lerp(Horizon.rgb, Zenith.rgb, pow(elevation, 0.55));
 float2 uv = float2(atan2(D.y,D.x)*0.1591549431+0.5, acos(clamp(D.z,-0.99999,0.99999))*0.3183098862);
 
-float2 q = uv*float2(8.0,5.0) + Seconds*CloudSpeed*float2(0.05,0.009);
+// Clouds sample the continuous world direction, not longitude UV. Opposite
+// sides of atan2's wrap are the same3D location, so there is no meridian seam.
+float3 q=D*float3(4.0,4.0,6.0)+Seconds*CloudSpeed*float3(0.035,0.012,0.003);
 float cloudNoise=0.0, amplitude=0.52;
 [unroll] for(int octave=0;octave<5;++octave)
 {
-    float2 i=floor(q), f=frac(q); f=f*f*(3.0-2.0*f);
-    float a=frac(sin(dot(i,float2(127.1,311.7)))*43758.5453);
-    float b=frac(sin(dot(i+float2(1,0),float2(127.1,311.7)))*43758.5453);
-    float c=frac(sin(dot(i+float2(0,1),float2(127.1,311.7)))*43758.5453);
-    float d=frac(sin(dot(i+float2(1,1),float2(127.1,311.7)))*43758.5453);
-    cloudNoise+=lerp(lerp(a,b,f.x),lerp(c,d,f.x),f.y)*amplitude;
-    q=q*2.07+float2(19.2,7.6); amplitude*=0.48;
+    float3 cell3=floor(q), blend3=frac(q);blend3=blend3*blend3*(3.0-2.0*blend3);
+    float3 hashAxis=float3(127.1,311.7,74.7);
+    float c000=frac(sin(dot(cell3,hashAxis))*43758.5453);
+    float c100=frac(sin(dot(cell3+float3(1,0,0),hashAxis))*43758.5453);
+    float c010=frac(sin(dot(cell3+float3(0,1,0),hashAxis))*43758.5453);
+    float c110=frac(sin(dot(cell3+float3(1,1,0),hashAxis))*43758.5453);
+    float c001=frac(sin(dot(cell3+float3(0,0,1),hashAxis))*43758.5453);
+    float c101=frac(sin(dot(cell3+float3(1,0,1),hashAxis))*43758.5453);
+    float c011=frac(sin(dot(cell3+float3(0,1,1),hashAxis))*43758.5453);
+    float c111=frac(sin(dot(cell3+float3(1,1,1),hashAxis))*43758.5453);
+    float plane0=lerp(lerp(c000,c100,blend3.x),lerp(c010,c110,blend3.x),blend3.y);
+    float plane1=lerp(lerp(c001,c101,blend3.x),lerp(c011,c111,blend3.x),blend3.y);
+    cloudNoise+=lerp(plane0,plane1,blend3.z)*amplitude;
+    q=q*2.07+float3(19.2,7.6,11.3);amplitude*=0.48;
 }
-float clouds=smoothstep(0.43,0.72,cloudNoise)*CloudOpacity*smoothstep(-0.02,0.18,D.z);
+float clouds=smoothstep(0.38,0.70,cloudNoise)*CloudOpacity*smoothstep(-0.02,0.18,D.z);
 float moonDot=clamp(dot(D,M),-1.0,1.0);
 float rimLight=pow(saturate(moonDot),48.0);
 float3 cloudLight=CloudColor.rgb*(0.38+1.4*rimLight);
@@ -48,10 +57,11 @@ sky=lerp(sky,cloudLight,clouds);
 
 float2 starGrid=uv*float2(1200.0,600.0);
 float2 cell=floor(starGrid), fstar=frac(starGrid);
+cell.x=fmod(cell.x,1200.0);
 float seed=frac(sin(dot(cell,float2(127.1,311.7)))*43758.5453);
 float seed2=frac(sin(dot(cell,float2(269.5,183.3)))*43758.5453);
 float2 center=0.2+0.6*float2(seed2,frac(seed*17.31));
-float aa=clamp(max(fwidth(starGrid.x),fwidth(starGrid.y))*0.5,0.025,0.65);
+float aa=clamp(max(length(ddx(D)),length(ddy(D)))*95.0,0.025,0.65);
 float starPoint=1.0-smoothstep(0.06,0.06+aa,length(fstar-center));
 float stars=starPoint*step(0.991,seed)*StarBrightness*(1.0-clouds)*smoothstep(0.06,0.24,D.z);
 sky+=float3(0.68,0.79,1.0)*stars;
@@ -99,7 +109,7 @@ def run():
     output.parent.mkdir(parents=True, exist_ok=True)
     receipt = {'success': False, 'nativeAppearanceAccepted': False, 'material': MATERIAL, 'texture': TEXTURE,
                'moonSource': str(SOURCE), 'moonSourceSHA256': source_hash, 'recipeSHA256': recipe,
-               'moonDirectionWorld': [0.861950,0.401934,0.309017], 'shootingStarPeriodSeconds': 37.0}
+               'moonDirectionWorld': [0.879385,0.410064,0.241922], 'shootingStarPeriodSeconds': 37.0}
     lib, assets = unreal.MaterialEditingLibrary, unreal.EditorAssetLibrary
     try:
         material = assets.load_asset(MATERIAL) if assets.does_asset_exist(MATERIAL) else None
@@ -135,7 +145,7 @@ def run():
             if not assets.save_loaded_asset(texture, False):
                 raise RuntimeError('Moon texture save failed')
         material = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
-            'M_CathedralNight_v002', DEST, unreal.Material, unreal.MaterialFactoryNew())
+            'M_CathedralNight_v003', DEST, unreal.Material, unreal.MaterialFactoryNew())
         if not isinstance(material, unreal.Material):
             raise RuntimeError('Native material creation failed')
         material.set_editor_property('blend_mode', unreal.BlendMode.BLEND_OPAQUE)
@@ -158,12 +168,12 @@ def run():
         inputs = {
             'ViewRay': node('CameraVectorWS'), 'Seconds': node('Time'),
             'MoonTex': node('TextureObjectParameter', parameter_name='MoonTexture', texture=texture),
-            'MoonDirection': vector('MoonDirection', (.861950,.401934,.309017,0)),
+            'MoonDirection': vector('MoonDirection', (.879385,.410064,.241922,0)),
             'Zenith': vector('ZenithColor', (.012,.022,.043,1)),
             'Horizon': vector('HorizonColor', (.052,.073,.105,1)),
-            'CloudColor': vector('CloudColor', (.10,.14,.20,1)),
-            'CloudSpeed': scalar('CloudSpeed', .015), 'CloudOpacity': scalar('CloudOpacity', .60),
-            'StarBrightness': scalar('StarBrightness', .70), 'MoonRadius': scalar('MoonRadius', .09),
+            'CloudColor': vector('CloudColor', (.30,.35,.42,1)),
+            'CloudSpeed': scalar('CloudSpeed', .015), 'CloudOpacity': scalar('CloudOpacity', .95),
+            'StarBrightness': scalar('StarBrightness', .32), 'MoonRadius': scalar('MoonRadius', .09),
             'MoonBrightness': scalar('MoonBrightness', 1.7), 'MeteorPeriod': scalar('ShootingStarPeriod', 37.0)}
         custom_inputs = []
         for name in inputs:

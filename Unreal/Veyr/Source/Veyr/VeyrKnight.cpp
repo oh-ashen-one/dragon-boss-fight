@@ -75,7 +75,7 @@ AVeyrKnight::AVeyrKnight()
     BoatWeapon->SetGenerateOverlapEvents(false);BoatWeapon->SetCanEverAffectNavigation(false);
     BoatWeapon->SetVisibility(false);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> WeaponMesh(
-        TEXT("/Game/ArtPass/Tripo/BoatGreatsword_v002/SM_BoatGreatsword_v002.SM_BoatGreatsword_v002"),LOAD_Quiet|LOAD_NoWarn);
+        TEXT("/Game/ArtPass/Tripo/BoatGreatsword_v004/SM_BoatGreatsword_v004.SM_BoatGreatsword_v004"),LOAD_Quiet|LOAD_NoWarn);
     BoatWeapon->SetStaticMesh(WeaponMesh.Get());
     PresentationNominalSpeeds.Add(TEXT("Walk"),123.6f);
     PresentationNominalSpeeds.Add(TEXT("Run"),822.8f);
@@ -194,6 +194,12 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction, float Duration)
 {
     Action = NewAction; ActionElapsed = 0.f; ActionDuration = Duration;
     bContactSent = false; bHealGranted = false; bPreviousBladePoseValid=false;
+    if(NewAction==EVeyrKnightAction::LightAttack||NewAction==EVeyrKnightAction::HeavyAttack)
+    {
+        // Authored foot plants and short steps are in-place. Do not slide the
+        // capsule under a fixed support foot when a movement key stays held.
+        ConsumeMovementInputVector();GetCharacterMovement()->StopMovementImmediately();
+    }
 }
 
 void AVeyrKnight::FinishAction()
@@ -470,7 +476,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     else
     {
         Movement->MaxWalkSpeed = Action == EVeyrKnightAction::Guard ? 240.f : Action == EVeyrKnightAction::Heal ? 120.f :
-            Action == EVeyrKnightAction::HeavyAttack ? 75.f : bAttack ? 140.f : Action == EVeyrKnightAction::Stagger ? 0.f : 580.f;
+            bAttack ? 0.f : Action == EVeyrKnightAction::Stagger ? 0.f : 580.f;
         if(bImportedPresentationActive&&bLockedOn&&Action==EVeyrKnightAction::Ready)
         {
             const FVector Direction=MoveIntent.GetSafeNormal2D();
@@ -504,7 +510,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     const float FarBlend=FMath::Clamp((BossRange-1000.f)/600.f,0.f,1.f);
     // A small distance allowance at range permits a level view of the entire
     // giant while retaining floor clearance and space above the boss HUD.
-    const float DesiredArm=FMath::Clamp(CameraDistance,500.f,1100.f)+100.f*FarBlend;
+    const bool bOpeningView=!bReplayControlled&&!bHasEverCapturedMouse;
+    const float DesiredArm=FMath::Clamp(CameraDistance,500.f,1100.f)+100.f*FarBlend+(bOpeningView?350.f:0.f);
     if(VisualClock<=DeltaSeconds*1.5f)CameraBoom->TargetArmLength=DesiredArm;
     else CameraBoom->TargetArmLength=FMath::FInterpTo(CameraBoom->TargetArmLength,DesiredArm,DeltaSeconds,12.f);
     const float Arm=FMath::Max(1.f,CameraBoom->TargetArmLength);
@@ -612,6 +619,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     else
     {
         FRotator Look=Controller->GetControlRotation();
+        if(bOpeningView)Look.Pitch=0.f;
         Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,CameraPitchCeiling);Look.Roll=0.f;
         Controller->SetControlRotation(Look);
     }
@@ -760,12 +768,12 @@ FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
 bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
 {
     FTransform Grip;
-    if(BoatWeapon&&BoatWeapon->GetStaticMesh()&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_grip"),Grip))
+    if(BoatWeapon&&BoatWeapon->GetStaticMesh()&&CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_grip"))&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_grip"),Grip))
     {
         // The imported rigid mesh is authored in actual cm with +Z along its
         // blade. Ignore skeletal scale here: the grip location is already world space.
         const FTransform Weapon(Grip.GetRotation(),Grip.GetLocation(),FVector::OneVector);
-        Base=Weapon.TransformPosition(FVector(0,0,35));Tip=Weapon.TransformPosition(FVector(0,0,200));
+        Base=Weapon.TransformPosition(FVector(6.2972f,-1.1143f,71.3305f));Tip=Weapon.TransformPosition(FVector(28.7113f,-8.1916f,235.f));
         return true;
     }
     FTransform A,B;
@@ -778,12 +786,43 @@ void AVeyrKnight::UpdateEquippedWeapon()
 {
     if(!BoatWeapon)return;
     if(!BoatWeapon->GetStaticMesh())BoatWeapon->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,
-        TEXT("/Game/ArtPass/Tripo/BoatGreatsword_v002/SM_BoatGreatsword_v002.SM_BoatGreatsword_v002"),nullptr,LOAD_Quiet|LOAD_NoWarn));
+        TEXT("/Game/ArtPass/Tripo/BoatGreatsword_v004/SM_BoatGreatsword_v004.SM_BoatGreatsword_v004"),nullptr,LOAD_Quiet|LOAD_NoWarn));
     FTransform Grip;
-    const bool Visible=bImportedPresentationActive&&BoatWeapon->GetStaticMesh()&&
+    const bool Visible=bImportedPresentationActive&&BoatWeapon->GetStaticMesh()&&CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_grip"))&&
         ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_grip"),Grip);
     BoatWeapon->SetVisibility(Visible);
-    if(Visible)BoatWeapon->SetWorldTransform(FTransform(Grip.GetRotation(),Grip.GetLocation(),FVector::OneVector));
+    if(!Visible)return;
+    if(Action!=EVeyrKnightAction::Dead)bBoatReleased=false;
+    if(Action==EVeyrKnightAction::Dead&&ActionElapsed>=.30f)
+    {
+        if(!bBoatReleased)
+        {
+            // Preserve the last held pose at release, then let the visible
+            // oversized prop fall beside the body. It never follows the dying
+            // hand through the ground or changes combat/corpse collision.
+            bBoatReleased=true;BoatReleaseTime=ActionElapsed;
+            BoatReleaseStart=BoatWeapon->GetComponentTransform();
+            const FQuat RestRotation=FRotationMatrix::MakeFromZY(GetActorForwardVector(),FVector::UpVector).ToQuat();
+            FVector Rest=GetActorLocation()+GetActorRightVector()*250.f+GetActorForwardVector()*70.f;
+            float FloorZ=GetActorLocation().Z-GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+            FHitResult Hit;FCollisionQueryParams Query(SCENE_QUERY_STAT(VeyrDroppedWeaponFloor),false,this);
+            if(IsValid(Boss))Query.AddIgnoredActor(Boss);
+            if(GetWorld()->LineTraceSingleByChannel(Hit,Rest+FVector(0,0,400),Rest-FVector(0,0,2000),ECC_Visibility,Query))FloorZ=Hit.ImpactPoint.Z;
+            const FBox Bounds=BoatWeapon->GetStaticMesh()->GetBoundingBox();
+            float MinZ=TNumericLimits<float>::Max();
+            for(int32 X=0;X<2;++X)for(int32 Y=0;Y<2;++Y)for(int32 Z=0;Z<2;++Z)
+                MinZ=FMath::Min(MinZ,float(RestRotation.RotateVector(FVector(X?Bounds.Max.X:Bounds.Min.X,Y?Bounds.Max.Y:Bounds.Min.Y,Z?Bounds.Max.Z:Bounds.Min.Z)).Z));
+            Rest.Z=FloorZ+3.f-MinZ;
+            BoatReleaseRest=FTransform(RestRotation,Rest,FVector::OneVector);
+        }
+        const float T=FMath::Clamp((ActionElapsed-BoatReleaseTime)/.72f,0.f,1.f);
+        const float RotationT=FMath::SmoothStep(0.f,1.f,T);
+        FVector Location=FMath::Lerp(BoatReleaseStart.GetLocation(),BoatReleaseRest.GetLocation(),T);
+        Location.Z+=65.f*FMath::Sin(T*PI);
+        BoatWeapon->SetWorldTransform(FTransform(FQuat::Slerp(BoatReleaseStart.GetRotation(),BoatReleaseRest.GetRotation(),RotationT),Location,FVector::OneVector));
+        return;
+    }
+    BoatWeapon->SetWorldTransform(FTransform(Grip.GetRotation(),Grip.GetLocation(),FVector::OneVector));
 }
 
 void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
@@ -823,7 +862,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         case EVeyrKnightAction::Heal: Clip=TEXT("Heal"); bUsePhase=true; break;
         case EVeyrKnightAction::Stagger: Clip=TEXT("Stagger"); bUsePhase=true; break;
         case EVeyrKnightAction::Dead: Clip=TEXT("Death"); bUsePhase=true; break;
-        case EVeyrKnightAction::Guard: Clip=TEXT("Guard"); Time=ActionElapsed; break;
+        case EVeyrKnightAction::Guard: Clip=bTwoHanded?TEXT("GuardTwoHand"):TEXT("Guard"); Time=ActionElapsed; break;
         default:
             if (!IsGrounded())
             {
@@ -869,7 +908,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
             PresentationTransitionClip=Clip;
             PresentationTransitionLowerClip=PresentationLowerClip;
         }
-        const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/.12f,0.f,1.f):1.f;
+        const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/(GripTransitionRemaining>0.f?.28f:.12f),0.f,1.f):1.f;
         if(Lower)
             bSampled=ImportedPresentation->SampleLayeredClips(Clip,bUsePhase?Phase*ClipDuration:Time,
                 PresentationLowerClip,PresentationLowerTime,PresentationLowerWeight,Alpha);

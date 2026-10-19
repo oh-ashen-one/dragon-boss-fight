@@ -7,13 +7,17 @@ Branch: `feat/unreal-migration`. Historical Unity branch: `checkpoint/unity-nati
 
 The owner played and rejected a450a43b presentation. Work is active on the boat greatsword, one/two-hand combat, repaired full-body motion, active dragon, Gothic moonlit Tripo cathedral and restrained HUD. See docs/art-pass-20261019.md. The previous handoff below is a preserved mechanical baseline, not current visual acceptance.
 
-## Revision checkpoint
+## Revision checkpoint — 2026-10-19 20:15 UTC
 
-Source runtime compiles at the initial revision checkpoint. Later moon material/version and weapon canonical paths need the next compile. Native editor is task-owned at port 18773; current import log/lease is Local/owned-editor-20261019T182156Z. Close before the 2400-second lease limit. Root alone controls it; foreign Hollow Current and Bully instances are excluded.
+Latest pushed checkpoint f35646b; current source changes still uncommitted. Latest native editor build0432f7aedc6c21a69b4615bb510ea960da9de1d9d15417256df44349a79bc2be passed. All three owned editors closed normally; last Local/owned-editor-20261019T200555Z wrapper81084 exit0 at20:14. Active root-owned offscreen stance test Evidence/native-stance-20261019T201443Z, wrapper22265,12requestedFPS1600x900. This tests the new full moveset and8.5s idle proof; finalresultpending.
 
-Tripo web operations: weapon H3.1 55 credits + retopology35; facade/wall/arch55 each, total255 this pass. All four raw models exported privately. Weapon canonical is /Game/ArtPass/Tripo/BoatGreatsword_v002/SM_BoatGreatsword_v002, with verified native render UVs and three LOD budgets. Earlier v001/v002 diagnostic failures remain preserved; generated LOD UVs must be read with StaticMesh.get_num_tex_coords, not editable MeshDescription counts. Texture import metadata remains private because UE5.8 exposes it read-only.
+Tripo web debit310 credits this pass. BoatGreatsword_v004 final2.8m weapon with correct shaftcenter/worldscale1,45cm belowrightgrip and28cm handspacing; native17,242/8,500/3,500tris. Three major cathedral meshes and1.8m brazier native imported with3LODs andactualUV1, importedPBRpreserved. Generated floor materialv001 repaired/saved; skyv003 nativecompiled/saved, sourceusescontinuous3Dcloudnoise. Ten built-in imagegen references/prompts retained privately and owneroutputs.
 
-Dragon v007 (40 clips) imported successfully; activation and native review remain. Architecture import is in progress. Sky material v001 failed on the reserved HLSL variable point; source correction creates v002 and reuses the unchanged moon texture. Knight stances/strikes are still being authored and are not activated. New code is a work checkpoint, not a new runnable acceptance claim.
+Dragonv00740clips activated. Native unengaged8.5sidle observation confirms head axis motion49.47/98.64/71.43cm, noinput. First90.134savoidancepassedall6moves butearlierartrejected. Round3nativeenvironment muchimproved/coherent, critic5.5/10; round4source0432 addsframingarchitecture/localwarm pools/lowmist/ridgeoverlap. Actualround4renderreviewpending.
+
+Knightv014 full18clips imported/validated withzero definition/completeerrors andstableDAactivated forruntimeQA. PriorstableDA archived at /Game/Characters/Customuse/Runtime/Archive/DA_Knight_a450a43b. Includes10newcore/guard/heal/roll clips pluscorrectedJump/Stagger/Death andpreservedlocomotion. Nativev013posecritique found high/crossed2H arms andweaklowerbodyload; animatorworkingstancev2. V014notowneraccepted/final. Death visibleweaponrelease .30s/.72s fall hasoffline0bodyintersections/floor3cm, nativepending. Rollbody/lefttracks preserved, rightcarryonlychanged.
+
+Rootownsengine/browser/builds/integration/Knight/Replay; animatorowns author_knight_stances.py/privatecandidates; Arena workerround4frozen. Preserveunrelated SourceManifest2file. No crashes this pass. Do notmistake API/materialerrors forcrashes; do notclaimplayablehandoffyet.
 
 ## Prior delivered state
 

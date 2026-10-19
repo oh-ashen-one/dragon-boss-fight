@@ -22,6 +22,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingBasaltCliff=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingImportedCathedral=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingAuthoredNightSky=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingAuthoredFloor=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingImportedBraziers=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") int32 ImportedArchitecturePieces=0;
     /** GLB front is provisionally +Y after import; root verifies native orientation. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Environment") float CathedralFacingYawOffset=90.f;
@@ -39,6 +41,8 @@ private:
     UPROPERTY() TObjectPtr<UStaticMesh> CathedralFacadeMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> CathedralWallMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> CathedralArchMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> CathedralBrazierMesh;
+    UPROPERTY() TObjectPtr<UMaterialInterface> CathedralFloorParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> NightSkyParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> StoneParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> PlainParent;
@@ -52,6 +56,10 @@ private:
     UInstancedStaticMeshComponent* Floor = nullptr;
     UInstancedStaticMeshComponent* FloorLight = nullptr;
     UInstancedStaticMeshComponent* FloorWet = nullptr;
+    UInstancedStaticMeshComponent* FloorSurface = nullptr;
+    UInstancedStaticMeshComponent* Foundations = nullptr;
+    UInstancedStaticMeshComponent* FloorCarvings = nullptr;
+    UInstancedStaticMeshComponent* BoundaryStone = nullptr;
     UInstancedStaticMeshComponent* Bronze = nullptr;
     UInstancedStaticMeshComponent* Columns = nullptr;
     UInstancedStaticMeshComponent* ColumnTrim = nullptr;
@@ -72,7 +80,7 @@ private:
     void BuildFloor();
     void BuildCathedral();
     bool BuildImportedCathedral();
-    void ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector& Position,float Height,float Yaw);
+    void ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector& Position,float Height,float Yaw,bool bArchitecture=true);
     void BuildDistance();
     void BuildLighting();
     void BuildCollision();
