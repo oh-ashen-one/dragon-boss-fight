@@ -3,6 +3,7 @@
 #include "VeyrDragon.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrGameMode.h"
+#include "VeyrArena.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -17,6 +18,8 @@
 #include "Serialization/JsonWriter.h"
 #include "Policies/CondensedJsonPrintPolicy.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
+#include "Components/StaticMeshComponent.h"
 #include "UnrealClient.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformMisc.h"
@@ -1100,7 +1103,13 @@ void AVeyrReplay::OnVideoPixels(int32 Width,int32 Height,const TArray<FColor>& P
         const double WriteStarted=FPlatformTime::Seconds();
         TArray64<uint8> PNG;
         if(!PixelCopy.IsEmpty())
-            FImageUtils::PNGCompressImageArray(Request.Width,Request.Height,TArrayView64<const FColor>(PixelCopy.GetData(),PixelCopy.Num()),PNG);
+        {
+            // Same lossless native pixels, faster zlib level1. The default
+            // level3 held the single background job for ~128ms at1600x900,
+            // skipping capture slots during the short new attack animations.
+            FImageView View(PixelCopy.GetData(),Request.Width,Request.Height,EGammaSpace::sRGB);
+            FImageUtils::CompressImage(PNG,TEXT("png"),View,-1);
+        }
         Result.bSaved=!PNG.IsEmpty()&&FFileHelper::SaveArrayToFile(PNG,*Request.File);
         Result.PNGWriteSeconds=FPlatformTime::Seconds()-WriteStarted;
         return Result;
@@ -1125,6 +1134,7 @@ void AVeyrReplay::ConsumeVideoWrite(bool bWait)
     Record->SetNumberField(TEXT("pngWriteSeconds"),Result.PNGWriteSeconds);
     Record->SetNumberField(TEXT("pixelCopySeconds"),Result.PixelCopySeconds);
     Record->SetBoolField(TEXT("backgroundPNG"),true);
+    Record->SetNumberField(TEXT("pngZlibLevel"),1);
     if(!Result.bSaved)Record->SetStringField(TEXT("reason"),TEXT("invalid/oversized pixels or PNG encode/write failure"));
     if(!AppendVideoRecord(Record)){bVideoStopped=true;VideoStopReason=TEXT("manifest write failed");}
 }
@@ -1243,6 +1253,25 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
         TEXT("Customuse knight and dragon with authored motion; runtime quality acceptance is separate"):
         TEXT("temporary character primitives remain active"));
     Root->SetBoolField(TEXT("bothCustomuseCharactersActive"),bImportedArt);
+    TSharedPtr<FJsonObject> Presentation=MakeShared<FJsonObject>();
+    const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+    const AVeyrArena* Arena=Mode?Mode->Arena.Get():nullptr;
+    Presentation->SetBoolField(TEXT("importedCathedral"),Arena&&Arena->bUsingImportedCathedral);
+    Presentation->SetNumberField(TEXT("majorArchitecturePieces"),Arena?Arena->ImportedArchitecturePieces:0);
+    Presentation->SetBoolField(TEXT("generatedNightSky"),Arena&&Arena->bUsingAuthoredNightSky);
+    Presentation->SetBoolField(TEXT("generatedStoneFloor"),Arena&&Arena->bUsingAuthoredFloor);
+    Presentation->SetBoolField(TEXT("importedBraziers"),Arena&&Arena->bUsingImportedBraziers);
+    FString WeaponPath;bool bWeaponVisible=false;
+    if(IsValid(Knight))
+    {
+        TInlineComponentArray<UStaticMeshComponent*> Components;Knight->GetComponents(Components);
+        for(const UStaticMeshComponent* Part:Components)
+            if(Part->GetFName()==FName(TEXT("Tripo Timber Greatsword"))&&Part->GetStaticMesh())
+            {WeaponPath=Part->GetStaticMesh()->GetPathName();bWeaponVisible=Part->IsVisible();break;}
+    }
+    Presentation->SetStringField(TEXT("equippedWeaponMesh"),WeaponPath);
+    Presentation->SetBoolField(TEXT("equippedWeaponVisible"),bWeaponVisible);
+    Root->SetObjectField(TEXT("presentationAssets"),Presentation);
     Root->SetStringField(TEXT("policy"),TEXT("input-only provisional navigation; runtime tuning required"));
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);

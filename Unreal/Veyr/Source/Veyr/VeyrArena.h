@@ -8,7 +8,6 @@ class UInstancedStaticMeshComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UStaticMesh;
-class UTextureCube;
 
 /** Original native layout, using labelled engine-primitive prototype geometry.
  *  No Customuse asset or finished art is claimed. Centimeters, +X forward, Z up. */
@@ -47,7 +46,6 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInterface> StoneParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> PlainParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> SkyParent;
-    UPROPERTY() TObjectPtr<UTextureCube> AmbientCube;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Batches;
 

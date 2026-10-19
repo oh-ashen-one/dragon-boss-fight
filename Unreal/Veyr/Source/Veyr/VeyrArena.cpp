@@ -10,7 +10,6 @@
 #include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
-#include "Engine/TextureCube.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -44,7 +43,6 @@ AVeyrArena::AVeyrArena()
     static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> AuthoredStone(
         TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinder<UMaterialInterface> SkyMaterial(TEXT("/Engine/EngineSky/M_Sky_Panning_Clouds2.M_Sky_Panning_Clouds2"));
-    static ConstructorHelpers::FObjectFinder<UTextureCube> CubeMap(TEXT("/Engine/EngineMaterials/DefaultCubemap.DefaultCubemap"));
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Facade(TEXT("/Game/ArtPass/Tripo/CathedralFacade_v001/SM_CathedralFacade_v001.SM_CathedralFacade_v001"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Wall(TEXT("/Game/ArtPass/Tripo/CathedralWall_v001/SM_CathedralWall_v001.SM_CathedralWall_v001"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> GothicArch(TEXT("/Game/ArtPass/Tripo/CathedralArch_v001/SM_CathedralArch_v001.SM_CathedralArch_v001"),LOAD_Quiet|LOAD_NoWarn);
@@ -56,7 +54,7 @@ AVeyrArena::AVeyrArena()
     BasaltCliffMesh=BasaltCliff.Get();
     CubeMesh = Cube.Object; CylinderMesh = CylinderAsset.Object; SphereMesh = Sphere.Object; ConeMesh = Cone.Object;
     PlainParent=Base.Object;StoneParent=AuthoredStone.Get()?AuthoredStone.Get():Base.Object.Get();
-    SkyMesh = Sky.Object; SkyParent = SkyMaterial.Object; AmbientCube = CubeMap.Object;
+    SkyMesh = Sky.Object; SkyParent = SkyMaterial.Object;
 }
 
 void AVeyrArena::BeginPlay()
@@ -467,19 +465,23 @@ void AVeyrArena::BuildLighting()
     }
     auto* Ambient = NewObject<USkyLightComponent>(this, TEXT("PrototypeGentleSkyBounce"));
     AddInstanceComponent(Ambient); Ambient->SetupAttachment(GetRootComponent()); Ambient->SetMobility(EComponentMobility::Movable);
-    if (AmbientCube) { Ambient->SourceType = SLS_SpecifiedCubemap; Ambient->SetCubemap(AmbientCube); }
-    Ambient->SetIntensity(.85f); Ambient->SetLightColor(FLinearColor(.58f, .64f, .74f));
-    Ambient->SetLowerHemisphereColor(FLinearColor(.10f, .12f, .15f)); Ambient->RegisterComponent();
+    // Capture the authored night instead of tinting the engine's unrelated
+    // default HDR cubemap. Only the distant sky is inside the capture domain.
+    Ambient->SourceType=SLS_CapturedScene;
+    Ambient->SetRealTimeCapture(false);
+    Ambient->SkyDistanceThreshold=50000.f;
+    Ambient->SetIntensity(2.5f);Ambient->SetLightColor(FLinearColor(.92f,.96f,1.f));
+    Ambient->SetLowerHemisphereColor(FLinearColor(.025f,.035f,.05f));Ambient->RegisterComponent();
 
     auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("PrototypeDrownedCathedralMist"));
     AddInstanceComponent(Fog); Fog->SetupAttachment(GetRootComponent());
     Fog->SetRelativeLocation(FVector(0, 0, -150));
     Fog->SetFogDensity(.018f); Fog->SetFogHeightFalloff(.35f);
     Fog->SetFogInscatteringColor(FLinearColor(.038f, .050f, .065f));
-    Fog->SetStartDistance(3600); Fog->SetFogMaxOpacity(.82f);
+    Fog->SetStartDistance(3000); Fog->SetFogMaxOpacity(.82f);
     // A restrained low layer on the existing fog component softens the distant
     // platform/ridge join. The inner fight stays ahead of the fog start plane.
-    Fog->SetSecondFogDensity(.008f);
+    Fog->SetSecondFogDensity(.015f);
     Fog->SetSecondFogHeightOffset(240.f);
     Fog->SetSecondFogHeightFalloff(1.2f);
     Fog->SetVolumetricFog(false); // native layout baseline; no unmeasured volume cost
@@ -495,6 +497,9 @@ void AVeyrArena::BuildLighting()
     Grade->Settings.bOverride_BloomIntensity = true; Grade->Settings.BloomIntensity = .18f;
     Grade->Settings.bOverride_VignetteIntensity = true; Grade->Settings.VignetteIntensity = .12f;
     Grade->RegisterComponent();
+    // One queued capture after sky and fog registration. No frame tick,
+    // recurring timer, or real-time capture is enabled by the arena.
+    Ambient->RecaptureSky();
 }
 
 void AVeyrArena::BuildCollision()

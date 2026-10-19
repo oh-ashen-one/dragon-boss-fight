@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-MODES = {'core','controls','leg0','leg1','leg2','leg3','avoidance','healing','guard','death','victory'}
+MODES = {'core','controls','leg0','leg1','leg2','leg3','avoidance','healing','guard','death','victory','stance'}
 
 
 def read(path):
@@ -46,6 +46,9 @@ def run(path, expected):
     value=read(candidates[0]);launch=read(folder/'launch.json');gpu=read(folder/'gpu.json');preflight=read(folder/'bundle-preflight.json')
     assert value['sourceId']==expected and value['finished'] and value['finalWrite'] and value['passed']
     assert value['bothCustomuseCharactersActive'] and value['warningContainmentFailures']==0
+    art=value['presentationAssets']
+    assert all(art[key] for key in ('importedCathedral','generatedNightSky','generatedStoneFloor','importedBraziers','equippedWeaponVisible'))
+    assert art['majorArchitecturePieces']==11 and '/BoatGreatsword_v004/SM_BoatGreatsword_v004' in art['equippedWeaponMesh']
     assert launch['runtimeKind']=='packaged-app' and gpu['exit_code']==0
     assert preflight['staticDependencyAuditPassed'] and preflight['signatureVerified'] and preflight['cookedPayloadPresent']
     return {'mode':value['mode'],'passed':True,'sourceId':expected,
@@ -53,6 +56,7 @@ def run(path, expected):
             'reason':value['reason'],'evidenceSHA256':sha(candidates[0]),
             'evidence':str(candidates[0].relative_to(ROOT)),
             'executableSHA256':launch['executableSHA256'],
+            'presentationAssets':art,
             'meanSimulationFrameSeconds':value['meanFrameSeconds'],
             'wallFrameP50Seconds':value.get('wallFrameP50Seconds'),
             'wallFrameP95Seconds':value.get('wallFrameP95Seconds'),
@@ -75,14 +79,14 @@ def main():
     assert 180<=victory['terminalGameSeconds']<=300
     physical=read(a.physical)
     assert physical['sourceId']==final_build['sourceId'] and physical['completed']
-    required={'mouse_capture','movement','light_attack','heavy_attack','jump','roll','guard','heal','lock_toggle','escape_release','reacquire','restart','post_restart_movement'}
+    required={'mouse_capture','movement','light_attack','heavy_attack','grip_toggle','jump','roll','guard','heal','lock_toggle','escape_release','reacquire','restart','post_restart_movement'}
     assert required<=physical['checks'].keys()
     assert all(physical['checks'][key] is True for key in required-{'roll'})
     assert physical['checks']['roll'] is True or (physical['checks']['roll'] is None and physical.get('rollInputLimitation'))
     report={'verified':True,'finalSourceId':final_build['sourceId'],
         'finalArchiveSHA256':final['signedArchives'][0]['sha256'],
         'architecture':'arm64 macOS','settings':{'resolution':[1280,720],'screenPercentage':100,'fpsCap':60},
-        'packagedCases':cases,'allElevenPackagedScenariosPassed':True,
+        'packagedCases':cases,'allPackagedScenariosPassed':True,'packagedScenarioCount':len(MODES),
         'physicalInput':physical, 'allPhysicalKeysVerified':all(physical['checks'][key] is True for key in required),
         'limits':['Owner feel/difficulty judgement is separate from mechanical and rendered verification.',
                   'Capture is silent with real wall timestamps; shared GPU and capture work prevent exclusive performance claims.',
