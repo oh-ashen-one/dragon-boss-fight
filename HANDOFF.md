@@ -130,3 +130,9 @@ Private stable runtime definitions now reference Knight v012 and Dragon v006. A 
 Source additionally uses a level initial camera pitch (rendered review keeps the entire standing dragon in frame), hides the internal imported-preview label, requires the replay to approach within 45 cm of its intended stand-off, and records the phase-zero dragon contact pose on Active entry. Complete authored clips use native sequence end times; definition validation now matches the runtime strict interval check.
 
 Both latest editor sessions ended normally with exit 0; the temporary background-throttle override was restored before shutdown. Root is packaging the standalone candidate next. Earlier failed core evidence remains preserved. Full packaged contacts, pacing, attack coverage, camera, restart and physical controls remain acceptance gates.
+
+## Standalone candidate e54eef34
+
+Game source `e54eef347c7382b8e4b0a4a64248c0d00e84cbcd1015d23f4c026f3dbd261412` compiled and cooked successfully. Pre-staging signing now handles the verified Documents FileProvider metadata race by sealing an exact private copy, checking signature-only file changes and copying those signed bytes back with exact payload parity. Final delivery still has its own independent strict signature/dependency/ZIP audit. No quarantine or system security settings changed.
+
+UAT's archive retained stale cooked containers from the generated build app. The audit rejected that conflict. The corrected copy-only repair uses the exact freshly staged app after matching its executable code identity and required map manifest to the archive. Original rejected archive and partial repair remain preserved. Fresh-stage repair passes static dependency, embedded source, ZIP manifest/CRC and extracted strict-signature checks. The verified extracted app is now entering core gameplay validation; packaging success is not gameplay acceptance.

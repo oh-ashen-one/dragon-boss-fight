@@ -12,6 +12,8 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import shutil
+import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -109,14 +111,57 @@ def sign_local_bundle(configuration, evidence):
     result["signExitCode"] = run_logged(
         ["/usr/bin/codesign", "--force", "--deep", "--sign", "-", "--timestamp=none", str(app)],
         evidence / "bundle-sign.log")
-    if result["signExitCode"] != 0:
-        result["reason"] = "local ad-hoc bundle signing failed"
-        return result
-    result["verifyExitCode"] = run_logged(
-        ["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
-        evidence / "bundle-verify.log")
+    if result["signExitCode"] == 0:
+        result["verifyExitCode"] = run_logged(
+            ["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
+            evidence / "bundle-verify.log")
     resources = app / "Contents/_CodeSignature/CodeResources"
-    if result["verifyExitCode"] != 0 or not resources.is_file():
+    if result["signExitCode"] != 0 or result["verifyExitCode"] != 0 or not resources.is_file():
+        verification_log = "\n".join(path.read_text(errors="replace") for path in
+            (evidence / "bundle-sign.log", evidence / "bundle-verify.log") if path.exists())
+        if "resource fork, Finder information, or similar detritus" in verification_log:
+            # Documents FileProvider can reattach FinderInfo immediately after
+            # signing. Verify an exact private copy outside that provider. The
+            # staged/final app still receives its own full dependency and ZIP
+            # signature audit; this is only the pre-staging build signature.
+            from audit_bundle import sign_in_place, manifest, is_macho
+            folder = Path(tempfile.mkdtemp(prefix="veyr-build-sign-", dir="/private/tmp"))
+            copied = folder / app.name
+            try:
+                original_manifest = manifest(app)
+                shutil.copytree(app, copied, symlinks=True)
+                if manifest(copied) != original_manifest:
+                    raise ValueError("temporary build copy differs before signing")
+                proof = sign_in_place(copied)
+                signed_manifest = manifest(copied)
+                changed = [name for name in set(original_manifest) | set(signed_manifest)
+                           if original_manifest.get(name) != signed_manifest.get(name)]
+                for name in changed:
+                    path = copied / name
+                    if "/_CodeSignature/" not in name and not (path.is_file() and is_macho(path)):
+                        raise ValueError("signing changed a non-signature payload: " + name)
+                if manifest(app) != original_manifest:
+                    raise ValueError("build payload changed concurrently during signing")
+                # UAT still stages from the generated build path. Copy only
+                # signer-produced bytes back, then require exact payload parity.
+                # Finder metadata may recur there; final delivery is verified
+                # separately on its signed, extracted ZIP.
+                for name in changed:
+                    destination = app / name
+                    if name in signed_manifest:
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(copied / name, destination)
+                    elif "/_CodeSignature/" in name:
+                        destination.unlink()
+                if manifest(app) != signed_manifest:
+                    raise ValueError("staging payload differs from verified signed copy")
+                result.update(success=True, originalPathVerified=False, verifiedCopyApp=str(copied),
+                    verifiedCopySignature=proof, signatureChangedFiles=changed, stagingPayloadMatchesVerifiedCopy=True,
+                    codeResourcesSHA256=hashlib.sha256((copied / "Contents/_CodeSignature/CodeResources").read_bytes()).hexdigest(),
+                    reason="pre-staging signature verified on an exact private copy outside Documents FileProvider; final packaged audit still required")
+                return result
+            except (OSError, ValueError, RuntimeError) as error:
+                result["temporaryCopyError"] = str(error)
         result["reason"] = "local bundle signature verification failed or CodeResources missing"
         return result
     result["codeResourcesSHA256"] = hashlib.sha256(resources.read_bytes()).hexdigest()
@@ -148,7 +193,9 @@ def main():
     identity = hashlib.sha256(json.dumps(before, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     generated = PROJECT / "Intermediate/VeyrBuild/VeyrGeneratedIdentity.h"
     generated.parent.mkdir(parents=True, exist_ok=True)
-    generated.write_text('#pragma once\n#define VEYR_SOURCE_ID TEXT("' + identity + '")\n')
+    identity_header = '#pragma once\n#define VEYR_SOURCE_ID TEXT("' + identity + '")\n'
+    if not generated.exists() or generated.read_text() != identity_header:
+        generated.write_text(identity_header)
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     evidence = ROOT / "Local" / ("unreal-build-" + stamp)
     evidence.mkdir(mode=0o700, exist_ok=False)

@@ -946,7 +946,11 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetObjectField(TEXT("nativeVideo"),Video);
     Root->SetStringField(TEXT("mode"),ReplayMode); Root->SetStringField(TEXT("engine"),FEngineVersion::Current().ToString());
     Root->SetStringField(TEXT("sourceId"),VEYR_SOURCE_ID);
-    Root->SetStringField(TEXT("artStatus"),TEXT("temporary original rule-test primitives; Customuse assets and authored animation pending"));
+    const bool bImportedArt=IsValid(Knight)&&IsValid(Dragon)&&Knight->bImportedPresentationActive&&Dragon->bUsingCustomuseVisual;
+    Root->SetStringField(TEXT("artStatus"),bImportedArt?
+        TEXT("Customuse knight and dragon with authored motion; runtime quality acceptance is separate"):
+        TEXT("temporary character primitives remain active"));
+    Root->SetBoolField(TEXT("bothCustomuseCharactersActive"),bImportedArt);
     Root->SetStringField(TEXT("policy"),TEXT("input-only provisional navigation; runtime tuning required"));
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);

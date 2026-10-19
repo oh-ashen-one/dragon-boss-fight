@@ -335,10 +335,18 @@ def repair_copy(source, staged, destination, receipt, engine):
         raise ValueError('matching staged app lacks Contents/UE payload')
     libraries = receipt_libraries(receipt, engine.resolve())
     destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(source, destination, symlinks=True)
+    # UE's Mac archive can omit Contents/UE or retain a previous cook there.
+    # The matching staged app is the authoritative fresh cook: its executable
+    # identity and map manifest were verified above. Copy it as one whole unit
+    # instead of mixing old archive resources with freshly cooked containers.
+    # Both generated inputs remain intact for diagnosis.
+    staged_manifest = manifest(staged)
+    archive_differences = [name for name in set(original) | set(staged_manifest)
+                           if original.get(name) != staged_manifest.get(name)]
+    shutil.copytree(staged, destination, symlinks=True)
+    if manifest(destination) != staged_manifest:
+        raise ValueError('fresh delivery copy differs from its matching stage')
     copied = []
-    # The observed archive lost the whole UE tree. Also verify any preexisting
-    # files against the matching stage instead of silently overwriting them.
     for path in files_inside(payload):
         if path.is_symlink():
             raise ValueError('staged payload symlinks require explicit handling')
@@ -346,12 +354,9 @@ def repair_copy(source, staged, destination, receipt, engine):
         if path.is_dir():
             target.mkdir(parents=True, exist_ok=True)
         elif path.is_file():
-            if target.exists():
-                if sha(target) != sha(path):
-                    raise ValueError(f'archive/staged payload conflict: {target}')
-            else:
-                shutil.copy2(path, target)
-                copied.append(str(target.relative_to(destination)))
+            if not target.is_file() or sha(target) != sha(path):
+                raise ValueError(f'fresh staged payload copy mismatch: {target}')
+            copied.append(str(target.relative_to(destination)))
     aliases = []
     for _ in range(8):
         audit = audit_bundle(destination)
@@ -385,6 +390,8 @@ def repair_copy(source, staged, destination, receipt, engine):
     same_code = code_identity(executable(destination)) == identity
     return {'sourceApp': str(source), 'repairedApp': str(destination), 'stagedApp': str(staged),
             'originalArchiveUnchanged': unchanged, 'gameCodeIdentityUnchanged': same_code,
+            'deliveryBase': 'exact matching staged app', 'stagedCopyManifestVerified': True,
+            'archiveStagedDifferencesPreserved': sorted(archive_differences),
             'gameCodeIdentity': identity, 'copiedPayloadFiles': copied, 'libraryRepairs': aliases,
             'sourceBuildIdentity': build_identity,
             'cookedMapManifest': {'map': required_map, 'source': str(ufs_manifest), 'sha256': sha(ufs_manifest)},
