@@ -300,7 +300,8 @@ void AVeyrReplay::Observe()
     if(State!=PreviousDragonState)
     {
         if(Dragon->State==EVeyrDragonState::Rise)bSawRise=true;
-        if(bSawRise&&PreviousDragonState==static_cast<int32>(EVeyrDragonState::Rise)&&Dragon->State==EVeyrDragonState::Idle)bRiseCompleted=true;
+        if(bSawRise&&PreviousDragonState==static_cast<int32>(EVeyrDragonState::Rise)&&
+           Dragon->State==EVeyrDragonState::Idle&&Dragon->GetHeadBonusHitCount()>0)bRiseCompleted=true;
         Event(TEXT("dragon_")+StaticEnum<EVeyrDragonState>()->GetNameStringByValue(State)); PreviousDragonState=State;
     }
     if(Action!=PreviousKnightAction)
@@ -699,10 +700,10 @@ void AVeyrReplay::DriveInputs()
     if(DriveScenarioInputs())return;
     FVector Movement=FVector::ZeroVector;
     bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false;
+    bool bWantLock=true;
     const FVector Feet=Knight->GetFootLocation();
     const bool bAvailable=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
     const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
-    if(!Knight->bLockedOn)Knight->ToggleLockOn();
     if(ReplayMode==TEXT("death"))
     {
         const FVector Goal=Dragon->GetHeadLocation()+Dragon->GetActorForwardVector()*120.f;
@@ -715,15 +716,32 @@ void AVeyrReplay::DriveInputs()
     else
     {
         const bool bDown=Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse||Dragon->IsHeadExposed();
+        const bool bHeadRoute=bDown||Dragon->State==EVeyrDragonState::Rise;
+        bool bHeadWaypoint=false;
         FVector Goal;
-        if(bDown)Goal=Dragon->GetHeadLocation()+Dragon->GetActorForwardVector()*205.f;
+        if(bHeadRoute)
+        {
+            const FVector Head=Dragon->GetHeadLocation();
+            const FVector Forward=Dragon->GetActorForwardVector(),Right=Dragon->GetActorRightVector();
+            const FVector Relative=Feet-Head;
+            // The exposed snout extends 206.54cm from this target. A 42cm
+            // pawn needs at least 248.54cm stand-off; 290 +/-15 leaves room.
+            // Route beside the low head instead of walking through its mouth.
+            bHeadWaypoint=FVector::DotProduct(Relative,Forward)<150.f;
+            const float Side=FVector::DotProduct(Relative,Right)<0.f?-1.f:1.f;
+            Goal=bHeadWaypoint?Head+Forward*200.f+Right*(Side*360.f):Head+Forward*290.f;
+        }
         else
         {
             const FVector Leg=Dragon->GetLegLocation(TargetLeg);
             Goal=Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*185.f;
         }
         const float GoalDistance=static_cast<float>(FVector::Dist2D(Feet,Goal));
-        if(GoalDistance>45.f)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
+        // Use the same optional lock toggle available to a player: run around
+        // the low head freely, then lock again for the measured punish range.
+        bWantLock=!bHeadRoute||(!bHeadWaypoint&&GoalDistance<200.f);
+        const float GoalTolerance=bHeadRoute?15.f:45.f;
+        if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
         const bool bDodgeExercise=ReplayMode==TEXT("core")&&Knight->DodgedHits==0&&Dragon->Move==EVeyrDragonMove::BackStomp;
         if(bDodgeExercise&&Dragon->State==EVeyrDragonState::Windup&&bThreat)
@@ -744,17 +762,21 @@ void AVeyrReplay::DriveInputs()
         {
             const bool bSafeHeal=(Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.35f)||bDown;
             if(Knight->Health<48.f&&Knight->HealingCharges>0&&bSafeHeal){bHeal=true;Movement=FVector::ZeroVector;}
-            else if(GoalDistance<45.f&&!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Rise&&Dragon->State!=EVeyrDragonState::Reposition)
+            else if(!bHeadWaypoint&&GoalDistance<GoalTolerance&&!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Rise&&Dragon->State!=EVeyrDragonState::Reposition)
             {
                 Movement=FVector::ZeroVector;
-                const float SafeTime=Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:20.f;
+                const float SafeTime=Dragon->IsHeadExposed()?Remaining-.1f:
+                    Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:20.f;
                 const bool bNeedLight=(ReplayMode==TEXT("core")||bLegIsolation)&&!bLightLegContact&&!bDown;
                 const float Reserve=bDown?0.f:25.f;
                 bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>Knight->GetAttackDuration(true)&&(!bDown||Dragon->IsHeadExposed());
-                bLight=!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false)&&(!bDown||Dragon->IsHeadExposed());
+                // Heavy reaches the safe head distance. Ready intervals refill
+                // stamina naturally rather than substituting a short light cut.
+                bLight=!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false);
             }
         }
     }
+    if(Knight->bLockedOn!=bWantLock)Knight->ToggleLockOn();
     Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,false);
 }
 

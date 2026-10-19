@@ -1,23 +1,43 @@
 # Veyr — The Cinder Warden
 
-An original single-arena dragon boss fight, currently migrating to Unreal Engine 5.8. The knight breaks the dragon's balance by attacking four independent legs, then punishes its exposed head during a short collapse.
+An original native Unreal Engine 5.8 dragon encounter in a ruined cathedral arena. An eight-foot armored knight attacks four independently damageable legs, breaks the dragon's balance, and reaches its exposed crown before it rises again.
 
-**Status: native Unreal core combat, all four independent leg tests, death/restart and a 3:02 victory/restart have passed on a source-stamped prototype.** The previous Unity prototype is preserved at `checkpoint/unity-native-009`. Its results below are historical Unity evidence. See [native test results](docs/native-test-results.md) for the verified Unreal checkpoint; newer presentation/input/audio changes require their own regression. Character geometry is explicitly temporary. The requested final models are being prepared in Customuse; website rigging, animation and redistribution capabilities remain under inspection. No paid generation has been submitted, and no reference-game assets are included.
+Both main characters now use Customuse models, with corrected rigging, skinning and authored motion. A packaged complete fight reached victory in 4:15 and verified a fresh responsive restart. Core combat, all four independent leg tests and avoidance of all six attack types have passed native validation. The latest camera, fire and boundary-test revision is completing its final packaged acceptance suite; [native test results](docs/native-test-results.md) records exact checkpoints rather than treating compilation as gameplay proof.
 
-The Unreal project is `Unreal/Veyr/Veyr.uproject`, with native C++ encounter code. Current branch: `feat/unreal-migration`. Native controls are WASD movement, Space jump, Shift roll, J/LMB light attack, K heavy attack, F/RMB guard, Q healing, Tab lock-on and R terminal restart. The current source adds click-to-begin and Escape-to-release mouse control; these physical bindings still need a packaged-app acceptance pass. Input-only replay verification is separate from physical key verification.
+## Play and controls
 
-Build the native module with `python3 tools/unreal/build.py --engine <installed-engine-root>`. This records a source hash and local receipt without launching the editor. See [Unreal validation](docs/unreal-validation.md) for current evidence and remaining acceptance checks. `tools/unreal/run_native.py --engine <installed-engine-root> --gpu-slot <shared-slot-wrapper> --mode core` runs one bounded native scenario. Optional `--video-fps 10` records unchanged viewport frames with observed wall timestamps; `tools/unreal/encode_video.py <run>/native-video/frames.jsonl` encodes silent VFR evidence. Run the real game through the host slot protocol. `tools/unreal/package.py --engine <installed-engine-root>` prepares a local Mac archive; packaging success alone is not runtime acceptance.
+The private owner handoff includes the signed local macOS ZIP. Click or press Enter to capture control; Escape releases the mouse. Movement is WASD, mouse controls the free camera, Space jumps, Shift rolls, J/LMB performs a light attack, K a heavy attack, F/RMB guards, Q uses one of four healing draughts, Tab toggles lock-on, and R restarts after defeat or victory.
 
-## Preserved Unity prototype
+Guard direction, stamina, invulnerability timing and healing charges matter. Each leg has its own stagger meter. A buckle leads to a brief exposed-head opening with bonus damage, followed by recovery. Fire sweeps, bites, claws, rear stomps, tail sweeps and flight/landing share visible anticipation and danger areas.
 
-WASD move; mouse while right button held rotates camera; left click or J attacks; Space dodges; Q heals; Tab toggles lock-on; R restarts after death or victory; Escape releases the pointer.
+## Native project and validation
 
-## Source and assets
+The project is `Unreal/Veyr/Veyr.uproject`; the task branch is `feat/unreal-migration`. Build the editor module with:
 
-Original project C++, C# and Python code: MIT (LICENSE). Original procedural meshes and authored temporary rig/animation: CC0-1.0 (ASSET-LICENSE.md). Unreal Engine resources remain subject to Epic's license and are not relicensed by this project. Customuse assets are not included pending generation approval and redistribution verification. Gameplay reference links are research citations only.
+```sh
+python3 tools/unreal/build.py --engine <installed-engine-root>
+```
 
-Unity 6000.3.20f1. Open this directory as a Unity project, or invoke that editor with `-batchmode -nographics -projectPath <this-directory> -executeMethod VeyrBuild.Build -quit`. It creates the native macOS build at `Builds/Veyr.app`. Run its executable `Builds/Veyr.app/Contents/MacOS/Veyr - The Cinder Warden` (quote the path in a shell).
+`tools/unreal/package.py --engine <installed-engine-root>` builds, cooks and audits a local Mac package. The delivery copy comes from the matching fresh stage, with an independently verified signed ZIP and extraction. Build/cook success is separate from runtime acceptance.
 
-For input-driven native validation, append `--replay combat|death|victory|avoidance|legregions|healing --capture-dir <absolute-new-output-directory>`. Choose one mode. Optional `--record-dir <absolute-new-video-directory>` records native backbuffer frames; `python3 tools/encode-recording.py <new-video-directory>` encodes them using ffmpeg. Use absolute, separate output directories to preserve runs: the native application can change its working directory. The executable writes its embedded source manifest beside captures.
+Run a bounded native scenario through the host's shared GPU coordinator:
 
-See [validation](docs/validation.md) for actual results and limits, [combat design](docs/combat-design.md) for targets, and [references](docs/references.md) for the inspected public source footage. Follow the host's shared GPU-slot protocol before launching editors, games or renderers.
+```sh
+python3 tools/unreal/run_native.py --app <verified-app-path> --gpu-slot <shared-slot-wrapper> --mode core
+```
+
+Modes include core, controls, leg0–leg3, avoidance, healing, guard, death and victory. Optional `--video-fps 8` records unchanged native viewport frames. `tools/unreal/encode_video.py <run>/native-video/frames.jsonl` produces silent variable-frame-rate evidence using the observed wall timestamps. Capture and shared workloads affect timing; these recordings are not exclusive rendering benchmarks.
+
+See [Unreal validation](docs/unreal-validation.md), [native results](docs/native-test-results.md), [combat design](docs/combat-design.md) and [gameplay references](docs/references.md).
+
+## Source and asset separation
+
+Project code is MIT. Original procedural arena geometry, stone/fire material graphs and synthesized audio follow [ASSET-LICENSE.md](ASSET-LICENSE.md). Epic Engine Content remains under Epic's terms.
+
+The final knight and dragon originate in Customuse. Their raw and derived assets remain private pending raw redistribution clearance; they are not relicensed by this repository. The owner's local project contains them under `Content/Characters/Customuse`, and the private handoff includes the active authoring assets. Restore those assets before rebuilding the final presentation from a public checkout. Without them, the code deliberately displays a labeled temporary-character fallback.
+
+No models, textures, animation, audio or footage were ripped from the reference games. Public gameplay references informed encounter principles only.
+
+## Preserved Unity history
+
+The earlier Unity prototype and its evidence remain preserved at `checkpoint/unity-native-009`. Unity results and controls in the historical [validation record](docs/validation.md) are not Unreal acceptance. Current implementation and delivery use Unreal.

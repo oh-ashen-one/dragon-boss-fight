@@ -1,9 +1,13 @@
-# Asset provenance
+# Asset provenance and licensing
 
-All currently included procedural geometry, materials, rig and animation authored specifically for this project are dedicated under CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+Project C++, C#, Python and other original source code is separately licensed under MIT; see LICENSE.
 
-This covers the original temporary Veyr and Knight `.blend`/FBX rigs, their authored clips, procedural arena and generated audio, and geometry produced by the project's scripts. They are temporary prototypes, not final Customuse models.
+Original procedural geometry, material graphs, prototype rigs/animations and synthesized audio authored specifically for this project are dedicated under CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/. This includes the original basalt cliff generator and mesh, cathedral layout, original stone/fire shader graphs, procedural audio, and the preserved historical temporary character assets. This dedication does not override the terms of any third-party input.
 
-Unreal prototype code references installed engine basic meshes and materials. Those resources are Epic Engine Content, are not copied into this source repository, and are not covered by this CC0 dedication. Use and distribution remain subject to the applicable Epic license. No Customuse model has been generated or included yet.
+Unreal basic meshes, engine material functions, fonts and other Epic Engine Content remain subject to Epic's applicable license. References to installed engine resources do not relicense them under MIT or CC0.
 
-Code is separately licensed under MIT. No third-party game models, textures, audio or footage are included. Reference links do not grant redistribution rights. Any future generated or external asset must receive an individual provenance and redistribution entry before inclusion in the public repository.
+The final main-character models are Customuse Knight B and Dragon V3-B. The private integration includes provider rig/animation exports plus local coordinate normalization, rigid weapon attachment, cloth correction, anatomical wing/jaw work and authored movement/combat derivatives. These combined character assets retain their applicable provider rights; they are not covered by the project's CC0 dedication. Raw public redistribution has not been cleared. They remain outside public Git, in the owner's local project and private handoff.
+
+Original authoring tools remain available as source. A tool's MIT license does not grant rights to its third-party inputs or automatically relicense generated character derivatives.
+
+No reference-game models, textures, audio, animation or footage are included. Research citations for Kalameet, Sinh and Midir convey no redistribution rights and are not asset sources.

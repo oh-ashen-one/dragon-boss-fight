@@ -12,7 +12,7 @@ Updated 2026-10-18. The owner first approved four P2 mesh attempts, then granted
 | Fourteen knight motion candidates, including directional locomotion | 33 | 462 |
 | **Total observed debit** | | **1,143 credits** |
 
-Every paid operation was started once, with a local record written before submission and its status/result preserved afterward. No failed/unknown paid call was automatically retried. The original ten operations completed: four meshes, two rigs and four motion candidates. Seven additional state candidates were then submitted once each after the integration owner reported the native bind fix: run, roll, jump, guard, heal, stagger and death. All seven additional clips completed and were downloaded. Three additional looped directional candidates—left strafe, right strafe and backpedal—then completed at a live-verified 33 credits each. All twenty paid operations completed. The remaining balance is 1,453 credits. Completion is not artistic or native acceptance.
+Every paid operation was started once, with a local record written before submission and its status/result preserved afterward. No failed/unknown paid call was automatically retried. The original ten operations completed: four meshes, two rigs and four motion candidates. Seven additional state candidates were then submitted once each after the integration owner reported the native bind fix: run, roll, jump, guard, heal, stagger and death. All seven additional clips completed and were downloaded. Three additional looped directional candidates—left strafe, right strafe and backpedal—then completed at a live-verified 33 credits each. All twenty paid operations completed. Account balances remain in the private ledger. Completion is not artistic or native acceptance.
 
 ## Actual mesh outputs
 
@@ -54,3 +54,9 @@ CPU orthographic diagnostics show that the geodesic wing candidates follow both 
 Raw meshes, rigs, clips, signed output links, identifiers and receipts remain in ignored local storage. Output metadata identifies the generator but supplies no embedded raw-redistribution license. Keep code licensing separate from asset rights and resolve applicable plan/provider notices before raw public asset publication.
 
 Next work is verification of the rigid sword in native playback, native review of the experimental dragon wing/jaw correction, review of the additional state candidates, action-window/loop review and actual game QA. The [capability report](customuse-capabilities.md) records verified website capabilities and their limits. Standing credit permission remains valid; no routine re-approval is needed once a credible next operation is ready.
+
+## Native integration update
+
+The raw-export observations above are historical diagnostics. Final active Knight v012 uses normalized coordinates, a rigid sword, corrected cloth, a reviewed carry, frontal authored strikes, grounded Run, directional steps and complete action states. Dragon v006 uses the repaired 51-joint rig, scene-parent normalization and 38 original motion clips. Both are active in the native game. Their CPU and native pose checks are followed by real packaged combat tests; see [native test results](native-test-results.md).
+
+Two generated directional clips were unsuitable: LeftStrafe uses mirrored usable RightStrafe foot trajectories with anatomical IK, and Backpedal uses reversed curated Walk. Originals are preserved. No further paid operation was needed for these corrections or the dragon animation. Total recorded debit remains 1,143 credits. Generated main-character assets remain private; source authoring tools and original procedural environment art are published separately.
