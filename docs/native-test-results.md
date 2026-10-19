@@ -1,3 +1,34 @@
+# Cathedral / boat greatsword pass — 2026-10-19
+
+Final source-and-asset identity: `9b185634d4c3b88084749bc8eb8c079546724eb6a969cf382f390620c81758db`. All 12 final packaged scenarios passed with the same embedded identity. All new presentation assets were present: 11 major cathedral placements, the generated night sky and floor, imported braziers, and the visible v004 boat weapon.
+
+| Scenario | Result | Game seconds |
+| --- | --- | ---: |
+| stance | PASS | 58.26 |
+| core | PASS | 43.65 |
+| controls | PASS | 18.29 |
+| leg0 | PASS | 28.09 |
+| leg1 | PASS | 29.84 |
+| leg2 | PASS | 28.74 |
+| leg3 | PASS | 30.00 |
+| avoidance | PASS | 89.89 |
+| healing | PASS | 23.85 |
+| guard | PASS | 23.42 |
+| death | PASS | 18.24 |
+| victory | PASS | 207.79 |
+
+Packaged victory occurred at 202.145 seconds (3:22), within the 3–5 minute contract; reset resources, movement and attack after restart passed. Physical packaged input verified capture/release/recapture, movement, J/K attacks, E switching both ways, jump, guard, heal, lock-on and restart. The UI API's standalone-modifier limitation leaves physical Shift owner-playtest coverage; native controls and stance cases verify the unchanged roll.
+
+Knight v015 / Dragon v007 remain the original character designs. Sampled native grip/pose reviews found no hard self-clipping or wrist defect. Continuous close-range attack readability remains a polish issue where the large dragon obscures the sword. The final sky v004 meteor was observed at natural 23-second timing in the unchanged opening camera. Environment depth and atmospheric richness still trail the target reference; owner gameplay/visual acceptance is not inferred from tests.
+
+ZIP SHA256: `25bb280fe123d68a8d6a16b9c835b0bd4659b5be2c8f566653c1e6c41acd5747`. Static dependency audit, cooked payload, strict ad-hoc signature, ZIP CRC and exact extracted payload passed. App is locally signed, not notarized. No security/quarantine setting was weakened. Captures retain actual wall timestamps and are silent; capture cadence/shared GPU work is not an exclusive rendering-performance benchmark.
+
+Machine-local receipts: `Local/package-20261019T210433Z/receipt.json`, `Local/final-packaged-suite-sky4.json`, `Evidence/manual-input-9b185634/physical-input.json`. Owner delivery: `outputs/veyr-art-pass` in the continuing projectless chat.
+
+---
+
+## Preserved previous baseline
+
 # Native Unreal acceptance results
 
 ## Final owner handoff — source a450a43b

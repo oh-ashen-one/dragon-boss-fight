@@ -2,7 +2,7 @@
 
 Source preparation only; root invokes run() through native Unreal Python/MCP.
 Never launches an editor or replaces existing assets. Matching owned assets may
-be reused read-only; mismatched/partial assets are preserved; repaired material uses fresh v003.
+be reused read-only; mismatched/partial assets are preserved; repaired material uses fresh v004.
 """
 import datetime
 import hashlib
@@ -13,9 +13,9 @@ import unreal
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'Local/art-pass-20261019/references/moon-disc-v1.png'
 DEST = '/Game/ArtPass/Sky'
-MATERIAL = DEST + '/M_CathedralNight_v003'
+MATERIAL = DEST + '/M_CathedralNight_v004'
 TEXTURE = DEST + '/T_MoonDisc_v001'
-OWNER = 'Veyr.original-cathedral-night.v003'
+OWNER = 'Veyr.original-cathedral-night.v004'
 TEXTURE_OWNER = 'Veyr.original-cathedral-night.v001'
 
 # Pixel shader work is bounded: five cloud-noise octaves, one moon texture
@@ -84,8 +84,8 @@ float cycle=floor(Seconds/max(12.0,MeteorPeriod));
 float phase=frac(Seconds/max(12.0,MeteorPeriod));
 float life=(phase-0.62)/0.022;
 float envelope=smoothstep(0.0,0.12,life)*(1.0-smoothstep(0.72,1.0,life));
-float2 start=float2(frac(0.43+cycle*0.381966),0.14+0.025*sin(cycle*2.4));
-float2 travel=float2(0.058,0.033),head=start+travel*saturate(life);
+float2 start=float2(frac(0.47+cycle*0.381966),0.39+0.012*sin(cycle*2.4));
+float2 travel=float2(0.058,0.018),head=start+travel*saturate(life);
 float2 tail=head-travel*0.26,segment=head-tail;
 float2 delta=uv-tail;delta.x-=round(delta.x);
 float along=saturate(dot(delta,segment)/dot(segment,segment));
@@ -145,7 +145,7 @@ def run():
             if not assets.save_loaded_asset(texture, False):
                 raise RuntimeError('Moon texture save failed')
         material = unreal.AssetToolsHelpers.get_asset_tools().create_asset(
-            'M_CathedralNight_v003', DEST, unreal.Material, unreal.MaterialFactoryNew())
+            'M_CathedralNight_v004', DEST, unreal.Material, unreal.MaterialFactoryNew())
         if not isinstance(material, unreal.Material):
             raise RuntimeError('Native material creation failed')
         material.set_editor_property('blend_mode', unreal.BlendMode.BLEND_OPAQUE)

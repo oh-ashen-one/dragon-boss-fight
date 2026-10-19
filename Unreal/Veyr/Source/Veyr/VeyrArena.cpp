@@ -46,7 +46,7 @@ AVeyrArena::AVeyrArena()
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Facade(TEXT("/Game/ArtPass/Tripo/CathedralFacade_v001/SM_CathedralFacade_v001.SM_CathedralFacade_v001"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Wall(TEXT("/Game/ArtPass/Tripo/CathedralWall_v001/SM_CathedralWall_v001.SM_CathedralWall_v001"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> GothicArch(TEXT("/Game/ArtPass/Tripo/CathedralArch_v001/SM_CathedralArch_v001.SM_CathedralArch_v001"),LOAD_Quiet|LOAD_NoWarn);
-    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Night(TEXT("/Game/ArtPass/Sky/M_CathedralNight_v003.M_CathedralNight_v003"),LOAD_Quiet|LOAD_NoWarn);
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Night(TEXT("/Game/ArtPass/Sky/M_CathedralNight_v004.M_CathedralNight_v004"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Brazier(TEXT("/Game/ArtPass/Tripo/CathedralBrazier_v001/SM_CathedralBrazier_v001.SM_CathedralBrazier_v001"),LOAD_Quiet|LOAD_NoWarn);
     static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> FloorMaterial(TEXT("/Game/ArtPass/Floor/M_CathedralFloor_v001.M_CathedralFloor_v001"),LOAD_Quiet|LOAD_NoWarn);
     CathedralBrazierMesh=Brazier.Get();CathedralFloorParent=FloorMaterial.Get();
@@ -67,7 +67,7 @@ void AVeyrArena::BeginPlay()
     if(!CathedralFacadeMesh)CathedralFacadeMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralFacade_v001/SM_CathedralFacade_v001.SM_CathedralFacade_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralWallMesh)CathedralWallMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralWall_v001/SM_CathedralWall_v001.SM_CathedralWall_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralArchMesh)CathedralArchMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralArch_v001/SM_CathedralArch_v001.SM_CathedralArch_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
-    if(!NightSkyParent)NightSkyParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Sky/M_CathedralNight_v003.M_CathedralNight_v003"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!NightSkyParent)NightSkyParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Sky/M_CathedralNight_v004.M_CathedralNight_v004"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     bUsingAuthoredNightSky=NightSkyParent!=nullptr;
     if(!CathedralBrazierMesh)CathedralBrazierMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralBrazier_v001/SM_CathedralBrazier_v001.SM_CathedralBrazier_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralFloorParent)CathedralFloorParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Floor/M_CathedralFloor_v001.M_CathedralFloor_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
