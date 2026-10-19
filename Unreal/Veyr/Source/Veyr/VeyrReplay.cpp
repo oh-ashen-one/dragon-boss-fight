@@ -237,6 +237,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         Metrics->SetBoolField(TEXT("collisionFixApplied"),Knight->CameraBoom->IsCollisionFixApplied());
         Metrics->SetNumberField(TEXT("hiddenProxyParts"),Knight->CameraHiddenProxyParts);
         Metrics->SetNumberField(TEXT("severelyCompressedSeconds"),Knight->CameraSeverelyCompressedSeconds);
+        Metrics->SetNumberField(TEXT("floorClearanceCm"),Knight->CameraFloorClearance);
+        Metrics->SetNumberField(TEXT("upwardPitchCeilingDegrees"),Knight->CameraPitchCeiling);
         FHitResult Hit;
         FCollisionQueryParams Query(SCENE_QUERY_STAT(VeyrReplayCamera),false,Knight);
         const bool bOccluded=GetWorld()->LineTraceSingleByChannel(Hit,Camera,Knight->GetActorLocation(),ECC_Camera,Query);
@@ -248,6 +250,10 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
             int32 Width=0,Height=0;PC->GetViewportSize(Width,Height);
             const bool bProjected=PC->ProjectWorldLocationToScreen(Knight->GetActorLocation(),Screen);
             Metrics->SetBoolField(TEXT("playerCenterWithinViewport"),bProjected&&Width>0&&Height>0&&Screen.X>=0&&Screen.Y>=0&&Screen.X<Width&&Screen.Y<Height);
+            FVector2D FeetScreen;
+            const bool bFeetProjected=PC->ProjectWorldLocationToScreen(Knight->GetFootLocation(),FeetScreen);
+            Metrics->SetBoolField(TEXT("feetProjected"),bFeetProjected);
+            if(bFeetProjected&&Height>0)Metrics->SetNumberField(TEXT("feetViewportY"),FeetScreen.Y/Height);
         }
         Metrics->SetStringField(TEXT("scope"),TEXT("geometric diagnostics only; visual readability requires rendered review"));
         O->SetObjectField(TEXT("camera"),Metrics);

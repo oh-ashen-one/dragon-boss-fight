@@ -47,6 +47,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraResolvedDistance = 720.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraSeverelyCompressedSeconds = 0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 CameraHiddenProxyParts = 0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraFloorClearance=220.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraPitchCeiling=0.f;
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return Health <= 0.f; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsGrounded() const;
@@ -128,6 +130,7 @@ private:
     float PresentationPreviousActionElapsed=-1.f;
     bool bPresentationTransitionActive=false;
     float CameraDistance = 720.f;
+    float CameraFloorZ = 0.f;
     float LockHeadBlend = 0.f;
     TWeakObjectPtr<APlayerController> OcclusionController;
     TMap<TWeakObjectPtr<UPrimitiveComponent>, float> CameraHiddenParts;

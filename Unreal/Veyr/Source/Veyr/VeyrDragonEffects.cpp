@@ -62,7 +62,7 @@ bool AVeyrDragonEffects::Initialize(AVeyrDragon* InDragon)
     {EffectsDiagnostic=TEXT("Unexpected breath material blend mode; effects disabled");return false;}
     ConfigurePool(Core,CoreMaterial,CoreCount);ConfigurePool(Flame,FlameMaterial,FlameCount);ConfigurePool(Smoke,SmokeMaterial,SmokeCount);
     AddTickPrerequisiteActor(Dragon);
-    bEffectsReady=true;EffectsDiagnostic=TEXT("Original 128-sprite breath presentation; native visual acceptance pending");
+    bEffectsReady=true;EffectsDiagnostic=TEXT("Original 176-sprite continuous cone presentation; native visual acceptance pending");
     return true;
 }
 
@@ -80,6 +80,25 @@ void AVeyrDragonEffects::Sprite(UInstancedStaticMeshComponent* Pool,int32 Index,
     // Engine plane is 100cm square with local +Z normal. World-space instance
     // transforms prevent double application of the effects actor transform.
     Pool->UpdateInstanceTransform(Index,FTransform(Rotation,Position,FVector(Size/100.f,Size/100.f,1.f)),true,false,true);
+    const float CameraFade=FMath::Clamp((static_cast<float>(FVector::Distance(Camera,Position))-70.f)/130.f,0.f,1.f);
+    Pool->SetCustomDataValue(Index,0,FMath::Clamp(Alpha*CameraFade,0.f,1.f),false);
+    Pool->SetCustomDataValue(Index,1,Seed,false);
+}
+
+void AVeyrDragonEffects::Streak(UInstancedStaticMeshComponent* Pool,int32 Index,const FVector& Position,
+    const FVector& Camera,const FVector& Axis,float Along,float Across,float Alpha,float Seed)
+{
+    FVector Facing=(Camera-Position).GetSafeNormal();
+    if(Facing.IsNearlyZero())Facing=FVector::UpVector;
+    const FVector Projected=Axis-Facing*FVector::DotProduct(Axis,Facing);
+    const float Projection=static_cast<float>(Projected.Size());
+    const FQuat Rotation=Projection>.001f?FRotationMatrix::MakeFromXZ(Projected/Projection,Facing).ToQuat():
+        FRotationMatrix::MakeFromZ(Facing).ToQuat();
+    // Axial ellipses overlap along the projected beam. End-on views retain
+    // a round cross-section instead of a long camera-facing ribbon.
+    const float ScreenAlong=FMath::Min(FMath::Lerp(Across,Along,FMath::Clamp(Projection,0.f,1.f)),
+        Along/FMath::Max(.001f,Projection));
+    Pool->UpdateInstanceTransform(Index,FTransform(Rotation,Position,FVector(ScreenAlong/100.f,Across/100.f,1.f)),true,false,true);
     const float CameraFade=FMath::Clamp((static_cast<float>(FVector::Distance(Camera,Position))-70.f)/130.f,0.f,1.f);
     Pool->SetCustomDataValue(Index,0,FMath::Clamp(Alpha*CameraFade,0.f,1.f),false);
     Pool->SetCustomDataValue(Index,1,Seed,false);
@@ -132,24 +151,64 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
             const float Distance=Beam.Length*U,Radius=Distance*Spread;
             return Beam.Origin+Axis*Distance+Side*(SideAmount*Radius)+Up*(UpAmount*Radius);
         };
+        const float CoreStep=Beam.Length/CoreCount,BodyStep=Beam.Length/FlameBodyCount;
+        auto BoundedLength=[&](float U,float Desired)
+        {
+            // The finite cone is never connected backward to a proxy origin,
+            // and even elongated cards end at the muzzle/beam endpoint.
+            return FMath::Max(1.f,FMath::Min(Desired,2.f*Beam.Length*FMath::Min(U,1.f-U)));
+        };
         for(int32 I=0;I<CoreCount;++I)
         {
-            const float U=I/static_cast<float>(CoreCount-1),Seed=FMath::Frac(I*.618034f);
-            Sprite(Core,I,Point(U,.04f*FMath::Sin(Clock*14+I),0),Camera,24.f+U*45.f,.24f,Seed);
+            const float U=(I+.5f)/CoreCount,Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
+            const float Across=24.f+Radius*.62f;
+            const float Along=BoundedLength(U,FMath::Max(CoreStep*4.5f,Across*1.5f));
+            const float Density=FMath::Clamp(CoreStep*2.2f/FMath::Max(CoreStep,Along),.16f,.54f);
+            Streak(Core,I,Point(U,.025f*FMath::Sin(Clock*17.f-U*22.f),.02f*FMath::Cos(Clock*13.f-U*19.f)),
+                Camera,Axis,Along,Across,Density*(.90f+.10f*FMath::Sin(Clock*21.f-U*31.f)),Seed);
         }
-        for(int32 I=0;I<FlameCount;++I)
+        // Broad, overlapping orange ellipses provide the actual flame body.
+        // FXv2's radial power has a soft edge:2.8*radius card width puts the
+        // damaging cone rim inside that visible feather rather than outside
+        // a tiny155cm puff (the far cone is roughly744cm in diameter).
+        for(int32 I=0;I<FlameBodyCount;++I)
         {
-            const float U=(I+.5f)/FlameCount,Seed=FMath::Frac(I*.618034f);
-            const float Angle=Clock*4+I*2.399963f,Radial=.75f*FMath::Sqrt(Seed);
-            Sprite(Flame,I,Point(U,FMath::Cos(Angle)*Radial,FMath::Sin(Angle)*Radial),Camera,
-                55.f+100.f*U,.12f+.08f*FMath::Square(FMath::Sin(Clock*15+I)),Seed);
+            const float U=(I+.5f)/FlameBodyCount,Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
+            const float Across=FMath::Max(40.f,Radius*2.8f);
+            const float Along=BoundedLength(U,FMath::Max(BodyStep*5.f,Across*.75f));
+            const float Density=FMath::Clamp(BodyStep*1.8f/FMath::Max(BodyStep,Along),.075f,.42f);
+            Streak(Flame,I,Point(U,.035f*FMath::Sin(Clock*11.f-U*27.f),.035f*FMath::Cos(Clock*9.f-U*25.f)),
+                Camera,Axis,Along,Across,Density,Seed);
+        }
+        // A separate downstream-moving layer breaks up the body silhouette;
+        // it is not responsible for continuity and cannot leave gaps in it.
+        for(int32 I=0;I<FlameTurbulenceCount;++I)
+        {
+            const int32 Index=FlameBodyCount+I;
+            const float U=FMath::Frac((I+.5f)/FlameTurbulenceCount+Clock*.65f);
+            const float Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
+            const float Angle=I*2.399963f-Clock*7.f+U*9.f,Radial=.40f+.20f*Seed;
+            const float Across=45.f+Radius*.85f,Along=BoundedLength(U,FMath::Max(100.f,Across*1.6f));
+            const float Fade=FMath::Clamp(U/.06f,0.f,1.f)*FMath::Clamp((1.f-U)/.15f,0.f,1.f);
+            Streak(Flame,Index,Point(U,FMath::Cos(Angle)*Radial,FMath::Sin(Angle)*Radial),
+                Camera,Axis,Along,Across,.15f*Fade,Seed);
+        }
+        const int32 EmberCount=FlameCount-FlameBodyCount-FlameTurbulenceCount;
+        for(int32 I=0;I<EmberCount;++I)
+        {
+            const float U=FMath::Frac((I+.5f)/EmberCount+Clock*.9f),Seed=FMath::Frac(I*.618034f);
+            const float Angle=I*2.399963f+Clock*2.f;
+            Streak(Flame,FlameBodyCount+FlameTurbulenceCount+I,
+                Point(U,FMath::Cos(Angle)*.82f,FMath::Sin(Angle)*.82f),Camera,Axis,
+                BoundedLength(U,40.f+35.f*Seed),7.f+5.f*Seed,.55f*FMath::Sin(U*PI),Seed);
         }
         for(int32 I=0;I<SmokeCount;++I)
         {
-            const float U=.3f+.7f*(I+.5f)/SmokeCount,Seed=FMath::Frac(I*.618034f);
-            const float Drift=FMath::Frac(Clock*.8f+Seed);
-            Sprite(Smoke,I,Point(U,(Seed-.5f)*1.1f,.25f)+FVector::UpVector*(70+Drift*130),Camera,
-                95.f+95.f*Drift,.035f*(1-Drift),Seed);
+            const float U=.25f+.75f*(I+.5f)/SmokeCount,Seed=FMath::Frac(I*.618034f);
+            const float Drift=FMath::Frac(Clock*.8f+Seed),Radius=Beam.Length*U*Spread;
+            const FVector Position=Point(U,(Seed-.5f)*.9f,.25f)+FVector::UpVector*(60.f+Drift*140.f);
+            Streak(Smoke,I,Position,Camera,Axis,220.f+Radius*1.2f,130.f+Radius*1.1f,
+                .025f*(1.f-Drift),Seed);
         }
         Core->MarkRenderStateDirty();Flame->MarkRenderStateDirty();Smoke->MarkRenderStateDirty();
         VisibleSpriteCount=CoreCount+FlameCount+SmokeCount;return;
@@ -169,7 +228,7 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
     for(int32 I=0;I<CoreCount;++I)
     {
         const float Seed=FMath::Frac(I*.618034f);
-        const float U=I<8?I/7.f:(I-8+.5f)/24.f;
+        const float U=I<8?I/7.f:(I-8+.5f)/(CoreCount-8.f);
         const FVector Position=I<8?FMath::Lerp(Mouth,ConnectorEnd,U):BeamPoint(U,.10f*FMath::Sin(Clock*14.f+I),0.f);
         Sprite(Core,I,Position,Camera,I<8?32.f:42.f+U*23.f,.20f+.10f*FMath::Sin(Clock*18.f+I),Seed);
     }

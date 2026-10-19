@@ -136,3 +136,11 @@ Both latest editor sessions ended normally with exit 0; the temporary background
 Game source `e54eef347c7382b8e4b0a4a64248c0d00e84cbcd1015d23f4c026f3dbd261412` compiled and cooked successfully. Pre-staging signing now handles the verified Documents FileProvider metadata race by sealing an exact private copy, checking signature-only file changes and copying those signed bytes back with exact payload parity. Final delivery still has its own independent strict signature/dependency/ZIP audit. No quarantine or system security settings changed.
 
 UAT's archive retained stale cooked containers from the generated build app. The audit rejected that conflict. The corrected copy-only repair uses the exact freshly staged app after matching its executable code identity and required map manifest to the archive. Original rejected archive and partial repair remain preserved. Fresh-stage repair passes static dependency, embedded source, ZIP manifest/CRC and extracted strict-signature checks. The verified extracted app is now entering core gameplay validation; packaging success is not gameplay acceptance.
+
+## Packaged mechanics and presentation follow-up
+
+Packaged e54eef34 core passed in 44.906 seconds. Full victory occurred at 254.986 seconds (4:15), followed by verified fresh resources, movement and attack after restart; total 260.623 seconds. All four independent leg tests passed (27.705, 28.308, 41.091, 34.507 seconds), each leaving the other three legs unchanged. Both Customuse characters remained active; no warning-containment failures were observed.
+
+Rendered review found a close/collapse camera floor-clearance problem and overly sparse fire. New editor source `f4621490f998e062384ffca1075fa897d067654e0408eac1aecb6152dee6f7b6` compiles with a floor/boot framing constraint, near/far lock framing, non-overlapping head guidance, and continuous cone-aligned flame cards. These visual corrections are entering native review; the earlier mechanical passes do not establish their final acceptance.
+
+The small red detail under the dragon cheek was traced to unchanged original throat triangles, with no jaw-mask or tongue influence and bounded local deformation. It is not the previous jaw-seam failure; assets remain unchanged.

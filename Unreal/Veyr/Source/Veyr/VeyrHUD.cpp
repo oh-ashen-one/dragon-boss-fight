@@ -52,6 +52,62 @@ void AVeyrHUD::DrawExposedHeadMarker(const AVeyrDragon* Dragon)
         DrawLine(A.X,A.Y,B.X,B.Y,FLinearColor(0,0,0,.95f),5.f*Unit);
         DrawLine(A.X,A.Y,B.X,B.Y,Gold,2.f*Unit);
     };
+    const FVector2D HeadAnchor=Point;
+    if(bOnscreen)
+    {
+        if(const AVeyrKnight* Knight=Cast<AVeyrKnight>(PlayerOwner->GetPawn()))
+        {
+            FVector2D Minimum(TNumericLimits<double>::Max(),TNumericLimits<double>::Max());
+            FVector2D Maximum(-TNumericLimits<double>::Max(),-TNumericLimits<double>::Max());
+            int32 ProjectedCorners=0;
+            // A body/arm envelope in view space, not a fixed central-screen box.
+            // Include the helmet and boots; do not attach text to either one.
+            const FVector Side=ViewAxes.GetUnitAxis(EAxis::Y)*95.f;
+            for(float Height:{0.f,255.f})for(float Sign:{-1.f,1.f})
+            {
+                FVector2D Corner;
+                if(PlayerOwner->ProjectWorldLocationToScreen(Knight->GetFootLocation()+FVector(0,0,Height)+Side*Sign,Corner))
+                {
+                    Minimum.X=FMath::Min(Minimum.X,Corner.X);Minimum.Y=FMath::Min(Minimum.Y,Corner.Y);
+                    Maximum.X=FMath::Max(Maximum.X,Corner.X);Maximum.Y=FMath::Max(Maximum.Y,Corner.Y);
+                    ++ProjectedCorners;
+                }
+            }
+            if(ProjectedCorners==4)
+            {
+                Minimum-=FVector2D(18.f*ScaleX,18.f*ScaleY);Maximum+=FVector2D(18.f*ScaleX,18.f*ScaleY);
+                auto OverlapsKnight=[&](const FVector2D& Candidate)
+                {
+                    const double LabelLeft=FMath::Clamp(Candidate.X/ScaleX-65.,12.,1090.)*ScaleX-5.f*ScaleX;
+                    const double Left=FMath::Min(Candidate.X-12.f*Unit,LabelLeft);
+                    const double Right=FMath::Max(Candidate.X+12.f*Unit,LabelLeft+180.f*ScaleX);
+                    return Right>Minimum.X&&Left<Maximum.X&&Candidate.Y+38.f*ScaleY>Minimum.Y&&Candidate.Y-12.f*Unit<Maximum.Y;
+                };
+                if(OverlapsKnight(Point))
+                {
+                    const FVector2D Candidates[]={
+                        FVector2D(Point.X,Minimum.Y-48.f*ScaleY),
+                        FVector2D(Maximum.X+85.f*ScaleX,Point.Y-25.f*ScaleY),
+                        FVector2D(Minimum.X-130.f*ScaleX,Point.Y-25.f*ScaleY)};
+                    for(FVector2D Candidate:Candidates)
+                    {
+                        Candidate.X=FMath::Clamp(Candidate.X,Center.X-SafeExtent.X,Center.X+SafeExtent.X);
+                        Candidate.Y=FMath::Clamp(Candidate.Y,Center.Y-SafeExtent.Y,Center.Y+SafeExtent.Y);
+                        if(!OverlapsKnight(Candidate)) { Point=Candidate;break; }
+                    }
+                }
+            }
+        }
+        if(!Point.Equals(HeadAnchor,.5f))
+        {
+            // Keep the target position truthful while moving the bulky marker
+            // and label off the player's silhouette. The leader is intentionally thin.
+            const FVector2D LeaderDirection=(Point-HeadAnchor).GetSafeNormal();
+            const FVector2D End=Point-LeaderDirection*14.f*Unit;
+            DrawLine(HeadAnchor.X,HeadAnchor.Y,End.X,End.Y,FLinearColor(0,0,0,.9f),3.f*Unit);
+            DrawLine(HeadAnchor.X,HeadAnchor.Y,End.X,End.Y,Gold,1.f*Unit);
+        }
+    }
     if(bOnscreen)
     {
         const FVector2D Top=Point+FVector2D(0,-12)*Unit,Right=Point+FVector2D(12,0)*Unit;

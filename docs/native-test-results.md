@@ -46,3 +46,19 @@ Editor-game source `b6cb077f370a3398e6c22b3cacd3276ca7d35ca4f6d3bc01fd3574dea25e
 
 
 The same source passed the guard boundary scenario in 21.389 game seconds. A front Fire contact reduced health by 4.5 and consumed guard stamina. A rear Bite with 42.81 stamina dealt the full 34 damage, with no block or guard break. Later, a front Bite against 1.06 stamina dealt full damage, depleted stamina to zero, incremented guard-break count and entered Stagger. All cases used preceding-frame guard/facing/grounded evidence and actual contact counters; process exit was 0.
+
+## Customuse packaged candidate e54eef34
+
+The signed, freshly extracted standalone app uses source `e54eef347c7382b8e4b0a4a64248c0d00e84cbcd1015d23f4c026f3dbd261412`, Knight v012 and Dragon v006. Both Customuse characters remained active.
+
+| Scenario | Result | Game time | Scope |
+| --- | --- | ---: | --- |
+| Core | Pass | 44.906 s | Jump, light/heavy leg contacts, collapse, three head bonus hits, completed rise, invulnerable dodge contact |
+| Victory/restart | Pass | 260.623 s total | Boss defeat at 254.986 s (4:15), terminal pose, fresh resources, movement and attack after restart |
+| Leg 0 | Pass | 27.705 s | Selected leg staggered and buckled; other three unchanged |
+| Leg 1 | Pass | 28.308 s | Selected leg staggered and buckled; other three unchanged |
+| Leg 2 | Pass | 41.091 s | Selected leg staggered and buckled; other three unchanged |
+
+No warning-containment failure was recorded in these runs. Core video requested 10 FPS: 330 frames saved, zero failed writes and 67 skipped capture slots; worker PNG work totalled 29.826 seconds and pixel copying 0.077 seconds. Victory video requested 8 FPS: 1,645 frames saved, zero failed writes and 82 skipped slots; worker PNG work totalled 149.257 seconds and pixel copying 0.388 seconds. These silent recordings preserve actual wall-clock frame timestamps; capture and shared workloads affect performance.
+
+Rendered review found close/collapse camera floor clearance and sparse fire continuity still needed correction. The mechanical passes are not final visual acceptance. A later camera/marker and fire presentation revision is compiled but not yet accepted in native rendering.

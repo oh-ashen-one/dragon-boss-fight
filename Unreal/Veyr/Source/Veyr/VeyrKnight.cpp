@@ -466,39 +466,86 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
 
 void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 {
-    CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, CameraDistance, DeltaSeconds, 12.f);
+    const FVector Feet=GetFootLocation();
+    const bool bHasBoss=IsValid(Boss)&&!Boss->IsDead();
+    const float BossRange=bHasBoss?FVector::Dist2D(GetActorLocation(),Boss->GetActorLocation()):1600.f;
+    const float FarBlend=FMath::Clamp((BossRange-1000.f)/600.f,0.f,1.f);
+    // A small distance allowance at range permits a level view of the entire
+    // giant while retaining floor clearance and space above the boss HUD.
+    const float DesiredArm=FMath::Clamp(CameraDistance,500.f,1100.f)+80.f*FarBlend;
+    if(VisualClock<=DeltaSeconds*1.5f)CameraBoom->TargetArmLength=DesiredArm;
+    else CameraBoom->TargetArmLength=FMath::FInterpTo(CameraBoom->TargetArmLength,DesiredArm,DeltaSeconds,12.f);
+    const float Arm=FMath::Max(1.f,CameraBoom->TargetArmLength);
+    const float PivotAboveFeet=FMath::Min(187.f,Arm*.27f);
+    CameraBoom->SetRelativeLocation(FVector(0,0,PivotAboveFeet-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
     if (!Controller) { RestoreCameraOcclusion(); return; }
-    if (bLockedOn && IsValid(Boss) && !Boss->IsDead())
+
+    // Read the actual static play surface, excluding both combatants. This is
+    // a view constraint only: never move the pawn or bypass spring-arm collision.
+    FHitResult FloorHit;
+    FCollisionQueryParams FloorQuery(SCENE_QUERY_STAT(VeyrCameraFloor),false,this);
+    if(IsValid(Boss))FloorQuery.AddIgnoredActor(Boss);
+    if(GetWorld()->LineTraceSingleByChannel(FloorHit,Feet+FVector(0,0,60),Feet-FVector(0,0,5000),ECC_Visibility,FloorQuery))
+        CameraFloorZ=FloorHit.ImpactPoint.Z;
+    else if(IsGrounded())CameraFloorZ=Feet.Z;
+    const float PivotZ=CameraBoom->GetComponentLocation().Z;
+    int32 ViewWidth=0,ViewHeight=0;
+    if(APlayerController* Player=Cast<APlayerController>(Controller))Player->GetViewportSize(ViewWidth,ViewHeight);
+    const float Aspect=ViewHeight>0?float(ViewWidth)/ViewHeight:FMath::Max(.1f,CombatCamera->AspectRatio);
+    const float VerticalTangent=FMath::Tan(FMath::DegreesToRadians(CombatCamera->FieldOfView*.5f))/Aspect;
+    const float BootRatio=(615.f/720.f*2.f-1.f)*VerticalTangent;
+    const float SocketZ=CameraBoom->SocketOffset.Z;
+    auto SafePitch=[&](float Pitch)
     {
-        // The standing head is far above a player fighting the legs. Frame the
-        // grounded combat region nearby, blend toward the head at range and on
-        // collapse, and solve from the pivot rather than the lagged camera.
-        const float BossRange = FVector::Dist2D(GetActorLocation(), Boss->GetActorLocation());
-        const bool bHeadApproach = Boss->State == EVeyrDragonState::Buckle || Boss->State == EVeyrDragonState::Collapse || Boss->IsHeadExposed();
-        const float HeadWeight = bHeadApproach ? 1.f : FMath::Clamp((BossRange - 700.f) / 700.f, 0.f, 1.f);
-        LockHeadBlend = FMath::FInterpTo(LockHeadBlend, HeadWeight, DeltaSeconds, 4.f);
-        const FVector GroundFocus(Boss->GetActorLocation().X, Boss->GetActorLocation().Y, GetFootLocation().Z + 230.f);
-        const FVector Focus = FMath::Lerp(GroundFocus, Boss->GetHeadLocation(), LockHeadBlend);
-        const FVector ToFocus = Focus - CameraBoom->GetComponentLocation();
-        FRotator Current = Controller->GetControlRotation().GetNormalized();
-        FRotator Desired = Current;
-        // Retain azimuth when walking directly beneath the target. Otherwise a
-        // few centimetres crossing its axis can request a sudden 180-degree turn.
-        // Head punish range is about 205cm: the body dead zone must not freeze
-        // the view while the player walks beside the exposed crown.
-        if (ToFocus.Size2D() > (bHeadApproach ? 60.f : 240.f)) Desired.Yaw = ToFocus.Rotation().Yaw;
-        Desired.Pitch = FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(ToFocus.Z,
-            FMath::Max(300.f, static_cast<float>(ToFocus.Size2D()))))) - 8.f, -28.f, 18.f);
-        Desired.Roll = 0.f;
-        const FRotator Smoothed = FMath::RInterpTo(Current, Desired, DeltaSeconds, 5.f);
-        Controller->SetControlRotation(FMath::RInterpConstantTo(Current, Smoothed, DeltaSeconds, 100.f));
+        const float Radians=FMath::DegreesToRadians(Pitch),S=FMath::Sin(Radians),C=FMath::Cos(Radians);
+        const float CameraZ=PivotZ-Arm*S+SocketZ*C;
+        const float FootDepth=Arm-PivotAboveFeet*S;
+        const float FootBelowView=PivotAboveFeet*C+SocketZ;
+        return CameraZ>=CameraFloorZ+220.f&&FootDepth>1.f&&FootBelowView/FootDepth<=BootRatio;
+    };
+    float Low=-55.f,High=45.f;
+    for(int32 I=0;I<16;++I)
+    {
+        const float Middle=(Low+High)*.5f;
+        if(SafePitch(Middle))Low=Middle;else High=Middle;
+    }
+    CameraPitchCeiling=Low;
+    const bool bLock=bLockedOn&&bHasBoss;
+    // Controller rotation already has an explicit bounded smoothing path.
+    // A second rotational lag can retain an unsafe upward view during collapse.
+    CameraBoom->bEnableCameraRotationLag=false;
+    if (bLock)
+    {
+        const bool bHeadApproach=Boss->State==EVeyrDragonState::Buckle||Boss->State==EVeyrDragonState::Collapse||Boss->IsHeadExposed();
+        const float HeadWeight=bHeadApproach?1.f:FarBlend;
+        LockHeadBlend=FMath::FInterpTo(LockHeadBlend,HeadWeight,DeltaSeconds,4.f);
+        const FVector GroundFocus(Boss->GetActorLocation().X,Boss->GetActorLocation().Y,CameraFloorZ+150.f);
+        FVector HeadRoute=Boss->GetHeadLocation();
+        // Follow the route toward the crown in XY, but never chase the standing
+        // skull's height while the buckle/collapse is only beginning.
+        HeadRoute.Z=FMath::Min(HeadRoute.Z,CameraFloorZ+(bHeadApproach?190.f:400.f));
+        const FVector Focus=FMath::Lerp(GroundFocus,HeadRoute,LockHeadBlend);
+        const FVector ToFocus=Focus-CameraBoom->GetComponentLocation();
+        FRotator Current=Controller->GetControlRotation().GetNormalized(),Desired=Current;
+        if(ToFocus.Size2D()>(bHeadApproach?60.f:240.f))Desired.Yaw=ToFocus.Rotation().Yaw;
+        const float NearBlend=bHeadApproach?1.f:1.f-FarBlend;
+        const float LockCeiling=FMath::Min(CameraPitchCeiling,FMath::Lerp(0.f,-16.f,NearBlend));
+        Desired.Pitch=FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(ToFocus.Z,
+            FMath::Max(300.f,static_cast<float>(ToFocus.Size2D())))))-4.f,-55.f,LockCeiling);
+        Desired.Roll=0.f;
+        FRotator Smoothed=FMath::RInterpConstantTo(Current,FMath::RInterpTo(Current,Desired,DeltaSeconds,5.f),DeltaSeconds,100.f);
+        Smoothed.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Smoothed.Pitch),-55.f,CameraPitchCeiling);
+        Controller->SetControlRotation(Smoothed);
     }
     else
     {
-        FRotator Look = Controller->GetControlRotation();
-        Look.Pitch = FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch), -55.f, 45.f); Look.Roll = 0.f;
+        FRotator Look=Controller->GetControlRotation();
+        Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,CameraPitchCeiling);Look.Roll=0.f;
         Controller->SetControlRotation(Look);
     }
+    // Resolved previous-frame evidence includes genuine wall compression; the
+    // analytical minimum applies to the unobstructed boom, not through walls.
+    CameraFloorClearance=CombatCamera->GetComponentLocation().Z-CameraFloorZ;
     UpdateCameraOcclusion(DeltaSeconds);
 }
 
@@ -984,8 +1031,8 @@ void AVeyrKnight::JumpPressed() { if (HumanInputEnabled()) TryGroundedJump(); }
 void AVeyrKnight::LockPressed() { if (HumanInputEnabled()) ToggleLockOn(); }
 void AVeyrKnight::LookYaw(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerYawInput(Value * .7f); }
 void AVeyrKnight::LookPitch(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerPitchInput(-Value * .6f); }
-void AVeyrKnight::ZoomIn() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance - 65.f, 300.f, 1100.f); }
-void AVeyrKnight::ZoomOut() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance + 65.f, 300.f, 1100.f); }
+void AVeyrKnight::ZoomIn() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance - 65.f, 500.f, 1100.f); }
+void AVeyrKnight::ZoomOut() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance + 65.f, 500.f, 1100.f); }
 void AVeyrKnight::GuardPressed() { if (HumanInputEnabled()) SetGuard(true); }
 void AVeyrKnight::GuardReleased() { if (!bReplayControlled) SetGuard(false); }
 void AVeyrKnight::JumpReleased() { if (!bReplayControlled) StopJumping(); }
