@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Veyr — asset review</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {"imports": {
+      "three": "/node_modules/three/build/three.module.js",
+      "three/webgpu": "/node_modules/three/build/three.webgpu.js",
+      "three/tsl": "/node_modules/three/build/three.tsl.js",
+      "three/addons/": "/node_modules/three/examples/jsm/"
+    }}
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="masthead">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✣</span><div><strong>Veyr</strong><span>Asset review</span></div></div>
+      <p>Cathedral pass <span id="build-id">9b185634</span></p>
+    </header>
+
+    <main class="workbench">
+      <aside class="library" aria-label="Asset library">
+        <div class="library-heading"><h1>Models &amp; motion</h1><span id="asset-count">Loading…</span></div>
+        <nav class="group-tabs" aria-label="Asset group">
+          <button class="group-tab active" data-group="knight" type="button">Knight</button>
+          <button class="group-tab" data-group="dragon" type="button">Dragon</button>
+          <button class="group-tab" data-group="objects" type="button">Objects</button>
+        </nav>
+        <label class="search-label" for="asset-search">Find a model or move</label>
+        <input id="asset-search" type="search" placeholder="Search this set" autocomplete="off">
+        <div id="asset-list" class="asset-list" role="listbox" aria-label="Available models and animations"></div>
+        <p class="library-footnote">Source GLBs from the active authoring sets. This browser preview shows geometry and clips; the packaged Unreal game can render them differently.</p>
+      </aside>
+
+      <section class="stage-column" aria-label="3D review stage">
+        <div class="stage-toolbar">
+          <div><span class="stage-kicker" id="stage-group">Knight v015</span><h2 id="stage-title">Opening model…</h2></div>
+          <div class="stage-actions">
+            <button id="frame-button" type="button" title="Fit model in view">Frame model</button>
+            <button id="wire-button" type="button" aria-pressed="false">Wireframe</button>
+            <button id="bones-button" type="button" aria-pressed="false">Bones</button>
+          </div>
+        </div>
+        <div class="viewport" id="viewport">
+          <canvas id="stage" aria-label="Interactive 3D model viewer"></canvas>
+          <div class="viewport-guidance">Drag to orbit · Scroll to zoom · Right drag to pan</div>
+          <div class="loading" id="loading" role="status" aria-live="polite"><span class="loading-line"></span><span id="loading-text">Connecting to Studio…</span></div>
+        </div>
+        <div class="playback">
+          <button id="play-button" class="play-button" type="button" aria-label="Pause animation">Ⅱ</button>
+          <div class="timeline-wrap">
+            <div class="timeline-labels"><span id="clip-name">Animation</span><span id="time-label">0:00 / 0:00</span></div>
+            <input id="timeline" type="range" min="0" max="1000" value="0" aria-label="Animation timeline">
+          </div>
+          <label class="speed-label" for="speed">Speed</label>
+          <select id="speed" aria-label="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+          <button id="loop-button" type="button" aria-pressed="true">Loop on</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="./viewer.js"></script>
+</body>
+</html>

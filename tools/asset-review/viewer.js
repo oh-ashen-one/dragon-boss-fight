@@ -1,0 +1,310 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = (id) => document.getElementById(id);
+const viewport = $('viewport');
+const canvas = $('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 10000);
+camera.position.set(4, 3, 6);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.screenSpacePanning = true;
+controls.target.set(0, 1, 0);
+controls.update();
+
+scene.add(new THREE.HemisphereLight(0xd6e4e9, 0x40372f, 2.5));
+const key = new THREE.DirectionalLight(0xffe2c4, 3.2);
+key.position.set(4, 8, 6);
+scene.add(key);
+const rim = new THREE.DirectionalLight(0x9bbccc, 2.2);
+rim.position.set(-6, 4, -5);
+scene.add(rim);
+
+const loader = new GLTFLoader();
+const clock = new THREE.Clock();
+const groupNames = { knight: 'Knight v015', dragon: 'Dragon v007', objects: 'Cathedral objects' };
+const ordered = {
+  knight: ['KnightRig', 'Idle', 'IdleTwoHand', 'Walk', 'Run', 'StrafeLeft', 'StrafeRight', 'Backpedal', 'LightAttack', 'LightAttackTwoHand', 'HeavyAttack', 'HeavyAttackTwoHand', 'Guard', 'GuardTwoHand', 'Roll', 'Jump', 'Heal', 'Stagger', 'Death'],
+  dragon: ['DragonRig', 'Idle', 'Walk', 'TurnLeft', 'TurnRight', 'BiteWindup', 'BiteActive', 'BiteRecovery', 'ClawWindup', 'ClawActive', 'ClawRecovery', 'FireWindup', 'FireActive', 'FireRecovery', 'TailWindup', 'TailActive', 'TailRecovery', 'FlightWindup', 'FlightActive', 'FlightRecovery', 'Exposed', 'Rise', 'Collapse', 'Death', 'DeathDown'],
+  objects: ['BoatGreatsword_v4', 'CathedralFacade_v1', 'CathedralWall_v1', 'CathedralArch_v1', 'CathedralBrazier_v1'],
+};
+
+let catalog = [];
+let activeGroup = 'knight';
+let activeItem = null;
+let model = null;
+let grid = null;
+let bones = null;
+let mixer = null;
+let action = null;
+let duration = 0;
+let playing = true;
+let looping = true;
+let wireframe = false;
+let showBones = false;
+let loadSerial = 0;
+
+function humanName(item) {
+  const names = {
+    KnightRig: 'Knight body', DragonRig: 'Dragon body',
+    BoatGreatsword_v4: 'Boat greatsword', CathedralFacade_v1: 'Cathedral facade',
+    CathedralWall_v1: 'Cathedral wall', CathedralArch_v1: 'Cathedral arch',
+    CathedralBrazier_v1: 'Cathedral brazier',
+    Idle: 'Idle · one hand', IdleTwoHand: 'Idle · two hands',
+    LightAttack: 'Light attack · one hand', LightAttackTwoHand: 'Light attack · two hands',
+    HeavyAttack: 'Heavy attack · one hand', HeavyAttackTwoHand: 'Heavy attack · two hands',
+    Guard: 'Guard · one hand', GuardTwoHand: 'Guard · two hands',
+  };
+  if (item.group === 'dragon' && item.name === 'Idle') return 'Idle';
+  return names[item.name] || item.name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/(\d)([A-Z])/g, '$1 $2');
+}
+
+function sortItems(a, b) {
+  const order = ordered[activeGroup] || [];
+  const ia = order.indexOf(a.name), ib = order.indexOf(b.name);
+  if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  return a.name.localeCompare(b.name);
+}
+
+function renderList() {
+  const query = $('asset-search').value.trim().toLowerCase();
+  const items = catalog.filter(item => item.group === activeGroup && humanName(item).toLowerCase().includes(query)).sort(sortItems);
+  const list = $('asset-list');
+  list.replaceChildren();
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.className = 'asset-empty';
+    empty.textContent = 'No model or move matches this search.';
+    list.append(empty);
+  }
+  for (const item of items) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'asset-item' + (activeItem?.id === item.id ? ' active' : '');
+    button.setAttribute('role', 'option');
+    button.setAttribute('aria-selected', activeItem?.id === item.id ? 'true' : 'false');
+    const name = document.createElement('span');
+    name.className = 'name'; name.textContent = humanName(item);
+    const kind = document.createElement('span');
+    kind.className = 'kind'; kind.textContent = item.animationNames.length ? 'motion' : 'model';
+    button.append(name, kind);
+    button.addEventListener('click', () => selectItem(item));
+    list.append(button);
+  }
+  $('asset-count').textContent = `${catalog.filter(x => x.group === activeGroup).length} files`;
+}
+
+function setGroup(group) {
+  activeGroup = group;
+  for (const tab of document.querySelectorAll('.group-tab')) tab.classList.toggle('active', tab.dataset.group === group);
+  $('asset-search').value = '';
+  renderList();
+}
+
+function loading(message, visible = true) {
+  $('loading').classList.toggle('hidden', !visible);
+  $('loading-text').textContent = message;
+}
+
+function disposeModel() {
+  if (mixer) mixer.stopAllAction();
+  if (bones) { scene.remove(bones); bones.geometry.dispose(); bones.material.dispose(); bones = null; }
+  if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); grid = null; }
+  if (model) {
+    scene.remove(model);
+    const geometries = new Set(), materials = new Set(), textures = new Set();
+    model.traverse(node => {
+      if (node.geometry) geometries.add(node.geometry);
+      const mats = node.material ? (Array.isArray(node.material) ? node.material : [node.material]) : [];
+      for (const mat of mats) materials.add(mat);
+    });
+    for (const material of materials) {
+      for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
+      material.dispose();
+    }
+    for (const texture of textures) texture.dispose();
+    for (const geometry of geometries) geometry.dispose();
+  }
+  model = null; mixer = null; action = null; duration = 0;
+}
+
+function frameModel() {
+  if (!model) return;
+  const box = new THREE.Box3().setFromObject(model);
+  if (box.isEmpty()) return;
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const radius = Math.max(size.length() * 0.5, 0.25);
+  const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 1.2;
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(distance * 0.65, distance * 0.43, distance));
+  camera.near = Math.max(0.001, distance / 1000);
+  camera.far = Math.max(1000, distance * 30);
+  camera.updateProjectionMatrix();
+  controls.minDistance = radius * 0.1;
+  controls.maxDistance = radius * 25;
+  controls.update();
+
+  if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
+  const gridSize = Math.max(2, Math.ceil(Math.max(size.x, size.z, size.y) * 2));
+  grid = new THREE.GridHelper(gridSize, 16, 0x627277, 0x3e5157);
+  grid.position.y = box.min.y - Math.max(0.005, size.y * 0.003);
+  grid.material.transparent = true;
+  grid.material.opacity = 0.4;
+  scene.add(grid);
+}
+
+function updatePlaybackControls() {
+  const hasClip = !!action;
+  $('play-button').disabled = !hasClip;
+  $('timeline').disabled = !hasClip;
+  $('speed').disabled = !hasClip;
+  $('loop-button').disabled = !hasClip;
+  $('play-button').textContent = hasClip && playing ? 'Ⅱ' : '▶';
+  $('play-button').setAttribute('aria-label', hasClip && playing ? 'Pause animation' : 'Play animation');
+  $('loop-button').textContent = looping ? 'Loop on' : 'Loop off';
+  $('loop-button').setAttribute('aria-pressed', looping ? 'true' : 'false');
+  $('clip-name').textContent = activeItem?.animationNames.join(', ') || 'Static model';
+}
+
+function timeText(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(Math.floor(seconds % 60)).padStart(2, '0')}.${String(Math.floor((seconds % 1) * 10))}`;
+}
+
+function updateTime() {
+  const elapsed = action ? (duration ? action.time % duration : 0) : 0;
+  $('time-label').textContent = `${timeText(elapsed)} / ${timeText(duration)}`;
+  $('timeline').value = duration ? String(Math.round(elapsed / duration * 1000)) : '0';
+}
+
+function toggleWireframe(value) {
+  wireframe = value;
+  model?.traverse(node => {
+    const mats = node.material ? (Array.isArray(node.material) ? node.material : [node.material]) : [];
+    for (const mat of mats) if ('wireframe' in mat) mat.wireframe = wireframe;
+  });
+  $('wire-button').setAttribute('aria-pressed', String(wireframe));
+}
+
+function toggleBones(value) {
+  showBones = value;
+  if (bones) bones.visible = showBones;
+  $('bones-button').setAttribute('aria-pressed', String(showBones));
+}
+
+function selectItem(item) {
+  const serial = ++loadSerial;
+  activeItem = item;
+  setGroup(item.group);
+  $('stage-group').textContent = groupNames[item.group];
+  $('stage-title').textContent = humanName(item);
+  window.history.replaceState(null, '', `#${encodeURIComponent(item.id)}`);
+  loading(`Loading ${humanName(item)} from Studio…`);
+  loader.load(`/api/asset/${encodeURIComponent(item.id)}`,
+    gltf => {
+      if (serial !== loadSerial) { disposeGltf(gltf); return; }
+      disposeModel();
+      model = gltf.scene;
+      scene.add(model);
+      bones = new THREE.SkeletonHelper(model);
+      bones.visible = showBones;
+      scene.add(bones);
+      frameModel();
+      toggleWireframe(wireframe);
+      if (gltf.animations.length) {
+        mixer = new THREE.AnimationMixer(model);
+        action = mixer.clipAction(gltf.animations[0]);
+        duration = gltf.animations[0].duration;
+        action.setLoop(looping ? THREE.LoopRepeat : THREE.LoopOnce, looping ? Infinity : 1);
+        action.clampWhenFinished = true;
+        action.play();
+        playing = true;
+      }
+      updatePlaybackControls();
+      updateTime();
+      renderList();
+      loading('', false);
+    },
+    event => {
+      if (serial !== loadSerial) return;
+      if (event.lengthComputable) loading(`Loading ${humanName(item)}… ${Math.round(event.loaded / event.total * 100)}%`);
+    },
+    error => { if (serial === loadSerial) loading(`Could not load ${humanName(item)}. Check the Studio connection and try again.`); console.error(error); }
+  );
+}
+
+function disposeGltf(gltf) {
+  gltf.scene.traverse(node => {
+    node.geometry?.dispose();
+    if (node.material) (Array.isArray(node.material) ? node.material : [node.material]).forEach(material => material.dispose());
+  });
+}
+
+function resize() {
+  const width = viewport.clientWidth, height = viewport.clientHeight;
+  if (!width || !height) return;
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(viewport);
+
+let hudAccum = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = Math.min(clock.getDelta(), 0.1);
+  if (mixer && playing) mixer.update(delta * Number($('speed').value));
+  controls.update();
+  renderer.render(scene, camera);
+  hudAccum += delta;
+  if (hudAccum > 0.05) { updateTime(); hudAccum = 0; }
+}
+animate();
+
+for (const tab of document.querySelectorAll('.group-tab')) tab.addEventListener('click', () => setGroup(tab.dataset.group));
+$('asset-search').addEventListener('input', renderList);
+$('frame-button').addEventListener('click', frameModel);
+$('wire-button').addEventListener('click', () => toggleWireframe(!wireframe));
+$('bones-button').addEventListener('click', () => toggleBones(!showBones));
+$('play-button').addEventListener('click', () => { playing = !playing; updatePlaybackControls(); });
+$('loop-button').addEventListener('click', () => {
+  looping = !looping;
+  if (action) action.setLoop(looping ? THREE.LoopRepeat : THREE.LoopOnce, looping ? Infinity : 1);
+  updatePlaybackControls();
+});
+$('timeline').addEventListener('input', event => {
+  if (!mixer || !action) return;
+  playing = false;
+  mixer.setTime(Number(event.target.value) / 1000 * duration);
+  updatePlaybackControls(); updateTime();
+});
+document.addEventListener('keydown', event => {
+  if (event.code !== 'Space' || !action || ['INPUT', 'SELECT', 'BUTTON'].includes(document.activeElement?.tagName)) return;
+  event.preventDefault(); playing = !playing; updatePlaybackControls();
+});
+
+try {
+  const response = await fetch('/api/catalog');
+  if (!response.ok) throw new Error(`Catalog HTTP ${response.status}`);
+  const data = await response.json();
+  catalog = data.items;
+  $('build-id').textContent = data.build;
+  renderList();
+  const requestedId = decodeURIComponent(location.hash.slice(1));
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'knight/Idle.glb') || catalog[0];
+  if (initial) selectItem(initial);
+  else loading('No active GLB assets found on the Studio.');
+} catch (error) {
+  console.error(error);
+  loading('Could not reach the local asset server.');
+}

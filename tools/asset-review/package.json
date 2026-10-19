@@ -1,0 +1,9 @@
+{
+  "name": "veyr-asset-review",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local browser review of the active Veyr GLB models and animations",
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}
