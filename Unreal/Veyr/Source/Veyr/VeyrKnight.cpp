@@ -69,6 +69,14 @@ AVeyrKnight::AVeyrKnight()
     static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> KnightDefinition(
         TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
     CustomuseVisualDefinition = KnightDefinition.Get();
+    BoatWeapon=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tripo Timber Greatsword"));
+    BoatWeapon->SetupAttachment(GetCapsuleComponent());
+    BoatWeapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    BoatWeapon->SetGenerateOverlapEvents(false);BoatWeapon->SetCanEverAffectNavigation(false);
+    BoatWeapon->SetVisibility(false);
+    static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> WeaponMesh(
+        TEXT("/Game/ArtPass/Tripo/BoatGreatsword_v002/SM_BoatGreatsword_v002.SM_BoatGreatsword_v002"),LOAD_Quiet|LOAD_NoWarn);
+    BoatWeapon->SetStaticMesh(WeaponMesh.Get());
     PresentationNominalSpeeds.Add(TEXT("Walk"),123.6f);
     PresentationNominalSpeeds.Add(TEXT("Run"),822.8f);
     PresentationNominalSpeeds.Add(TEXT("StrafeLeft"),170.28f);
@@ -176,11 +184,11 @@ bool AVeyrKnight::IsGrounded() const { return GetCharacterMovement() && GetChara
 bool AVeyrKnight::IsRollingInvulnerable() const { return Action == EVeyrKnightAction::Roll && ActionElapsed > .08f && ActionElapsed < .44f; }
 float AVeyrKnight::GetPlanarSpeed() const { return GetVelocity().Size2D(); }
 FVector AVeyrKnight::GetFootLocation() const { return GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()); }
-float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return bImportedPresentationActive?(bHeavy?1.20f:.85f):(bHeavy?1.15f:.65f); }
-float AVeyrKnight::GetAttackContactTime(bool bHeavy) const { return bImportedPresentationActive?(bHeavy?.617f:.522f):(bHeavy?.55f:.23f); }
+float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return bTwoHanded?(bHeavy?1.20f:.90f):(bHeavy?.90f:.66f); }
+float AVeyrKnight::GetAttackContactTime(bool bHeavy) const { return bTwoHanded?(bHeavy?.64f:.46f):(bHeavy?.45f:.33f); }
 float AVeyrKnight::GetSwordContactTime() const { return Action == EVeyrKnightAction::HeavyAttack ? GetAttackContactTime(true) : Action == EVeyrKnightAction::LightAttack ? GetAttackContactTime(false) : -1.f; }
 bool AVeyrKnight::IsTerminal() const { return IsDead() || (IsValid(Boss) && Boss->IsDead()); }
-bool AVeyrKnight::CanStartGroundedAction() const { return !IsTerminal() && IsGrounded() && !bPressedJump && (Action == EVeyrKnightAction::Ready || Action == EVeyrKnightAction::Guard); }
+bool AVeyrKnight::CanStartGroundedAction() const { return GripTransitionRemaining<=0.f && !IsTerminal() && IsGrounded() && !bPressedJump && (Action == EVeyrKnightAction::Ready || Action == EVeyrKnightAction::Guard); }
 
 void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction, float Duration)
 {
@@ -194,18 +202,40 @@ void AVeyrKnight::FinishAction()
     BeginAction(bGuardRequested && Stamina > 5.f && IsGrounded() ? EVeyrKnightAction::Guard : EVeyrKnightAction::Ready, 0.f);
 }
 
+void AVeyrKnight::ToggleGrip()
+{
+    if (!CanStartGroundedAction()) return;
+    bTwoHanded=!bTwoHanded; GripTransitionRemaining=.28f;
+    BufferedAttackRemaining=0.f;
+    UE_LOG(LogTemp,Display,TEXT("VEYR_GRIP twoHanded=%d"),bTwoHanded);
+}
+
 void AVeyrKnight::TryLightAttack()
 {
-    if (!CanStartGroundedAction() || Stamina < 22.f) return;
-    Stamina -= 22.f; RegenDelay = .75f; ++SwingId; ++LightAttacks;
-    BeginAction(EVeyrKnightAction::LightAttack, GetAttackDuration(false));
+    if (!CanStartGroundedAction())
+    {
+        if(!IsTerminal()&&(Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack)&&
+           ActionDuration-ActionElapsed<=.18f) { BufferedAttackRemaining=.20f;bBufferedHeavy=false; }
+        return;
+    }
+    const float Cost=bTwoHanded?28.f:22.f;
+    if(Stamina<Cost)return;
+    Stamina-=Cost;RegenDelay=.75f;++SwingId;++LightAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
+    BeginAction(EVeyrKnightAction::LightAttack,GetAttackDuration(false));
 }
 
 void AVeyrKnight::TryHeavyAttack()
 {
-    if (!CanStartGroundedAction() || Stamina < 38.f) return;
-    Stamina -= 38.f; RegenDelay = 1.05f; ++SwingId; ++HeavyAttacks;
-    BeginAction(EVeyrKnightAction::HeavyAttack, GetAttackDuration(true));
+    if (!CanStartGroundedAction())
+    {
+        if(!IsTerminal()&&(Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack)&&
+           ActionDuration-ActionElapsed<=.18f) { BufferedAttackRemaining=.20f;bBufferedHeavy=true; }
+        return;
+    }
+    const float Cost=bTwoHanded?40.f:34.f;
+    if(Stamina<Cost)return;
+    Stamina-=Cost;RegenDelay=1.f;++SwingId;++HeavyAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
+    BeginAction(EVeyrKnightAction::HeavyAttack,GetAttackDuration(true));
 }
 
 void AVeyrKnight::TryRoll()
@@ -334,6 +364,7 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     if (IsDead()) { ActionElapsed += DeltaSeconds; UpdateImportedPresentation(DeltaSeconds); }
     else if (!IsTerminal()) AdvanceCombat(DeltaSeconds);
     else { GetCharacterMovement()->StopMovementImmediately(); bLockedOn = false; UpdateImportedPresentation(DeltaSeconds); }
+    UpdateEquippedWeapon();
     UpdateHealFlask();
     UpdateCamera(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
@@ -341,6 +372,8 @@ void AVeyrKnight::Tick(float DeltaSeconds)
 
 void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
 {
+    GripTransitionRemaining=FMath::Max(0.f,GripTransitionRemaining-DeltaSeconds);
+    BufferedAttackRemaining=FMath::Max(0.f,BufferedAttackRemaining-DeltaSeconds);
     ActionElapsed += DeltaSeconds;
     // Evaluate the strike at the UPDATED action time, synchronously, before
     // gameplay resolves contact. Imported strikes use evaluated blade sweeps.
@@ -350,16 +383,14 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
         const bool bHeavy=Action==EVeyrKnightAction::HeavyAttack;
         if(bImportedPresentationActive)
         {
-            FTransform BasePose,TipPose;
+            FVector Base,Tip;
             // A visible imported sword resolves contact only from its evaluated
             // blade. Missing targets cannot silently fall back to proxy damage.
             const bool bBladeReady=bRequestedPresentationClipSampled&&
-                ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_base"),BasePose)&&
-                ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_tip"),TipPose);
+                GetWeaponSweep(Base,Tip);
             if(bBladeReady)
             {
-                const FVector Base=BasePose.GetLocation(),Tip=TipPose.GetLocation();
-                const float Start=bHeavy?.53f:.425f,End=bHeavy?.73f:.664f;
+                const float Start=ActionDuration*.38f,End=ActionDuration*(bHeavy?.675f:.667f);
                 if(!bContactSent&&ActionElapsed>=Start&&ActionElapsed-DeltaSeconds<=End&&IsValid(Boss))
                 {
                     FVector FromBase=bPreviousBladePoseValid?PreviousBladeBase:Base;
@@ -371,10 +402,7 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
                     {
                         bResampled=true;
                         if(!ImportedPresentation->SampleClipPhaseBlended(RequestedPresentationClip,Time/ActionDuration,Alpha))return false;
-                        FTransform A,B;
-                        if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_base"),A)||
-                           !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_tip"),B))return false;
-                        OutBase=A.GetLocation();OutTip=B.GetLocation();return true;
+                        return GetWeaponSweep(OutBase,OutTip);
                     };
                     // Clip collision to the actual active interval even when a
                     // slow frame crosses its beginning or end; never include
@@ -384,7 +412,7 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
                     if(ActionElapsed>End)bWindowValid=SampleBoundary(End,ToBase,ToTip)&&bWindowValid;
                     if(bResampled)bWindowValid=ImportedPresentation->SampleClipPhaseBlended(RequestedPresentationClip,
                         FMath::Clamp(ActionElapsed/ActionDuration,0.f,1.f),Alpha)&&bWindowValid;
-                    if(bWindowValid)bContactSent=Boss->ReceiveSwordSweep(FromBase,FromTip,ToBase,ToTip,bHeavy,SwingId);
+                    if(bWindowValid)bContactSent=Boss->ReceiveSwordSweep(FromBase,FromTip,ToBase,ToTip,bHeavy,SwingId,bSwingTwoHanded?1.55f:1.f);
                 }
                 PreviousBladeBase=Base;PreviousBladeTip=Tip;bPreviousBladePoseValid=true;
             }
@@ -393,7 +421,7 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
         else if (!bContactSent && ActionElapsed >= GetSwordContactTime())
         {
             bContactSent = true;
-            if (IsValid(Boss)) Boss->ReceiveSword(GetFootLocation() + FVector(0,0,125), GetActorForwardVector(), bHeavy, SwingId);
+            if (IsValid(Boss)) Boss->ReceiveSword(GetFootLocation() + FVector(0,0,125), GetActorForwardVector(), bHeavy, SwingId,bSwingTwoHanded?1.55f:1.f);
         }
     }
     else if (Action == EVeyrKnightAction::Heal && !bHealGranted && ActionElapsed >= .85f)
@@ -405,7 +433,11 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
         Stamina = FMath::Max(0.f, Stamina - 3.f * DeltaSeconds);
         if (Stamina <= 0.f || !IsGrounded()) FinishAction();
     }
-    if (ActionDuration > 0.f && ActionElapsed >= ActionDuration) FinishAction();
+    if (ActionDuration > 0.f && ActionElapsed >= ActionDuration)
+    {
+        FinishAction();
+        if(BufferedAttackRemaining>0.f) { if(bBufferedHeavy)TryHeavyAttack();else TryLightAttack(); }
+    }
     if (Action == EVeyrKnightAction::Ready)
     {
         if (RegenDelay <= 0.f) Stamina = FMath::Min(100.f, Stamina + 29.f * DeltaSeconds);
@@ -725,13 +757,43 @@ FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
     return bAllowRun&&GetPlanarSpeed()>360.f?FName(TEXT("Run")):FName(TEXT("Walk"));
 }
 
+bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
+{
+    FTransform Grip;
+    if(BoatWeapon&&BoatWeapon->GetStaticMesh()&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_grip"),Grip))
+    {
+        // The imported rigid mesh is authored in actual cm with +Z along its
+        // blade. Ignore skeletal scale here: the grip location is already world space.
+        const FTransform Weapon(Grip.GetRotation(),Grip.GetLocation(),FVector::OneVector);
+        Base=Weapon.TransformPosition(FVector(0,0,35));Tip=Weapon.TransformPosition(FVector(0,0,200));
+        return true;
+    }
+    FTransform A,B;
+    if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_base"),A)||
+       !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_tip"),B))return false;
+    Base=A.GetLocation();Tip=B.GetLocation();return true;
+}
+
+void AVeyrKnight::UpdateEquippedWeapon()
+{
+    if(!BoatWeapon)return;
+    if(!BoatWeapon->GetStaticMesh())BoatWeapon->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,
+        TEXT("/Game/ArtPass/Tripo/BoatGreatsword_v002/SM_BoatGreatsword_v002.SM_BoatGreatsword_v002"),nullptr,LOAD_Quiet|LOAD_NoWarn));
+    FTransform Grip;
+    const bool Visible=bImportedPresentationActive&&BoatWeapon->GetStaticMesh()&&
+        ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_grip"),Grip);
+    BoatWeapon->SetVisibility(Visible);
+    if(Visible)BoatWeapon->SetWorldTransform(FTransform(Grip.GetRotation(),Grip.GetLocation(),FVector::OneVector));
+}
+
 void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
 {
     if (!bImportedPresentationActive || !ImportedPresentation || !CustomuseVisualDefinition) return;
     const float Speed=GetPlanarSpeed();
     const bool bMoving=IsGrounded()&&Speed>8.f;
-    const bool bLayerAction=Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal;
-    const FName DesiredLower=bLayerAction&&bMoving?SelectDirectionalLocomotion(false):NAME_None;
+    const bool bLocomotionHold=Action==EVeyrKnightAction::Ready&&bMoving;
+    const bool bLayerAction=bLocomotionHold||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal;
+    const FName DesiredLower=bLayerAction&&bMoving?SelectDirectionalLocomotion(bLocomotionHold):NAME_None;
     if(!DesiredLower.IsNone())PresentationLowerClip=DesiredLower;
     PresentationLowerWeight=FMath::FInterpConstantTo(PresentationLowerWeight,
         !DesiredLower.IsNone()?1.f:0.f,DeltaSeconds,1.f/.12f);
@@ -750,13 +812,13 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     const FQuat BaseRotation=CustomuseVisualDefinition->MeshRelativeTransform.GetRotation();
     ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*BaseRotation);
 
-    FName Clip=TEXT("Idle");
+    FName Clip=bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
     bool bUsePhase=false,bJumpPose=false;
     float Time=VisualClock,Phase=FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f);
     switch (Action)
     {
-        case EVeyrKnightAction::LightAttack: Clip=TEXT("LightAttack"); bUsePhase=true; break;
-        case EVeyrKnightAction::HeavyAttack: Clip=TEXT("HeavyAttack"); bUsePhase=true; break;
+        case EVeyrKnightAction::LightAttack: Clip=bSwingTwoHanded?TEXT("LightAttackTwoHand"):TEXT("LightAttack"); bUsePhase=true; break;
+        case EVeyrKnightAction::HeavyAttack: Clip=bSwingTwoHanded?TEXT("HeavyAttackTwoHand"):TEXT("HeavyAttack"); bUsePhase=true; break;
         case EVeyrKnightAction::Roll: Clip=TEXT("Roll"); bUsePhase=true; break;
         case EVeyrKnightAction::Heal: Clip=TEXT("Heal"); bUsePhase=true; break;
         case EVeyrKnightAction::Stagger: Clip=TEXT("Stagger"); bUsePhase=true; break;
@@ -773,11 +835,8 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
             }
             else if (bMoving)
             {
-                Clip=bLockedOn?SelectDirectionalLocomotion(true):(Speed>360.f?FName(TEXT("Run")):FName(TEXT("Walk")));
-                const float* Nominal=PresentationNominalSpeeds.Find(Clip);
-                if(Nominal&&FMath::IsFinite(*Nominal)&&*Nominal>0.f)
-                    PresentationLocomotionTime+=DeltaSeconds*Speed/(*Nominal);
-                Time=PresentationLocomotionTime;
+                Clip=bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
+                Time=VisualClock;
             }
             break;
     }
@@ -787,7 +846,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     const FVeyrVisualClip* Lower=PresentationLowerClip.IsNone()?nullptr:CustomuseVisualDefinition->Clips.Find(PresentationLowerClip);
     FString Error;
     bool bSampled=false;
-    const bool bLocomotion=Action==EVeyrKnightAction::Ready&&bMoving;
+    const bool bLocomotion=false; // Locomotion is the explicit lower layer; upper pose retains the grip.
     const float* Nominal=PresentationNominalSpeeds.Find(bLocomotion?Clip:PresentationLowerClip);
     if (!Config || !Config->Sequence) Error=TEXT("Requested imported clip is missing: ")+Clip.ToString();
     else if (!PresentationLowerClip.IsNone()&&(!Lower||!Lower->Sequence))
@@ -945,6 +1004,7 @@ void AVeyrKnight::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::D, IE_Pressed, this, &AVeyrKnight::RightPressed); Input->BindKey(EKeys::D, IE_Released, this, &AVeyrKnight::RightReleased);
     Input->BindKey(EKeys::J, IE_Pressed, this, &AVeyrKnight::LightPressed); Input->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AVeyrKnight::CaptureMouseOrAttack);
     Input->BindKey(EKeys::K, IE_Pressed, this, &AVeyrKnight::HeavyPressed);
+    Input->BindKey(EKeys::E, IE_Pressed, this, &AVeyrKnight::GripPressed);
     Input->BindKey(EKeys::LeftShift, IE_Pressed, this, &AVeyrKnight::RollPressed);
     Input->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AVeyrKnight::JumpPressed); Input->BindKey(EKeys::SpaceBar, IE_Released, this, &AVeyrKnight::JumpReleased);
     Input->BindKey(EKeys::F, IE_Pressed, this, &AVeyrKnight::GuardPressed); Input->BindKey(EKeys::F, IE_Released, this, &AVeyrKnight::GuardReleased);
@@ -1063,6 +1123,7 @@ void AVeyrKnight::ReleaseMouse()
     }
 }
 
+void AVeyrKnight::GripPressed() { if(HumanInputEnabled()) ToggleGrip(); }
 void AVeyrKnight::LightPressed() { if (HumanInputEnabled()) TryLightAttack(); }
 void AVeyrKnight::HeavyPressed() { if (HumanInputEnabled()) TryHeavyAttack(); }
 void AVeyrKnight::RollPressed() { if (HumanInputEnabled()) TryRoll(); }

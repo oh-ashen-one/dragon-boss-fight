@@ -69,6 +69,12 @@ public:
     bool SampleLayeredClips(FName UpperClip, float UpperElapsedSeconds, FName LowerClip,
         float LowerElapsedSeconds, float LowerWeight, float TransitionAlpha);
 
+    /** Configure at most four bounded component-space additive bone rotations
+     * for subsequent samples. Applied inside the native proxy before transition
+     * blending/publication, so all rendered and queried targets use one pose.
+     * Empty map clears; reference-pose sampling also clears. No time advances. */
+    bool SetComponentSpaceBoneRotations(const TMap<FName,FRotator>& Rotations);
+
     /** Offset is applied in bone-local space: LocalOffset * BoneWorldTransform.
      * Requires a successful sample; missing/unevaluated bones fail with Identity
      * output, never a socket fallback to component origin. Check the bool result.

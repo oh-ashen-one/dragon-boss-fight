@@ -92,9 +92,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(bInitialized)return false;
     ReplayMode=Mode.ToLower();
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -160,9 +160,10 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
-    DurationLimit=ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:ReplayMode==TEXT("avoidance")?240.f:bLegIsolation?120.f:180.f;
+    DurationLimit=ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
     InitializeVideo();
-    if(!Knight->bLockedOn)Knight->ToggleLockOn();
+    if(ReplayMode!=TEXT("stance")&&!Knight->bLockedOn)Knight->ToggleLockOn();
+    if(ReplayMode==TEXT("stance"))Event(TEXT("stance_idle_before_input"));
     Event(bResume?TEXT("restart_world_loaded"):TEXT("start")); SaveEvidence(false);
     if(bResume&&!bFreshResourcesVerified)Finish(false,TEXT("restart resource reset failed"));
     UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_STARTED mode=%s evidence=%s limit=%.1f"),*ReplayMode,*RunDirectory,DurationLimit);
@@ -207,6 +208,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("targetLeg"),TargetLeg);
     O->SetNumberField(TEXT("struckLeg"),Dragon->GetStruckLegIndex());
     O->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
+    O->SetBoolField(TEXT("twoHanded"),Knight->IsTwoHanded());
+    O->SetNumberField(TEXT("stanceTrialIndex"),StanceTrialIndex);
     O->SetNumberField(TEXT("controlStage"),ControlStage);
     O->SetNumberField(TEXT("boundaryStage"),BoundaryStage);
     O->SetBoolField(TEXT("guardRechargeLatched"),bGuardRechargeLatched);
@@ -357,6 +360,187 @@ void AVeyrReplay::ObserveScenarios()
         }
         ObservedAttack=-1;
     }
+}
+
+bool AVeyrReplay::DriveStanceInputs()
+{
+    if(ReplayMode!=TEXT("stance"))return false;
+    // No lock toggle or replay-control input before this interval: the fresh
+    // pawn/dragon remain in their ordinary unengaged idle state for capture.
+    if(Elapsed<2.f)return true;
+    if(!bStanceIdleVerified)
+    {
+        bStanceIdleVerified=!Knight->HasEnteredEncounter()&&Knight->Action==EVeyrKnightAction::Ready&&
+            Knight->LightAttacks==0&&Knight->HeavyAttacks==0&&Knight->Rolls==0;
+        if(!bStanceIdleVerified){Finish(false,TEXT("stance idle interval was contaminated by prior input"));return true;}
+        Event(TEXT("stance_idle_interval_verified"));
+    }
+    const bool Available=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
+    const bool Two=StanceTrialIndex>=3&&StanceTrialIndex<6;
+    const bool Roll=StanceTrialIndex%3==2;
+    const bool Heavy=StanceTrialIndex%3==1;
+    const int32 ModeIndex=Two?1:0,Slot=ModeIndex*2+(Heavy?1:0);
+    const EVeyrKnightAction Wanted=Roll?EVeyrKnightAction::Roll:Heavy?EVeyrKnightAction::HeavyAttack:EVeyrKnightAction::LightAttack;
+    const int32 Actions=Roll?Knight->Rolls:Heavy?Knight->HeavyAttacks:Knight->LightAttacks;
+    auto Neutral=[&](){Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
+    if(bStancePending)
+    {
+        Neutral();
+        if(Knight->Action==EVeyrKnightAction::Stagger)bStanceInterrupted=true;
+        if(Knight->Action==Wanted&&Actions==StanceActionsBefore+1)
+        {
+            if(Knight->IsTwoHanded()!=Two){Finish(false,TEXT("grip changed during the observed stance trial"));return true;}
+            if(!bStanceActionObserved)
+            {
+                bStanceActionObserved=true;
+                StanceCurrentTrial->SetNumberField(TEXT("acceptedActionDuration"),Knight->GetActionDuration());
+                StanceCurrentTrial->SetNumberField(TEXT("staminaAtAcceptance"),Knight->Stamina);
+                StanceCurrentTrial->SetNumberField(TEXT("observedStartSeconds"),Elapsed-Knight->GetActionElapsed());
+                if(!Roll&&!FMath::IsNearlyEqual(Knight->GetActionDuration(),Knight->GetAttackDuration(Heavy),.001f))
+                {Finish(false,TEXT("accepted attack duration differs from selected grip timing"));return true;}
+                if(Roll&&!FMath::IsNearlyEqual(Knight->GetActionDuration(),Knight->bImportedPresentationActive?.78f:.58f,.001f))
+                {Finish(false,TEXT("grip trial changed the established roll action duration"));return true;}
+                Event(TEXT("stance_action_accepted"));
+            }
+            if(!Roll&&!bStanceSwitchBlocked&&Knight->GetActionElapsed()>.04f&&Knight->GetActionElapsed()<Knight->GetActionDuration()-.04f)
+            {
+                const float BeforeTime=Knight->GetActionElapsed(),BeforeDuration=Knight->GetActionDuration();
+                Knight->ToggleGrip();
+                bStanceSwitchBlocked=Knight->IsTwoHanded()==Two&&Knight->Action==Wanted&&
+                    Knight->GetActionElapsed()==BeforeTime&&Knight->GetActionDuration()==BeforeDuration;
+                StanceCurrentTrial->SetBoolField(TEXT("midAttackGripSwitchRejected"),bStanceSwitchBlocked);
+                StanceCurrentTrial->SetNumberField(TEXT("rejectedSwitchActionElapsed"),BeforeTime);
+                if(!bStanceSwitchBlocked){Finish(false,TEXT("grip toggle changed an active attack"));return true;}
+                Event(TEXT("stance_mid_attack_switch_rejected"),false);
+            }
+            if(Roll)
+            {
+                const float T=Knight->GetActionElapsed();
+                const bool Expected=T>.08f&&T<.44f;
+                if(Knight->IsRollingInvulnerable()!=Expected){Finish(false,TEXT("stance changed roll invulnerability window"));return true;}
+                bStanceRollInvulnerable|=Expected;
+                bStanceRollRecovery|=T>=.44f&&!Knight->IsRollingInvulnerable();
+            }
+        }
+        const int32 ContactDelta=Dragon->GetSwordContactCount()-StanceContactsBefore;
+        if(!Roll&&ContactDelta&&!bStanceContactVerified)
+        {
+            const int32 Region=Dragon->GetLastHitRegion();
+            if(ContactDelta!=1||Region<0||Region>3)
+            {Finish(false,TEXT("stance comparison requires exactly one actual leg contact; head/extra contact invalidates trial"));return true;}
+            const float Damage=Dragon->GetLastSwordDamage();
+            if(!bStanceActionObserved||Damage<=0.f||!FMath::IsNearlyEqual(StanceBossHealthBefore-Dragon->Health,Damage,.05f))
+            {Finish(false,TEXT("stance contact damage was not corroborated by boss health and accepted action"));return true;}
+            bStanceContactVerified=true;
+            StanceCurrentTrial->SetNumberField(TEXT("actualContactSeconds"),Elapsed);
+            StanceCurrentTrial->SetNumberField(TEXT("actualContactActionElapsed"),Knight->GetActionElapsed());
+            StanceCurrentTrial->SetNumberField(TEXT("legRegion"),Region);
+            StanceCurrentTrial->SetNumberField(TEXT("actualDamage"),Damage);
+            StanceCurrentTrial->SetNumberField(TEXT("bossHealthAfterContact"),Dragon->Health);
+            StanceCurrentTrial->SetNumberField(TEXT("actualContactCountDelta"),ContactDelta);
+            Event(TEXT("stance_actual_leg_contact"));
+        }
+        if(Available&&bStanceActionObserved)
+        {
+            const bool Verified=Roll?bStanceRollInvulnerable&&bStanceRollRecovery&&!bStanceInterrupted:
+                bStanceContactVerified&&bStanceSwitchBlocked;
+            StanceCurrentTrial->SetBoolField(TEXT("verified"),Verified);
+            StanceCurrentTrial->SetBoolField(TEXT("interruptedByStagger"),bStanceInterrupted);
+            StanceCurrentTrial->SetNumberField(TEXT("playerHitDelta"),Knight->HitsTaken-StanceHitsBefore);
+            StanceCurrentTrial->SetNumberField(TEXT("finishedAtSeconds"),Elapsed);
+            if(Roll)
+            {
+                const float Cost=StanceStaminaBefore-StanceCurrentTrial->GetNumberField(TEXT("staminaAtAcceptance"));
+                if(Verified&&!FMath::IsNearlyEqual(Cost,25.f,.1f))
+                {Finish(false,TEXT("stance roll did not consume the unchanged 25 stamina"));return true;}
+                StanceCurrentTrial->SetNumberField(TEXT("observedRollStaminaCost"),Cost);
+                StanceCurrentTrial->SetBoolField(TEXT("invulnerableWindowObserved"),bStanceRollInvulnerable);
+                StanceCurrentTrial->SetBoolField(TEXT("vulnerableRecoveryObserved"),bStanceRollRecovery);
+                if(Verified)StanceRollDurations[ModeIndex]=StanceCurrentTrial->GetNumberField(TEXT("acceptedActionDuration"));
+            }
+            else if(Verified)
+            {
+                StanceDamage[Slot]=StanceCurrentTrial->GetNumberField(TEXT("actualDamage"));
+                StanceDurations[Slot]=StanceCurrentTrial->GetNumberField(TEXT("acceptedActionDuration"));
+            }
+            double RecordedDamage=0;StanceCurrentTrial->TryGetNumberField(TEXT("actualDamage"),RecordedDamage);
+            UE_LOG(LogTemp,Display,TEXT("VEYR_STANCE_TRIAL index=%d twoHanded=%d kind=%s verified=%d duration=%.3f damage=%.2f"),
+                StanceTrialIndex,Two,*StanceCurrentTrial->GetStringField(TEXT("kind")),Verified,
+                StanceCurrentTrial->GetNumberField(TEXT("acceptedActionDuration")),RecordedDamage);
+            StanceTrials.Add(MakeShared<FJsonValueObject>(StanceCurrentTrial));StanceCurrentTrial.Reset();bStancePending=false;
+            if(Verified){++StanceTrialIndex;StanceAttempt=0;Event(TEXT("stance_trial_verified"));}
+            else if(++StanceAttempt>=10){Finish(false,TEXT("stance trial failed to obtain valid actual contact/roll evidence after ten attempts"));return true;}
+            return true;
+        }
+        if(Elapsed-StanceRequestedAt>3.f)
+        {
+            StanceCurrentTrial->SetBoolField(TEXT("verified"),false);
+            StanceCurrentTrial->SetStringField(TEXT("failure"),TEXT("action acceptance/completion not observed"));
+            StanceTrials.Add(MakeShared<FJsonValueObject>(StanceCurrentTrial));StanceCurrentTrial.Reset();bStancePending=false;
+            if(++StanceAttempt>=10)Finish(false,TEXT("stance input acceptance repeatedly timed out"));
+        }
+        return true;
+    }
+    if(!Knight->bLockedOn)Knight->ToggleLockOn();
+    if(Knight->IsTwoHanded()!=Two&&Available&&Knight->IsGrounded())
+    {
+        Knight->ToggleGrip();
+        if(Knight->IsTwoHanded()==Two)
+        {
+            ++StanceSafeSwitches;StanceSwitchAt=Elapsed;Event(TEXT("stance_safe_grip_switch"));
+        }
+        Neutral();return true;
+    }
+    if(Elapsed-StanceSwitchAt<.35f){Neutral();return true;}
+    if(StanceTrialIndex>=6)
+    {
+        bStancePassed=StanceSafeSwitches>=2&&!Knight->IsTwoHanded()&&StanceDamage[2]>StanceDamage[0]&&
+            StanceDamage[3]>StanceDamage[1]&&StanceDurations[2]>StanceDurations[0]&&StanceDurations[3]>StanceDurations[1]&&
+            StanceRollDurations[0]>0.f&&FMath::IsNearlyEqual(StanceRollDurations[0],StanceRollDurations[1],.001f);
+        Finish(bStancePassed,bStancePassed?TEXT("one/two-handed light/heavy leg contacts, slower higher-damage two-hand attacks, blocked active switches and unchanged roll verified"):
+            TEXT("stance comparison failed damage/duration/safe-switch/roll invariants"));return true;
+    }
+    const FVector Feet=Knight->GetFootLocation();
+    const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
+    const bool Threat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
+    const bool Down=Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse||Dragon->IsHeadExposed()||Dragon->State==EVeyrDragonState::Rise;
+    const FVector Leg=Dragon->GetLegLocation(TargetLeg);
+    const FVector Goal=Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*185.f;
+    const float Distance=FVector::Dist2D(Feet,Goal);
+    FVector Movement=Distance>35.f?(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(Distance/160.f,.2f,1.f):FVector::ZeroVector;
+    bool Light=false,HeavyInput=false,RollInput=false,Heal=false;
+    const bool SafeRecovery=Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.4f;
+    if(Threat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active))
+    {
+        Movement=EscapeDirection();RollInput=Available&&Knight->Stamina>=25.f&&(Dragon->State==EVeyrDragonState::Active||Remaining<.32f);
+    }
+    else if(Available&&Knight->IsGrounded()&&Knight->IsTwoHanded()==Two)
+    {
+        if(Knight->Health<60.f&&Knight->HealingCharges>0&&SafeRecovery){Heal=true;Movement=FVector::ZeroVector;}
+        else
+        {
+            const float SafeTime=Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:
+                Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:Dragon->State==EVeyrDragonState::Idle?2.f:0.f;
+            const bool CanTrial=Roll?(SafeRecovery||(Dragon->IsHeadExposed()&&Remaining>1.1f)):
+                !Down&&!Dragon->IsAirborne()&&Distance<35.f&&SafeTime>Knight->GetAttackDuration(Heavy)+.1f;
+            if(CanTrial&&Knight->Stamina>=(Roll?55.f:Heavy?70.f:55.f))
+            {
+                bStancePending=true;bStanceActionObserved=bStanceContactVerified=bStanceSwitchBlocked=false;
+                bStanceRollInvulnerable=bStanceRollRecovery=bStanceInterrupted=false;
+                StanceContactsBefore=Dragon->GetSwordContactCount();StanceActionsBefore=Actions;StanceHitsBefore=Knight->HitsTaken;
+                StanceBossHealthBefore=Dragon->Health;StanceStaminaBefore=Knight->Stamina;StanceRequestedAt=Elapsed;
+                StanceCurrentTrial=MakeShared<FJsonObject>();
+                StanceCurrentTrial->SetNumberField(TEXT("index"),StanceTrialIndex);StanceCurrentTrial->SetNumberField(TEXT("attempt"),StanceAttempt+1);
+                StanceCurrentTrial->SetBoolField(TEXT("twoHanded"),Two);StanceCurrentTrial->SetStringField(TEXT("kind"),Roll?TEXT("roll"):Heavy?TEXT("heavy"):TEXT("light"));
+                StanceCurrentTrial->SetNumberField(TEXT("requestedAtSeconds"),Elapsed);StanceCurrentTrial->SetNumberField(TEXT("bossHealthBefore"),StanceBossHealthBefore);
+                StanceCurrentTrial->SetNumberField(TEXT("staminaBefore"),StanceStaminaBefore);
+                Movement=Roll?EscapeDirection():FVector::ZeroVector;RollInput=Roll;HeavyInput=!Roll&&Heavy;Light=!Roll&&!Heavy;
+                Event(TEXT("stance_trial_requested"));
+            }
+        }
+    }
+    Knight->SetReplayInput(Movement,Light,HeavyInput,RollInput,Heal,false,false);
+    return true;
 }
 
 bool AVeyrReplay::DriveBoundaryInputs()
@@ -697,6 +881,7 @@ FVector AVeyrReplay::EscapeDirection() const
 
 void AVeyrReplay::DriveInputs()
 {
+    if(DriveStanceInputs())return;
     if(DriveScenarioInputs())return;
     FVector Movement=FVector::ZeroVector;
     bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false;
@@ -1075,6 +1260,21 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetNumberField(TEXT("guardRechargeCount"),GuardRechargeCount);
     Root->SetNumberField(TEXT("lastObservedFullDamageGuardCost"),LastObservedFullDamageGuardCost);
     Root->SetArrayField(TEXT("boundaryTrials"),BoundaryTrials);
+    TSharedPtr<FJsonObject> Stance=MakeShared<FJsonObject>();
+    Stance->SetBoolField(TEXT("passed"),bStancePassed);
+    Stance->SetBoolField(TEXT("idleBeforeFirstInputVerified"),bStanceIdleVerified);
+    Stance->SetNumberField(TEXT("idleCaptureIntervalSeconds"),2.f);
+    Stance->SetNumberField(TEXT("trialIndex"),StanceTrialIndex);
+    Stance->SetNumberField(TEXT("successfulSafeGripSwitches"),StanceSafeSwitches);
+    Stance->SetArrayField(TEXT("trials"),StanceTrials);
+    if(StanceCurrentTrial.IsValid())Stance->SetObjectField(TEXT("currentTrial"),StanceCurrentTrial);
+    Stance->SetNumberField(TEXT("oneHandLightDamage"),StanceDamage[0]);Stance->SetNumberField(TEXT("oneHandHeavyDamage"),StanceDamage[1]);
+    Stance->SetNumberField(TEXT("twoHandLightDamage"),StanceDamage[2]);Stance->SetNumberField(TEXT("twoHandHeavyDamage"),StanceDamage[3]);
+    Stance->SetNumberField(TEXT("oneHandLightDuration"),StanceDurations[0]);Stance->SetNumberField(TEXT("oneHandHeavyDuration"),StanceDurations[1]);
+    Stance->SetNumberField(TEXT("twoHandLightDuration"),StanceDurations[2]);Stance->SetNumberField(TEXT("twoHandHeavyDuration"),StanceDurations[3]);
+    Stance->SetNumberField(TEXT("oneHandRollDuration"),StanceRollDurations[0]);Stance->SetNumberField(TEXT("twoHandRollDuration"),StanceRollDurations[1]);
+    Stance->SetStringField(TEXT("coverage"),TEXT("Two seconds without replay/lock input; actual accepted light/heavy duration and exactly one leg contact per grip corroborated by boss HP loss; active ToggleGrip rejection; valid switches to two-hand and back; roll duration .78 imported/.58 proxy, 25 stamina and .08-.44 immunity/recovery in both grips. Input handlers only; E hardware binding and visual pose acceptance require separate native review."));
+    Root->SetObjectField(TEXT("stance"),Stance);
     Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for 1.4s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; rear trial recharges with guard released to75 then arms (48reserve hysteresis, >=40contact qualifier); break requires precontact stamina below max(12,0.9*observed nonlethal full damage); natural attacks and normal controller yaw input only"));
     Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));
     Root->SetStringField(TEXT("avoidanceCoverageDefinition"),TEXT("inside actual warning at least once during windup, then no HitsTaken increase through completed recovery; no boss move forcing"));

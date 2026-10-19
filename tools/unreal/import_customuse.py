@@ -237,6 +237,13 @@ def run(plan_file):
                     raise ValueError("Bone-local target offset must contain three finite values")
                 transform = unreal.Transform()
                 transform.translation = unreal.Vector(*offset)
+                rotation = specification.get("rotation_quat_xyzw", [0, 0, 0, 1])
+                if len(rotation) != 4 or not all(math.isfinite(float(value)) for value in rotation):
+                    raise ValueError("Bone-local rotation must contain four finite quaternion values")
+                length = math.sqrt(sum(float(value)**2 for value in rotation))
+                if abs(length-1) > .001:
+                    raise ValueError("Bone-local quaternion must be normalized")
+                transform.rotation = unreal.Quat(*rotation)
                 target.set_editor_property("local_offset", transform)
             targets[key] = target
         definition.set_editor_property("bone_targets", targets)

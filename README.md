@@ -2,11 +2,11 @@
 
 An original native Unreal Engine 5.8 dragon encounter in a ruined cathedral arena. An eight-foot armored knight attacks four independently damageable legs, breaks the dragon's balance, and reaches its exposed crown before it rises again.
 
-Both main characters use Customuse models, with corrected rigging, skinning and authored motion. The final signed macOS app passed all 11 packaged scenarios on source `a450a43b`, including a complete fight ending at **3:34** and a fresh responsive restart. Physical input was checked separately; standalone Shift could not be sent by the UI automation tool, while native tests verified dodge behavior. [Native test results](docs/native-test-results.md) records the exact final identity, coverage and limitations. The private owner handoff contains the runnable app, real gameplay videos and active authoring assets.
+Both main characters use Customuse models. The owner played the a450a43b build and rejected its animation, HUD and environment presentation. An owner-directed revision is in progress: a Tripo wooden boat-shaped greatsword, one-/two-handed combat, corrected character poses and whole-body attacks, an active dragon, a moonlit Gothic cathedral and a restrained HUD. See [the current art-pass brief](docs/art-pass-20261019.md). The prior 11-scenario mechanical pass and 3:34 fight remain historical results, not acceptance of this revision.
 
 ## Play and controls
 
-The private owner handoff includes the signed local macOS ZIP. Click or press Enter to capture control; Escape releases the mouse. Movement is WASD, mouse controls the free camera, Space jumps, Shift rolls, J/LMB performs a light attack, K a heavy attack, F/RMB guards, Q uses one of four healing draughts, Tab toggles lock-on, and R restarts after defeat or victory.
+The private owner handoff includes the signed local macOS ZIP. Click or press Enter to capture control; Escape releases the mouse. Movement is WASD, mouse controls the free camera, Space jumps, Shift rolls, J/LMB performs a light attack, K a heavy attack, F/RMB guards, Q uses one of four healing draughts, Tab toggles lock-on, E switches one-/two-handed grip in the current revision, and R restarts after defeat or victory.
 
 Guard direction, stamina, invulnerability timing and healing charges matter. Each leg has its own stagger meter. A buckle leads to a brief exposed-head opening with bonus damage, followed by recovery. Fire sweeps, bites, claws, rear stomps, tail sweeps and flight/landing share visible anticipation and danger areas.
 

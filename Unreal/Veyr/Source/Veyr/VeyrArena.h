@@ -20,6 +20,11 @@ public:
     AVeyrArena();
     static constexpr float CombatRadius = 3600.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingBasaltCliff=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingImportedCathedral=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingAuthoredNightSky=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") int32 ImportedArchitecturePieces=0;
+    /** GLB front is provisionally +Y after import; root verifies native orientation. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Environment") float CathedralFacingYawOffset=90.f;
 
 protected:
     virtual void BeginPlay() override;
@@ -31,6 +36,10 @@ private:
     UPROPERTY() TObjectPtr<UStaticMesh> SphereMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> ConeMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> SkyMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> CathedralFacadeMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> CathedralWallMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> CathedralArchMesh;
+    UPROPERTY() TObjectPtr<UMaterialInterface> NightSkyParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> StoneParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> PlainParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> SkyParent;
@@ -42,6 +51,7 @@ private:
     UInstancedStaticMeshComponent* Trim = nullptr;
     UInstancedStaticMeshComponent* Floor = nullptr;
     UInstancedStaticMeshComponent* FloorLight = nullptr;
+    UInstancedStaticMeshComponent* FloorWet = nullptr;
     UInstancedStaticMeshComponent* Bronze = nullptr;
     UInstancedStaticMeshComponent* Columns = nullptr;
     UInstancedStaticMeshComponent* ColumnTrim = nullptr;
@@ -61,6 +71,8 @@ private:
     void RoseRing(const FVector& Center, float Radius, float Width);
     void BuildFloor();
     void BuildCathedral();
+    bool BuildImportedCathedral();
+    void ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector& Position,float Height,float Yaw);
     void BuildDistance();
     void BuildLighting();
     void BuildCollision();

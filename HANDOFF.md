@@ -1,9 +1,21 @@
-# Veyr final owner handoff
+# Veyr presentation rebuild handoff
 
 Repository: https://github.com/oh-ashen-one/veyr-cinder-warden
 Branch: `feat/unreal-migration`. Historical Unity branch: `checkpoint/unity-native-009`.
 
-## Delivered state
+## Active owner revision
+
+The owner played and rejected a450a43b presentation. Work is active on the boat greatsword, one/two-hand combat, repaired full-body motion, active dragon, Gothic moonlit Tripo cathedral and restrained HUD. See docs/art-pass-20261019.md. The previous handoff below is a preserved mechanical baseline, not current visual acceptance.
+
+## Revision checkpoint
+
+Source runtime compiles at the initial revision checkpoint. Later moon material/version and weapon canonical paths need the next compile. Native editor is task-owned at port 18773; current import log/lease is Local/owned-editor-20261019T182156Z. Close before the 2400-second lease limit. Root alone controls it; foreign Hollow Current and Bully instances are excluded.
+
+Tripo web operations: weapon H3.1 55 credits + retopology35; facade/wall/arch55 each, total255 this pass. All four raw models exported privately. Weapon canonical is /Game/ArtPass/Tripo/BoatGreatsword_v002/SM_BoatGreatsword_v002, with verified native render UVs and three LOD budgets. Earlier v001/v002 diagnostic failures remain preserved; generated LOD UVs must be read with StaticMesh.get_num_tex_coords, not editable MeshDescription counts. Texture import metadata remains private because UE5.8 exposes it read-only.
+
+Dragon v007 (40 clips) imported successfully; activation and native review remain. Architecture import is in progress. Sky material v001 failed on the reserved HLSL variable point; source correction creates v002 and reuses the unchanged moon texture. Knight stances/strikes are still being authored and are not activated. New code is a work checkpoint, not a new runnable acceptance claim.
+
+## Prior delivered state
 
 Native Unreal 5.8.3 arm64 macOS encounter, source identity `a450a43b4b726a5bdebdd5ce8ca8a49fcf36dbc766fe4884d939e4d3ec8ac825`. The final signed app passed all 11 packaged scenarios, with Customuse Knight B v012 and Dragon V3-B v006 active. Victory occurred at 214.158 game seconds (3:34); fresh responsive restart completed at 219.691 seconds. See [final test results](docs/native-test-results.md).
 
@@ -35,4 +47,4 @@ Recorded provider debit: 1,143 credits across 20 completed operations; no pendin
 
 All owned editor and standalone sessions are closed; final physical process exit was 0 and its GPU slot released. No renderer should be assumed reserved. Verify actual ownership and shared slots before another launch; hard cap remains two renderer-bearing engines. Ghostty, Pocket Planet and foreign jobs remain outside task authority. Preserve unrelated untracked `Assets/Resources/SourceManifest 2.txt`.
 
-The source is frozen for handoff. Use source-matched package receipts and native results when extending it. Earlier historical failures and milestones remain labeled; do not reuse their source IDs as final acceptance. FileProvider signing races and stale raw UAT payloads are handled by audited private signing copies and exact fresh-stage packaging; no global security or quarantine setting was weakened.
+The baseline source was frozen at d94cd2e; the authorized presentation revision is now in progress. Use source-matched package receipts and native results when extending it. Earlier historical failures and milestones remain labeled; do not reuse their source IDs as final acceptance. FileProvider signing races and stale raw UAT payloads are handled by audited private signing copies and exact fresh-stage packaging; no global security or quarantine setting was weakened.

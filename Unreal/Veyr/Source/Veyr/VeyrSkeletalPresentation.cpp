@@ -109,6 +109,7 @@ bool UVeyrSkeletalPresentation::SampleReferencePose()
     UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
     Instance->ClearTransitionSource();
     Instance->ClearExplicitLowerBody();
+    Instance->ClearExplicitBoneRotations();
     CurrentLowerClip=NAME_None;CurrentLowerSequenceSeconds=CurrentLowerWeight=0.f;
     bTransitionSourceCaptured=false;CurrentTransitionAlpha=1.f;
     Instance->SetAnimationAsset(nullptr,false,0.f);
@@ -298,5 +299,16 @@ bool UVeyrSkeletalPresentation::GetBoneTargetWorldTransform(FName TargetName, FT
     if(Result.ContainsNaN())return Fail(TEXT("Bone target produced a non-finite world transform: ")+TargetName.ToString());
     OutWorldTransform=Result;
     LastError.Reset();
+    return true;
+}
+
+bool UVeyrSkeletalPresentation::SetComponentSpaceBoneRotations(const TMap<FName,FRotator>& Rotations)
+{
+    if(!CheckReady())return false;
+    HandleExistingParallelEvaluationTask(true,true);
+    for(const auto& Entry:Rotations)
+        if(GetBoneIndex(Entry.Key)==INDEX_NONE)return Fail(TEXT("Rotation modifier bone is missing: ")+Entry.Key.ToString());
+    if(!CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance())->SetExplicitBoneRotations(Rotations))
+        return Fail(TEXT("Rotation modifiers require at most four finite bones within 20 degrees per axis and 25 degrees total"));
     return true;
 }

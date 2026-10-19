@@ -53,6 +53,42 @@ namespace
         TWeakObjectPtr<UObject> MaskAsset;
         TArray<FBoneIndexType> MaskBoneMap;
         TArray<float> LowerMask,LowerWeights;
+        TMap<FName,FRotator> BoneRotations;
+
+        bool ApplyBoneRotations(FPoseContext& Output)
+        {
+            if(BoneRotations.IsEmpty())return true;
+            const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
+            const FReferenceSkeleton& Reference=Bones.GetReferenceSkeleton();
+            TMap<int32,FQuat> Deltas;
+            for(const auto& Entry:BoneRotations)
+            {
+                const int32 MeshIndex=Reference.FindBoneIndex(Entry.Key);
+                if(MeshIndex==INDEX_NONE)
+                {EvaluationError=TEXT("Rotation modifier bone is missing: ")+Entry.Key.ToString();return false;}
+                const FCompactPoseBoneIndex Compact=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(MeshIndex));
+                if(Compact.GetInt()==INDEX_NONE)
+                {EvaluationError=TEXT("Rotation modifier bone was not evaluated: ")+Entry.Key.ToString();return false;}
+                Deltas.Add(Compact.GetInt(),Entry.Value.Quaternion());
+            }
+            // Traverse the complete compact hierarchy, carrying already modified
+            // parent rotations. This changes local rotation only: no translated
+            // or scaled links and no cosmetic post-publication bone override.
+            TArray<FQuat> ComponentRotations;
+            ComponentRotations.Init(FQuat::Identity,Output.Pose.GetNumBones());
+            for(FCompactPoseBoneIndex Index:Output.Pose.ForEachBoneIndex())
+            {
+                const FCompactPoseBoneIndex Parent=Bones.GetParentBoneIndex(Index);
+                if(Parent.GetInt()!=INDEX_NONE&&Parent.GetInt()>=Index.GetInt())
+                {EvaluationError=TEXT("Rotation modifier requires parent-first compact bones");return false;}
+                const FQuat ParentRotation=Parent.GetInt()==INDEX_NONE?FQuat::Identity:ComponentRotations[Parent.GetInt()];
+                FTransform& Local=Output.Pose[Index];
+                if(const FQuat* Delta=Deltas.Find(Index.GetInt()))
+                    Local.SetRotation((ParentRotation.Inverse()*(*Delta)*ParentRotation*Local.GetRotation()).GetNormalized());
+                ComponentRotations[Index.GetInt()]=(ParentRotation*Local.GetRotation()).GetNormalized();
+            }
+            return true;
+        }
 
         bool EnsureLowerMask(const FPoseContext& Output)
         {
@@ -132,7 +168,7 @@ namespace
             FAnimSingleNodeInstanceProxy::Initialize(Instance);
             LastPublished.bValid=TransitionSource.bValid=false;Alpha=1.f;
             EvaluationError.Reset();EvaluationSerial=0;
-            LowerSequence=nullptr;LowerSeconds=LowerWeight=0.f;
+            LowerSequence=nullptr;LowerSeconds=LowerWeight=0.f;BoneRotations.Reset();
             MaskAsset.Reset();MaskBoneMap.Reset();LowerMask.Reset();LowerWeights.Reset();
         }
 
@@ -141,7 +177,7 @@ namespace
             ++EvaluationSerial;
             EvaluationError.Reset();
             FAnimSingleNodeInstanceProxy::Evaluate(Output);
-            if(!ApplyLowerBody(Output))
+            if(!ApplyLowerBody(Output)||!ApplyBoneRotations(Output))
             {
                 LastPublished.bValid=false;return true;
             }
@@ -246,4 +282,24 @@ void UVeyrSingleNodeInstance::ClearExplicitLowerBody()
     auto& Proxy=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
     Proxy.LowerSequence=nullptr;Proxy.LowerSeconds=Proxy.LowerWeight=0.f;
     ExplicitLowerSequence=nullptr;
+}
+
+bool UVeyrSingleNodeInstance::SetExplicitBoneRotations(const TMap<FName,FRotator>& Rotations)
+{
+    if(!IsInGameThread()||Rotations.Num()>4)return false;
+    for(const auto& Entry:Rotations)
+    {
+        const FRotator& R=Entry.Value;
+        if(Entry.Key.IsNone()||R.ContainsNaN()||FMath::Abs(R.Pitch)>20.f||
+            FMath::Abs(R.Yaw)>20.f||FMath::Abs(R.Roll)>20.f||
+            FMath::RadiansToDegrees(R.Quaternion().GetAngle())>25.f)return false;
+    }
+    GetProxyOnGameThread<FVeyrSingleNodeProxy>().BoneRotations=Rotations;
+    return true;
+}
+
+void UVeyrSingleNodeInstance::ClearExplicitBoneRotations()
+{
+    check(IsInGameThread());
+    GetProxyOnGameThread<FVeyrSingleNodeProxy>().BoneRotations.Reset();
 }

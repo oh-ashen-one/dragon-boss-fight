@@ -64,6 +64,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrVisualDefinition> VisualDefinition;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bUsingCustomuseVisual=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FName MissingVisualClip=NAME_None;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FString LocomotionDiagnostic;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") float GazeYawDegrees=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") float GazePitchDegrees=0.f;
     UFUNCTION(BlueprintCallable, Category="Presentation") bool ApplyCustomuseVisual(UVeyrVisualDefinition* Definition);
     /** Parameter binding readiness; rendered mask acceptance is a separate gate. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") bool bCameraOcclusionReady=false;
@@ -91,9 +94,9 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetLegLocation(int32 Index) const;
     UFUNCTION(BlueprintPure, Category="Combat") float GetLegStagger(int32 Index) const;
     /** Origin is already the world sword/contact center (no extra torso offset). */
-    void ReceiveSword(const FVector& Origin, const FVector& Forward, bool bHeavy, int32 SwingId);
+    void ReceiveSword(const FVector& Origin, const FVector& Forward, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
     bool ReceiveSwordSweep(const FVector& PreviousBase, const FVector& PreviousTip,
-                           const FVector& CurrentBase, const FVector& CurrentTip, bool bHeavy, int32 SwingId);
+                           const FVector& CurrentBase, const FVector& CurrentTip, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
 
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetStateElapsed() const { return StateElapsed; }
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetStateDuration() const { return StateDuration; }
@@ -183,6 +186,13 @@ private:
     FVector ImportedHeadWorld=FVector::ZeroVector;
     FVector ImportedFeetWorld[4];
     void UpdateImportedPresentation();
+    void UpdateGaze(float DeltaSeconds);
+    FVector LastPresentationLocation=FVector::ZeroVector;
+    float LastPresentationYaw=0.f,WalkPhase=0.f,TurnPhase=0.f;
+    float GazeSmoothedYaw=0.f,GazeSmoothedPitch=0.f;
+    bool bPresentationMotionInitialized=false,bRepositionWalking=false;
+    float RepositionTurnDuration=0.f,RepositionTravelDuration=0.f;
+    float RepositionYawDelta=0.f;
 
     float LegStagger[4] = {0,0,0,0};
     float LegFlash[4] = {0,0,0,0};
@@ -212,7 +222,7 @@ private:
     void AdvanceState(float DeltaSeconds);
     void TryDamageTarget();
     bool CanStagger() const;
-    void ApplySwordRegion(int32 Region, bool bHeavy, int32 SwingId);
+    void ApplySwordRegion(int32 Region, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
     float GetDownAmount() const;
     void UpdateTemporaryPresentation(float DeltaSeconds);
     void UpdateTelegraphs();

@@ -22,6 +22,10 @@ public:
     uint64 GetExplicitEvaluationSerial() const;
     bool SetExplicitLowerBody(UAnimSequence* Sequence, float SequenceSeconds, float Weight);
     void ClearExplicitLowerBody();
+    /** Bounded component-space additive rotations, applied to the next explicit
+     * destination pose before transition blending and publication. */
+    bool SetExplicitBoneRotations(const TMap<FName,FRotator>& Rotations);
+    void ClearExplicitBoneRotations();
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
 private:

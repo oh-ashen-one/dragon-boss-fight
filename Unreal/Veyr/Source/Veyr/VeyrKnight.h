@@ -33,6 +33,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrKnightAction Action = EVeyrKnightAction::Ready;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<AVeyrDragon> Boss;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") bool bLockedOn = false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") bool bTwoHanded = false;
+    UFUNCTION(BlueprintPure, Category="Combat") bool IsTwoHanded() const { return bTwoHanded; }
+    UFUNCTION(BlueprintCallable, Category="Combat") void ToggleGrip();
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 LightAttacks = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 HeavyAttacks = 0;
@@ -106,12 +109,19 @@ protected:
 
 private:
     UPROPERTY() TObjectPtr<USceneComponent> SwordPivot;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BoatWeapon;
+    bool GetWeaponSweep(FVector& Base,FVector& Tip);
+    void UpdateEquippedWeapon();
     UPROPERTY() TObjectPtr<UStaticMeshComponent> LeftLeg;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> RightLeg;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ProxyParts;
     UPROPERTY() TObjectPtr<USceneComponent> HealFlaskRoot;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> HealFlaskParts;
 
+    float GripTransitionRemaining = 0.f;
+    float BufferedAttackRemaining = 0.f;
+    bool bBufferedHeavy = false;
+    bool bSwingTwoHanded = false;
     float ActionElapsed = 0.f;
     float ActionDuration = 0.f;
     float RegenDelay = 0.f;
@@ -187,6 +197,7 @@ private:
     void CaptureMouseOrAttack();
     void BeginControlFromKeyboard();
     void ReleaseMouse();
+    void GripPressed();
     void LightPressed(); void HeavyPressed(); void RollPressed();
     void HealPressed(); void JumpPressed(); void LockPressed();
 };

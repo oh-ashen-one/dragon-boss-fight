@@ -70,6 +70,15 @@ private:
     float GuardSampleHealth=100, GuardSampleStamina=100, GuardSampleFacing=0;
     int32 GuardSampleHits=0, GuardSampleBlocks=0, GuardSampleBreaks=0;
     TArray<TSharedPtr<FJsonValue>> BoundaryTrials;
+    int32 StanceTrialIndex=0,StanceAttempt=0,StanceSafeSwitches=0;
+    int32 StanceContactsBefore=0,StanceActionsBefore=0,StanceHitsBefore=0;
+    float StanceRequestedAt=0,StanceSwitchAt=-1,StanceBossHealthBefore=0,StanceStaminaBefore=0;
+    float StanceDamage[4]={0,0,0,0},StanceDurations[4]={0,0,0,0},StanceRollDurations[2]={0,0};
+    bool bStanceIdleVerified=false,bStancePending=false,bStanceActionObserved=false,bStanceContactVerified=false;
+    bool bStanceSwitchBlocked=false,bStanceRollInvulnerable=false,bStanceRollRecovery=false;
+    bool bStanceInterrupted=false,bStancePassed=false;
+    TSharedPtr<FJsonObject> StanceCurrentTrial;
+    TArray<TSharedPtr<FJsonValue>> StanceTrials;
     TArray<TSharedPtr<FJsonValue>> Samples, Events;
     TArray<TSharedPtr<FJsonValue>> CaptureStates;
     TArray<FString> CaptureQueue, CaptureNames, CaptureFiles;
@@ -92,6 +101,7 @@ private:
     void DriveInputs();
     bool DriveScenarioInputs();
     bool DriveBoundaryInputs();
+    bool DriveStanceInputs();
     void ObserveScenarios();
     bool AllMovesAvoided() const;
     void Event(const FString& Name, bool bScreenshot=true);
