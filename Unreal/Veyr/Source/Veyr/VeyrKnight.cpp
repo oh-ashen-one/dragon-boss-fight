@@ -49,9 +49,9 @@ AVeyrKnight::AVeyrKnight()
     CameraBoom->ProbeChannel = ECC_Camera;
     CameraBoom->bDoCollisionTest = true;
     CameraBoom->bUsePawnControlRotation = true;
-    CameraBoom->bEnableCameraLag = true;
+    CameraBoom->bEnableCameraLag = false;
     CameraBoom->CameraLagSpeed = 14.f;
-    CameraBoom->CameraLagMaxDistance = 65.f;
+    CameraBoom->CameraLagMaxDistance = 15.f;
     CameraBoom->bUseCameraLagSubstepping = true;
     CameraBoom->bEnableCameraRotationLag = true;
     CameraBoom->CameraRotationLagSpeed = 18.f;
@@ -472,11 +472,46 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     const float FarBlend=FMath::Clamp((BossRange-1000.f)/600.f,0.f,1.f);
     // A small distance allowance at range permits a level view of the entire
     // giant while retaining floor clearance and space above the boss HUD.
-    const float DesiredArm=FMath::Clamp(CameraDistance,500.f,1100.f)+80.f*FarBlend;
+    const float DesiredArm=FMath::Clamp(CameraDistance,500.f,1100.f)+100.f*FarBlend;
     if(VisualClock<=DeltaSeconds*1.5f)CameraBoom->TargetArmLength=DesiredArm;
     else CameraBoom->TargetArmLength=FMath::FInterpTo(CameraBoom->TargetArmLength,DesiredArm,DeltaSeconds,12.f);
     const float Arm=FMath::Max(1.f,CameraBoom->TargetArmLength);
-    const float PivotAboveFeet=FMath::Min(187.f,Arm*.27f);
+    // Position lag shortened the real player-to-camera distance during a roll,
+    // invalidating the requested-arm framing solve. Rotation retains its own
+    // smoothing below; position now follows the pawn without that hidden offset.
+    CameraBoom->bEnableCameraLag=false;
+    float FramingCandidate=Arm;
+    if(CameraBoom->IsCollisionFixApplied())
+        FramingCandidate=FMath::Min(FramingCandidate,static_cast<float>(FVector::Dist2D(
+            CameraBoom->GetComponentLocation(),CombatCamera->GetComponentLocation())));
+    if(Controller&&CameraBoom->bDoCollisionTest)
+    {
+        // Predict using the same sphere/channel as the owned spring arm. The
+        // horizontal obstruction distance remains stable as pitch tilts down
+        // against a wall; using the slanted distance would cause feedback.
+        const FVector ProbeOrigin=Feet+FVector(0,0,FMath::Min(187.f,Arm*.27f));
+        const FRotator ProbeRotation=Controller->GetControlRotation();
+        const FVector ProbeEnd=ProbeOrigin-ProbeRotation.Vector()*Arm+ProbeRotation.RotateVector(CameraBoom->SocketOffset);
+        FHitResult CameraHit;
+        FCollisionQueryParams CameraQuery(SCENE_QUERY_STAT(VeyrCameraFraming),false,this);
+        if(GetWorld()->SweepSingleByChannel(CameraHit,ProbeOrigin,ProbeEnd,FQuat::Identity,
+            CameraBoom->ProbeChannel,FCollisionShape::MakeSphere(CameraBoom->ProbeSize),CameraQuery))
+            FramingCandidate=FMath::Min(FramingCandidate,static_cast<float>(FVector::Dist2D(ProbeOrigin,CameraHit.Location)));
+    }
+    FramingCandidate=FMath::Clamp(FramingCandidate,80.f,Arm);
+    if(VisualClock<=DeltaSeconds*1.5f)CameraFramingArm=FramingCandidate;
+    else if(FramingCandidate<CameraFramingArm)
+    {
+        CameraFramingArm=FramingCandidate;CameraObstructionHold=.20f;
+    }
+    else
+    {
+        CameraObstructionHold=FMath::Max(0.f,CameraObstructionHold-DeltaSeconds);
+        if(CameraObstructionHold<=0.f)
+            CameraFramingArm=FMath::FInterpConstantTo(CameraFramingArm,FramingCandidate,DeltaSeconds,220.f);
+    }
+    CameraFramingArm=FMath::Min(CameraFramingArm,Arm);
+    const float PivotAboveFeet=FMath::Min(187.f,CameraFramingArm*.27f);
     CameraBoom->SetRelativeLocation(FVector(0,0,PivotAboveFeet-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
     if (!Controller) { RestoreCameraOcclusion(); return; }
 
@@ -493,15 +528,20 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     if(APlayerController* Player=Cast<APlayerController>(Controller))Player->GetViewportSize(ViewWidth,ViewHeight);
     const float Aspect=ViewHeight>0?float(ViewWidth)/ViewHeight:FMath::Max(.1f,CombatCamera->AspectRatio);
     const float VerticalTangent=FMath::Tan(FMath::DegreesToRadians(CombatCamera->FieldOfView*.5f))/Aspect;
-    const float BootRatio=(615.f/720.f*2.f-1.f)*VerticalTangent;
+    // Leave 30px above the boss-name band for camera-view-cache timing and toes.
+    const float BootRatio=(600.f/720.f*2.f-1.f)*VerticalTangent;
     const float SocketZ=CameraBoom->SocketOffset.Z;
+    const float FloorSocketZ=SocketZ*FMath::Clamp(CameraFramingArm/Arm,0.f,1.f);
     auto SafePitch=[&](float Pitch)
     {
         const float Radians=FMath::DegreesToRadians(Pitch),S=FMath::Sin(Radians),C=FMath::Cos(Radians);
-        const float CameraZ=PivotZ-Arm*S+SocketZ*C;
-        const float FootDepth=Arm-PivotAboveFeet*S;
+        // A collision hit also shortens the socket offset. Count only its
+        // compressed fraction for floor clearance, but its full height for
+        // the conservative boot-framing bound below.
+        const float CameraZ=PivotZ-CameraFramingArm*S+FloorSocketZ*C;
+        const float FootDepth=CameraFramingArm-PivotAboveFeet*S;
         const float FootBelowView=PivotAboveFeet*C+SocketZ;
-        return CameraZ>=CameraFloorZ+220.f&&FootDepth>1.f&&FootBelowView/FootDepth<=BootRatio;
+        return CameraZ>=CameraFloorZ+225.f&&FootDepth>1.f&&FootBelowView/FootDepth<=BootRatio;
     };
     float Low=-55.f,High=45.f;
     for(int32 I=0;I<16;++I)
@@ -543,8 +583,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,CameraPitchCeiling);Look.Roll=0.f;
         Controller->SetControlRotation(Look);
     }
-    // Resolved previous-frame evidence includes genuine wall compression; the
-    // analytical minimum applies to the unobstructed boom, not through walls.
+    // Record the resolved view as well as CameraFramingArm. Collision still
+    // owns the final camera position, including an unavoidable initial overlap.
     CameraFloorClearance=CombatCamera->GetComponentLocation().Z-CameraFloorZ;
     UpdateCameraOcclusion(DeltaSeconds);
 }

@@ -6,6 +6,7 @@
 class AVeyrDragon;
 class UInstancedStaticMeshComponent;
 class UMaterialInterface;
+class UMaterialInstanceDynamic;
 class UStaticMesh;
 
 /** Original bounded sprite presentation. Reads encounter geometry; never deals damage. */
@@ -30,6 +31,8 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInterface> CoreMaterial;
     UPROPERTY() TObjectPtr<UMaterialInterface> FlameMaterial;
     UPROPERTY() TObjectPtr<UMaterialInterface> SmokeMaterial;
+    UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> WarmCoreMaterial;
+    UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> WarmFlameMaterial;
     // Fixed pools: continuous body, a smaller turbulent layer, and16 embers.
     static constexpr int32 CoreCount=48,FlameCount=96,SmokeCount=32;
     static constexpr int32 FlameBodyCount=48,FlameTurbulenceCount=32;

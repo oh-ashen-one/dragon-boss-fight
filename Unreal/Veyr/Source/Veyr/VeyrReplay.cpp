@@ -102,6 +102,10 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED initialize only after knight and dragon are ready")); return false;
     }
     Knight=ModeActor->Knight; Dragon=ModeActor->Dragon;
+    // A new/restarted world never inherits a pending guard trial or readiness latch.
+    bGuardRechargeLatched=false;bRearGuardArmed=false;GuardRechargeCount=0;
+    LastObservedFullDamageGuardCost=0.f;bGuardSampleValid=false;
+    bFrontGuardVerified=bRearGuardVerified=bGuardBreakVerified=false;
     if(bLegIsolation)TargetLeg=FCString::Atoi(*ReplayMode.Right(1));
     ControlOrigin=Knight->GetFootLocation();
     const bool bResume=PendingRestartEvidence.IsValid()&&PendingRestartEvidence->GetStringField(TEXT("mode"))==ReplayMode;
@@ -205,6 +209,10 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
     O->SetNumberField(TEXT("controlStage"),ControlStage);
     O->SetNumberField(TEXT("boundaryStage"),BoundaryStage);
+    O->SetBoolField(TEXT("guardRechargeLatched"),bGuardRechargeLatched);
+    O->SetBoolField(TEXT("rearGuardArmed"),bRearGuardArmed);
+    O->SetNumberField(TEXT("guardRechargeCount"),GuardRechargeCount);
+    O->SetNumberField(TEXT("lastObservedFullDamageGuardCost"),LastObservedFullDamageGuardCost);
     O->SetNumberField(TEXT("verifiedHealCharges"),VerifiedHealCharges);
     O->SetBoolField(TEXT("controlJumpAirborneObserved"),bControlJumpAirborne);
     O->SetBoolField(TEXT("controlJumpLandingObserved"),bControlJumpLanded);
@@ -239,6 +247,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         Metrics->SetNumberField(TEXT("severelyCompressedSeconds"),Knight->CameraSeverelyCompressedSeconds);
         Metrics->SetNumberField(TEXT("floorClearanceCm"),Knight->CameraFloorClearance);
         Metrics->SetNumberField(TEXT("upwardPitchCeilingDegrees"),Knight->CameraPitchCeiling);
+        Metrics->SetNumberField(TEXT("framingArmCm"),Knight->CameraFramingArm);
         FHitResult Hit;
         FCollisionQueryParams Query(SCENE_QUERY_STAT(VeyrReplayCamera),false,Knight);
         const bool bOccluded=GetWorld()->LineTraceSingleByChannel(Hit,Camera,Knight->GetActorLocation(),ECC_Camera,Query);
@@ -253,7 +262,18 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
             FVector2D FeetScreen;
             const bool bFeetProjected=PC->ProjectWorldLocationToScreen(Knight->GetFootLocation(),FeetScreen);
             Metrics->SetBoolField(TEXT("feetProjected"),bFeetProjected);
-            if(bFeetProjected&&Height>0)Metrics->SetNumberField(TEXT("feetViewportY"),FeetScreen.Y/Height);
+            if(bFeetProjected&&Height>0)Metrics->SetNumberField(TEXT("cachedFeetViewportY"),FeetScreen.Y/Height);
+            // Compare the feet with the same component pose recorded above;
+            // the player-camera manager can still contain the preceding view.
+            const FVector ToFeet=Knight->GetFootLocation()-Camera;
+            const FRotationMatrix CameraBasis(Knight->CombatCamera->GetComponentRotation());
+            const float Depth=FVector::DotProduct(ToFeet,CameraBasis.GetUnitAxis(EAxis::X));
+            if(Depth>1.f&&Width>0&&Height>0)
+            {
+                const float VerticalTangent=FMath::Tan(FMath::DegreesToRadians(Knight->CombatCamera->FieldOfView*.5f))*Height/Width;
+                const float Up=FVector::DotProduct(ToFeet,CameraBasis.GetUnitAxis(EAxis::Z));
+                Metrics->SetNumberField(TEXT("feetViewportY"),.5f-.5f*Up/(Depth*VerticalTangent));
+            }
         }
         Metrics->SetStringField(TEXT("scope"),TEXT("geometric diagnostics only; visual readability requires rendered review"));
         O->SetObjectField(TEXT("camera"),Metrics);
@@ -426,6 +446,12 @@ bool AVeyrReplay::DriveBoundaryInputs()
         {
             const float Lost=GuardSampleHealth-Knight->Health;
             const int32 Blocks=Knight->GuardedHits-GuardSampleBlocks,Breaks=Knight->GuardBreaks-GuardSampleBreaks;
+            // On a nonlethal unblocked hit, the measured health loss is the
+            // contacted attack's full damage. Derive its actual guard cost,
+            // rather than assuming every move breaks below a fixed35 stamina.
+            const bool bFullDamageObserved=Knight->HitsTaken==GuardSampleHits+1&&Blocks==0&&Lost>0.f&&Knight->Health>0.f;
+            const float ActualContactGuardCost=bFullDamageObserved?FMath::Max(12.f,Lost*.9f):0.f;
+            if(bFullDamageObserved)LastObservedFullDamageGuardCost=ActualContactGuardCost;
             TSharedPtr<FJsonObject> Trial=MakeShared<FJsonObject>();
             Trial->SetStringField(TEXT("kind"),TEXT("guard_contact"));Trial->SetNumberField(TEXT("seconds"),Elapsed);
             Trial->SetNumberField(TEXT("stage"),BoundaryStage);Trial->SetBoolField(TEXT("guardHeldBefore"),bGuardSampleHeld);
@@ -434,17 +460,28 @@ bool AVeyrReplay::DriveBoundaryInputs()
             Trial->SetNumberField(TEXT("staminaBefore"),GuardSampleStamina);Trial->SetNumberField(TEXT("staminaAfter"),Knight->Stamina);
             Trial->SetNumberField(TEXT("actualHitDelta"),Knight->HitsTaken-GuardSampleHits);Trial->SetNumberField(TEXT("guardedDelta"),Blocks);
             Trial->SetNumberField(TEXT("guardBreakDelta"),Breaks);
+            Trial->SetBoolField(TEXT("fullDamageCostObserved"),bFullDamageObserved);
+            Trial->SetNumberField(TEXT("actualGuardCostFromFullDamage"),ActualContactGuardCost);
+            Trial->SetBoolField(TEXT("rearTrialArmedBeforeContact"),bRearGuardArmed);
+            Trial->SetBoolField(TEXT("rechargeLatchedBeforeContact"),bGuardRechargeLatched);
             Trial->SetStringField(TEXT("move"),StaticEnum<EVeyrDragonMove>()->GetNameStringByValue(static_cast<int64>(Dragon->Move)));
             Trial->SetStringField(TEXT("actionAfter"),StaticEnum<EVeyrKnightAction>()->GetNameStringByValue(static_cast<int64>(Knight->Action)));
             BoundaryTrials.Add(MakeShared<FJsonValueObject>(Trial));
             const bool bSingle=Knight->HitsTaken==GuardSampleHits+1&&bGuardSampleHeld&&bGuardSampleGrounded;
             if(BoundaryStage==0&&bSingle&&GuardSampleFacing>.75f&&GuardSampleStamina>=40.f&&Blocks==1&&Breaks==0&&
                 Lost>0.f&&Lost<=10.f&&GuardSampleStamina-Knight->Stamina>=10.f)
-            {bFrontGuardVerified=true;Next(1,TEXT("front_guard_chip_and_stamina_verified"));}
+            {
+                bFrontGuardVerified=true;bGuardRechargeLatched=true;bRearGuardArmed=false;++GuardRechargeCount;
+                Next(1,TEXT("front_guard_chip_and_stamina_verified"));
+                Event(TEXT("rear_guard_recharge_started"));
+            }
             else if(BoundaryStage==1&&bSingle&&GuardSampleFacing<-.5f&&GuardSampleStamina>=40.f&&Blocks==0&&Breaks==0&&Lost>=20.f)
-            {bRearGuardVerified=true;Next(2,TEXT("rear_guard_full_damage_verified"));}
-            else if(BoundaryStage==2&&bSingle&&GuardSampleFacing>.75f&&GuardSampleStamina>0.f&&GuardSampleStamina<35.f&&
-                Blocks==0&&Breaks==1&&Lost>=20.f&&Knight->Stamina<.5f&&Knight->IsGuardBroken()&&Knight->Action==EVeyrKnightAction::Stagger)
+            {
+                bRearGuardVerified=true;bGuardRechargeLatched=false;bRearGuardArmed=false;
+                Next(2,TEXT("rear_guard_full_damage_verified"));
+            }
+            else if(BoundaryStage==2&&bSingle&&GuardSampleFacing>.75f&&GuardSampleStamina>0.f&&bFullDamageObserved&&
+                GuardSampleStamina<ActualContactGuardCost&&Blocks==0&&Breaks==1&&Lost>=20.f&&Knight->Stamina<.5f&&Knight->IsGuardBroken()&&Knight->Action==EVeyrKnightAction::Stagger)
             {
                 bGuardBreakVerified=true;Finish(bFrontGuardVerified&&bRearGuardVerified,
                     TEXT("front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified"));return true;
@@ -453,6 +490,31 @@ bool AVeyrReplay::DriveBoundaryInputs()
         const bool bRear=BoundaryStage==1;
         if(Knight->bLockedOn==bRear)Knight->ToggleLockOn();
         bGuard=true;
+        if(bRear)
+        {
+            // Hysteresis is deliberate: recharge stays latched until75, then
+            // the rear trial stays armed until contact or a reserve below48.
+            // This cannot oscillate between guard and recharge near one cutoff.
+            if(bRearGuardArmed&&Knight->Stamina<48.f)
+            {
+                bRearGuardArmed=false;bGuardRechargeLatched=true;++GuardRechargeCount;
+                Event(TEXT("rear_guard_reserve_lost_recharging"));
+            }
+            const bool bSafeToArm=Dragon->State==EVeyrDragonState::Idle||
+                (Dragon->State==EVeyrDragonState::Recovery&&Remaining>.35f);
+            if(bGuardRechargeLatched&&Knight->Stamina>=75.f&&bAvailable&&Knight->IsGrounded()&&bSafeToArm)
+            {
+                bGuardRechargeLatched=false;bRearGuardArmed=true;
+                Event(TEXT("rear_guard_recharged_and_armed"));
+            }
+            bGuard=bRearGuardArmed&&!bGuardRechargeLatched;
+            if(bGuardRechargeLatched&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active))
+            {
+                // Ordinary movement avoids an unqualified contact while the
+                // Ready action regenerates stamina; no resource/state writes.
+                Movement=Contains(Dragon->GetWarningFootprints(),Feet,75.f)?EscapeDirection():FVector::ZeroVector;
+            }
+        }
         if(bRear)
         {
             if(APlayerController* Player=Cast<APlayerController>(Knight->GetController()))
@@ -986,8 +1048,12 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetBoolField(TEXT("frontGuardVerified"),bFrontGuardVerified);
     Root->SetBoolField(TEXT("rearGuardVerified"),bRearGuardVerified);
     Root->SetBoolField(TEXT("staminaGuardBreakVerified"),bGuardBreakVerified);
+    Root->SetBoolField(TEXT("guardRechargeLatched"),bGuardRechargeLatched);
+    Root->SetBoolField(TEXT("rearGuardArmed"),bRearGuardArmed);
+    Root->SetNumberField(TEXT("guardRechargeCount"),GuardRechargeCount);
+    Root->SetNumberField(TEXT("lastObservedFullDamageGuardCost"),LastObservedFullDamageGuardCost);
     Root->SetArrayField(TEXT("boundaryTrials"),BoundaryTrials);
-    Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for 1.4s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; natural attacks and normal controller yaw input only"));
+    Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for 1.4s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; rear trial recharges with guard released to75 then arms (48reserve hysteresis, >=40contact qualifier); break requires precontact stamina below max(12,0.9*observed nonlethal full damage); natural attacks and normal controller yaw input only"));
     Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));
     Root->SetStringField(TEXT("avoidanceCoverageDefinition"),TEXT("inside actual warning at least once during windup, then no HitsTaken increase through completed recovery; no boss move forcing"));
     Root->SetNumberField(TEXT("terminalSeconds"),TerminalSeconds);

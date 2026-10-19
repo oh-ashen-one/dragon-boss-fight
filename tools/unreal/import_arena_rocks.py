@@ -23,6 +23,11 @@ def run(source_file):
     if existing:
         if assets.get_metadata_tag(existing, 'VeyrOriginalSourceSHA256') != source_hash:
             raise RuntimeError('Existing canonical mesh differs; preserve it and use a new version')
+        # The reproducible generator/hash supplies provenance. Do not publish
+        # editor reimport metadata containing the author's machine path.
+        existing.set_editor_property('asset_import_data', None)
+        if not assets.save_loaded_asset(existing, False):
+            raise RuntimeError('Saving sanitized original mesh failed')
         return {'success': True, 'reused': True, 'sourceSHA256': source_hash, 'mesh': existing.get_path_name()}
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     receipt = {'success': False, 'sourceSHA256': source_hash, 'originalProceduralGeometry': True}
@@ -51,6 +56,7 @@ def run(source_file):
         if len(meshes) != 1:
             raise RuntimeError('Expected one native static mesh; partial assets preserved')
         rock = meshes[0]
+        rock.set_editor_property('asset_import_data', None)
         bounds = rock.get_bounds()
         size = [2*getattr(bounds.box_extent, axis) for axis in ('x','y','z')]
         origin = [getattr(bounds.origin, axis) for axis in ('x','y','z')]

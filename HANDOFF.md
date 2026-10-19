@@ -144,3 +144,11 @@ Packaged e54eef34 core passed in 44.906 seconds. Full victory occurred at 254.98
 Rendered review found a close/collapse camera floor-clearance problem and overly sparse fire. New editor source `f4621490f998e062384ffca1075fa897d067654e0408eac1aecb6152dee6f7b6` compiles with a floor/boot framing constraint, near/far lock framing, non-overlapping head guidance, and continuous cone-aligned flame cards. These visual corrections are entering native review; the earlier mechanical passes do not establish their final acceptance.
 
 The small red detail under the dragon cheek was traced to unchanged original throat triangles, with no jaw-mask or tongue influence and bounded local deformation. It is not the previous jaw-seam failure; assets remain unchanged.
+
+## Final camera and guard validation
+
+Native editor-game source `9d91cdf52bd3c9fd5c7a59b297d9ae6f04b9970c98f770252a743e807b7af5a5` passed core in 44.917 seconds. Recorded camera floor clearance stayed at or above 224.167 cm and coherent foot projection at or above the 600/720 HUD boundary. Root and a separate reviewer inspected the formerly clipped wall/roll frames, collapse, and head marker; the severe camera issues are resolved. The retuned flame is a continuous orange plume in the actual side/oblique frames.
+
+The e54 guard trial failed because its driver held guard continuously and could not regain the >=40 rear-trial reserve. Recorded front/rear contacts behaved correctly. Test-only recharge hysteresis and an actual contacted-damage cost check fix the driver without altering combat resources or damage. New source `ee0313cda00023e00cfd6a679e37164de1cba268eee85db027bb4a31dc211516` passed guard in 24.912 seconds: front chip block, rear full damage with ample stamina, and real exhausted guard break. It is now being packaged, with healing and death/restart still to verify.
+
+The original basalt asset's editor-only reimport metadata is removed, retaining its generator hash; all tracked native assets pass the machine-path scan. No generated Customuse assets were added to public Git.

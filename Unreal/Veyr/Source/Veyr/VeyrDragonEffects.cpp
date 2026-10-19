@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialParameters.h"
 #include "UObject/ConstructorHelpers.h"
 
 AVeyrDragonEffects::AVeyrDragonEffects()
@@ -60,9 +62,27 @@ bool AVeyrDragonEffects::Initialize(AVeyrDragon* InDragon)
     {EffectsDiagnostic=TEXT("Authored breath material/plane missing; no untextured substitute rendered");return false;}
     if(CoreMaterial->GetBlendMode()!=BLEND_Additive||FlameMaterial->GetBlendMode()!=BLEND_Additive||SmokeMaterial->GetBlendMode()!=BLEND_Translucent)
     {EffectsDiagnostic=TEXT("Unexpected breath material blend mode; effects disabled");return false;}
-    ConfigurePool(Core,CoreMaterial,CoreCount);ConfigurePool(Flame,FlameMaterial,FlameCount);ConfigurePool(Smoke,SmokeMaterial,SmokeCount);
+    // Owned transient overrides retain the original FXv2 shaders. Their pale
+    // six-times-emissive default overwhelmed the orange body after overlap was
+    // fixed; reserve a subdued amber core rather than an unbroken white stripe.
+    for(UMaterialInterface* Material:{CoreMaterial.Get(),FlameMaterial.Get()})
+    {
+        float Brightness=0;FLinearColor Tint;
+        if(!Material->GetScalarParameterValue(FHashedMaterialParameterInfo(TEXT("Brightness")),Brightness)||
+           !Material->GetVectorParameterValue(FHashedMaterialParameterInfo(TEXT("Tint")),Tint))
+        {EffectsDiagnostic=TEXT("Original FXv2 Tint/Brightness parameters missing; effects disabled");return false;}
+    }
+    WarmCoreMaterial=UMaterialInstanceDynamic::Create(CoreMaterial,this);
+    WarmFlameMaterial=UMaterialInstanceDynamic::Create(FlameMaterial,this);
+    if(!WarmCoreMaterial||!WarmFlameMaterial){EffectsDiagnostic=TEXT("Transient flame material creation failed");return false;}
+    WarmCoreMaterial->SetFlags(RF_Transient);WarmFlameMaterial->SetFlags(RF_Transient);
+    WarmCoreMaterial->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.45f,.045f,1.f));
+    WarmCoreMaterial->SetScalarParameterValue(TEXT("Brightness"),1.6f);
+    WarmFlameMaterial->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.18f,.008f,1.f));
+    WarmFlameMaterial->SetScalarParameterValue(TEXT("Brightness"),2.6f);
+    ConfigurePool(Core,WarmCoreMaterial,CoreCount);ConfigurePool(Flame,WarmFlameMaterial,FlameCount);ConfigurePool(Smoke,SmokeMaterial,SmokeCount);
     AddTickPrerequisiteActor(Dragon);
-    bEffectsReady=true;EffectsDiagnostic=TEXT("Original 176-sprite continuous cone presentation; native visual acceptance pending");
+    bEffectsReady=true;EffectsDiagnostic=TEXT("Original 176-sprite orange turbulent cone with subdued amber core; native visual acceptance pending");
     return true;
 }
 
@@ -161,11 +181,12 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         for(int32 I=0;I<CoreCount;++I)
         {
             const float U=(I+.5f)/CoreCount,Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
-            const float Across=24.f+Radius*.62f;
-            const float Along=BoundedLength(U,FMath::Max(CoreStep*4.5f,Across*1.5f));
+            const float Pulse=FMath::Square(FMath::Sin(Clock*15.f-U*39.f));
+            const float Across=(28.f+Radius*.92f)*(.80f+.30f*Pulse);
+            const float Along=BoundedLength(U,FMath::Max(CoreStep*4.5f,Across));
             const float Density=FMath::Clamp(CoreStep*2.2f/FMath::Max(CoreStep,Along),.16f,.54f);
-            Streak(Core,I,Point(U,.025f*FMath::Sin(Clock*17.f-U*22.f),.02f*FMath::Cos(Clock*13.f-U*19.f)),
-                Camera,Axis,Along,Across,Density*(.90f+.10f*FMath::Sin(Clock*21.f-U*31.f)),Seed);
+            Streak(Core,I,Point(U,.18f*FMath::Sin(Clock*12.f-U*29.f),.13f*FMath::Cos(Clock*15.f-U*37.f)),
+                Camera,Axis,Along,Across,Density*.28f*(.45f+.55f*Pulse),Seed);
         }
         // Broad, overlapping orange ellipses provide the actual flame body.
         // FXv2's radial power has a soft edge:2.8*radius card width puts the
@@ -174,10 +195,11 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         for(int32 I=0;I<FlameBodyCount;++I)
         {
             const float U=(I+.5f)/FlameBodyCount,Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
-            const float Across=FMath::Max(40.f,Radius*2.8f);
-            const float Along=BoundedLength(U,FMath::Max(BodyStep*5.f,Across*.75f));
-            const float Density=FMath::Clamp(BodyStep*1.8f/FMath::Max(BodyStep,Along),.075f,.42f);
-            Streak(Flame,I,Point(U,.035f*FMath::Sin(Clock*11.f-U*27.f),.035f*FMath::Cos(Clock*9.f-U*25.f)),
+            const float Bulge=.94f+.12f*FMath::Square(FMath::Sin(Clock*11.f-U*27.f));
+            const float Across=FMath::Max(40.f,Radius*2.8f)*Bulge;
+            const float Along=BoundedLength(U,FMath::Max(BodyStep*4.f,Across*.48f));
+            const float Density=FMath::Clamp(BodyStep*1.8f/FMath::Max(BodyStep,Along),.075f,.48f);
+            Streak(Flame,I,Point(U,.09f*FMath::Sin(Clock*11.f-U*27.f),.09f*FMath::Cos(Clock*9.f-U*25.f)),
                 Camera,Axis,Along,Across,Density,Seed);
         }
         // A separate downstream-moving layer breaks up the body silhouette;
@@ -187,11 +209,13 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
             const int32 Index=FlameBodyCount+I;
             const float U=FMath::Frac((I+.5f)/FlameTurbulenceCount+Clock*.65f);
             const float Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
-            const float Angle=I*2.399963f-Clock*7.f+U*9.f,Radial=.40f+.20f*Seed;
-            const float Across=45.f+Radius*.85f,Along=BoundedLength(U,FMath::Max(100.f,Across*1.6f));
+            const float Angle=I*2.399963f-Clock*7.f+U*9.f,Radial=.55f+.25f*Seed;
+            const float Flicker=FMath::Square(FMath::Sin(Clock*16.f-I*1.73f));
+            const float Across=(50.f+Radius*1.05f)*(.80f+.40f*Flicker);
+            const float Along=BoundedLength(U,FMath::Max(100.f,Across*1.15f));
             const float Fade=FMath::Clamp(U/.06f,0.f,1.f)*FMath::Clamp((1.f-U)/.15f,0.f,1.f);
             Streak(Flame,Index,Point(U,FMath::Cos(Angle)*Radial,FMath::Sin(Angle)*Radial),
-                Camera,Axis,Along,Across,.15f*Fade,Seed);
+                Camera,Axis,Along,Across,(.18f+.10f*Flicker)*Fade,Seed);
         }
         const int32 EmberCount=FlameCount-FlameBodyCount-FlameTurbulenceCount;
         for(int32 I=0;I<EmberCount;++I)
@@ -208,7 +232,7 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
             const float Drift=FMath::Frac(Clock*.8f+Seed),Radius=Beam.Length*U*Spread;
             const FVector Position=Point(U,(Seed-.5f)*.9f,.25f)+FVector::UpVector*(60.f+Drift*140.f);
             Streak(Smoke,I,Position,Camera,Axis,220.f+Radius*1.2f,130.f+Radius*1.1f,
-                .025f*(1.f-Drift),Seed);
+                .035f*(1.f-Drift),Seed);
         }
         Core->MarkRenderStateDirty();Flame->MarkRenderStateDirty();Smoke->MarkRenderStateDirty();
         VisibleSpriteCount=CoreCount+FlameCount+SmokeCount;return;

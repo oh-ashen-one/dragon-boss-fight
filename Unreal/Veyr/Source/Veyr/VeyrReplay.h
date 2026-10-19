@@ -63,6 +63,9 @@ private:
     float BoundaryStageStarted=0, TrialHealth=0;
     bool bHealCapVerified=false, bEmptyHealRejected=false;
     bool bFrontGuardVerified=false, bRearGuardVerified=false, bGuardBreakVerified=false;
+    bool bGuardRechargeLatched=false, bRearGuardArmed=false;
+    int32 GuardRechargeCount=0;
+    float LastObservedFullDamageGuardCost=0.f;
     bool bGuardSampleValid=false, bGuardSampleHeld=false, bGuardSampleGrounded=false;
     float GuardSampleHealth=100, GuardSampleStamina=100, GuardSampleFacing=0;
     int32 GuardSampleHits=0, GuardSampleBlocks=0, GuardSampleBreaks=0;
