@@ -2,7 +2,7 @@
 
 An original native Unreal Engine 5.8 dragon encounter in a ruined cathedral arena. An eight-foot armored knight attacks four independently damageable legs, breaks the dragon's balance, and reaches its exposed crown before it rises again.
 
-Both main characters now use Customuse models, with corrected rigging, skinning and authored motion. A packaged complete fight reached victory in 4:15 and verified a fresh responsive restart. Core combat, all four independent leg tests and avoidance of all six attack types have passed native validation. The latest camera, fire and boundary-test revision is completing its final packaged acceptance suite; [native test results](docs/native-test-results.md) records exact checkpoints rather than treating compilation as gameplay proof.
+Both main characters use Customuse models, with corrected rigging, skinning and authored motion. The final signed macOS app passed all 11 packaged scenarios on source `a450a43b`, including a complete fight ending at **3:34** and a fresh responsive restart. Physical input was checked separately; standalone Shift could not be sent by the UI automation tool, while native tests verified dodge behavior. [Native test results](docs/native-test-results.md) records the exact final identity, coverage and limitations. The private owner handoff contains the runnable app, real gameplay videos and active authoring assets.
 
 ## Play and controls
 

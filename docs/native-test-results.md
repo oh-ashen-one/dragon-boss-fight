@@ -1,5 +1,36 @@
 # Native Unreal acceptance results
 
+## Final owner handoff — source a450a43b
+
+The final signed and freshly extracted arm64 macOS app passed all 11 packaged scenarios on the same source identity: `a450a43b4b726a5bdebdd5ce8ca8a49fcf36dbc766fe4884d939e4d3ec8ac825`. Both Customuse characters were active throughout; all runs exited 0 and recorded zero warning-containment failures.
+
+| Scenario | Result | Game seconds including final checks |
+| --- | --- | ---: |
+| core | PASS | 41.843 |
+| controls | PASS | 18.206 |
+| leg0 | PASS | 27.708 |
+| leg1 | PASS | 28.586 |
+| leg2 | PASS | 27.720 |
+| leg3 | PASS | 34.561 |
+| avoidance | PASS | 80.700 |
+| healing | PASS | 26.625 |
+| guard | PASS | 24.678 |
+| death | PASS | 19.583 |
+| victory | PASS | 219.691 |
+
+Boss defeat occurred at **214.158 seconds (3:34)**; victory settling and responsive restart finished at 219.691 seconds. Final boss health is 5,800. This is the measured input-policy fight time, not a promise of every player's completion time. Core covers jump, light/heavy contacts, independent-leg collapse, exposed-head bonus, completed rise and an invulnerable dodge contact. The four isolated-leg tests keep the other three legs unchanged. Avoidance covers all six moves; healing covers all four charges and empty rejection; guard covers front chip, rear full damage and exhausted guard break.
+
+A separate standalone run with replay disabled verified Enter capture, movement, J/K attacks, jump, F guard, Q healing, Tab lock, Escape release, recapture and movement, death and R restart. The UI tool rejects a standalone modifier key, so **physical Shift-key roll is not verified**; native controls/core tests verify roll behavior and contact immunity. Audio was enabled in that run but was not aurally reviewed. The process closed normally with exit 0 and released its shared GPU slot.
+
+Final ZIP SHA256: `d37d2c0c5526a3dac0a01b1edb4c29fa1e243b8d03347156ef8c90653cfcec5d`. Package, fresh extraction, strict ad-hoc signature and all 15 Mach-O dependencies passed audit. Local signing is not notarization.
+
+Native core video: 304 captured frames, 9 skipped slots, zero failed writes, 27.155 s worker PNG time and 0.068 s pixel copy time. Full-fight video: 1,388 captured frames, 81 skipped slots, zero failed writes, 128.108 s worker PNG time and 0.327 s pixel copy time. Both requested 8 FPS at 1280x720, preserve actual wall-clock timestamps and pass per-frame timing verification. They are silent, contain no generated/interpolated frames and do not constitute exclusive performance benchmarks. Full-fight video wall duration is 222.504 s; simulation time differs from capture wall time.
+
+Private evidence: `Local/final-packaged-suite-a450a43b.json`, `Local/package-20261019T012734Z/receipt.json`, `Evidence/native-victory-20261019T013107Z`, and `Evidence/manual-input-a450a43b/physical-input.json`. The owner delivery contains sanitized Validation.json, physical-input notes, videos and checksums. Raw Customuse authoring assets are delivered privately and excluded from public Git. Owner judgement of feel, difficulty and presentation remains separate from these checks.
+
+## Historical checkpoints
+
+
 Observed native rendered gameplay from input-only replays. This does not establish physical-key coverage, final-art quality or exclusive performance. Engine 5.8.3; output 1280×720, screen percentage 100, cap 60 FPS. Screenshots/evidence writes and shared workloads affect timing.
 
 | Scenario | Result | Game seconds | Observed outcome |

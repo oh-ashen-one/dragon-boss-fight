@@ -103,13 +103,17 @@ def main():
     concat.write_text("\n".join(lines) + "\n")
     command = [args.ffmpeg, "-hide_banner", "-nostdin", "-n", "-f", "concat", "-safe", "0", "-i", str(concat),
                "-an", "-c:v", "libx264", "-threads", "2", "-preset", "veryfast", "-crf", "18",
-               "-pix_fmt", "yuv420p", "-bf", "0", "-fps_mode", "vfr", "-enc_time_base", "1:1000000",
+               # Nominal encoder rate avoids advertising the concat demuxer's
+               # 1000-Hz timestamp precision as a level-6 video stream. Passing
+               # through PTS preserves every actual variable-rate capture.
+               "-pix_fmt", "yuv420p", "-bf", "0", "-x264-params", "fps=60/1:force-cfr=0",
+               "-fps_mode", "vfr", "-enc_time_base", "1:1000000",
                "-video_track_timescale", "1000000", "-movflags", "+faststart", str(output)]
     result = subprocess.run(command, cwd=manifest.parent)
     if result.returncode:
         return result.returncode
     probe_result = subprocess.run([args.ffprobe, "-v", "error", "-select_streams", "v:0", "-show_entries",
-                                   "stream=codec_name,width,height,nb_frames,duration,avg_frame_rate:format=duration:frame=pts_time",
+                                   "stream=codec_name,level,width,height,nb_frames,duration,avg_frame_rate:format=duration:frame=pts_time",
                                    "-of", "json", str(output)], check=True, capture_output=True, text=True)
     probe = json.loads(probe_result.stdout)
     actual_duration = float(probe["format"]["duration"])

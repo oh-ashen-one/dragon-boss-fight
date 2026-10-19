@@ -80,3 +80,8 @@ Save native rendered gameplay, matching-build screenshots, and a source commit/b
 ## Measured balance update
 
 Native build004’s efficient input replay defeated2800HP in65.25s, below the180–300s goal. The next build tests8400HP with unchanged attack, dodge and head-damage timing. This is a measured starting adjustment, not accepted final balance until a complete native run passes.
+
+
+## Final pacing calibration
+
+The final dragon has 5,800 health. A measured safe head approach keeps the knight center roughly 288 cm from the target during heavy punishes (mesh snout plus capsule clearance requires at least 248.535 cm). The replay approaches beside the head, re-locks near the target, and stays clear during Rise. The former 8,400-health setting took 6:20 with that safe route; the final exact-build fight ended at 3:34. Player attack damage, leg stagger thresholds, stamina rules and enemy moves were unchanged by this pacing calibration.

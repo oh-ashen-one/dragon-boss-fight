@@ -75,8 +75,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="Presentation|Camera")
     bool SetViewOcclusion(const FVector& CameraWorld,const FVector& FocusWorld,bool bEnabled);
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 8400.f;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 8400.f;
+    // Calibrated for the native characters' safe approach and head-punish
+    // cadence. Damage, independent leg thresholds and enemy moves are unchanged.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 5800.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 5800.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonState State = EVeyrDragonState::Idle;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonMove Move = EVeyrDragonMove::ClawSwipe;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<AVeyrKnight> Target;

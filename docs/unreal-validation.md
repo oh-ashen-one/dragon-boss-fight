@@ -1,5 +1,13 @@
 # Unreal validation status
 
+Final source `a450a43b` has completed packaging and all 11 native packaged scenarios. See [final results](native-test-results.md) for exact source identity, case durations and coverage. The owner handoff includes the signed app, exact-source recordings and a sanitized validation receipt. Physical controls were observed with the documented standalone Shift automation limitation; audio listening and owner gameplay judgement are not claimed.
+
+The records below are historical debugging checkpoints. Earlier launch/spending holds were superseded by the owner's explicit standing permission. Earlier statements about primitives, pending tests or pending approval do not describe the final build.
+
+## Historical integration and recovery record
+
+# Unreal validation status
+
 The requested native migration is separate from the preserved Unity prototype. Unity results in `validation.md` do not establish Unreal behavior.
 
 ## C++ integration checkpoint
