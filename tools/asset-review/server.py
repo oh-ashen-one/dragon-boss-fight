@@ -119,7 +119,7 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/catalog":
             payload = json.dumps({
                 "build": "9b185634",
-                "source": "Knight body reference · two-hand breathing review",
+                "source": "Knight body reference · approved one-hand and two-hand idles",
                 "items": [{key: value for key, value in item.items() if key not in {"remotePath", "localPath"}}
                           for item in self.server.catalog],
             }).encode("utf-8")

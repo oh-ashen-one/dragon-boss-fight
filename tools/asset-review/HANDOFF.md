@@ -13,7 +13,8 @@ It remains on the Studio at
 `Local/art-pass-20261019/knight/idle-review-20261019/IdleOneHand_Breathing_v3.glb`.
 `tools/art/author_knight_idle_review.py` recreates it from the preserved rig.
 
-The new two-hand v6 is an **unapproved review candidate**. It uses the static
+The owner approved the two-hand v6 in the laptop browser review on 2026-10-19.
+It uses the static
 Knight body pelvis and straight leg stance, re-solves both arms onto one sword
 axis, and breathes through hips, knees, ankles, back, chest, shoulders, neck,
 head, hands and weapon. A four-second 97-sample GLB loop is exported. The
@@ -47,7 +48,7 @@ was below 5e-8 rig units. Knees moved 0.022/0.023 rig units and hands
 checked at rest and inhale, full body and palm close-up.
 
 The original 9b185634 Mac build and active Unreal assets remain unchanged.
-No native Unreal preview or game integration is claimed. If the owner approves
-this review, check Studio renderer slots and the native bind-space behavior
-before integrating the clip; preserve the earlier build and approved one-hand
-motion. The browser preview can differ from Unreal.
+The owner's approval applies to the browser motion review; no native Unreal
+preview or game integration is claimed. Before integrating either approved
+clip, check Studio renderer slots and native bind-space behavior; preserve the
+earlier build. The browser preview can differ from Unreal.

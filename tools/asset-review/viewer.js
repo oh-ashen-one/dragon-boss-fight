@@ -36,6 +36,7 @@ const groupNames = { knight: 'Knight v015' };
 const ordered = {
   knight: ['IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
+const approvedIds = new Set(['review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
 let catalog = [];
 let activeGroup = 'knight';
@@ -55,7 +56,7 @@ let loadSerial = 0;
 function humanName(item) {
   const names = {
     IdleOneHand_Breathing_v3: 'One-hand idle · approved',
-    IdleTwoHand_ReadyBreath_v6: 'Two-hand idle · breathing review',
+    IdleTwoHand_ReadyBreath_v6: 'Two-hand idle · approved',
     KnightRig: 'Knight body · reference', DragonRig: 'Dragon body',
     BoatGreatsword_v4: 'Boat greatsword', CathedralFacade_v1: 'Cathedral facade',
     CathedralWall_v1: 'Cathedral wall', CathedralArch_v1: 'Cathedral arch',
@@ -95,7 +96,7 @@ function renderList() {
     const name = document.createElement('span');
     name.className = 'name'; name.textContent = humanName(item);
     const kind = document.createElement('span');
-    kind.className = 'kind'; kind.textContent = item.id.startsWith('review/') ? 'review' : item.animationNames.length ? 'motion' : 'model';
+    kind.className = 'kind'; kind.textContent = approvedIds.has(item.id) ? 'approved' : item.id.startsWith('review/') ? 'review' : item.animationNames.length ? 'motion' : 'model';
     button.append(name, kind);
     button.addEventListener('click', () => selectItem(item));
     list.append(button);
@@ -245,7 +246,7 @@ function selectItem(item) {
   const serial = ++loadSerial;
   activeItem = item;
   setGroup(item.group);
-  $('stage-group').textContent = item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
+  $('stage-group').textContent = approvedIds.has(item.id) ? 'Knight v015 · approved motion' : item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
   $('stage-title').textContent = humanName(item);
   window.history.replaceState(null, '', `#${encodeURIComponent(item.id)}`);
   loading(`Loading ${humanName(item)}…`);
