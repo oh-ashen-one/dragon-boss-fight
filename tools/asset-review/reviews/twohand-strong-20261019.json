@@ -1,0 +1,69 @@
+{
+  "StrongAttackTwoHand_Sweep_v8": {
+    "sha256": "9ac6e44a9e68af840dd2942375fd0131ebdcb0e03c077db2305abb34653da808",
+    "startPoseError": 0.0,
+    "endPoseError": 8.848605809186338e-08,
+    "maxFrameRotationDegrees": {
+      "RightArm": 6.070108576637241,
+      "RightForeArm": 4.112039707025315,
+      "RightHand": 1.9661816123489972,
+      "LeftArm": 4.385514068195835,
+      "LeftForeArm": 4.025357265850274,
+      "LeftHand": 1.7419229446346929,
+      "RightLeg": 1.2581873580078504,
+      "LeftLeg": 1.627736406724147
+    },
+    "palmError": {
+      "Right": 6.55615401687879e-08,
+      "Left": 6.104793142941122e-08
+    },
+    "elbowFlexRange": {
+      "Right": [
+        105.83932166414785,
+        128.7530112148222
+      ],
+      "Left": [
+        99.02693657564286,
+        119.18578509279173
+      ]
+    }
+  },
+  "StrongAttackTwoHand_Thrust_v6": {
+    "sha256": "42320336c2c7d09ab65576f9f3bf1f94d6dee82eb7a163e1ef6db2854fc07e89",
+    "startPoseError": 0.0,
+    "endPoseError": 7.02620948089816e-08,
+    "maxFrameRotationDegrees": {
+      "RightArm": 7.5608547924988985,
+      "RightForeArm": 5.635144618846326,
+      "RightHand": 2.415735325880188,
+      "LeftArm": 5.04599160605824,
+      "LeftForeArm": 2.9408336505847403,
+      "LeftHand": 2.4865331048403307,
+      "RightLeg": 1.952138665218193,
+      "LeftLeg": 1.6201335810989013
+    },
+    "palmError": {
+      "Right": 6.314793355513637e-08,
+      "Left": 6.457204085698461e-08
+    },
+    "elbowFlexRange": {
+      "Right": [
+        35.078108770964604,
+        128.92751859635885
+      ],
+      "Left": [
+        77.52409947429143,
+        114.88404994668939
+      ]
+    }
+  },
+  "sword": {
+    "outputSha256": "40d17087f2e97a03f0b630851a0ddc28a9deda30933e5bca624098800716181b",
+    "handleTaper": 0.48,
+    "allTrianglesPreserved": true
+  },
+  "ownerApprovedAttacks": [
+    "LightAttack_BlackKnightReference_v10"
+  ],
+  "twoHandStrongOwnerApproved": false
+}

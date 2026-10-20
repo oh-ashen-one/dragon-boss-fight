@@ -1,18 +1,79 @@
 # Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=continuous-onehand-v10#review%2FLightAttack_BlackKnightReference_v10.glb`.
+Laptop viewer: `http://127.0.0.1:8765/?review=twohand-strong#review%2FStrongAttackTwoHand_Sweep_v8.glb`.
 Loopback server on verified laptop `MacBook-Pro.local`, `Mac17,2`.
 
-## Current request and candidate
+## Active two-hand strong review
+
+Owner approved one-hand attack v10, then requested the two-hand strong attack.
+After selecting the first sweep in the supplied GIF, owner added "do both ok".
+Both the first sweep and later forward thrust are now separate review clips.
+Neither two-hand attack has owner approval yet. This is browser motion review;
+no Unreal rebuild, import, native preview, or game release was performed.
+
+- `StrongAttackTwoHand_Sweep_v8.glb`: 4.4 seconds / 265 samples.
+  SHA256 `9ac6e44a9e68af840dd2942375fd0131ebdcb0e03c077db2305abb34653da808`.
+- `StrongAttackTwoHand_Thrust_v6.glb`: 6.92 seconds / 425 samples.
+  SHA256 `42320336c2c7d09ab65576f9f3bf1f94d6dee82eb7a163e1ef6db2854fc07e89`.
+- `BoatGreatsword_StrongGrip_v1.glb` uses the original boat sword with a
+  continuous handle tapered to 48% width in the grip region. All blade vertices
+  and all triangles are preserved. The approved idle sword remains unchanged.
+  SHA256 `40d17087f2e97a03f0b630851a0ddc28a9deda30933e5bca624098800716181b`.
+
+`tools/art/author_knight_twohand_strong_review.py` accepts `--move sweep|thrust`,
+`--body`, `--approved-idle`, and exclusive `--output`. Its `make_review_sword`
+function regenerates the strong-attack sword from `BoatGreatsword_v4.glb`.
+Both motions use the approved two-hand idle v6 for exact starting/recovery pose.
+A single weapon transform drives both hilt contacts; arms use elbow hinges and
+bounded forearm rotation. Knees follow the pelvis/foot heading, with foot targets
+preserved through weight shift and the left step. Strong sweep is driven by a
+hip/torso turn; thrust includes a 30/15-degree right/left oblique palm adjustment
+at extension, instead of forcing backward wrist bend.
+
+IMPORTANT FOR FUTURE ENGINE INTEGRATION: these strong clips append an animated
+non-skin `ReviewWeaponSocket` node. The browser attaches the strong sword there,
+not to the fixed one-hand RightHand socket. Preserve/bake that weapon transform
+when importing into Unreal; dropping it loses the corrected thrust grip. All
+original body nodes, bind skeleton, skin weights and mesh bytes are unchanged.
+This is not a general mesh reweighting pass.
+
+Independent exported-GLB audit at 60Hz is in
+`reviews/twohand-strong-20261019.json`: worst palm-to-hilt drift <6.6e-8 rig units;
+start matrix error zero, end error <9e-8; maximum adjacent shoulder rotation
+6.08 degrees for sweep and 7.57 for thrust. No 180-degree joint reversals.
+Authoring wrist deviation from approved local grip stays below 27.6/23.1 degrees.
+Chrome checked windup, mid-cut, follow-through, thrust extension from the side,
+and both palms close up. The reference uses a different weapon/proportions;
+these are authored adaptations, not extracted original game animation tracks.
+No rendered performance or Unreal acceptance is claimed.
+
+Reference GIF: `d7965ok-b28aa032-999c-41e8-9825-33113292d5a7.gif`,
+640x360, 686 frames at 20ms, total 13.72s; SHA256
+`689fbf1cc5055d4270cfcca77bd84ba65b28a4761fb5b680674f0a5a22e37066`.
+The exact signed owner URL remains in the conversation. The local private file
+is `/tmp/veyr-twohand-strong-reference.gif`.
+`prepare_knight_twohand_reference.py` extracts 97 sweep frames from 0.00s and
+173 thrust frames from 6.80s, downsampled to 40ms. The viewer synchronizes the
+selected segment and offers normal/half/quarter speed. Earlier drafts remain
+in the ignored asset cache. Approved one-hand v10 and both idles are unchanged.
+
+Studio copy destination (verified `Mac15,14`):
+`/Users/midir/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/twohand-strong-review-20261019-codex/`.
+Both clips, strong-grip sword, and original GIF were copied with exclusive file
+creation and verified matching SHA256 hashes. Re-running the final generator
+reproduced both clips byte-for-byte. The approved one-hand attack and both idle
+hashes were rechecked unchanged before publication.
+
+## Approved one-hand attack
 
 Owner rejected v3 and subsequent IK revisions: both arms appeared to bend down,
 the windup stopped at separate keys, and shoulder/elbow rotations pinched the
 mesh. Owner's latest direction is a single continuous rest -> behind head ->
 floor swing, with anatomically plausible shoulders, elbows, and knees.
-Approved idles must remain unchanged. No acceptance of this attack is implied.
+Owner explicitly approved v10 on 2026-10-19: "Nice Nice. This looks much, much better. This one is approved". Preserve it and both approved idles. The active task is now both two-hand strong attacks: first sweep and later thrust.
 
-Current candidate: `LightAttack_BlackKnightReference_v10.glb`, 2.8 seconds,
+Approved browser motion: `LightAttack_BlackKnightReference_v10.glb`, 2.8 seconds,
 176 baked samples. SHA256:
 `6bbe88f658f2e72659aca48d41e141f6ab5faf6c3d82d3d076610880689b4665`.
 Generator: `tools/art/author_knight_light_attack_review.py`.
@@ -34,7 +95,7 @@ maximum authored foot target error <5e-16 rig units, exported world matrix error
 left elbow 29.17..94.17, fixed bone lengths, zero local wrist rotation changes.
 Largest right shoulder/forearm frame changes are 20.05/12.18 degrees, removing
 the prior ~175-degree IK reversal. Blade tip stays above floor (minimum .00395);
-held contact tip is .025 rig units. These are checks, not owner acceptance.
+held contact tip is .025 rig units. Owner approval applies to browser motion only.
 Chrome inspected at lift, overhead, and impact, including body closeups. Native
 Unreal preview remains untested. Source weighting may still need a separate
 review if deformation remains visible; do not claim a fully corrected rig.
@@ -55,7 +116,7 @@ is part of this review.
 The owner supplied the same Wix-hosted GIF ending in
 `d7965ok-b28aa032-999c-41e8-9825-33113292d5a7.gif` for both the
 two-hand strong and charged strong descriptions; the full signed URL is in the
-conversation. Work on that move after the owner reviews the one-hand candidate.
+conversation. Owner initially selected the first sweep, then explicitly asked to do both the sweep and later thrust. A separate charged-hold gameplay variant has not been integrated.
 
 The owner approved the one-hand idle v3. It remains available in the viewer and
 unchanged, alongside the static Knight body reference. The original two-hand
