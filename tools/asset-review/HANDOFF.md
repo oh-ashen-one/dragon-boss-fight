@@ -1,12 +1,18 @@
-# Knight idle review handoff
+# Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=twohand-v6#review%2FIdleTwoHand_ReadyBreath_v6.glb`.
+Laptop viewer: `http://127.0.0.1:8765/?review=light-attack#knight%2FLightAttack.glb`.
 The server is loopback-only on the verified laptop (`MacBook-Pro.local`, `Mac17,2`).
+
+The current focused review is the Studio's authored `LightAttack.glb` one-hand
+attack (`Veyr_Authored_LightAttackOneHand`, 53 animation channels). It is shown
+with the source boat greatsword, has not been edited in this review, and is not
+yet owner-approved. The two approved idles and static Knight body remain visible
+for comparison. All other source motions are preserved and hidden.
 
 The owner approved the one-hand idle v3. It remains available in the viewer and
 unchanged, alongside the static Knight body reference. The original two-hand
-idle and all other animations are preserved but hidden from this focused list.
+idle and the remaining animations are preserved but hidden from this focused list.
 Approved one-hand v3 SHA256:
 `7a5c482cb6a363e22e41303a8162d9b7bfbf04523745cb45cfc9dacf8beec3df`.
 It remains on the Studio at

@@ -204,10 +204,10 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     all_items = local_review_items() + catalog_from_studio(args.studio_host, args.studio_root)
-    visible_ids = {"review/IdleOneHand_Breathing_v3.glb", "review/IdleTwoHand_ReadyBreath_v6.glb", "knight/KnightRig.glb"}
+    visible_ids = {"review/IdleOneHand_Breathing_v3.glb", "review/IdleTwoHand_ReadyBreath_v6.glb", "knight/KnightRig.glb", "knight/LightAttack.glb"}
     catalog = [item for item in all_items if item["id"] in visible_ids]
     if {item["id"] for item in catalog} != visible_ids:
-        raise RuntimeError("A required Knight idle review asset is missing")
+        raise RuntimeError("A required Knight review asset is missing")
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     server.catalog = catalog
     server.assets = {item["id"]: item for item in all_items}
