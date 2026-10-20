@@ -1,14 +1,39 @@
 # Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=light-attack#knight%2FLightAttack.glb`.
+Laptop viewer: `http://127.0.0.1:8765/?review=black-knight-onehand-v3#review%2FLightAttack_BlackKnightReference_v3.glb`.
 The server is loopback-only on the verified laptop (`MacBook-Pro.local`, `Mac17,2`).
 
-The current focused review is the Studio's authored `LightAttack.glb` one-hand
-attack (`Veyr_Authored_LightAttackOneHand`, 53 animation channels). It is shown
-with the source boat greatsword, has not been edited in this review, and is not
-yet owner-approved. The two approved idles and static Knight body remain visible
-for comparison. All other source motions are preserved and hidden.
+The focused review is `LightAttack_BlackKnightReference_v3.glb`, a new 2.4-second
+one-hand attack based on the owner's [Black Knight GIF](https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevocosmic-black-knight-gif-2.gif?1606387799).
+It starts at the approved one-hand idle, draws the boat greatsword overhead,
+steps into a forward plunging strike, briefly holds low, and returns to that
+idle. It is a **review candidate, not owner-approved**. The approved idles and
+static Knight body remain visible. The original `LightAttack.glb` and earlier
+local review candidates v1/v2 are preserved and hidden from the focused list.
+
+`tools/art/author_knight_light_attack_review.py` recreates v3 from the static
+Knight and approved idle with exclusive output creation. The output SHA256 is
+`9fd002a45c6df1ee082d046aad7e961ad650d3eeefc0ec85a6e88fdcd445db97`.
+It contains 149 samples; the first and last poses match the approved idle,
+the source body geometry/bind data are unchanged, maximum solved foot-target
+error is 0.00553 rig units, no limb reach clamp occurred, and exported world
+matrices differ from authored poses by at most 5.3e-7. At the low hold, the
+left sole is at ground height and the skirt's lowest weighted vertex is about
+0.001 rig unit below ground. The raw mesh has unreferenced right-hand vertices
+below the ground during the strike; these are absent from rendered triangles.
+Chrome was checked at rest, overhead windup, impact, side stance, and close-up
+grip. The viewer camera frames the full arc. The one-hand source boat sword is
+unchanged; its held handle is occluded by the gauntlet, with pommel and shaft
+visible on opposite sides. v3 was copied to the verified Studio (`Mac15,14`)
+under `Local/art-pass-20261019/knight/light-attack-review-20261019/` with a
+matching SHA256. The prior v1 candidate is in that folder too; v2 remains
+locally cached and reproducible with the separate v2 generator.
+
+The owner supplied the same Wix-hosted GIF ending in
+`d7965ok-b28aa032-999c-41e8-9825-33113292d5a7.gif` for both the
+two-hand strong and charged strong descriptions; the full signed URL is in the
+conversation. Work on that move after the owner reviews the one-hand candidate.
 
 The owner approved the one-hand idle v3. It remains available in the viewer and
 unchanged, alongside the static Knight body reference. The original two-hand

@@ -34,7 +34,7 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['LightAttack', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['LightAttack_BlackKnightReference_v3', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 const approvedIds = new Set(['review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
@@ -57,6 +57,9 @@ function humanName(item) {
   const names = {
     IdleOneHand_Breathing_v3: 'One-hand idle · approved',
     IdleTwoHand_ReadyBreath_v6: 'Two-hand idle · approved',
+    LightAttack_FromApprovedIdle_v1: 'One-hand light attack · review',
+    LightAttack_BlackKnightReference_v2: 'One-hand plunging attack · review',
+    LightAttack_BlackKnightReference_v3: 'One-hand plunging attack · review',
     KnightRig: 'Knight body · reference', DragonRig: 'Dragon body',
     BoatGreatsword_v4: 'Boat greatsword', CathedralFacade_v1: 'Cathedral facade',
     CathedralWall_v1: 'Cathedral wall', CathedralArch_v1: 'Cathedral arch',
@@ -143,7 +146,7 @@ function frameModel() {
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
-  const fitMargin = activeItem?.name?.startsWith('IdleTwoHand') ? 0.9 : 0.68;
+  const fitMargin = activeItem?.name?.startsWith('LightAttack_BlackKnightReference') ? 1.30 : activeItem?.name?.startsWith('IdleTwoHand') ? 0.9 : 0.68;
   const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fitMargin;
   controls.target.copy(center);
   camera.position.copy(center).add(new THREE.Vector3(distance * 0.4, distance * 0.18, distance));
@@ -354,7 +357,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'knight/LightAttack.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/LightAttack_BlackKnightReference_v3.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

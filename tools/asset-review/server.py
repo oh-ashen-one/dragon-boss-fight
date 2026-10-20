@@ -86,7 +86,7 @@ def catalog_from_studio(host: str, root: Path) -> list[dict]:
 def local_review_items() -> list[dict]:
     """Expose only explicit, locally authored review clips; never alter Studio assets."""
     items = []
-    for filename in ("IdleOneHand_Breathing_v3.glb", "IdleTwoHand_ReadyBreath_v6.glb", "BoatGreatsword_Grip_v6.glb"):
+    for filename in ("IdleOneHand_Breathing_v3.glb", "IdleTwoHand_ReadyBreath_v6.glb", "LightAttack_FromApprovedIdle_v1.glb", "LightAttack_BlackKnightReference_v2.glb", "LightAttack_BlackKnightReference_v3.glb", "BoatGreatsword_Grip_v6.glb"):
         path = REVIEW / filename
         if not path.is_file():
             continue
@@ -204,7 +204,7 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     all_items = local_review_items() + catalog_from_studio(args.studio_host, args.studio_root)
-    visible_ids = {"review/IdleOneHand_Breathing_v3.glb", "review/IdleTwoHand_ReadyBreath_v6.glb", "knight/KnightRig.glb", "knight/LightAttack.glb"}
+    visible_ids = {"review/IdleOneHand_Breathing_v3.glb", "review/IdleTwoHand_ReadyBreath_v6.glb", "review/LightAttack_BlackKnightReference_v3.glb", "knight/KnightRig.glb"}
     catalog = [item for item in all_items if item["id"] in visible_ids]
     if {item["id"] for item in catalog} != visible_ids:
         raise RuntimeError("A required Knight review asset is missing")
