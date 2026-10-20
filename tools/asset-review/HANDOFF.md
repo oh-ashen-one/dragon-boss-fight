@@ -1,7 +1,7 @@
 # Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=twohand-strong#review%2FStrongAttackTwoHand_Sweep_v8.glb`.
+Laptop viewer: `http://127.0.0.1:8765/?review=fast-strong#review%2FStrongAttackTwoHand_Sweep_v9.glb`.
 Loopback server on verified laptop `MacBook-Pro.local`, `Mac17,2`.
 
 ## Active two-hand strong review
@@ -9,8 +9,29 @@ Loopback server on verified laptop `MacBook-Pro.local`, `Mac17,2`.
 Owner approved one-hand attack v10, then requested the two-hand strong attack.
 After selecting the first sweep in the supplied GIF, owner added "do both ok".
 Both the first sweep and later forward thrust are now separate review clips.
-Neither two-hand attack has owner approval yet. This is browser motion review;
+Owner approved BOTH motions on 2026-10-20, requesting much faster timing.
+Separate timing copies now run 3x faster; this timing awaits owner review.
+This is browser motion review;
 no Unreal rebuild, import, native preview, or game release was performed.
+
+### Faster timing, 2026-10-20
+
+- Sweep v9: 1.466667 seconds, SHA256 `cc900aa0c77e5e29a0a76e84c7f448a867b12df58505d7c7741b957394156deb`.
+- Thrust v7: 2.306667 seconds, SHA256 `ea2234f8e5e0cf4aa482c1a8ab510626393365639e57d88b7a84aecf38d55a92`.
+- `tools/art/retime_knight_strong_review.py` divides each unique animation time
+  accessor by 3 exactly once. All joint/socket output samples, mesh, skin,
+  materials, nodes, channels and sampler mappings verified unchanged.
+- Report: `reviews/twohand-strong-timing-20261020.json`. Originals below preserved.
+- Viewer serves v9/v7 by default, uses normal 1x playback, and maps the reference
+  inset back to original time. Both API asset hashes verified by HTTP.
+- New files copied exclusively to the Studio destination below; SHA256 verified.
+- Visual verification of NEW timing is pending: browser extension unavailable
+  and native Chrome access rejected with "Computer Use was not approved to use
+  Google Chrome". User asked how to grant access; official Settings > Computer
+  Use > Google Chrome setup and site permissions explained. Do not claim a new
+  visual review until Chrome control is restored or owner reviews the timing.
+
+### Preserved approved motion sources
 
 - `StrongAttackTwoHand_Sweep_v8.glb`: 4.4 seconds / 265 samples.
   SHA256 `9ac6e44a9e68af840dd2942375fd0131ebdcb0e03c077db2305abb34653da808`.

@@ -34,9 +34,11 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['StrongAttackTwoHand_Sweep_v8', 'StrongAttackTwoHand_Thrust_v6', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 const approvedIds = new Set(['review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
+
+const timingReviewIds = new Set(['review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb']);
 
 let catalog = [];
 let activeGroup = 'knight';
@@ -55,8 +57,8 @@ let loadSerial = 0;
 
 function humanName(item) {
   const names = {
-    StrongAttackTwoHand_Thrust_v6: 'Two-hand strong · thrust',
-    StrongAttackTwoHand_Sweep_v8: 'Two-hand strong · sweep',
+    StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · faster',
+    StrongAttackTwoHand_Sweep_v9: 'Two-hand sweep · faster',
     IdleOneHand_Breathing_v3: 'One-hand idle · approved',
     IdleTwoHand_ReadyBreath_v6: 'Two-hand idle · approved',
     LightAttack_FromApprovedIdle_v1: 'One-hand light attack · review',
@@ -101,7 +103,7 @@ function renderList() {
     const name = document.createElement('span');
     name.className = 'name'; name.textContent = humanName(item);
     const kind = document.createElement('span');
-    kind.className = 'kind'; kind.textContent = approvedIds.has(item.id) ? 'approved' : item.id.startsWith('review/') ? 'review' : item.animationNames.length ? 'motion' : 'model';
+    kind.className = 'kind'; kind.textContent = timingReviewIds.has(item.id) ? 'timing' : approvedIds.has(item.id) ? 'approved' : item.id.startsWith('review/') ? 'review' : item.animationNames.length ? 'motion' : 'model';
     button.append(name, kind);
     button.addEventListener('click', () => selectItem(item));
     list.append(button);
@@ -249,13 +251,14 @@ function updateTime() {
     const count = strong ? (thrust ? 173 : 97) : 37;
     const step = strong ? .04 : .05;
     const folder = strong ? (thrust ? 'thrust' : 'sweep') : 'onehand';
-    const frame = Math.min(count - 1, Math.floor(elapsed / step));
+    const referenceElapsed = elapsed * (timingReviewIds.has(activeItem.id) ? 3 : 1);
+    const frame = Math.min(count - 1, Math.floor(referenceElapsed / step));
     const src = `/.asset-cache/reference/${folder}/frame-${String(frame).padStart(strong ? 3 : 2, '0')}.jpg`;
     if ($('reference-frame').getAttribute('src') !== src) $('reference-frame').src = src;
     const link = $('attack-reference').querySelector('a');
     link.textContent = strong ? (thrust ? 'Your two-hand thrust reference' : 'Your two-hand sweep reference') : 'Your one-hand reference';
     link.href = strong ? `/.asset-cache/reference/${folder}/frame-000.jpg` : 'https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevocosmic-black-knight-gif-2.gif?1606387799';
-    $('reference-time').textContent = elapsed < count * step ? `${elapsed.toFixed(2)} s · reference` : 'Recovery to approved idle';
+    $('reference-time').textContent = referenceElapsed < count * step ? `${referenceElapsed.toFixed(2)} s · reference${timingReviewIds.has(activeItem.id) ? ' · 3× timing' : ''}` : 'Recovery to approved idle';
   }
 }
 
@@ -278,7 +281,7 @@ function selectItem(item) {
   const serial = ++loadSerial;
   activeItem = item;
   setGroup(item.group);
-  $('stage-group').textContent = approvedIds.has(item.id) ? 'Knight v015 · approved motion' : item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
+  $('stage-group').textContent = timingReviewIds.has(item.id) ? 'Approved motion · faster timing review' : approvedIds.has(item.id) ? 'Knight v015 · approved motion' : item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
   $('stage-title').textContent = humanName(item);
   window.history.replaceState(null, '', `#${encodeURIComponent(item.id)}`);
   loading(`Loading ${humanName(item)}…`);
@@ -386,7 +389,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/StrongAttackTwoHand_Sweep_v8.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/StrongAttackTwoHand_Sweep_v9.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

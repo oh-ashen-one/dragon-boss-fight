@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-20",
+  "approval": "Both source motions approved; faster timing awaiting review",
+  "clips": [
+    {
+      "source": "StrongAttackTwoHand_Sweep_v8.glb",
+      "sourceSHA256": "9ac6e44a9e68af840dd2942375fd0131ebdcb0e03c077db2305abb34653da808",
+      "output": "StrongAttackTwoHand_Sweep_v9.glb",
+      "outputSHA256": "cc900aa0c77e5e29a0a76e84c7f448a867b12df58505d7c7741b957394156deb",
+      "speedFactor": 3.0,
+      "originalDurationSeconds": 4.400000095367432,
+      "durationSeconds": 1.4666666984558105,
+      "sampleCounts": [
+        265
+      ],
+      "allPoseAndWeaponOutputsByteIdentical": true,
+      "meshSkinMaterialsNodesUnchanged": true,
+      "sourceUnchanged": true
+    },
+    {
+      "source": "StrongAttackTwoHand_Thrust_v6.glb",
+      "sourceSHA256": "42320336c2c7d09ab65576f9f3bf1f94d6dee82eb7a163e1ef6db2854fc07e89",
+      "output": "StrongAttackTwoHand_Thrust_v7.glb",
+      "outputSHA256": "ea2234f8e5e0cf4aa482c1a8ab510626393365639e57d88b7a84aecf38d55a92",
+      "speedFactor": 3.0,
+      "originalDurationSeconds": 6.920000076293945,
+      "durationSeconds": 2.306666612625122,
+      "sampleCounts": [
+        425
+      ],
+      "allPoseAndWeaponOutputsByteIdentical": true,
+      "meshSkinMaterialsNodesUnchanged": true,
+      "sourceUnchanged": true
+    }
+  ]
+}
