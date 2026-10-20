@@ -1,16 +1,45 @@
 # Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=fast-strong#review%2FStrongAttackTwoHand_Sweep_v9.glb`.
-Loopback server on verified laptop `MacBook-Pro.local`, `Mac17,2`.
+Laptop viewer: `http://127.0.0.1:8765/?review=twohand-light#review%2FLightAttackTwoHand_Compact_v1.glb`.
+Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-16`).
 
-## Active two-hand strong review
+## Active two-hand light attack review — 2026-10-20
+
+Owner approved the faster strong attacks, then authorized the proposed two-hand
+light attack starting from the approved two-hand idle. No new reference was
+supplied for this move; it is an original compact cut using the established rig.
+
+- Candidate: `LightAttackTwoHand_Compact_v1.glb`, 1.1 seconds, 73 baked samples.
+- SHA256 `cf2fdf2063824184251f2537efda74c95ab7fdb13df0e97289b8d7548ae78d56`.
+- Generator: `tools/art/author_knight_twohand_light_review.py`; shared solver
+  now accepts an optional profile, preserving the original strong profiles.
+- Short windup, fast cut, modest body/hip turn and left step, direct recovery.
+- Runs on verified Studio `Mac15,14` with NumPy/SciPy, headless CPU only.
+- Uses `BoatGreatsword_StrongGrip_v1.glb` on animated `ReviewWeaponSocket`.
+- Authoring report: `reviews/twohand-light-authoring-20261020.json`.
+  Wrist deviation <1.79 degrees; grip and foot target error <6e-16 rig units.
+- Independent exported audit: `reviews/twohand-light-audit-20261020.json`.
+  At 120Hz, both endpoints exactly equal the approved idle. Worst between-key
+  palm drift <0.000727 rig units; largest local joint step <3.24 degrees.
+  Body geometry, skin, bind nodes and materials preserved byte-for-byte.
+- Local API clip hash verified. Export preserved on Studio in the same dedicated
+  review destination listed below. Source pushed on this thread's branch.
+- Visual review and owner acceptance remain pending. Chrome inventory exposes
+  no connected browsers; native access again returned "Computer Use was not
+  approved to use Google Chrome". No UI workaround was used. User can open
+  the direct laptop viewer URL above; browser playback is normal 1x.
+- Next: visually inspect full motion and both palms, then get owner feedback.
+  Do not call this candidate approved or engine-integrated.
+
+## Approved two-hand strong attacks
 
 Owner approved one-hand attack v10, then requested the two-hand strong attack.
 After selecting the first sweep in the supplied GIF, owner added "do both ok".
 Both the first sweep and later forward thrust are now separate review clips.
 Owner approved BOTH motions on 2026-10-20, requesting much faster timing.
-Separate timing copies now run 3x faster; this timing awaits owner review.
+Separate timing copies run 3x faster. Owner approved the faster timing before
+requesting the next move on 2026-10-20; sweep v9 and thrust v7 are approved.
 This is browser motion review;
 no Unreal rebuild, import, native preview, or game release was performed.
 

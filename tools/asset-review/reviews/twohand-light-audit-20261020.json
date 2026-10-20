@@ -1,0 +1,24 @@
+{
+  "sha256": "cf2fdf2063824184251f2537efda74c95ab7fdb13df0e97289b8d7548ae78d56",
+  "durationSeconds": 1.100000023841858,
+  "auditHz": 120,
+  "startPoseError": 0.0,
+  "endPoseError": 0.0,
+  "maximumPalmDriftRigUnits": {
+    "Right": 0.0007260105768729445,
+    "Left": 0.000694498714664149
+  },
+  "maximumFrameRotationDegrees": {
+    "RightArm": 3.236344065420692,
+    "RightForeArm": 3.1435247674875084,
+    "RightHand": 0.443265320746804,
+    "RightLeg": 1.0775061340889323,
+    "LeftArm": 2.2224629919945995,
+    "LeftForeArm": 1.4058687069193792,
+    "LeftHand": 0.45972092409943965,
+    "LeftLeg": 1.4566964341037445
+  },
+  "sourceMeshSkinBindMaterialsPreserved": true,
+  "visualReview": "pending",
+  "ownerApproved": false
+}

@@ -34,11 +34,11 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
-const approvedIds = new Set(['review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
+const approvedIds = new Set(['review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
-const timingReviewIds = new Set(['review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb']);
+const retimedStrongIds = new Set(['review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb']);
 
 let catalog = [];
 let activeGroup = 'knight';
@@ -57,8 +57,9 @@ let loadSerial = 0;
 
 function humanName(item) {
   const names = {
-    StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · faster',
-    StrongAttackTwoHand_Sweep_v9: 'Two-hand sweep · faster',
+    LightAttackTwoHand_Compact_v1: 'Two-hand light attack · review',
+    StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · approved',
+    StrongAttackTwoHand_Sweep_v9: 'Two-hand sweep · approved',
     IdleOneHand_Breathing_v3: 'One-hand idle · approved',
     IdleTwoHand_ReadyBreath_v6: 'Two-hand idle · approved',
     LightAttack_FromApprovedIdle_v1: 'One-hand light attack · review',
@@ -103,7 +104,7 @@ function renderList() {
     const name = document.createElement('span');
     name.className = 'name'; name.textContent = humanName(item);
     const kind = document.createElement('span');
-    kind.className = 'kind'; kind.textContent = timingReviewIds.has(item.id) ? 'timing' : approvedIds.has(item.id) ? 'approved' : item.id.startsWith('review/') ? 'review' : item.animationNames.length ? 'motion' : 'model';
+    kind.className = 'kind'; kind.textContent = approvedIds.has(item.id) ? 'approved' : item.id.startsWith('review/') ? 'review' : item.animationNames.length ? 'motion' : 'model';
     button.append(name, kind);
     button.addEventListener('click', () => selectItem(item));
     list.append(button);
@@ -143,11 +144,15 @@ function disposeModel() {
   model = null; mixer = null; action = null; duration = 0;
 }
 
+function isTwoHandAttack(item) {
+  return !!item && /^(StrongAttackTwoHand_|LightAttackTwoHand_)/.test(item.name);
+}
+
 function frameModel() {
   if (!model) return;
   const box = new THREE.Box3().setFromObject(model);
   if (box.isEmpty()) return;
-  const attackReview = activeItem?.name === 'LightAttack_BlackKnightReference_v10' || activeItem?.name.startsWith('StrongAttackTwoHand_');
+  const attackReview = activeItem?.name === 'LightAttack_BlackKnightReference_v10' || isTwoHandAttack(activeItem);
   const center = attackReview ? new THREE.Vector3(0, 0.85, 0.30) : box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
@@ -199,8 +204,8 @@ const swordScale = 0.4096359622825952;
 async function attachSword(knight, serial, item) {
   const hand = knight.getObjectByName('RightHand');
   if (!hand) throw new Error('Knight RightHand bone is missing');
-  const twoHandReview = item.id === 'review/IdleTwoHand_ReadyBreath_v6.glb' || item.name.startsWith('StrongAttackTwoHand_');
-  const swordId = item.name.startsWith('StrongAttackTwoHand_') ? 'review/BoatGreatsword_StrongGrip_v1.glb' : twoHandReview ? 'review/BoatGreatsword_Grip_v6.glb' : 'objects/BoatGreatsword_v4.glb';
+  const twoHandReview = item.id === 'review/IdleTwoHand_ReadyBreath_v6.glb' || isTwoHandAttack(item);
+  const swordId = isTwoHandAttack(item) ? 'review/BoatGreatsword_StrongGrip_v1.glb' : twoHandReview ? 'review/BoatGreatsword_Grip_v6.glb' : 'objects/BoatGreatsword_v4.glb';
   const sword = await loader.loadAsync(`/api/asset/${encodeURIComponent(swordId)}`);
   if (serial !== loadSerial) { disposeGltf(sword); return false; }
   sword.scene.position.copy(swordGrip);
@@ -208,7 +213,7 @@ async function attachSword(knight, serial, item) {
   sword.scene.quaternion.copy(swordRotation);
   sword.scene.scale.setScalar(swordScale);
   const socket = knight.getObjectByName('ReviewWeaponSocket');
-  if (socket && item.name.startsWith('StrongAttackTwoHand_')) {
+  if (socket && isTwoHandAttack(item)) {
     sword.scene.position.set(0, 0, 0);
     sword.scene.quaternion.identity();
     sword.scene.scale.setScalar(1);
@@ -251,14 +256,14 @@ function updateTime() {
     const count = strong ? (thrust ? 173 : 97) : 37;
     const step = strong ? .04 : .05;
     const folder = strong ? (thrust ? 'thrust' : 'sweep') : 'onehand';
-    const referenceElapsed = elapsed * (timingReviewIds.has(activeItem.id) ? 3 : 1);
+    const referenceElapsed = elapsed * (retimedStrongIds.has(activeItem.id) ? 3 : 1);
     const frame = Math.min(count - 1, Math.floor(referenceElapsed / step));
     const src = `/.asset-cache/reference/${folder}/frame-${String(frame).padStart(strong ? 3 : 2, '0')}.jpg`;
     if ($('reference-frame').getAttribute('src') !== src) $('reference-frame').src = src;
     const link = $('attack-reference').querySelector('a');
     link.textContent = strong ? (thrust ? 'Your two-hand thrust reference' : 'Your two-hand sweep reference') : 'Your one-hand reference';
     link.href = strong ? `/.asset-cache/reference/${folder}/frame-000.jpg` : 'https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevocosmic-black-knight-gif-2.gif?1606387799';
-    $('reference-time').textContent = referenceElapsed < count * step ? `${referenceElapsed.toFixed(2)} s · reference${timingReviewIds.has(activeItem.id) ? ' · 3× timing' : ''}` : 'Recovery to approved idle';
+    $('reference-time').textContent = referenceElapsed < count * step ? `${referenceElapsed.toFixed(2)} s · reference${retimedStrongIds.has(activeItem.id) ? ' · 3× timing' : ''}` : 'Recovery to approved idle';
   }
 }
 
@@ -281,7 +286,7 @@ function selectItem(item) {
   const serial = ++loadSerial;
   activeItem = item;
   setGroup(item.group);
-  $('stage-group').textContent = timingReviewIds.has(item.id) ? 'Approved motion · faster timing review' : approvedIds.has(item.id) ? 'Knight v015 · approved motion' : item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
+  $('stage-group').textContent = approvedIds.has(item.id) ? 'Knight v015 · approved motion' : item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
   $('stage-title').textContent = humanName(item);
   window.history.replaceState(null, '', `#${encodeURIComponent(item.id)}`);
   loading(`Loading ${humanName(item)}…`);
@@ -389,7 +394,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/StrongAttackTwoHand_Sweep_v9.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/LightAttackTwoHand_Compact_v1.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

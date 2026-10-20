@@ -214,8 +214,8 @@ def fit_weapon(r, pose, chains, base, grip, center, weapon, torso, previous, ext
     return cc,ww,result.x
 
 
-def write_candidate(body, approved_idle, output, move="sweep"):
-    keys, values = (THRUST_KEYS, THRUST_VALUES) if move == "thrust" else (KEYS, VALUES)
+def write_candidate(body, approved_idle, output, move="sweep", *, profile=None):
+    keys, values = profile if profile is not None else ((THRUST_KEYS, THRUST_VALUES) if move == "thrust" else (KEYS, VALUES))
     duration = float(keys[-1])
     if output.exists():
         raise FileExistsError(output)

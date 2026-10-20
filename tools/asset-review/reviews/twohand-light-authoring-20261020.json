@@ -1,0 +1,221 @@
+{
+  "outputSha256": "cf2fdf2063824184251f2537efda74c95ab7fdb13df0e97289b8d7548ae78d56",
+  "approvedIdleSha256": "297b43eb9f240a1b166d815019a8914631549db207e79c6c52c219a8dd1cde01",
+  "move": "light-cut",
+  "durationSeconds": 1.1,
+  "sampleCount": 73,
+  "maximumGripError": 2.6558837364083264e-16,
+  "maximumFootError": 5.88825558411243e-16,
+  "maximumWristDeltaDegrees": 1.784378344059719,
+  "exportError": 1.6027613639058025e-07,
+  "keyMoments": [
+    {
+      "seconds": 0.0,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 1.0328406582377187e-13,
+          "elbowFlexDegrees": 120.34167889369049,
+          "forearmTwistDegrees": -5.088887490341627e-14
+        },
+        "Left": {
+          "wristDeltaDegrees": 3.124079777024678e-14,
+          "elbowFlexDegrees": 99.25027446304372,
+          "forearmTwistDegrees": 0.0
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.0007415106216802e-16,
+        "Left": 6.397344083151129e-17
+      },
+      "footTargetResidual": {
+        "Right": 2.238801616996866e-16,
+        "Left": 7.757919228897728e-17
+      }
+    },
+    {
+      "seconds": 0.1,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 0.9082092627852794,
+          "elbowFlexDegrees": 120.27713387315316,
+          "forearmTwistDegrees": -0.4323434576505232
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.7181786958385777,
+          "elbowFlexDegrees": 100.90460483992504,
+          "forearmTwistDegrees": -15.459561807003894
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.3092278833360675e-16,
+        "Left": 1.734723475976807e-16
+      },
+      "footTargetResidual": {
+        "Right": 1.9279638981753172e-16,
+        "Left": 1.389512421408389e-16
+      }
+    },
+    {
+      "seconds": 0.24,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 1.3353843033752972,
+          "elbowFlexDegrees": 124.81212576491859,
+          "forearmTwistDegrees": -7.982132173345111
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.9664517242292227,
+          "elbowFlexDegrees": 106.28000380476973,
+          "forearmTwistDegrees": -31.161318414756867
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.962615573354719e-16,
+        "Left": 9.639819490876586e-17
+      },
+      "footTargetResidual": {
+        "Right": 3.72961513072553e-16,
+        "Left": 1.0996354508877314e-16
+      }
+    },
+    {
+      "seconds": 0.33,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 0.4344024071525282,
+          "elbowFlexDegrees": 116.96377183024521,
+          "forearmTwistDegrees": 9.767554393396372
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.7660802003988865,
+          "elbowFlexDegrees": 108.33835983980431,
+          "forearmTwistDegrees": -43.65544273976875
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.1443916996305594e-16,
+        "Left": 1.6768594809361232e-16
+      },
+      "footTargetResidual": {
+        "Right": 2.3561606619023687e-16,
+        "Left": 7.473417450352271e-17
+      }
+    },
+    {
+      "seconds": 0.43,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 1.396859622789385,
+          "elbowFlexDegrees": 108.24568366116299,
+          "forearmTwistDegrees": 41.32478981124119
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.7728078367010183,
+          "elbowFlexDegrees": 108.87099013141565,
+          "forearmTwistDegrees": -44.42524043504311
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.734723475976807e-16,
+        "Left": 1.760893866893587e-16
+      },
+      "footTargetResidual": {
+        "Right": 2.2898349882893854e-16,
+        "Left": 2.0455030687293702e-16
+      }
+    },
+    {
+      "seconds": 0.54,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 0.990434178236872,
+          "elbowFlexDegrees": 107.44854922454296,
+          "forearmTwistDegrees": 53.09370945710829
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.42104836613717156,
+          "elbowFlexDegrees": 111.14345037818448,
+          "forearmTwistDegrees": -37.52948321608088
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.8619006149354548e-16,
+        "Left": 1.340123006720315e-16
+      },
+      "footTargetResidual": {
+        "Right": 3.377324398933778e-16,
+        "Left": 1.3383253895372864e-16
+      }
+    },
+    {
+      "seconds": 0.66,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 0.6747479333963262,
+          "elbowFlexDegrees": 109.28710490223975,
+          "forearmTwistDegrees": 44.66157100569195
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.2515068752344902,
+          "elbowFlexDegrees": 107.75057940048183,
+          "forearmTwistDegrees": -30.29594686914445
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.3877787807814457e-16,
+        "Left": 8.886119947416683e-17
+      },
+      "footTargetResidual": {
+        "Right": 1.734723475976807e-16,
+        "Left": 1.2719202621569003e-16
+      }
+    },
+    {
+      "seconds": 0.83,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 0.14161237545340552,
+          "elbowFlexDegrees": 115.44953801367964,
+          "forearmTwistDegrees": 12.190674422357711
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.22254236668331015,
+          "elbowFlexDegrees": 101.2993800608455,
+          "forearmTwistDegrees": -13.41641014708789
+        }
+      },
+      "handTargetResidual": {
+        "Right": 1.5700924586837752e-16,
+        "Left": 9.309503074677274e-17
+      },
+      "footTargetResidual": {
+        "Right": 4.751495951074711e-16,
+        "Left": 2.4591502649036963e-16
+      }
+    },
+    {
+      "seconds": 1.1,
+      "arms": {
+        "Right": {
+          "wristDeltaDegrees": 0.0038120457393690265,
+          "elbowFlexDegrees": 120.3423102973346,
+          "forearmTwistDegrees": 0.002838305556524824
+        },
+        "Left": {
+          "wristDeltaDegrees": 0.008117278125657356,
+          "elbowFlexDegrees": 99.24979430972246,
+          "forearmTwistDegrees": 0.006607889715229926
+        }
+      },
+      "handTargetResidual": {
+        "Right": 6.938893903907228e-17,
+        "Left": 6.206335383118183e-17
+      },
+      "footTargetResidual": {
+        "Right": 2.423651445728339e-16,
+        "Left": 1.66932774490923e-16
+      }
+    }
+  ],
+  "nativeUnrealReview": false
+}
