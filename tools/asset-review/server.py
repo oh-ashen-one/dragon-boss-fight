@@ -116,7 +116,7 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/catalog":
             payload = json.dumps({
                 "build": "9b185634",
-                "source": "Knight v015 · Dragon v007 · cathedral pass",
+                "source": "Knight body reference · one-hand idle review",
                 "items": [{key: value for key, value in item.items() if key not in {"remotePath", "localPath"}}
                           for item in self.server.catalog],
             }).encode("utf-8")
@@ -200,10 +200,14 @@ def main():
     parser.add_argument("--studio-root", required=True, type=Path)
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
-    catalog = local_review_items() + catalog_from_studio(args.studio_host, args.studio_root)
+    all_items = local_review_items() + catalog_from_studio(args.studio_host, args.studio_root)
+    visible_ids = {"review/IdleOneHand_Breathing_v3.glb", "knight/KnightRig.glb"}
+    catalog = [item for item in all_items if item["id"] in visible_ids]
+    if {item["id"] for item in catalog} != visible_ids:
+        raise RuntimeError("The Knight body or revised standing idle is missing")
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     server.catalog = catalog
-    server.assets = {item["id"]: item for item in catalog}
+    server.assets = {item["id"]: item for item in all_items}
     server.studio_host = args.studio_host
     print(f"Veyr asset review: http://127.0.0.1:{args.port}/ ({len(catalog)} assets)", flush=True)
     try:

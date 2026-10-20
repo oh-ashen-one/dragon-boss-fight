@@ -32,11 +32,9 @@ scene.add(rim);
 
 const loader = new GLTFLoader();
 const clock = new THREE.Clock();
-const groupNames = { knight: 'Knight v015', dragon: 'Dragon v007', objects: 'Cathedral objects' };
+const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['IdleOneHand_Breathing_v1', 'KnightRig', 'Idle', 'IdleTwoHand', 'Walk', 'Run', 'StrafeLeft', 'StrafeRight', 'Backpedal', 'LightAttack', 'LightAttackTwoHand', 'HeavyAttack', 'HeavyAttackTwoHand', 'Guard', 'GuardTwoHand', 'Roll', 'Jump', 'Heal', 'Stagger', 'Death'],
-  dragon: ['DragonRig', 'Idle', 'Walk', 'TurnLeft', 'TurnRight', 'BiteWindup', 'BiteActive', 'BiteRecovery', 'ClawWindup', 'ClawActive', 'ClawRecovery', 'FireWindup', 'FireActive', 'FireRecovery', 'TailWindup', 'TailActive', 'TailRecovery', 'FlightWindup', 'FlightActive', 'FlightRecovery', 'Exposed', 'Rise', 'Collapse', 'Death', 'DeathDown'],
-  objects: ['BoatGreatsword_v4', 'CathedralFacade_v1', 'CathedralWall_v1', 'CathedralArch_v1', 'CathedralBrazier_v1'],
+  knight: ['IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 
 let catalog = [];
@@ -56,8 +54,8 @@ let loadSerial = 0;
 
 function humanName(item) {
   const names = {
-    IdleOneHand_Breathing_v1: 'Idle · one hand · breathing review',
-    KnightRig: 'Knight body', DragonRig: 'Dragon body',
+    IdleOneHand_Breathing_v3: 'One-hand idle · revised',
+    KnightRig: 'Knight body · reference', DragonRig: 'Dragon body',
     BoatGreatsword_v4: 'Boat greatsword', CathedralFacade_v1: 'Cathedral facade',
     CathedralWall_v1: 'Cathedral wall', CathedralArch_v1: 'Cathedral arch',
     CathedralBrazier_v1: 'Cathedral brazier',
@@ -78,8 +76,7 @@ function sortItems(a, b) {
 }
 
 function renderList() {
-  const query = $('asset-search').value.trim().toLowerCase();
-  const items = catalog.filter(item => item.group === activeGroup && humanName(item).toLowerCase().includes(query)).sort(sortItems);
+  const items = catalog.filter(item => item.group === activeGroup).sort(sortItems);
   const list = $('asset-list');
   list.replaceChildren();
   if (!items.length) {
@@ -102,13 +99,11 @@ function renderList() {
     button.addEventListener('click', () => selectItem(item));
     list.append(button);
   }
-  $('asset-count').textContent = `${catalog.filter(x => x.group === activeGroup).length} files`;
+  $('asset-count').textContent = `${items.length} views`;
 }
 
 function setGroup(group) {
   activeGroup = group;
-  for (const tab of document.querySelectorAll('.group-tab')) tab.classList.toggle('active', tab.dataset.group === group);
-  $('asset-search').value = '';
   renderList();
 }
 
@@ -146,7 +141,7 @@ function frameModel() {
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
-  const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 0.82;
+  const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 0.68;
   controls.target.copy(center);
   camera.position.copy(center).add(new THREE.Vector3(distance * 0.4, distance * 0.18, distance));
   camera.near = Math.max(0.001, distance / 1000);
@@ -169,20 +164,13 @@ const swordGrip = new THREE.Vector3(0.0616763, -0.00199617, 0.00555098);
 const swordRotation = new THREE.Quaternion(0.78155554, 0.0047625, 0.01463231, -0.62364586);
 const swordScale = 0.4096359622825952;
 
-async function attachSword(knight, serial, standingReview) {
+async function attachSword(knight, serial) {
   const hand = knight.getObjectByName('RightHand');
   if (!hand) throw new Error('Knight RightHand bone is missing');
   const sword = await loader.loadAsync('/api/asset/objects%2FBoatGreatsword_v4.glb');
   if (serial !== loadSerial) { disposeGltf(sword); return false; }
   sword.scene.position.copy(swordGrip);
   sword.scene.quaternion.copy(swordRotation);
-  if (standingReview) {
-    // Rest the oversized boat blade toward the floor while the hand stays on its grip.
-    hand.updateWorldMatrix(true, false);
-    const handWorld = hand.getWorldQuaternion(new THREE.Quaternion());
-    const lowerBlade = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(22.5));
-    sword.scene.quaternion.premultiply(handWorld.clone().invert().multiply(lowerBlade).multiply(handWorld));
-  }
   sword.scene.scale.setScalar(swordScale);
   hand.add(sword.scene);
   return true;
@@ -247,7 +235,7 @@ function selectItem(item) {
       try {
         if (item.group === 'knight') {
           loading('Attaching the boat greatsword to the Knight’s right hand…');
-          if (!await attachSword(model, serial, item.id.startsWith('review/'))) return;
+          if (!await attachSword(model, serial)) return;
         }
       } catch (error) {
         console.error(error);
@@ -307,8 +295,6 @@ function animate() {
 }
 animate();
 
-for (const tab of document.querySelectorAll('.group-tab')) tab.addEventListener('click', () => setGroup(tab.dataset.group));
-$('asset-search').addEventListener('input', renderList);
 $('frame-button').addEventListener('click', frameModel);
 $('wire-button').addEventListener('click', () => toggleWireframe(!wireframe));
 $('bones-button').addEventListener('click', () => toggleBones(!showBones));
@@ -337,7 +323,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'knight/Idle.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/IdleOneHand_Breathing_v3.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {
