@@ -36,7 +36,7 @@ const groupNames = { knight: 'Knight v015' };
 const ordered = {
   knight: ['LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
-const approvedIds = new Set(['review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
+const approvedIds = new Set(['review/LightAttackTwoHand_Compact_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
 const retimedStrongIds = new Set(['review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb']);
 
@@ -57,7 +57,7 @@ let loadSerial = 0;
 
 function humanName(item) {
   const names = {
-    LightAttackTwoHand_Compact_v1: 'Two-hand light attack · review',
+    LightAttackTwoHand_Compact_v1: 'Two-hand light attack · approved',
     StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · approved',
     StrongAttackTwoHand_Sweep_v9: 'Two-hand sweep · approved',
     IdleOneHand_Breathing_v3: 'One-hand idle · approved',

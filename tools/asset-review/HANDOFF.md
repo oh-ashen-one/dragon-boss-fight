@@ -4,13 +4,13 @@ Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
 Laptop viewer: `http://127.0.0.1:8765/?review=twohand-light#review%2FLightAttackTwoHand_Compact_v1.glb`.
 Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-16`).
 
-## Active two-hand light attack review — 2026-10-20
+## Approved two-hand light attack — 2026-10-20
 
 Owner approved the faster strong attacks, then authorized the proposed two-hand
 light attack starting from the approved two-hand idle. No new reference was
 supplied for this move; it is an original compact cut using the established rig.
 
-- Candidate: `LightAttackTwoHand_Compact_v1.glb`, 1.1 seconds, 73 baked samples.
+- Approved: `LightAttackTwoHand_Compact_v1.glb`, 1.1 seconds, 73 baked samples.
 - SHA256 `cf2fdf2063824184251f2537efda74c95ab7fdb13df0e97289b8d7548ae78d56`.
 - Generator: `tools/art/author_knight_twohand_light_review.py`; shared solver
   now accepts an optional profile, preserving the original strong profiles.
@@ -25,12 +25,12 @@ supplied for this move; it is an original compact cut using the established rig.
   Body geometry, skin, bind nodes and materials preserved byte-for-byte.
 - Local API clip hash verified. Export preserved on Studio in the same dedicated
   review destination listed below. Source pushed on this thread's branch.
-- Visual review and owner acceptance remain pending. Chrome inventory exposes
-  no connected browsers; native access again returned "Computer Use was not
-  approved to use Google Chrome". No UI workaround was used. User can open
-  the direct laptop viewer URL above; browser playback is normal 1x.
-- Next: visually inspect full motion and both palms, then get owner feedback.
-  Do not call this candidate approved or engine-integrated.
+- Owner explicitly approved this candidate in the conversation on 2026-10-20:
+  "approved". Preserve the clip and its 1.1-second timing.
+- Agent visual inspection was blocked by Chrome tool permissions; owner approval
+  is recorded separately from that unavailable inspection. No native Unreal
+  import, integration, or playtest is claimed.
+- Await the owner's next move selection; do not change approved motions.
 
 ## Approved two-hand strong attacks
 

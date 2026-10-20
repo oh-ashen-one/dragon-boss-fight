@@ -19,6 +19,8 @@
     "LeftLeg": 1.4566964341037445
   },
   "sourceMeshSkinBindMaterialsPreserved": true,
-  "visualReview": "pending",
-  "ownerApproved": false
+  "visualReview": "Owner approved; agent visual inspection blocked by Chrome permissions",
+  "ownerApproved": true,
+  "ownerApprovalDate": "2026-10-20",
+  "ownerApprovalQuote": "approved"
 }
