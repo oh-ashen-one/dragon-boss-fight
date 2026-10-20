@@ -34,7 +34,7 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['IdleTwoHand', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 
 let catalog = [];
@@ -59,7 +59,7 @@ function humanName(item) {
     BoatGreatsword_v4: 'Boat greatsword', CathedralFacade_v1: 'Cathedral facade',
     CathedralWall_v1: 'Cathedral wall', CathedralArch_v1: 'Cathedral arch',
     CathedralBrazier_v1: 'Cathedral brazier',
-    Idle: 'Idle · one hand', IdleTwoHand: 'Idle · two hands',
+    Idle: 'Idle · one hand', IdleTwoHand: 'Two-hand idle · current',
     LightAttack: 'Light attack · one hand', LightAttackTwoHand: 'Light attack · two hands',
     HeavyAttack: 'Heavy attack · one hand', HeavyAttackTwoHand: 'Heavy attack · two hands',
     Guard: 'Guard · one hand', GuardTwoHand: 'Guard · two hands',
@@ -141,7 +141,8 @@ function frameModel() {
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
-  const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 0.68;
+  const fitMargin = activeItem?.name === 'IdleTwoHand' ? 0.9 : 0.68;
+  const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fitMargin;
   controls.target.copy(center);
   camera.position.copy(center).add(new THREE.Vector3(distance * 0.4, distance * 0.18, distance));
   camera.near = Math.max(0.001, distance / 1000);
@@ -243,7 +244,6 @@ function selectItem(item) {
         return;
       }
       if (serial !== loadSerial) return;
-      frameModel();
       toggleWireframe(wireframe);
       if (gltf.animations.length) {
         mixer = new THREE.AnimationMixer(model);
@@ -252,8 +252,11 @@ function selectItem(item) {
         action.setLoop(looping ? THREE.LoopRepeat : THREE.LoopOnce, looping ? Infinity : 1);
         action.clampWhenFinished = true;
         action.play();
+        mixer.setTime(0);
         playing = true;
       }
+      model.updateMatrixWorld(true);
+      frameModel();
       updatePlaybackControls();
       updateTime();
       renderList();

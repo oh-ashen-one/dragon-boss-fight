@@ -13,8 +13,9 @@ transform. The viewer attaches `BoatGreatsword_v4.glb` to `RightHand` using the
 same grip transform in both the static reference and v3; the extra viewer-only
 blade pitch used in v1 was removed after the owner identified knuckle clipping.
 
-Only the v3 candidate and static Knight body are listed in the laptop viewer.
-The other source files are hidden from the list, not deleted. The accepted
+The laptop viewer also lists the current active `IdleTwoHand.glb` so the owner
+can review the two-hand grip next. It is labeled “current,” not approved. The
+other source files are hidden from the list, not deleted. The accepted
 `9b185634` build and active Unreal assets are unchanged. No native Unreal
 preview or game integration has been claimed for v3.
 
@@ -26,7 +27,8 @@ same verified hash to the Studio's
 under the Veyr checkout. `tools/art/author_knight_idle_review.py` regenerates
 it from active Knight v015 `KnightRig.glb` without replacing an existing file.
 
-Next: get owner visual feedback in the focused Chrome viewer. If accepted,
+Next: get owner visual feedback on the two-hand idle in the focused Chrome
+viewer. The one-hand idle is owner-approved. For any approved clip,
 inspect the candidate in a session-owned native Unreal preview after checking
 the shared renderer slots and bind-space handling, then integrate it on the
 appropriate game branch. Preserve the old build and prior clips.
