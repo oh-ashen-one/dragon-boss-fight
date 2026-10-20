@@ -25,7 +25,7 @@
       <aside class="library" aria-label="Asset library">
         <div class="library-heading"><h1>Knight moves</h1><span id="asset-count">Loading…</span></div>
         <div id="asset-list" class="asset-list" role="listbox" aria-label="Available models and animations"></div>
-        <p class="library-footnote">The one-hand attack follows the owner’s Black Knight reference: windup, forward plunge, low hold, then recovery to the approved idle. This attack is up for review; both idles remain approved. Other animations are preserved and hidden.</p>
+        <p class="library-footnote">The one-hand attack follows the owner’s Black Knight reference: one continuous swing from the approved resting pose, behind the head, then down to the floor. This attack is up for review; both idles remain approved. Other animations are preserved and hidden.</p>
       </aside>
 
       <section class="stage-column" aria-label="3D review stage">
@@ -41,6 +41,11 @@
         </div>
         <div class="viewport" id="viewport">
           <canvas id="stage" aria-label="Interactive 3D model viewer"></canvas>
+          <aside id="attack-reference" class="attack-reference" hidden aria-label="One-hand attack reference">
+            <a href="https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevocosmic-black-knight-gif-2.gif?1606387799" target="_blank" rel="noopener">Your one-hand reference ↗</a>
+            <img id="reference-frame" alt="Black Knight one-hand attack at the matching point in the timeline">
+            <span id="reference-time"></span>
+          </aside>
           <div class="viewport-guidance">Drag to orbit · Scroll to zoom · Right drag to pan</div>
           <div class="loading" id="loading" role="status" aria-live="polite"><span class="loading-line"></span><span id="loading-text">Connecting to Studio…</span></div>
         </div>

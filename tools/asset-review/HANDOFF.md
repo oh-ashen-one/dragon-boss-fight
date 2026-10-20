@@ -1,34 +1,56 @@
 # Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=black-knight-onehand-v3#review%2FLightAttack_BlackKnightReference_v3.glb`.
-The server is loopback-only on the verified laptop (`MacBook-Pro.local`, `Mac17,2`).
+Laptop viewer: `http://127.0.0.1:8765/?review=continuous-onehand-v10#review%2FLightAttack_BlackKnightReference_v10.glb`.
+Loopback server on verified laptop `MacBook-Pro.local`, `Mac17,2`.
 
-The focused review is `LightAttack_BlackKnightReference_v3.glb`, a new 2.4-second
-one-hand attack based on the owner's [Black Knight GIF](https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevocosmic-black-knight-gif-2.gif?1606387799).
-It starts at the approved one-hand idle, draws the boat greatsword overhead,
-steps into a forward plunging strike, briefly holds low, and returns to that
-idle. It is a **review candidate, not owner-approved**. The approved idles and
-static Knight body remain visible. The original `LightAttack.glb` and earlier
-local review candidates v1/v2 are preserved and hidden from the focused list.
+## Current request and candidate
 
-`tools/art/author_knight_light_attack_review.py` recreates v3 from the static
-Knight and approved idle with exclusive output creation. The output SHA256 is
-`9fd002a45c6df1ee082d046aad7e961ad650d3eeefc0ec85a6e88fdcd445db97`.
-It contains 149 samples; the first and last poses match the approved idle,
-the source body geometry/bind data are unchanged, maximum solved foot-target
-error is 0.00553 rig units, no limb reach clamp occurred, and exported world
-matrices differ from authored poses by at most 5.3e-7. At the low hold, the
-left sole is at ground height and the skirt's lowest weighted vertex is about
-0.001 rig unit below ground. The raw mesh has unreferenced right-hand vertices
-below the ground during the strike; these are absent from rendered triangles.
-Chrome was checked at rest, overhead windup, impact, side stance, and close-up
-grip. The viewer camera frames the full arc. The one-hand source boat sword is
-unchanged; its held handle is occluded by the gauntlet, with pommel and shaft
-visible on opposite sides. v3 was copied to the verified Studio (`Mac15,14`)
-under `Local/art-pass-20261019/knight/light-attack-review-20261019/` with a
-matching SHA256. The prior v1 candidate is in that folder too; v2 remains
-locally cached and reproducible with the separate v2 generator.
+Owner rejected v3 and subsequent IK revisions: both arms appeared to bend down,
+the windup stopped at separate keys, and shoulder/elbow rotations pinched the
+mesh. Owner's latest direction is a single continuous rest -> behind head ->
+floor swing, with anatomically plausible shoulders, elbows, and knees.
+Approved idles must remain unchanged. No acceptance of this attack is implied.
+
+Current candidate: `LightAttack_BlackKnightReference_v10.glb`, 2.8 seconds,
+176 baked samples. SHA256:
+`6bbe88f658f2e72659aca48d41e141f6ab5faf6c3d82d3d076610880689b4665`.
+Generator: `tools/art/author_knight_light_attack_review.py`.
+Earlier candidates remain in the ignored asset cache and older scripts preserve
+the prior implementations. The native game/build 9b185634 is unchanged.
+
+Arms now use torso-relative FK shoulder flexion/abduction and single-axis elbow
+hinges. Approved local wrists/fingers remain fixed; free arm guards independently.
+Continuous PCHIP channels carry velocity through intermediate lift poses, with
+staggered shoulder/elbow peaks. A bounded shoulder-flexion correction lands the
+blade, without rotating the wrist. Knee poles derive from approved leg planes;
+foot targets stay planted except for a small right step. Original mesh, skin,
+bind skeleton and materials are byte-preserved; this is a motion correction,
+not a general reskinning or corrective-shape pass.
+
+Checks: exact approved start/end pose, unchanged source hashes, no reach clamp,
+maximum authored foot target error <5e-16 rig units, exported world matrix error
+<8.6e-7. Independent 60Hz evaluation: right elbow flexion 14.25..74.20 degrees,
+left elbow 29.17..94.17, fixed bone lengths, zero local wrist rotation changes.
+Largest right shoulder/forearm frame changes are 20.05/12.18 degrees, removing
+the prior ~175-degree IK reversal. Blade tip stays above floor (minimum .00395);
+held contact tip is .025 rig units. These are checks, not owner acceptance.
+Chrome inspected at lift, overhead, and impact, including body closeups. Native
+Unreal preview remains untested. Source weighting may still need a separate
+review if deformation remains visible; do not claim a fully corrected rig.
+
+The exact owner reference is shown alongside the model on the same timeline:
+https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevocosmic-black-knight-gif-2.gif?1606387799
+37 frames, 50ms each, SHA256
+`7406671d0795781d5d835928effda4ee5937bec928845a98077e52ced4da685b`.
+`tools/art/prepare_knight_onehand_reference.py` extracts the verified reference
+into ignored `.asset-cache/reference/onehand/`; it refuses a mismatched source.
+
+Private candidate destination on verified Studio `Mac15,14`:
+`/Users/midir/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/light-attack-review-20261019/LightAttack_BlackKnightReference_v10.glb`.
+Copied with matching SHA256 and exclusive destination creation. Generator replay
+produced the identical SHA256. No Studio engine/game launch or Unreal rebuild
+is part of this review.
 
 The owner supplied the same Wix-hosted GIF ending in
 `d7965ok-b28aa032-999c-41e8-9825-33113292d5a7.gif` for both the

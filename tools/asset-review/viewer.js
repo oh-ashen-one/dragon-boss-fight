@@ -34,7 +34,7 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['LightAttack_BlackKnightReference_v3', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 const approvedIds = new Set(['review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
@@ -58,8 +58,8 @@ function humanName(item) {
     IdleOneHand_Breathing_v3: 'One-hand idle · approved',
     IdleTwoHand_ReadyBreath_v6: 'Two-hand idle · approved',
     LightAttack_FromApprovedIdle_v1: 'One-hand light attack · review',
-    LightAttack_BlackKnightReference_v2: 'One-hand plunging attack · review',
-    LightAttack_BlackKnightReference_v3: 'One-hand plunging attack · review',
+    LightAttack_BlackKnightReference_v2: 'One-hand overhead attack · review',
+    LightAttack_BlackKnightReference_v10: 'One-hand overhead attack · review',
     KnightRig: 'Knight body · reference', DragonRig: 'Dragon body',
     BoatGreatsword_v4: 'Boat greatsword', CathedralFacade_v1: 'Cathedral facade',
     CathedralWall_v1: 'Cathedral wall', CathedralArch_v1: 'Cathedral arch',
@@ -143,11 +143,12 @@ function frameModel() {
   if (!model) return;
   const box = new THREE.Box3().setFromObject(model);
   if (box.isEmpty()) return;
-  const center = box.getCenter(new THREE.Vector3());
+  const attackReview = activeItem?.name === 'LightAttack_BlackKnightReference_v10';
+  const center = attackReview ? new THREE.Vector3(0, 0.85, 0.30) : box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
   const fitMargin = activeItem?.name?.startsWith('LightAttack_BlackKnightReference') ? 1.30 : activeItem?.name?.startsWith('IdleTwoHand') ? 0.9 : 0.68;
-  const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fitMargin;
+  const distance = attackReview ? 2.8 : radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fitMargin;
   controls.target.copy(center);
   camera.position.copy(center).add(new THREE.Vector3(distance * 0.4, distance * 0.18, distance));
   camera.near = Math.max(0.001, distance / 1000);
@@ -160,7 +161,7 @@ function frameModel() {
   if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
   const gridSize = Math.max(2, Math.ceil(Math.max(size.x, size.z, size.y) * 2));
   grid = new THREE.GridHelper(gridSize, 16, 0x627277, 0x3e5157);
-  grid.position.y = box.min.y - Math.max(0.005, size.y * 0.003);
+  grid.position.y = attackReview ? -0.005 : box.min.y - Math.max(0.005, size.y * 0.003);
   grid.material.transparent = true;
   grid.material.opacity = 0.4;
   scene.add(grid);
@@ -228,6 +229,14 @@ function updateTime() {
   const elapsed = action ? (duration ? action.time % duration : 0) : 0;
   $('time-label').textContent = `${timeText(elapsed)} / ${timeText(duration)}`;
   $('timeline').value = duration ? String(Math.round(elapsed / duration * 1000)) : '0';
+  const showReference = activeItem?.name === 'LightAttack_BlackKnightReference_v10';
+  $('attack-reference').hidden = !showReference;
+  if (showReference) {
+    const frame = Math.min(36, Math.floor(elapsed / 0.05));
+    const src = `/.asset-cache/reference/onehand/frame-${String(frame).padStart(2, '0')}.jpg`;
+    if ($('reference-frame').getAttribute('src') !== src) $('reference-frame').src = src;
+    $('reference-time').textContent = elapsed < 1.85 ? `${elapsed.toFixed(2)} s · reference` : 'Recovery to approved idle';
+  }
 }
 
 function toggleWireframe(value) {
@@ -357,7 +366,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/LightAttack_BlackKnightReference_v3.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/LightAttack_BlackKnightReference_v10.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

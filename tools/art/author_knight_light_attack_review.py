@@ -1,49 +1,47 @@
 #!/usr/bin/env python3
-"""Author a one-hand plunging strike from the approved idle.
+"""Continuous one-hand overhead attack with anatomical FK arm hinges.
 
-The owner-provided Black Knight reference moves from a low one-hand guard to a
-raised windup, then leaps into a forward ground strike and briefly holds low.
-The approved idle supplies frame zero and the return pose. Separate whole-body
-motion is solved between them; the original GLBs and bind data remain intact.
+Approved idle supplies the bind-compatible resting pose and wrist grip.
+Arm joints are authored in torso space; no endpoint IK or antipodal alignment
+is used for shoulders or elbows. PCHIP channels carry velocity through the
+windup, with staggered shoulder/elbow extrema so the sword keeps moving.
 """
-
 from __future__ import annotations
-
 import argparse
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
-
 import numpy as np
-from scipy.spatial.transform import Rotation, Slerp
-
-from author_knight_actions import blend, build, sample, smooth
+from scipy.interpolate import PchipInterpolator
+from scipy.optimize import brentq
+from scipy.spatial.transform import Rotation
+from author_knight_actions import build, sample, smooth
 from author_knight_stances import Rig
+from author_knight_hold import unit
 from inspect_weapon_topology import GLB
 
+DURATION = 2.8
+SAMPLES = 169
+SOCKET_ROTATION = Rotation.from_quat([.78155554,.0047625,.01463231,-.62364586]).as_matrix()
 
-DURATION = 2.40
-SAMPLES = 145
-SOCKET_ROTATION = Rotation.from_quat([0.78155554, 0.0047625, 0.01463231, -0.62364586]).as_matrix()
-# Time, right hand relative to upper-arm joint, blade direction, torso yaw,
-# forward pitch, hips displacement, left/right foot displacement, left hand
-# relative to its upper-arm joint. Rig coordinates: Y up, Z forward.
-CONTROLS = [
-    (0.00, None, None, 0., 0., [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], None),
-    (0.18, [-.10, -.21, .09], [-.68, -.10, .73], -3., -2., [0., -.005, 0.], [0., 0., 0.], [0., 0., 0.], None),
-    (0.39, [-.13, -.15, .13], [-.72, .25, .65], -11., -5., [0., -.015, .005], [0., 0., 0.], [0., 0., 0.], [.09, -.17, .10]),
-    (0.60, [-.15, -.05, .16], [-.30, .82, .49], -14., -7., [0., .012, .035], [0., .035, .045], [0., .025, .015], [.09, -.10, .13]),
-    (0.75, [-.13, .015, .18], [-.10, .90, .43], -7., 2., [0., .025, .060], [0., .080, .120], [0., .070, .035], [.09, -.07, .16]),
-    (0.94, [-.06, -.18, .16], [.02, -.45, .90], 6., 33., [0., -.135, .155], [0., 0., .175], [0., 0., -.045], [.09, -.13, .17]),
-    (1.10, [-.06, -.18, .16], [.02, -.45, .90], 6., 33., [0., -.145, .165], [0., 0., .175], [0., 0., -.045], [.09, -.13, .17]),
-    (1.68, [-.06, -.18, .16], [.02, -.45, .90], 6., 33., [0., -.145, .165], [0., 0., .175], [0., 0., -.045], [.09, -.13, .17]),
-    (2.10, [-.08, -.20, .10], [.20, .10, .97], 2., 7., [0., -.070, .045], [0., 0., .045], [0., 0., -.015], [.08, -.19, .10]),
-    (DURATION, None, None, 0., 0., [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], None),
-]
-
-
+# Each curve is continuous in position and first derivative. Intermediate
+# rising/falling keys retain velocity instead of easing to a stop at each key.
+CURVES = {
+    'rightFlex': ([0,.30,.60,.72,.80,.91,1.04,1.84,2.4,2.8], [0,50,125,145,132,37,35,35,20,0]),
+    'rightAbduct': ([0,.50,.72,.91,1.84,2.8], [0,10,15,8,8,0]),
+    'rightElbow': ([0,.35,.65,.79,.91,1.84,2.8], [0,10,30,40,-20,-20,0]),
+    'leftFlex': ([0,.45,.80,.94,1.84,2.8], [0,35,75,80,75,0]),
+    'leftAbduct': ([0,.50,.91,1.84,2.8], [0,15,25,25,0]),
+    'leftElbow': ([0,.45,.80,1.04,1.84,2.8], [0,35,65,65,60,0]),
+    'pitch': ([0,.45,.72,.83,.94,1.05,1.84,2.8], [0,-3,-5,8,53,55,51,0]),
+    'yaw': ([0,.40,.72,.94,1.84,2.8], [0,-8,-12,14,12,0]),
+    'hipY': ([0,.40,.72,.94,1.05,1.84,2.8], [0,-.012,.008,-.095,-.10,-.095,0]),
+    'hipZ': ([0,.50,.72,.94,1.84,2.8], [0,.015,.045,.13,.13,0]),
+    'stepY': ([0,.35,.70,.91,1.84,2.40,2.8], [0,0,.055,0,0,.025,0]),
+    'stepZ': ([0,.35,.70,.94,1.84,2.8], [0,0,.10,.19,.19,0]),
+}
 def setup_rig(g: GLB, idle: GLB) -> Rig:
     r = Rig.__new__(Rig)
     r.g = g
@@ -79,154 +77,114 @@ def turn(r: Rig, pose: dict, name: str, degrees: tuple[float, float, float]) -> 
     r.set_world_rotation(pose, node, desired, world)
 
 
-def control_at(time: float, start_rotation: np.ndarray, start_axis: np.ndarray,
-               right_start: np.ndarray, left_start: np.ndarray) -> tuple:
-    i = max(0, min(len(CONTROLS) - 2, int(np.searchsorted([c[0] for c in CONTROLS], time, side='right') - 1)))
-    a, b = CONTROLS[i:i + 2]
-    raw = float(np.clip((time - a[0]) / (b[0] - a[0]), 0., 1.))
-    # Anticipation briefly hangs, then the falling stroke accelerates into its
-    # planted contact instead of easing through every interpolation key.
-    u = 1. - (1. - raw) ** 3 if a[0] == .75 else float(smooth(raw))
 
-    def orientation(axis: list[float] | None) -> Rotation:
-        if axis is None:
-            return Rotation.from_matrix(start_rotation)
-        direction = np.asarray(axis, dtype=float)
-        direction /= np.linalg.norm(direction)
-        align, _ = Rotation.align_vectors([direction], [start_axis])
-        return align * Rotation.from_matrix(start_rotation)
-
-    rotations = Rotation.from_quat([orientation(a[2]).as_quat(), orientation(b[2]).as_quat()])
-    hand_rotation = Slerp([0., 1.], rotations)(u).as_matrix()
-    def lerp(index: int, fallback: np.ndarray | None = None) -> np.ndarray:
-        left = fallback if a[index] is None else np.asarray(a[index], dtype=float)
-        right = fallback if b[index] is None else np.asarray(b[index], dtype=float)
-        return (1. - u) * left + u * right
-
-    return (lerp(1, right_start), hand_rotation, float(lerp(3)), float(lerp(4)),
-            lerp(5), lerp(6), lerp(7), lerp(8, left_start))
+def arm_fk(r, pose, donor_world, chain, flex, abduct, bend, side):
+    upper, fore, hand = chain
+    spine = r.names['Spine2']
+    world = r.world(pose)
+    torso_delta = world[spine,:3,:3] @ donor_world[spine,:3,:3].T
+    u = donor_world[fore,:3,3] - donor_world[upper,:3,3]
+    f = donor_world[hand,:3,3] - donor_world[fore,:3,3]
+    hinge = unit(np.cross(u,f))
+    base_bend = math.degrees(math.acos(float(np.clip(unit(u)@unit(f),-1,1))))
+    # Flexion cannot reverse the elbow or collapse it beyond 135 degrees.
+    actual_bend = float(np.clip(base_bend+bend, 8., 135.))
+    bend = actual_bend-base_bend
+    shoulder = Rotation.from_euler('x',-flex,degrees=True).as_matrix() @ Rotation.from_euler('z',(-1 if side=='Right' else 1)*abduct,degrees=True).as_matrix()
+    upper_rotation = torso_delta @ shoulder @ donor_world[upper,:3,:3]
+    fore_rotation = torso_delta @ shoulder @ Rotation.from_rotvec(hinge*np.deg2rad(bend)).as_matrix() @ donor_world[fore,:3,:3]
+    r.set_world_rotation(pose,upper,upper_rotation)
+    r.set_world_rotation(pose,fore,fore_rotation)
+    # Do not touch the hand: its approved local wrist and fingers follow forearm.
+    return actual_bend
 
 
-def write_candidate(body_path: Path, approved_idle_path: Path, output: Path) -> dict:
+def write_candidate(body_path, approved_idle_path, output):
     if output.exists():
         raise FileExistsError(f'Refusing to overwrite a review clip: {output}')
-    g = GLB(body_path)
-    idle = GLB(approved_idle_path)
-    if g.json.get('animations') or len(idle.json.get('animations', [])) != 1:
-        raise ValueError('Expected a static Knight rig and one approved idle clip')
+    g, idle = GLB(body_path), GLB(approved_idle_path)
     if g.json['nodes'] != idle.json['nodes'] or g.json['skins'] != idle.json['skins']:
-        raise ValueError('The approved idle and Knight body do not share the exact bind skeleton')
-    r = setup_rig(g, idle)
-    arms = {side: [r.names[side + name] for name in ('Arm', 'ForeArm', 'Hand')] for side in ('Right', 'Left')}
-    legs = {side: [r.names[side + name] for name in ('UpLeg', 'Leg', 'Foot')] for side in ('Right', 'Left')}
-    animated = [node for chain in (*arms.values(), *legs.values()) for node in chain]
-    rest_rotations = {node: np.asarray(g.json['nodes'][node].get('rotation', [0., 0., 0., 1.]), dtype=float) for node in animated}
-    right = arms['Right']
-    left = arms['Left']
-    start = r.baseW[right[2], :3, :3]
-    start_axis = start @ SOCKET_ROTATION[:, 1]
-    right_start = r.baseW[right[2], :3, 3] - r.baseW[right[0], :3, 3]
-    left_start = r.baseW[left[2], :3, 3] - r.baseW[left[0], :3, 3]
-    times = np.unique(np.r_[np.linspace(0., DURATION, SAMPLES), [c[0] for c in CONTROLS]])
-    poses = []
-    metrics = []
-    for time in times:
-        # Frame zero and the final recovery frame exactly match the approved
-        # one-hand idle. A small breath from that clip persists during action.
-        idle_time = .8 * math.sin(math.pi * float(time) / DURATION) ** 2
-        donor = sample(idle, idle_time)
-        for node in animated:
-            donor.setdefault((node, 'rotation'), rest_rotations[node].copy())
-        hips = r.names['Hips']
-        donor.setdefault((hips, 'translation'), np.asarray(g.json['nodes'][hips].get('translation', [0., 0., 0.]), dtype=float))
-        pose = {key: value.copy() for key, value in donor.items()}
-        right_rel, hand_rotation, yaw, pitch, hip_shift, left_step, right_step, left_rel = control_at(
-            float(time), start, start_axis, right_start, left_start)
-        pose[(hips, 'translation')] = donor[(hips, 'translation')] + hip_shift
-        turn(r, pose, 'Spine', (pitch * .27, yaw * .26, 0.))
-        turn(r, pose, 'Spine1', (pitch * .37, yaw * .34, 0.))
-        turn(r, pose, 'Spine2', (pitch * .36, yaw * .40, 0.))
-        turn(r, pose, 'Neck', (-pitch * .15, -yaw * .25, 0.))
-        turn(r, pose, 'Head', (-pitch * .10, -yaw * .15, 0.))
-        donor_world = r.world(donor)
-        leg_errors = {}
-        foot_targets = {}
-        for side, shift, pole in (('Left', left_step, np.array([.12, 0., 1.])),
-                                  ('Right', right_step, np.array([-.12, 0., 1.]))):
-            chain = legs[side]
-            target = donor_world[chain[2], :3, 3] + shift
-            foot_targets[side] = target
-            result = r.limb(pose, chain, target, donor_world[chain[2], :3, :3], pole)
-            leg_errors[side] = result['reachClampCm']
-        right_target = r.world(pose)[right[0], :3, 3] + right_rel
-        arm = r.limb(pose, right, right_target, hand_rotation, np.array([-1., -.35, .30]))
-        left_target = r.world(pose)[left[0], :3, 3] + left_rel
-        left_arm = r.limb(pose, left, left_target, donor_world[left[2], :3, :3], np.array([1., -.35, .30]))
-        # Solve away from the approved pose only after the windup starts. At
-        # the final key the exact approved pose is restored for clean blending.
-        fade = min(1., float(time) / .10, (DURATION - float(time)) / .18)
-        pose = blend(donor, pose, max(0., fade))
-        world = r.world(pose)
-        sword_axis = world[right[2], :3, :3] @ SOCKET_ROTATION[:, 1]
-        sword_tip = world[right[2], :3, 3] + world[right[2], :3, :3] @ np.array([.0616763, -.00199617, .00555098]) + sword_axis * (.4096359622825952 * 2.35)
-        feet_error = {side: float(np.linalg.norm(world[chain[2], :3, 3] - foot_targets[side])) for side, chain in legs.items()}
-        metrics.append({
-            'seconds': float(time),
-            'hips': world[hips, :3, 3].tolist(),
-            'hand': world[right[2], :3, 3].tolist(),
-            'swordAxis': sword_axis.tolist(),
-            'swordTip': sword_tip.tolist(),
-            'feetTargetError': feet_error,
-            'reachClampCm': max(arm['reachClampCm'], left_arm['reachClampCm'], *leg_errors.values()),
-            'reachClampByLimbCm': {'RightArm': arm['reachClampCm'], 'LeftArm': left_arm['reachClampCm'], **{side + 'Leg': value for side, value in leg_errors.items()}},
-            'knees': {side: world[chain[1], :3, 3].tolist() for side, chain in legs.items()},
-        })
+        raise ValueError('Approved idle must share exact bind skeleton')
+    if g.json.get('animations') or len(idle.json.get('animations', [])) != 1:
+        raise ValueError('Expected static body and one approved idle clip')
+    r = setup_rig(g,idle)
+    arms={s:[r.names[s+n] for n in ('Arm','ForeArm','Hand')] for s in ('Right','Left')}
+    legs={s:[r.names[s+n] for n in ('UpLeg','Leg','Foot')] for s in ('Right','Left')}
+    nodes=[n for c in (*arms.values(),*legs.values()) for n in c]
+    curves={k:PchipInterpolator(*v) for k,v in CURVES.items()}
+    times=np.unique(np.r_[np.linspace(0,DURATION,SAMPLES),*[v[0] for v in CURVES.values()]])
+    poses=[]; metrics=[]
+    for t in times:
+        donor=sample(idle,.5*math.sin(math.pi*float(t)/DURATION)**2)
+        for n in nodes:
+            donor.setdefault((n,'rotation'),np.asarray(g.json['nodes'][n].get('rotation',[0,0,0,1]),dtype=float))
+        hips=r.names['Hips']
+        donor.setdefault((hips,'translation'),np.asarray(g.json['nodes'][hips].get('translation',[0,0,0]),dtype=float))
+        pose={k:v.copy() for k,v in donor.items()}
+        c={k:float(f(t)) for k,f in curves.items()}
+        pose[(hips,'translation')]+=np.array([0,c['hipY'],c['hipZ']])
+        for name,p,y in (('Spine',.27,.26),('Spine1',.37,.34),('Spine2',.36,.40),('Neck',-.15,-.25),('Head',-.10,-.15)):
+            turn(r,pose,name,(c['pitch']*p,c['yaw']*y,0))
+        dw=r.world(donor)
+        feet={}; clamps={}; bends={}
+        for side in ('Left','Right'):
+            shift=np.array([0,c['stepY'],c['stepZ']]) if side=='Right' else np.zeros(3)
+            target=dw[legs[side][2],:3,3]+shift
+            feet[side]=target
+            upper,knee,foot=legs[side]
+            hinge=unit(np.cross(dw[knee,:3,3]-dw[upper,:3,3],dw[foot,:3,3]-dw[knee,:3,3]))
+            direction=unit(target-r.world(pose)[upper,:3,3])
+            pole=unit(np.cross(direction,hinge))
+            result=r.limb(pose,legs[side],target,dw[foot,:3,:3],pole)
+            clamps[side]=result['reachClampCm']
+            low=side.lower()
+            bends[side]=arm_fk(r,pose,dw,arms[side],c[low+'Flex'],c[low+'Abduct'],c[low+'Elbow'],side)
+        # A single shoulder-flexion correction lands the blade on the floor;
+        # elbow remains its authored hinge, wrist/grip remains untouched.
+        contact=float(smooth(np.clip((t-.88)/.06,0,1)))*float(smooth(np.clip((2.2-t)/.36,0,1)))
+        if contact>0:
+            h=arms['Right'][2]
+            def tip_height(flex):
+                arm_fk(r,pose,dw,arms['Right'],flex,c['rightAbduct'],c['rightElbow'],'Right')
+                w0=r.world(pose)
+                return float((w0[h,:3,3]+w0[h,:3,:3]@np.array([.0616763,-.00199617,.00555098])+w0[h,:3,:3]@SOCKET_ROTATION[:,1]*(.4096359622825952*2.35))[1])-.025
+            landed=brentq(tip_height,0.,90.) if tip_height(0.)*tip_height(90.)<0 else c['rightFlex']
+            arm_fk(r,pose,dw,arms['Right'],c['rightFlex']*(1-contact)+landed*contact,c['rightAbduct'],c['rightElbow'],'Right')
+        if t==0 or t==DURATION:
+            pose={k:v.copy() for k,v in donor.items()}
+        w=r.world(pose); hand=arms['Right'][2]
+        axis=w[hand,:3,:3]@SOCKET_ROTATION[:,1]
+        tip=w[hand,:3,3]+w[hand,:3,:3]@np.array([.0616763,-.00199617,.00555098])+axis*(.4096359622825952*2.35)
+        metrics.append({'seconds':float(t),'hand':w[hand,:3,3].tolist(),'freeHand':w[arms['Left'][2],:3,3].tolist(),'head':w[r.names['Head'],:3,3].tolist(),'swordAxis':axis.tolist(),'swordTip':tip.tolist(),'elbowFlexDegrees':bends,'footTargetError':max(np.linalg.norm(w[legs[s][2],:3,3]-feet[s]) for s in feet),'reachClampCm':max(clamps.values())})
         poses.append(pose)
-    if any(set(pose) != set(poses[0]) for pose in poses):
-        raise ValueError('Animation channel set changes between samples')
-    if any(not np.allclose(poses[0][key], poses[-1][key], atol=1e-6) for key in poses[0]):
-        raise ValueError('The attack does not return to the approved idle pose')
-    worst_foot = max(max(row['feetTargetError'].values()) for row in metrics)
-    worst_clamp = max(row['reachClampCm'] for row in metrics)
-    if worst_foot > .012 or worst_clamp > 2.0:
-        worst_row = max(metrics, key=lambda row: row['reachClampCm'])
-        raise ValueError(f'Foot placement or arm reach failed: {worst_foot}, {worst_clamp} at {worst_row["seconds"]:.3f}s {worst_row["reachClampByLimbCm"]}')
-    result = build(g, poses, times, 'LightAttack_BlackKnightReference_v3')
-    if result.binary[:len(g.binary)] != g.binary or any(result.json.get(key) != g.json.get(key) for key in ('nodes', 'skins', 'meshes', 'materials', 'textures', 'images')):
-        raise ValueError('Source body geometry or bind data changed')
-    export_error = 0.
-    for time, pose in zip(times, poses):
-        export_error = max(export_error, float(np.abs(result.world_matrices(0, float(time)) - r.world(pose)).max()))
-    if export_error > 1e-5:
-        raise ValueError(f'Exported motion differs from authored poses: {export_error}')
-    output.parent.mkdir(parents=True, exist_ok=True)
-    with os.fdopen(os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'wb') as stream:
-        stream.write(result.bytes())
-    return {
-        'bodySourceSha256': hashlib.sha256(body_path.read_bytes()).hexdigest(),
-        'approvedIdleSha256': hashlib.sha256(approved_idle_path.read_bytes()).hexdigest(),
-        'outputSha256': hashlib.sha256(output.read_bytes()).hexdigest(),
-        'durationSeconds': DURATION,
-        'sampleCount': len(times),
-        'maximumFootTargetErrorRigUnits': worst_foot,
-        'maximumReachClampCm': worst_clamp,
-        'maximumExportMatrixError': export_error,
-        'startAndEndMatchApprovedIdle': True,
-        'sourceGeometryAndBindDataPreserved': True,
-        'nativeUnrealReview': False,
-        'reference': 'https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevocosmic-black-knight-gif-2.gif?1606387799',
-        'keyMoments': {str(moment): min(metrics, key=lambda row: abs(row['seconds'] - moment)) for moment in (0., .39, .75, .94, 1.25, 1.68, DURATION)},
-    }
+    if any(set(p)!=set(poses[0]) for p in poses): raise ValueError('Track set changes')
+    if any(not np.allclose(poses[0][k],poses[-1][k],atol=1e-6) for k in poses[0]): raise ValueError('Loop differs')
+    if max(m['footTargetError'] for m in metrics)>.012 or max(m['reachClampCm'] for m in metrics)>2.:
+        raise ValueError('Foot target or leg reach failed')
+    for side in arms:
+        hand=arms[side][2]
+        if any(not np.allclose(p[(hand,'rotation')],poses[0][(hand,'rotation')],atol=1e-6) for p in poses):
+            raise ValueError('Approved local wrist grip changed')
+    result=build(g,poses,times,'LightAttack_BlackKnightReference_v10')
+    if result.binary[:len(g.binary)]!=g.binary or any(result.json.get(k)!=g.json.get(k) for k in ('nodes','skins','meshes','materials','textures','images')): raise ValueError('Bind or geometry changed')
+    error=max(float(np.abs(result.world_matrices(0,float(t))-r.world(p)).max()) for t,p in zip(times,poses))
+    if error>1e-5: raise ValueError('Export mismatch')
+    # Report angular speeds on baked local channels, including elbow and wrist.
+    speeds={}
+    for n in nodes:
+        q=Rotation.from_quat([p[(n,'rotation')] for p in poses])
+        speeds[g.json['nodes'][n]['name']]=float(np.max((q[:-1].inv()*q[1:]).magnitude()/np.diff(times))*180/math.pi)
+    output.parent.mkdir(parents=True,exist_ok=True)
+    with os.fdopen(os.open(output,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600),'wb') as f: f.write(result.bytes())
+    return {'bodySourceSha256':hashlib.sha256(body_path.read_bytes()).hexdigest(),'approvedIdleSha256':hashlib.sha256(approved_idle_path.read_bytes()).hexdigest(),'outputSha256':hashlib.sha256(output.read_bytes()).hexdigest(),'durationSeconds':DURATION,'sampleCount':len(times),'maximumExportMatrixError':error,'maximumFootTargetErrorRigUnits':max(m['footTargetError'] for m in metrics),'maximumReachClampCm':max(m['reachClampCm'] for m in metrics),'maximumLocalAngularSpeedDegreesPerSecond':speeds,'startAndEndMatchApprovedIdle':True,'sourceGeometryAndBindDataPreserved':True,'anatomy':'Torso-relative shoulder flexion and abduction; one-axis elbow hinge 8..135 degrees; unchanged local wrist.','nativeUnrealReview':False,'keyMoments':{str(t):min(metrics,key=lambda m:abs(m['seconds']-t)) for t in (0,.3,.6,.72,.8,.85,.91,1.04,1.84,DURATION)}}
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--body', required=True, type=Path)
-    parser.add_argument('--approved-idle', required=True, type=Path)
-    parser.add_argument('--output', required=True, type=Path)
-    args = parser.parse_args()
-    print(json.dumps(write_candidate(args.body, args.approved_idle, args.output), indent=2))
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--body',required=True,type=Path)
+    parser.add_argument('--approved-idle',required=True,type=Path)
+    parser.add_argument('--output',required=True,type=Path)
+    a=parser.parse_args()
+    print(json.dumps(write_candidate(a.body,a.approved_idle,a.output),indent=2))
 
-
-if __name__ == '__main__':
-    main()
+if __name__=='__main__':main()
