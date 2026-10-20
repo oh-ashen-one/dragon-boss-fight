@@ -34,7 +34,7 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['IdleTwoHand', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 
 let catalog = [];
@@ -54,7 +54,8 @@ let loadSerial = 0;
 
 function humanName(item) {
   const names = {
-    IdleOneHand_Breathing_v3: 'One-hand idle · revised',
+    IdleOneHand_Breathing_v3: 'One-hand idle · approved',
+    IdleTwoHand_ReadyBreath_v6: 'Two-hand idle · breathing review',
     KnightRig: 'Knight body · reference', DragonRig: 'Dragon body',
     BoatGreatsword_v4: 'Boat greatsword', CathedralFacade_v1: 'Cathedral facade',
     CathedralWall_v1: 'Cathedral wall', CathedralArch_v1: 'Cathedral arch',
@@ -141,7 +142,7 @@ function frameModel() {
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
-  const fitMargin = activeItem?.name === 'IdleTwoHand' ? 0.9 : 0.68;
+  const fitMargin = activeItem?.name?.startsWith('IdleTwoHand') ? 0.9 : 0.68;
   const distance = radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fitMargin;
   controls.target.copy(center);
   camera.position.copy(center).add(new THREE.Vector3(distance * 0.4, distance * 0.18, distance));
@@ -161,16 +162,40 @@ function frameModel() {
   scene.add(grid);
 }
 
+function frameBody() {
+  if (!model) return;
+  const body = model.getObjectByName('Hips');
+  if (!body) return;
+  const center = body.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.12, 0));
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(0.50, 0.28, 1.9));
+  controls.update();
+}
+
+function frameGrip() {
+  if (!model) return;
+  const right = model.getObjectByName('RightHand');
+  const left = model.getObjectByName('LeftHand');
+  if (!right || !left) return;
+  const center = right.getWorldPosition(new THREE.Vector3()).add(left.getWorldPosition(new THREE.Vector3())).multiplyScalar(0.5);
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(0.20, 0.10, 0.52));
+  controls.update();
+}
+
 const swordGrip = new THREE.Vector3(0.0616763, -0.00199617, 0.00555098);
 const swordRotation = new THREE.Quaternion(0.78155554, 0.0047625, 0.01463231, -0.62364586);
 const swordScale = 0.4096359622825952;
 
-async function attachSword(knight, serial) {
+async function attachSword(knight, serial, item) {
   const hand = knight.getObjectByName('RightHand');
   if (!hand) throw new Error('Knight RightHand bone is missing');
-  const sword = await loader.loadAsync('/api/asset/objects%2FBoatGreatsword_v4.glb');
+  const twoHandReview = item.id === 'review/IdleTwoHand_ReadyBreath_v6.glb';
+  const swordId = twoHandReview ? 'review/BoatGreatsword_Grip_v6.glb' : 'objects/BoatGreatsword_v4.glb';
+  const sword = await loader.loadAsync(`/api/asset/${encodeURIComponent(swordId)}`);
   if (serial !== loadSerial) { disposeGltf(sword); return false; }
   sword.scene.position.copy(swordGrip);
+  if (twoHandReview) sword.scene.position.add(new THREE.Vector3(0, 0.075 * swordScale, 0).applyQuaternion(swordRotation));
   sword.scene.quaternion.copy(swordRotation);
   sword.scene.scale.setScalar(swordScale);
   hand.add(sword.scene);
@@ -236,7 +261,7 @@ function selectItem(item) {
       try {
         if (item.group === 'knight') {
           loading('Attaching the boat greatsword to the Knight’s right hand…');
-          if (!await attachSword(model, serial)) return;
+          if (!await attachSword(model, serial, item)) return;
         }
       } catch (error) {
         console.error(error);
@@ -299,6 +324,8 @@ function animate() {
 animate();
 
 $('frame-button').addEventListener('click', frameModel);
+$('body-button').addEventListener('click', frameBody);
+$('grip-button').addEventListener('click', frameGrip);
 $('wire-button').addEventListener('click', () => toggleWireframe(!wireframe));
 $('bones-button').addEventListener('click', () => toggleBones(!showBones));
 $('play-button').addEventListener('click', () => { playing = !playing; updatePlaybackControls(); });
@@ -326,7 +353,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/IdleOneHand_Breathing_v3.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/IdleTwoHand_ReadyBreath_v6.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

@@ -86,7 +86,10 @@ def catalog_from_studio(host: str, root: Path) -> list[dict]:
 def local_review_items() -> list[dict]:
     """Expose only explicit, locally authored review clips; never alter Studio assets."""
     items = []
-    for path in sorted(REVIEW.glob("IdleOneHand_Breathing_v*.glb")):
+    for filename in ("IdleOneHand_Breathing_v3.glb", "IdleTwoHand_ReadyBreath_v6.glb", "BoatGreatsword_Grip_v6.glb"):
+        path = REVIEW / filename
+        if not path.is_file():
+            continue
         with path.open("rb") as stream:
             header = stream.read(20)
             if len(header) < 20 or header[:4] != b"glTF":
@@ -97,7 +100,7 @@ def local_review_items() -> list[dict]:
             document = json.loads(stream.read(json_size))
         items.append({
             "id": f"review/{path.name}",
-            "group": "knight",
+            "group": "objects" if path.name.startswith("BoatGreatsword") else "knight",
             "name": path.stem,
             "file": path.name,
             "bytes": path.stat().st_size,
@@ -116,7 +119,7 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/catalog":
             payload = json.dumps({
                 "build": "9b185634",
-                "source": "Knight body reference · one-hand idle review",
+                "source": "Knight body reference · two-hand breathing review",
                 "items": [{key: value for key, value in item.items() if key not in {"remotePath", "localPath"}}
                           for item in self.server.catalog],
             }).encode("utf-8")
@@ -201,7 +204,7 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     all_items = local_review_items() + catalog_from_studio(args.studio_host, args.studio_root)
-    visible_ids = {"review/IdleOneHand_Breathing_v3.glb", "knight/IdleTwoHand.glb", "knight/KnightRig.glb"}
+    visible_ids = {"review/IdleOneHand_Breathing_v3.glb", "review/IdleTwoHand_ReadyBreath_v6.glb", "knight/KnightRig.glb"}
     catalog = [item for item in all_items if item["id"] in visible_ids]
     if {item["id"] for item in catalog} != visible_ids:
         raise RuntimeError("A required Knight idle review asset is missing")
