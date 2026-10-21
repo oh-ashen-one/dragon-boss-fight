@@ -110,6 +110,15 @@ def local_review_items() -> list[dict]:
     return items
 
 
+def local_body_item() -> dict:
+    path = CACHE / "knight" / "KnightRig.glb"
+    if not path.is_file():
+        raise RuntimeError("Restore the private review bundle first: missing KnightRig.glb")
+    return {"id": "knight/KnightRig.glb", "group": "knight", "name": "KnightRig",
+            "file": path.name, "bytes": path.stat().st_size, "animationNames": [],
+            "localPath": str(path)}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(HERE), **kwargs)
@@ -200,10 +209,15 @@ class Handler(SimpleHTTPRequestHandler):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--studio-host", default="studio")
-    parser.add_argument("--studio-root", required=True, type=Path)
+    parser.add_argument("--studio-root", type=Path)
+    parser.add_argument("--local-only", action="store_true",
+                        help="Use the restored private review bundle without Studio SSH")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
-    all_items = local_review_items() + catalog_from_studio(args.studio_host, args.studio_root)
+    if not args.local_only and args.studio_root is None:
+        parser.error("--studio-root is required unless --local-only is selected")
+    all_items = local_review_items() + ([local_body_item()] if args.local_only else
+                                       catalog_from_studio(args.studio_host, args.studio_root))
     visible_ids = {"review/WalkTwoHand_Blender_v3.glb", "review/LightAttackTwoHand_Compact_v1.glb", "review/StrongAttackTwoHand_Thrust_v7.glb", "review/StrongAttackTwoHand_Sweep_v9.glb", "review/IdleOneHand_Breathing_v3.glb", "review/IdleTwoHand_ReadyBreath_v6.glb", "review/LightAttack_BlackKnightReference_v10.glb", "knight/KnightRig.glb"}
     catalog = [item for item in all_items if item["id"] in visible_ids]
     if {item["id"] for item in catalog} != visible_ids:

@@ -1,11 +1,12 @@
 """Import the preserved walk as reference into the session-owned Blender scene."""
+import os
 import bpy
 import json
 from pathlib import Path
 from mathutils import Vector
 
-ROOT = Path('/Users/midir/veyr-blender-walk-20261021')
-ASSETS = Path('/Users/midir/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/twohand-strong-review-20261019-codex')
+ROOT = Path(os.environ.get('VEYR_BLENDER_WORK', '/Users/midir/veyr-blender-walk-20261021'))
+ASSETS = Path(os.environ.get('VEYR_REVIEW_ASSETS', '/Users/midir/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/twohand-strong-review-20261019-codex'))
 assert not ROOT.joinpath('Knight_Walk_Blender_v3.blend').exists(), 'Preserve existing authoring scene'
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.object.delete(use_global=False)

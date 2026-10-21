@@ -8,7 +8,7 @@ import bpy
 ROOT = Path(os.environ['VEYR_BLENDER_WORK'])
 PORT = 9881
 OWNER = 'codex-veyr-walk-20261021'
-spec = importlib.util.spec_from_file_location('veyr_isolated_mcp', '/Users/midir/blender-mcp-work/addons/blender_mcp.py')
+spec = importlib.util.spec_from_file_location('veyr_isolated_mcp', os.environ.get('VEYR_BLENDER_ADDON', '/Users/midir/blender-mcp-work/addons/blender_mcp.py'))
 addon = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = addon
 spec.loader.exec_module(addon)

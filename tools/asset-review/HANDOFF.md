@@ -4,11 +4,19 @@ Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
 Laptop viewer: `http://127.0.0.1:8765/?review=blender-walk-v3#review%2FWalkTwoHand_Blender_v3.glb`.
 Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-106`).
 
+## Cross-machine entry point — 2026-10-21
+
+Read the root `HANDOFF.md` first for GitHub assets, fresh restore verification,
+process ownership, and exact commands. This document preserves detailed motion
+approvals and technical history.
+
 ## Blender walk v3 candidate — 2026-10-21
 
 - Authored in live Blender 5.2.0 LTS with sparse pelvis/torso/breath/hilt curves,
   native anatomical IK, calibrated pole angles and a 60fps baked deform action.
   The embedded refinement script rebakes edited control curves.
+  On another Studio, use current repository scripts with `VEYR_BLENDER_WORK`;
+  the archived embedded scripts retain the original Studio paths.
 - `WalkTwoHand_Blender_v3.glb`, 3.5 seconds, SHA256
   `d0713bac27cd87f6d5ed34eebb2c10a4bc6d1011a125bbe30f65bda405cd3c3d`.
 - Editable scene: `/Users/midir/veyr-blender-walk-20261021/Knight_Walk_Blender_v3.blend`
@@ -27,7 +35,8 @@ Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-106`).
 - All approved clips and the v1/v2 walk files are preserved. V3 is unapproved,
   still a start/walk/stop study, with no Unreal integration/rebuild.
 - Public project repository: character derivatives remain private as before;
-  Blender scene and export stay on the Studio, export copied to laptop cache.
+  Blender scene and export are preserved in the private GitHub handoff bundle;
+  see the root `HANDOFF.md` for the portable restore commands.
 - Shared-brain rule commit `e5330b7` pushed to
   `oh-ashen-one/agents-md:codex/blender-animation-rule-20261021`.
   52 tests and catalog validation passed. Not merged to main; no global rollout

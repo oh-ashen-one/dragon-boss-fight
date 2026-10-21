@@ -1,8 +1,9 @@
+import os
 import bpy,json
 from pathlib import Path
 from mathutils import Vector
 scene=bpy.context.scene
-root=Path('/Users/midir/veyr-blender-walk-20261021')
+root=Path(os.environ.get('VEYR_BLENDER_WORK', '/Users/midir/veyr-blender-walk-20261021'))
 cam=scene.camera
 scene.render.resolution_x=640;scene.render.resolution_y=640
 for view,xyz in [('front',(0,-3.8,1.3)),('side',(3.8,0,1.3)),('threequarter',(2.4,-3.4,1.5))]:

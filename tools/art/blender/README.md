@@ -47,3 +47,17 @@ The project GitHub repository is public. Character derivatives remain private
 under the project's existing asset restriction: keep the `.blend` and GLB on
 the Studio and laptop asset cache; do not commit them to this public repository.
 The authoring recipes, checks, reports and retrieval instructions are committed.
+
+## Portable handoff
+
+Private editable scene and required review files are now archived in GitHub:
+`oh-ashen-one/veyr-animation-sources`, release
+`knight-blender-walk-v3-20261021`. See the repository root `HANDOFF.md` for
+verified download/restore instructions. Public code still excludes the assets.
+
+For a different Studio, set `VEYR_BLENDER_WORK` to the owned authoring directory,
+`VEYR_REVIEW_ASSETS` to the restored `.asset-cache/review` directory, and
+`VEYR_BLENDER_ADDON` to that Studio's verified Blender MCP addon. The updated
+external scripts accept these settings. The archived blend's embedded scripts
+retain the original Studio paths, so use the current repository scripts when
+relocating. These environment variables must be set when starting Blender.

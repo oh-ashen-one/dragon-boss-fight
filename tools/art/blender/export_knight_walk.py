@@ -1,7 +1,8 @@
+import os
 import bpy,json,hashlib
 from pathlib import Path
 from mathutils import Vector
-root=Path('/Users/midir/veyr-blender-walk-20261021');scene=bpy.context.scene
+root=Path(os.environ.get('VEYR_BLENDER_WORK', '/Users/midir/veyr-blender-walk-20261021'));scene=bpy.context.scene
 rig=bpy.data.objects['Knight_Walk_Rig'];socket=bpy.data.objects['ReviewWeaponSocket']
 # Compare baked endpoint poses to the preserved reference in the same Blender rig.
 new_action=rig.animation_data.action;new_slot=rig.animation_data.action_slot
@@ -13,6 +14,7 @@ for f in (0,210):
  endpoint_errors.append(max(max(abs(baked[b.name][i][j]-b.matrix[i][j]) for i in range(4) for j in range(4)) for b in rig.pose.bones))
  rig.animation_data.action=new_action;rig.animation_data.action_slot=new_slot
  scene.frame_set(f);bpy.context.view_layer.update()
+assert max(endpoint_errors)<1e-4, f'Idle endpoint mismatch: {endpoint_errors}'
 scene.frame_set(70)
 scene.render.resolution_x=1000;scene.render.resolution_y=1000
 travel=rig.pose.bones['Hips'].matrix.translation.y

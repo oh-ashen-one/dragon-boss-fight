@@ -1,56 +1,166 @@
-# Veyr presentation rebuild handoff
+# HANDOFF — Veyr Knight animation review
 
-Repository: https://github.com/oh-ashen-one/veyr-cinder-warden
-Branch: `feat/unreal-migration`. Historical Unity branch: `checkpoint/unity-native-009`.
+Date: 2026-10-21 · Branch: `codex/veyr-asset-review-20261019` · Written on laptop `Mac-106` / `Mac17,2` · Status: **ready to resume; walk v3 awaits owner review**
 
-## Active owner revision
+## What this is
 
-The owner played and rejected a450a43b presentation. Work is active on the boat greatsword, one/two-hand combat, repaired full-body motion, active dragon, Gothic moonlit Tripo cathedral and restrained HUD. See docs/art-pass-20261019.md. The previous handoff below is a preserved mechanical baseline, not current visual acceptance.
+Hari is reviewing the Knight's motions one at a time in Chrome on localhost.
+The current work is a two-hand ready walk: hunched shoulders, full-body breathing,
+weight shift through the hips/knees/feet, and responsive arms holding the sword.
+Hari explicitly required Blender for character animation authoring/refinement
+and asked to persist that rule. Scripts may automate Blender and check results;
+external scripted joint transforms alone are not the authoring workflow.
 
-## Final revision handoff — 2026-10-19
+Approved: one-hand idle, two-hand idle, one-hand overhead attack, two faster
+strong attacks, and two-hand light attack. Preserve those exact clips and timing.
+Walk v1 was rejected as stiff. V2 and Blender v3 are NOT approved.
+Detailed approvals/hashes: [motion ledger](tools/asset-review/HANDOFF.md).
+Historical game build handoff is preserved in
+[docs/handoffs/HANDOFF-cathedral-build-20261019.md](docs/handoffs/HANDOFF-cathedral-build-20261019.md).
 
-The requested boat-sword and cathedral pass is implemented and the native Mac build is verified for owner playtest. Final source-and-asset identity: `9b185634d4c3b88084749bc8eb8c079546724eb6a969cf382f390620c81758db`. Package receipt: `Local/package-20261019T210433Z/receipt.json`. All 12 source-matched packaged scenarios passed in `Local/final-packaged-suite-sky4.json`. Victory occurred at 202.145 seconds (3:22), followed by a successful restart.
+## Repo / branch map
 
-Physical E-key switching and the other recorded keyboard controls were verified. The UI API's standalone Shift limitation remains separate from the passing native roll checks. All owned editors and games exited normally and released their slots. Foreign Hollow Current work remained untouched. There were no Unreal crashes in this pass.
+| Repository | Branch / artifact | Purpose |
+|---|---|---|
+| `oh-ashen-one/veyr-cinder-warden` (public) | `codex/veyr-asset-review-20261019` | Code, viewer, Blender authoring scripts, checks and this handoff |
+| `oh-ashen-one/veyr-animation-sources` (private) | `codex/knight-blender-handoff-20261021`; release `knight-blender-walk-v3-20261021` | Editable `.blend`, model/clip files, reference frames, checksums |
+| `oh-ashen-one/agents-md` (private) | `codex/blender-animation-rule-20261021`, commit `e5330b7` | Tested Blender-first global rule; pushed, NOT merged to main |
 
-Active assets are Knight v015 (18 clips) and Dragon v007 (40 clips), retaining both character designs. The knight uses the v2 core/guard poses, reviewed v1 heal/roll/jump/stagger/death clips, and preserved locomotion. The accepted roll body and left-side tracks are unchanged; only the right-arm carry accommodates the new weapon. Generator SHA256: `5c87df5509a5f4b7a8a2afc7dae6b64dd865c0ba29b539fac7bf50cfd02cf1d1`. Root and critic reviewed 12 native poses without a hard grip or pose blocker. Remaining polish includes close-range weapon occlusion against the dragon and environmental depth. Do not claim AAA/reference-match or owner acceptance.
+Current laptop checkout:
+`/Users/darkeatermidir/Documents/Codex/2026-10-19/veyr-asset-review`.
+Only one worktree was listed for this repository and there are no stashes.
+No main merge is authorized. This handoff request does not resolve the separate
+pending approval to merge the shared-brain rule.
 
-Tripo used 310 credits in this pass: weapon 55 plus retopology 35, then facade, wall, arch and brazier at 55 each. Boat v004 is 2.8 m tall with unit world scale. Eleven major cathedral placements retain their imported PBR materials. Built-in image generation supplied 10 references/textures and saved prompts. Floor material is v001; night sky is v004. Ambient light captures the actual night sky instead of the old daylight cubemap. The meteor starts at u=0.47, polar UV=0.39, with vertical travel 0.018 and a 37-second period. Natural visibility was verified around 23 seconds without a time override. The earlier high-sky version remains preserved privately.
+## Where things stand
 
-Owner delivery is `/Users/midir/Documents/Codex/2026-10-18/go/outputs/veyr-art-pass`. It contains `Veyr-Mac-9b185634.zip`, validation, physical-input notes, instructions, native videos and reference art. The ZIP is 638637929 bytes; SHA256 is `25bb280fe123d68a8d6a16b9c835b0bd4659b5be2c8f566653c1e6c41acd5747`. Studio Downloads contains the same ZIP and the verified extracted app at `/Users/midir/Downloads/Veyr-Cathedral-Pass-9b185634/Veyr.app`. No laptop installation is claimed.
+- Animation implementation commit: `4c28e2812267007981cd49922beb99fa8149c37e`.
+- `WalkTwoHand_Blender_v3.glb`: 3.5 seconds / 60 fps / 211 samples.
+  SHA256 `d0713bac27cd87f6d5ed34eebb2c10a4bc6d1011a125bbe30f65bda405cd3c3d`.
+- Blender 5.2.0 LTS scene has preserved reference action, editable pelvis/torso/
+  breath/hilt controls, native four-limb IK, calibrated pole angles and baked
+  deform animation. The deform rig's rest bones/skin were not reauthored.
+- Scene SHA256 `b37a8e36dfcc1c1edb8c3df6289ae74a746ab8538f9c571fcb3d260b1fda20e9`.
+- The previous work turn rendered front, side and three-quarter poses, corrected
+  an elbow bend-plane mismatch, and verified the exported character/sword in
+  Chrome at 1x. This handoff turn rechecked hashes and restored the bundle fresh.
+- The Blender rule is active in project `AGENTS.md`; a local Codex memory update
+  was also requested and saved. Other clients should follow the committed project
+  instructions; local Codex memory does not travel with this repository.
 
-The private editable archive `Veyr-EditableAssets-Knight15-Dragon7-Sky4.zip` contains 105 active packages. Its SHA256 is `f63b336cc63eb7f314daf8d143bfd29444fd70657d23905385dae313994afa25`. Restore its Content directory under Unreal/Veyr. Provider originals and rejected candidates remain private; raw assets were not published to GitHub. Source stays on `feat/unreal-migration`; no main merge was performed. Preserve the unrelated `Assets/Resources/SourceManifest 2.txt`.
+## What changed for this handoff
 
-## Prior delivered state
+- The public root handoff now routes to this active animation thread; the older
+  game build handoff was archived without deleting its content.
+- The private GitHub snapshot includes 325 files: editable Blender scene,
+  reference Knight body, six approved clips, both sword grips, walk v1/v2/v3,
+  original strong-attack timings, and the existing reference frames.
+- `restore_review_bundle.py` validates every SHA256 before writing anything and
+  refuses to overwrite differing existing files.
+- `server.py --local-only` starts the review without Studio SSH or the Unreal
+  project. Only the restored active Knight review assets are required.
+- External Blender scripts now accept relocated Studio paths through
+  `VEYR_BLENDER_WORK`, `VEYR_REVIEW_ASSETS` and `VEYR_BLENDER_ADDON`.
 
-Native Unreal 5.8.3 arm64 macOS encounter, source identity `a450a43b4b726a5bdebdd5ce8ca8a49fcf36dbc766fe4884d939e4d3ec8ac825`. The final signed app passed all 11 packaged scenarios, with Customuse Knight B v012 and Dragon V3-B v006 active. Victory occurred at 214.158 game seconds (3:34); fresh responsive restart completed at 219.691 seconds. See [final test results](docs/native-test-results.md).
+## Verification
 
-The owner delivery contains `Veyr-Mac-a450a43b.zip`, exact-source core/full-fight videos and timing receipts, `Validation.json`, `Physical-Input.json`, SHA256SUMS and `READ-ME.txt`. The separate private active-authoring ZIP contains 71 assets, unchanged since ee0313. Restore its Characters directory under Unreal/Veyr/Content before rebuilding from public source. Its older filename identifies the asset snapshot, not a different final character revision.
+This turn: restored all 325 files to a new temporary directory; started its
+server with `--local-only` on port 8766; catalog returned all 8 views; fetched
+walk and body over HTTP and matched their expected SHA256 hashes. Studio SSH
+was not used by that test server. Python compilation and JavaScript syntax
+checks pass. The temporary test server is stopped after verification.
 
-Game ZIP SHA256: `d37d2c0c5526a3dac0a01b1edb4c29fa1e243b8d03347156ef8c90653cfcec5d`. Cook, strict ad-hoc signature, ZIP CRC, extracted manifest and 15 binary dependencies passed. The app is locally signed, not notarized. Raw Customuse derivatives remain private pending public redistribution clearance. Code is MIT; original procedural art and Epic resources retain their separate licenses.
+Prior recorded checks: exported GLB sampled independently at 120 Hz; palm drift
+<0.000789 rig units, stance-foot frame drift <0.000021, maximum local rotation
+step <3.366 degrees per 60 Hz sample; Blender idle endpoint matrix errors
+<2.3e-6. Reports: `tools/asset-review/reviews/blender-walk-v3-*.json`.
+Shared-brain change passed 52 tests and catalog validation in the preceding turn.
 
-## Evidence and exact build
+## Not done / out of scope
 
-- Final package: `Local/package-20261019T012734Z/receipt.json`.
-- Standalone build: `Local/unreal-build-20261019T012735299495Z/receipt.json`.
-- Matching editor build: `Local/unreal-build-20261019T013815658137Z/receipt.json`.
-- Final suite: `Local/final-packaged-suite-a450a43b.json`.
-- Victory: `Evidence/native-victory-20261019T013107Z`.
-- Core: `Evidence/native-core-20261019T013108Z`.
-- Physical input: `Evidence/manual-input-a450a43b/physical-input.json`.
+- Owner has not approved walk v3. It is a start/walk/stop study, NOT a seamless
+  locomotion cycle; looping resets the root after 0.72 rig units of travel.
+- No Unreal import, rebuild, new installed game, or native-engine playtest.
+- No modifications to approved clips, no public redistribution of private assets.
+- Shared-brain rule awaits explicit permission for a main merge. Do not claim
+  it is globally published merely because its task branch is pushed.
+- Full simultaneous-render stress testing was not done. `powermetrics` needed
+  sudo authentication; IOAccelerator samples were available and recorded.
 
-Physical standalone input verified capture, movement, attacks, jump, guard, healing, lock, Escape release, recapture and restart. The UI API rejects modifier-only Shift, so its physical mapping remains owner-playtest coverage; native tests verified dodge motion, stamina and invulnerability. Audio was enabled but not aurally reviewed. Recordings are silent 8-FPS requested captures with actual wall timestamps; shared GPU/capture overhead precludes exclusive performance claims. Owner feel/difficulty/visual judgement is not inferred from automated tests.
+## Resume on another machine
 
-## Final implementation
+Use GitHub access to the owner's private repositories, Git, Python 3.11+, Node/npm,
+and `gh`. Clone into a new directory; do not repurpose another session's checkout.
 
-Knight: 244 cm, rigid weapon, corrected cloth/carry and grounded gait; full action clips with moving guard/heal layers; four heals, directional guard, stamina, jump, dodge immunity and optional lock. Dragon: 51-joint repaired rig, 38 authored clips, independent leg stagger/buckle/collapse, exposed head and rise; pose-driven attack contacts and bounded warnings for six attacks. Camera floor/wall/close framing and head marker were reviewed in native captures. Original basalt, material graphs, continuous fire cards and synthesized audio complete the arena.
+```sh
+git clone --filter=blob:none --branch codex/veyr-asset-review-20261019 \
+  https://github.com/oh-ashen-one/veyr-cinder-warden.git veyr-asset-review
+cd veyr-asset-review
+mkdir -p /tmp/veyr-handoff
+gh release download knight-blender-walk-v3-20261021 \
+  --repo oh-ashen-one/veyr-animation-sources --dir /tmp/veyr-handoff \
+  --pattern 'Veyr-Knight-Blender-Handoff-20261021.zip' --pattern SHA256SUMS
+(cd /tmp/veyr-handoff && shasum -a 256 -c SHA256SUMS)
+python3 tools/asset-review/restore_review_bundle.py \
+  /tmp/veyr-handoff/Veyr-Knight-Blender-Handoff-20261021.zip
+npm ci --prefix tools/asset-review
+python3 tools/asset-review/server.py --local-only --port 8765
+```
 
-Safe automated head approach uses a side waypoint and approximately 288 cm heavy-punish distance, avoiding the snout. Final dragon health is 5,800, calibrated from a measured 6:20 safe-route fight at 8,400 to the verified 3:34 final fight. No player damage, stagger, stamina or enemy move changes accompanied that calibration.
+Open in Chrome:
+`http://127.0.0.1:8765/?review=blender-walk-v3#review%2FWalkTwoHand_Blender_v3.glb`.
+Select **Body**, play at **1x**, then review the walk with Hari.
+Archive: 517156410 bytes; SHA256
+`c4ae59ee7da0b7d6737ab35bdd0b5ebfd12c8bf0d1f872c85066baedf8f70a61`.
+The scene restores to `Local/Blender/Knight_Walk_Blender_v3.blend`.
+The review cache restores to `tools/asset-review/.asset-cache`.
 
-Recorded provider debit: 1,143 credits across 20 completed operations; no pending paid job. Provider originals and failed/rejected evidence remain preserved. The owner grants standing Veyr launch/credit authority and explicitly says not to ask routine permission again. No main merge, subscription change or generated-asset public publication was performed.
+Heavy authoring stays on a verified Studio. To revise: preserve v3, create a
+new versioned scene/export, edit the four Blender control actions and rebake
+with `tools/art/blender/refine_knight_walk.py`. Run the export audit and inspect
+full-body playback at intended speed before requesting owner approval. See
+[Blender workflow](tools/art/blender/README.md) for commands and caveats.
 
-## Operating continuity
+## Processes / ownership
 
-All owned editor and standalone sessions are closed; final physical process exit was 0 and its GPU slot released. No renderer should be assumed reserved. Verify actual ownership and shared slots before another launch; hard cap remains two renderer-bearing engines. Ghostty, Pocket Planet and foreign jobs remain outside task authority. Preserve unrelated untracked `Assets/Resources/SourceManifest 2.txt`.
+At verification: Studio `studio` is `Mac` / `Mac15,14`. This task's Blender PID
+28574, owner tag `codex-veyr-walk-20261021`, loopback MCP port 9881, work folder
+`/Users/midir/veyr-blender-walk-20261021`. Its editable scene and v3 export hashes
+were rechecked this turn. Hari's requested handoff authorizes the receiving
+Veyr session to continue this task-owned instance after verifying its owner tag
+and live PID. Never assume recorded PIDs are still current.
 
-The baseline source was frozen at d94cd2e; the authorized presentation revision is now in progress. Use source-matched package receipts and native results when extending it. Earlier historical failures and milestones remain labeled; do not reuse their source IDs as final acceptance. FileProvider signing races and stale raw UAT payloads are handled by audited private signing copies and exact fresh-stage packaging; no global security or quarantine setting was weakened.
+Foreign Blender PIDs 27849 and 27888 were left untouched. Do not use their ports
+or files. Shared GPU rule published at brain main `ba35669`: Blender-only cap 4,
+mixed engine cap 2, shared slot lock required. Verify current policy and process
+state before launch. The task Blender has a four-hour slot lease; do not assume
+it will remain alive indefinitely. Do not start a second Veyr Blender while the
+handed-off one is still running.
+
+Laptop review server is task-owned on 127.0.0.1:8765. It is a foreground process
+held by the tool session, not a LaunchAgent. New machines start their own server.
+No new account secrets, authentication stores or terminal sessions were copied.
+
+## Gotchas / local-only remainder
+
+- Public repository excludes private models by design. Cloning code alone is
+  insufficient; download and restore the private release above.
+- The archived blend's embedded scripts retain original Studio absolute paths.
+  Use current repository scripts and the documented environment variables when
+  moving to a different host. The existing scene is editable without rerunning
+  the initial import. Never run `prepare_knight_walk.py` over existing work.
+- Hand attachment is animated `ReviewWeaponSocket`; the browser adds the preserved
+  strong-grip sword. Do not add a second sword to the exported body GLB.
+- Blender pole-angle conventions differed from the glTF bone axes; calibration
+  in the refinement script is required to avoid bent/twisted elbows.
+- `node_modules`, transient logs/QA images, unrelated rejected historical assets,
+  the installed game ZIP/app and the running process state were not bundled.
+  The complete current animation review and editable scene ARE in the private
+  release. The historical Unreal build remains a separate workflow.
+
+## Resume instruction
+
+Clone `oh-ashen-one/veyr-cinder-warden` on branch
+`codex/veyr-asset-review-20261019`, read root `HANDOFF.md`, restore the private
+Knight bundle, and continue the Blender two-hand walk review without changing
+approved animations.

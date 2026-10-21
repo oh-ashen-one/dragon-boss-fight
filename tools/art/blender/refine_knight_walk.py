@@ -4,13 +4,14 @@ Run once after prepare_knight_walk.py. The preserved source action is sampled as
 a reference. Sparse Blender curves direct the revision; native Blender IK solves
 the limbs, and the deform rig retains its original rest matrices/skin.
 """
+import os
 import bpy
 import json
 import math
 from pathlib import Path
 from mathutils import Matrix, Vector, Euler
 
-ROOT=Path('/Users/midir/veyr-blender-walk-20261021')
+ROOT=Path(os.environ.get('VEYR_BLENDER_WORK', '/Users/midir/veyr-blender-walk-20261021'))
 scene=bpy.context.scene
 rig=bpy.data.objects['Knight_Walk_Rig']
 socket=bpy.data.objects['ReviewWeaponSocket']
