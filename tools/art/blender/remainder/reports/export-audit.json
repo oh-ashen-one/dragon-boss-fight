@@ -1,0 +1,283 @@
+[
+  {
+    "job": "walk",
+    "file": "WalkOneHand_Blender_v1.glb",
+    "sha256": "4db239519ee4d50b98618d6cda46c18cb2bbf000377dede8e2b02aac726b86ae",
+    "duration": 1.2000000476837158,
+    "durationError": 4.768371586472142e-08,
+    "closedLoopExpected": true,
+    "loopMatrixError": 4.206578508858527e-07,
+    "nativeIKError": 2.0981025457872038e-07,
+    "maxLimbLengthChange": 3.5480656276898337e-07,
+    "maxPalmDrift": {
+      "Right": 7.25890652908547e-06
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 2.6288721335000655,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "walk_two",
+    "file": "WalkTwoHand_Blender_v4.glb",
+    "sha256": "80c0e39f5a60f3155b6f8f67609b02454509b1e1557a069c65ae5a3e48bf29ae",
+    "duration": 3.5,
+    "durationError": 0.0,
+    "closedLoopExpected": false,
+    "loopMatrixError": 0.7200002568978826,
+    "nativeIKError": 5.947878334303805e-07,
+    "maxLimbLengthChange": 4.720580515094053e-07,
+    "maxPalmDrift": {
+      "Right": 0.0007876911804915542,
+      "Left": 0.000787620198548426
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 1.4883338145162326,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "run",
+    "file": "RunOneHand_Blender_v1.glb",
+    "sha256": "ef5587da6785bf28b20c979360639e8c6eb0aadf8058026918cda6a1efb363a5",
+    "duration": 0.6000000238418579,
+    "durationError": 2.384185793236071e-08,
+    "closedLoopExpected": true,
+    "loopMatrixError": 5.955131697765736e-07,
+    "nativeIKError": 1.7132842962313618e-05,
+    "maxLimbLengthChange": 1.1703518477651498e-05,
+    "maxPalmDrift": {
+      "Right": 3.8783722172052915e-06
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 7.022603190346426,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "backpedal",
+    "file": "Backpedal_Blender_v1.glb",
+    "sha256": "8d46669ed42c77a0483269ea6a7f05fd53c0408c8bc1250485e3dcbda0cdc2bd",
+    "duration": 1.600000023841858,
+    "durationError": 2.3841857821338408e-08,
+    "closedLoopExpected": true,
+    "loopMatrixError": 6.811040030862969e-07,
+    "nativeIKError": 2.573418027038953e-07,
+    "maxLimbLengthChange": 4.268422166275876e-07,
+    "maxPalmDrift": {
+      "Right": 2.3778592340511263e-06
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 1.6960710401193582,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "strafe_left",
+    "file": "StrafeLeft_Blender_v1.glb",
+    "sha256": "90eddc25e20927f5ad18d48c3ea59ec6d4238dc997f17c103a821e22462dd2e8",
+    "duration": 1.25,
+    "durationError": 0.0,
+    "closedLoopExpected": true,
+    "loopMatrixError": 3.995770023745848e-07,
+    "nativeIKError": 3.1828894262453656e-07,
+    "maxLimbLengthChange": 4.3232249921643096e-07,
+    "maxPalmDrift": {
+      "Right": 4.361807484904452e-07
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 2.7791415744898713,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "strafe_right",
+    "file": "StrafeRight_Blender_v1.glb",
+    "sha256": "16d48e7441cd5673646dc2e819ffd827505ca72358c1a8b820b0518c1af8f6cb",
+    "duration": 1.2999999523162842,
+    "durationError": 4.768371586472142e-08,
+    "closedLoopExpected": true,
+    "loopMatrixError": 7.59517596704562e-07,
+    "nativeIKError": 4.937661148840455e-07,
+    "maxLimbLengthChange": 2.5054344240937887e-07,
+    "maxPalmDrift": {
+      "Right": 3.952886274651413e-07
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 3.921894196649491,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "guard",
+    "file": "GuardOneHand_Blender_v1.glb",
+    "sha256": "ace834cf783dd2af9b3bdfeaded83bb5d66b8fb35e1a5bd72c2f0db8c38662be",
+    "duration": 4.0,
+    "durationError": 0.0,
+    "closedLoopExpected": true,
+    "loopMatrixError": 5.100817191960871e-07,
+    "nativeIKError": 1.812804499357408e-07,
+    "maxLimbLengthChange": 3.17687060075178e-07,
+    "maxPalmDrift": {
+      "Right": 4.640229509008306e-07
+    },
+    "guardFootDrift": {
+      "Left": 8.694409141350492e-17,
+      "Right": 8.777083671441753e-17
+    },
+    "maxExportRotationStepDegrees": 0.021890876563218885,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "guard_two",
+    "file": "GuardTwoHand_Blender_v1.glb",
+    "sha256": "aece8175dbbdd66a3ddef9de53ff6a5e50dae589cda3fea692162c577fa19f98",
+    "duration": 4.0,
+    "durationError": 0.0,
+    "closedLoopExpected": true,
+    "loopMatrixError": 6.797157907634244e-07,
+    "nativeIKError": 1.694655244739488e-07,
+    "maxLimbLengthChange": 2.6982640993766793e-07,
+    "maxPalmDrift": {
+      "Right": 7.172166607436008e-07,
+      "Left": 6.981378678879895e-07
+    },
+    "guardFootDrift": {
+      "Left": 3.8399290124159553e-07,
+      "Right": 3.2965864229728845e-07
+    },
+    "maxExportRotationStepDegrees": 0.06042566497838565,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "heavy",
+    "file": "HeavyAttackOneHand_Blender_v1.glb",
+    "sha256": "fd358f6c984c5db9745cc0cf9b8f52cd26de26097abc4bc1a10a68f90d57f412",
+    "duration": 1.399999976158142,
+    "durationError": 2.3841857821338408e-08,
+    "closedLoopExpected": false,
+    "loopMatrixError": 1.6539725988806708e-07,
+    "nativeIKError": 3.0247831284094796e-05,
+    "maxLimbLengthChange": 2.7314763808405917e-05,
+    "maxPalmDrift": {
+      "Right": 0.0006709327341103497
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 10.318584162693776,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "jump",
+    "file": "Jump_Blender_v1.glb",
+    "sha256": "5ba38155e92f44141f239ab8e7138bcbcd47d3e9eaf3c08d63807f53cd8e3744",
+    "duration": 1.0,
+    "durationError": 0.0,
+    "closedLoopExpected": false,
+    "loopMatrixError": 3.363462637295811e-07,
+    "nativeIKError": 4.953865132959843e-05,
+    "maxLimbLengthChange": 3.6445737546908497e-05,
+    "maxPalmDrift": {
+      "Right": 0.00030923960910187066
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 11.063751309914096,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "heal",
+    "file": "Heal_Blender_v1.glb",
+    "sha256": "bac0ebe7eb4671cd091f1c14012e6047daeb03272c292ec1f56a2584e8f19ad5",
+    "duration": 1.25,
+    "durationError": 0.0,
+    "closedLoopExpected": false,
+    "loopMatrixError": 3.703216727712899e-07,
+    "nativeIKError": 1.0423958710530509e-05,
+    "maxLimbLengthChange": 8.999358182604222e-06,
+    "maxPalmDrift": {
+      "Right": 1.5526339850939928e-05
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 11.58306443145189,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "stagger",
+    "file": "Stagger_Blender_v1.glb",
+    "sha256": "fb26a98f6f8a41aff3f1ee6e68d2aad11de61de33560ce9d9a5344e498b10e8c",
+    "duration": 0.41999998688697815,
+    "durationError": 1.3113021835042815e-08,
+    "closedLoopExpected": false,
+    "loopMatrixError": 4.849690720121203e-07,
+    "nativeIKError": 9.442581435950326e-06,
+    "maxLimbLengthChange": 7.93885844616038e-06,
+    "maxPalmDrift": {
+      "Right": 0.0010651323429076286
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 15.537133896141647,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  },
+  {
+    "job": "death",
+    "file": "Death_Blender_v1.glb",
+    "sha256": "3de37b40fcd3de053a204785ef0d7ceda88d9adcafe7b317622c9dcb50640bf4",
+    "duration": 4.400000095367432,
+    "durationError": 9.536743128535363e-08,
+    "closedLoopExpected": false,
+    "loopMatrixError": 1.8982328208727126,
+    "nativeIKError": 5.6279200274793854e-05,
+    "maxLimbLengthChange": 4.1255133597761784e-05,
+    "maxPalmDrift": {
+      "Right": 0.00015552589205209324
+    },
+    "guardFootDrift": null,
+    "maxExportRotationStepDegrees": 6.117989012063396,
+    "bodyTriangleIndices": 77475,
+    "approvedBodyTriangleIndices": 77475,
+    "ownerApproved": false,
+    "auditHz": 120,
+    "pass": true
+  }
+]

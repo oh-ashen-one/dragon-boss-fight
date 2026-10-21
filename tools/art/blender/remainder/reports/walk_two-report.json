@@ -1,0 +1,23 @@
+{
+  "job": "walk_two",
+  "duration": 3.5,
+  "source": "WalkTwoHand_Blender_v3",
+  "sourceSHA256": "d0713bac27cd87f6d5ed34eebb2c10a4bc6d1011a125bbe30f65bda405cd3c3d",
+  "sha256": "80c0e39f5a60f3155b6f8f67609b02454509b1e1557a069c65ae5a3e48bf29ae",
+  "nativeIKError": 5.947878334303805e-07,
+  "endpointMatrixDelta": [
+    1.0728836059570312e-06,
+    2.168118953704834e-06
+  ],
+  "sparsePoses": 29,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "WalkTwoHand_Blender_v4",
+  "loopExpected": false,
+  "authoring": "Blender sparse FK poses, approved grip shapes, native IK and native bone follow constraints",
+  "sourceWindow": [
+    0,
+    3.5
+  ]
+}

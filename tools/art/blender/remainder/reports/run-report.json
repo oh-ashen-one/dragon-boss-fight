@@ -1,0 +1,18 @@
+{
+  "job": "run",
+  "duration": 0.6,
+  "source": "Reference_Run",
+  "sourceSHA256": "41e5e390330da898bcc9cad302886a9311f4edb2c2542951b935c626ee4a045a",
+  "sha256": "ef5587da6785bf28b20c979360639e8c6eb0aadf8058026918cda6a1efb363a5",
+  "nativeIKError": 1.7132842962313618e-05,
+  "endpointMatrixDelta": [
+    5.960464477539062e-07,
+    1.1622905731201172e-06
+  ],
+  "sparsePoses": 17,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "RunOneHand_Blender_v1",
+  "loopExpected": true
+}

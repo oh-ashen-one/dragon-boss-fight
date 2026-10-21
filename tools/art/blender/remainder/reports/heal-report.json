@@ -1,0 +1,23 @@
+{
+  "job": "heal",
+  "duration": 1.25,
+  "source": "Reference_Heal",
+  "sourceSHA256": "49e2913b83263344d8ded1a824bf195b29370d4d7358b729dc356350253fab25",
+  "sha256": "bac0ebe7eb4671cd091f1c14012e6047daeb03272c292ec1f56a2584e8f19ad5",
+  "nativeIKError": 1.0423958710530509e-05,
+  "endpointMatrixDelta": [
+    8.344650268554688e-07,
+    8.344650268554688e-07
+  ],
+  "sparsePoses": 13,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "Heal_Blender_v1",
+  "loopExpected": false,
+  "authoring": "Blender sparse FK poses, approved grip shapes, native IK and native bone follow constraints",
+  "sourceWindow": [
+    0,
+    1.25
+  ]
+}

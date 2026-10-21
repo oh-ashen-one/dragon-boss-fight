@@ -1,0 +1,23 @@
+{
+  "job": "guard_two",
+  "duration": 4.0,
+  "source": "IdleTwoHand_ReadyBreath_v6",
+  "sourceSHA256": "297b43eb9f240a1b166d815019a8914631549db207e79c6c52c219a8dd1cde01",
+  "sha256": "aece8175dbbdd66a3ddef9de53ff6a5e50dae589cda3fea692162c577fa19f98",
+  "nativeIKError": 1.694655244739488e-07,
+  "endpointMatrixDelta": [
+    0.3813171684741974,
+    0.3813171237707138
+  ],
+  "sparsePoses": 13,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "GuardTwoHand_Blender_v1",
+  "loopExpected": true,
+  "authoring": "Blender sparse FK poses, approved grip shapes, native IK and native bone follow constraints",
+  "sourceWindow": [
+    0,
+    4.0
+  ]
+}

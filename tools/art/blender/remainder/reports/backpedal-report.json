@@ -1,0 +1,23 @@
+{
+  "job": "backpedal",
+  "duration": 1.6,
+  "source": "Reference_Backpedal",
+  "sourceSHA256": "f85e2fb3debe9be0b4ecb7c80c43fadc7d4d61942336655e3674feb4814d8d0a",
+  "sha256": "8d46669ed42c77a0483269ea6a7f05fd53c0408c8bc1250485e3dcbda0cdc2bd",
+  "nativeIKError": 2.573418027038953e-07,
+  "endpointMatrixDelta": [
+    8.344650268554688e-07,
+    8.642673492431641e-07
+  ],
+  "sparsePoses": 17,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "Backpedal_Blender_v1",
+  "loopExpected": true,
+  "authoring": "Blender sparse FK poses, approved grip shapes, native IK and native bone follow constraints",
+  "sourceWindow": [
+    0,
+    1.6666666269
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "job": "strafe_left",
+  "duration": 1.25,
+  "source": "Reference_StrafeLeft",
+  "sourceSHA256": "ea4849dd4305dd002e2c1fbd82975a9dac341d1828bcf47b25d62b5d3bcc0d32",
+  "sha256": "90eddc25e20927f5ad18d48c3ea59ec6d4238dc997f17c103a821e22462dd2e8",
+  "nativeIKError": 3.1828894262453656e-07,
+  "endpointMatrixDelta": [
+    1.6689300537109375e-06,
+    1.7583370208740234e-06
+  ],
+  "sparsePoses": 17,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "StrafeLeft_Blender_v1",
+  "loopExpected": true
+}

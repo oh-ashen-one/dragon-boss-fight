@@ -316,3 +316,8 @@ All six approved Knight idles/attacks now have separate Blender-authored v1 cand
 Owner: “These are all approved.” This approves the six Blender v1 rebuilds delivered together: one-hand idle, two-hand idle, overhead, strong sweep, strong thrust, and compact two-hand light attack. Exact files and hashes are in `tools/art/blender/rebuild/approvals.json`. It does not implicitly approve the separate Blender walk v3 or native Unreal integration.
 
 Runtime inventory confirms additional character motions: walk/run/backpedal/strafe left/right, one-hand heavy, one-/two-hand guard, jump, heal, stagger, death, and roll. These exist as earlier clips; presence does not mean a new Blender review. Preserve the roll the owner previously praised. Walk v3 is the immediate outstanding review. Owner requests the dragon next, one animation at a time, conditional on finishing remaining Knight scope.
+
+
+## Remaining Knight set — 2026-10-21
+
+13 Blender-authored review candidates now cover one-hand walk, two-hand ready walk v4, run, backpedal, both strafes, both guards, one-hand heavy, jump, heal, stagger, and death. They are not yet owner-approved. All six previously approved hashes are unchanged; roll is preserved. See `tools/art/blender/remainder/README.md`, `reports/`, and `tools/asset-review/remainder-catalog.json`. The local viewer at port 8775 lists new motions first and defaults one-shots to Loop off. Chrome playback, death terminal hold, and jump scrubbing were verified. Private release: `knight-remainder-blender-v1-20261021` in `oh-ashen-one/veyr-animation-sources`. No Unreal integration. Dragon work has not begun.

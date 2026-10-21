@@ -1,0 +1,18 @@
+{
+  "job": "walk",
+  "duration": 1.2,
+  "source": "Reference_Walk",
+  "sourceSHA256": "8af338f96bd138c66077d9ab28794a2e1d967049ada4f3c6950ec8d48371d139",
+  "sha256": "4db239519ee4d50b98618d6cda46c18cb2bbf000377dede8e2b02aac726b86ae",
+  "nativeIKError": 2.0981025457872038e-07,
+  "endpointMatrixDelta": [
+    8.940696716308594e-07,
+    8.717179298400879e-07
+  ],
+  "sparsePoses": 17,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "WalkOneHand_Blender_v1",
+  "loopExpected": true
+}

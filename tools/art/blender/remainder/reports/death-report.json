@@ -1,0 +1,18 @@
+{
+  "job": "death",
+  "duration": 4.4,
+  "source": "Reference_Death",
+  "sourceSHA256": "615336efc03b6ed2551428f3fadc1c33a0d55624713ab294bc7ad162fc99e14b",
+  "sha256": "3de37b40fcd3de053a204785ef0d7ceda88d9adcafe7b317622c9dcb50640bf4",
+  "nativeIKError": 5.6279200274793854e-05,
+  "endpointMatrixDelta": [
+    8.195638656616211e-07,
+    1.1026859283447266e-06
+  ],
+  "sparsePoses": 17,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "Death_Blender_v1",
+  "loopExpected": false
+}

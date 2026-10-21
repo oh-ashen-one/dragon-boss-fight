@@ -1,0 +1,23 @@
+{
+  "job": "stagger",
+  "duration": 0.42,
+  "source": "Reference_Stagger",
+  "sourceSHA256": "de05a6758887e3441900147d91f0db6a9c298537d5b0ea8877f72c509179605d",
+  "sha256": "fb26a98f6f8a41aff3f1ee6e68d2aad11de61de33560ce9d9a5344e498b10e8c",
+  "nativeIKError": 9.442581435950326e-06,
+  "endpointMatrixDelta": [
+    8.344650268554688e-07,
+    7.748603820800781e-07
+  ],
+  "sparsePoses": 13,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "Stagger_Blender_v1",
+  "loopExpected": false,
+  "authoring": "Blender sparse FK poses, approved grip shapes, native IK and native bone follow constraints",
+  "sourceWindow": [
+    0,
+    0.42
+  ]
+}

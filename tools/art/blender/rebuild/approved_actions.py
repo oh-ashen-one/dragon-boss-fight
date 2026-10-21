@@ -12,6 +12,8 @@ REPO = Path(__file__).resolve().parents[4]
 ASSETS = REPO/'tools/asset-review/.asset-cache/review'
 OUT = REPO/'Local/Blender/approved-rebuild-20261021'
 OWNER = 'codex-veyr-walk-20261021'
+SOURCE_RANGES = {}
+SNAPSHOT_REFINER = None
 JOBS = {
  'idle_one': ('IdleOneHand_Breathing_v3',4.,[0,.5,1,1.5,2,2.5,3,3.5,4],False),
  'idle_two': ('IdleTwoHand_ReadyBreath_v6',4.,[0,.5,1,1.5,2,2.5,3,3.5,4],True),
@@ -53,6 +55,8 @@ def prepare(job):
  assert not (OUT/(job+'_Blender_v1.blend')).exists(),'Preserve candidate; use the saved scene to revise'
  if bpy.context.object and bpy.context.object.mode!='OBJECT':bpy.ops.object.mode_set(mode='OBJECT')
  for o in list(scene.objects):bpy.data.objects.remove(o,do_unlink=True)
+ for collection in list(bpy.data.collections):
+  if collection.name.startswith('AUTHORING_') and not collection.objects:bpy.data.collections.remove(collection)
  scene.render.fps=60;scene.render.fps_base=1
  bpy.ops.import_scene.gltf(filepath=str(ASSETS/(stem+'.glb')))
  rig=next(o for o in scene.objects if o.type=='ARMATURE');rig.name='Knight_Deform'
@@ -68,11 +72,14 @@ def prepare(job):
  offset=Matrix.LocRotScale(grip,q,Vector((.4096359622825952,)*3))@C.inverted()
  snapshots=[]
  for t in times:
-  at(t*60)
+  start,finish=SOURCE_RANGES.get(job,(0,duration))
+  at((start+t/duration*(finish-start))*60)
   poses={b.name:b.matrix.copy() for b in rig.pose.bones}
   bases={b.name:b.matrix_basis.copy() for b in rig.pose.bones}
   weapon=old_socket.matrix_world.copy() if old_socket else rig.matrix_world@poses['RightHand']@offset
   snapshots.append((t,poses,bases,weapon))
+ if SNAPSHOT_REFINER:
+  snapshots=SNAPSHOT_REFINER(rig,snapshots,job,offset)
  scene['rebuild_job']=job;scene['duration']=duration;scene['reference_sha256']=hashlib.sha256((ASSETS/(stem+'.glb')).read_bytes()).hexdigest()
  scene['source_action']=source.name;scene['two_hand']=two
  scene['authoring']='Sparse Blender FK poses, native four-limb IK, editable target/pole/hilt curves; baked separately'
@@ -151,7 +158,7 @@ def bake():
   bpy.context.view_layer.update()
   for label,names in chains.items():
    upper=ikrig.pose.bones[label+'_Upper'];lower=ikrig.pose.bones[label+'_Lower'];c=lower.constraints[0]
-   start=upper.head.copy();axis=(c.target.matrix_world.translation-start).normalized();wanted=c.pole_target.location-start;wanted-=axis*wanted.dot(axis);wanted.normalize()
+   start=upper.head.copy();axis=(c.target.matrix_world.translation-start).normalized();wanted=c.pole_target.matrix_world.translation-start;wanted-=axis*wanted.dot(axis);wanted.normalize()
    def error(value):
     c.pole_angle=(value+math.pi)%(2*math.pi)-math.pi;bpy.context.view_layer.update()
     d=lower.head-start;d-=axis*d.dot(axis);d.normalize()

@@ -1,0 +1,18 @@
+{
+  "job": "jump",
+  "duration": 1.0,
+  "source": "Reference_Jump",
+  "sourceSHA256": "4080f7d3dde2c680943b8aeed96a34df374270599e81cb13af7898e878762134",
+  "sha256": "5ba38155e92f44141f239ab8e7138bcbcd47d3e9eaf3c08d63807f53cd8e3744",
+  "nativeIKError": 4.953865132959843e-05,
+  "endpointMatrixDelta": [
+    8.344650268554688e-07,
+    1.0281801223754883e-06
+  ],
+  "sparsePoses": 13,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "Jump_Blender_v1",
+  "loopExpected": false
+}

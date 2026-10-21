@@ -1,0 +1,23 @@
+{
+  "job": "guard",
+  "duration": 4.0,
+  "source": "IdleOneHand_Breathing_v3",
+  "sourceSHA256": "7a5c482cb6a363e22e41303a8162d9b7bfbf04523745cb45cfc9dacf8beec3df",
+  "sha256": "ace834cf783dd2af9b3bdfeaded83bb5d66b8fb35e1a5bd72c2f0db8c38662be",
+  "nativeIKError": 1.812804499357408e-07,
+  "endpointMatrixDelta": [
+    9.5367431640625e-07,
+    8.940696716308594e-07
+  ],
+  "sparsePoses": 13,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "GuardOneHand_Blender_v1",
+  "loopExpected": true,
+  "authoring": "Blender sparse FK poses, approved grip shapes, native IK and native bone follow constraints",
+  "sourceWindow": [
+    0,
+    4.0
+  ]
+}

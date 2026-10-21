@@ -1,0 +1,18 @@
+{
+  "job": "heavy",
+  "duration": 1.4,
+  "source": "StrongAttackTwoHand_Sweep_v9",
+  "sourceSHA256": "cc900aa0c77e5e29a0a76e84c7f448a867b12df58505d7c7741b957394156deb",
+  "sha256": "fd358f6c984c5db9745cc0cf9b8f52cd26de26097abc4bc1a10a68f90d57f412",
+  "nativeIKError": 3.0247831284094796e-05,
+  "endpointMatrixDelta": [
+    8.195638656616211e-07,
+    9.55279887193683e-07
+  ],
+  "sparsePoses": 13,
+  "ownerApproved": false,
+  "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
+  "blender": "5.2.0 LTS",
+  "reviewName": "HeavyAttackOneHand_Blender_v1",
+  "loopExpected": false
+}
