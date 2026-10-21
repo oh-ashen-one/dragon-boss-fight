@@ -34,7 +34,7 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['WalkTwoHand_Ready_v2', 'LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 const approvedIds = new Set(['review/LightAttackTwoHand_Compact_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
@@ -54,9 +54,11 @@ let looping = true;
 let wireframe = false;
 let showBones = false;
 let loadSerial = 0;
+let followedWalkZ = null;
 
 function humanName(item) {
   const names = {
+    WalkTwoHand_Ready_v2: 'Two-hand walk · review',
     LightAttackTwoHand_Compact_v1: 'Two-hand light attack · approved',
     StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · approved',
     StrongAttackTwoHand_Sweep_v9: 'Two-hand sweep · approved',
@@ -141,19 +143,23 @@ function disposeModel() {
     for (const texture of textures) texture.dispose();
     for (const geometry of geometries) geometry.dispose();
   }
-  model = null; mixer = null; action = null; duration = 0;
+  model = null; mixer = null; action = null; duration = 0; followedWalkZ = null;
 }
 
-function isTwoHandAttack(item) {
-  return !!item && /^(StrongAttackTwoHand_|LightAttackTwoHand_)/.test(item.name);
+function isTwoHandMotion(item) {
+  return !!item && /^(StrongAttackTwoHand_|LightAttackTwoHand_|WalkTwoHand_)/.test(item.name);
 }
 
 function frameModel() {
   if (!model) return;
   const box = new THREE.Box3().setFromObject(model);
   if (box.isEmpty()) return;
-  const attackReview = activeItem?.name === 'LightAttack_BlackKnightReference_v10' || isTwoHandAttack(activeItem);
+  const attackReview = activeItem?.name === 'LightAttack_BlackKnightReference_v10' || isTwoHandMotion(activeItem);
   const center = attackReview ? new THREE.Vector3(0, 0.85, 0.30) : box.getCenter(new THREE.Vector3());
+  if (activeItem?.name.startsWith('WalkTwoHand_')) {
+    followedWalkZ = model.getObjectByName('Hips').getWorldPosition(new THREE.Vector3()).z;
+    center.z += followedWalkZ;
+  }
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
   const fitMargin = activeItem?.name?.startsWith('LightAttack_BlackKnightReference') ? 1.30 : activeItem?.name?.startsWith('IdleTwoHand') ? 0.9 : 0.68;
@@ -204,8 +210,8 @@ const swordScale = 0.4096359622825952;
 async function attachSword(knight, serial, item) {
   const hand = knight.getObjectByName('RightHand');
   if (!hand) throw new Error('Knight RightHand bone is missing');
-  const twoHandReview = item.id === 'review/IdleTwoHand_ReadyBreath_v6.glb' || isTwoHandAttack(item);
-  const swordId = isTwoHandAttack(item) ? 'review/BoatGreatsword_StrongGrip_v1.glb' : twoHandReview ? 'review/BoatGreatsword_Grip_v6.glb' : 'objects/BoatGreatsword_v4.glb';
+  const twoHandReview = item.id === 'review/IdleTwoHand_ReadyBreath_v6.glb' || isTwoHandMotion(item);
+  const swordId = isTwoHandMotion(item) ? 'review/BoatGreatsword_StrongGrip_v1.glb' : twoHandReview ? 'review/BoatGreatsword_Grip_v6.glb' : 'objects/BoatGreatsword_v4.glb';
   const sword = await loader.loadAsync(`/api/asset/${encodeURIComponent(swordId)}`);
   if (serial !== loadSerial) { disposeGltf(sword); return false; }
   sword.scene.position.copy(swordGrip);
@@ -213,7 +219,7 @@ async function attachSword(knight, serial, item) {
   sword.scene.quaternion.copy(swordRotation);
   sword.scene.scale.setScalar(swordScale);
   const socket = knight.getObjectByName('ReviewWeaponSocket');
-  if (socket && isTwoHandAttack(item)) {
+  if (socket && isTwoHandMotion(item)) {
     sword.scene.position.set(0, 0, 0);
     sword.scene.quaternion.identity();
     sword.scene.scale.setScalar(1);
@@ -357,6 +363,14 @@ function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.1);
   if (mixer && playing) mixer.update(delta * Number($('speed').value));
+  if (model && activeItem?.name.startsWith('WalkTwoHand_')) {
+    const z = model.getObjectByName('Hips').getWorldPosition(new THREE.Vector3()).z;
+    if (followedWalkZ !== null) {
+      camera.position.z += z - followedWalkZ;
+      controls.target.z += z - followedWalkZ;
+    }
+    followedWalkZ = z;
+  }
   controls.update();
   renderer.render(scene, camera);
   hudAccum += delta;
@@ -394,7 +408,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/LightAttackTwoHand_Compact_v1.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/WalkTwoHand_Ready_v2.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

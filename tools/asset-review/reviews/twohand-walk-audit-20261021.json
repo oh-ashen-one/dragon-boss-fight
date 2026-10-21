@@ -1,0 +1,21 @@
+{
+  "sha256": "26e3e28d739d9f4f5cbb1c9db3f0bb8bd5d7ed564a06d2614778283d843cb3b0",
+  "auditHz": 120,
+  "startPoseError": 0.0,
+  "endPoseErrorAfterRootTravel": 2.8610229629855155e-08,
+  "maximumStanceFootDriftPerFrame": {
+    "Left": 7.361181827295118e-08,
+    "Right": 7.488182616125301e-08
+  },
+  "maximumPalmDrift": {
+    "Left": 6.684669945472355e-08,
+    "Right": 6.707821887698392e-08
+  },
+  "kneeFlexionDegrees": [
+    17.886881247368017,
+    60.22537050461142
+  ],
+  "maximumLocalJointStepDegrees": 2.3640708916275126,
+  "sourceGeometryPreserved": true,
+  "ownerApproved": false
+}

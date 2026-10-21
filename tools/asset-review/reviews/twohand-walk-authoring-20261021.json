@@ -1,0 +1,13 @@
+{
+  "sha256": "26e3e28d739d9f4f5cbb1c9db3f0bb8bd5d7ed564a06d2614778283d843cb3b0",
+  "durationSeconds": 3.5,
+  "sampleCount": 426,
+  "rootTravelRigUnits": 0.72,
+  "steps": 5,
+  "maximumFootTargetError": 5.439402427716569e-16,
+  "exportMatrixError": 4.5397590830997814e-07,
+  "stanceSamples": 567,
+  "meshSkinBindPreserved": true,
+  "ownerApproved": false,
+  "approvedIdleSHA256": "297b43eb9f240a1b166d815019a8914631549db207e79c6c52c219a8dd1cde01"
+}

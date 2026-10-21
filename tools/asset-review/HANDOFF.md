@@ -1,8 +1,40 @@
 # Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=twohand-light#review%2FLightAttackTwoHand_Compact_v1.glb`.
-Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-16`).
+Laptop viewer: `http://127.0.0.1:8765/?review=twohand-walk-v2#review%2FWalkTwoHand_Ready_v2.glb`.
+Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-106`).
+
+## Active two-hand walk review — 2026-10-21
+
+Owner authorized the two-hand walk after approving every currently displayed
+attack and idle. Walk v1 was rejected as too stiff: only the feet seemed to move.
+Owner requested a ready-to-hit posture, hunched shoulders, whole-body breathing,
+sway and idle movement. **Walk v2 remains a review candidate, not approved.**
+
+- `WalkTwoHand_Ready_v2.glb`: 3.5 seconds, 426 samples, five alternating steps.
+  SHA256 `0947c437e48a47b0590619ce25fc977a5072d96f9be8b9eafab4b1a061723dfe`.
+- Starts in approved idle, walks 0.72 rig units forward, returns to exact approved
+  idle at its new position. This is a start/walk/stop study, not a seamless
+  locomotion cycle ready for engine blending. Looping repeats that study.
+- v2: forward torso lean, shoulder protraction/elevation, pelvis/chest counter
+  rotation, stronger lateral weight shift, 1.8-second breathing layer, and
+  animated shared hilt solved to both palms with flexible elbows.
+- `author_knight_twohand_walk_review.py` is the v2 generator.
+  `verify_knight_twohand_walk_review.py` independently checks exported contacts,
+  start/end pose (accounting for translated Hips descendants), and continuity.
+- v2 audit at 120Hz: stance-foot frame drift <8.8e-8 rig units, palm drift
+  <7.8e-8, knee flexion 24.43–60.79 degrees, maximum local joint step <1.81 degrees.
+  Authoring wrist deviation <0.52 degrees; mesh/skin/bind bytes preserved.
+- Reports: `reviews/twohand-walk-v2-{authoring,audit}-20261021.json`.
+  Rejected v1 export and its separate reports remain preserved.
+- CPU authoring and audit ran on verified Studio `Mac15,14`; no engine launch.
+  Both exports are saved in the Studio review destination below, SHA verified.
+- Viewer follows root travel with the camera. Uses the continuous strong grip
+  sword on `ReviewWeaponSocket`. Existing approved assets are untouched.
+- Chrome native access now works. Loaded v2 and verified playback at 1x, inspected
+  the closer Body view. Browser changed back to a New Tab during further scrub
+  inspection; do not claim a comprehensive visual acceptance or current open tab.
+- Next: owner review of the fuller body motion. Preserve v2 until feedback.
 
 ## Approved two-hand light attack — 2026-10-20
 
