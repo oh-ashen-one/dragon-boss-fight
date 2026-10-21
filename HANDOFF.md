@@ -1,3 +1,129 @@
+# START HERE — next-session handoff
+
+Status: **saved for a later session; waiting for owner review, not permission to work**.
+This handoff was refreshed after the owner explicitly requested that all work be
+pushed for another session. Do not resume animation or dragon work merely because
+this file exists. The latest animation implementation is `c9c38d5`; the commit
+containing this section is the later documentation handoff on the same branch.
+
+## Repository and exact branch
+
+- Source: https://github.com/oh-ashen-one/veyr-cinder-warden
+- Branch: `codex/veyr-asset-review-20261019` (use this, not the default branch).
+- Existing authoring checkout: the Git root containing this file. On a different
+  machine, clone the branch into a new directory rather than assuming an old
+  absolute path is valid or taking over another session's checkout.
+- Private art backups: https://github.com/oh-ashen-one/veyr-animation-sources
+- Latest art branch: `codex/knight-feedback-v3-20261021`, commit `762fdfa`.
+- Latest art release: `knight-feedback-v3-20261021`.
+
+## What is approved and what comes next
+
+Nine Blender clips are approved and must remain byte-for-byte unchanged: the six
+idles/attacks in `tools/art/blender/rebuild/approvals.json`, plus Death, Stagger and
+WalkOneHand in `tools/art/blender/feedback/decisions.json`. The praised original
+roll also remains preserved. The Knight, dragon and boat-sword designs are kept.
+
+1. Read `AGENTS.md`, this section and `tools/art/blender/feedback_v3/README.md`.
+   Verify actual host, branch, dirty state and process ownership before work.
+2. When the owner resumes, reopen the six v3 candidates in the existing reviewer:
+   guard entry, left/right blink dodges, backpedal, one-hand heavy and heal. They
+   passed technical checks but are **not owner-approved yet**. Do not relabel them
+   approved based on the previous agent's screenshots, tests or delivery message.
+3. Incorporate the owner's next review notes. Save new candidates separately and
+   author pose/constraint/keyframe changes through Blender MCP on a verified
+   Studio. Inspect full motions and close-up contacts in the actual exported
+   viewer. Preserve approved clips and the previous candidates.
+4. Run and two-hand ready walk remain pending separate owner review. Keep their
+   existing files unchanged unless the owner requests corrections.
+5. Once the Knight review is settled and the owner resumes that scope, proceed to
+   the existing dragon **one animation at a time**, preserving its model/design.
+6. Native Unreal integration is a later phase: import accepted actions, configure
+   transitions and coordinate root motion with actor movement; implement blink
+   visibility/afterimages in Unreal. Then verify the actual packaged game. Do not
+   call browser playback or a successful export proof of native integration.
+
+The user has already authorized routine task work and relevant credit use; do not
+repeat the historical budget/launcher/validation permission questions. Native
+security prompts, ownership and shared GPU rules still apply. Current scope has
+no generation or spending requirement.
+
+## Explicitly not done
+
+- No new owner acceptance for the six v3 corrections, Run or ready walk.
+- No dragon animation pass has begun.
+- No Unreal import, new installed build or native gameplay test for this batch.
+- Blue blink afterimages currently run in the reviewer; Blender supplies motion
+  and hide keys, and glTF extras supply the visibility timing contract.
+- Jump and one-hand guard remain removed. The dodge hop does not reintroduce jump.
+
+## Restore on a fresh machine
+
+The public Git repository holds code, recipes, reports and approval ledgers.
+Private release archives hold the large editable scenes, model/animation exports,
+references and films. All releases below were confirmed uploaded and non-draft
+when this handoff was written. Archive SHA256 digests are available in GitHub's
+release asset metadata; embedded manifests verify every restored file.
+
+Restore these releases in order into the cloned source checkout:
+
+| Order | Private release tag | ZIP asset(s) |
+|---|---|---|
+| 1 | `knight-blender-walk-v3-20261021` | `Veyr-Knight-Blender-Handoff-20261021.zip` |
+| 2 | `knight-approved-blender-v1-20261021` | `Veyr-Knight-Blender-Rebuild-v1.zip` |
+| 3 | `knight-remainder-blender-v1-20261021` | `Veyr-Knight-Remainder-Blender-v1.zip`, `Veyr-Knight-Remainder-Review-v1.zip` |
+| 4 | `knight-feedback-v2-20261021` | `Veyr-Knight-Feedback-v2.zip` |
+| 5 | `knight-feedback-v3-20261021` | `Veyr-Knight-Feedback-v3.zip` |
+
+Use authenticated `gh release download <tag> --repo
+ oh-ashen-one/veyr-animation-sources --pattern '*.zip' --dir <download-directory>`.
+For each ZIP, run `python3 tools/asset-review/restore_review_bundle.py <archive>`
+from the source checkout. The restore tool validates all hashes and refuses to
+overwrite differing local files. On a conflict, preserve both variants and
+investigate; never force extraction over another session's work. Local manifests
+for the approved/remainder/v2/v3 archives were checked for conflicting overlap;
+none was found. Earlier historical instructions below restore only the old base
+bundle and are insufficient on their own for the current review set.
+
+Latest delta: 37 manifest files, 512,505,607 bytes, SHA256
+`7ff0cd51be469ce668de62386a347dec194fc2a55b6838ba8be3cfe356d76529`.
+The final textured cup-grip screenshot is also an asset of that private release.
+
+## Reviewer and authoring processes
+
+The Studio reviewer was rechecked during handoff: owned Python PID 44839 serves
+loopback port 8775, and `/api/catalog` responds. Existing Tailscale forwarding
+provides the owner's cross-network laptop link. No laptop command is needed:
+`http://100.95.131.102:8775/?review=feedback-v3#review%2FGuardReadyTwoHand_Blender_v3.glb`.
+Film page: `http://100.95.131.102:8775/.asset-cache/feedback-v3-media/index.html`.
+These process facts are a snapshot; recheck before acting in a later session.
+
+If the reviewer is stopped, install its pinned dependencies with
+`npm ci --prefix tools/asset-review`, then use
+`python3 tools/asset-review/start_background.py`. For changed catalog metadata,
+use that helper's `--restart` after proving the PID belongs to this checkout.
+Do not change the user's existing tailnet forwarding or require them to run SSH.
+
+The owned Blender session has exited cleanly. Start a fresh owned Studio instance
+under the current shared GPU-slot protocol only when new authoring is requested.
+`tools/art/blender/start_veyr_session.py` and `veyr_rpc.py` use
+`VEYR_BLENDER_WORK`, `VEYR_BLENDER_OWNER`, `VEYR_BLENDER_PORT` and optional
+`VEYR_BLENDER_ADDON`. Resolve the installed MCP addon on the actual compute host;
+its old absolute location is not portable. Node modules, running processes,
+local tool installations and disposable logs are machine-local, not source work.
+No credentials or authentication stores are included in the backups.
+
+## Resume prompt
+
+> Continue Veyr from oh-ashen-one/veyr-cinder-warden, branch
+> codex/veyr-asset-review-20261019. Read HANDOFF.md and AGENTS.md first. Restore
+> missing private animation bundles if necessary, reopen the feedback-v3 Knight
+> reviewer, and pick up at the pending owner review. Preserve approved animations.
+> Use Blender MCP on the Studio for any revisions. Do not jump ahead to the dragon
+> or claim Unreal integration from browser results.
+
+---
+
 # Current handoff — Knight feedback v3, 2026-10-21
 
 **Stop after this pass, per owner.** No dragon work or Unreal integration.
