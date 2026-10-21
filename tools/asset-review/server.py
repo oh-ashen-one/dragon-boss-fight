@@ -86,7 +86,7 @@ def catalog_from_studio(host: str, root: Path) -> list[dict]:
 def local_review_items() -> list[dict]:
     """Expose only explicit, locally authored review clips; never alter Studio assets."""
     items = []
-    for filename in ("WalkTwoHand_Blender_v3.glb", "WalkTwoHand_Ready_v1.glb", "WalkTwoHand_Ready_v2.glb", "LightAttackTwoHand_Compact_v1.glb", "IdleOneHand_Breathing_v3.glb", "IdleTwoHand_ReadyBreath_v6.glb", "LightAttack_FromApprovedIdle_v1.glb", "LightAttack_BlackKnightReference_v2.glb", "LightAttack_BlackKnightReference_v3.glb", "LightAttack_BlackKnightReference_v4.glb", "LightAttack_BlackKnightReference_v5.glb", "LightAttack_BlackKnightReference_v6.glb", "LightAttack_BlackKnightReference_v10.glb", "StrongAttackTwoHand_Sweep_v8.glb", "StrongAttackTwoHand_Thrust_v6.glb", "StrongAttackTwoHand_Sweep_v9.glb", "StrongAttackTwoHand_Thrust_v7.glb", "BoatGreatsword_Grip_v6.glb", "BoatGreatsword_StrongGrip_v1.glb"):
+    for filename in ("IdleOneHand_Blender_v1.glb", "IdleTwoHand_Blender_v1.glb", "LightAttack_BlackKnightReference_Blender_v1.glb", "StrongAttackTwoHand_Sweep_Blender_v1.glb", "StrongAttackTwoHand_Thrust_Blender_v1.glb", "LightAttackTwoHand_Compact_Blender_v1.glb", "BoatGreatsword_OneHand_v4.glb", "WalkTwoHand_Blender_v3.glb", "WalkTwoHand_Ready_v1.glb", "WalkTwoHand_Ready_v2.glb", "LightAttackTwoHand_Compact_v1.glb", "IdleOneHand_Breathing_v3.glb", "IdleTwoHand_ReadyBreath_v6.glb", "LightAttack_FromApprovedIdle_v1.glb", "LightAttack_BlackKnightReference_v2.glb", "LightAttack_BlackKnightReference_v3.glb", "LightAttack_BlackKnightReference_v4.glb", "LightAttack_BlackKnightReference_v5.glb", "LightAttack_BlackKnightReference_v6.glb", "LightAttack_BlackKnightReference_v10.glb", "StrongAttackTwoHand_Sweep_v8.glb", "StrongAttackTwoHand_Thrust_v6.glb", "StrongAttackTwoHand_Sweep_v9.glb", "StrongAttackTwoHand_Thrust_v7.glb", "BoatGreatsword_Grip_v6.glb", "BoatGreatsword_StrongGrip_v1.glb"):
         path = REVIEW / filename
         if not path.is_file():
             continue
@@ -127,8 +127,8 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == "/api/catalog":
             payload = json.dumps({
-                "build": "9b185634",
-                "source": "Knight body reference · approved one-hand and two-hand idles",
+                "build": "v1",
+                "source": "Six Blender candidates and preserved approved Knight motions",
                 "items": [{key: value for key, value in item.items() if key not in {"remotePath", "localPath"}}
                           for item in self.server.catalog],
             }).encode("utf-8")
@@ -219,6 +219,7 @@ def main():
     all_items = local_review_items() + ([local_body_item()] if args.local_only else
                                        catalog_from_studio(args.studio_host, args.studio_root))
     visible_ids = {"review/WalkTwoHand_Blender_v3.glb", "review/LightAttackTwoHand_Compact_v1.glb", "review/StrongAttackTwoHand_Thrust_v7.glb", "review/StrongAttackTwoHand_Sweep_v9.glb", "review/IdleOneHand_Breathing_v3.glb", "review/IdleTwoHand_ReadyBreath_v6.glb", "review/LightAttack_BlackKnightReference_v10.glb", "knight/KnightRig.glb"}
+    visible_ids.update(item["id"] for item in all_items if item["name"].endswith("_Blender_v1"))
     catalog = [item for item in all_items if item["id"] in visible_ids]
     if {item["id"] for item in catalog} != visible_ids:
         raise RuntimeError("A required Knight review asset is missing")

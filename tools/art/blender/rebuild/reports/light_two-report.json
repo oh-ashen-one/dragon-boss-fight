@@ -1,0 +1,16 @@
+{
+  "job": "light_two",
+  "duration": 1.1,
+  "source": "LightAttackTwoHand_Compact_v1",
+  "sourceSHA256": "cf2fdf2063824184251f2537efda74c95ab7fdb13df0e97289b8d7548ae78d56",
+  "sha256": "52cf9b5bac412463e8b7b9f387854a66949305b51adb648fb72fefa630522174",
+  "nativeIKError": 2.2821774173522894e-07,
+  "endpointMatrixDelta": [
+    1.1473894119262695e-06,
+    8.344650268554688e-07
+  ],
+  "sparsePoses": 9,
+  "ownerApproved": false,
+  "visualReview": "Blender full-length front, side, and three-quarter renders inspected; new owner review pending",
+  "blender": "5.2.0 LTS"
+}

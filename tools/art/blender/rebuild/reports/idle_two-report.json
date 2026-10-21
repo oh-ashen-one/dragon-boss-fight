@@ -1,0 +1,16 @@
+{
+  "job": "idle_two",
+  "duration": 4.0,
+  "source": "IdleTwoHand_ReadyBreath_v6",
+  "sourceSHA256": "297b43eb9f240a1b166d815019a8914631549db207e79c6c52c219a8dd1cde01",
+  "sha256": "950b8a361992bb5084a8ebed14f6cac0c1ea62048991e2568c684abe2a03152d",
+  "nativeIKError": 1.8585428123573097e-07,
+  "endpointMatrixDelta": [
+    8.195638656616211e-07,
+    9.834766387939453e-07
+  ],
+  "sparsePoses": 9,
+  "ownerApproved": false,
+  "visualReview": "Blender full-length front, side, and three-quarter renders inspected; new owner review pending",
+  "blender": "5.2.0 LTS"
+}

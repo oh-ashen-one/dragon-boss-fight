@@ -1,0 +1,350 @@
+[
+  {
+    "job": "idle_one",
+    "fps": 150,
+    "end": 600,
+    "sourceAction": "REFERENCE_IdleOneHand_Breathing_v3",
+    "editableActions": [
+      [
+        "idle_one_Blender_v1_SOCKET",
+        1
+      ],
+      [
+        "idle_one_EDITABLE_FK_POSES",
+        1
+      ],
+      [
+        "LeftLeg_TargetAction.002",
+        1
+      ],
+      [
+        "RightArm_TargetAction.002",
+        1
+      ],
+      [
+        "LeftLeg_PoleAction.002",
+        1
+      ],
+      [
+        "LeftArm_PoleAction.002",
+        1
+      ],
+      [
+        "RightArm_PoleAction.002",
+        1
+      ],
+      [
+        "RightLeg_PoleAction.002",
+        1
+      ],
+      [
+        "LeftArm_TargetAction.002",
+        1
+      ],
+      [
+        "Hilt_ControlAction.003",
+        1
+      ],
+      [
+        "RightLeg_TargetAction.002",
+        1
+      ],
+      [
+        "idle_one_Blender_v1_BAKED",
+        1
+      ]
+    ],
+    "nativeIKConstraints": 4,
+    "recipeEmbedded": true
+  },
+  {
+    "job": "idle_two",
+    "fps": 150,
+    "end": 600,
+    "sourceAction": "REFERENCE_IdleTwoHand_ReadyBreath_v6",
+    "editableActions": [
+      [
+        "LeftArm_PoleAction.003",
+        1
+      ],
+      [
+        "idle_two_Blender_v1_BAKED.001",
+        1
+      ],
+      [
+        "Hilt_ControlAction.001",
+        1
+      ],
+      [
+        "idle_two_Blender_v1_SOCKET.001",
+        1
+      ],
+      [
+        "idle_two_EDITABLE_FK_POSES",
+        1
+      ],
+      [
+        "RightArm_TargetAction.003",
+        1
+      ],
+      [
+        "RightLeg_PoleAction.003",
+        1
+      ],
+      [
+        "RightArm_PoleAction.003",
+        1
+      ],
+      [
+        "RightLeg_TargetAction.003",
+        1
+      ],
+      [
+        "LeftLeg_PoleAction.003",
+        1
+      ],
+      [
+        "LeftArm_TargetAction.003",
+        1
+      ],
+      [
+        "LeftLeg_TargetAction.003",
+        1
+      ]
+    ],
+    "nativeIKConstraints": 4,
+    "recipeEmbedded": true
+  },
+  {
+    "job": "overhead",
+    "fps": 150,
+    "end": 420,
+    "sourceAction": "REFERENCE_LightAttack_BlackKnightReference_v10",
+    "editableActions": [
+      [
+        "overhead_Blender_v1_SOCKET",
+        1
+      ],
+      [
+        "LeftArm_TargetAction.004",
+        1
+      ],
+      [
+        "Hilt_ControlAction.003",
+        1
+      ],
+      [
+        "RightArm_TargetAction.004",
+        1
+      ],
+      [
+        "LeftArm_PoleAction.004",
+        1
+      ],
+      [
+        "LeftLeg_TargetAction.004",
+        1
+      ],
+      [
+        "RightLeg_TargetAction.004",
+        1
+      ],
+      [
+        "overhead_Blender_v1_BAKED",
+        1
+      ],
+      [
+        "overhead_EDITABLE_FK_POSES",
+        1
+      ],
+      [
+        "LeftLeg_PoleAction.004",
+        1
+      ],
+      [
+        "RightArm_PoleAction.004",
+        1
+      ],
+      [
+        "RightLeg_PoleAction.004",
+        1
+      ]
+    ],
+    "nativeIKConstraints": 4,
+    "recipeEmbedded": true
+  },
+  {
+    "job": "sweep",
+    "fps": 150,
+    "end": 220,
+    "sourceAction": "REFERENCE_StrongAttackTwoHand_Sweep_v9",
+    "editableActions": [
+      [
+        "sweep_EDITABLE_FK_POSES",
+        1
+      ],
+      [
+        "sweep_Blender_v1_SOCKET.001",
+        1
+      ],
+      [
+        "LeftArm_TargetAction.005",
+        1
+      ],
+      [
+        "sweep_Blender_v1_BAKED.001",
+        1
+      ],
+      [
+        "LeftLeg_PoleAction.005",
+        1
+      ],
+      [
+        "RightArm_PoleAction.005",
+        1
+      ],
+      [
+        "RightArm_TargetAction.005",
+        1
+      ],
+      [
+        "RightLeg_PoleAction.005",
+        1
+      ],
+      [
+        "LeftArm_PoleAction.005",
+        1
+      ],
+      [
+        "RightLeg_TargetAction.005",
+        1
+      ],
+      [
+        "Hilt_ControlAction.003",
+        1
+      ],
+      [
+        "LeftLeg_TargetAction.005",
+        1
+      ]
+    ],
+    "nativeIKConstraints": 4,
+    "recipeEmbedded": true
+  },
+  {
+    "job": "thrust",
+    "fps": 150,
+    "end": 346,
+    "sourceAction": "REFERENCE_StrongAttackTwoHand_Thrust_v7",
+    "editableActions": [
+      [
+        "thrust_Blender_v1_BAKED.001",
+        1
+      ],
+      [
+        "LeftArm_PoleAction.006",
+        1
+      ],
+      [
+        "RightArm_PoleAction.006",
+        1
+      ],
+      [
+        "Hilt_ControlAction.004",
+        1
+      ],
+      [
+        "thrust_EDITABLE_FK_POSES",
+        1
+      ],
+      [
+        "LeftArm_TargetAction.006",
+        1
+      ],
+      [
+        "RightArm_TargetAction.006",
+        1
+      ],
+      [
+        "LeftLeg_TargetAction.006",
+        1
+      ],
+      [
+        "LeftLeg_PoleAction.006",
+        1
+      ],
+      [
+        "RightLeg_TargetAction.006",
+        1
+      ],
+      [
+        "RightLeg_PoleAction.006",
+        1
+      ],
+      [
+        "thrust_Blender_v1_SOCKET.001",
+        1
+      ]
+    ],
+    "nativeIKConstraints": 4,
+    "recipeEmbedded": true
+  },
+  {
+    "job": "light_two",
+    "fps": 150,
+    "end": 165,
+    "sourceAction": "REFERENCE_LightAttackTwoHand_Compact_v1",
+    "editableActions": [
+      [
+        "light_two_Blender_v1_BAKED.001",
+        1
+      ],
+      [
+        "light_two_EDITABLE_FK_POSES",
+        1
+      ],
+      [
+        "Hilt_ControlAction.005",
+        1
+      ],
+      [
+        "LeftLeg_TargetAction.007",
+        1
+      ],
+      [
+        "LeftArm_PoleAction.007",
+        1
+      ],
+      [
+        "RightArm_PoleAction.007",
+        1
+      ],
+      [
+        "RightLeg_PoleAction.007",
+        1
+      ],
+      [
+        "LeftArm_TargetAction.007",
+        1
+      ],
+      [
+        "light_two_Blender_v1_SOCKET.001",
+        1
+      ],
+      [
+        "LeftLeg_PoleAction.007",
+        1
+      ],
+      [
+        "RightArm_TargetAction.007",
+        1
+      ],
+      [
+        "RightLeg_TargetAction.007",
+        1
+      ]
+    ],
+    "nativeIKConstraints": 4,
+    "recipeEmbedded": true
+  }
+]

@@ -1,0 +1,100 @@
+[
+  {
+    "job": "idle_one",
+    "duration": 4.0,
+    "durationError": 0.0,
+    "endpointJointPositionError": 3.603853942716472e-07,
+    "loopMatrixError": 3.4677530119653355e-07,
+    "maximumLimbLengthChange": 3.160846339667067e-07,
+    "maximumPalmDrift": {
+      "Right": 4.7055777621734143e-07,
+      "Left": 0.0
+    },
+    "maxRotationStepDegrees": 0.02841023323595972,
+    "nativeIKError": 1.4901161193847656e-07,
+    "samplesHz": 120,
+    "leftHandIsFree": true,
+    "pass": true
+  },
+  {
+    "job": "idle_two",
+    "duration": 4.0,
+    "durationError": 0.0,
+    "endpointJointPositionError": 2.9655431758332277e-07,
+    "loopMatrixError": 5.129285091109992e-07,
+    "maximumLimbLengthChange": 2.472026849054121e-07,
+    "maximumPalmDrift": {
+      "Right": 6.523704718229071e-07,
+      "Left": 5.301051442543962e-07
+    },
+    "maxRotationStepDegrees": 0.06239326285165467,
+    "nativeIKError": 1.8585428123573097e-07,
+    "samplesHz": 120,
+    "pass": true
+  },
+  {
+    "job": "light_two",
+    "duration": 1.100000023841858,
+    "durationError": 2.3841857821338408e-08,
+    "endpointJointPositionError": 2.986525631309126e-07,
+    "loopMatrixError": 5.085827834427903e-07,
+    "maximumLimbLengthChange": 2.6451496437651656e-07,
+    "maximumPalmDrift": {
+      "Right": 0.00011728482882193022,
+      "Left": 0.00011078092395293454
+    },
+    "maxRotationStepDegrees": 4.790894953722606,
+    "nativeIKError": 2.2821774173522894e-07,
+    "samplesHz": 120,
+    "pass": true
+  },
+  {
+    "job": "overhead",
+    "duration": 2.799999952316284,
+    "durationError": 4.7683715642676816e-08,
+    "endpointJointPositionError": 3.184269678278727e-07,
+    "loopMatrixError": 3.126354183313751e-07,
+    "maximumLimbLengthChange": 1.6067024060734125e-05,
+    "maximumPalmDrift": {
+      "Right": 0.0024679890434669578,
+      "Left": 0.0
+    },
+    "maxRotationStepDegrees": 16.2358585352741,
+    "nativeIKError": 1.9239478052950927e-05,
+    "samplesHz": 120,
+    "leftHandIsFree": true,
+    "pass": true
+  },
+  {
+    "job": "sweep",
+    "duration": 1.4666666984558105,
+    "durationError": 3.1789143761784544e-08,
+    "endpointJointPositionError": 2.9655431758332277e-07,
+    "loopMatrixError": 6.416472392301031e-07,
+    "maximumLimbLengthChange": 1.6985321041496082e-05,
+    "maximumPalmDrift": {
+      "Right": 0.0003155853938200398,
+      "Left": 0.00030077846968140035
+    },
+    "maxRotationStepDegrees": 6.742650367082134,
+    "nativeIKError": 2.0308691948693726e-05,
+    "samplesHz": 120,
+    "pass": true
+  },
+  {
+    "job": "thrust",
+    "duration": 2.306666612625122,
+    "durationError": 5.404154457266941e-08,
+    "endpointJointPositionError": 3.333393336466493e-07,
+    "loopMatrixError": 4.2991105320133727e-07,
+    "maximumLimbLengthChange": 2.1659840907545247e-05,
+    "maximumPalmDrift": {
+      "Right": 0.0008076314574023332,
+      "Left": 0.00028176817415851324
+    },
+    "maxRotationStepDegrees": 5.347578625142995,
+    "nativeIKError": 2.589585598164024e-05,
+    "samplesHz": 120,
+    "pass": true
+  }
+]

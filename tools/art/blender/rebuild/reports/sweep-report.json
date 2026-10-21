@@ -1,0 +1,16 @@
+{
+  "job": "sweep",
+  "duration": 1.4666666666666668,
+  "source": "StrongAttackTwoHand_Sweep_v9",
+  "sourceSHA256": "cc900aa0c77e5e29a0a76e84c7f448a867b12df58505d7c7741b957394156deb",
+  "sha256": "71b8797a6a143f5f7b261c667cb6b621a238d11f976afd6381ec6e8b268bc93c",
+  "nativeIKError": 2.0308691948693726e-05,
+  "endpointMatrixDelta": [
+    8.195638656616211e-07,
+    7.748603820800781e-07
+  ],
+  "sparsePoses": 11,
+  "ownerApproved": false,
+  "visualReview": "Blender full-length front, side, and three-quarter renders inspected; new owner review pending",
+  "blender": "5.2.0 LTS"
+}

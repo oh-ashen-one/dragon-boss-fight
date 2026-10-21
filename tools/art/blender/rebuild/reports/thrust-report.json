@@ -1,0 +1,16 @@
+{
+  "job": "thrust",
+  "duration": 2.3066666666666666,
+  "source": "StrongAttackTwoHand_Thrust_v7",
+  "sourceSHA256": "ea2234f8e5e0cf4aa482c1a8ab510626393365639e57d88b7a84aecf38d55a92",
+  "sha256": "55312e05a003bff53d7e7f35763404e12e498407b1da767ec8feb243f885658d",
+  "nativeIKError": 2.589585598164024e-05,
+  "endpointMatrixDelta": [
+    1.1473894119262695e-06,
+    9.238719940185547e-07
+  ],
+  "sparsePoses": 11,
+  "ownerApproved": false,
+  "visualReview": "Blender full-length front, side, and three-quarter renders inspected; new owner review pending",
+  "blender": "5.2.0 LTS"
+}

@@ -1,0 +1,16 @@
+{
+  "job": "overhead",
+  "duration": 2.8,
+  "source": "LightAttack_BlackKnightReference_v10",
+  "sourceSHA256": "6bbe88f658f2e72659aca48d41e141f6ab5faf6c3d82d3d076610880689b4665",
+  "sha256": "74c7749f5bdfb51f3b4c46bc40c479a2b1b0b3c8f49e183b9c76a0bc688e6995",
+  "nativeIKError": 1.9239478052950927e-05,
+  "endpointMatrixDelta": [
+    8.344650268554688e-07,
+    9.5367431640625e-07
+  ],
+  "sparsePoses": 18,
+  "ownerApproved": false,
+  "visualReview": "Blender full-length front, side, and three-quarter renders inspected; new owner review pending",
+  "blender": "5.2.0 LTS"
+}

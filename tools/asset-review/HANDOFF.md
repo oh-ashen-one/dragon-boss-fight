@@ -304,3 +304,8 @@ The owner's approval applies to the browser motion review; no native Unreal
 preview or game integration is claimed. Before integrating either approved
 clip, check Studio renderer slots and native bind-space behavior; preserve the
 earlier build. The browser preview can differ from Unreal.
+
+
+## 2026-10-21 — Six Blender rebuild candidates
+
+All six approved Knight idles/attacks now have separate Blender-authored v1 candidates. See `tools/art/blender/rebuild/README.md` and its `reports/` for exact provenance, timings, checks, editable controls, and limitations. Approved source GLBs and walk v3 are unchanged. The viewer lists all six new candidates beside approved originals, uses the baked socket for the Blender exports, and keeps the original attack references and 3x strong timing. Private release: `oh-ashen-one/veyr-animation-sources`, `knight-approved-blender-v1-20261021`. All six exports pass the independent 120 Hz audit. New owner review and Unreal integration remain pending.

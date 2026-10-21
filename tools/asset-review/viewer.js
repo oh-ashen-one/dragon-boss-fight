@@ -34,11 +34,11 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['WalkTwoHand_Blender_v3', 'LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['IdleOneHand_Blender_v1','IdleTwoHand_Blender_v1','LightAttack_BlackKnightReference_Blender_v1','StrongAttackTwoHand_Sweep_Blender_v1','StrongAttackTwoHand_Thrust_Blender_v1','LightAttackTwoHand_Compact_Blender_v1','WalkTwoHand_Blender_v3', 'LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 const approvedIds = new Set(['review/LightAttackTwoHand_Compact_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
-const retimedStrongIds = new Set(['review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb']);
+const retimedStrongIds = new Set(['review/StrongAttackTwoHand_Sweep_Blender_v1.glb', 'review/StrongAttackTwoHand_Thrust_Blender_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb']);
 
 let catalog = [];
 let activeGroup = 'knight';
@@ -58,6 +58,12 @@ let followedWalkZ = null;
 
 function humanName(item) {
   const names = {
+    IdleOneHand_Blender_v1: 'One-hand idle · Blender candidate',
+    IdleTwoHand_Blender_v1: 'Two-hand idle · Blender candidate',
+    LightAttack_BlackKnightReference_Blender_v1: 'One-hand overhead · Blender candidate',
+    StrongAttackTwoHand_Sweep_Blender_v1: 'Two-hand sweep · Blender candidate',
+    StrongAttackTwoHand_Thrust_Blender_v1: 'Two-hand thrust · Blender candidate',
+    LightAttackTwoHand_Compact_Blender_v1: 'Two-hand light attack · Blender candidate',
     WalkTwoHand_Blender_v3: 'Two-hand walk · Blender review',
     LightAttackTwoHand_Compact_v1: 'Two-hand light attack · approved',
     StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · approved',
@@ -154,7 +160,7 @@ function frameModel() {
   if (!model) return;
   const box = new THREE.Box3().setFromObject(model);
   if (box.isEmpty()) return;
-  const attackReview = activeItem?.name === 'LightAttack_BlackKnightReference_v10' || isTwoHandMotion(activeItem);
+  const attackReview = activeItem?.name?.startsWith('LightAttack_BlackKnightReference') || isTwoHandMotion(activeItem);
   const center = attackReview ? new THREE.Vector3(0, 0.85, 0.30) : box.getCenter(new THREE.Vector3());
   if (activeItem?.name.startsWith('WalkTwoHand_')) {
     followedWalkZ = model.getObjectByName('Hips').getWorldPosition(new THREE.Vector3()).z;
@@ -210,8 +216,8 @@ const swordScale = 0.4096359622825952;
 async function attachSword(knight, serial, item) {
   const hand = knight.getObjectByName('RightHand');
   if (!hand) throw new Error('Knight RightHand bone is missing');
-  const twoHandReview = item.id === 'review/IdleTwoHand_ReadyBreath_v6.glb' || isTwoHandMotion(item);
-  const swordId = isTwoHandMotion(item) ? 'review/BoatGreatsword_StrongGrip_v1.glb' : twoHandReview ? 'review/BoatGreatsword_Grip_v6.glb' : 'objects/BoatGreatsword_v4.glb';
+  const twoHandReview = ['review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleTwoHand_Blender_v1.glb'].includes(item.id) || isTwoHandMotion(item);
+  const swordId = isTwoHandMotion(item) ? 'review/BoatGreatsword_StrongGrip_v1.glb' : twoHandReview ? 'review/BoatGreatsword_Grip_v6.glb' : 'review/BoatGreatsword_OneHand_v4.glb';
   const sword = await loader.loadAsync(`/api/asset/${encodeURIComponent(swordId)}`);
   if (serial !== loadSerial) { disposeGltf(sword); return false; }
   sword.scene.position.copy(swordGrip);
@@ -219,7 +225,7 @@ async function attachSword(knight, serial, item) {
   sword.scene.quaternion.copy(swordRotation);
   sword.scene.scale.setScalar(swordScale);
   const socket = knight.getObjectByName('ReviewWeaponSocket');
-  if (socket && isTwoHandMotion(item)) {
+  if (socket && (isTwoHandMotion(item) || item.name.endsWith('_Blender_v1'))) {
     sword.scene.position.set(0, 0, 0);
     sword.scene.quaternion.identity();
     sword.scene.scale.setScalar(1);
@@ -244,8 +250,9 @@ function updatePlaybackControls() {
 }
 
 function timeText(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(Math.floor(seconds % 60)).padStart(2, '0')}.${String(Math.floor((seconds % 1) * 10))}`;
+  const tenths = Math.round(seconds * 10);
+  const minutes = Math.floor(tenths / 600);
+  return `${minutes}:${String(Math.floor(tenths / 10) % 60).padStart(2, '0')}.${tenths % 10}`;
 }
 
 function updateTime() {
@@ -255,7 +262,7 @@ function updateTime() {
   const strong = activeItem?.name.startsWith('StrongAttackTwoHand_');
   $('attack-reference').setAttribute('aria-label', strong ? 'Two-hand attack reference' : 'One-hand attack reference');
   $('reference-frame').alt = strong ? 'Selected two-hand attack reference at the matching time' : 'One-hand attack reference at the matching time';
-  const showReference = strong || activeItem?.name === 'LightAttack_BlackKnightReference_v10';
+  const showReference = strong || activeItem?.name?.startsWith('LightAttack_BlackKnightReference');
   $('attack-reference').hidden = !showReference;
   if (showReference) {
     const thrust = activeItem?.name.includes('Thrust');
@@ -408,7 +415,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/WalkTwoHand_Blender_v3.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/IdleOneHand_Blender_v1.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {
