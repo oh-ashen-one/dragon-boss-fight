@@ -1,3 +1,32 @@
+# Current handoff — remaining Knight Blender set, 2026-10-21
+
+The requested 13 remaining character animations are built as **new review candidates**.
+All six previously approved Blender motions retain their recorded hashes; the
+original roll is preserved. Dragon work has not begun. No Unreal integration.
+
+- Public branch: `codex/veyr-asset-review-20261019`; implementation commit `036a16e`.
+- Active Studio checkout: `/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
+- Instructions, provenance, controls and checks: `tools/art/blender/remainder/README.md`.
+- Review inventory: `tools/asset-review/remainder-catalog.json` (13 new clips).
+- Local server: port **8775**, 27 total entries. New clips appear first.
+- Chrome was opened locally and verified with textured playback. It is left on the new one-hand walk at 1x. Death holds at 4.4 s with Loop off; jump scrubbing at 0.5 s shows the airborne pose; the healing flask and palm were inspected close up.
+- All 13 independent 120 Hz export audits pass. All 13 native FK action ranges match their playback endpoints. All 13 three-view films decode and match their intended durations.
+- Outputs: `/Users/midir/Documents/Codex/2026-10-18/go/outputs/knight-remainder-review`.
+- Private branch: `oh-ashen-one/veyr-animation-sources:codex/knight-remainder-blender-20261021`, commit `4bc33ce`.
+- Private release: `knight-remainder-blender-v1-20261021`; both archives and checksum asset are uploaded, release is not a draft, and GitHub SHA256 digests match locally verified files.
+- Blender 5.2.0 LTS ran on verified Studio Mac15,14 through the shared GPU slot, owner `codex-veyr-remainder-20261021`, port 9882. It exited cleanly after saving; PID 79350 is gone and the slot is released. Start a new owned instance for future authoring; do not reuse the old PID.
+
+- `Veyr-Knight-Remainder-Review-v1.zip`: 1,137,102,948 bytes, 344 verified manifest assets; SHA256 `b0ea03fd1d5189fa51162e9a95d4ebba00c8f24866bfd9506ebcda8b3229d335`.
+- `Veyr-Knight-Remainder-Blender-v1.zip`: 1,503,232,915 bytes, 53 verified manifest assets; SHA256 `1b32cdd3f3a8fad2d7882547340c5a405207987193f9358a58ec3ec0344e61a8`.
+
+The two-hand ready walk is a start/walk/stop sequence. Jump includes vertical
+preview root motion. Engine integration must coordinate capsule movement,
+weapon release and flask attachment. Owner review of these 13 is pending.
+
+The following sections preserve the earlier six-clip approval and walk history.
+
+---
+
 # Current handoff — six Knight Blender rebuilds, 2026-10-21
 
 The six previously approved Knight motions have new **owner-approved Blender v1 versions**.
