@@ -1,0 +1,19 @@
+{
+  "job": "backpedal",
+  "duration": 2.4,
+  "source": "IdleOneHand_Breathing_v3",
+  "sourceSHA256": "7a5c482cb6a363e22e41303a8162d9b7bfbf04523745cb45cfc9dacf8beec3df",
+  "sha256": "7b251bb83bfc4a02b03c6474b101f4d9f934eddafaaecd3540309fb6d6dbc49c",
+  "nativeIKError": 5.158772536048154e-06,
+  "endpointMatrixDelta": [
+    8.344650268554688e-07,
+    1.2069940567016602e-06
+  ],
+  "sparsePoses": 13,
+  "ownerApproved": false,
+  "visualReview": "pending",
+  "blender": "5.2.0 LTS",
+  "reviewName": "Backpedal_Blender_v2",
+  "rootMotion": "backward .36",
+  "feedbackRevision": 2
+}

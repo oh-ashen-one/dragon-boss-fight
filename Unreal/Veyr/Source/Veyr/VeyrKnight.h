@@ -25,6 +25,8 @@ class VEYR_API AVeyrKnight : public ACharacter
 public:
     AVeyrKnight();
     virtual void Tick(float DeltaSeconds) override;
+    // Owner removed jumping; also reject inherited/Blueprint jump requests.
+    virtual bool CanJumpInternal_Implementation() const override { return false; }
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 100.f;
@@ -74,7 +76,6 @@ public:
     UFUNCTION(BlueprintCallable, Category="Combat") void TryHeavyAttack();
     UFUNCTION(BlueprintCallable, Category="Combat") void TryRoll();
     UFUNCTION(BlueprintCallable, Category="Combat") void TryHeal();
-    UFUNCTION(BlueprintCallable, Category="Combat") void TryGroundedJump();
     UFUNCTION(BlueprintCallable, Category="Combat") void SetGuard(bool bHeld);
     UFUNCTION(BlueprintCallable, Category="Combat") void ToggleLockOn();
     UFUNCTION(BlueprintCallable, Category="Combat") void RestartIfTerminal();
@@ -104,7 +105,6 @@ public:
 
 protected:
     virtual void BeginPlay() override;
-    virtual void OnJumped_Implementation() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
@@ -190,7 +190,6 @@ private:
     void ZoomOut();
     void GuardPressed();
     void GuardReleased();
-    void JumpReleased();
     void ForwardPressed(); void ForwardReleased();
     void BackPressed(); void BackReleased();
     void LeftPressed(); void LeftReleased();
@@ -202,5 +201,5 @@ private:
     void ReleaseMouse();
     void GripPressed();
     void LightPressed(); void HeavyPressed(); void RollPressed();
-    void HealPressed(); void JumpPressed(); void LockPressed();
+    void HealPressed(); void LockPressed();
 };

@@ -14,6 +14,7 @@ OUT = REPO/'Local/Blender/approved-rebuild-20261021'
 OWNER = 'codex-veyr-walk-20261021'
 SOURCE_RANGES = {}
 SNAPSHOT_REFINER = None
+END_FOLLOW_LOWER = set()
 JOBS = {
  'idle_one': ('IdleOneHand_Breathing_v3',4.,[0,.5,1,1.5,2,2.5,3,3.5,4],False),
  'idle_two': ('IdleTwoHand_ReadyBreath_v6',4.,[0,.5,1,1.5,2,2.5,3,3.5,4],True),
@@ -176,6 +177,9 @@ def bake():
     old=(base[names[i+1]].translation-base[names[i]].translation).normalized();new=(pts[i+1]-pts[i]).normalized()
     desired[names[i]]=Matrix.LocRotScale(pts[i],old.rotation_difference(new)@base[names[i]].to_quaternion(),base[names[i]].to_scale())
    desired[names[2]]=c.target.matrix_world.copy()
+   if label in END_FOLLOW_LOWER:
+    relative=base[names[1]].to_quaternion().inverted()@base[names[2]].to_quaternion()
+    desired[names[2]]=Matrix.LocRotScale(desired[names[2]].translation,desired[names[1]].to_quaternion()@relative,base[names[2]].to_scale())
    maxerror=max(maxerror,(pts[2]-desired[names[2]].translation).length)
    delta=desired[names[2]]@base[names[2]].inverted()
    for child in rig.pose.bones[names[2]].children_recursive:desired[child.name]=delta@base[child.name]

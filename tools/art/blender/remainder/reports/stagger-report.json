@@ -10,7 +10,7 @@
     7.748603820800781e-07
   ],
   "sparsePoses": 13,
-  "ownerApproved": false,
+  "ownerApproved": true,
   "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
   "blender": "5.2.0 LTS",
   "reviewName": "Stagger_Blender_v1",
@@ -19,5 +19,7 @@
   "sourceWindow": [
     0,
     0.42
-  ]
+  ],
+  "ownerApprovalDate": "2026-10-21",
+  "ownerApprovalQuote": "stagger approved"
 }

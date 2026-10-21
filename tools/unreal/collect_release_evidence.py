@@ -79,7 +79,7 @@ def main():
     assert 180<=victory['terminalGameSeconds']<=300
     physical=read(a.physical)
     assert physical['sourceId']==final_build['sourceId'] and physical['completed']
-    required={'mouse_capture','movement','light_attack','heavy_attack','grip_toggle','jump','roll','guard','heal','lock_toggle','escape_release','reacquire','restart','post_restart_movement'}
+    required={'mouse_capture','movement','light_attack','heavy_attack','grip_toggle','roll','guard','heal','lock_toggle','escape_release','reacquire','restart','post_restart_movement'}
     assert required<=physical['checks'].keys()
     assert all(physical['checks'][key] is True for key in required-{'roll'})
     assert physical['checks']['roll'] is True or (physical['checks']['roll'] is None and physical.get('rollInputLimitation'))

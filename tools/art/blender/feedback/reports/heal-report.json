@@ -1,0 +1,19 @@
+{
+  "job": "heal",
+  "duration": 2.4,
+  "source": "IdleOneHand_Breathing_v3",
+  "sourceSHA256": "7a5c482cb6a363e22e41303a8162d9b7bfbf04523745cb45cfc9dacf8beec3df",
+  "sha256": "9d78375adaf21dc0af58ea22c1baa4e98ce8653a6775d011c846da4db0d10bdf",
+  "nativeIKError": 2.387738497081434e-05,
+  "endpointMatrixDelta": [
+    1.4603137969970703e-06,
+    1.4603137969970703e-06
+  ],
+  "sparsePoses": 11,
+  "ownerApproved": false,
+  "visualReview": "pending",
+  "blender": "5.2.0 LTS",
+  "reviewName": "Heal_Blender_v2",
+  "rootMotion": "none",
+  "feedbackRevision": 2
+}

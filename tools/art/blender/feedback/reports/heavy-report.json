@@ -1,0 +1,19 @@
+{
+  "job": "heavy",
+  "duration": 1.4,
+  "source": "HeavyAttackOneHand_Blender_v1",
+  "sourceSHA256": "fd358f6c984c5db9745cc0cf9b8f52cd26de26097abc4bc1a10a68f90d57f412",
+  "sha256": "e2014c761502c0599eb07463fe96dc93b159f5563defe3ca96967f806c3bbcfb",
+  "nativeIKError": 3.0385310166337853e-05,
+  "endpointMatrixDelta": [
+    9.834766387939453e-07,
+    3.6582350730895996e-06
+  ],
+  "sparsePoses": 10,
+  "ownerApproved": false,
+  "visualReview": "pending",
+  "blender": "5.2.0 LTS",
+  "reviewName": "HeavyAttackOneHand_Blender_v2",
+  "rootMotion": "right .22",
+  "feedbackRevision": 2
+}

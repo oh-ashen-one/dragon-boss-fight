@@ -321,3 +321,8 @@ Runtime inventory confirms additional character motions: walk/run/backpedal/stra
 ## Remaining Knight set — 2026-10-21
 
 13 Blender-authored review candidates now cover one-hand walk, two-hand ready walk v4, run, backpedal, both strafes, both guards, one-hand heavy, jump, heal, stagger, and death. They are not yet owner-approved. All six previously approved hashes are unchanged; roll is preserved. See `tools/art/blender/remainder/README.md`, `reports/`, and `tools/asset-review/remainder-catalog.json`. The local viewer at port 8775 lists new motions first and defaults one-shots to Loop off. Chrome playback, death terminal hold, and jump scrubbing were verified. Private release: `knight-remainder-blender-v1-20261021` in `oh-ashen-one/veyr-animation-sources`. No Unreal integration. Dragon work has not begun.
+
+
+## Owner feedback revision 2 — 2026-10-21
+
+Death and stagger are approved; exact hashes are in `tools/art/blender/feedback/decisions.json`. Jump and one-hand guard are removed from the active set and disabled in gameplay source paths. Heal, one-hand heavy, backpedal, idle-to-two-hand-guard and both locked-on sidesteps have new v2 candidates. All six pass the owner-specific export audit. Run and ready walk remain unchanged, unapproved, and are first for the next review. See `tools/art/blender/feedback/README.md`. The private laptop link remains `http://100.95.131.102:8775/`; it now lists 25 entries. Source compiles; installed game has not been replaced. No dragon work yet.

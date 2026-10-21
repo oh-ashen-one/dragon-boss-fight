@@ -828,13 +828,9 @@ bool AVeyrReplay::DriveScenarioInputs()
             case 2:
                 Movement=FVector(0,1,0);bJump=Knight->SuccessfulJumps==0&&Knight->IsGrounded();
                 bControlMovement|=FVector::Dist2D(Feet,ControlOrigin)>100.f;
-                if(Knight->SuccessfulJumps>0&&!Knight->IsGrounded())
-                {
-                    ControlJumpMaximumRise=FMath::Max(ControlJumpMaximumRise,static_cast<float>(Feet.Z-ControlJumpStartFootZ));
-                    bControlJumpAirborne|=ControlJumpMaximumRise>10.f;
-                }
-                bControlJumpLanded|=bControlJumpAirborne&&Knight->IsGrounded();
-                if(bControlMovement&&Knight->SuccessfulJumps>0&&bControlJumpAirborne&&bControlJumpLanded)
+                // Pressing the legacy jump input must have no effect while moving.
+                if(Knight->SuccessfulJumps>0){Finish(false,TEXT("removed jump unexpectedly executed"));return true;}
+                if(bControlMovement&&Knight->IsGrounded()&&!Knight->CanJump()&&Elapsed-ControlStageStarted>1.f)
                 {
                     Knight->ToggleLockOn();bLockOnObserved=Knight->bLockedOn;Next();
                 }
@@ -1390,12 +1386,12 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     else if(bLegIsolation&&bIsolationViolated)Finish(false,TEXT("leg isolation failed: contact or stagger changed a different region"));
     else if(bLegIsolation&&bLightLegContact&&bHeavyLegContact&&bIsolatedStagger&&bCorrectLegBuckle&&Dragon->State==EVeyrDragonState::Collapse)
         Finish(true,FString::Printf(TEXT("leg %d isolated light/heavy stagger, correct buckle and collapse observed; other three legs unchanged"),TargetLeg));
-    else if(ReplayMode==TEXT("controls")&&ControlStage>=9&&bFullHealthHealRejected&&bLockOffObserved&&bLockOnObserved&&bControlMovement&&bControlJumpAirborne&&bControlJumpLanded&&bControlStaminaSpent&&bControlStaminaRecovered&&Knight->SuccessfulJumps>0&&Knight->LightAttacks>0&&Knight->HeavyAttacks>0&&Knight->Rolls>0&&Knight->GuardedHits>0&&Knight->SuccessfulHeals>0)
-        Finish(true,TEXT("movement jump attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed"));
+    else if(ReplayMode==TEXT("controls")&&ControlStage>=9&&bFullHealthHealRejected&&bLockOffObserved&&bLockOnObserved&&bControlMovement&&bControlStaminaSpent&&bControlStaminaRecovered&&Knight->SuccessfulJumps==0&&!Knight->CanJump()&&Knight->LightAttacks>0&&Knight->HeavyAttacks>0&&Knight->Rolls>0&&Knight->GuardedHits>0&&Knight->SuccessfulHeals>0)
+        Finish(true,TEXT("movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed"));
     else if(ReplayMode==TEXT("avoidance")&&AllMovesAvoided())
         Finish(true,TEXT("all six naturally selected moves threatened the player in windup and completed recovery without a damaging hit"));
-    else if(ReplayMode==TEXT("core")&&Knight->SuccessfulJumps>0&&bLightLegContact&&bHeavyLegContact&&Dragon->GetCollapseCount()>0&&Dragon->GetHeadBonusHitCount()>0&&bRiseCompleted&&Knight->DodgedHits>0)
-        Finish(true,TEXT("jump light heavy collapse head bonus completed rise and dodge contact observed"));
+    else if(ReplayMode==TEXT("core")&&Knight->SuccessfulJumps==0&&!Knight->CanJump()&&bLightLegContact&&bHeavyLegContact&&Dragon->GetCollapseCount()>0&&Dragon->GetHeadBonusHitCount()>0&&bRiseCompleted&&Knight->DodgedHits>0)
+        Finish(true,TEXT("jump-disabled light heavy collapse head bonus completed rise and dodge contact observed"));
     else if(Elapsed>DurationLimit)Finish(false,TEXT("objective timeout; inspect event history and policy"));
     if(!bFinished&&!bTerminalSettling&&!bAwaitingReload&&!bRestartVerification)DriveInputs();ServiceCapture();
     if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}

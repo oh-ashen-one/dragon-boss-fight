@@ -57,7 +57,7 @@ let loadSerial = 0;
 let followedWalkZ = null;
 
 function humanName(item) {
-  if (item.title) return `${item.title} · Blender review`;
+  if (item.title) return `${item.title} · ${item.ownerApproved ? "approved" : "review"}`;
   const names = {
     IdleOneHand_Blender_v1: 'One-hand idle · Blender approved',
     IdleTwoHand_Blender_v1: 'Two-hand idle · Blender approved',
@@ -422,10 +422,11 @@ try {
   if (!response.ok) throw new Error(`Catalog HTTP ${response.status}`);
   const data = await response.json();
   catalog = data.items;
+  for (const item of catalog) if (item.ownerApproved) approvedIds.add(item.id);
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/WalkOneHand_Blender_v1.glb') || catalog.find(item => item.id === 'review/IdleOneHand_Blender_v1.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/RunOneHand_Blender_v1.glb') || catalog.find(item => item.id === 'review/WalkOneHand_Blender_v1.glb') || catalog.find(item => item.id === 'review/IdleOneHand_Blender_v1.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

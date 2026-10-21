@@ -6,7 +6,7 @@ Both main characters use Customuse models. The owner played the a450a43b build a
 
 ## Play and controls
 
-The private owner handoff includes the signed local macOS ZIP. Click or press Enter to capture control; Escape releases the mouse. Movement is WASD, mouse controls the free camera, Space jumps, Shift rolls, J/LMB performs a light attack, K a heavy attack, F/RMB guards, Q uses one of four healing draughts, Tab toggles lock-on, E switches one-/two-handed grip in the current revision, and R restarts after defeat or victory.
+The private owner handoff includes the signed local macOS ZIP. Click or press Enter to capture control; Escape releases the mouse. Movement is WASD, mouse controls the free camera, Shift rolls, J/LMB performs a light attack, K a heavy attack, F/RMB readies a two-handed guard, Q uses one of four healing draughts, Tab toggles lock-on, E switches one-/two-handed grip in the current revision, and R restarts after defeat or victory.
 
 Guard direction, stamina, invulnerability timing and healing charges matter. Each leg has its own stagger meter. A buckle leads to a brief exposed-head opening with bonus damage, followed by recovery. Fire sweeps, bites, claws, rear stomps, tail sweeps and flight/landing share visible anticipation and danger areas.
 

@@ -1,0 +1,62 @@
+[
+  {
+    "job": "heal",
+    "fps": 150,
+    "frameEnd": 360,
+    "authoringKeyEnd": 360.0,
+    "nativeIKConstraints": 4,
+    "editableActions": 11,
+    "sourceAction": "REFERENCE_IdleOneHand_Breathing_v3",
+    "ownerApproved": false
+  },
+  {
+    "job": "heavy",
+    "fps": 150,
+    "frameEnd": 210,
+    "authoringKeyEnd": 210.0,
+    "nativeIKConstraints": 4,
+    "editableActions": 12,
+    "sourceAction": "REFERENCE_HeavyAttackOneHand_Blender_v1",
+    "ownerApproved": false
+  },
+  {
+    "job": "backpedal",
+    "fps": 150,
+    "frameEnd": 360,
+    "authoringKeyEnd": 360.0,
+    "nativeIKConstraints": 4,
+    "editableActions": 8,
+    "sourceAction": "REFERENCE_IdleOneHand_Breathing_v3.001",
+    "ownerApproved": false
+  },
+  {
+    "job": "guard_two",
+    "fps": 150,
+    "frameEnd": 165,
+    "authoringKeyEnd": 165.0,
+    "nativeIKConstraints": 4,
+    "editableActions": 12,
+    "sourceAction": "REFERENCE_IdleTwoHand_ReadyBreath_v6",
+    "ownerApproved": false
+  },
+  {
+    "job": "strafe_left",
+    "fps": 150,
+    "frameEnd": 195,
+    "authoringKeyEnd": 195.0,
+    "nativeIKConstraints": 4,
+    "editableActions": 8,
+    "sourceAction": "REFERENCE_IdleOneHand_Breathing_v3.002",
+    "ownerApproved": false
+  },
+  {
+    "job": "strafe_right",
+    "fps": 150,
+    "frameEnd": 195,
+    "authoringKeyEnd": 195.0,
+    "nativeIKConstraints": 4,
+    "editableActions": 8,
+    "sourceAction": "REFERENCE_IdleOneHand_Breathing_v3.003",
+    "ownerApproved": false
+  }
+]

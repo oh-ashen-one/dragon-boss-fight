@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-21",
+  "approved": [
+    {
+      "file": "Death_Blender_v1.glb",
+      "sha256": "3de37b40fcd3de053a204785ef0d7ceda88d9adcafe7b317622c9dcb50640bf4",
+      "quote": "death is approved"
+    },
+    {
+      "file": "Stagger_Blender_v1.glb",
+      "sha256": "fb26a98f6f8a41aff3f1ee6e68d2aad11de61de33560ce9d9a5344e498b10e8c",
+      "quote": "stagger approved"
+    }
+  ],
+  "removed": [
+    "Jump_Blender_v1.glb",
+    "GuardOneHand_Blender_v1.glb"
+  ],
+  "rejectedForRevision": {
+    "Heal_Blender_v1.glb": "Simple cup-to-mouth action; elbow must not fold into hip.",
+    "HeavyAttackOneHand_Blender_v1.glb": "Free left arm must move independently, not stay pinned to torso.",
+    "Backpedal_Blender_v1.glb": "Walk backward upright from approved idle, no hit/crouch pose.",
+    "GuardTwoHand_Blender_v1.glb": "Show idle-to-guard preparation, not instant defensive hold.",
+    "StrafeLeft_Blender_v1.glb": "Target-facing sidestep with separated feet, no crossed legs or bent torso.",
+    "StrafeRight_Blender_v1.glb": "Target-facing sidestep with separated feet, no crossed legs or bent torso."
+  },
+  "nextReview": [
+    "RunOneHand_Blender_v1.glb",
+    "WalkTwoHand_Blender_v4.glb"
+  ]
+}

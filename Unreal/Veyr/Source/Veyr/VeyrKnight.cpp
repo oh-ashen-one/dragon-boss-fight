@@ -33,7 +33,7 @@ AVeyrKnight::AVeyrKnight()
     Movement->MaxAcceleration = 3000.f;
     Movement->BrakingDecelerationWalking = 2500.f;
     Movement->GroundFriction = 8.f;
-    Movement->JumpZVelocity = 580.f;
+    Movement->JumpZVelocity = 0.f;
     Movement->GravityScale = 1.8f;
     Movement->AirControl = .30f;
     Movement->RotationRate = FRotator(0.f, 720.f, 0.f);
@@ -192,6 +192,10 @@ bool AVeyrKnight::CanStartGroundedAction() const { return GripTransitionRemainin
 
 void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction, float Duration)
 {
+    if (NewAction == EVeyrKnightAction::Guard && !bTwoHanded)
+    {
+        bTwoHanded = true; GripTransitionRemaining = .28f;
+    }
     Action = NewAction; ActionElapsed = 0.f; ActionDuration = Duration;
     bContactSent = false; bHealGranted = false; bPreviousBladePoseValid=false;
     if(NewAction==EVeyrKnightAction::LightAttack||NewAction==EVeyrKnightAction::HeavyAttack)
@@ -210,7 +214,7 @@ void AVeyrKnight::FinishAction()
 
 void AVeyrKnight::ToggleGrip()
 {
-    if (!CanStartGroundedAction()) return;
+    if (!CanStartGroundedAction() || Action == EVeyrKnightAction::Guard) return;
     bTwoHanded=!bTwoHanded; GripTransitionRemaining=.28f;
     BufferedAttackRemaining=0.f;
     UE_LOG(LogTemp,Display,TEXT("VEYR_GRIP twoHanded=%d"),bTwoHanded);
@@ -258,21 +262,6 @@ void AVeyrKnight::TryHeal()
     if (!CanStartGroundedAction() || HealingCharges <= 0 || Health >= 100.f) return;
     --HealingCharges;
     BeginAction(EVeyrKnightAction::Heal, 1.25f);
-}
-
-void AVeyrKnight::TryGroundedJump()
-{
-    if (!CanStartGroundedAction()) return;
-    if (Action == EVeyrKnightAction::Guard) BeginAction(EVeyrKnightAction::Ready, 0.f);
-    Jump();
-}
-
-void AVeyrKnight::OnJumped_Implementation()
-{
-    Super::OnJumped_Implementation();
-    PresentationJumpLaunchSpeed=FMath::Max(1.f,FMath::Max(GetVelocity().Z,GetCharacterMovement()->JumpZVelocity));
-    ++SuccessfulJumps;
-    UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_JUMP count=%d footZ=%.2f"), SuccessfulJumps, GetFootLocation().Z);
 }
 
 void AVeyrKnight::SetGuard(bool bHeld)
@@ -344,9 +333,6 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     if (DeltaSeconds <= 0.f) return;
     UpdateMouseCapture();
-    // Keep replay press alive until CharacterMovement has actually consumed it.
-    // Jump followed by StopJumping in one actor tick cancels the jump entirely.
-    if (bReplayJumpHeld && !IsGrounded()) { StopJumping(); bReplayJumpHeld = false; }
     VisualClock += DeltaSeconds;
     RegenDelay = FMath::Max(0.f, RegenDelay - DeltaSeconds);
     DamageGrace = FMath::Max(0.f, DamageGrace - DeltaSeconds);
@@ -360,7 +346,6 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     {
         SetGuard(bReplayGuard);
         if (bReplayRoll) TryRoll();
-        else if (bReplayJump) { TryGroundedJump(); bReplayJumpHeld = bPressedJump; }
         else if (bReplayHeal) TryHeal();
         else if (bReplayHeavy) TryHeavyAttack();
         else if (bReplayLight) TryLightAttack();
@@ -852,7 +837,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*BaseRotation);
 
     FName Clip=bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
-    bool bUsePhase=false,bJumpPose=false;
+    bool bUsePhase=false;
     float Time=VisualClock,Phase=FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f);
     switch (Action)
     {
@@ -862,24 +847,16 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         case EVeyrKnightAction::Heal: Clip=TEXT("Heal"); bUsePhase=true; break;
         case EVeyrKnightAction::Stagger: Clip=TEXT("Stagger"); bUsePhase=true; break;
         case EVeyrKnightAction::Dead: Clip=TEXT("Death"); bUsePhase=true; break;
-        case EVeyrKnightAction::Guard: Clip=bTwoHanded?TEXT("GuardTwoHand"):TEXT("Guard"); Time=ActionElapsed; break;
+        case EVeyrKnightAction::Guard: Clip=TEXT("GuardTwoHand"); Time=ActionElapsed; break;
         default:
-            if (!IsGrounded())
-            {
-                Clip=TEXT("Jump");bUsePhase=bJumpPose=true;
-                // Authored jump has its apex at phase .5, with ballistic root
-                // translation removed. Follow actual vertical motion, not time.
-                Phase=FMath::Clamp(.5f-.5f*GetVelocity().Z/FMath::Max(1.f,PresentationJumpLaunchSpeed),0.f,1.f);
-                PresentationJumpPhase=Phase;
-            }
-            else if (bMoving)
+            if (bMoving)
             {
                 Clip=bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
                 Time=VisualClock;
             }
             break;
     }
-    if(IsGrounded())PresentationJumpPhase=0.f;
+    PresentationJumpPhase=0.f;
     RequestedPresentationClip=Clip;
     const FVeyrVisualClip* Config=CustomuseVisualDefinition->Clips.Find(Clip);
     const FVeyrVisualClip* Lower=PresentationLowerClip.IsNone()?nullptr:CustomuseVisualDefinition->Clips.Find(PresentationLowerClip);
@@ -896,7 +873,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     else
     {
         if(Lower)PresentationLowerTime+=DeltaSeconds*Speed/(*Nominal);
-        const bool bActionRestarted=bUsePhase&&!bJumpPose&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
+        const bool bActionRestarted=bUsePhase&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
         const float ClipEnd=Config->EndSeconds<0.f?Config->Sequence->GetPlayLength():Config->EndSeconds;
         const float ClipDuration=ClipEnd-Config->StartSeconds;
         const bool bLoopWrapped=!bUsePhase&&Config->bLoop&&ClipDuration>0.f&&ImportedPresentation->CurrentClip==Clip&&
@@ -926,7 +903,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     }
     bRequestedPresentationClipSampled=bSampled;
     bPresentationUsingFallback=!bSampled;
-    PresentationPreviousActionElapsed=bUsePhase&&!bJumpPose?ActionElapsed:-1.f;
+    PresentationPreviousActionElapsed=bUsePhase?ActionElapsed:-1.f;
     if (bSampled) { SetPresentationDiagnostic(FString()); return; }
 
     bPresentationTransitionActive=false;
@@ -1017,7 +994,8 @@ void AVeyrKnight::UpdateTemporaryPresentation(float DeltaSeconds)
 void AVeyrKnight::SetReplayInput(const FVector& WorldMove, bool bLight, bool bHeavy, bool bRoll, bool bHeal, bool bJump, bool bGuard)
 {
     bReplayControlled = true; ReplayMove = FVector(WorldMove.X, WorldMove.Y, 0).GetClampedToMaxSize(1.f);
-    bReplayLight |= bLight; bReplayHeavy |= bHeavy; bReplayRoll |= bRoll; bReplayHeal |= bHeal; bReplayJump |= bJump; bReplayGuard = bGuard;
+    bReplayLight |= bLight; bReplayHeavy |= bHeavy; bReplayRoll |= bRoll; bReplayHeal |= bHeal; bReplayJump = false; // Legacy replay jump input is intentionally ignored.
+    bReplayGuard = bGuard;
 }
 void AVeyrKnight::ClearReplayInput()
 {
@@ -1045,7 +1023,6 @@ void AVeyrKnight::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::K, IE_Pressed, this, &AVeyrKnight::HeavyPressed);
     Input->BindKey(EKeys::E, IE_Pressed, this, &AVeyrKnight::GripPressed);
     Input->BindKey(EKeys::LeftShift, IE_Pressed, this, &AVeyrKnight::RollPressed);
-    Input->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AVeyrKnight::JumpPressed); Input->BindKey(EKeys::SpaceBar, IE_Released, this, &AVeyrKnight::JumpReleased);
     Input->BindKey(EKeys::F, IE_Pressed, this, &AVeyrKnight::GuardPressed); Input->BindKey(EKeys::F, IE_Released, this, &AVeyrKnight::GuardReleased);
     Input->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AVeyrKnight::GuardPressed); Input->BindKey(EKeys::RightMouseButton, IE_Released, this, &AVeyrKnight::GuardReleased);
     Input->BindKey(EKeys::Q, IE_Pressed, this, &AVeyrKnight::HealPressed); Input->BindKey(EKeys::Tab, IE_Pressed, this, &AVeyrKnight::LockPressed);
@@ -1167,7 +1144,6 @@ void AVeyrKnight::LightPressed() { if (HumanInputEnabled()) TryLightAttack(); }
 void AVeyrKnight::HeavyPressed() { if (HumanInputEnabled()) TryHeavyAttack(); }
 void AVeyrKnight::RollPressed() { if (HumanInputEnabled()) TryRoll(); }
 void AVeyrKnight::HealPressed() { if (HumanInputEnabled()) TryHeal(); }
-void AVeyrKnight::JumpPressed() { if (HumanInputEnabled()) TryGroundedJump(); }
 void AVeyrKnight::LockPressed() { if (HumanInputEnabled()) ToggleLockOn(); }
 void AVeyrKnight::LookYaw(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerYawInput(Value * .7f); }
 void AVeyrKnight::LookPitch(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerPitchInput(-Value * .6f); }
@@ -1175,7 +1151,6 @@ void AVeyrKnight::ZoomIn() { if (HumanInputEnabled()) CameraDistance = FMath::Cl
 void AVeyrKnight::ZoomOut() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance + 65.f, 500.f, 1100.f); }
 void AVeyrKnight::GuardPressed() { if (HumanInputEnabled()) SetGuard(true); }
 void AVeyrKnight::GuardReleased() { if (!bReplayControlled) SetGuard(false); }
-void AVeyrKnight::JumpReleased() { if (!bReplayControlled) StopJumping(); }
 void AVeyrKnight::ForwardPressed() { bForwardHeld = HumanInputEnabled(); } void AVeyrKnight::ForwardReleased() { bForwardHeld = false; }
 void AVeyrKnight::BackPressed() { bBackHeld = HumanInputEnabled(); } void AVeyrKnight::BackReleased() { bBackHeld = false; }
 void AVeyrKnight::LeftPressed() { bLeftHeld = HumanInputEnabled(); } void AVeyrKnight::LeftReleased() { bLeftHeld = false; }

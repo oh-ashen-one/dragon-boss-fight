@@ -10,9 +10,11 @@
     1.1026859283447266e-06
   ],
   "sparsePoses": 17,
-  "ownerApproved": false,
+  "ownerApproved": true,
   "visualReview": "Front, side and three-quarter pose sequences inspected; normal-speed review films rendered; owner approval pending.",
   "blender": "5.2.0 LTS",
   "reviewName": "Death_Blender_v1",
-  "loopExpected": false
+  "loopExpected": false,
+  "ownerApprovalDate": "2026-10-21",
+  "ownerApprovalQuote": "death is approved"
 }

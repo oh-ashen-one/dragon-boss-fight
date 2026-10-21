@@ -1,0 +1,19 @@
+{
+  "job": "guard_two",
+  "duration": 1.1,
+  "source": "IdleTwoHand_ReadyBreath_v6",
+  "sourceSHA256": "297b43eb9f240a1b166d815019a8914631549db207e79c6c52c219a8dd1cde01",
+  "sha256": "bd7b9111b5c4c8e43cdc9d515f0beaad105b9316478c75b4a332edf578b6a9bb",
+  "nativeIKError": 1.7130513617916322e-07,
+  "endpointMatrixDelta": [
+    8.195638656616211e-07,
+    0.34694966673851013
+  ],
+  "sparsePoses": 7,
+  "ownerApproved": false,
+  "visualReview": "pending",
+  "blender": "5.2.0 LTS",
+  "reviewName": "GuardReadyTwoHand_Blender_v2",
+  "rootMotion": "right .22",
+  "feedbackRevision": 2
+}
