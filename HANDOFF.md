@@ -1,3 +1,52 @@
+# Current handoff — Knight feedback v2, 2026-10-21
+
+Owner approved **Death** and **Stagger**, removed **Jump** and **one-hand guard**,
+and requested six corrections. Exact decisions/hashes are in
+`tools/art/blender/feedback/decisions.json`. The six older approved idles/attacks
+also retain their exact hashes. No dragon work has begun.
+
+- Six new v2 candidates: simple cup drink, independent left arm in one-hand heavy,
+  upright backward steps, idle-to-two-hand-guard entry, target-facing left/right
+  sidesteps with no leg crossing. They await owner review.
+- Run and ready walk are unchanged and first for the next review. Both were opened
+  at 1x in separate Chrome tabs via the private laptop-accessible URL.
+- Private viewer: `http://100.95.131.102:8775/`. Verified **25 entries**; jump and
+  one-hand guard are absent, death/stagger show approved, and v2 replaces the
+  rejected v1 rows. Existing Tailscale Serve forwarding is unchanged.
+- Reviewer runs as a detached process; PID file `Local/review-service.pid`.
+  Use `tools/asset-review/start_background.py` (or `--restart`) to recover/reload it.
+  Verify the PID command before operating it. No launch agent or OS permission
+  change remains from the abandoned listener attempt.
+- Public branch `codex/veyr-asset-review-20261019`; implementation commit `03dcbc4`.
+  Current checkout: `/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
+- Native gameplay source no longer binds or executes jump, and inherited jump
+  eligibility is false. Guard always readies two-handed grip. Native Mac
+  VeyrEditor compile succeeded; receipt is in the feedback reports. The installed
+  packaged game was not replaced and runtime integration remains separate.
+- Six owner-specific 120 Hz export audits pass, including approved idle start,
+  translated idle recovery, neutral wrists, held palms, separated feet/knees,
+  fixed torso orientation for movement and independent heavy free-arm motion.
+- Six full-length Blender front/side/three-quarter films were decoded and checked
+  for duration. The revised textured heal and elbow clearance were inspected in
+  Chrome. Editable scenes are in `Local/Blender/feedback-20261021`.
+- Verified Studio Mac15,14; Blender 5.2.0 LTS task owner
+  `codex-veyr-feedback-20261021`, MCP port 9883. It exited cleanly after saving;
+  PID 11046 is gone. Start a fresh owned instance for subsequent authoring.
+- Private branch `oh-ashen-one/veyr-animation-sources:codex/knight-feedback-v2-20261021`,
+  commit `bdfef86`; release `knight-feedback-v2-20261021` is uploaded and not a draft.
+- Archive `Veyr-Knight-Feedback-v2.zip`: 706,380,872 bytes, 26 manifest assets verified;
+  SHA256 `5468d1e4b24158de45d4b128db48f50bd0c457d233bba142a99ba938d7bbbf66`
+  matches GitHub's asset digest. This is a delta on the previous review bundles.
+- Owner-facing outputs: `/Users/midir/Documents/Codex/2026-10-18/go/outputs/knight-feedback-v2`.
+  Private film page: `http://100.95.131.102:8775/.asset-cache/feedback-media/index.html`.
+
+Detailed methods, limits and editing instructions: `tools/art/blender/feedback/README.md`.
+Root translation in backward/sidestep clips must be coordinated with actor movement
+at integration. The guard entry is a one-shot that holds its final guard pose.
+Historical states below are superseded by this section.
+
+---
+
 # Current handoff — remaining Knight Blender set, 2026-10-21
 
 The requested 13 remaining character animations are built as **new review candidates**.
