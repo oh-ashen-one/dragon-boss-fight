@@ -36,7 +36,7 @@ const groupNames = { knight: 'Knight v015' };
 const ordered = {
   knight: ['IdleOneHand_Blender_v1','IdleTwoHand_Blender_v1','LightAttack_BlackKnightReference_Blender_v1','StrongAttackTwoHand_Sweep_Blender_v1','StrongAttackTwoHand_Thrust_Blender_v1','LightAttackTwoHand_Compact_Blender_v1','WalkTwoHand_Blender_v3', 'LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
-const approvedIds = new Set(['review/LightAttackTwoHand_Compact_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
+const approvedIds = new Set(['review/IdleOneHand_Blender_v1.glb','review/IdleTwoHand_Blender_v1.glb','review/LightAttack_BlackKnightReference_Blender_v1.glb','review/StrongAttackTwoHand_Sweep_Blender_v1.glb','review/StrongAttackTwoHand_Thrust_Blender_v1.glb','review/LightAttackTwoHand_Compact_Blender_v1.glb', 'review/LightAttackTwoHand_Compact_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
 const retimedStrongIds = new Set(['review/StrongAttackTwoHand_Sweep_Blender_v1.glb', 'review/StrongAttackTwoHand_Thrust_Blender_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb']);
 
@@ -58,12 +58,12 @@ let followedWalkZ = null;
 
 function humanName(item) {
   const names = {
-    IdleOneHand_Blender_v1: 'One-hand idle · Blender candidate',
-    IdleTwoHand_Blender_v1: 'Two-hand idle · Blender candidate',
-    LightAttack_BlackKnightReference_Blender_v1: 'One-hand overhead · Blender candidate',
-    StrongAttackTwoHand_Sweep_Blender_v1: 'Two-hand sweep · Blender candidate',
-    StrongAttackTwoHand_Thrust_Blender_v1: 'Two-hand thrust · Blender candidate',
-    LightAttackTwoHand_Compact_Blender_v1: 'Two-hand light attack · Blender candidate',
+    IdleOneHand_Blender_v1: 'One-hand idle · Blender approved',
+    IdleTwoHand_Blender_v1: 'Two-hand idle · Blender approved',
+    LightAttack_BlackKnightReference_Blender_v1: 'One-hand overhead · Blender approved',
+    StrongAttackTwoHand_Sweep_Blender_v1: 'Two-hand sweep · Blender approved',
+    StrongAttackTwoHand_Thrust_Blender_v1: 'Two-hand thrust · Blender approved',
+    LightAttackTwoHand_Compact_Blender_v1: 'Two-hand light attack · Blender approved',
     WalkTwoHand_Blender_v3: 'Two-hand walk · Blender review',
     LightAttackTwoHand_Compact_v1: 'Two-hand light attack · approved',
     StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · approved',

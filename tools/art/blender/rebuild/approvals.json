@@ -1,0 +1,38 @@
+{
+  "approved": true,
+  "date": "2026-10-21",
+  "ownerQuote": "These are all approved.",
+  "scope": "The six Blender rebuilds delivered in the preceding response. Does not include the separate walk v3 or native Unreal integration.",
+  "clips": [
+    {
+      "file": "IdleOneHand_Blender_v1.glb",
+      "sha256": "2bfa3bc2ec5fd1f91ef9fdefceaa628d95947a1ac1c0cd83c65c77ec60a6e30d",
+      "duration": 4.0
+    },
+    {
+      "file": "IdleTwoHand_Blender_v1.glb",
+      "sha256": "950b8a361992bb5084a8ebed14f6cac0c1ea62048991e2568c684abe2a03152d",
+      "duration": 4.0
+    },
+    {
+      "file": "LightAttackTwoHand_Compact_Blender_v1.glb",
+      "sha256": "52cf9b5bac412463e8b7b9f387854a66949305b51adb648fb72fefa630522174",
+      "duration": 1.1
+    },
+    {
+      "file": "LightAttack_BlackKnightReference_Blender_v1.glb",
+      "sha256": "74c7749f5bdfb51f3b4c46bc40c479a2b1b0b3c8f49e183b9c76a0bc688e6995",
+      "duration": 2.8
+    },
+    {
+      "file": "StrongAttackTwoHand_Sweep_Blender_v1.glb",
+      "sha256": "71b8797a6a143f5f7b261c667cb6b621a238d11f976afd6381ec6e8b268bc93c",
+      "duration": 1.4666666666666668
+    },
+    {
+      "file": "StrongAttackTwoHand_Thrust_Blender_v1.glb",
+      "sha256": "55312e05a003bff53d7e7f35763404e12e498407b1da767ec8feb243f885658d",
+      "duration": 2.3066666666666666
+    }
+  ]
+}

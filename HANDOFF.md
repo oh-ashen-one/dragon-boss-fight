@@ -1,6 +1,6 @@
 # Current handoff — six Knight Blender rebuilds, 2026-10-21
 
-The six previously approved Knight motions have new **Blender v1 review candidates**.
+The six previously approved Knight motions have new **owner-approved Blender v1 versions**.
 Authoring ran in the handed-off Veyr Blender MCP session on the verified Studio.
 The session exited cleanly after saving and archiving the scenes; no new engine
 is running for this pass. Start a fresh owned Blender session under the GPU
@@ -15,13 +15,13 @@ protocol for further authoring. The old PID/port notes below are historical.
 - SHA256: `b69a548b1fbefff017bc8af1871fe612b800a4be4fdad8f7f770f29df6b00961`; GitHub asset digest matches.
 - 351 asset files verified against the archive manifest; six review films decode and match approved durations.
 - All six GLBs pass independent 120 Hz checks. Full-length Blender three-view renders and pose sequences are available.
-- Source/approved GLBs, original references and walk v3 remain preserved. New candidate owner review and Unreal integration are still pending.
+- Source/approved GLBs, original references and walk v3 remain preserved. The owner approved all six on 2026-10-21; Unreal integration is still pending.
 - Local viewer: `python3 tools/asset-review/server.py --local-only --port 8774` (14 entries).
 
 The editable sources are under `Local/Blender/approved-rebuild-20261021` after
 restoring the private archive. Owner-facing films, review HTML, ZIP and checks
 are under the chat's `outputs/knight-blender-review` directory. No main merge.
-The earlier handoff below documents the preceding walk-review state.
+The two-hand walk v3 is still separately unapproved. Other existing runtime motions not covered by this six-clip batch: locomotion (walk/run/backpedal/left/right strafe), one-hand heavy attack, guards in both stances, jump, heal, stagger and death. The owner previously praised the roll; preserve it. Next review: the existing walk v3. Dragon review is requested one animation at a time after remaining Knight scope is settled. The earlier handoff below documents the preceding walk-review state.
 
 ---
 

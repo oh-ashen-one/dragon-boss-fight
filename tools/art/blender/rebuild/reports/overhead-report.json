@@ -10,7 +10,9 @@
     9.5367431640625e-07
   ],
   "sparsePoses": 18,
-  "ownerApproved": false,
-  "visualReview": "Blender full-length front, side, and three-quarter renders inspected; new owner review pending",
-  "blender": "5.2.0 LTS"
+  "ownerApproved": true,
+  "visualReview": "Owner approved the Blender rebuild after reviewing the delivered set.",
+  "blender": "5.2.0 LTS",
+  "ownerApprovalDate": "2026-10-21",
+  "ownerApprovalQuote": "These are all approved."
 }

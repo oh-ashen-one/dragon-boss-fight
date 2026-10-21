@@ -309,3 +309,10 @@ earlier build. The browser preview can differ from Unreal.
 ## 2026-10-21 — Six Blender rebuild candidates
 
 All six approved Knight idles/attacks now have separate Blender-authored v1 candidates. See `tools/art/blender/rebuild/README.md` and its `reports/` for exact provenance, timings, checks, editable controls, and limitations. Approved source GLBs and walk v3 are unchanged. The viewer lists all six new candidates beside approved originals, uses the baked socket for the Blender exports, and keeps the original attack references and 3x strong timing. Private release: `oh-ashen-one/veyr-animation-sources`, `knight-approved-blender-v1-20261021`. All six exports pass the independent 120 Hz audit. New owner review and Unreal integration remain pending.
+
+
+## Owner approval — 2026-10-21
+
+Owner: “These are all approved.” This approves the six Blender v1 rebuilds delivered together: one-hand idle, two-hand idle, overhead, strong sweep, strong thrust, and compact two-hand light attack. Exact files and hashes are in `tools/art/blender/rebuild/approvals.json`. It does not implicitly approve the separate Blender walk v3 or native Unreal integration.
+
+Runtime inventory confirms additional character motions: walk/run/backpedal/strafe left/right, one-hand heavy, one-/two-hand guard, jump, heal, stagger, death, and roll. These exist as earlier clips; presence does not mean a new Blender review. Preserve the roll the owner previously praised. Walk v3 is the immediate outstanding review. Owner requests the dragon next, one animation at a time, conditional on finishing remaining Knight scope.

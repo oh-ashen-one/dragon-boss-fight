@@ -1,7 +1,7 @@
 # Approved Knight motions rebuilt in Blender — 2026-10-21
 
 Six new candidates preserve the approved meshes, grips, references and durations.
-They are not owner-approved replacements and are not integrated into Unreal.
+The owner approved all six on 2026-10-21: “These are all approved.” See `approvals.json` for the exact export hashes. Unreal integration is pending.
 
 | Job | Approved reference | Duration | Editable pose beats |
 |---|---|---:|---:|
@@ -72,7 +72,7 @@ approved durations; pose sequences were inspected for body motion, contact,
 foot placement and recovery. The browser loaded the overhead export and its
 original reference and advanced its timeline at 1x. In-app browser screenshot
 capture timed out, so browser visual equivalence is not claimed from that UI.
-Owner motion/feel review remains pending. Gray preview materials are for motion
+Owner motion review is approved for these six exports. Gray preview materials are for motion
 inspection; GLBs preserve source materials. These checks do not prove gameplay
 quality or Unreal integration.
 
