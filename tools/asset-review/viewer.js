@@ -34,7 +34,7 @@ const loader = new GLTFLoader();
 const clock = new THREE.Clock();
 const groupNames = { knight: 'Knight v015' };
 const ordered = {
-  knight: ['WalkTwoHand_Ready_v2', 'LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
+  knight: ['WalkTwoHand_Blender_v3', 'LightAttackTwoHand_Compact_v1', 'StrongAttackTwoHand_Sweep_v9', 'StrongAttackTwoHand_Thrust_v7', 'LightAttack_BlackKnightReference_v10', 'IdleTwoHand_ReadyBreath_v6', 'IdleOneHand_Breathing_v3', 'KnightRig'],
 };
 const approvedIds = new Set(['review/LightAttackTwoHand_Compact_v1.glb', 'review/StrongAttackTwoHand_Sweep_v9.glb', 'review/StrongAttackTwoHand_Thrust_v7.glb', 'review/LightAttack_BlackKnightReference_v10.glb', 'review/IdleTwoHand_ReadyBreath_v6.glb', 'review/IdleOneHand_Breathing_v3.glb']);
 
@@ -58,7 +58,7 @@ let followedWalkZ = null;
 
 function humanName(item) {
   const names = {
-    WalkTwoHand_Ready_v2: 'Two-hand walk · review',
+    WalkTwoHand_Blender_v3: 'Two-hand walk · Blender review',
     LightAttackTwoHand_Compact_v1: 'Two-hand light attack · approved',
     StrongAttackTwoHand_Thrust_v7: 'Two-hand thrust · approved',
     StrongAttackTwoHand_Sweep_v9: 'Two-hand sweep · approved',
@@ -408,7 +408,7 @@ try {
   $('build-id').textContent = data.build;
   renderList();
   const requestedId = decodeURIComponent(location.hash.slice(1));
-  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/WalkTwoHand_Ready_v2.glb') || catalog[0];
+  const initial = catalog.find(item => item.id === requestedId) || catalog.find(item => item.id === 'review/WalkTwoHand_Blender_v3.glb') || catalog[0];
   if (initial) selectItem(initial);
   else loading('No active GLB assets found on the Studio.');
 } catch (error) {

@@ -1,8 +1,55 @@
 # Knight motion review handoff
 
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
-Laptop viewer: `http://127.0.0.1:8765/?review=twohand-walk-v2#review%2FWalkTwoHand_Ready_v2.glb`.
+Laptop viewer: `http://127.0.0.1:8765/?review=blender-walk-v3#review%2FWalkTwoHand_Blender_v3.glb`.
 Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-106`).
+
+## Blender walk v3 candidate — 2026-10-21
+
+- Authored in live Blender 5.2.0 LTS with sparse pelvis/torso/breath/hilt curves,
+  native anatomical IK, calibrated pole angles and a 60fps baked deform action.
+  The embedded refinement script rebakes edited control curves.
+- `WalkTwoHand_Blender_v3.glb`, 3.5 seconds, SHA256
+  `d0713bac27cd87f6d5ed34eebb2c10a4bc6d1011a125bbe30f65bda405cd3c3d`.
+- Editable scene: `/Users/midir/veyr-blender-walk-20261021/Knight_Walk_Blender_v3.blend`
+  on the Studio; SHA256 `b37a8e36dfcc1c1edb8c3df6289ae74a746ab8538f9c571fcb3d260b1fda20e9`.
+- Scripts and usage: `tools/art/blender/README.md`. Reports:
+  `reviews/blender-walk-v3-{authoring,export,audit}.json`.
+- Final idle endpoint matrix errors <2.3e-6; independent 120Hz GLB audit:
+  palm drift <0.000789 rig units, stance-foot frame drift <0.000021,
+  maximum local joint step <3.366 degrees per 60Hz sample.
+- Inspected Blender renders from front, side and three-quarter views; corrected
+  an initial elbow bend-plane mismatch before the final export.
+- Chrome extension control is now available. Opened the actual v3 GLB on laptop
+  localhost, verified textured character/sword, 3.5-second playback at 1x and
+  Body view. The deliverable tab is marked to remain open. Snapshot saved at
+  `/tmp/veyr-blender-chrome-review.png` on the laptop.
+- All approved clips and the v1/v2 walk files are preserved. V3 is unapproved,
+  still a start/walk/stop study, with no Unreal integration/rebuild.
+- Public project repository: character derivatives remain private as before;
+  Blender scene and export stay on the Studio, export copied to laptop cache.
+- Shared-brain rule commit `e5330b7` pushed to
+  `oh-ashen-one/agents-md:codex/blender-animation-rule-20261021`.
+  52 tests and catalog validation passed. Not merged to main; no global rollout
+  is claimed. Project AGENTS.md and user-requested local memory note are active.
+
+## Blender workflow correction — 2026-10-21
+
+Owner requires Blender for all character animation authoring/refinement and asked
+for this rule in project files and the shared brain. Walk v2 is a reference only;
+it remains unapproved. Next work must refine the full-body ready walk in Blender,
+retain editable rig/actions and inspect motion visually before exporting.
+
+Owner explicitly authorized a third session. Published brain main `ba35669`
+also permits up to four Blender-only processes. Verified Studio `Mac15,14`;
+foreign Blender PIDs 27849 and 27888 remain untouched. Task session launched
+through the shared GPU slot wrapper: owner `codex-veyr-walk-20261021`,
+loopback MCP port 9881, Blender PID 28574, work folder
+`/Users/midir/veyr-blender-walk-20261021`. Query the owner tag before mutation.
+Do not reuse stale PIDs without checking live state. No game engine was running
+or queued at launch. `powermetrics` required sudo authentication; the slot tool's
+IOAccelerator sample was 13 percent before launch. No claim of a completed
+three-renderer stress test is made.
 
 ## Active two-hand walk review — 2026-10-21
 

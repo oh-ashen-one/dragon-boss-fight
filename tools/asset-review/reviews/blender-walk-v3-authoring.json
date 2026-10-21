@@ -1,0 +1,19 @@
+{
+  "authoring": "Blender curves and native IK",
+  "blender": "5.2.0 LTS",
+  "frames": 211,
+  "fps": 60,
+  "durationSeconds": 3.5,
+  "maximumIKTargetError": 6.47643620136402e-07,
+  "kneeFlexionDegrees": [
+    24.431608972935948,
+    60.49500779060328
+  ],
+  "approved": false,
+  "editableControls": [
+    "Walk_Pelvis_Control",
+    "Walk_Torso_Control",
+    "Walk_Breath_Control",
+    "Walk_Hilt_Follow_Control"
+  ]
+}

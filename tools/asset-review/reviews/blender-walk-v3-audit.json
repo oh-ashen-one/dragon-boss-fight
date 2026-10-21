@@ -1,0 +1,14 @@
+{
+  "sha256": "d0713bac27cd87f6d5ed34eebb2c10a4bc6d1011a125bbe30f65bda405cd3c3d",
+  "auditHz": 120,
+  "maximumPalmDrift": {
+    "Right": 0.000788557916993318,
+    "Left": 0.000787990249502023
+  },
+  "maximumStanceFootFrameDrift": {
+    "Right": 1.765257907810675e-05,
+    "Left": 2.0920989888272676e-05
+  },
+  "maximumLocalJointStepDegreesAt60Hz": 3.3653076757445706,
+  "ownerApproved": false
+}
