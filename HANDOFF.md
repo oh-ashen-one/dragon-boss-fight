@@ -9,6 +9,7 @@ original roll is preserved. Dragon work has not begun. No Unreal integration.
 - Instructions, provenance, controls and checks: `tools/art/blender/remainder/README.md`.
 - Review inventory: `tools/asset-review/remainder-catalog.json` (13 new clips).
 - Local server: port **8775**, 27 total entries. New clips appear first.
+- Cross-network laptop access: `http://100.95.131.102:8775/` (also `http://studio.tail791b0f.ts.net:8775/`). Tailscale Serve TCP 8775 forwards to the existing loopback viewer at 127.0.0.1:8775. Owner requested command-free laptop access from Chicago. Verified the remote address returns all 27 catalog entries; laptop was online on Tailscale. Private tailnet only, no public Funnel, existing Serve routes preserved. No laptop SSH tunnel is required.
 - Chrome was opened locally and verified with textured playback. It is left on the new one-hand walk at 1x. Death holds at 4.4 s with Loop off; jump scrubbing at 0.5 s shows the airborne pose; the healing flask and palm were inspected close up.
 - All 13 independent 120 Hz export audits pass. All 13 native FK action ranges match their playback endpoints. All 13 three-view films decode and match their intended durations.
 - Outputs: `/Users/midir/Documents/Codex/2026-10-18/go/outputs/knight-remainder-review`.
