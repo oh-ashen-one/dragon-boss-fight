@@ -1,3 +1,30 @@
+# Current handoff — six Knight Blender rebuilds, 2026-10-21
+
+The six previously approved Knight motions have new **Blender v1 review candidates**.
+Authoring ran in the handed-off Veyr Blender MCP session on the verified Studio.
+The session exited cleanly after saving and archiving the scenes; no new engine
+is running for this pass. Start a fresh owned Blender session under the GPU
+protocol for further authoring. The old PID/port notes below are historical.
+
+- Public source branch: `codex/veyr-asset-review-20261019`; implementation commit `df2a422`.
+- Active Studio checkout: `/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
+- Detailed authoring, controls, tests and limitations: `tools/art/blender/rebuild/README.md`.
+- Private branch: `oh-ashen-one/veyr-animation-sources`, `codex/knight-approved-blender-rebuild-20261021`, commit `85fa979`.
+- Private release: `knight-approved-blender-v1-20261021`; GitHub reports both assets uploaded.
+- Archive: `Veyr-Knight-Blender-Rebuild-v1.zip`, 1,172,460,045 bytes.
+- SHA256: `b69a548b1fbefff017bc8af1871fe612b800a4be4fdad8f7f770f29df6b00961`; GitHub asset digest matches.
+- 351 asset files verified against the archive manifest; six review films decode and match approved durations.
+- All six GLBs pass independent 120 Hz checks. Full-length Blender three-view renders and pose sequences are available.
+- Source/approved GLBs, original references and walk v3 remain preserved. New candidate owner review and Unreal integration are still pending.
+- Local viewer: `python3 tools/asset-review/server.py --local-only --port 8774` (14 entries).
+
+The editable sources are under `Local/Blender/approved-rebuild-20261021` after
+restoring the private archive. Owner-facing films, review HTML, ZIP and checks
+are under the chat's `outputs/knight-blender-review` directory. No main merge.
+The earlier handoff below documents the preceding walk-review state.
+
+---
+
 # HANDOFF — Veyr Knight animation review
 
 Date: 2026-10-21 · Branch: `codex/veyr-asset-review-20261019` · Written on laptop `Mac-106` / `Mac17,2` · Status: **ready to resume; walk v3 awaits owner review**
