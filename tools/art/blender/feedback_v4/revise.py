@@ -194,8 +194,14 @@ def export(job):
  return _export(job)
 
 
+def _strap_fix():
+ """LEG 0: every v4 export uses the v4 strap-fix body weights (body/Knight_Body_StrapFix_v4)."""
+ sp=importlib.util.spec_from_file_location('veyr_v4_strap',HERE/'strap_v4.py');m=importlib.util.module_from_spec(sp);m.VEYR_V4_PARAMS=globals().get('VEYR_V4_PARAMS');sp.loader.exec_module(m)
+ s=bpy.context.scene;return m.apply_body(auto_frames=list(range(0,s.frame_end+1,10)))
+
+
 def _export(job):
- s=bpy.context.scene;c.at(0);rig=bpy.data.objects['Knight_Deform']
+ s=bpy.context.scene;fix=_strap_fix();c.at(0);rig=bpy.data.objects['Knight_Deform']
  for o in s.objects:o.select_set(o==rig or o.name=='ReviewWeaponSocket' or bool(o.get('export_body')))
  bpy.context.view_layer.objects.active=rig;p=c.OUT/(job+'_Blender_v1.glb')
  with bpy.context.temp_override(window=bpy.context.window_manager.windows[0]):bpy.ops.export_scene.gltf(filepath=str(p),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIVE_ACTIONS',export_nla_strips_merged_animation_name=f.NAMES[job],export_frame_range=True,export_force_sampling=True,export_optimize_animation_size=False,export_cameras=False,export_lights=False,export_extras=True)
@@ -203,7 +209,7 @@ def _export(job):
  s['feedback_revision']=P['revision']
  bpy.ops.wm.save_as_mainfile(filepath=str(c.OUT/(job+'_Blender_v1.blend')),compress=True)
  assert cm._inside(bpy.data.filepath,c.OUT),bpy.data.filepath
- rp=c.OUT/(job+'-report.json');r=json.loads(rp.read_text()) if rp.exists() else {};r.update(job=job,reviewName=f.NAMES[job],duration=s['duration'],sha256=hashlib.sha256(p.read_bytes()).hexdigest(),ownerApproved=False,feedbackRevision=P['revision'],startedFrom=s.get('v4_opened_from'),rootMotion=s.get('root_motion','none'),blink=json.loads(s['blink_vfx']) if s.get('blink_vfx') else None);rp.write_text(json.dumps(r,indent=2)+'\n')
+ rp=c.OUT/(job+'-report.json');r=json.loads(rp.read_text()) if rp.exists() else {};r.update(job=job,reviewName=f.NAMES[job],duration=s['duration'],sha256=hashlib.sha256(p.read_bytes()).hexdigest(),ownerApproved=False,feedbackRevision=P['revision'],startedFrom=s.get('v4_opened_from'),rootMotion=s.get('root_motion','none'),strapFixWeightsSHA256=s.get('strap_fix_v4'),blink=json.loads(s['blink_vfx']) if s.get('blink_vfx') else None);rp.write_text(json.dumps(r,indent=2)+'\n')
  name=f.NAMES[job]+'.glb';dest=P['export_dir']/name
  if name in cm.approved_names():raise PermissionError(f'{name} is an approved clip name')
  if dest.exists() and not (P['allow_overwrite'] and not cm._inside(dest,cm.REVIEWER_CACHE)):raise FileExistsError(dest)
