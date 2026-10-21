@@ -59,6 +59,7 @@ for group, (folder, pattern) in specs.items():
             "name": path.stem,
             "file": path.name,
             "bytes": path.stat().st_size,
+            "cacheVersion": str(path.stat().st_mtime_ns),
             "animationNames": [a.get("name", "Clip") for a in document.get("animations", [])],
             "remotePath": str(path),
         })
@@ -110,6 +111,7 @@ def local_review_items() -> list[dict]:
             "name": path.stem,
             "file": path.name,
             "bytes": path.stat().st_size,
+            "cacheVersion": str(path.stat().st_mtime_ns),
             "animationNames": [a.get("name", "Clip") for a in document.get("animations", [])],
             "localPath": str(path),
             **{key: value for key, value in metadata.get(filename, {}).items() if key not in {"job", "file"}},
@@ -122,7 +124,8 @@ def local_body_item() -> dict:
     if not path.is_file():
         raise RuntimeError("Restore the private review bundle first: missing KnightRig.glb")
     return {"id": "knight/KnightRig.glb", "group": "knight", "name": "KnightRig",
-            "file": path.name, "bytes": path.stat().st_size, "animationNames": [],
+            "file": path.name, "bytes": path.stat().st_size,
+            "cacheVersion": str(path.stat().st_mtime_ns), "animationNames": [],
             "localPath": str(path)}
 
 
@@ -134,7 +137,7 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == "/api/catalog":
             payload = json.dumps({
-                "build": "v1",
+                "build": "feedback v3",
                 "source": "Six Blender candidates and preserved approved Knight motions",
                 "items": [{key: value for key, value in item.items() if key not in {"remotePath", "localPath"}}
                           for item in self.server.catalog],

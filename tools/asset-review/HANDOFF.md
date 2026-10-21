@@ -1,5 +1,11 @@
 # Knight motion review handoff
 
+**Current: feedback v3 is delivered; stop here per owner.** Read root `HANDOFF.md`
+and `tools/art/blender/feedback_v3/README.md`. One-hand walk is now approved. The
+loopback/laptop notes below are historical; use the existing private tailnet
+reviewer for the six v3 corrections. No dragon work or Unreal integration.
+
+
 Branch: `codex/veyr-asset-review-20261019` in `oh-ashen-one/veyr-cinder-warden`.
 Laptop viewer: `http://127.0.0.1:8765/?review=blender-walk-v3#review%2FWalkTwoHand_Blender_v3.glb`.
 Loopback server on verified laptop model `Mac17,2` (current hostname `Mac-106`).

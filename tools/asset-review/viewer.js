@@ -55,6 +55,7 @@ let wireframe = false;
 let showBones = false;
 let loadSerial = 0;
 let followedWalkZ = null;
+let blinkEffects = null;
 
 function humanName(item) {
   if (item.title) return `${item.title} · ${item.ownerApproved ? "approved" : "review"}`;
@@ -133,6 +134,11 @@ function loading(message, visible = true) {
 }
 
 function disposeModel() {
+  if (blinkEffects) {
+    scene.remove(blinkEffects);
+    blinkEffects.traverse(n => { n.geometry?.dispose(); n.material?.dispose(); });
+    blinkEffects = null;
+  }
   if (mixer) mixer.stopAllAction();
   if (bones) { scene.remove(bones); bones.geometry.dispose(); bones.material.dispose(); bones = null; }
   if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); grid = null; }
@@ -163,7 +169,7 @@ function frameModel() {
   const box = new THREE.Box3().setFromObject(model);
   if (box.isEmpty()) return;
   const attackReview = activeItem?.name?.startsWith('LightAttack_BlackKnightReference') || isTwoHandMotion(activeItem);
-  const center = attackReview ? new THREE.Vector3(0, 0.85, 0.30) : box.getCenter(new THREE.Vector3());
+  const center = activeItem?.blink ? new THREE.Vector3(activeItem.blink.direction * 0.5, 0.65, 0.2) : activeItem?.revision === 3 ? new THREE.Vector3(0, 0.85, 0.2) : attackReview ? new THREE.Vector3(0, 0.85, 0.30) : box.getCenter(new THREE.Vector3());
   if (activeItem?.name.startsWith('WalkTwoHand_')) {
     followedWalkZ = model.getObjectByName('Hips').getWorldPosition(new THREE.Vector3()).z;
     center.z += followedWalkZ;
@@ -171,7 +177,7 @@ function frameModel() {
   const size = box.getSize(new THREE.Vector3());
   const radius = Math.max(size.length() * 0.5, 0.25);
   const fitMargin = activeItem?.name?.startsWith('LightAttack_BlackKnightReference') ? 1.30 : activeItem?.name?.startsWith('IdleTwoHand') ? 0.9 : 0.68;
-  const distance = attackReview ? 2.8 : radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fitMargin;
+  const distance = activeItem?.blink ? 3.2 : activeItem?.revision === 3 ? 2.8 : attackReview ? 2.8 : radius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fitMargin;
   controls.target.copy(center);
   camera.position.copy(center).add(new THREE.Vector3(distance * 0.4, distance * 0.18, distance));
   camera.near = Math.max(0.001, distance / 1000);
@@ -305,7 +311,7 @@ function selectItem(item) {
   $('stage-title').textContent = humanName(item);
   window.history.replaceState(null, '', `#${encodeURIComponent(item.id)}`);
   loading(`Loading ${humanName(item)}…`);
-  loader.load(`/api/asset/${encodeURIComponent(item.id)}`,
+  loader.load(`/api/asset/${encodeURIComponent(item.id)}?v=${encodeURIComponent(item.cacheVersion || "1")}`,
     async gltf => {
       if (serial !== loadSerial) { disposeGltf(gltf); return; }
       disposeModel();
@@ -338,6 +344,7 @@ function selectItem(item) {
         mixer.setTime(0);
         playing = true;
       }
+      prepareBlinkEffects();
       model.updateMatrixWorld(true);
       frameModel();
       updatePlaybackControls();
@@ -357,6 +364,53 @@ function disposeGltf(gltf) {
   gltf.scene.traverse(node => {
     node.geometry?.dispose();
     if (node.material) (Array.isArray(node.material) ? node.material : [node.material]).forEach(material => material.dispose());
+  });
+}
+
+// Visibility is explicitly authored in Blender and exported as timing metadata.
+// glTF lacks visibility channels; preserve skin scale and apply this VFX layer.
+function prepareBlinkEffects() {
+  if (!activeItem.blink || !mixer) return;
+  blinkEffects = new THREE.Group();
+  scene.add(blinkEffects);
+  const spec = activeItem.blink;
+  for (const time of [spec.vanish - 0.02, spec.reappear]) {
+    mixer.setTime(time); model.updateMatrixWorld(true);
+    const ghost = new THREE.Group();
+    ghost.userData.sampleTime = time;
+    model.traverse(node => {
+      if (!node.isMesh) return;
+      node.skeleton?.update();
+      const geo = node.geometry.clone();
+      const pos = geo.attributes.position;
+      const v = new THREE.Vector3();
+      for (let i = 0; i < pos.count; i++) {
+        node.getVertexPosition(i, v); v.applyMatrix4(node.matrixWorld);
+        pos.setXYZ(i, v.x, v.y, v.z);
+      }
+      geo.deleteAttribute('skinIndex'); geo.deleteAttribute('skinWeight');
+      geo.computeBoundingSphere();
+      const mat = new THREE.MeshBasicMaterial({color:0x67caff,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
+      ghost.add(new THREE.Mesh(geo, mat));
+    });
+    blinkEffects.add(ghost);
+  }
+  action.reset().play(); mixer.setTime(0);
+}
+
+function updateBlinkEffects() {
+  if (!model || !action || !activeItem?.blink) return;
+  const spec = activeItem.blink, t = action.time;
+  const hidden = t >= spec.vanish && t < spec.reappear;
+  model.visible = !hidden;
+  if (bones) bones.visible = showBones && !hidden;
+  blinkEffects?.children.forEach((ghost, index) => {
+    const start = index ? spec.reappear - 0.025 : spec.vanish - 0.025;
+    const life = index ? 0.09 : 0.20;
+    const age = t - start;
+    ghost.visible = age >= 0 && age < life;
+    const opacity = ghost.visible ? (index ? 0.22 : 0.32) * (1-age/life) : 0;
+    ghost.children.forEach(mesh => {mesh.material.opacity = opacity;});
   });
 }
 
@@ -382,6 +436,7 @@ function animate() {
     }
     followedWalkZ = z;
   }
+  updateBlinkEffects();
   controls.update();
   renderer.render(scene, camera);
   hudAccum += delta;

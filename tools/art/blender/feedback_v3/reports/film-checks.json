@@ -1,0 +1,92 @@
+[
+  {
+    "job": "guard_two",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 1440,
+        "height": 480,
+        "nb_frames": "21"
+      }
+    ],
+    "format": {
+      "duration": "0.700000"
+    }
+  },
+  {
+    "job": "strafe_left",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 1440,
+        "height": 480,
+        "nb_frames": "21"
+      }
+    ],
+    "format": {
+      "duration": "0.700000"
+    }
+  },
+  {
+    "job": "strafe_right",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 1440,
+        "height": 480,
+        "nb_frames": "21"
+      }
+    ],
+    "format": {
+      "duration": "0.700000"
+    }
+  },
+  {
+    "job": "backpedal",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 1440,
+        "height": 480,
+        "nb_frames": "72"
+      }
+    ],
+    "format": {
+      "duration": "2.400000"
+    }
+  },
+  {
+    "job": "heavy",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 1440,
+        "height": 480,
+        "nb_frames": "42"
+      }
+    ],
+    "format": {
+      "duration": "1.400000"
+    }
+  },
+  {
+    "job": "heal",
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "width": 1440,
+        "height": 480,
+        "nb_frames": "72"
+      }
+    ],
+    "format": {
+      "duration": "2.400000"
+    }
+  }
+]

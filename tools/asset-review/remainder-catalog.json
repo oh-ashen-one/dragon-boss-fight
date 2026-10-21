@@ -5,7 +5,7 @@
       "file": "RunOneHand_Blender_v1.glb",
       "title": "Run",
       "previewLoop": true,
-      "reviewOrder": 0,
+      "reviewOrder": 7,
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "ownerApproved": false
@@ -15,75 +15,89 @@
       "file": "WalkTwoHand_Blender_v4.glb",
       "title": "Ready walk \u00b7 two hands",
       "previewLoop": false,
-      "reviewOrder": 1,
+      "reviewOrder": 8,
       "swordFile": "BoatGreatsword_StrongGrip_v1.glb",
       "reviewBatch": "remainder",
       "ownerApproved": false
     },
     {
       "job": "heal",
-      "file": "Heal_Blender_v2.glb",
+      "file": "Heal_Blender_v3.glb",
       "title": "Heal",
-      "previewLoop": false,
-      "reviewOrder": 2,
-      "swordFile": "BoatGreatsword_OneHand_v4.glb",
-      "reviewBatch": "remainder",
-      "revision": 2,
-      "ownerApproved": false
-    },
-    {
-      "job": "heavy",
-      "file": "HeavyAttackOneHand_Blender_v2.glb",
-      "title": "Heavy attack \u00b7 one hand",
-      "previewLoop": false,
-      "reviewOrder": 3,
-      "swordFile": "BoatGreatsword_OneHand_v4.glb",
-      "reviewBatch": "remainder",
-      "revision": 2,
-      "ownerApproved": false
-    },
-    {
-      "job": "backpedal",
-      "file": "Backpedal_Blender_v2.glb",
-      "title": "Backpedal",
-      "previewLoop": false,
-      "reviewOrder": 4,
-      "swordFile": "BoatGreatsword_OneHand_v4.glb",
-      "reviewBatch": "remainder",
-      "revision": 2,
-      "ownerApproved": false
-    },
-    {
-      "job": "strafe_left",
-      "file": "StrafeLeft_Blender_v2.glb",
-      "title": "Locked-on sidestep left",
       "previewLoop": false,
       "reviewOrder": 5,
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
-      "revision": 2,
+      "revision": 3,
       "ownerApproved": false
+    },
+    {
+      "job": "heavy",
+      "file": "HeavyAttackOneHand_Blender_v3.glb",
+      "title": "Heavy attack \u00b7 one hand",
+      "previewLoop": false,
+      "reviewOrder": 4,
+      "swordFile": "BoatGreatsword_OneHand_v4.glb",
+      "reviewBatch": "remainder",
+      "revision": 3,
+      "ownerApproved": false
+    },
+    {
+      "job": "backpedal",
+      "file": "Backpedal_Blender_v3.glb",
+      "title": "Backpedal",
+      "previewLoop": false,
+      "reviewOrder": 3,
+      "swordFile": "BoatGreatsword_OneHand_v4.glb",
+      "reviewBatch": "remainder",
+      "revision": 3,
+      "ownerApproved": false
+    },
+    {
+      "job": "strafe_left",
+      "file": "StrafeLeft_Blender_v3.glb",
+      "title": "Blink dodge left",
+      "previewLoop": false,
+      "reviewOrder": 1,
+      "swordFile": "BoatGreatsword_OneHand_v4.glb",
+      "reviewBatch": "remainder",
+      "revision": 3,
+      "ownerApproved": false,
+      "blink": {
+        "vanish": 0.18,
+        "reappear": 0.34,
+        "distance": 1.0,
+        "direction": 1,
+        "duration": 0.7
+      }
     },
     {
       "job": "strafe_right",
-      "file": "StrafeRight_Blender_v2.glb",
-      "title": "Locked-on sidestep right",
+      "file": "StrafeRight_Blender_v3.glb",
+      "title": "Blink dodge right",
       "previewLoop": false,
-      "reviewOrder": 6,
+      "reviewOrder": 2,
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
-      "revision": 2,
-      "ownerApproved": false
+      "revision": 3,
+      "ownerApproved": false,
+      "blink": {
+        "vanish": 0.18,
+        "reappear": 0.34,
+        "distance": 1.0,
+        "direction": -1,
+        "duration": 0.7
+      }
     },
     {
       "job": "guard_two",
-      "file": "GuardReadyTwoHand_Blender_v2.glb",
+      "file": "GuardReadyTwoHand_Blender_v3.glb",
       "title": "Idle to two-hand guard",
       "previewLoop": false,
-      "reviewOrder": 7,
+      "reviewOrder": 0,
       "swordFile": "BoatGreatsword_Grip_v6.glb",
       "reviewBatch": "remainder",
-      "revision": 2,
+      "revision": 3,
       "ownerApproved": false
     },
     {
@@ -91,10 +105,10 @@
       "file": "WalkOneHand_Blender_v1.glb",
       "title": "Walk \u00b7 one hand",
       "previewLoop": true,
-      "reviewOrder": 8,
+      "reviewOrder": 6,
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "stagger",

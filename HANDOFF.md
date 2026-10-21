@@ -1,3 +1,46 @@
+# Current handoff — Knight feedback v3, 2026-10-21
+
+**Stop after this pass, per owner.** No dragon work or Unreal integration.
+The owner approved one-hand walk; its exact hash is recorded alongside death and
+stagger in `tools/art/blender/feedback/decisions.json`. All nine approved Blender
+files remain unchanged.
+
+- Six v3 review candidates replace v2: lowered idle to quick face-cover guard,
+  left/right hop-blink dodges with fading blue review afterimages, whole-body
+  attack-ready backpedal, clearly one-handed heavy, and an exterior cup handle.
+- Detailed recipe, reference, limitations and checks:
+  `tools/art/blender/feedback_v3/README.md`. Editable scenes are in
+  `Local/Blender/feedback-v3-20261021`; internal utility names retain v1 while
+  delivered review files are explicitly v3.
+- All six independent 120 Hz export audits pass. Native evaluated-mesh checks
+  verify cup bowl clearance and free-hand/sword clearance throughout the motion.
+  Six full-length three-view films decode; textured Chrome checks exposed and
+  resolved a missing cup material and camera framing that clipped the dodge.
+- Viewer: existing private tailnet URL `http://100.95.131.102:8775/`, confirmed
+  reachable with 25 entries. Six v3 clips appear first; one-hand walk is approved;
+  jump and one-hand guard remain absent. Native run/ready walk are unchanged.
+  `tools/asset-review/start_background.py` manages only the owned review service.
+- Browser blink visibility follows authored Blender hide keys and glTF metadata.
+  The blue afterimage is implemented in the reviewer; Unreal must reproduce this
+  contract during later integration. Root motion also requires actor coordination.
+- Private branch `oh-ashen-one/veyr-animation-sources:codex/knight-feedback-v3-20261021`,
+  commit `762fdfa`; release `knight-feedback-v3-20261021` verified uploaded,
+  not draft. Archive is 512,505,607 bytes; 37 manifest files verified.
+  SHA256 `7ff0cd51be469ce668de62386a347dec194fc2a55b6838ba8be3cfe356d76529`
+  matches GitHub's asset digest. Delta requires the previous source bundles.
+- Private film page: `.asset-cache/feedback-v3-media/index.html` on the same viewer.
+  Owner-facing local outputs are in the chat's `outputs/knight-feedback-v3`.
+- Owned Blender MCP session `codex-veyr-feedback-v3-20261021` exited cleanly;
+  PID 34053 is gone and the GPU wrapper returned exit 0. Start a fresh owned
+  instance if further authoring is requested. The reviewer remains running.
+- Public branch remains `codex/veyr-asset-review-20261019`; no main merge.
+  Installed game was not rebuilt or replaced. These six candidates await owner
+  judgement; test results are not approval.
+
+Historical entries below are superseded by this section.
+
+---
+
 # Current handoff — Knight feedback v2, 2026-10-21
 
 Owner approved **Death** and **Stagger**, removed **Jump** and **one-hand guard**,

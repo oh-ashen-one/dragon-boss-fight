@@ -1,0 +1,14 @@
+{
+  "heal": {
+    "leftHandVertices": 2031,
+    "minimumBowlClearance": 0.013102745493403564,
+    "atSeconds": 1.8533333333333333,
+    "pass": true
+  },
+  "heavy": {
+    "leftHandVertices": 2033,
+    "minimumFreeHandSwordSurfaceDistance": 0.07438845638360059,
+    "atSeconds": 0.36,
+    "pass": true
+  }
+}

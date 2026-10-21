@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-21",
+  "approvedUnchanged": "WalkOneHand_Blender_v1.glb",
+  "scope": "Fix six review clips then stop; no dragon or game build.",
+  "corrections": {
+    "guard_two": "Lowered idle then quick face-covering guard",
+    "strafe_left": "Quick lateral hop, vanish, reappear farther left",
+    "strafe_right": "Quick lateral hop, vanish, reappear farther right",
+    "backpedal": "Whole-body attack-ready backward movement",
+    "heavy": "Only right hand holds sword; left hand visibly separated",
+    "heal": "Preserve drink motion, grip exterior cup handle without finger penetration"
+  },
+  "reference": {
+    "url": "https://c.tenor.com/cTChNmdPpk0AAAAC/vergil-dodge.gif",
+    "sha256": "4ddc5f882e718ddc8c991aeaceb15d92b14a2c02784793ecac2b64ee2f1a4980",
+    "frames": 145,
+    "duration": 14.5,
+    "observed": "8.1s idle, 8.2s lateral launch, 8.3-8.4s blue ghost/transit, 8.5s reappearance farther laterally, 8.7s ready."
+  }
+}
