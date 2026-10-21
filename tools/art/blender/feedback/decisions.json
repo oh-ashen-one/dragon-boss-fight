@@ -15,6 +15,21 @@
       "file": "WalkOneHand_Blender_v1.glb",
       "sha256": "4db239519ee4d50b98618d6cda46c18cb2bbf000377dede8e2b02aac726b86ae",
       "quote": "Walking one-handed is approved. ... let\u2019s keep it."
+    },
+    {
+      "file": "GuardReadyTwoHand_Blender_v3.glb",
+      "sha256": "06b8469b882b6922199a1ccc772818b11190d08dd6b205612c085bc7fc21b7d1",
+      "quote": "Approved as-is, no changes (owner, laptop reviewer, 2026-10-21; relayed by coordinator)"
+    },
+    {
+      "file": "StrafeLeft_Blender_v3.glb",
+      "sha256": "26f7d49c7d87668ac3dd457532c901aa3bd1ab09b5dcbf1b876b57eb8fbd2340",
+      "quote": "Approved as-is, no changes (owner, laptop reviewer, 2026-10-21; relayed by coordinator)"
+    },
+    {
+      "file": "StrafeRight_Blender_v3.glb",
+      "sha256": "3eea74461231f3303ea70e455ce134b0477652d356f4d0f7364547a8f4703690",
+      "quote": "Approved as-is, no changes (owner, laptop reviewer, 2026-10-21; relayed by coordinator)"
     }
   ],
   "removed": [

@@ -1,5 +1,7 @@
 # Knight feedback revision 3 — 2026-10-21
 
+**2026-10-21 owner decision:** GuardReadyTwoHand_Blender_v3, StrafeLeft_Blender_v3 and StrafeRight_Blender_v3 approved as-is (hashes in `tools/art/blender/feedback/decisions.json`; 12 approved clips). Pending owner notes: Backpedal v3, HeavyAttackOneHand v3, Heal v3, Run, ready walk (WalkTwoHand v4).
+
 The owner approved **WalkOneHand_Blender_v1** and requested six final corrections,
 then a stop. No dragon work or Unreal integration is included. Death, stagger and
 the six earlier approved Blender actions remain unchanged; nine approval hashes

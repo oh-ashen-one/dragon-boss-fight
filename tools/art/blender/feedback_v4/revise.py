@@ -173,6 +173,7 @@ def _check_session(job):
  s=bpy.context.scene
  assert s.get('session_owner')==P['owner'],'Scene not tagged for this session'
  assert s.get('rebuild_job')==job,(s.get('rebuild_job'),job)
+ if job in cm.approved_jobs():raise PermissionError(f'{job} is owner-approved and locked; revise only on an explicit owner request')
  assert not cm._inside(c.OUT,P['scene_in']),'Output would overwrite input scenes'
  cm.check_writable(c.OUT)
  dst=c.OUT/(job+'_Blender_v1.blend')

@@ -62,7 +62,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 3,
-      "ownerApproved": false,
+      "ownerApproved": true,
       "blink": {
         "vanish": 0.18,
         "reappear": 0.34,
@@ -80,7 +80,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 3,
-      "ownerApproved": false,
+      "ownerApproved": true,
       "blink": {
         "vanish": 0.18,
         "reappear": 0.34,
@@ -98,7 +98,7 @@
       "swordFile": "BoatGreatsword_Grip_v6.glb",
       "reviewBatch": "remainder",
       "revision": 3,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "walk",

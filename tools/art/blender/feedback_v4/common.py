@@ -94,6 +94,12 @@ def approved_names():
     return {e['file']: e['sha256'] for e in a + d}
 
 
+def approved_jobs():
+    """Jobs whose delivered clip (any revision) is owner-approved and therefore locked."""
+    names = approved_names()
+    return {job for job, base in REVIEW_BASE.items() if any(f.startswith(base + '_Blender_v') for f in names)}
+
+
 def open_tagged(path, owner, port=None):
     """Open a .blend and immediately re-tag it for this session (veyr_rpc's guard)."""
     import bpy

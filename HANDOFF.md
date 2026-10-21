@@ -1,5 +1,7 @@
 # START HERE — next-session handoff
 
+**2026-10-21 owner decision:** GuardReadyTwoHand_Blender_v3, StrafeLeft_Blender_v3 and StrafeRight_Blender_v3 approved as-is (hashes in `tools/art/blender/feedback/decisions.json`; 12 approved clips). Pending owner notes: Backpedal v3, HeavyAttackOneHand v3, Heal v3, Run, ready walk (WalkTwoHand v4).
+
 Status: **saved for a later session; waiting for owner review, not permission to work**.
 This handoff was refreshed after the owner explicitly requested that all work be
 pushed for another session. Do not resume animation or dragon work merely because

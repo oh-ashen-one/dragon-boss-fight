@@ -22,7 +22,9 @@ Relative paths resolve against the repository root.
 | MCP port | `--port` | `VEYR_BLENDER_PORT` | required |
 
 Writes into the v3/v2/approved/remainder scene folders or `tools/asset-review/.asset-cache`
-are refused. Delivery into the reviewer cache needs `VEYR_V4_ALLOW_REVIEWER_EXPORT=1`
+are refused. Jobs with an owner-approved delivered clip in either ledger (currently
+`guard_two`, `strafe_left`, `strafe_right`) are locked: `rebake`/`export` refuse them.
+Delivery into the reviewer cache needs `VEYR_V4_ALLOW_REVIEWER_EXPORT=1`
 and the owner's go-ahead; approved clip names are always refused.
 
 ## Scripts
