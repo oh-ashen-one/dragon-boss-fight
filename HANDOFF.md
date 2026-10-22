@@ -16,6 +16,12 @@
 - **Later decisions:** Heal v5 dropped (it changed the approved drink pose). Meshy backpedal, Tripo guard walk and hand-keyed Run r6 dropped. Walk v6r2's "deeper breathing" was not visible in pixels and is not claimed.
 - **Engine cap (later):** the foreign Godot runs ended, so four Blenders are allowed again. `gpu_slot` capture needs `GPU_SLOT_CAPTURE_SLOTS=4` in the launch environment or it queues at 2.
 
+**(later, 2026-10-22 early)**
+
+- **Reviewer now (32 rows, pending-only + `abBaseline`):** NEW LightCombo v5 (critic PASS); Backpedal loop v1; Backpedal v4r5; Heavy A r3 / B r4; Run B Meshy r3 / C Tripo r2; RunStop v1r2. A/B pairs vs approved: WalkOneHand v2r2, Guard v4r4, Blink dodge L/R v4r2, Death v2r3, WalkTwoHand v6r2, IdleOneHand v2r4, IdleTwoHand v2r4, Overhead v2r3, Sweep v2r3, Thrust v2r3, Compact v2r3. Stagger polish pulled (v2 was v1 motion; r4 pending). Heal v5 dropped.
+- **In progress:** ParryRiposte v1, RollAttack v1 (fighting builder); Thrust v2r4, Heavy v4r5 (attack builder); GuardBreakStagger v1, RunStart v1r3, Stagger v2r4, Backpedal loop r2 (locomotion builder); dragon wing-fold rig fix, then idle r3 / walk r2 / turn r2 / FlyHover / TakeoffLand (dragon builder).
+- **Method rules that stuck:** hit-stop at the front-view centreline crossing after the fastest frame, at most 2 frames, full-speed release unless a clip rule says otherwise. Pay back freeze time inside existing holds or lengthen the clip, never in the recovery/settle. Whole-cycle cyclic curves for loops (no end blends). Report pixel measurements at the critic's 480 px sheet scale. Single slow exhale in holds, no 3 Hz breaths. Visible body changes must be at least 3-4 px, or cut them.
+
 **2026-10-21 owner decision (2):** Heal_Blender_v4 and WalkTwoHand_Blender_v5r2 (two-hand ready walk) approved as-is ("Heal and ready walk is approved."; 14 approved clips, hashes in `tools/art/blender/feedback/decisions.json`). Backpedal round 4 rejected. Pending: backpedal r5, run r5 (sword held up like a bat), heavy r3.
 
 **2026-10-21 owner decision:** GuardReadyTwoHand_Blender_v3, StrafeLeft_Blender_v3 and StrafeRight_Blender_v3 approved as-is (hashes in `tools/art/blender/feedback/decisions.json`; 12 approved clips). Pending owner notes: Backpedal v3, HeavyAttackOneHand v3, Heal v3, Run, ready walk (WalkTwoHand v4).
