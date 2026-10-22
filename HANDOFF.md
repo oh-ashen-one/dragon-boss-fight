@@ -1,4 +1,61 @@
-# START HERE — next-session handoff
+# START HERE — autonomous Elden Ring pass ended 2026-10-22 02:00 CST (owner hard stop)
+
+## State
+
+- All four Blender sessions exited cleanly; no `gpu_slot` holders; nothing is running.
+- Branch `fable/veyr-knight-v4-20261021` has all scripts: `dragon_v1`, `dragon_flight_r2`, `feedback_v4` (incl. `polish_tools`), `newclips` (incl. tools), and the asset-review server/catalog.
+- Private release `oh-ashen-one/veyr-animation-sources`, tag `knight-dragon-v4-20261022`:
+  - A-exports: zip + z01, 3.5 GB, `manifestA.json` (465 files).
+  - B-scenes: zip + z01 + z02, 4.1 GB, `manifestB.json` (97 latest-round `.blend`).
+  - `SHA256SUMS.txt`; GitHub digests verified against the local sums.
+- Restore: download all parts, `zip -s 0 X.zip --out X-joined.zip`, then unzip into `Local/Blender` and verify against the manifests.
+
+## Owner reviewer (laptop, 44 rows)
+
+Run from a clone with the review cache rsynced:
+
+```
+VEYR_PENDING_ONLY=1 VEYR_AB_BASELINES="IdleOneHand_Blender_v1,IdleTwoHand_Blender_v1,LightAttack_BlackKnightReference_Blender_v1,StrongAttackTwoHand_Sweep_Blender_v1,StrongAttackTwoHand_Thrust_Blender_v1,LightAttackTwoHand_Compact_Blender_v1" python3 tools/asset-review/server.py --local-only --port 8765
+```
+
+All rows are critic-passed candidates awaiting the owner:
+
+- **New clips:** LightCombo v5, GuardBreakStagger v1r2, RollAttack v1 (praised roll preserved), Backpedal loop v1r3, RunStop v1r2, Backpedal v4r5, Heavy A r3 / B r5, Run B Meshy r3 / C Tripo r2.
+- **A/B vs approved:** WalkOneHand v2r2, Guard v4r4, Blink L/R v4r2, Stagger v2r5, Death v2r3, WalkTwoHand v6r2, IdleOneHand v2r4, IdleTwoHand v2r4, Overhead v2r3, Sweep v2r3, Thrust v2r4, Compact v2r3.
+- **Dragon:** Idle v1r3, Walk v1r2, Turn v1r2, Hover v1 and v1r2, Takeoff v1, Land v1, FireBreath v1.
+
+## Not in the reviewer (critic FAIL or defect)
+
+- ParryRiposte v1: chamber aims 35-40° off target, grip through forearm; v2 spec in the builder's last brief.
+- Dragon Bite v1: peck, not lunge; v2 spec in the critic notes.
+- RunStart v1r5: lead sole floats at the join because the approved run's f0 itself floats 31 mm; fix in the run clip.
+- Stagger v2r6: 3/4 view 0.35 of impact; r5 shown instead.
+- Takeoff v1r2: joins hover r2 exactly, but one-frame hind-knee IK flip at f22→23; needs an IK pole.
+- Heal v5: dropped (changed the approved pose).
+
+## Next session
+
+1. Owner verdicts on the 44 rows; record approvals in `tools/art/blender/feedback/decisions.json` with sha256 and lock them.
+2. ParryRiposte v2, Bite v2, Land r2 (join hover r2), Takeoff r3 (IK pole), RunStart in the run clip; dragon ClawSwipe/TailSweep/WingBuffet/Stagger/Death; dragon six-clip fold-silhouette polish (wrist knuckle visible, nothing above the spine or below the belly); Knight-vs-dragon 10-15 s fight film.
+3. Cloth: the tabard has no bones (hem goes through the floor in Death).
+4. Unreal integration only after owner approval: game constants change (dragon walk cycle 134→215.6 cm; turn played per 20°); new clips hover/takeoff/land/fire/bite; Knight run start/stop; root motion on backpedal/guard-break.
+
+## Method rules (keep)
+
+- Hit-stop at the front-view centreline crossing after the fastest frame, at most 2 frames baked (the engine drives real hit-stop), full-speed release unless the clip rule says otherwise.
+- Pay freeze time back inside holds or lengthen the clip, never in the recovery.
+- Loops as whole-cycle cyclic curves, no end blends.
+- Report pixels at the critic's 480 px sheet scale.
+- One slow exhale in holds.
+- Body changes at least 3-4 px, or cut them.
+- Approved files stay byte-identical; every change is a new version.
+- Builder → critic → owner.
+
+---
+
+# History (earlier handoffs, superseded by the section above)
+
+## Earlier START HERE — next-session handoff
 
 ## Autonomous Elden Ring pass, 2026-10-21 evening
 
