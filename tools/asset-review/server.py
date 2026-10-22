@@ -233,6 +233,14 @@ def main():
     catalog = [item for item in all_items if item["id"] in visible_ids]
     if {item["id"] for item in catalog} != visible_ids:
         raise RuntimeError("A required Knight review asset is missing")
+    if os.environ.get("VEYR_PENDING_ONLY"):
+        ab = set(filter(None, os.environ.get("VEYR_AB_BASELINES", "").split(",")))
+        seen = set(); kept = []
+        for i in catalog:
+            if i["id"] in seen: continue
+            if (i.get("reviewBatch") == "remainder" and not i.get("ownerApproved")) or i.get("abBaseline") or i["name"] in ab:
+                seen.add(i["id"]); kept.append(i)
+        catalog = kept
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     server.catalog = catalog
     server.assets = {item["id"]: item for item in all_items}
