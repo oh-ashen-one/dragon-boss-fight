@@ -30,6 +30,23 @@
       "file": "StrafeRight_Blender_v3.glb",
       "sha256": "3eea74461231f3303ea70e455ce134b0477652d356f4d0f7364547a8f4703690",
       "quote": "Approved as-is, no changes (owner, laptop reviewer, 2026-10-21; relayed by coordinator)"
+    },
+    {
+      "file": "Heal_Blender_v4.glb",
+      "sha256": "54a3a0b5ad615a363509fbeb790ca613da3058bdb9079f999414f68e9560413f",
+      "quote": "Heal and ready walk is approved.",
+      "supersedes": [
+        "Heal_Blender_v3.glb"
+      ]
+    },
+    {
+      "file": "WalkTwoHand_Blender_v5r2.glb",
+      "sha256": "cbd3c1bffb06070cc2089e231cee2ffc7ea200ea00b03abca02f717e93d5a637",
+      "quote": "Heal and ready walk is approved.",
+      "supersedes": [
+        "WalkTwoHand_Blender_v3.glb",
+        "WalkTwoHand_Blender_v4.glb"
+      ]
     }
   ],
   "removed": [
@@ -45,7 +62,6 @@
     "StrafeRight_Blender_v1.glb": "Target-facing sidestep with separated feet, no crossed legs or bent torso."
   },
   "nextReview": [
-    "RunOneHand_Blender_v1.glb",
-    "WalkTwoHand_Blender_v4.glb"
+    "RunOneHand_Blender_v1.glb"
   ]
 }

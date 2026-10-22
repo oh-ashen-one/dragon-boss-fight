@@ -1,5 +1,7 @@
 # Knight feedback revision 3 — 2026-10-21
 
+**2026-10-21 owner decision (2):** Heal_Blender_v4 and WalkTwoHand_Blender_v5r2 (two-hand ready walk) approved as-is ("Heal and ready walk is approved."; 14 approved clips, hashes in `tools/art/blender/feedback/decisions.json`). Backpedal round 4 rejected. Pending: backpedal r5, run r5 (sword held up like a bat), heavy r3.
+
 **2026-10-21 owner decision:** GuardReadyTwoHand_Blender_v3, StrafeLeft_Blender_v3 and StrafeRight_Blender_v3 approved as-is (hashes in `tools/art/blender/feedback/decisions.json`; 12 approved clips). Pending owner notes: Backpedal v3, HeavyAttackOneHand v3, Heal v3, Run, ready walk (WalkTwoHand v4).
 
 The owner approved **WalkOneHand_Blender_v1** and requested six final corrections,

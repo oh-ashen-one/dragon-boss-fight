@@ -23,7 +23,7 @@ Relative paths resolve against the repository root.
 
 Writes into the v3/v2/approved/remainder scene folders or `tools/asset-review/.asset-cache`
 are refused. Jobs with an owner-approved delivered clip in either ledger (currently
-`guard_two`, `strafe_left`, `strafe_right`) are locked: `rebake`/`export` refuse them.
+`guard_two`, `strafe_left`, `strafe_right`, `heal`, `walk_two`) are locked: `rebake`/`export` refuse them.
 Delivery into the reviewer cache needs `VEYR_V4_ALLOW_REVIEWER_EXPORT=1`
 and the owner's go-ahead; approved clip names are always refused.
 

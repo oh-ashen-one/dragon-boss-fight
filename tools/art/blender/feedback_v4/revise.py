@@ -211,7 +211,7 @@ def _export(job):
  assert cm._inside(bpy.data.filepath,c.OUT),bpy.data.filepath
  rp=c.OUT/(job+'-report.json');r=json.loads(rp.read_text()) if rp.exists() else {};r.update(job=job,reviewName=f.NAMES[job],duration=s['duration'],sha256=hashlib.sha256(p.read_bytes()).hexdigest(),ownerApproved=False,feedbackRevision=P['revision'],startedFrom=s.get('v4_opened_from'),rootMotion=s.get('root_motion','none'),strapFixWeightsSHA256=s.get('strap_fix_v4'),blink=json.loads(s['blink_vfx']) if s.get('blink_vfx') else None);rp.write_text(json.dumps(r,indent=2)+'\n')
  name=f.NAMES[job]+'.glb';dest=P['export_dir']/name
- if name in cm.approved_names():raise PermissionError(f'{name} is an approved clip name')
+ cm.assert_export_allowed(dest)
  if dest.exists() and not (P['allow_overwrite'] and not cm._inside(dest,cm.REVIEWER_CACHE)):raise FileExistsError(dest)
  P['export_dir'].mkdir(parents=True,exist_ok=True);shutil.copyfile(p,dest)
  print('V4_READY',job,dest);return {'job':job,'glb':str(dest),'sha256':r['sha256'],'blend':bpy.data.filepath}

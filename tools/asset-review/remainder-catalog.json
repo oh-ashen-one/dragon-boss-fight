@@ -12,24 +12,24 @@
     },
     {
       "job": "walk_two",
-      "file": "WalkTwoHand_Blender_v4.glb",
+      "file": "WalkTwoHand_Blender_v5r2.glb",
       "title": "Ready walk \u00b7 two hands",
-      "previewLoop": false,
+      "previewLoop": true,
       "reviewOrder": 8,
       "swordFile": "BoatGreatsword_StrongGrip_v1.glb",
       "reviewBatch": "remainder",
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "heal",
-      "file": "Heal_Blender_v3.glb",
+      "file": "Heal_Blender_v4.glb",
       "title": "Heal",
       "previewLoop": false,
       "reviewOrder": 5,
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
-      "revision": 3,
-      "ownerApproved": false
+      "revision": 4,
+      "ownerApproved": true
     },
     {
       "job": "heavy",

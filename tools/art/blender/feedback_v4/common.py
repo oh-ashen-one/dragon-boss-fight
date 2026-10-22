@@ -4,6 +4,7 @@ Precedence for every parameter: explicit overrides (run.py passes them as
 VEYR_V4_PARAMS) > environment variable > v4 default. Relative paths resolve
 against the repository root. Nothing here hard-codes a session owner.
 """
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,7 +12,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[4]
 JOBS = ('heal', 'heavy', 'backpedal', 'guard_two', 'strafe_left', 'strafe_right')
 REVIEW_BASE = {'heal': 'Heal', 'heavy': 'HeavyAttackOneHand', 'backpedal': 'Backpedal',
-               'guard_two': 'GuardReadyTwoHand', 'strafe_left': 'StrafeLeft', 'strafe_right': 'StrafeRight'}
+               'guard_two': 'GuardReadyTwoHand', 'strafe_left': 'StrafeLeft', 'strafe_right': 'StrafeRight',
+               'walk_two': 'WalkTwoHand', 'run': 'RunOneHand'}
 DEFAULTS = {
     'owner': 'fable-veyr-knight-v4-20261021',
     'scene_in': 'Local/Blender/feedback-v3-20261021',
@@ -92,6 +94,16 @@ def approved_names():
     a = json.loads((REPO / 'tools/art/blender/rebuild/approvals.json').read_text())['clips']
     d = json.loads((REPO / 'tools/art/blender/feedback/decisions.json').read_text())['approved']
     return {e['file']: e['sha256'] for e in a + d}
+
+
+def assert_export_allowed(dest):
+    """Refuse to write over an approved clip: by ledger name, or by an existing file's approved hash."""
+    dest = Path(dest); names = approved_names()
+    if dest.name in names:
+        raise PermissionError(f'{dest.name} is an owner-approved clip name')
+    if dest.exists() and hashlib.sha256(dest.read_bytes()).hexdigest() in set(names.values()):
+        raise PermissionError(f'{dest} holds an owner-approved clip')
+    return dest
 
 
 def approved_jobs():
