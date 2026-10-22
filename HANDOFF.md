@@ -1,5 +1,14 @@
 # START HERE — next-session handoff
 
+## Autonomous Elden Ring pass, 2026-10-21 evening
+
+- **Owner directive:** redo/enhance all Knight and dragon animations to Elden Ring quality. Animations only, no Unreal. Builder + critic loop; the owner approves in the laptop reviewer (pending-only view; A/B rows show the approved baseline tagged `abBaseline`).
+- **Owner verdicts so far:** Heal v4 and WalkTwoHand v5r2 approved (`8c55e78`). Backpedal r4 rejected ("just walk backwards, no bent knees/back").
+- **Pending owner:** Backpedal v4r5 (critic PASS); Run A hand-keyed v4r6 (bat carry); Run B Meshy-retargeted sprint r2 (critic prefers B, ~7/10 vs 4/10); Heavy v4r3 (critic PASS; 4 mm grip-to-upper-arm shortfall not visible); WalkOneHand v2 A/B (critic PASS; v2r2 fixes queued: both feet same contact, restore ground speed, head sway, sword hold, 36-frame loop).
+- **In progress:** LightCombo v1 (critic), GuardReadyTwoHand v4 (critic), Strafe L/R v4, Stagger/Death v2, Heal v5, WalkTwoHand v6; ParryRiposte, RollAttack (preserve the praised roll), GuardBreakStagger, six idle/attack v2 remasters; Tripo run/guard-walk retargets; dragon rig audit, then idle (port 9888, `Local/Blender/dragon-v1-20261021`).
+- **Decisions:** Meshy backpedal dropped (crouched). Strap skin-weight fix applied to all v4 exports (`body/Knight_Body_StrapFix_v4.blend`). Heavy sword path adjusted so pommel/grip stay outside the body. Approved files stay byte-identical; all new work is saved as new versions.
+- **Tooling:** `feedback_v4/meshy_v4.py` (retarget), `polish_fable.py`, `newclips/audit_newclip.py`, audit copies per clip. Tripo exports in `Local/tripo-ab-20261021`, Meshy in `Local/meshy-ab-20261021`.
+
 **2026-10-21 owner decision (2):** Heal_Blender_v4 and WalkTwoHand_Blender_v5r2 (two-hand ready walk) approved as-is ("Heal and ready walk is approved."; 14 approved clips, hashes in `tools/art/blender/feedback/decisions.json`). Backpedal round 4 rejected. Pending: backpedal r5, run r5 (sword held up like a bat), heavy r3.
 
 **2026-10-21 owner decision:** GuardReadyTwoHand_Blender_v3, StrafeLeft_Blender_v3 and StrafeRight_Blender_v3 approved as-is (hashes in `tools/art/blender/feedback/decisions.json`; 12 approved clips). Pending owner notes: Backpedal v3, HeavyAttackOneHand v3, Heal v3, Run, ready walk (WalkTwoHand v4).
