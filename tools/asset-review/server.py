@@ -238,7 +238,7 @@ def main():
         seen = set(); kept = []
         for i in catalog:
             if i["id"] in seen: continue
-            if (i.get("reviewBatch") == "remainder" and not i.get("ownerApproved")) or i.get("abBaseline") or i["name"] in ab:
+            if (i.get("reviewBatch") == "remainder" and not i.get("ownerApproved")) or (not os.environ.get("VEYR_NO_BASELINES") and (i.get("abBaseline") or i["name"] in ab)):
                 seen.add(i["id"]); kept.append(i)
         catalog = kept
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
