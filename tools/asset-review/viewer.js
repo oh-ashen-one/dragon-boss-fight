@@ -307,7 +307,7 @@ function selectItem(item) {
   const serial = ++loadSerial;
   activeItem = item;
   setGroup(item.group);
-  $('stage-group').textContent = approvedIds.has(item.id) ? 'Knight v015 · approved motion' : item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
+  $('stage-group').textContent = approvedIds.has(item.id) ? 'Knight v015 · approved motion' : item.name.startsWith('Dragon_') ? 'Dragon · review candidate' : item.id.startsWith('review/') ? 'Knight v015 · review candidate' : groupNames[item.group];
   $('stage-title').textContent = humanName(item);
   window.history.replaceState(null, '', `#${encodeURIComponent(item.id)}`);
   loading(`Loading ${humanName(item)}…`);
@@ -321,7 +321,7 @@ function selectItem(item) {
       bones.visible = showBones;
       scene.add(bones);
       try {
-        if (item.group === 'knight') {
+        if (item.group === 'knight' && !item.name.startsWith('Dragon_')) {
           loading('Attaching the boat greatsword to the Knight’s right hand…');
           if (!await attachSword(model, serial, item)) return;
         }
