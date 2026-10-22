@@ -600,6 +600,7 @@ def stagger_v2(step=.005):
         hy = pchip(S['hip_y'], t) if S.get('hip_y') else 0.; hx = pchip(S['hip_x'], t) if S.get('hip_x') else 0.
         hips = fk.pose.bones['Hips']; hips.location += fk.data.bones['Hips'].matrix_local.to_3x3().inverted() @ Vector((hx, hy, dip))
         bpy.context.view_layer.update()
+        if S.get('head_x_fix'): _stag_head_x(t, fk, BB)
         if S.get('blade_bell'): _stag_blade_bell(t, fk, BB)
         for b in fk.pose.bones: c.key(b, t * fps, prev)
         if S.get('rstep'): _stag_rstep(t, world, prev, fps)
@@ -1746,6 +1747,13 @@ def run_start_r4(step=.01):
         if t < A['r_flat']:  # heel touched: toes come down about the heel
             return _roll_contact('Right', _ploc(Rflat, loc['Right']['heel'], -A['r_land_pitch'] * (1 - smooth01((t - A['r_land']) / (A['r_flat'] - A['r_land'])))))
         if t < A['r_roll']: return Rflat
+        if A.get('ballpush'):  # r5: heel rises about the toe (toe pinned on the floor), toe leaves last, then a quick flick into run f0
+            tb = A['toe_off']; pk = A['push_pitch']
+            if t < tb: return _ploc(Rflat, loc['Right']['toe'], pk * smooth01((t - A['r_roll']) / (tb - A['r_roll'])) ** 1.2)
+            P0 = _ploc(Rflat, loc['Right']['toe'], pk); uu = min(1., (t - tb) / (D - tb)); kk = smooth01(uu)
+            dz = (Rend @ loc['Right']['toe']).z - (P0 @ loc['Right']['toe']).z
+            M = _mblend(Matrix.Translation(Vector((0, 0, dz * smooth01(uu)))) @ P0, Rend, kk)  # toe lifts off steadily, heel stays up
+            return _roll_contact('Right', M, clamp_only=True) if uu < 1 else Rend
         u = min(1., (t - A['r_roll']) / (D - A['r_roll'])); a_ = A.get('roll_a')
         if A.get('roll_linear_low'):  # choose the blend so the foot's lowest point rises at a constant rate onto the run's f0 height
             def Mk(k):
@@ -1781,7 +1789,7 @@ def run_start_r4(step=.01):
         rf, ro = runat(phi(t)); wb = wbody(t)
         for b in fk.pose.bones: b.matrix_basis = _mblend(IF[b.name], rf[b.name], wb)
         kf = {'Right': smoother01((t - A['r_lift']) / (A['r_land'] - A['r_lift'])), 'Left': smoother01((t - A['l_off']) / (D - A['l_off']))}
-        for sd in ('Left', 'Right'): fk.pose.bones[sd + 'ToeBase'].matrix_basis = _mblend(IF[sd + 'ToeBase'], rf[sd + 'ToeBase'], kf[sd] if sd == 'Left' else (0. if t < A['r_roll'] else (min(1., (t - A['r_roll']) / (D - A['r_roll'])) if A.get('roll_linear_low') else smoother01((t - A['r_roll']) / (D - A['r_roll'])))))
+        for sd in ('Left', 'Right'): fk.pose.bones[sd + 'ToeBase'].matrix_basis = _mblend(IF[sd + 'ToeBase'], rf[sd + 'ToeBase'], kf[sd] if sd == 'Left' else (0. if t < A.get('toe_off', A['r_roll']) else (1 - (1 - min(1., (t - A['toe_off']) / (D - A['toe_off']))) ** 3 if A.get('ballpush') else min(1., (t - A['r_roll']) / (D - A['r_roll'])) if A.get('roll_linear_low') else smoother01((t - A['r_roll']) / (D - A['r_roll'])))))
         hips = fk.pose.bones['Hips']; hips.location += fk.data.bones['Hips'].matrix_local.to_3x3().inverted() @ (off(t) + Vector((0, 0, pchip(A['dip'], t))))
         bpy.context.view_layer.update()
         for b in fk.pose.bones: c.key(b, t * fps, prev)
@@ -1843,3 +1851,48 @@ def backloop_v1r3(**kw):
     small lagging bob on the greatsword."""
     a = dict(chest=-.75, clav2=9., abd2=-6., abd2r=0., free_swing=5.5, abd1=0., sword_bob=0., sword_bob_lag=.08, chest_sway=0.)
     a.update(kw); return backloop_v1r2(**a)
+
+
+def run_start_r5():
+    """Critic r5: push off through the lead foot's ball: from f13 the heel rises about the toe (toe on the floor), the toe
+    leaves last at f16, then the foot flicks into the run's f0 matrix; rear toe-off moved to f13-14 so a foot is always down."""
+    RS4.update(D=.6, p=3., r_roll=.4333, roll_linear_low=False, ballpush=True, toe_off=.50, push_pitch=34., l_peel=.30, l_off=.44,
+               dip=[(0, 0), (.06, -.012), (.18, -.018), (.29, -.040), (.36, -.034), (.45, -.020), (.6, 0)])
+    return run_start_r4()
+
+
+def heel_toe(step30=1):
+    """Per 30 fps frame and foot: lowest deform-sole z (mm) of the rear 30% (heel) and front 30% (toe) of the foot."""
+    s = bpy.context.scene; st = s.render.fps / 30.; out = []
+    for i in range(0, int(s.frame_end / st + 1e-6) + 1, step30):
+        row = {'f': i}
+        for sd in ('Left', 'Right'):
+            pts, M = sole_world(sd, i * st); fw = (M.to_3x3() @ Vector((0, 1, 0))).normalized(); fw.z = 0; fw.normalize()
+            d = [p.dot(fw) for p in pts]; lo, hi = min(d), max(d); L = hi - lo
+            a = [p.z for p, x in zip(pts, d) if x < lo + .3 * L]; b = [p.z for p, x in zip(pts, d) if x > hi - .3 * L]
+            row[sd[0]] = (round(1000 * min(a), 1), round(1000 * min(b), 1))
+        out.append(row)
+    return out
+
+
+def stagger_v2r6(head='trapHA', **kw):
+    """Critic r6: the head's sideways travel in the front view spreads evenly over f3-f6 (head returns on the torso's own
+    eased window, slightly lagged, instead of its own long window)."""
+    r = {n: 'bellA' for n in ('RightShoulder', 'RightArm', 'RightForeArm', 'RightHand')}
+    r.update({n: head for n in ('Neck', 'Head')})
+    ex = dict(over=1.0, b_mix=0., home_start=.0667, home=.345, head_home=(.0667, .42), trap_a=.33, lag_head=0., lag_neck=0., blade_bell=(.0667, .30), snap=.0333)
+    ex.update(kw)
+    return _stag_r4(r, ex)
+
+
+def _stag_head_x(t, fk, BB):
+    """r6: the head's front-view sideways path after the impact becomes one steady eased return (the pelvis carries the
+    difference), so no frame lurches sideways."""
+    t0, t1 = STAG['head_x_fix']; hx = (fk.matrix_world @ fk.pose.bones['Head'].tail).x
+    if t == 0: BB['hx_end'] = hx; return
+    if t < t0: return
+    if 'hx0' not in BB: BB['hx0'] = hx
+    u = min(1., (t - t0) / (t1 - t0)); a_ = STAG.get('hx_a', .35); vm = 1 / (1 - a_)
+    k = vm * u * u / (2 * a_) if u < a_ else 1 - vm * (1 - u) ** 2 / (2 * a_) if u > 1 - a_ else vm * (u - a_ / 2)
+    tgt = BB['hx0'] + (BB['hx_end'] - BB['hx0']) * k; hips = fk.pose.bones['Hips']
+    hips.location += fk.data.bones['Hips'].matrix_local.to_3x3().inverted() @ Vector((tgt - hx, 0, 0)); bpy.context.view_layer.update()
