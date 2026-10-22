@@ -354,7 +354,7 @@ def _clearance(tree, tdom, pts, margin):
 
 
 def fix_sword(margin=.03, sigma=3, iters=10, ramp=.14, safety=1.3, pivots=(2.35, 1.4, .3), max_reach=.955,
-              exclude=('RightHand', 'RightForeArm', 'RightArm', 'LeftHand', 'LeftForeArm', 'LeftArm')):
+              exclude=('RightHand', 'RightForeArm', 'RightArm', 'LeftHand', 'LeftForeArm', 'LeftArm'), stride=3, push_normal=False):
     """Per key: swing the sword about a pivot on its own axis (blade tip, blade middle or just above
     the hand) so the handle + pommel clear the body by `margin`; pick the pivot that moves the blade
     tip least (approved arc) while the arm stays within `max_reach` of full extension (no locked elbow). The hand's
@@ -369,7 +369,7 @@ def fix_sword(margin=.03, sigma=3, iters=10, ramp=.14, safety=1.3, pivots=(2.35,
     dom = _dominant(body); body.data.calc_loop_triangles()
     tris = [tuple(t.vertices) for t in body.data.loop_triangles if not any(dom[i].startswith(tuple(exclude)) for i in t.vertices)]
     tdom = [dom[t[0]] for t in tris]
-    handle = [v.co.copy() for v in sword.data.vertices if v.co.z < HANDLE_Z][::3]
+    handle = [v.co.copy() for v in sword.data.vertices if v.co.z < HANDLE_Z][::stride]
     n = round(DUR / KEY_STEP); times = [min(DUR, i * KEY_STEP) for i in range(n + 1)]
     names = ('RightArm', 'RightForeArm', 'RightHand')
     c.at(0); Ks = (fk.matrix_world @ fk.pose.bones['RightHand'].matrix).inverted() @ sword.matrix_world
@@ -385,8 +385,12 @@ def fix_sword(margin=.03, sigma=3, iters=10, ramp=.14, safety=1.3, pivots=(2.35,
         Sm = hand_m @ Ks; palm = hand_m @ Vector((0, .05, 0))
         base = [Sm @ p for p in handle]; base = [p for p in base if (p - palm).length > .075]
         a = (Sm.to_3x3() @ Vector((0, 0, 1))).normalized(); Pp = Sm @ Vector((0, 0, -.45))
-        u = Pp - ax; u.z = 0; u.normalize(); r = a.cross(u)
-        w0 = _clearance(tree, tdom, base, margin)[0]; worst0[t] = w0
+        u = Pp - ax; u.z = 0; u.normalize()
+        w0, wp, wh = _clearance(tree, tdom, base, margin); worst0[t] = w0
+        if push_normal and wh is not None and not tdom[wh[2]].startswith(TORSO):  # own arm / thighs: push away from that surface
+            nv = (wp - wh[0]) if w0 > 0 else Vector(wh[1]); nv = nv - a * nv.dot(a)
+            if nv.length > 1e-6: u = nv.normalized()
+        r = a.cross(u)
         best = None
         if w0 < margin and r.length > 1e-6:
             r.normalize()
@@ -444,3 +448,76 @@ def fix_sword(margin=.03, sigma=3, iters=10, ramp=.14, safety=1.3, pivots=(2.35,
     return {'maxHandShift': round(max(shift.values()), 4), 'maxDeg': round(math.degrees(max(v.length for v in sr.values())), 1),
             'worstBefore': [(round(t * 30, 1), round(worst0[t], 3)) for t in times[::3]], 'solvedWorst': [(round(t * 30, 1), round(worst1[t], 3), piv[t]) for t in times[::3]],
             'shift': [(round(t * 30, 1), round(shift[t], 3)) for t in times[::3]]}
+
+
+def open_elbow(min_deg=115., sigma=3, until=.45, fade=.15):
+    """Round 3: the approved wind-up folds the sword arm to ~54 deg at the shoulder, which put
+    the handle into the upper arm and (after r2's clearance push) produced a 146->67->145 deg
+    elbow pop. Keep the sword-arm elbow at least `min_deg` open: where the wrist is closer to
+    the shoulder than that allows, slide it straight out from the shoulder (hand orientation
+    kept, sword translates with it), smoothed in time; the elbow pole follows."""
+    s = bpy.context.scene
+    assert s.get('session_owner') == P['owner'] and s.get('rebuild_job') == 'heavy', 'open_job(heavy) first'
+    fps = s.render.fps; fk = bpy.data.objects['Pose_Control_Rig']; pole = bpy.data.objects['RightArm_Pole']; pb = fk.pose.bones
+    names = ('RightArm', 'RightForeArm', 'RightHand')
+    n = round(DUR / KEY_STEP); times = [min(DUR, i * KEY_STEP) for i in range(n + 1)]
+    c.at(0); a = (pb['RightForeArm'].head - pb['RightArm'].head).length; b = (pb['RightHand'].head - pb['RightForeArm'].head).length
+    dmin = math.sqrt(a * a + b * b - 2 * a * b * math.cos(math.radians(min_deg)))
+    orig = {}; raw = {}; before = {}
+    for t in times:
+        c.at(t * fps); S = pb['RightArm'].head.copy(); W = pb['RightHand'].head.copy(); E = pb['RightForeArm'].head.copy()
+        orig[t] = ({nm: pb[nm].matrix_basis.copy() for nm in names}, pole.location.copy(), pb['RightHand'].matrix.copy())
+        before[t] = math.degrees((S - E).angle(W - E)); d = (W - S).length
+        k = 1. if t <= until else max(0., 1 - (t - until) / fade); k = k * k * (3 - 2 * k)
+        raw[t] = (W - S).normalized() * (dmin - d) * k if d < dmin else Vector()
+    sm = {}
+    for i, t in enumerate(times):
+        acc = Vector(); ws = 0.
+        for j, u in enumerate(times):
+            w = math.exp(-((i - j) / sigma) ** 2 / 2); acc += raw[u] * w; ws += w
+        v = acc / ws
+        sm[t] = v if v.length >= raw[t].length else (v.normalized() * raw[t].length if v.length > 1e-9 else raw[t])
+        if t in (times[0], times[-1]): sm[t] = Vector()  # exact approved idle endpoints
+    _clear_curves(fk, names); pole.animation_data_clear(); prev = {}; after = {}
+    for t in times:
+        fr = t * fps; c.at(fr); bases, pl, hm = orig[t]
+        for nm in names: pb[nm].matrix_basis = bases[nm]
+        bpy.context.view_layer.update()
+        de, dw = _two_bone(fk, 'Right', hm.translation + sm[t], hm.to_quaternion())
+        S, E, W = pb['RightArm'].head, pb['RightForeArm'].head, pb['RightHand'].head; after[t] = math.degrees((S - E).angle(W - E))
+        for nm in names: c.key(pb[nm], fr, prev)
+        pole.location = pl + de; pole.keyframe_insert('location', frame=fr)
+    c.smooth(fk); c.smooth(pole); c.at(0)
+    s['heavy_v4_r3_elbow'] = json.dumps({'minDeg': min_deg, 'sigma': sigma})
+    return {'minBefore': round(min(before.values()), 1), 'minAfter': round(min(after.values()), 1), 'maxShift': round(max(v.length for v in sm.values()), 4),
+            'elbow': [(round(t * 30, 1), round(before[t]), round(after[t])) for t in times[::3]]}
+
+
+def ease_arm(t0=0., t1=.24, passes=3, names=('RightArm', 'RightForeArm', 'RightHand')):
+    """Round 3: spread the fastest sword-arm rotations of the lift over more frames - a 1-2-1
+    quaternion filter on the FK keys inside [t0, t1] (endpoints and keys outside untouched)."""
+    s = bpy.context.scene; fps = s.render.fps; fk = bpy.data.objects['Pose_Control_Rig']; pb = fk.pose.bones
+    n = round(DUR / KEY_STEP); times = [min(DUR, i * KEY_STEP) for i in range(n + 1)]
+    q = {}
+    for t in times:
+        c.at(t * fps); q[t] = {nm: pb[nm].matrix_basis.copy() for nm in names}
+    for _ in range(passes):
+        nq = {t: dict(q[t]) for t in times}
+        for i in range(1, len(times) - 1):
+            t = times[i]
+            if not (t0 < t < t1): continue
+            for nm in names:
+                a, m, b = q[times[i - 1]][nm], q[t][nm], q[times[i + 1]][nm]
+                qa, qm, qb = a.to_quaternion(), m.to_quaternion(), b.to_quaternion()
+                qa.make_compatible(qm); qb.make_compatible(qm)
+                avg = qa.slerp(qb, .5); r = qm.slerp(avg, .5)
+                nq[t][nm] = Matrix.LocRotScale(m.to_translation().lerp(a.to_translation().lerp(b.to_translation(), .5), .5), r, m.to_scale())
+        q = nq
+    _clear_curves(fk, names); prev = {}
+    for t in times:
+        c.at(t * fps)
+        for nm in names: pb[nm].matrix_basis = q[t][nm]
+        bpy.context.view_layer.update()
+        for nm in names: c.key(pb[nm], t * fps, prev)
+    c.smooth(fk); c.at(0)
+    return {'eased': [t0, t1], 'passes': passes}
