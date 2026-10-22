@@ -254,8 +254,8 @@
     },
     {
       "job": "backpedal_loop",
-      "file": "Backpedal_Blender_loop_v1r2.glb",
-      "title": "Backpedal loop (held input) v1r2",
+      "file": "Backpedal_Blender_loop_v1r3.glb",
+      "title": "Backpedal loop (held input) v1r3",
       "previewLoop": true,
       "reviewOrder": 0.5,
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
@@ -342,8 +342,8 @@
     },
     {
       "job": "stagger_v2",
-      "file": "Stagger_Blender_v2r4.glb",
-      "title": "Stagger B \u00b7 polish v2r4",
+      "file": "Stagger_Blender_v2r5.glb",
+      "title": "Stagger B \u00b7 polish v2r5",
       "previewLoop": false,
       "reviewOrder": 6.5,
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
@@ -353,8 +353,8 @@
     },
     {
       "job": "guard_break",
-      "file": "GuardBreakStagger_Blender_v1.glb",
-      "title": "NEW \u00b7 Guard-break stagger v1",
+      "file": "GuardBreakStagger_Blender_v1r2.glb",
+      "title": "NEW \u00b7 Guard-break stagger v1r2",
       "previewLoop": false,
       "reviewOrder": 0.2,
       "swordFile": "BoatGreatsword_Grip_v6.glb",
@@ -420,6 +420,47 @@
       "reviewOrder": 19.3,
       "reviewBatch": "remainder",
       "revision": 1,
+      "ownerApproved": false
+    },
+    {
+      "job": "dragon_fire",
+      "file": "Dragon_FireBreath_Blender_v1.glb",
+      "title": "DRAGON \u00b7 Fire breath v1 (flame is VFX)",
+      "previewLoop": false,
+      "reviewOrder": 20.4,
+      "reviewBatch": "remainder",
+      "revision": 1,
+      "ownerApproved": false
+    },
+    {
+      "job": "dragon_hover_r2",
+      "file": "Dragon_FlyHover_Blender_v1r2.glb",
+      "title": "DRAGON \u00b7 Hover v1r2 (legs tucked, cupped beat)",
+      "previewLoop": true,
+      "reviewOrder": 20.15,
+      "reviewBatch": "remainder",
+      "revision": 2,
+      "ownerApproved": false
+    },
+    {
+      "job": "roll_attack",
+      "file": "RollAttack_Blender_v1.glb",
+      "title": "NEW \u00b7 Roll into attack v1 (praised roll preserved)",
+      "previewLoop": false,
+      "reviewOrder": 0.3,
+      "swordFile": "BoatGreatsword_OneHand_v4.glb",
+      "reviewBatch": "remainder",
+      "revision": 1,
+      "ownerApproved": false
+    },
+    {
+      "job": "dragon_bite",
+      "file": "Dragon_Bite_Blender_v2.glb",
+      "title": "DRAGON \u00b7 Bite v2",
+      "previewLoop": false,
+      "reviewOrder": 20.5,
+      "reviewBatch": "remainder",
+      "revision": 2,
       "ownerApproved": false
     }
   ]
