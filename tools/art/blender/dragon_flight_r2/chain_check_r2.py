@@ -14,7 +14,7 @@ def load(n):
 def pose(g, names, t): W_ = g.world_matrices(0, t); return {n: W_[i] for n, i in names.items()}
 out = {}
 for a, ta, b, tb in [('Dragon_Idle_Blender_v1r3', 0, 'Dragon_Takeoff_Blender_v1r2', 0), ('Dragon_Takeoff_Blender_v1r2', 'end', 'Dragon_FlyHover_Blender_v1r2', 0),
-                     ('Dragon_FlyHover_Blender_v1r2', 'end', 'Dragon_FlyHover_Blender_v1r2', 0)]:
+                     ('Dragon_FlyHover_Blender_v1r2', 'end', 'Dragon_FlyHover_Blender_v1r2', 0), ('Dragon_FlyHover_Blender_v1r2', 0, 'Dragon_Land_Blender_v1r2', 0), ('Dragon_Land_Blender_v1r2', 'end', 'Dragon_Idle_Blender_v1r3', 0)]:
     ga, Ta, na = load(a); gb, Tb, nb = load(b)
     pa = pose(ga, na, Ta if ta == 'end' else ta); pb = pose(gb, nb, Tb if tb == 'end' else tb)
     dp = max(np.linalg.norm(pa[n][:3, 3] - pb[n][:3, 3]) for n in pa) * 2155.818
