@@ -1,4 +1,4 @@
-# START HERE — autonomous Elden Ring pass ended 2026-10-22 02:00 CST (owner hard stop)
+# START HERE — autonomous Elden Ring pass ended 2026-10-22 ~01:45 CST after a 45-min extension
 
 ## State
 
@@ -8,9 +8,11 @@
   - A-exports: zip + z01, 3.5 GB, `manifestA.json` (465 files).
   - B-scenes: zip + z01 + z02, 4.1 GB, `manifestB.json` (97 latest-round `.blend`).
   - `SHA256SUMS.txt`; GitHub digests verified against the local sums.
+- **Bundle gap:** the release tag predates the extension sprint. Exports added after it (RollAttack v1, ParryRiposte v2, RunStart r5, Stagger r6, Hover r2, Takeoff r2, Land r2, ClawSwipe v1, Bite v2, loop r3, guard-break r2, FireBreath v1, Bite v1) exist only in the Studio checkout `Local/Blender` until the next bundle. Next session: cut a delta release first.
+- All scripts committed through `a97c06e`; reviewer catalog committed from the laptop clone.
 - Restore: download all parts, `zip -s 0 X.zip --out X-joined.zip`, then unzip into `Local/Blender` and verify against the manifests.
 
-## Owner reviewer (laptop, 44 rows)
+## Owner reviewer (laptop, 45 rows)
 
 Run from a clone with the review cache rsynced:
 
@@ -22,7 +24,7 @@ All rows are critic-passed candidates awaiting the owner:
 
 - **New clips:** LightCombo v5, GuardBreakStagger v1r2, RollAttack v1 (praised roll preserved), Backpedal loop v1r3, RunStop v1r2, Backpedal v4r5, Heavy A r3 / B r5, Run B Meshy r3 / C Tripo r2.
 - **A/B vs approved:** WalkOneHand v2r2, Guard v4r4, Blink L/R v4r2, Stagger v2r5, Death v2r3, WalkTwoHand v6r2, IdleOneHand v2r4, IdleTwoHand v2r4, Overhead v2r3, Sweep v2r3, Thrust v2r4, Compact v2r3.
-- **Dragon:** Idle v1r3, Walk v1r2, Turn v1r2, Hover v1 and v1r2, Takeoff v1, Land v1, FireBreath v1.
+- **Dragon:** Idle v1r3, Walk v1r2, Turn v1r2, Hover v1 and v1r2, Takeoff v1, Land v1, FireBreath v1, Bite v2 (critic PASS).
 
 ## Not in the reviewer (critic FAIL or defect)
 
@@ -32,11 +34,16 @@ All rows are critic-passed candidates awaiting the owner:
 - Stagger v2r6: 3/4 view 0.35 of impact; r5 shown instead.
 - Takeoff v1r2: joins hover r2 exactly, but one-frame hind-knee IK flip at f22→23; needs an IK pole.
 - Heal v5: dropped (changed the approved pose).
+- ParryRiposte v2: FAIL — pommel/grip through forearm and pauldron at f18-20 again; recoil only ~20% back by f26; arms not extending. v3 spec: hands forward of the right pectoral so the pommel stays in front of the chest f17-20, at least 60% recoil by f26, blade near vertical by f32, arms at least 70% reach at f23.
+- Dragon ClawSwipe v1: FAIL — the front-right paw never leaves its idle x; the arc is a wing tip + head yaw. v2 must key the forearm: wrist at least 150 px up, at least 250 px travel outside-right→inside-left f16-21, strike displacement at least 1.5× the wind-up.
+- Dragon Land v1r2: FAIL — wings edge-on in side view, membrane inside the flank f12-19, hind untuck reads as a kick, fold snaps in 2-3 frames; v1 stays.
+- Dragon Takeoff v1r3: not exported — the hover r2 hind tuck forces one knee flip; needs a knee pole animated across the transition or a softer hover r3 tuck, then re-join takeoff and land.
 
 ## Next session
 
-1. Owner verdicts on the 44 rows; record approvals in `tools/art/blender/feedback/decisions.json` with sha256 and lock them.
-2. ParryRiposte v2, Bite v2, Land r2 (join hover r2), Takeoff r3 (IK pole), RunStart in the run clip; dragon ClawSwipe/TailSweep/WingBuffet/Stagger/Death; dragon six-clip fold-silhouette polish (wrist knuckle visible, nothing above the spine or below the belly); Knight-vs-dragon 10-15 s fight film.
+0. Cut a delta release of the post-tag exports (see Bundle gap).
+1. Owner verdicts on the 45 rows; record approvals in `tools/art/blender/feedback/decisions.json` with sha256 and lock them.
+2. ParryRiposte v3, ClawSwipe v2, Land r2 (join hover r2), Takeoff r3 (knee pole or softer hover r3 tuck), RunStart in the run clip; dragon TailSweep/WingBuffet/Stagger/Death; dragon six-clip fold-silhouette polish (wrist knuckle visible, nothing above the spine or below the belly); Knight-vs-dragon 10-15 s fight film.
 3. Cloth: the tabard has no bones (hem goes through the floor in Death).
 4. Unreal integration only after owner approval: game constants change (dragon walk cycle 134→215.6 cm; turn played per 20°); new clips hover/takeoff/land/fire/bite; Knight run start/stop; root motion on backpedal/guard-break.
 
