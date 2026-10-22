@@ -42,7 +42,7 @@ def probe():
 IDLE = dict(hips=(0, 0, 0), hyaw=0, hlean=0, hroll=0, cyaw=0, clean=0, hilt=(-.042, -.125, .036), az=-24, el=68, roll=0,
             lw=1, lfree=(.18, -.22, -.05), lf=(0, 0, 0), lfyaw=0, lfp=0, rf=(0, 0, 0), rfyaw=0, rfp=0, rpole=(-.51, -.12, -.08), lpole=(.42, -.20, -.15))
 KEYS = [
-    (0.00, {}),
+    (0, {}),
     # 0-0.78 s: the roll is copied exactly after the bake. These two keys are the roll's own last poses read back in
     # authoring space (pose_params at f108/f117), so the authored motion leaves the roll with the roll's own velocity.
     (0.72, dict(hips=(.019, .068, .016), lf=(-.192, .105, .032), rf=(-.049, -.002, .083), lfyaw=19.2, rfyaw=74.6, lfp=12.3, rfp=5.9, cyaw=33.6, hyaw=34.6, hlean=4,
@@ -54,32 +54,32 @@ KEYS = [
                   hilt=(-.30, .09, -.12), az=-114, el=48, lfree=(.09, -.08, -.12))),
     # ---- coil into the low-right load (rising-slash chamber), left foot lifts for the step-in -----------------------------
     (0.9333, dict(rfyaw=52, lf=(-.12, .12, .045), lfyaw=16, lfp=0, hips=(.01, .05, -.065), hlean=9, cyaw=-8, hyaw=10,
-                hilt=(-.26, .10, -.09), az=-142, el=8, lfree=(.20, -.13, -.05), rpole=(-.40, .35, -.10))),
-    (1.0, dict(lf=(-.07, .0, .05), lfyaw=10, hips=(.005, .03, -.07), hlean=10, cyaw=-30, hyaw=0, hilt=(-.25, .12, -.08), az=-145, el=-8, rpole=(-.42, .30, -.12), lfree=(.23, -.14, -.03))),
+                hilt=(-.26, .10, -.09), az=-142, el=8, lfree=(.19, -.15, -.05), rpole=(-.40, .35, -.10))),
+    (1, dict(lf=(-.07, .0, .05), lfyaw=10, hips=(.005, .03, -.07), hlean=10, cyaw=-30, hyaw=0, hilt=(-.25, .12, -.08), az=-145, el=-8, rpole=(-.42, .30, -.12), lfree=(.20, -.17, -.04))),
     # ---- step-in plants, rising one-hand slash low-right -> high-left; impact mid-swing with the weight on the lead foot ---
-    (1.0333, dict(lf=(-.03, -.10, 0), lfyaw=4, hips=(.01, -.02, -.06), hlean=8, cyaw=-12, hyaw=4, hilt=(-.17, -.15, -.11), az=-80, el=-20, rpole=(-.50, .10, -.15))),
-    (1.1, dict(hilt=(-.01, -.24, .03), az=20, el=32, cyaw=15, hyaw=8, hips=(.02, -.07, -.05), hlean=6, lfree=(.25, .04, -.06), rfp=12, rfyaw=34, rpole=(-.45, -.10, -.12))),
-    (1.1333, "hold"),
-    (1.1667, dict(hilt=(-.005, -.24, .08), az=42, el=44, cyaw=32, hyaw=16, hips=(.025, -.07, -.04), lfree=(.24, .10, -.04))),
-    (1.2, dict(hilt=(.01, -.20, .13), az=64, el=57, cyaw=42, hyaw=20, hips=(.025, -.065, -.035))),
-    (1.2333, dict(hilt=(.015, -.19, .155), az=75, el=63, cyaw=46, hyaw=22)),
-    (1.3, dict(hilt=(.01, -.18, .16), az=80, el=66, cyaw=46, hyaw=22, hips=(.02, -.06, -.03), rfp=6)),
+    (1.05, dict(lf=(-.03, -.10, 0), lfyaw=4, hips=(.01, -.02, -.06), hlean=8, cyaw=-12, hyaw=4, hilt=(-.185, -.10, -.11), az=-92, el=-20, rpole=(-.50, .10, -.15))),
+    (1.1333, dict(hilt=(-.01, -.24, .03), az=20, el=32, cyaw=15, hyaw=8, hips=(.02, -.07, -.05), hlean=6, lfree=(.19, -.18, -.05), rfp=12, rfyaw=34, rpole=(-.45, -.10, -.12))),
+    (1.1666, "hold"),
+    (1.2, dict(hilt=(-.005, -.24, .08), az=42, el=44, cyaw=32, hyaw=16, hips=(.025, -.07, -.04), lfree=(.19, -.15, -.05))),
+    (1.2333, dict(hilt=(.01, -.20, .13), az=64, el=57, cyaw=42, hyaw=20, hips=(.025, -.065, -.035))),
+    (1.2666, dict(hilt=(.015, -.19, .155), az=75, el=63, cyaw=46, hyaw=22)),
+    (1.3333, dict(hilt=(.01, -.18, .16), az=80, el=66, cyaw=46, hyaw=22, hips=(.02, -.06, -.03), rfp=6)),
     # ---- recovery: blade comes down on the right; right foot steps up, left foot steps back into the idle stance ---------
-    (1.3667, dict(rf=(-.06, .11, 0), rfp=0)),
-    (1.4333, dict(hilt=(-.16, -.18, .04), az=-10, el=40, cyaw=8, hyaw=4, hips=(.01, -.03, -.025), hlean=3, rf=(-.03, .05, .04), rfyaw=14, lfree=(.20, -.05, -.10), rpole=(-.51, -.12, -.08))),
-    (1.5, dict(rf=(0, 0, 0), rfyaw=0, lf=(-.03, -.10, 0), lfyaw=4)),
-    (1.5667, dict(lf=(-.015, -.05, .035), lfyaw=2, hips=(.005, -.01, -.012))),
-    (1.6, dict(hilt=(-.19, -.13, -.12), az=0, el=10, cyaw=2, hyaw=1, hlean=1)),
-    (1.6333, dict(lf=(0, 0, 0), lfyaw=0)),
-    (1.7333, dict(IDLE)),
+    (1.4, dict(rf=(-.06, .11, 0), rfp=0)),
+    (1.4666, dict(hilt=(-.16, -.18, .04), az=-10, el=40, cyaw=8, hyaw=4, hips=(.01, -.03, -.025), hlean=3, rf=(-.03, .05, .04), rfyaw=14, lfree=(.20, -.05, -.10), rpole=(-.51, -.12, -.08))),
+    (1.5333, dict(rf=(0, 0, 0), rfyaw=0, lf=(-.03, -.10, 0), lfyaw=4)),
+    (1.6, dict(lf=(-.015, -.05, .035), lfyaw=2, hips=(.005, -.01, -.012))),
+    (1.6333, dict(hilt=(-.19, -.13, -.12), az=0, el=10, cyaw=2, hyaw=1, hlean=1)),
+    (1.6666, dict(lf=(0, 0, 0), lfyaw=0)),
+    (1.7666, dict(IDLE)),
 ]
 DURATION = 2.2
 WRIST_MIN = 0.
 TR = {"B": None, "d": None}
-ORIENT_TRANSPORT = (0.78, 1.0333, 1.10)  # parallel-transported blade frame: the chamber passes near the anti-idle direction
-HITSTOPS = [[33 / 30, 34 / 30]]
-END_IDLE_T = 1.72
-BREATH = dict(t0=1.7333, t1=2.2, chest=3.5, rise=.024, lift=.012, clav=27.)  # one deep post-combo recovery breath; ends exactly on the approved idle
+ORIENT_TRANSPORT = (0.78, 1.0, 1.1333)  # parallel-transported blade frame: the chamber passes near the anti-idle direction
+HITSTOPS = [[34 / 30, 35 / 30]]
+END_IDLE_T = 1.75
+BREATH = dict(t0=1.7666, t1=2.2, chest=3.5, rise=.024, lift=.012, clav=27.)  # one deep post-combo recovery breath; ends exactly on the approved idle
 
 
 # ------------------------------------------------------------------ evaluation ----------------------
@@ -251,7 +251,7 @@ def author():
         for sd, wgt in (("Right", 1.), ("Left", lw)):
             if wgt < .5: continue
             Sh = fk.pose.bones[sd + "Arm"].head; tgt = (H @ grip_rel.inverted()).translation if sd == "Right" else (H @ left_rel).translation
-            L = (arm_len[sd][0] + arm_len[sd][1]) * .955; dv = tgt - Sh
+            L = (arm_len[sd][0] + arm_len[sd][1]) * .958; dv = tgt - Sh  # .958: the approved one-hand idle sits at .9566 of full reach
             if dv.length > L:
                 H = Matrix.Translation(-dv.normalized() * (dv.length - L)) @ H; reach_log.append((fr, sd, round(dv.length / L, 3)))
         hilt.matrix_world = H; core.key(hilt, fr, prev)
