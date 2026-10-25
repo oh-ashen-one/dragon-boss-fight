@@ -281,20 +281,21 @@ void AVeyrHUD::TogglePauseMenu()
     AVeyrGameMode* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
     if(!Mode||!PlayerOwner||!PlayerOwner->IsLocalController())return;
     bRestoreCapture=Mode->Knight&&Mode->Knight->IsMouseCaptured();
-    if(Mode->Knight)Mode->Knight->SuspendForPauseMenu();
     if(!Mode->SetPauseMenuOpen(true))return;
+    if(Mode->Knight)Mode->Knight->SuspendForPauseMenu();
     PausePage=0;RebuildPauseMenu();
 }
 
 void AVeyrHUD::ClosePauseMenu()
 {
+    AVeyrGameMode* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+    // Keep the usable menu on screen if the world cannot resume.
+    if(Mode&&!Mode->SetPauseMenuOpen(false))return;
     if(GetWorld()&&GetWorld()->GetGameViewport()&&PauseRoot.IsValid())
         GetWorld()->GetGameViewport()->RemoveViewportWidgetContent(PauseRoot.ToSharedRef());
     PauseRoot.Reset();
-    AVeyrGameMode* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
     if(Mode)
     {
-        Mode->SetPauseMenuOpen(false);
         if(Mode->Knight)Mode->Knight->ResumeFromPauseMenu(bRestoreCapture);
     }
 }

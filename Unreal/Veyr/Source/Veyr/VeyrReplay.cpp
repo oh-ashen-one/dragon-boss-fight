@@ -172,7 +172,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
-    DurationLimit=ReplayMode==TEXT("collision")?150.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
+    DurationLimit=ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
     InitializeVideo();
     if(ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&!Knight->bLockedOn)Knight->ToggleLockOn();
     if(ReplayMode==TEXT("stance"))Event(TEXT("stance_idle_before_input"));
@@ -481,13 +481,25 @@ void AVeyrReplay::ObserveCollisionHit(UPrimitiveComponent* HitComponent,AActor* 
 {
     if(ReplayMode!=TEXT("collision")||OtherActor!=Dragon||!OtherComponent||!OtherComponent->GetName().StartsWith(TEXT("VeyrSolid_")))return;
     ++CollisionHits;CollisionLastHitShape=OtherComponent->GetFName();CollisionLastHitPoint=Hit.ImpactPoint;CollisionLastHitNormal=Hit.ImpactNormal;
+    ++CollisionComponentHits.FindOrAdd(CollisionLastHitShape);
+    const FVector Radial=(Knight->GetFootLocation()-Dragon->GetActorLocation()).GetSafeNormal2D();
+    const float Side=FVector::DotProduct(Radial,Dragon->GetActorRightVector());
+    const float Front=FVector::DotProduct(Radial,Dragon->GetActorForwardVector());
+    const FString Name=OtherComponent->GetName();
+    const bool Region=(CollisionStage==3&&Side<-.55f)||(CollisionStage==4&&Side>.55f)||
+        (CollisionStage==5&&Front<-.55f)||(CollisionStage==6&&(Name==TEXT("VeyrSolid_Head")||Name==TEXT("VeyrSolid_Neck")));
+    if(Region)
+    {
+        bCollisionRegionContactObserved=true;CollisionRegionContactShape=CollisionLastHitShape;
+        CollisionRegionContactDirection=Radial;CollisionRegionContactPoint=Hit.ImpactPoint;
+    }
 }
 
 TSharedPtr<FJsonObject> AVeyrReplay::CollisionEvidence(bool bIncludeTrials) const
 {
     auto O=MakeShared<FJsonObject>();
     O->SetNumberField(TEXT("stage"),CollisionStage);O->SetNumberField(TEXT("phase"),CollisionPhase);
-    O->SetNumberField(TEXT("completed"),CollisionCompleted);O->SetNumberField(TEXT("required"),3);
+    O->SetNumberField(TEXT("completed"),CollisionCompleted);O->SetNumberField(TEXT("required"),8);
     O->SetNumberField(TEXT("actualBodyHitEvents"),CollisionHits);
     O->SetStringField(TEXT("lastHitComponent"),CollisionLastHitShape.ToString());
     O->SetArrayField(TEXT("lastHitPoint"),VectorJson(CollisionLastHitPoint));O->SetArrayField(TEXT("lastHitNormal"),VectorJson(CollisionLastHitNormal));
@@ -496,10 +508,30 @@ TSharedPtr<FJsonObject> AVeyrReplay::CollisionEvidence(bool bIncludeTrials) cons
     O->SetNumberField(TEXT("maximumPostPhysicsPenetrationCm"),CollisionMaximumDepth);
     O->SetNumberField(TEXT("maximumPersistentPenetrationSeconds"),CollisionMaximumPersistentSeconds);
     O->SetNumberField(TEXT("probeHitDistanceCm"),CollisionPredictedDistance);
+    O->SetBoolField(TEXT("regionContactObserved"),bCollisionRegionContactObserved);
+    O->SetStringField(TEXT("regionContactComponent"),CollisionRegionContactShape.ToString());
+    O->SetArrayField(TEXT("regionContactDirection"),VectorJson(CollisionRegionContactDirection));
+    O->SetNumberField(TEXT("naturalLandingAttempts"),CollisionLandingAttempts);
+    O->SetNumberField(TEXT("landingRecoveryPushes"),CollisionLandingPushes);
+    O->SetBoolField(TEXT("naturalFlightObserved"),bCollisionFlightObserved);
+    O->SetBoolField(TEXT("naturalLandingObserved"),bCollisionLandingObserved);
+    O->SetBoolField(TEXT("torsoElevatedCapsuleProbeHit"),bCollisionTorsoProbeHit);
+    O->SetNumberField(TEXT("torsoProbeCenterHeightAbovePawnCm"),CollisionTorsoProbeHeight);
+    TArray<FName> Names;CollisionComponentMaximumDepth.GetKeys(Names);Names.Sort(FNameLexicalLess());
+    TArray<TSharedPtr<FJsonValue>> Coverage;
+    for(const FName& Name:Names)
+    {
+        auto Row=MakeShared<FJsonObject>();Row->SetStringField(TEXT("component"),Name.ToString());
+        Row->SetNumberField(TEXT("actualHitEvents"),CollisionComponentHits.FindRef(Name));
+        Row->SetNumberField(TEXT("pushDeltaAttributedToLastReportedShape"),CollisionComponentPushes.FindRef(Name));
+        Row->SetNumberField(TEXT("maximumPostPhysicsPenetrationCm"),CollisionComponentMaximumDepth.FindRef(Name));
+        Coverage.Add(MakeShared<FJsonValueObject>(Row));
+    }
+    O->SetArrayField(TEXT("componentCoverage"),Coverage);
     if(bIncludeTrials)
     {
         O->SetArrayField(TEXT("trials"),CollisionTrials);
-        O->SetStringField(TEXT("scope"),TEXT("Fresh-world ordinary sprint/Q-roll/Space-blink inputs into actual evaluated Dragon Pawn blockers. Native OnComponentHit, read-only world capsule sweeps, measured travel and independent post-physics penetration are recorded. No state, resources, transforms or collision settings are changed by validation. This does not replace rendered collision/landing critique."));
+        O->SetStringField(TEXT("scope"),TEXT("Fresh-world ordinary sprint/Q-roll/Space-blink inputs into actual evaluated Dragon Pawn blockers. Native OnComponentHit, read-only world capsule sweeps, measured travel and independent post-physics penetration are recorded. No state, resources, transforms or collision settings are changed by validation. Eight stages require front sprint/roll/blink, left and right flanks, rear, head/neck contact and a native push during natural landing recovery. Elevated torso probes are reported separately and never counted as physical contact. This does not replace rendered collision/landing/corpse critique."));
     }
     return O;
 }
@@ -516,9 +548,19 @@ bool AVeyrReplay::DriveCollisionInputs()
     for(UCapsuleComponent* Part:Parts)
     {
         if(!Part||!Part->GetName().StartsWith(TEXT("VeyrSolid_"))||!Part->IsQueryCollisionEnabled())continue;
-        ++EnabledShapes;FMTDResult MTD;
-        if(Part->ComputePenetration(MTD,Shape,Player->GetComponentLocation(),Rotation))CollisionIndependentDepth=FMath::Max(CollisionIndependentDepth,static_cast<float>(MTD.Distance));
+        ++EnabledShapes;FMTDResult MTD;float Depth=0.f;
+        if(Part->ComputePenetration(MTD,Shape,Player->GetComponentLocation(),Rotation))Depth=static_cast<float>(MTD.Distance);
+        CollisionIndependentDepth=FMath::Max(CollisionIndependentDepth,Depth);
+        float& Maximum=CollisionComponentMaximumDepth.FindOrAdd(Part->GetFName());Maximum=FMath::Max(Maximum,Depth);
     }
+    if(Dragon->SolidBodyPushCount>CollisionLastObservedPushes)
+    {
+        const int32 NewPushes=Dragon->SolidBodyPushCount-CollisionLastObservedPushes;
+        CollisionComponentPushes.FindOrAdd(Dragon->LastSolidBodyPushShape)+=NewPushes;
+        if(CollisionStage==7&&Dragon->Move==EVeyrDragonMove::FlyAway&&Dragon->State==EVeyrDragonState::Recovery)
+            CollisionLandingPushes+=NewPushes;
+    }
+    CollisionLastObservedPushes=Dragon->SolidBodyPushCount;
     CollisionMaximumDepth=FMath::Max(CollisionMaximumDepth,CollisionIndependentDepth);
     CollisionPenetratingSeconds=CollisionIndependentDepth>2.f?CollisionPenetratingSeconds+Dt:0.f;
     CollisionMaximumPersistentSeconds=FMath::Max(CollisionMaximumPersistentSeconds,CollisionPenetratingSeconds);
@@ -527,10 +569,11 @@ bool AVeyrReplay::DriveCollisionInputs()
     if(Knight->bPresentationUsingFallback||!Knight->BlinkVFXDiagnostic.IsEmpty())
     {Finish(false,TEXT("collision exercise encountered an animation/VFX fallback"));return true;}
     auto Neutral=[&](){Knight->SetSprintRequested(false);Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
-    if(CollisionStage>=3)
+    if(CollisionStage>=8)
     {
-        Neutral();Finish(CollisionCompleted==3,TEXT("sprint, roll and explicit blink produced actual Dragon blocking contacts/limited travel with no persistent overlap"));return true;
+        Neutral();Finish(CollisionCompleted==8&&CollisionLandingPushes>0,TEXT("eight collision stages: front sprint/roll/blink, both flanks, rear, head/neck, and native natural-landing push without persistent penetration"));return true;
     }
+    if(CollisionStage>=3)return DriveAnatomyCollisionInputs();
     const TCHAR* Labels[]={TEXT("sprint_into_dragon"),TEXT("roll_into_dragon"),TEXT("blink_into_dragon")};
     if(CollisionStageStarted<=0.f)CollisionStageStarted=Elapsed;
     if(Elapsed-CollisionStageStarted>45.f){Neutral();Finish(false,FString(TEXT("collision trial timeout: "))+Labels[CollisionStage]);return true;}
@@ -623,6 +666,151 @@ bool AVeyrReplay::DriveCollisionInputs()
         if(Passed){++CollisionCompleted;++CollisionStage;CollisionAttempts=0;CollisionStageStarted=Elapsed;}
         else if(++CollisionAttempts>=3)Finish(false,FString(TEXT("collision input did not obtain valid blocking/recovery evidence after three attempts: "))+Labels[CollisionStage]);
     }
+    return true;
+}
+
+bool AVeyrReplay::DriveAnatomyCollisionInputs()
+{
+    static const TCHAR* Labels[]={TEXT("left_flank_contact"),TEXT("right_flank_contact"),TEXT("rear_contact"),TEXT("head_neck_contact"),TEXT("natural_landing_push")};
+    const TCHAR* Label=Labels[CollisionStage-3];
+    const bool Landing=CollisionStage==7;
+    if(CollisionStageStarted<=0.f)CollisionStageStarted=Elapsed;
+    if(Elapsed-CollisionStageStarted>(Landing?150.f:75.f))
+    {Finish(false,FString(TEXT("collision scenario unreached within bounded ordinary-input navigation: "))+Label);return true;}
+    auto Input=[&](FVector Direction,bool Sprint=false,bool Roll=false)
+    {Knight->SetSprintRequested(Sprint);Knight->SetReplayInput(Direction,false,false,Roll,false,false,false);};
+    if(Knight->bLockedOn)Knight->ToggleLockOn();
+    const FVector Feet=Knight->GetFootLocation();const FVector Boss=Dragon->GetActorLocation();
+    const bool Ready=Knight->Action==EVeyrKnightAction::Ready&&Knight->IsGrounded();
+    const bool Flight=Dragon->Move==EVeyrDragonMove::FlyAway&&
+        (Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||Dragon->State==EVeyrDragonState::Recovery);
+    if(Knight->Health<70.f&&Knight->HealingCharges>0&&!Flight)
+    {
+        if(Ready&&SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.1f)
+        {Input(FVector::ZeroVector);Knight->TryHeal();}
+        else Input(Ready?EscapeDirection():FVector::ZeroVector,Ready);
+        return true;
+    }
+    auto Complete=[&]()
+    {
+        auto Trial=MakeShared<FJsonObject>();Trial->SetStringField(TEXT("input"),Label);Trial->SetBoolField(TEXT("passed"),true);
+        Trial->SetNumberField(TEXT("seconds"),Elapsed);Trial->SetStringField(TEXT("actualContactComponent"),CollisionRegionContactShape.ToString());
+        Trial->SetArrayField(TEXT("actualContactPoint"),VectorJson(CollisionRegionContactPoint));
+        Trial->SetArrayField(TEXT("contactDirectionFromDragon"),VectorJson(CollisionRegionContactDirection));
+        Trial->SetNumberField(TEXT("landingRecoveryPushes"),CollisionLandingPushes);
+        Trial->SetNumberField(TEXT("residualPenetrationCm"),CollisionIndependentDepth);
+        Trial->SetNumberField(TEXT("maximumPersistentPenetrationSeconds"),CollisionMaximumPersistentSeconds);
+        CollisionTrials.Add(MakeShared<FJsonValueObject>(Trial));Event(FString(TEXT("collision_verified_"))+Label);
+        ++CollisionStage;++CollisionCompleted;CollisionStageStarted=Elapsed;CollisionPhase=0;
+        bCollisionRegionContactObserved=false;CollisionRegionContactShape=NAME_None;Input(FVector::ZeroVector);
+    };
+    if(Landing)
+    {
+        if(Flight)
+        {
+            if(!bCollisionFlightObserved){bCollisionFlightObserved=true;Event(TEXT("collision_natural_flight_observed"));}
+            if(Dragon->State==EVeyrDragonState::Recovery)
+            {
+                if(!bCollisionLandingObserved){bCollisionLandingObserved=true;Event(TEXT("collision_natural_landing_observed"));}
+                // Once descent begins, stop asking for movement: a recorded
+                // push must be produced by the moving anatomy, not our input.
+                Input(FVector::ZeroVector);return true;
+            }
+            // Move with normal inputs below an actual airborne front foot.
+            // No teleport, modified hit points or forced flight/landing state.
+            const FVector Goal=Dragon->GetLegLocation(CollisionLandingAttempts%2);
+            const float Distance=FVector::Dist2D(Feet,Goal);
+            Input(Ready&&Distance>25.f?(Goal-Feet).GetSafeNormal2D():FVector::ZeroVector,Ready&&Distance>180.f);
+            return true;
+        }
+        if(bCollisionLandingObserved)
+        {
+            if(!Ready){Input(FVector::ZeroVector);return true;}
+            if(CollisionLandingPushes>0&&CollisionIndependentDepth<=2.f){Complete();return true;}
+            ++CollisionLandingAttempts;Event(TEXT("collision_landing_did_not_intersect_player"),false);
+            bCollisionFlightObserved=bCollisionLandingObserved=false;
+            if(CollisionLandingAttempts>=3)
+            {Finish(false,TEXT("three natural landings completed without a native body-push intersection; landing coverage not obtained"));return true;}
+        }
+        // The normal positional AI chooses flight at range. We only request
+        // movement and wait; it remains free to choose a different move.
+        Input(Ready&&FVector::Dist2D(Feet,Boss)<2100.f?EscapeDirection():FVector::ZeroVector,Ready);
+        return true;
+    }
+    if(bCollisionRegionContactObserved&&Ready&&CollisionIndependentDepth<=2.f)
+    {Complete();return true;}
+    if(!Ready){Input(FVector::ZeroVector);return true;}
+    if(Knight->IsTwoHanded()){Input(FVector::ZeroVector);Knight->ToggleGrip();return true;}
+    const bool Threat=Contains(Dragon->GetWarningFootprints(),Feet,50.f);
+    if(Flight)
+    {
+        Input(Threat?EscapeDirection():FVector::ZeroVector,Threat,
+            Threat&&Knight->Stamina>=25.f&&DangerContactDelay()<.3f);return true;
+    }
+    const FVector Forward=Dragon->GetActorForwardVector().GetSafeNormal2D();
+    const FVector Right=Dragon->GetActorRightVector().GetSafeNormal2D();
+    const FVector Desired=CollisionStage==3?-Right:CollisionStage==4?Right:CollisionStage==5?-Forward:Forward;
+    const FVector Radial=(Feet-Boss).GetSafeNormal2D();
+    const bool InSector=FVector::DotProduct(Radial,Desired)>.75f;
+    TInlineComponentArray<UCapsuleComponent*> Parts;Dragon->GetComponents(Parts);
+    UCapsuleComponent* Target=nullptr;
+    const FName TargetName=CollisionStage==6?FName(TEXT("VeyrSolid_Head")):FName(TEXT("VeyrSolid_Torso"));
+    for(UCapsuleComponent* Part:Parts)if(Part&&Part->GetFName()==TargetName)Target=Part;
+    if(!Target){Finish(false,TEXT("anatomical collision target component missing"));return true;}
+    UCapsuleComponent* Player=Knight->GetCapsuleComponent();
+    if(CollisionStage==3||CollisionStage==4)
+    {
+        // Torso may be above a standing Pawn. A probe at actual torso height
+        // verifies that collider separately; it cannot satisfy contact stages.
+        FHitResult Hit;const FVector Center=Target->GetComponentLocation();
+        const FVector Outside=Center+Desired*(Target->GetScaledCapsuleHalfHeight()+Player->GetScaledCapsuleRadius()+100.f);
+        bCollisionTorsoProbeHit|=Target->SweepComponent(Hit,Outside,Center,Player->GetComponentQuat(),Player->GetCollisionShape(),false);
+        CollisionTorsoProbeHeight=static_cast<float>(Center.Z-Player->GetComponentLocation().Z);
+    }
+    if(CollisionStage<6)
+    {
+        // Pick a collider that actually intersects a standing Pawn at this
+        // height. The elevated torso query above is not movement coverage.
+        UCapsuleComponent* Reachable=nullptr;float BestProjection=-TNumericLimits<float>::Max();
+        for(UCapsuleComponent* Part:Parts)
+        {
+            if(!Part||!Part->GetName().StartsWith(TEXT("VeyrSolid_"))||!Part->IsQueryCollisionEnabled())continue;
+            FVector End=Part->GetComponentLocation();End.Z=Player->GetComponentLocation().Z;
+            const FVector Outside=End+Desired*(Part->Bounds.SphereRadius+Player->GetScaledCapsuleRadius()+200.f);
+            FHitResult Hit;
+            if(!Part->SweepComponent(Hit,Outside,End,Player->GetComponentQuat(),Player->GetCollisionShape(),false))continue;
+            if(FVector::DotProduct((Hit.Location-Boss).GetSafeNormal2D(),Desired)<.65f)continue;
+            const float Projection=static_cast<float>(FVector::DotProduct(Hit.Location-Boss,Desired));
+            if(Projection>BestProjection){BestProjection=Projection;Reachable=Part;}
+        }
+        if(Reachable)Target=Reachable;
+    }
+    FVector Goal;
+    if(!InSector)
+    {
+        // Advance around the outside in <=30-degree steps rather than cutting
+        // straight through the body toward the far-side destination.
+        const float Angle=FMath::RadiansToDegrees(FMath::Atan2(FVector::CrossProduct(Radial,Desired).Z,FVector::DotProduct(Radial,Desired)));
+        const FVector Direction=Radial.IsNearlyZero()?Desired:Radial.RotateAngleAxis(FMath::Clamp(Angle,-30.f,30.f),FVector::UpVector);
+        Goal=Boss+Direction*FMath::Max(950.f,static_cast<float>(FVector::Dist2D(Feet,Boss)));
+    }
+    else
+    {
+        Goal=Target->GetComponentLocation();Goal.Z=Feet.Z;
+        if(CollisionStage==6)
+        {
+            // Walk up to the mouth boundary, then hold movement into it while
+            // normal bite motion brings the head into standing-Pawn reach.
+            Goal=HeadApproachGoal()-Forward*30.f;
+        }
+    }
+    FHitResult Probe;FVector End=Goal;End.Z=Player->GetComponentLocation().Z;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrReplayAnatomyApproach),false,Knight);
+    if(GetWorld()->SweepSingleByChannel(Probe,Player->GetComponentLocation(),End,Player->GetComponentQuat(),ECC_Pawn,Player->GetCollisionShape(),Params)&&Probe.GetActor()==Dragon)
+    {CollisionTargetShape=Probe.GetComponent()?Probe.GetComponent()->GetFName():NAME_None;CollisionPredictedDistance=Probe.Distance;}
+    else CollisionPredictedDistance=-1.f;
+    const FVector Direction=(Goal-Feet).GetSafeNormal2D();
+    Input(Direction,FVector::Dist2D(Feet,Goal)>250.f);
     return true;
 }
 
@@ -1191,7 +1379,7 @@ bool AVeyrReplay::DriveBoundaryInputs()
             }
         }
         const bool bRear=BoundaryStage==1;
-        if(Knight->bLockedOn==bRear)Knight->ToggleLockOn();
+        if(Knight->bLockedOn)Knight->ToggleLockOn(); // Guard aim follows normal look input, not elevated head lock.
         bGuard=true;
         if(bRear)
         {
@@ -1218,17 +1406,15 @@ bool AVeyrReplay::DriveBoundaryInputs()
                 Movement=Contains(Dragon->GetWarningFootprints(),Feet,75.f)?EscapeDirection():FVector::ZeroVector;
             }
         }
-        if(bRear)
+        if(APlayerController* Player=Cast<APlayerController>(Knight->GetController()))
         {
-            if(APlayerController* Player=Cast<APlayerController>(Knight->GetController()))
-            {
-                const FVector Source=(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)?
-                    Dragon->GetWarningFootprint().Origin:Dragon->GetActorLocation();
-                const float AwayYaw=(Knight->GetActorLocation()-Source).Rotation().Yaw;
-                const float Error=FMath::FindDeltaAngleDegrees(Player->GetControlRotation().Yaw,AwayYaw);
-                // Normal controller look input; never SetActor/ControlRotation.
-                Player->AddYawInput(FMath::Clamp(Error*.1f,-6.f,6.f));
-            }
+            const FVector Toward=GuardDamageSource()-Knight->GetActorLocation();
+            const float AimYaw=(bRear?-Toward:Toward).Rotation().Yaw;
+            const float Error=FMath::FindDeltaAngleDegrees(Player->GetControlRotation().Yaw,AimYaw);
+            const float YawScale=UInputSettings::GetInputSettings()->bEnableLegacyInputScales?Player->InputYawScale_DEPRECATED:1.f;
+            // Same ordinary mouse-look path in both directions. Keep the
+            // strict facing qualifier; never rotate an actor/controller directly.
+            if(FMath::Abs(YawScale)>.01f)Player->AddYawInput(FMath::Clamp(Error*.18f/YawScale,-8.f,8.f));
         }
         // Permit ordinary recovery healing to survive the natural sequence;
         // it neither replenishes stamina nor contributes guard coverage.
@@ -1242,8 +1428,7 @@ bool AVeyrReplay::DriveBoundaryInputs()
         GuardSampleHealth=Knight->Health;GuardSampleStamina=Knight->Stamina;
         GuardSampleHits=Knight->HitsTaken;GuardSampleBlocks=Knight->GuardedHits;GuardSampleBreaks=Knight->GuardBreaks;
         bGuardSampleHeld=Knight->Action==EVeyrKnightAction::Guard;bGuardSampleGrounded=Knight->IsGrounded();
-        const FVector Threat=(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)?
-            Dragon->GetWarningFootprint().Origin:Dragon->GetActorLocation();
+        const FVector Threat=GuardDamageSource();
         GuardSampleFacing=FVector::DotProduct(Knight->GetActorForwardVector(),(Threat-Knight->GetActorLocation()).GetSafeNormal2D());
         bGuardSampleValid=true;
     }
@@ -1519,6 +1704,19 @@ void AVeyrReplay::TrackFlightWithLookInput()
     const float YawScale=Legacy?PC->InputYawScale_DEPRECATED:1.f,PitchScale=Legacy?PC->InputPitchScale_DEPRECATED:1.f;
     if(FMath::Abs(YawScale)>.01f)PC->AddYawInput(FMath::Clamp(FMath::FindDeltaAngleDegrees(View.Yaw,Aim.Yaw)*.12f/YawScale,-4.f,4.f));
     if(FMath::Abs(PitchScale)>.01f)PC->AddPitchInput(FMath::Clamp(FMath::FindDeltaAngleDegrees(View.Pitch,FMath::Clamp(Aim.Pitch,-25.f,55.f))*.12f/PitchScale,-4.f,4.f));
+}
+
+FVector AVeyrReplay::GuardDamageSource() const
+{
+    if(Dragon->Move==EVeyrDragonMove::Fire||Dragon->Move==EVeyrDragonMove::Bite)return Dragon->GetMouthLocation();
+    // Native claw/stomp/tail damage uses Contacts[0].Start; active footprint0
+    // is its ground projection, which has exactly the same planar guard yaw.
+    const auto Active=Dragon->GetActiveFootprints();
+    if(!Active.IsEmpty())return Active[0].Origin;
+    // FlyAway has no skeletal Contacts; its damage source is AttackOrigin,
+    // the committed landing warning origin, including during Recovery.
+    const auto Warning=Dragon->GetWarningFootprints();
+    return Warning.IsEmpty()?Dragon->GetActorLocation():Warning[0].Origin;
 }
 
 FVector AVeyrReplay::HeadApproachGoal(FName* OutBlocker,float* OutSweepDistance) const

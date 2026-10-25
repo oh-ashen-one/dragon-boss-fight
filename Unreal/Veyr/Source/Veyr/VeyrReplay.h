@@ -108,6 +108,7 @@ private:
     bool bStanceGripPending=false,bStanceGripTarget=false;
     float StanceGripRequestedAt=0;
     bool DriveCollisionInputs();
+    bool DriveAnatomyCollisionInputs();
     TSharedPtr<FJsonObject> CollisionEvidence(bool bIncludeTrials=false) const;
     UFUNCTION() void ObserveCollisionHit(UPrimitiveComponent* HitComponent,AActor* OtherActor,UPrimitiveComponent* OtherComponent,FVector NormalImpulse,const FHitResult& Hit);
     int32 CollisionStage=0,CollisionPhase=0,CollisionHits=0,CollisionHitsBefore=0,CollisionRootBlocksBefore=0,CollisionCompleted=0,CollisionAttempts=0;
@@ -119,6 +120,13 @@ private:
     FVector CollisionOrigin=FVector::ZeroVector,CollisionDirection=FVector::ForwardVector;
     FVector CollisionLastHitPoint=FVector::ZeroVector,CollisionLastHitNormal=FVector::ZeroVector;
     TArray<TSharedPtr<FJsonValue>> CollisionTrials;
+    TMap<FName,int32> CollisionComponentHits,CollisionComponentPushes;
+    TMap<FName,float> CollisionComponentMaximumDepth;
+    int32 CollisionLastObservedPushes=0,CollisionLandingPushes=0,CollisionLandingAttempts=0;
+    bool bCollisionRegionContactObserved=false,bCollisionFlightObserved=false,bCollisionLandingObserved=false,bCollisionTorsoProbeHit=false;
+    float CollisionTorsoProbeHeight=0.f;
+    FName CollisionRegionContactShape=NAME_None;
+    FVector CollisionRegionContactDirection=FVector::ZeroVector,CollisionRegionContactPoint=FVector::ZeroVector;
 
     TArray<TSharedPtr<FJsonValue>> Samples, Events;
     TArray<TSharedPtr<FJsonValue>> CaptureStates;
@@ -159,6 +167,7 @@ private:
     void BeginTerminalVerification();
     void AdvanceRestart(float DeltaSeconds);
     FVector EscapeDirection() const;
+    FVector GuardDamageSource() const;
     FVector HeadApproachGoal(FName* OutBlocker=nullptr,float* OutSweepDistance=nullptr) const;
     float AuthoredKnightSeconds(FName Clip,float Fallback) const;
     float DragonPhaseSeconds(EVeyrDragonMove Move,const TCHAR* Phase,float Fallback) const;
