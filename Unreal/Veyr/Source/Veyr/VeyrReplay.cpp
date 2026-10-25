@@ -8,6 +8,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/InputSettings.h"
+#include "Animation/AnimSequence.h"
 #include "Engine/GameViewportClient.h"
 #include "HAL/IConsoleManager.h"
 #include "ImageUtils.h"
@@ -107,6 +109,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED initialize only after knight and dragon are ready")); return false;
     }
     Knight=ModeActor->Knight; Dragon=ModeActor->Dragon;
+    if(Knight->CameraBoom)AddTickPrerequisiteComponent(Knight->CameraBoom);
     // A new/restarted world never inherits a pending guard trial or readiness latch.
     bGuardRechargeLatched=false;bRearGuardArmed=false;GuardRechargeCount=0;
     LastObservedFullDamageGuardCost=0.f;bGuardSampleValid=false;
@@ -226,6 +229,13 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("collapses"),Dragon->GetCollapseCount()); O->SetNumberField(TEXT("headBonusHits"),Dragon->GetHeadBonusHitCount());
     O->SetNumberField(TEXT("headWindow"),Dragon->GetHeadWindowRemaining());
     O->SetNumberField(TEXT("targetLeg"),TargetLeg);
+    const FVector ReviewLeg=Dragon->GetLegLocation(TargetLeg);
+    const FVector ReviewGoal=ReviewLeg+(ReviewLeg-Dragon->GetActorLocation()).GetSafeNormal2D()*185.f;
+    O->SetNumberField(TEXT("targetLegGoalDistanceCm"),FVector::Dist2D(Knight->GetFootLocation(),ReviewGoal));
+    O->SetNumberField(TEXT("targetLegFacingDot"),FVector::DotProduct(Knight->GetActorForwardVector(),(ReviewLeg-Knight->GetFootLocation()).GetSafeNormal2D()));
+    O->SetBoolField(TEXT("combatHealSeeking"),bCombatHealSeeking);
+    O->SetNumberField(TEXT("estimatedStationarySafetySeconds"),SafeStationarySeconds(Knight->GetFootLocation()));
+    O->SetNumberField(TEXT("dangerContactDelaySeconds"),DangerContactDelay());
     O->SetNumberField(TEXT("struckLeg"),Dragon->GetStruckLegIndex());
     O->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
     O->SetBoolField(TEXT("twoHanded"),Knight->IsTwoHanded());
@@ -268,7 +278,12 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         Metrics->SetBoolField(TEXT("collisionFixApplied"),Knight->CameraBoom->IsCollisionFixApplied());
         Metrics->SetNumberField(TEXT("hiddenProxyParts"),Knight->CameraHiddenProxyParts);
         Metrics->SetNumberField(TEXT("severelyCompressedSeconds"),Knight->CameraSeverelyCompressedSeconds);
-        Metrics->SetNumberField(TEXT("floorClearanceCm"),Knight->CameraFloorClearance);
+        FHitResult FloorHit;FCollisionQueryParams FloorQuery(SCENE_QUERY_STAT(VeyrReplayResolvedFloor),false,Knight);FloorQuery.AddIgnoredActor(Dragon);
+        const FVector Feet=Knight->GetFootLocation();
+        const bool FloorFound=GetWorld()->LineTraceSingleByChannel(FloorHit,Feet+FVector(0,0,250),Feet-FVector(0,0,1500),ECC_Visibility,FloorQuery);
+        Metrics->SetNumberField(TEXT("floorClearanceCm"),Camera.Z-(FloorFound?FloorHit.ImpactPoint.Z:Feet.Z));
+        Metrics->SetBoolField(TEXT("resolvedFloorTraceHit"),FloorFound);
+        Metrics->SetStringField(TEXT("samplingScope"),TEXT("same-frame resolved spring arm; replay tick depends on CameraBoom; floor traced beneath Knight excluding Knight and Dragon"));
         Metrics->SetNumberField(TEXT("upwardPitchCeilingDegrees"),Knight->CameraPitchCeiling);
         Metrics->SetNumberField(TEXT("framingArmCm"),Knight->CameraFramingArm);
         FHitResult Hit;
@@ -727,7 +742,7 @@ bool AVeyrReplay::DriveStanceInputs()
             else if(++StanceAttempt>=10){Finish(false,TEXT("stance trial failed to obtain valid actual contact/roll evidence after ten attempts"));return true;}
             return true;
         }
-        if(Elapsed-StanceRequestedAt>3.f)
+        if(Elapsed-StanceRequestedAt>FMath::Max(3.f,(Roll?AuthoredKnightSeconds(TEXT("Roll"),.78f):Knight->GetAttackDuration(Heavy))+1.f))
         {
             StanceCurrentTrial->SetBoolField(TEXT("verified"),false);
             StanceCurrentTrial->SetStringField(TEXT("failure"),TEXT("action acceptance/completion not observed"));
@@ -736,16 +751,8 @@ bool AVeyrReplay::DriveStanceInputs()
         }
         return true;
     }
-    if(Knight->IsTwoHanded()!=Two&&Available&&Knight->IsGrounded())
-    {
-        Knight->ToggleGrip();
-        if(Knight->IsTwoHanded()==Two)
-        {
-            ++StanceSafeSwitches;StanceSwitchAt=Elapsed;Event(TEXT("stance_safe_grip_switch"));
-        }
-        Neutral();return true;
-    }
-    if(Elapsed-StanceSwitchAt<.35f){Neutral();return true;}
+    if(StanceTrialIndex>=6&&Knight->IsTwoHanded()&&Available)
+    {Knight->ToggleGrip();if(!Knight->IsTwoHanded())++StanceSafeSwitches;Neutral();return true;}
     if(StanceTrialIndex>=6)
     {
         bStancePassed=StanceSafeSwitches>=2&&!Knight->IsTwoHanded()&&StanceDamage[2]>StanceDamage[0]&&
@@ -761,24 +768,33 @@ bool AVeyrReplay::DriveStanceInputs()
     const FVector Leg=Dragon->GetLegLocation(TargetLeg);
     const FVector Goal=Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*185.f;
     const float Distance=FVector::Dist2D(Feet,Goal);
+    // Use the normal one-hand run to approach; ready two hands only at range.
+    const bool DesiredGrip=Two&&(Roll||Distance<80.f);
+    if(Knight->IsTwoHanded()!=DesiredGrip&&Available&&Knight->IsGrounded())
+    {
+        Knight->ToggleGrip();
+        if(Knight->IsTwoHanded()==DesiredGrip){++StanceSafeSwitches;StanceSwitchAt=Elapsed;Event(TEXT("stance_safe_grip_switch"));}
+        Neutral();return true;
+    }
+    if(Elapsed-StanceSwitchAt<.35f){Neutral();return true;}
     // Locked lateral input is a discrete blink, not fine navigation.
     const bool WantStanceLock=Distance<35.f;
     if(Knight->bLockedOn!=WantStanceLock)Knight->ToggleLockOn();
-    const bool FacingStanceLeg=FVector::DotProduct(Knight->GetActorForwardVector(),(Leg-Feet).GetSafeNormal2D())>.97f;
+    const bool FacingStanceLeg=FVector::DotProduct(Knight->GetActorForwardVector(),(Leg-Feet).GetSafeNormal2D())>.85f;
     FVector Movement=Distance>35.f?(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(Distance/160.f,.2f,1.f):FVector::ZeroVector;
     bool Light=false,HeavyInput=false,RollInput=false,Heal=false;
-    const bool SafeRecovery=Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.4f;
-    if(Threat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active))
+    const bool SafeRecovery=SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f;
+    if(Threat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending()))
     {
-        Movement=EscapeDirection();RollInput=Available&&Knight->Stamina>=25.f&&(Dragon->State==EVeyrDragonState::Active||Remaining<.32f);
+        if(Knight->bLockedOn)Knight->ToggleLockOn();
+        Movement=EscapeDirection();RollInput=Available&&Knight->Stamina>=25.f&&DangerContactDelay()<.32f;
     }
     else if(Available&&Knight->IsGrounded()&&Knight->IsTwoHanded()==Two)
     {
         if(Knight->Health<60.f&&Knight->HealingCharges>0&&SafeRecovery){Heal=true;Movement=FVector::ZeroVector;}
         else
         {
-            const float SafeTime=Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:
-                Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:Dragon->State==EVeyrDragonState::Idle?2.f:0.f;
+            const float SafeTime=SafeStationarySeconds(Feet);
             const bool CanTrial=Roll?(SafeRecovery||(Dragon->IsHeadExposed()&&Remaining>1.1f)):
                 !Down&&!Dragon->IsAirborne()&&Distance<35.f&&FacingStanceLeg&&SafeTime>Knight->GetAttackDuration(Heavy)+.1f;
             if(CanTrial&&Knight->Stamina>=(Roll?55.f:Heavy?70.f:55.f))
@@ -808,7 +824,8 @@ bool AVeyrReplay::DriveBoundaryInputs()
     const FVector Feet=Knight->GetFootLocation();
     const bool bAvailable=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
     const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
-    const bool bSafeRecovery=Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.35f;
+    const float HealSeconds=AuthoredKnightSeconds(TEXT("Heal"),2.4f);
+    const bool bSafeRecovery=SafeStationarySeconds(Feet)>=HealSeconds+.10f;
     FVector Movement=FVector::ZeroVector;
     bool bHeal=false,bGuard=false;
     auto Next=[&](int32 Stage,const TCHAR* Name)
@@ -830,8 +847,15 @@ bool AVeyrReplay::DriveBoundaryInputs()
     if(ReplayMode==TEXT("healing"))
     {
         if(Knight->Health>100.01f){Finish(false,TEXT("healing exceeded 100 HP cap"));return true;}
-        if(BoundaryStage==0&&Knight->Health<99.99f&&bAvailable&&Knight->IsGrounded()&&bSafeRecovery)
+        if(BoundaryStage==0&&Knight->Health<99.99f&&!bSafeRecovery)
         {
+            if(Knight->bLockedOn)Knight->ToggleLockOn();
+            Movement=EscapeDirection();
+        }
+        if(BoundaryStage==0&&Knight->Health<99.99f&&bAvailable&&Knight->IsGrounded()&&bSafeRecovery&&
+           (Knight->HealingCharges>0||SafeStationarySeconds(Feet)>=HealSeconds+.30f))
+        {
+            BoundaryHealDuration=HealSeconds;BoundaryEmptyObservation=HealSeconds+.15f;
             TrialHealth=Knight->Health;TrialCharges=Knight->HealingCharges;
             TrialHeals=Knight->SuccessfulHeals;TrialHits=Knight->HitsTaken;
             Movement=FVector::ZeroVector;bHeal=true;
@@ -855,7 +879,7 @@ bool AVeyrReplay::DriveBoundaryInputs()
                 bHealCapVerified|=TrialHealth>45.f&&FMath::IsNearlyEqual(Knight->Health,100.f,.02f);
                 ++VerifiedHealCharges;Next(2,TEXT("healing_charge_verified"));
             }
-            else if(Knight->SuccessfulHeals>TrialHeals+1||Elapsed-BoundaryStageStarted>1.8f)
+            else if(Knight->SuccessfulHeals>TrialHeals+1||Elapsed-BoundaryStageStarted>BoundaryHealDuration+.5f)
             {Finish(false,TEXT("requested heal did not complete exactly once within its action duration"));return true;}
         }
         else if(BoundaryStage==2)
@@ -869,7 +893,7 @@ bool AVeyrReplay::DriveBoundaryInputs()
             if(Knight->Action==EVeyrKnightAction::Heal||Knight->HealingCharges!=0||Knight->SuccessfulHeals!=TrialHeals||
                 Knight->HitsTaken!=TrialHits||!FMath::IsNearlyEqual(Knight->Health,TrialHealth,.02f))
             {Finish(false,TEXT("injured empty-flask trial changed action/resources/health or was contaminated by damage"));return true;}
-            if(Elapsed-BoundaryStageStarted>=1.4f)
+            if(Elapsed-BoundaryStageStarted>=BoundaryEmptyObservation)
             {
                 bEmptyHealRejected=TrialHealth<100.f&&TrialCharges==0&&TrialHits>0;
                 TSharedPtr<FJsonObject> Trial=MakeShared<FJsonObject>();
@@ -973,8 +997,13 @@ bool AVeyrReplay::DriveBoundaryInputs()
         }
         // Permit ordinary recovery healing to survive the natural sequence;
         // it neither replenishes stamina nor contributes guard coverage.
-        if(Knight->Health<45.f&&Knight->HealingCharges>0&&bAvailable&&bSafeRecovery)
+        if(Knight->Health<75.f&&Knight->HealingCharges>0&&bAvailable&&bSafeRecovery)
         {bGuard=false;bHeal=true;Movement=FVector::ZeroVector;}
+        else if(Knight->Health<75.f&&Knight->HealingCharges>0&&bAvailable&&!bSafeRecovery)
+        {
+            bGuard=false;Movement=EscapeDirection();
+            if(Knight->bLockedOn)Knight->ToggleLockOn();
+        }
         GuardSampleHealth=Knight->Health;GuardSampleStamina=Knight->Stamina;
         GuardSampleHits=Knight->HitsTaken;GuardSampleBlocks=Knight->GuardedHits;GuardSampleBreaks=Knight->GuardBreaks;
         bGuardSampleHeld=Knight->Action==EVeyrKnightAction::Guard;bGuardSampleGrounded=Knight->IsGrounded();
@@ -1031,16 +1060,16 @@ bool AVeyrReplay::DriveScenarioInputs()
         // Returning inward may provoke normal repositioning; it is not coverage.
         if(!bAvoidanceGoalAvailable)AvoidanceGoal=FVector::ZeroVector;
         Toward(AvoidanceGoal);
-        if(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)
+        if(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending())
         {
             if(Contains(Dragon->GetWarningFootprints(),Feet,65.f))
             {
                 Movement=EscapeDirection();
-                bRoll=bAvailable&&Knight->Stamina>=25.f&&(Dragon->State==EVeyrDragonState::Active||Remaining<.32f);
+                bRoll=bAvailable&&Knight->Stamina>=25.f&&DangerContactDelay()<.32f;
             }
             else Movement=FVector::ZeroVector; // Do not step back into a read telegraph.
         }
-        if(Knight->Health<65.f&&Knight->HealingCharges>0&&Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.3f&&bAvailable)
+        if(Knight->Health<75.f&&Knight->HealingCharges>0&&SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f&&bAvailable)
         {
             bHeal=true;Movement=FVector::ZeroVector;
         }
@@ -1108,18 +1137,109 @@ bool AVeyrReplay::DriveScenarioInputs()
                 break;
             }
             case 8:
-                bGuard=Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active;
-                if(Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.3f&&bAvailable&&Knight->Health<100.f)
-                {
-                    bGuard=false;bHeal=true;
-                }
-                if(Knight->SuccessfulHeals>0)Next();
+                if(Knight->bLockedOn)Knight->ToggleLockOn();
+                if(Knight->Action!=EVeyrKnightAction::Heal)Movement=EscapeDirection();
+                if(SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f&&bAvailable&&Knight->Health<100.f)
+                {bHeal=true;Movement=FVector::ZeroVector;}
+                if(Knight->SuccessfulHeals>0&&bAvailable)Next();
                 break;
             default:break;
         }
     }
     Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,bGuard);
     return true;
+}
+
+float AVeyrReplay::AuthoredKnightSeconds(FName Clip,float Fallback) const
+{
+    const FVeyrVisualClip* C=Knight&&Knight->CustomuseVisualDefinition?Knight->CustomuseVisualDefinition->Clips.Find(Clip):nullptr;
+    if(!C||!C->Sequence)return Fallback;
+    const float End=C->EndSeconds<0.f?C->Sequence->GetPlayLength():C->EndSeconds;
+    return End>C->StartSeconds?(End-C->StartSeconds)/FMath::Clamp(C->GameplayPlayRate,.1f,4.f):Fallback;
+}
+
+float AVeyrReplay::DragonPhaseSeconds(EVeyrDragonMove Move,const TCHAR* Phase,float Fallback) const
+{
+    if(!Dragon||!Dragon->VisualDefinition)return Fallback;
+    const TCHAR* Prefix=Move==EVeyrDragonMove::Fire?TEXT("Fire"):Move==EVeyrDragonMove::FlyAway?TEXT("Flight"):
+        Move==EVeyrDragonMove::ClawSwipe?TEXT("Claw"):Move==EVeyrDragonMove::BackStomp?TEXT("Stomp2"):
+        Move==EVeyrDragonMove::TailSmack?TEXT("Tail"):TEXT("Bite");
+    const FVeyrVisualClip* C=Dragon->VisualDefinition->Clips.Find(FName(*(FString(Prefix)+Phase)));
+    if(!C||!C->Sequence)return Fallback;
+    const float End=C->EndSeconds<0.f?C->Sequence->GetPlayLength():C->EndSeconds;
+    float Duration=End>C->StartSeconds?End-C->StartSeconds:Fallback;
+    if(Move==EVeyrDragonMove::FlyAway&&FCString::Strcmp(Phase,TEXT("Active"))==0&&C->ApprovedSourceFile.Contains(TEXT("Dragon_FlyHover")))Duration*=2.f;
+    return Duration;
+}
+
+bool AVeyrReplay::LandingDangerPending() const
+{
+    if(!Dragon||Dragon->Move!=EVeyrDragonMove::FlyAway||Dragon->State!=EVeyrDragonState::Recovery)return false;
+    const FVeyrVisualClip* C=Dragon->VisualDefinition?Dragon->VisualDefinition->Clips.Find(TEXT("FlightRecovery")):nullptr;
+    if(!C||!C->ApprovedSourceFile.StartsWith(TEXT("Dragon_Land")))return false;
+    const float Impact=C->ImpactSeconds>=0.f?C->ImpactSeconds:25.f/30.f;
+    return Dragon->GetStateElapsed()<Impact+.20f;
+}
+
+float AVeyrReplay::DangerContactDelay() const
+{
+    if(!Dragon)return 0.f;
+    if(LandingDangerPending())
+    {
+        const FVeyrVisualClip& C=Dragon->VisualDefinition->Clips.FindChecked(TEXT("FlightRecovery"));
+        return FMath::Max(0.f,(C.ImpactSeconds>=0.f?C.ImpactSeconds:25.f/30.f)-Dragon->GetStateElapsed());
+    }
+    if(Dragon->State==EVeyrDragonState::Windup)return FMath::Max(0.f,Dragon->GetStateDuration()-Dragon->GetStateElapsed());
+    if(Dragon->State==EVeyrDragonState::Active&&Dragon->Move==EVeyrDragonMove::FlyAway)
+        return FMath::Max(0.f,Dragon->GetStateDuration()-Dragon->GetStateElapsed())+25.f/30.f;
+    return 0.f;
+}
+
+float AVeyrReplay::SafeStationarySeconds(const FVector& Point) const
+{
+    if(!Dragon)return 0.f;
+    const float Remaining=FMath::Max(0.f,Dragon->GetStateDuration()-Dragon->GetStateElapsed());
+    const bool InWarning=Contains(Dragon->GetWarningFootprints(),Point,110.f);
+    if(Dragon->IsPointInsideActiveDanger(Point))return 0.f;
+    if(LandingDangerPending()&&InWarning)return FMath::Max(0.f,DangerContactDelay()-.15f);
+    const int32 Predicted=Dragon->PredictPositionalMove(Point);
+    // At a stationary position the ordinary positional policy selects this move.
+    // Anti-repeat reposition and periodic flight cannot strike earlier than this
+    // bounded wind-up. No forced boss choice or state mutation is involved.
+    float NextWindup=.4f;
+    if(Predicted>=0&&Predicted<6)NextWindup=FMath::Min(1.5f,DragonPhaseSeconds(static_cast<EVeyrDragonMove>(Predicted),TEXT("Windup"),.4f));
+    const float Recovery=DragonPhaseSeconds(Dragon->Move,TEXT("Recovery"),.5f);
+    float Window=0.f;
+    switch(Dragon->State)
+    {
+        case EVeyrDragonState::Windup:
+            Window=InWarning?Remaining:Remaining+DragonPhaseSeconds(Dragon->Move,TEXT("Active"),.3f)+Recovery+.9f+NextWindup;break;
+        case EVeyrDragonState::Active:Window=InWarning?0.f:Remaining+Recovery+.9f+NextWindup;break;
+        case EVeyrDragonState::Recovery:Window=Remaining+.9f+NextWindup;break;
+        case EVeyrDragonState::Idle:Window=Remaining+NextWindup;break;
+        case EVeyrDragonState::Reposition:Window=Remaining+.75f+.4f;break;
+        case EVeyrDragonState::Buckle:Window=Remaining+1.f+7.f+2.f+.8f+.4f;break;
+        case EVeyrDragonState::Collapse:Window=Remaining+7.f+2.f+.8f+.4f;break;
+        case EVeyrDragonState::Exposed:Window=Remaining+2.f+.8f+.4f;break;
+        case EVeyrDragonState::Rise:Window=Remaining+.8f+.4f;break;
+        case EVeyrDragonState::Dead:Window=1000.f;break;
+        default:break;
+    }
+    return FMath::Max(0.f,Window-.15f);
+}
+
+void AVeyrReplay::TrackFlightWithLookInput()
+{
+    if(!Knight||!Dragon||Knight->bLockedOn||Dragon->Move!=EVeyrDragonMove::FlyAway||
+       (Dragon->State!=EVeyrDragonState::Windup&&Dragon->State!=EVeyrDragonState::Active&&Dragon->State!=EVeyrDragonState::Recovery))return;
+    APlayerController* PC=Cast<APlayerController>(Knight->GetController());
+    if(!PC||!Knight->CombatCamera)return;
+    const FRotator Aim=(Dragon->GetHeadLocation()-Knight->CombatCamera->GetComponentLocation()).Rotation();
+    const FRotator View=PC->GetControlRotation();
+    const bool Legacy=UInputSettings::GetInputSettings()->bEnableLegacyInputScales;
+    const float YawScale=Legacy?PC->InputYawScale_DEPRECATED:1.f,PitchScale=Legacy?PC->InputPitchScale_DEPRECATED:1.f;
+    if(FMath::Abs(YawScale)>.01f)PC->AddYawInput(FMath::Clamp(FMath::FindDeltaAngleDegrees(View.Yaw,Aim.Yaw)*.12f/YawScale,-4.f,4.f));
+    if(FMath::Abs(PitchScale)>.01f)PC->AddPitchInput(FMath::Clamp(FMath::FindDeltaAngleDegrees(View.Pitch,FMath::Clamp(Aim.Pitch,-25.f,55.f))*.12f/PitchScale,-4.f,4.f));
 }
 
 FVector AVeyrReplay::EscapeDirection() const
@@ -1154,6 +1274,12 @@ void AVeyrReplay::DriveInputs()
     const FVector Feet=Knight->GetFootLocation();
     const bool bAvailable=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
     const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
+    if(ReplayMode!=TEXT("death"))
+    {
+        if(bCombatHealSeeking&&(Knight->SuccessfulHeals>CombatHealCountAtRequest||Knight->HealingCharges<=0))bCombatHealSeeking=false;
+        if(!bCombatHealSeeking&&Knight->Health<75.f&&Knight->HealingCharges>0)
+        {bCombatHealSeeking=true;CombatHealCountAtRequest=Knight->SuccessfulHeals;Event(TEXT("combat_heal_retreat_requested"),false);}
+    }
     if(ReplayMode==TEXT("death"))
     {
         const FVector Goal=Dragon->GetHeadLocation()+Dragon->GetActorForwardVector()*120.f;
@@ -1205,20 +1331,30 @@ void AVeyrReplay::DriveInputs()
                 Movement=(Dragon->GetWarningFootprint().Origin-Feet).GetSafeNormal2D(); bRoll=true;bWantLock=false;
             }
         }
-        else if(bThreat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active))
+        else if(bThreat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending()))
         {
             Movement=EscapeDirection();bWantLock=false;
-            bRoll=bAvailable&&Knight->Stamina>=25.f&&(Dragon->State==EVeyrDragonState::Active||Remaining<.32f);
+            bRoll=bAvailable&&Knight->Stamina>=25.f&&DangerContactDelay()<.32f;
+        }
+        else if(bCombatHealSeeking)
+        {
+            bWantLock=false;
+            if(bAvailable&&Knight->IsGrounded()&&SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f)
+            {bHeal=true;Movement=FVector::ZeroVector;Event(TEXT("combat_heal_safe_window"),false);}
+            else Movement=Knight->Action==EVeyrKnightAction::Heal?FVector::ZeroVector:EscapeDirection();
+        }
+        else if(Dragon->Move==EVeyrDragonMove::FlyAway&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending()))
+        {
+            // A cleared landing telegraph is a waiting position, not a new leg
+            // destination. Stay out until contact ends and let lock-on frame flight.
+            Movement=FVector::ZeroVector;bWantLock=true;
         }
         else if(bAvailable&&Knight->IsGrounded())
         {
-            const bool bSafeHeal=(Dragon->State==EVeyrDragonState::Recovery&&Remaining>1.35f)||bDown;
-            if(Knight->Health<48.f&&Knight->HealingCharges>0&&bSafeHeal){bHeal=true;Movement=FVector::ZeroVector;}
-            else if(!bHeadWaypoint&&GoalDistance<GoalTolerance&&FacingStrike&&!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Rise&&Dragon->State!=EVeyrDragonState::Reposition)
+            if(!bHeadWaypoint&&GoalDistance<GoalTolerance&&FacingStrike&&!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Rise&&Dragon->State!=EVeyrDragonState::Reposition)
             {
                 Movement=FVector::ZeroVector;
-                const float SafeTime=Dragon->IsHeadExposed()?Remaining-.1f:
-                    Dragon->State==EVeyrDragonState::Windup?Remaining-.22f:Dragon->State==EVeyrDragonState::Recovery?Remaining+.75f:20.f;
+                const float SafeTime=Dragon->IsHeadExposed()?Remaining-.1f:SafeStationarySeconds(Feet);
                 const bool bNeedLight=(ReplayMode==TEXT("core")||bLegIsolation)&&!bLightLegContact&&!bDown;
                 const float Reserve=bDown?0.f:25.f;
                 bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>Knight->GetAttackDuration(true)&&(!bDown||Dragon->IsHeadExposed());
@@ -1230,6 +1366,7 @@ void AVeyrReplay::DriveInputs()
     }
     if(Knight->bLockedOn!=bWantLock)Knight->ToggleLockOn();
     Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,false);
+    TrackFlightWithLookInput();
 }
 
 void AVeyrReplay::ServiceCapture()
@@ -1572,7 +1709,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Stance->SetNumberField(TEXT("oneHandRollDuration"),StanceRollDurations[0]);Stance->SetNumberField(TEXT("twoHandRollDuration"),StanceRollDurations[1]);
     Stance->SetStringField(TEXT("coverage"),TEXT("8.5 seconds without replay/lock input, with sampled native knight/dragon head motion; actual accepted light/heavy duration and exactly one leg contact per grip corroborated by boss HP loss; active ToggleGrip rejection; valid switches to two-hand and back; roll duration .78 imported/.58 proxy, 25 stamina and .08-.44 immunity/recovery in both grips. Input handlers only; E hardware binding and visual pose acceptance require separate native review."));
     Root->SetObjectField(TEXT("stance"),Stance);
-    Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for 1.4s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; rear trial recharges with guard released to75 then arms (48reserve hysteresis, >=40contact qualifier); break requires precontact stamina below max(12,0.9*observed nonlethal full damage); natural attacks and normal controller yaw input only"));
+    Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for one authored heal duration plus0.15s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; rear trial recharges with guard released to75 then arms (48reserve hysteresis, >=40contact qualifier); break requires precontact stamina below max(12,0.9*observed nonlethal full damage); natural attacks and normal controller yaw input only"));
     Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));
     Root->SetStringField(TEXT("avoidanceCoverageDefinition"),TEXT("inside actual warning at least once during windup, then no HitsTaken increase through completed recovery; no boss move forcing"));
     Root->SetNumberField(TEXT("terminalSeconds"),TerminalSeconds);

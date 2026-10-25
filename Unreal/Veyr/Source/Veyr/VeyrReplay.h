@@ -8,6 +8,7 @@ class AVeyrKnight;
 class AVeyrDragon;
 class FJsonObject;
 class FJsonValue;
+enum class EVeyrDragonMove : uint8;
 
 /** Value-only result: no UObject or replay-owned pointers cross the worker boundary. */
 struct FVeyrVideoWriteResult
@@ -139,4 +140,14 @@ private:
     void BeginTerminalVerification();
     void AdvanceRestart(float DeltaSeconds);
     FVector EscapeDirection() const;
+    float AuthoredKnightSeconds(FName Clip,float Fallback) const;
+    float DragonPhaseSeconds(EVeyrDragonMove Move,const TCHAR* Phase,float Fallback) const;
+    float SafeStationarySeconds(const FVector& Point) const;
+    float DangerContactDelay() const;
+    bool LandingDangerPending() const;
+    void TrackFlightWithLookInput();
+    bool bCombatHealSeeking=false;
+    int32 CombatHealCountAtRequest=0;
+    float BoundaryHealDuration=0,BoundaryEmptyObservation=0;
+
 };
