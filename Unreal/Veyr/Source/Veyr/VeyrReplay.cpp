@@ -201,6 +201,24 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("warningContainmentFailures"),Dragon->WarningContainmentFailures);
     O->SetStringField(TEXT("importedCombatDiagnostic"),Dragon->ImportedCombatDiagnostic);
     O->SetBoolField(TEXT("importedCombatPoseValid"),Dragon->HasValidImportedCombatPose());
+    O->SetBoolField(TEXT("biteGroundAimReady"),Dragon->bBiteGroundAimReady);
+    O->SetNumberField(TEXT("biteGroundPitchDegrees"),Dragon->BiteGroundPitchDegrees);
+    O->SetNumberField(TEXT("biteStrikeMuzzleHeightCm"),Dragon->BiteGroundStrikeMuzzleHeightCm);
+    O->SetStringField(TEXT("biteGroundAimDiagnostic"),Dragon->BiteGroundAimDiagnostic);
+    O->SetBoolField(TEXT("anatomicalLegContactsReady"),Dragon->bAnatomicalLegContactsReady);
+    O->SetStringField(TEXT("legContactDiagnostic"),Dragon->LegContactDiagnostic);
+    TArray<TSharedPtr<FJsonValue>> LegGeometry;
+    for(int32 I=0;I<4;++I)
+    {
+        TSharedPtr<FJsonObject> Leg=MakeShared<FJsonObject>();
+        Leg->SetNumberField(TEXT("region"),I);
+        Leg->SetArrayField(TEXT("ankle"),VectorJson(Dragon->GetLegLocation(I)));
+        Leg->SetArrayField(TEXT("hock"),VectorJson(Dragon->GetLegHockLocation(I)));
+        Leg->SetArrayField(TEXT("knee"),VectorJson(Dragon->GetLegKneeLocation(I)));
+        Leg->SetNumberField(TEXT("calfRadiusCm"),Dragon->GetLegContactRadius(I));
+        LegGeometry.Add(MakeShared<FJsonValueObject>(Leg));
+    }
+    O->SetArrayField(TEXT("legContactGeometry"),LegGeometry);
     const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
     O->SetArrayField(TEXT("mouth"),VectorJson(Dragon->GetMouthLocation()));
     O->SetArrayField(TEXT("flameDirection"),VectorJson(Beam.Direction));

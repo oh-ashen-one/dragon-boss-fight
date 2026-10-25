@@ -32,6 +32,29 @@ namespace
         Material->SetVectorParameterValue(TEXT("BaseColor"),Color);
     }
     int32 MoveIndex(EVeyrDragonMove Move) { return static_cast<int32>(Move); }
+
+    /** Exact distance from a limb's capsule axis to one triangle of the blade's
+     * swept quadrilateral. Includes interior crossings and degenerate sweeps. */
+    float SegmentTriangleDistance(const FVector& Start,const FVector& End,
+        const FVector& A,const FVector& B,const FVector& C)
+    {
+        float Distance=TNumericLimits<float>::Max();
+        auto Edge=[&](const FVector& P,const FVector& Q)
+        {
+            FVector OnLimb,OnEdge;
+            FMath::SegmentDistToSegmentSafe(Start,End,P,Q,OnLimb,OnEdge);
+            Distance=FMath::Min(Distance,static_cast<float>(FVector::Dist(OnLimb,OnEdge)));
+        };
+        Edge(A,B);Edge(B,C);Edge(C,A);
+        if(FVector::CrossProduct(B-A,C-A).SizeSquared()>1.e-4f)
+        {
+            FVector Intersection,Normal;
+            if(FMath::SegmentTriangleIntersection(Start,End,A,B,C,Intersection,Normal))return 0.f;
+            Distance=FMath::Min(Distance,static_cast<float>(FVector::Dist(Start,FMath::ClosestPointOnTriangleToPoint(Start,A,B,C))));
+            Distance=FMath::Min(Distance,static_cast<float>(FVector::Dist(End,FMath::ClosestPointOnTriangleToPoint(End,A,B,C))));
+        }
+        return Distance;
+    }
 }
 
 AVeyrDragon::AVeyrDragon()
@@ -323,6 +346,83 @@ float AVeyrDragon::WalkCycleDistance() const
     if(Clip&&Clip->NominalSpeedCmPerSecond>0.f)
         return Clip->NominalSpeedCmPerSecond*VisualClipDuration(TEXT("Walk"),3.2f);
     return 134.f;
+}
+
+bool AVeyrDragon::HasGroundTargetBite() const
+{
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(TEXT("BiteActive")):nullptr;
+    return Clip&&Clip->Sequence&&Clip->ApprovedSourceFile.Contains(TEXT("Dragon_Bite_Blender_v2"));
+}
+
+TMap<FName,FRotator> AVeyrDragon::BiteGroundRotations(float SourceSeconds,float PitchDegrees) const
+{
+    TMap<FName,FRotator> Result;
+    if(!HasGroundTargetBite()||BiteNeckBase.IsNone()||BiteNeckMiddle.IsNone()||BiteHead.IsNone())return Result;
+    const FVeyrVisualClip& Windup=VisualDefinition->Clips.FindChecked(TEXT("BiteWindup"));
+    const FVeyrVisualClip& Active=VisualDefinition->Clips.FindChecked(TEXT("BiteActive"));
+    const FVeyrVisualClip& Recovery=VisualDefinition->Clips.FindChecked(TEXT("BiteRecovery"));
+    const float Finish=Recovery.EndSeconds<0.f?Recovery.Sequence->GetPlayLength():Recovery.EndSeconds;
+    const float WindupWeight=Ease((SourceSeconds-Windup.StartSeconds)/FMath::Max(.001f,Active.StartSeconds-Windup.StartSeconds));
+    const float RecoveryWeight=1.f-Ease((SourceSeconds-Active.EndSeconds)/FMath::Max(.001f,Finish-Active.EndSeconds));
+    const float Pitch=-FMath::Clamp(PitchDegrees,0.f,50.f)*FMath::Min(WindupWeight,RecoveryWeight);
+    // Distributed curvature, never a translated/stretched neck or an enlarged
+    // invisible hit volume. Each joint stays within the native modifier limits.
+    Result.Add(BiteNeckBase,FRotator(Pitch*.4f,0,0));
+    Result.Add(BiteNeckMiddle,FRotator(Pitch*.4f,0,0));
+    Result.Add(BiteHead,FRotator(Pitch*.2f,0,0));
+    return Result;
+}
+
+bool AVeyrDragon::CalibrateBiteGroundAim()
+{
+    bBiteGroundAimReady=false;BiteGroundPitchDegrees=0.f;BiteGroundStrikeMuzzleHeightCm=0.f;
+    BiteNeckBase=BiteNeckMiddle=BiteHead=NAME_None;BiteGroundAimDiagnostic.Reset();
+    if(!HasGroundTargetBite())return true;
+    const FVeyrVisualBoneTarget* Neck=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
+    const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
+    if(!Neck||!Head)return false;
+    BiteNeckMiddle=Neck->BoneName;BiteHead=Head->BoneName;
+    BiteNeckBase=AttackPoseProbe->GetParentBone(BiteNeckMiddle);
+    if(BiteNeckBase.IsNone()||BiteNeckBase==BiteNeckMiddle||BiteNeckMiddle==BiteHead)
+    {BiteGroundAimDiagnostic=TEXT("Ground bite requires the measured three-joint neck chain");return false;}
+    const FVeyrVisualClip& Active=VisualDefinition->Clips.FindChecked(TEXT("BiteActive"));
+    const float StrikeSource=Active.ImpactSeconds>=0.f?Active.ImpactSeconds:18.f/30.f;
+    const float StrikeTrimmed=FMath::Clamp(StrikeSource-Active.StartSeconds,0.f,VisualClipDuration(TEXT("BiteActive"),.633333f));
+    const float HalfHeight=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleHalfHeight():122.f;
+    const float TorsoHeight=HalfHeight*1.3f;
+    auto SampleHeight=[&](float Degrees,float& Height)
+    {
+        if(!AttackPoseProbe->SetComponentSpaceBoneRotations(BiteGroundRotations(StrikeSource,Degrees))||
+           !AttackPoseProbe->SampleClipTime(TEXT("BiteActive"),StrikeTrimmed))return false;
+        FTransform Mouth;
+        if(!AttackPoseProbe->GetBoneTargetWorldTransform(TEXT("mouth"),Mouth))return false;
+        Height=Mouth.GetLocation().Z-GetActorLocation().Z;return FMath::IsFinite(Height);
+    };
+    float HighHeight=0.f,LowHeight=0.f;
+    if(!SampleHeight(0.f,LowHeight)||!SampleHeight(50.f,HighHeight))
+    {BiteGroundAimDiagnostic=TEXT("Ground bite native pose calibration failed");return false;}
+    if(LowHeight>TorsoHeight)
+    {
+        float Low=0.f,High=50.f;
+        // If the anatomical bound cannot reach torso centre, use its nearest
+        // pose only when the unchanged physical jaw capsule reaches the body.
+        if(HighHeight<=TorsoHeight)
+            for(int32 I=0;I<10;++I)
+            {
+                const float Mid=(Low+High)*.5f;float Height=0.f;
+                if(!SampleHeight(Mid,Height))return false;
+                if(Height>TorsoHeight)Low=Mid;else High=Mid;
+            }
+        BiteGroundPitchDegrees=High;
+    }
+    if(!SampleHeight(BiteGroundPitchDegrees,BiteGroundStrikeMuzzleHeightCm))return false;
+    // The existing bite capsule radius is 100 cm (ReadImportedContactPose).
+    bBiteGroundAimReady=BiteGroundStrikeMuzzleHeightCm>=100.f&&
+        BiteGroundStrikeMuzzleHeightCm-100.f<=2.f*HalfHeight;
+    BiteGroundAimDiagnostic=FString::Printf(TEXT("Ground bite pitch %.2f degrees; strike muzzle %.2f cm; torso target %.2f cm; unchanged jaw radius 100 cm; %s"),
+        BiteGroundPitchDegrees,BiteGroundStrikeMuzzleHeightCm,TorsoHeight,bBiteGroundAimReady?TEXT("reachable"):TEXT("outside anatomical reach"));
+    AttackPoseProbe->SetComponentSpaceBoneRotations({});
+    return bBiteGroundAimReady;
 }
 
 bool AVeyrDragon::ReadTurnTrajectory(float SourceSeconds,FVector& Translation,float& YawDegrees) const
@@ -617,6 +717,13 @@ void AVeyrDragon::ReceiveSword(const FVector& Origin,const FVector& Forward,bool
     {
         float Score;
         if(SwordContact(Origin,Forward,GetLegLocation(I),75.f,Score)&&Score<Best){Best=Score;Region=I;}
+        if(bUsingCustomuseVisual&&bAnatomicalLegContactsReady)
+        {
+            const FVector Knee=GetLegKneeLocation(I),Hock=GetLegHockLocation(I),Ankle=GetLegLocation(I);
+            const float Radius=GetLegContactRadius(I);
+            for(const FVector& Point:{FMath::ClosestPointOnSegment(Origin,Knee,Hock),FMath::ClosestPointOnSegment(Origin,Hock,Ankle)})
+                if(SwordContact(Origin,Forward,Point,Radius,Score)&&Score<Best){Best=Score;Region=I;}
+        }
     }
     float Score;
     if(SwordContact(Origin,Forward,GetHeadLocation(),100.f,Score)&&Score<Best){Best=Score;Region=4;}
@@ -649,7 +756,21 @@ bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& P
     {
         const float Radius=I<4?75.f:100.f;
         const float D=Distance(I<4?GetLegLocation(I):GetHeadLocation());
-        if(D<=Radius+8.f&&D-Radius<Best){Best=D-Radius;Region=I;}
+        float SurfaceDistance=D-Radius;
+        if(I<4&&bUsingCustomuseVisual&&bAnatomicalLegContactsReady)
+        {
+            auto LimbDistance=[&](const FVector& A,const FVector& B)
+            {
+                return FMath::Min(SegmentTriangleDistance(A,B,CurrentBase,CurrentTip,PreviousTip),
+                    SegmentTriangleDistance(A,B,CurrentBase,PreviousTip,PreviousBase));
+            };
+            const FVector Knee=GetLegKneeLocation(I),Hock=GetLegHockLocation(I),Ankle=GetLegLocation(I);
+            SurfaceDistance=FMath::Min(SurfaceDistance,
+                FMath::Min(LimbDistance(Knee,Hock),LimbDistance(Hock,Ankle))-GetLegContactRadius(I));
+        }
+        // Keep the existing ankle sphere and head sphere, plus the measured
+        // lower-leg axes. One deepest region wins; blade thickness stays 8 cm.
+        if(SurfaceDistance<=8.f&&SurfaceDistance<Best){Best=SurfaceDistance;Region=I;}
     }
     if(Region<0)return false;
     ApplySwordRegion(Region,bHeavy,SwingId,DamageMultiplier);
@@ -681,6 +802,25 @@ bool AVeyrDragon::CanStagger() const
 FVector AVeyrDragon::GetMouthLocation() const {return bUsingCustomuseVisual?ImportedMouthWorld:GetHeadLocation();}
 FVector AVeyrDragon::GetHeadLocation() const {return bUsingCustomuseVisual?ImportedHeadWorld:GetActorTransform().TransformPosition(HeadLocal);}
 FVector AVeyrDragon::GetLegLocation(int32 Index) const {const int32 I=FMath::Clamp(Index,0,3);return bUsingCustomuseVisual?ImportedFeetWorld[I]:GetActorTransform().TransformPosition(LegLocal[I]);}
+FVector AVeyrDragon::GetLegKneeLocation(int32 Index) const
+{
+    const int32 I=FMath::Clamp(Index,0,3);
+    return bUsingCustomuseVisual&&bAnatomicalLegContactsReady?ImportedKneesWorld[I]:GetLegLocation(I);
+}
+FVector AVeyrDragon::GetLegHockLocation(int32 Index) const
+{
+    const int32 I=FMath::Clamp(Index,0,3);
+    return bUsingCustomuseVisual&&bAnatomicalLegContactsReady?ImportedHocksWorld[I]:GetLegLocation(I);
+}
+float AVeyrDragon::GetLegContactRadius(int32 Index) const
+{
+    // Measured visible lower-leg skin at the native 1050 cm dragon size:
+    // FL median58/P90=71, FR median64.5/P90=76.2, hinds median51/P90=61–66.
+    // No hip/thigh region is added, and all radii remain <= the old ankle75.
+    static constexpr float Radii[]={70.f,75.f,60.f,60.f};
+    const float Scale=ImportedPresentation?ImportedPresentation->GetComponentTransform().GetScale3D().GetAbsMax()/21.558172f:1.f;
+    return Radii[FMath::Clamp(Index,0,3)]*Scale;
+}
 float AVeyrDragon::GetLegStagger(int32 Index) const {return LegStagger[FMath::Clamp(Index,0,3)];}
 float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,7.f-StateElapsed):0.f;}
 bool AVeyrDragon::IsAirborne() const
@@ -896,6 +1036,31 @@ FVector AVeyrDragon::ClampArena(const FVector& V,float Radius)
 }
 
 
+bool AVeyrDragon::InitializeAnatomicalLegContacts()
+{
+    bAnatomicalLegContactsReady=false;LegContactDiagnostic.Reset();
+    if(!VisualDefinition||!ImportedPresentation)return false;
+    for(int32 I=0;I<4;++I)
+    {
+        const FVeyrVisualBoneTarget* Ankle=VisualDefinition->BoneTargets.Find(FName(*FString::Printf(TEXT("leg%d"),I)));
+        if(!Ankle){LegContactDiagnostic=TEXT("Anatomical ankle target missing");return false;}
+        // The measured 51-bone dragon topology has one shin link in front and
+        // two calf links behind. Resolve imported/sanitized names through its
+        // actual hierarchy; never mistake the existing ankle target for a knee.
+        const FName Parent=ImportedPresentation->GetParentBone(Ankle->BoneName);
+        ImportedHockBones[I]=I<2?Ankle->BoneName:Parent;
+        ImportedKneeBones[I]=I<2?Parent:ImportedPresentation->GetParentBone(Parent);
+        if(ImportedKneeBones[I].IsNone()||ImportedHockBones[I].IsNone()||
+           ImportedPresentation->GetBoneIndex(ImportedKneeBones[I])==INDEX_NONE||
+           ImportedPresentation->GetBoneIndex(ImportedHockBones[I])==INDEX_NONE)
+        {LegContactDiagnostic=FString::Printf(TEXT("Anatomical lower-leg hierarchy missing for region %d"),I);return false;}
+        LegContactDiagnostic+=FString::Printf(TEXT("leg%d %s -> %s -> %s, radius %.1f cm; "),I,
+            *ImportedKneeBones[I].ToString(),*ImportedHockBones[I].ToString(),*Ankle->BoneName.ToString(),GetLegContactRadius(I));
+    }
+    bAnatomicalLegContactsReady=true;
+    return true;
+}
+
 bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
     if(!Definition||!ImportedPresentation)return false;
@@ -912,10 +1077,13 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
             return false;
         }
     VisualDefinition=Definition;bUsingCustomuseVisual=true;
+    InitializeAnatomicalLegContacts();
     for(UStaticMeshComponent* Part:TemporaryParts)if(Part)Part->SetVisibility(false);
     ImportedPresentation->SetVisibility(true);
     TemporaryLabel->SetVisibility(false);
-    bImportedAttackCacheReady=AttackPoseProbe->SetVisualDefinition(Definition,false)&&CacheImportedAttackWarnings();
+    bImportedAttackCacheReady=AttackPoseProbe->SetVisualDefinition(Definition,false)&&
+        CalibrateBiteGroundAim()&&CacheImportedAttackWarnings();
+    if(!bImportedAttackCacheReady&&!BiteGroundAimDiagnostic.IsEmpty())ImportedCombatDiagnostic=BiteGroundAimDiagnostic;
     AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
     LastImportedClip=NAME_None;bImportedTransitionReady=false;
     bPresentationMotionInitialized=false;WalkPhase=TurnPhase=0.f;
@@ -967,14 +1135,24 @@ void AVeyrDragon::UpdateImportedPresentation()
     }
     LastPresentationLocation=CurrentLocation;LastPresentationYaw=CurrentYaw;bPresentationMotionInitialized=true;
     TMap<FName,FRotator> Gaze;
+    const bool GroundBite=HasGroundTargetBite()&&bBiteGroundAimReady&&Move==EVeyrDragonMove::Bite&&
+        (State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery);
     if((State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)&&
-       !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery))
+       !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery)&&!GroundBite)
     {
         const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
         const FVeyrVisualBoneTarget* Neck=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
         const bool SeparateNeck=Neck&&Head&&Neck->BoneName!=Head->BoneName;
         if(SeparateNeck)Gaze.Add(Neck->BoneName,FRotator(GazePitchDegrees*.6f,GazeYawDegrees*.6f,0));
         if(Head)Gaze.Add(Head->BoneName,FRotator(GazePitchDegrees*(SeparateNeck?.4f:1.f),GazeYawDegrees*(SeparateNeck?.4f:1.f),0));
+    }
+    if(GroundBite)
+    {
+        const FName BiteClip=ImportedMoveClip(EVeyrDragonMove::Bite,0,
+            State==EVeyrDragonState::Windup?TEXT("Windup"):State==EVeyrDragonState::Active?TEXT("Active"):TEXT("Recovery"));
+        const FVeyrVisualClip& Config=VisualDefinition->Clips.FindChecked(BiteClip);
+        const float Trimmed=FMath::Clamp(StateElapsed/FMath::Max(.001f,StateDuration),0.f,1.f)*VisualClipDuration(BiteClip,0.f);
+        Gaze=BiteGroundRotations(Config.StartSeconds+Trimmed,BiteGroundPitchDegrees);
     }
     if(!ImportedPresentation->SetComponentSpaceBoneRotations(Gaze))return;
     FString Name;
@@ -1059,6 +1237,16 @@ void AVeyrDragon::UpdateImportedPresentation()
         if(!ImportedPresentation->GetBoneTargetWorldTransform(FName(*FString::Printf(TEXT("leg%d"),I)),Feet[I]))return;
     ImportedHeadWorld=Head.GetLocation();
     for(int32 I=0;I<4;++I)ImportedFeetWorld[I]=Feet[I].GetLocation();
+    if(bAnatomicalLegContactsReady)
+        for(int32 I=0;I<4;++I)
+        {
+            const int32 Knee=ImportedPresentation->GetBoneIndex(ImportedKneeBones[I]);
+            const int32 Hock=ImportedPresentation->GetBoneIndex(ImportedHockBones[I]);
+            if(Knee==INDEX_NONE||Hock==INDEX_NONE)return;
+            ImportedKneesWorld[I]=ImportedPresentation->GetBoneTransform(Knee).GetLocation();
+            ImportedHocksWorld[I]=ImportedPresentation->GetBoneTransform(Hock).GetLocation();
+            if(ImportedKneesWorld[I].ContainsNaN()||ImportedHocksWorld[I].ContainsNaN())return;
+        }
     FTransform Mouth,Aim,Foot,Tail;
     if(!Sampled||!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("mouth"),Mouth)||
        !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("mouth_aim"),Aim))return;
@@ -1199,6 +1387,17 @@ bool AVeyrDragon::CacheImportedAttackWarnings()
             // component. No gameplay actor pose/state/physics is changed.
             for(int32 I=0;I<=32;++I)
             {
+                TMap<FName,FRotator> Aim;
+                if(Attack==EVeyrDragonMove::Bite&&HasGroundTargetBite()&&bBiteGroundAimReady)
+                {
+                    const FVeyrVisualClip& Config=VisualDefinition->Clips.FindChecked(Clip);
+                    const float SourceSeconds=Config.StartSeconds+VisualClipDuration(Clip,0.f)*I/32.f;
+                    Aim=BiteGroundRotations(SourceSeconds,BiteGroundPitchDegrees);
+                }
+                // Exactly the same pose layer is published for visible motion,
+                // live jaw contact and the committed warning envelope.
+                if(!AttackPoseProbe->SetComponentSpaceBoneRotations(Aim))
+                {ImportedCombatDiagnostic=AttackPoseProbe->LastError;return false;}
                 if(!AttackPoseProbe->SampleClipPhase(Clip,I/32.f))
                 {ImportedCombatDiagnostic=AttackPoseProbe->LastError;return false;}
                 TArray<FVeyrDragonContact> Contacts;FVeyrDragonFlameBeam Beam;
@@ -1236,6 +1435,7 @@ bool AVeyrDragon::CacheImportedAttackWarnings()
         }
     }
     LandingLocalCenter=FVector::ZeroVector;LandingWarningRadius=600.f;
+    if(!AttackPoseProbe->SetComponentSpaceBoneRotations({}))return false;
     if(HasAuthoredFlight())
     {
         const FVeyrVisualClip& Land=VisualDefinition->Clips.FindChecked(TEXT("FlightRecovery"));

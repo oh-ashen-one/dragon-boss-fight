@@ -724,10 +724,15 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         // A collision hit also shortens the socket offset. Count only its
         // compressed fraction for floor clearance, but its full height for
         // the conservative boot-framing bound below.
-        const float CameraZ=PivotZ-CameraFramingArm*S+FloorSocketZ*C;
+        // During flight the resolved arm can extend before the conservative
+        // framing allowance catches up. An upward view gets lower as the arm
+        // grows: constrain floor clearance with the full requested arm then.
+        const float FloorArm=S>0.f?Arm:CameraFramingArm;
+        const float CameraZ=PivotZ-FloorArm*S+FloorSocketZ*C;
         const float FootDepth=CameraFramingArm-PivotAboveFeet*S;
         const float FootBelowView=PivotAboveFeet*C+SocketZ;
-        return CameraZ>=CameraFloorZ+225.f&&FootDepth>1.f&&FootBelowView/FootDepth<=BootRatio;
+        // Keep a small integration margin above the 225cm resolved-view guard.
+        return CameraZ>=CameraFloorZ+230.f&&FootDepth>1.f&&FootBelowView/FootDepth<=BootRatio;
     };
     float Low=-55.f,High=45.f;
     for(int32 I=0;I<16;++I)

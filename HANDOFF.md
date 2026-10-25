@@ -52,6 +52,31 @@ restrictions below are superseded. Exact approvals/hashes are in
 - No main merge/public release authorized. Task branch pushes/private backups
   are authorized. Preserve other checkouts and unrelated processes/files.
 
+## Contact-fix checkpoint (07:34 UTC)
+
+- First signed cooked app source494183bf launches cleanly; all16 animation
+  exercises pass in76.05s. Death/restart previously passed in editor. Private
+  native content restore is already verified and unchanged by later C++ fixes.
+- Packaged core survives180s at100HP, onecollapse/threeheadpunishes, but fails
+  heavy-leg contact. Stance confirms ten accepted Heavy B swings miss visible
+  calf. Geometry audit proves the blade hits shin while old75cm ankle sphere
+  misses; report heavy-leg-contact-audit.json documents measurements/limits.
+- New bounded calf capsules preserve four regions, oldankle/head radii and8cm
+  blade thickness. Front knee/ankle70/75cm; hind knee/hock/ankle60cm.
+- Approved Bite was aboveground-player reach. Runtime aiming now bends the
+  three neck joints20/20/10degrees max, preserving source/bone lengths/radius.
+  Same modifier feeds live pose/contact and warning probe. Native proof pending.
+- Camera solver now uses fullarm for upward-pitch clearance and230cm margin
+  above225cm guard; new ordered evidence must confirm. Blink opacity critique
+  is closed in packaged captures. Minor upperwingtip crop atflightentry remains.
+- New native build e164aaefb67e9bc9df7407a41199364c34a07bbbf0682878ef9d13cea5134ab7
+  compiled successfully; package073412 is being signed/audited. No editor open.
+- Healing used allfourcharges and verifiedcap, but empty-flask trial timedout
+  waiting for injury because oldbite couldnot reach. Retest correctedpackage.
+- Critic notes legacy Rise→newIdle wing fold completes too abruptly at.12s;
+  refine transition after contact-fix baseline tests. Approved fold shape has
+  a hard lowerboundary in original source; do not silently alter lockedart.
+
 ---
 
 # START HERE — autonomous Elden Ring pass ended 2026-10-22 ~01:45 CST after a 45-min extension

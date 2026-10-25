@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-25",
+  "scope": "Read-only diagnosis of packaged HeavyAttack leg misses; no gameplay, source motion or collision edit made by this audit.",
+  "evidence": "Evidence/native-core-20261025T071632Z/unreal-core-20261025T071640Z-29B432E1/evidence.json",
+  "additional_reproduction": "Evidence/native-stance-20261025T072003Z: parent reports ten uninterrupted one-hand heavy attempts with zero damage.",
+  "sources": {
+    "knight": "Local/CustomuseAssets/Integration20261025b/knight/HeavyAttackOneHand_Blender_v4r5.glb",
+    "dragon": "Local/CustomuseAssets/Integration20261025b/dragon/Legacy_Stomp2Windup.glb",
+    "anatomy_measurement": "Local/CustomuseAssets/Integration20261025b/dragon/Dragon_Idle_Blender_v1r3.glb",
+    "weapon": "Local/CustomuseAssets/Integration20261025b/props/BoatGreatsword_OneHand_v4.glb"
+  },
+  "recorded_placement": {
+    "knightFeetCm": [
+      827.9147887,
+      -238.9126283,
+      2.149996
+    ],
+    "knightForward": [
+      -0.7288521598,
+      0.6846711102,
+      0.0
+    ],
+    "dragonActorPositionCm": [
+      418.4204393,
+      38.4203208,
+      0.0
+    ],
+    "knightActionStartSeconds": 20.1626790762,
+    "dragonWindupStartSeconds": 20.6233024597,
+    "knightMeshYawDegrees": -90.0,
+    "knightMeshScale": 244.119184269807,
+    "dragonMeshScale": 21.5581720224,
+    "dragonMeshTranslationCm": [
+      -300,
+      0,
+      0
+    ],
+    "dragonYawDegreesAssumedForReconstruction": 90.0,
+    "dragonYawBasis": "Quarter-turn inferred from warning centroid and posed head/foot locations; actor yaw was not explicitly serialized in this replay."
+  },
+  "method": {
+    "samples": 43,
+    "windowSeconds": [
+      0.52,
+      0.94
+    ],
+    "weaponProxy": "Match GetWeaponSweep: static mesh bounding-box major-axis centerline, base at28percent along near-to-far axis, tip atfar end. Preserve8cm existing blade radius.",
+    "meshDistance": "CPU-skin indexed lower-leg vertices with >50percent summed influence from tripo::1_Right_Limb_1..4; compare nearest indexed rigid-boat vertices. A vertex distance is an upper bound on surface distance.",
+    "anatomyFit": "Measure posed lower-leg bone axes and weighted indexed mesh radial distributions at1050cm target height; exclude segment ends when estimating fore/distal shaft radius."
+  },
+  "measurements": {
+    "minimumExistingBladeCenterlineToAnkleCm": 159.57397208815564,
+    "existingHitThresholdCm": 83.0,
+    "minimumExistingDistanceAtSeconds": 0.53,
+    "minimumBladeCenterlineToPiecewiseHindLowerLegAxisCm": 28.807528944730624,
+    "minimumCapsuleAxisDistanceAtSeconds": 0.52,
+    "nearestIndexedLowerLegToBoatVertexCm": 0.583977557991649,
+    "nearestRenderedContactAtSeconds": 0.52,
+    "contactHeightCm": 202.73702987298813,
+    "lowerLegMeshPointWorldCm": [
+      663.9691737814308,
+      -97.00567555958388,
+      202.73702987298813
+    ],
+    "boatMeshPointWorldCm": [
+      664.3229468648998,
+      -97.45032789817716,
+      202.602275684058
+    ],
+    "existingAnkleHeightCm": 38.91
+  },
+  "proposed_regions": [
+    {
+      "region": 0,
+      "name": "front left",
+      "bones": [
+        "tripo::1_Left_Limb_0",
+        "bone_9"
+      ],
+      "segmentLengthsCm": [
+        293.45
+      ],
+      "boneHeightsCm": [
+        290.99,
+        49.41
+      ],
+      "capsuleRadiusCm": 70.0,
+      "visibleShaftRadialMedianCm": 58.11,
+      "visibleShaftRadialP90Cm": 71.17,
+      "visibleShaftRadialP95Cm": 75.75
+    },
+    {
+      "region": 1,
+      "name": "front right",
+      "bones": [
+        "tripo::0_Left_Limb_1",
+        "tripo::0_Left_Limb_2"
+      ],
+      "segmentLengthsCm": [
+        272.71
+      ],
+      "boneHeightsCm": [
+        298.15,
+        44.15
+      ],
+      "capsuleRadiusCm": 75.0,
+      "visibleShaftRadialMedianCm": 64.49,
+      "visibleShaftRadialP90Cm": 76.23,
+      "visibleShaftRadialP95Cm": 80.38
+    },
+    {
+      "region": 2,
+      "name": "hind left",
+      "bones": [
+        "tripo::1_Right_Limb_1",
+        "tripo::1_Right_Limb_2",
+        "tripo::1_Right_Limb_3"
+      ],
+      "segmentLengthsCm": [
+        158.92,
+        119.02
+      ],
+      "boneHeightsCm": [
+        232.01,
+        148.87,
+        38.91
+      ],
+      "capsuleRadiusCm": 60.0,
+      "visibleDistalShaftRadialMedianCm": 51.45,
+      "visibleDistalShaftRadialP90Cm": 61.07
+    },
+    {
+      "region": 3,
+      "name": "hind right",
+      "bones": [
+        "tripo::0_Right_Limb_1",
+        "tripo::0_Right_Limb_2",
+        "tripo::0_Right_Limb_3"
+      ],
+      "segmentLengthsCm": [
+        146.26,
+        122.28
+      ],
+      "boneHeightsCm": [
+        239.86,
+        143.61,
+        33.65
+      ],
+      "capsuleRadiusCm": 60.0,
+      "visibleDistalShaftRadialMedianCm": 51.37,
+      "visibleDistalShaftRadialP90Cm": 65.6
+    }
+  ],
+  "recommendation": "Retain current75cm ankle spheres and head handling, add anatomy-following lower-leg capsules with the listed radii and unchanged region IDs. Do not add hip/thigh segments, enlarge invisible volumes, alter approved attack timing, or move the driver closer to conceal a missing hit region. Keep8cm blade radius for the first native retest.",
+  "limitations": [
+    "CPU reconstruction at recorded placement, not direct native collision-query capture.",
+    "The earliest .52s point lies inside the brief Idle-to-Stomp blend; reconstruction samples the target source pose and omits that frozen-source transition blend. The large159.57-versus28.81cm difference and native captures support the diagnosis, but actual native replay must verify it.",
+    "Hind radius60cm is conservative and below the existing75cm foot radius; this is not a full maximum-envelope fit for every pose.",
+    "No claim that all32 animations, combat difficulty or owner gameplay acceptance passes follows from this audit."
+  ]
+}

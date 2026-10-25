@@ -74,6 +74,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Presentation") bool bPreferHoverAlternate=false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Presentation") bool bAlternateHoverVariants=true;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bHoverAlternateThisFlight=false;
+    /** Bounded native aiming layer; source animation and contact radii stay unchanged. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bBiteGroundAimReady=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") float BiteGroundPitchDegrees=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") float BiteGroundStrikeMuzzleHeightCm=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FString BiteGroundAimDiagnostic;
     /** Parameter binding readiness; rendered mask acceptance is a separate gate. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") bool bCameraOcclusionReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") bool bCameraOcclusionEnabled=false;
@@ -98,6 +103,11 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
     bool HasValidImportedCombatPose() const {return bImportedTargetsValid&&bImportedAttackCacheReady&&MissingVisualClip.IsNone();}
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetLegLocation(int32 Index) const;
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVector GetLegKneeLocation(int32 Index) const;
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVector GetLegHockLocation(int32 Index) const;
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetLegContactRadius(int32 Index) const;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") bool bAnatomicalLegContactsReady=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") FString LegContactDiagnostic;
     UFUNCTION(BlueprintPure, Category="Combat") float GetLegStagger(int32 Index) const;
     /** Origin is already the world sword/contact center (no extra torso offset). */
     void ReceiveSword(const FVector& Origin, const FVector& Forward, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
@@ -191,6 +201,9 @@ private:
     float ImportedTransitionStarted=0.f;
     FVector ImportedHeadWorld=FVector::ZeroVector;
     FVector ImportedFeetWorld[4];
+    FName ImportedKneeBones[4],ImportedHockBones[4];
+    FVector ImportedKneesWorld[4],ImportedHocksWorld[4];
+    bool InitializeAnatomicalLegContacts();
     void UpdateImportedPresentation();
     void UpdateGaze(float DeltaSeconds);
     FVector LastPresentationLocation=FVector::ZeroVector;
@@ -211,6 +224,10 @@ private:
     float WalkCycleDistance() const;
     bool ReadTurnTrajectory(float SourceSeconds,FVector& Translation,float& YawDegrees) const;
     FTransform RepositionTurnTransform(float Phase) const;
+    FName BiteNeckBase=NAME_None,BiteNeckMiddle=NAME_None,BiteHead=NAME_None;
+    bool HasGroundTargetBite() const;
+    bool CalibrateBiteGroundAim();
+    TMap<FName,FRotator> BiteGroundRotations(float SourceSeconds,float PitchDegrees) const;
 
     float LegStagger[4] = {0,0,0,0};
     float LegFlash[4] = {0,0,0,0};
