@@ -237,7 +237,28 @@ def receipt_libraries(receipt, engine):
     return candidates
 
 
+def configure_startup_allocator(app):
+    """Use Epic's supported startup allocator selection only inside this app.
+
+    UE5.8's MacPlatformMemory.cpp reads UE4_FORCE_MALLOC_ANSI before allocator
+    construction. This avoids the observed Binned3/LLM PopTag startup failure
+    in LaunchServices. It changes no global environment or security settings.
+    Graphical startup still requires a fresh runtime check.
+    """
+    info_path=app/'Contents/Info.plist'
+    info=plistlib.loads(info_path.read_bytes())
+    environment=dict(info.get('LSEnvironment',{}))
+    environment['UE4_FORCE_MALLOC_ANSI']='1'
+    info['LSEnvironment']=environment
+    info_path.write_bytes(plistlib.dumps(info,fmt=plistlib.FMT_XML,sort_keys=False))
+    return {'allocator':'ANSI','environmentKey':'UE4_FORCE_MALLOC_ANSI',
+            'scope':'This app via LaunchServices; no global environment mutation',
+            'reason':'Avoid observed Binned3/LLM PopTag failure during macOS startup',
+            'graphicalLaunchVerified':False}
+
+
 def sign_in_place(app):
+    startup_policy=configure_startup_allocator(app)
     removed = {}
     for path in files_inside(app):
         if path.is_symlink():
@@ -261,7 +282,7 @@ def sign_in_place(app):
     command(['/usr/bin/codesign', '--force', '--deep', '--sign', '-', '--timestamp=none', str(app)])
     command(['/usr/bin/codesign', '--verify', '--deep', '--strict', str(app)])
     return {'verified': True, 'identity': 'ad-hoc', 'removedAttributes': removed,
-            'notarized': False, 'quarantineChanged': False}
+            'notarized': False, 'quarantineChanged': False, 'startupPolicy': startup_policy}
 
 
 def sign_copy(app):

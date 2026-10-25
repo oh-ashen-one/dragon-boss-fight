@@ -1,0 +1,14 @@
+{
+  "status": "signed offline repair; graphical launch not attempted",
+  "nativeSourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
+  "gameCodeIdentityUnchanged": true,
+  "startupEnvironment": {
+    "UE4_FORCE_MALLOC_ANSI": "1"
+  },
+  "scope": "App only; no system environment, credentials or security protections changed",
+  "signatureVerified": true,
+  "dependenciesVerified": true,
+  "archiveSHA256": "914fcab6003c47b77f1c867b37df53f050b08e56e147b2b1d784c36afd889573",
+  "launchHold": true,
+  "reason": "Second session crash occurred during macOS Binned3/LLM startup; fresh owner-directed graphical validation required"
+}

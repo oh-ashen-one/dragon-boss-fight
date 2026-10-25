@@ -59,6 +59,10 @@ print('Native run:', run, flush=True)
 with (run/'launcher.log').open('w') as output:
     environment = os.environ.copy()
     environment['GPU_SLOT_CAPTURE_SLOTS'] = '2'
+    # Direct executable launches do not receive Info.plist LSEnvironment from
+    # LaunchServices. Honor only this explicit app-owned allocator setting.
+    if a.app and info.get('LSEnvironment',{}).get('UE4_FORCE_MALLOC_ANSI')=='1':
+        environment['UE4_FORCE_MALLOC_ANSI']='1'
     result = subprocess.run(cmd, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
 print('Process exit:', result.returncode, 'Evidence:', run, flush=True)
 if result.returncode:

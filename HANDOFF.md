@@ -1,4 +1,17 @@
-# Native approved animation integration — COMPLETE, 2026-10-25
+# Native gameplay integration verified — desktop startup repair pending, 2026-10-25
+
+**Current delivery gate:** the final headed launch from Downloads exited139
+before the game log/window, in Unreal FMallocBinned3 / low-level memory tracking
+during LaunchServices startup. This is the second integration-session crash.
+Automatic engine launches are stopped under the shared two-crash rule. All
+packaged gameplay results below remain valid; do not claim headed delivery works.
+
+Offline repair: app-scoped `UE4_FORCE_MALLOC_ANSI=1` (supported directly by
+Epic's MacPlatformMemory.cpp), preserving game code and security settings.
+The signed repair candidate requires one freshly authorized bounded graphical
+launch. `Local/ENGINE_LAUNCH_HOLD.json` remains in force. No further engine launch
+was attempted after the second crash. Source integration and private backups
+are preserved; current raw crash reports stay local.
 
 The owner approved all32 October24 review candidates and authorized full native
 integration, gameplay testing and critique agents. They are now integrated into
@@ -85,7 +98,8 @@ See `tools/art/integration/model-ledger.json` and linked reports for limits.
 
 ## Remaining review notes and ownership
 
-The requested integration/test work is complete. Owner gameplay feel/visual
+The animation integration and gameplay tests are complete; graphical startup
+validation of the repaired delivery remains open. Owner gameplay feel/visual
 judgment is not asserted by automated tests. Two minor visual notes remain:
 a brief upper wingtip crop at flight entry, and a hard lower fold edge already
 present in the approved Dragon source. Keep originals locked; any later art
@@ -96,12 +110,12 @@ concurrent owned tests affect pacing, so this is not an isolated performance
 benchmark. Physical start/grip/guard/light/restart routes were also exercised
 through native UI; automation exercises the normal game action/input paths.
 
-Only one editor crash occurred in this integration (during an early SIGTERM
-shutdown). Subsequent editor quits and all packaged exits were normal. Crash
-count1 remains in `Local/integration-crash-ledger.json`; never auto-relaunch after2.
-Use ordinary UI Quit. The owned native editor MCP server is closed. The owner-facing
-app may be left at its start screen through the shared GPU slot; check live
-process/slot state before a future launch and never take over an owner playtest.
+Two crashes occurred in this integration: an early editor SIGTERM shutdown and
+the final headed app startup. Other editor quits and automated packaged exits
+were normal. Crash count2 is in `Local/integration-crash-ledger.json`; no automatic
+engine relaunch is allowed until fresh owner direction.
+Use ordinary UI Quit. The owned native editor MCP server is closed. The owner-facing app is currently closed. Check live process/slot state before
+any explicitly authorized future launch. Never take over an owner playtest.
 
 The source checkout and useful failed/passing evidence remain for continuity.
 Duplicate generated builds and verified upload ZIPs may be removed; never delete
