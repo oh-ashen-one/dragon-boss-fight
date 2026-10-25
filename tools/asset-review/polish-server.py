@@ -10,6 +10,8 @@ from pathlib import Path
 from urllib.parse import unquote,urlsplit
 ROOT=Path(__file__).resolve().parents[2];HERE=Path(__file__).resolve().parent
 SOURCE=ROOT/'Local/Blender/polish-20261025';CACHE=ROOT/'Local/polish-review-20261025'
+DANGLE=ROOT/'Local/Blender/dangle-20261025'
+REVISION=ROOT/'docs/dragon-hover-dangle-20261025/manifest.json'
 VENDOR=['build/three.module.js','build/three.core.js','examples/jsm/loaders/GLTFLoader.js','examples/jsm/controls/OrbitControls.js','examples/jsm/utils/BufferGeometryUtils.js','examples/jsm/utils/SkeletonUtils.js']
 ALIASES={'FlightWindup':['polish/Dragon_Takeoff_Blender_polish_v1.glb','polish/Dragon_Takeoff_Blender_polish_v2.glb'],'FlightRecovery':['polish/Dragon_Land_Blender_polish_v1.glb','polish/Dragon_Land_Blender_polish_v2.glb','polish/Dragon_Land_Blender_polish_v3.glb']}
 TITLES={'FlightHoverAlternate':'Dragon · Hover','FlightWindup':'Dragon · Takeoff','FlightRecovery':'Dragon · Landing','RunTwoHand':'Knight · Two-hand run','GripToTwoHand':'Knight · One hand → two hands','GripToOneHand':'Knight · Two hands → one hand','Roll':'Knight · Roll','RollAttack':'Knight · Roll into attack'}
@@ -26,14 +28,17 @@ def header(path):
 def inventory():
  manifest=json.loads((SOURCE/'manifest.json').read_text());items=[];assets={}
  for row in manifest['clips']:
+  if row['key']=='FlightHoverAlternate' and REVISION.is_file():
+   row=json.loads(REVISION.read_text())
+   row['file']=str(ROOT/row['file'])
   path=Path(row['file']).resolve()
-  if not path.is_relative_to(SOURCE.resolve()) or path.suffix!='.glb':raise ValueError('Candidate outside the known authoring directory')
+  if not any(path.is_relative_to(base.resolve()) for base in (SOURCE,DANGLE)) or path.suffix!='.glb':raise ValueError('Candidate outside the known authoring directory')
   digest=sha(path)
   if digest!=row['sha256']:raise ValueError('Candidate hash changed: '+path.name)
   doc=header(path);group='dragon' if path.name.startswith('Dragon_') else 'knight';identifier='polish/'+path.name
   if group=='knight' and not any(n.get('name') in ('ReviewWeaponSocket','WeaponSocket') for n in doc['nodes']):raise ValueError('Knight candidate lacks authored weapon socket')
   assets['/api/asset/'+identifier]=path
-  items.append({'id':identifier,'aliases':ALIASES.get(row['key'],[]),'file':path.name,'group':group,'title':TITLES.get(row['key'],row['key']),'key':row['key'],'duration':row['duration'],'loop':row['loop'],'candidate':True,'ownerApproved':bool(row.get('ownerApproved',False)),'sha256':digest,'bytes':path.stat().st_size,'animationNames':[a.get('name','Animation') for a in doc.get('animations',[])],'morphTargets':sum(len(p.get('targets',[])) for m in doc.get('meshes',[]) for p in m['primitives']),'weaponId':'props/'+row['weapon_file'] if row.get('weapon_file') else None})
+  items.append({'id':identifier,'aliases':ALIASES.get(row['key'],[]),'file':path.name,'group':group,'title':row.get('title',TITLES.get(row['key'],row['key'])),'key':row['key'],'duration':row['duration'],'loop':row['loop'],'candidate':True,'ownerApproved':bool(row.get('ownerApproved',False)),'sha256':digest,'bytes':path.stat().st_size,'animationNames':[a.get('name','Animation') for a in doc.get('animations',[])],'morphTargets':sum(len(p.get('targets',[])) for m in doc.get('meshes',[]) for p in m['primitives']),'weaponId':'props/'+row['weapon_file'] if row.get('weapon_file') else None})
  if len(items)!=8:raise ValueError('Expected the final eight candidates, not an incomplete manifest')
  sword=CACHE/'BoatGreatsword_OneHand_v4.glb'
  if sha(sword)!='bfb0bd2d6580882236e499833d28564712e08ff9323d76d3c55715d0ee558ab4':raise ValueError('Intact approved sword cache hash changed')

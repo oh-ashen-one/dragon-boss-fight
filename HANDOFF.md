@@ -1,3 +1,25 @@
+# Dragon hover correction — review candidate, 2026-10-25
+
+Current branch: `codex/veyr-dragon-dangling-hover-20261025`.
+The owner rejected the old v1r2 tucked/cupped limbs. New Blender-MCP-authored
+`Dragon_FlyHover_Blender_dangle_v2` lowers all four paws, points claws down and
+moves front hands clear of the belly. The exact exported GLB is active on8776:
+http://127.0.0.1:8776/#polish%2FDragon_FlyHover_Blender_dangle_v2.glb
+
+Source, audit, provenance and restore instructions:
+`docs/dragon-hover-dangle-20261025/README.md` and adjacent manifest/backup receipt.
+Private source backup remote digest verified. Critic pose pass, full2s30fps
+three-view export renders, loop audit and live1x viewer playback complete.
+Owner visual acceptance remains pending. No new packaged game build this pass.
+Takeoff/landing airborne endpoints and native bank integration are the next step.
+
+The Moonlit Silver B app was closed normally for this correction's Blender slot.
+The unrelated Invincible Unreal process was not touched. The local reviewer is
+left running; original authoring sources and8775 remain intact. Earlier app-open
+statements below describe previous handoffs, not current process state.
+
+---
+
 # Moonlit Silver HUD B — delivered for owner review, 2026-10-25
 
 The owner selected concept B, superseding the earlier A recommendation.

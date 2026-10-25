@@ -1,0 +1,103 @@
+{
+  "tracks": 154,
+  "unchangedTracks": 136,
+  "changedTracks": [
+    {
+      "node": "bone_7",
+      "path": "rotation",
+      "maxDelta": 0.024213209748268127
+    },
+    {
+      "node": "tripo::1_Left_Limb_0",
+      "path": "rotation",
+      "maxDelta": 0.4423495829105377
+    },
+    {
+      "node": "bone_9",
+      "path": "translation",
+      "maxDelta": 0.008613228797912598
+    },
+    {
+      "node": "bone_9",
+      "path": "rotation",
+      "maxDelta": 0.4951206147670746
+    },
+    {
+      "node": "tripo::1_Left_Limb_1",
+      "path": "translation",
+      "maxDelta": 0.0019695298396982253
+    },
+    {
+      "node": "tripo::1_Left_Limb_1",
+      "path": "rotation",
+      "maxDelta": 0.4821964502334595
+    },
+    {
+      "node": "tripo::0_Left_Limb_0",
+      "path": "rotation",
+      "maxDelta": 0.11070439219474792
+    },
+    {
+      "node": "tripo::0_Left_Limb_1",
+      "path": "rotation",
+      "maxDelta": 0.5794659554958344
+    },
+    {
+      "node": "bone_14",
+      "path": "translation",
+      "maxDelta": 0.01100009074434638
+    },
+    {
+      "node": "bone_14",
+      "path": "rotation",
+      "maxDelta": 1.298595279455185
+    },
+    {
+      "node": "tripo::0_Left_Limb_2",
+      "path": "translation",
+      "maxDelta": 0.0032246370101347566
+    },
+    {
+      "node": "tripo::0_Left_Limb_2",
+      "path": "rotation",
+      "maxDelta": 0.6282602939754725
+    },
+    {
+      "node": "tripo::1_Right_Limb_0",
+      "path": "rotation",
+      "maxDelta": 0.14377007633447647
+    },
+    {
+      "node": "tripo::1_Right_Limb_1",
+      "path": "rotation",
+      "maxDelta": 0.3468218147754669
+    },
+    {
+      "node": "tripo::1_Right_Limb_2",
+      "path": "rotation",
+      "maxDelta": 0.6385648846626282
+    },
+    {
+      "node": "tripo::0_Right_Limb_0",
+      "path": "rotation",
+      "maxDelta": 0.1444389931857586
+    },
+    {
+      "node": "tripo::0_Right_Limb_1",
+      "path": "rotation",
+      "maxDelta": 0.3315976858139038
+    },
+    {
+      "node": "tripo::0_Right_Limb_2",
+      "path": "rotation",
+      "maxDelta": 0.587922140955925
+    }
+  ],
+  "nonLimbTracksPreserved": true,
+  "maxLoopEndpointDelta": 2.980232238769531e-07,
+  "skins": 1,
+  "jointCount": 51,
+  "duration": 2.0,
+  "ownerApproved": false,
+  "nativeIntegrated": false
+}

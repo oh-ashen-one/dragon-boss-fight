@@ -1,0 +1,19 @@
+{
+  "key": "FlightHoverAlternate",
+  "file": "Local/Blender/dangle-20261025/Dragon_FlyHover_Blender_dangle_v2.glb",
+  "blend": "Local/Blender/dangle-20261025/Dragon_FlyHover_Blender_dangle_v2.blend",
+  "sha256": "2f4ce12d171e1134117e58358a569b9915d5170fa104de0947e34394d1d8c725",
+  "blendSHA256": "ea639a5b5069adea4c78e302ea3f56196b3be33183dee85c0b552dffb10b4af0",
+  "duration": 2.0,
+  "fps": 30,
+  "loop": true,
+  "candidate": true,
+  "ownerApproved": false,
+  "nativeIntegrated": false,
+  "title": "Dragon \u00b7 Hover v2 \u2014 relaxed dangling limbs",
+  "runtimeKeys": [
+    "FlightActive",
+    "FlightHoverAlternate"
+  ],
+  "authoring": "Blender 5.2 isolated MCP; existing approved wing and body motion retained; four-limb IK and wrist orientation revised"
+}
