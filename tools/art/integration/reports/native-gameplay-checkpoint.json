@@ -1,0 +1,73 @@
+{
+  "status": "in_progress",
+  "runs": [
+    {
+      "mode": "integration",
+      "sourceId": "ba4c630fffa107ffc48742e65b21637fb978e7b85b2fdf9feccb7a4a294b7ca1",
+      "finished": true,
+      "passed": true,
+      "reason": "all16 integration control/motion features accepted and recovered under normal boss AI; actual contacts recorded separately",
+      "durationSeconds": 75.29424285888672,
+      "finalWrite": true,
+      "warningContainmentFailures": 0,
+      "lightLegContact": false,
+      "heavyLegContact": false,
+      "restartResourcesVerified": false,
+      "restartMovementVerified": false,
+      "restartAttackVerified": false,
+      "evidenceDirectory": "Evidence/pie-integration-20261025T060340Z/unreal-integration-20261025T060340Z-7FDD403F",
+      "coverage": "Input-only native gameplay with normal AI; frame capture affects pacing."
+    },
+    {
+      "mode": "core",
+      "sourceId": "f96b3ee5c74b210596a2b63768ddaf2ff78b12382823cc41b2911226b2f93cd9",
+      "finished": true,
+      "passed": false,
+      "reason": "player died before objectives",
+      "durationSeconds": 36.1950798034668,
+      "finalWrite": true,
+      "warningContainmentFailures": 0,
+      "lightLegContact": true,
+      "heavyLegContact": true,
+      "restartResourcesVerified": false,
+      "restartMovementVerified": false,
+      "restartAttackVerified": false,
+      "evidenceDirectory": "Evidence/pie-core-20261025T070058Z/unreal-core-20261025T070058Z-68506B2E",
+      "coverage": "Input-only native gameplay with normal AI; frame capture affects pacing."
+    },
+    {
+      "mode": "stance",
+      "sourceId": "f96b3ee5c74b210596a2b63768ddaf2ff78b12382823cc41b2911226b2f93cd9",
+      "finished": true,
+      "passed": false,
+      "reason": "objective timeout; inspect event history and policy",
+      "durationSeconds": 240.01397705078125,
+      "finalWrite": true,
+      "warningContainmentFailures": 0,
+      "lightLegContact": true,
+      "heavyLegContact": true,
+      "restartResourcesVerified": false,
+      "restartMovementVerified": false,
+      "restartAttackVerified": false,
+      "evidenceDirectory": "Evidence/pie-stance-20261025T070211Z/unreal-stance-20261025T070211Z-FCEC330D",
+      "coverage": "Input-only native gameplay with normal AI; frame capture affects pacing."
+    },
+    {
+      "mode": "death",
+      "sourceId": "f96b3ee5c74b210596a2b63768ddaf2ff78b12382823cc41b2911226b2f93cd9",
+      "finished": true,
+      "passed": true,
+      "reason": "death terminal pose, resource reset, movement and attack after restart verified",
+      "durationSeconds": 59.26689529418945,
+      "finalWrite": true,
+      "warningContainmentFailures": 0,
+      "lightLegContact": false,
+      "heavyLegContact": false,
+      "restartResourcesVerified": true,
+      "restartMovementVerified": true,
+      "restartAttackVerified": true,
+      "evidenceDirectory": "Evidence/pie-death-20261025T070631Z/unreal-death-20261025T070631Z-691A0658",
+      "coverage": "Input-only native gameplay with normal AI; frame capture affects pacing."
+    }
+  ]
+}

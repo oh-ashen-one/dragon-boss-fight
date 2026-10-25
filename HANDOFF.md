@@ -37,7 +37,16 @@ restrictions below are superseded. Exact approvals/hashes are in
 - Private source delta backup verified:154 files/6.2GB in five release ZIPs at
   oh-ashen-one/veyr-animation-sources, tag knight-dragon-postsprint-20261025.
   Receipt: tools/art/integration/source-backup-receipt.json.
-- Remaining gates: combat/legs/stance/guard/heal/death/victory gameplay tests;
+- Additional native results: death/restart PASS at59.27s, with terminal pose,
+  full resource reset, movement and attack after restart. Latest core proved
+  light/heavy leg hits but died after two landing hits: driver ignored damaging
+  flight Recovery. Stance verified1h light28/.933s,1h heavy62/1.4s,2h light43.4/1.2s,
+  then timed out before2h heavy. Replay fixes remain in progress.
+- Native content backup is verified:734assets/maps,2.82GB uncompressed in three
+  private release ZIPs, tag native-integration-20261025. See
+  tools/art/integration/native-content-backup-receipt.json for restoration.
+- Editor run070025 closed normally (exit0); crash count remains1.
+- Remaining gates: combat/legs/stance/guard/heal/victory gameplay tests;
   fresh visual critique; cook/package/signature and actual packaged runtime;
   backup native content and deliver app. Do not report completion before these.
 - No main merge/public release authorized. Task branch pushes/private backups

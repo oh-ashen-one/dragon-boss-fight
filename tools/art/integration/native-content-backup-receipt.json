@@ -1,0 +1,15 @@
+{
+  "privateRepository": "oh-ashen-one/veyr-animation-sources",
+  "release": "native-integration-20261025",
+  "verifiedFiles": 734,
+  "bytes": 2822583713,
+  "archives": {
+    "Veyr-NativeContent-20261025-part1.zip": "b83fb85be35d799acf4502996f5024d32c984ac0a6636d2464482c703e2b4023",
+    "Veyr-NativeContent-20261025-part2.zip": "26c2f34041e5595eda56b3aec10fe3a8741a61634171a730aeee622994da89d5",
+    "Veyr-NativeContent-20261025-part3.zip": "e39b70755daeced50e612a1f0216a7fd660624dedec1f67156f2de8a4da0dfa7",
+    "manifest.json": "7d09970d1ebdf3aeffeb6490eab210c328fc2fca3725187f944f1e389741e3a9",
+    "SHA256SUMS.txt": "38e5fc84b8089bf04730463a314b78496cde0f77ce6df00d463b3d0b872b2b3f"
+  },
+  "allGitHubDigestsMatch": true,
+  "restore": "Download all three independent ZIPs, verify SHA256SUMS.txt, extract each at the game repository root, then verify manifest.json file hashes."
+}

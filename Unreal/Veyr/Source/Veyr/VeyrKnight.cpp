@@ -69,7 +69,7 @@ AVeyrKnight::AVeyrKnight()
     ReadabilityFill->SetRelativeLocation(FVector(40,-100,100));
     ReadabilityFill->SetIntensityUnits(ELightUnits::Lumens);
     ReadabilityFill->SetIntensity(1800.f);
-    ReadabilityFill->SetAttenuationRadius(1300.f);
+    ReadabilityFill->SetAttenuationRadius(2600.f);
     ReadabilityFill->SetLightColor(FLinearColor(.80f,.86f,1.f));
     ReadabilityFill->SetCastShadows(false);
     ReadabilityFill->SourceRadius=80.f;

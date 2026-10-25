@@ -104,10 +104,25 @@ its POSITION accessor bounds, although its indexed triangles render only the
 body. Do not compare that variant's raw bounds against the modern canonical body
 or discard its source data to make that check pass.
 
-The normalized clips and plans are ready for native import, but this report does
-not claim Interchange success, correct native morph curves, rendered prop contact,
-transition quality, camera quality or gameplay acceptance. Those require the
-owned engine checks and critique loop led by the integration owner.
+Native import is now verified: Knight v025b and Dragon v025d are active through
+RuntimeApproved definitions. The Dragon importer merges the exact GLB weight
+curves into the native bone sequence because Interchange initially separated
+bone and morph animations. See reports/native-source-fidelity.json and
+reports/native-transition-endpoints.json: 68 keys/408 native samples match the
+sources within documented tolerances; 136 transition endpoint checks match.
+Seven native import unit tests pass. These numerical checks do not establish
+visual or gameplay quality by themselves.
+
+Native input integration and death/restart checks pass; combat, stance and
+camera validation remain in progress. All failed tests remain in the local
+Evidence directory and summarized in reports/native-gameplay-checkpoint.json.
+See HANDOFF.md for current state and exact remaining gates.
+
+Native content restore is independent of reimport: download the three ZIPs from
+the private release named in native-content-backup-receipt.json, verify the
+SHA256SUMS and manifest, then extract at the game checkout root. This includes
+734 native assets and maps; generated art and character assets remain private.
+The source animation backup is recorded in source-backup-receipt.json.
 
 ## Native import observations (2026-10-25)
 
