@@ -4,6 +4,7 @@
 #include "VeyrVisualDefinition.h"
 #include "Animation/AnimSequence.h"
 #include "Camera/CameraComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SceneComponent.h"
@@ -61,9 +62,24 @@ AVeyrKnight::AVeyrKnight()
     CombatCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     CombatCamera->bUsePawnControlRotation = false;
     CombatCamera->FieldOfView = 72.f;
+    // Soft moon-bounce fill preserves dark metal while exposing hands/shoulders.
+    // Channel1 confines this light to the player and held props, not the arena.
+    ReadabilityFill=CreateDefaultSubobject<UPointLightComponent>(TEXT("Knight moon bounce fill"));
+    ReadabilityFill->SetupAttachment(CombatCamera);
+    ReadabilityFill->SetRelativeLocation(FVector(40,-100,100));
+    ReadabilityFill->SetIntensityUnits(ELightUnits::Lumens);
+    ReadabilityFill->SetIntensity(1800.f);
+    ReadabilityFill->SetAttenuationRadius(1300.f);
+    ReadabilityFill->SetLightColor(FLinearColor(.80f,.86f,1.f));
+    ReadabilityFill->SetCastShadows(false);
+    ReadabilityFill->SourceRadius=80.f;
+    ReadabilityFill->LightingChannels.bChannel0=false;
+    ReadabilityFill->LightingChannels.bChannel1=true;
+
 
     ImportedPresentation = CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("ImportedPresentation"));
     ImportedPresentation->SetupAttachment(GetCapsuleComponent());
+    ImportedPresentation->LightingChannels.bChannel1=true;
     ImportedPresentation->SetVisibility(false);
     ImportedPresentation->SetHiddenInGame(true);
     // Optional until the stable native data asset is authored. The definition
@@ -73,6 +89,7 @@ AVeyrKnight::AVeyrKnight()
     CustomuseVisualDefinition = KnightDefinition.Get();
     BoatWeapon=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tripo Timber Greatsword"));
     BoatWeapon->SetupAttachment(GetCapsuleComponent());
+    BoatWeapon->LightingChannels.bChannel1=true;
     BoatWeapon->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     BoatWeapon->SetGenerateOverlapEvents(false);BoatWeapon->SetCanEverAffectNavigation(false);
     BoatWeapon->SetVisibility(false);
@@ -110,6 +127,7 @@ AVeyrKnight::AVeyrKnight()
     }
     ApprovedHealCup=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Approved handled healing cup"));
     ApprovedHealCup->SetupAttachment(GetCapsuleComponent());
+    ApprovedHealCup->LightingChannels.bChannel1=true;
     ApprovedHealCup->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     ApprovedHealCup->SetGenerateOverlapEvents(false);
     ApprovedHealCup->SetCanEverAffectNavigation(false);
@@ -221,12 +239,17 @@ bool AVeyrKnight::HasVisualClip(FName Name) const
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
     return C&&C->Sequence;
 }
+float AVeyrKnight::VisualClipPlayRate(FName Name) const
+{
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
+    return C?FMath::Clamp(C->GameplayPlayRate,.1f,4.f):1.f;
+}
 float AVeyrKnight::VisualClipDuration(FName Name,float Fallback) const
 {
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
     if(!C||!C->Sequence)return Fallback;
     const float End=C->EndSeconds<0.f?C->Sequence->GetPlayLength():C->EndSeconds;
-    return FMath::IsFinite(End)&&End>C->StartSeconds?End-C->StartSeconds:Fallback;
+    return FMath::IsFinite(End)&&End>C->StartSeconds?(End-C->StartSeconds)/VisualClipPlayRate(Name):Fallback;
 }
 float AVeyrKnight::VisualClipSpeed(FName Name) const
 {
@@ -248,11 +271,22 @@ float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return VisualClipDurat
 float AVeyrKnight::GetAttackContactTime(bool bHeavy) const
 {
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ChooseAttackClip(bHeavy)):nullptr;
-    if(C&&!C->DamageWindows.IsEmpty())return C->DamageWindows[0].X;
-    if(C&&C->ImpactSeconds>=0.f)return C->ImpactSeconds-C->StartSeconds;
+    if(C&&!C->DamageWindows.IsEmpty())return C->DamageWindows[0].X/VisualClipPlayRate(ChooseAttackClip(bHeavy));
+    if(C&&C->ImpactSeconds>=0.f)return (C->ImpactSeconds-C->StartSeconds)/VisualClipPlayRate(ChooseAttackClip(bHeavy));
     return GetAttackDuration(bHeavy)*.5f;
 }
-float AVeyrKnight::GetSwordContactTime() const { return IsAttackAction()?GetAttackContactTime(Action==EVeyrKnightAction::HeavyAttack):-1.f; }
+float AVeyrKnight::GetSwordContactTime() const
+{
+    if(!IsAttackAction())return -1.f;
+    const FVeyrVisualClip* Clip=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
+    if(Clip&&!Clip->DamageWindows.IsEmpty())
+    {
+        const float Rate=VisualClipPlayRate(ActionPresentationClip);
+        for(const FVector2D& Window:Clip->DamageWindows)if(Window.Y/Rate>=ActionElapsed)return Window.X/Rate;
+        return Clip->DamageWindows.Last().X/Rate;
+    }
+    return GetAttackContactTime(Action==EVeyrKnightAction::HeavyAttack);
+}
 bool AVeyrKnight::IsTerminal() const { return IsDead()||(IsValid(Boss)&&Boss->IsDead()); }
 bool AVeyrKnight::CanStartGroundedAction() const
 {
@@ -614,10 +648,15 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     const bool bHasBoss=IsValid(Boss)&&!Boss->IsDead();
     const float BossRange=bHasBoss?FVector::Dist2D(GetActorLocation(),Boss->GetActorLocation()):1600.f;
     const float FarBlend=FMath::Clamp((BossRange-1000.f)/600.f,0.f,1.f);
+    const bool FlightFraming=bHasBoss&&Boss->Move==EVeyrDragonMove::FlyAway&&
+        (Boss->State==EVeyrDragonState::Windup||Boss->State==EVeyrDragonState::Active||Boss->State==EVeyrDragonState::Recovery);
+    FlightCameraBlend=FMath::FInterpTo(FlightCameraBlend,FlightFraming?1.f:0.f,DeltaSeconds,3.f);
+    CombatCamera->SetFieldOfView(FMath::Lerp(72.f,86.f,FlightCameraBlend));
     // A small distance allowance at range permits a level view of the entire
     // giant while retaining floor clearance and space above the boss HUD.
     const bool bOpeningView=!bReplayControlled&&!bHasEverCapturedMouse;
-    const float DesiredArm=FMath::Clamp(CameraDistance,500.f,1100.f)+100.f*FarBlend+(bOpeningView?350.f:0.f);
+    const float GroundArm=FMath::Clamp(CameraDistance,500.f,1100.f)+100.f*FarBlend+(bOpeningView?350.f:0.f);
+    const float DesiredArm=FMath::Lerp(GroundArm,FMath::Max(GroundArm,1600.f),FlightCameraBlend);
     if(VisualClock<=DeltaSeconds*1.5f)CameraBoom->TargetArmLength=DesiredArm;
     else CameraBoom->TargetArmLength=FMath::FInterpTo(CameraBoom->TargetArmLength,DesiredArm,DeltaSeconds,12.f);
     const float Arm=FMath::Max(1.f,CameraBoom->TargetArmLength);
@@ -634,7 +673,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         // Predict using the same sphere/channel as the owned spring arm. The
         // horizontal obstruction distance remains stable as pitch tilts down
         // against a wall; using the slanted distance would cause feedback.
-        const FVector ProbeOrigin=Feet+FVector(0,0,FMath::Min(187.f,Arm*.27f));
+        const float ProbeHeight=FMath::Lerp(FMath::Min(187.f,Arm*.27f),FMath::Min(375.f,Arm*.24f),FlightCameraBlend);
+        const FVector ProbeOrigin=Feet+FVector(0,0,ProbeHeight);
         const FRotator ProbeRotation=Controller->GetControlRotation();
         const FVector ProbeEnd=ProbeOrigin-ProbeRotation.Vector()*Arm+ProbeRotation.RotateVector(CameraBoom->SocketOffset);
         FHitResult CameraHit;
@@ -656,7 +696,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             CameraFramingArm=FMath::FInterpConstantTo(CameraFramingArm,FramingCandidate,DeltaSeconds,220.f);
     }
     CameraFramingArm=FMath::Min(CameraFramingArm,Arm);
-    const float PivotAboveFeet=FMath::Min(187.f,CameraFramingArm*.27f);
+    const float PivotAboveFeet=FMath::Lerp(FMath::Min(187.f,CameraFramingArm*.27f),
+        FMath::Min(375.f,CameraFramingArm*.24f),FlightCameraBlend);
     CameraBoom->SetRelativeLocation(FVector(0,0,PivotAboveFeet-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
     if (!Controller) { RestoreCameraOcclusion(); return; }
 
@@ -702,19 +743,19 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     if (bLock)
     {
         const bool bHeadApproach=Boss->State==EVeyrDragonState::Buckle||Boss->State==EVeyrDragonState::Collapse||Boss->IsHeadExposed();
-        const float HeadWeight=bHeadApproach?1.f:FarBlend;
+        const float HeadWeight=bHeadApproach?1.f:FMath::Lerp(FarBlend,1.f,FlightCameraBlend);
         LockHeadBlend=FMath::FInterpTo(LockHeadBlend,HeadWeight,DeltaSeconds,4.f);
-        const FVector GroundFocus(Boss->GetActorLocation().X,Boss->GetActorLocation().Y,CameraFloorZ+150.f);
+        const FVector GroundFocus(Boss->GetActorLocation().X,Boss->GetActorLocation().Y,CameraFloorZ+FMath::Lerp(150.f,350.f,FlightCameraBlend));
         FVector HeadRoute=Boss->GetHeadLocation();
         // Follow the route toward the crown in XY, but never chase the standing
         // skull's height while the buckle/collapse is only beginning.
-        HeadRoute.Z=FMath::Min(HeadRoute.Z,CameraFloorZ+(bHeadApproach?190.f:400.f));
+        HeadRoute.Z=FMath::Min(HeadRoute.Z,CameraFloorZ+(bHeadApproach?190.f:FMath::Lerp(400.f,1400.f,FlightCameraBlend)));
         const FVector Focus=FMath::Lerp(GroundFocus,HeadRoute,LockHeadBlend);
         const FVector ToFocus=Focus-CameraBoom->GetComponentLocation();
         FRotator Current=Controller->GetControlRotation().GetNormalized(),Desired=Current;
         if(ToFocus.Size2D()>(bHeadApproach?60.f:240.f))Desired.Yaw=ToFocus.Rotation().Yaw;
         const float NearBlend=bHeadApproach?1.f:1.f-FarBlend;
-        const float LockCeiling=FMath::Min(CameraPitchCeiling,FMath::Lerp(0.f,-16.f,NearBlend));
+        const float LockCeiling=FMath::Min(CameraPitchCeiling,FMath::Lerp(FMath::Lerp(0.f,-16.f,NearBlend),45.f,FlightCameraBlend));
         Desired.Pitch=FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(ToFocus.Z,
             FMath::Max(300.f,static_cast<float>(ToFocus.Size2D())))))-4.f,-55.f,LockCeiling);
         Desired.Roll=0.f;
@@ -988,7 +1029,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     }
     const float BlendSeconds=GripTransitionRemaining>0.f?.28f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
-    const bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,Time,Alpha);
+    const bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,Time*VisualClipPlayRate(Clip),Alpha);
     if(Alpha>=1.f)bPresentationTransitionActive=false;
     bRequestedPresentationClipSampled=Sampled;bPresentationUsingFallback=!Sampled;
     PresentationPreviousActionElapsed=Action==EVeyrKnightAction::Ready?-1.f:ActionElapsed;
@@ -1003,7 +1044,7 @@ FVector AVeyrKnight::RootTranslationAt(float Seconds) const
 {
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
     if(!C||C->RootTranslationSamplesCm.IsEmpty()||C->RootSampleRate<=0.f)return FVector::ZeroVector;
-    const float Frame=FMath::Clamp(Seconds*C->RootSampleRate,0.f,float(C->RootTranslationSamplesCm.Num()-1));
+    const float Frame=FMath::Clamp(Seconds*VisualClipPlayRate(ActionPresentationClip)*C->RootSampleRate,0.f,float(C->RootTranslationSamplesCm.Num()-1));
     const int32 A=FMath::FloorToInt(Frame),B=FMath::Min(A+1,C->RootTranslationSamplesCm.Num()-1);
     return FMath::Lerp(C->RootTranslationSamplesCm[A],C->RootTranslationSamplesCm[B],Frame-A);
 }
@@ -1040,7 +1081,8 @@ bool AVeyrKnight::CaptureBlinkEcho(int32 Index,float SourceSeconds)
     auto* Material=BlinkEchoMaterials[Index].Get();
     for(int32 Slot=0;Slot<Echo->GetNumMaterials();++Slot)Echo->SetMaterial(Slot,Material);
     for(int32 Slot=0;Slot<WeaponEcho->GetNumMaterials();++Slot)WeaponEcho->SetMaterial(Slot,Material);
-    Material->SetScalarParameterValue(TEXT("Opacity"),Index==0?.32f:.22f);
+    Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(.08f,.32f,.55f));
+    Material->SetScalarParameterValue(TEXT("Opacity"),Index==0?.14f:.10f);
     Echo->SetVisibility(true);WeaponEcho->SetVisibility(HasWeapon);
     bBlinkEchoCaptured[Index]=true;BlinkEchoStarted[Index]=ActionElapsed;++BlinkEchoCaptures;
     const bool Restored=ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,RestoreSeconds,Alpha);
@@ -1058,7 +1100,7 @@ void AVeyrKnight::UpdateBlinkEchoes()
         const float Age=ActionElapsed-BlinkEchoStarted[I],Life=I==0?.20f:.09f;
         const bool Visible=Age<Life;
         BlinkEchoBodies[I]->SetVisibility(Visible);BlinkEchoWeapons[I]->SetVisibility(Visible);
-        if(BlinkEchoMaterials[I])BlinkEchoMaterials[I]->SetScalarParameterValue(TEXT("Opacity"),(I==0?.32f:.22f)*FMath::Clamp(1.f-Age/Life,0.f,1.f));
+        if(BlinkEchoMaterials[I])BlinkEchoMaterials[I]->SetScalarParameterValue(TEXT("Opacity"),(I==0?.14f:.10f)*FMath::Clamp(1.f-Age/Life,0.f,1.f));
     }
 }
 
@@ -1085,11 +1127,13 @@ void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)
     if(!bImportedPresentationActive||!bRequestedPresentationClipSampled||!IsValid(Boss))return;
     const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(ActionPresentationClip);
     if(!C)return;
+    const float Rate=VisualClipPlayRate(ActionPresentationClip);
     TArray<FVector2D> Windows=C->DamageWindows;
+    for(FVector2D& Window:Windows)Window/=Rate;
     if(Windows.IsEmpty())
     {
         // Legacy definitions retain one authored contact; new imports must supply windows.
-        const float Impact=C->ImpactSeconds>=0.f?C->ImpactSeconds-C->StartSeconds:ActionDuration*.5f;
+        const float Impact=C->ImpactSeconds>=0.f?(C->ImpactSeconds-C->StartSeconds)/Rate:ActionDuration*.5f;
         Windows.Add(FVector2D(FMath::Max(0.f,Impact-.06f),FMath::Min(ActionDuration,Impact+.08f)));
     }
     const float Alpha=ImportedPresentation->CurrentTransitionAlpha;
@@ -1097,7 +1141,7 @@ void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)
     auto SampleBlade=[&](float Seconds,FVector& Base,FVector& Tip)
     {
         Resampled=true;
-        if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,Seconds,Alpha)||!GetWeaponSweep(Base,Tip))return false;
+        if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,Seconds*Rate,Alpha)||!GetWeaponSweep(Base,Tip))return false;
         if(C->bRootMotionRemoved&&!bActionRootBlocked)
         {
             FVector Offset=RootTranslationAt(Seconds)-RootTranslationAt(ActionElapsed);Offset.Z=0.f;
@@ -1127,7 +1171,7 @@ void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)
             A=CurrA;B=CurrB;
         }
     }
-    if(Resampled)bRequestedPresentationClipSampled=ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,FMath::Min(ActionElapsed,ActionDuration),Alpha);
+    if(Resampled)bRequestedPresentationClipSampled=ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,FMath::Min(ActionElapsed,ActionDuration)*Rate,Alpha);
 
 }
 

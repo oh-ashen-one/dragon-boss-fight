@@ -175,7 +175,7 @@ def snapshot():
     for name in ("Source", "Config", "Content"):
         folder = PROJECT / name
         if folder.exists():
-            files.extend(p for p in folder.rglob("*") if p.is_file())
+            files.extend(p for p in folder.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
     return {str(p.relative_to(PROJECT)): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in sorted(files)}
 

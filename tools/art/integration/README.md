@@ -108,3 +108,21 @@ The normalized clips and plans are ready for native import, but this report does
 not claim Interchange success, correct native morph curves, rendered prop contact,
 transition quality, camera quality or gameplay acceptance. Those require the
 owned engine checks and critique loop led by the integration owner.
+
+## Native import observations (2026-10-25)
+
+- Native Knight v025b imports25 action keys and4 exact mesh/skin variants.
+- Native Dragon v025d imports43 keys and2 mesh variants, with8 distinct morph
+  payloads. Interchange emits a separate morph-only AnimSequence; the import
+  adapter therefore reads the exact normalized glTF weight channels into the
+  skeletal sequence's native float curves and verifies their saved values.
+- Fractional bone-track endpoints require native frame alignment. Import uses
+  300Hz with ceiling alignment, preserving motion with at most3.34ms endpoint hold.
+- Native deterministic proof sampled408 poses and204 transitions withzero rejected
+  requests. Independent source comparison passes all68keys, including morph
+  presence and completeclip/bone/samplecoverage. Alpha endpointproof is strengthened
+  for the next run; rendered/gameplay checks remain separate.
+- One-hand Light has a runtime GameplayPlayRate of3 toretainfastone-hand versus
+  slower two-hand combat (.933s versus1.2s). The approved source sequence remains
+  unchanged; native impact windows and blade samples use the same rate. All other
+  imported action rates are1.

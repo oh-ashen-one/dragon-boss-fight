@@ -24,7 +24,7 @@ def build(root:Path,legacy:Path,version:str):
   if sword:entry['weapon_file']=sword
   windows={'LightCombo':[[.30,.50],[.7667,1.0333],[1.60,1.9633]],'LightAttack':[[1.,1.2]],'LightAttackTwoHand':[[.35,.56]],'HeavyAttack':[[.52,.94]],'HeavyAttackAlternate':[[.52,.94]],'HeavyAttackTwoHand':[[.43,.74]],'HeavyAttackTwoHandAlternate':[[.70,.98]],'RollAttack':[[1.03,1.27]]}
   speeds={'Walk':157.8138,'WalkTwoHand':94.5496,'Run':460.4147,'RunAlternate':508.8226,'Backpedal':59.9455}
-  entry['damage_windows']=windows.get(key,[]);entry['nominal_speed_cm_per_second']=speeds.get(key,0.) if c['kind']=='knight' else (215.6/c['duration'] if key=='Walk' else 0.)
+  entry['gameplay_play_rate']=3.0 if key=='LightAttack' else 1.0;entry['damage_windows']=windows.get(key,[]);entry['nominal_speed_cm_per_second']=speeds.get(key,0.) if c['kind']=='knight' else (215.6/c['duration'] if key=='Walk' else 0.)
   entry.update(overrides);return entry
  plans={}
  for kind,character,base in [('knight','KnightB','import-knight-v015.json'),('dragon','DragonV3B','import-dragon-v007.json')]:

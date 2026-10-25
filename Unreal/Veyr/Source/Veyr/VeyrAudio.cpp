@@ -1,5 +1,6 @@
 #include "VeyrAudio.h"
 #include "VeyrKnight.h"
+#include "VeyrVisualDefinition.h"
 #include "VeyrDragon.h"
 #include "Components/AudioComponent.h"
 #include "Components/SceneComponent.h"
@@ -98,8 +99,28 @@ void AVeyrAudio::Tick(float DeltaSeconds)
         return;
     }
 
-    if (K->HeavyAttacks > LastHeavy) PlayCue(ECue::HeavySwing);
-    else if (K->LightAttacks > LastLight) PlayCue(ECue::Swing);
+    const bool SwordAction=K->Action==EVeyrKnightAction::LightAttack||K->Action==EVeyrKnightAction::HeavyAttack||
+        K->Action==EVeyrKnightAction::Combo||K->Action==EVeyrKnightAction::RollAttack;
+    if(K->Action!=LastSwingAction||K->RequestedPresentationClip!=LastSwingClip||K->GetActionElapsed()<LastSwingElapsed)
+        SwingWindowsPlayed.Reset();
+    const FVeyrVisualClip* Swing=K->CustomuseVisualDefinition?K->CustomuseVisualDefinition->Clips.Find(K->RequestedPresentationClip):nullptr;
+    if(SwordAction&&Swing&&!Swing->DamageWindows.IsEmpty())
+    {
+        const float Rate=FMath::Max(.1f,Swing->GameplayPlayRate);
+        for(int32 I=0;I<Swing->DamageWindows.Num();++I)
+        {
+            const bool Heavy=K->Action==EVeyrKnightAction::HeavyAttack||(K->Action==EVeyrKnightAction::Combo&&I==2);
+            const float CueAt=FMath::Max(0.f,static_cast<float>(Swing->DamageWindows[I].X)/Rate-(Heavy?.35f:.13f));
+            if(K->GetActionElapsed()>=CueAt&&!SwingWindowsPlayed.Contains(I))
+            {PlayCue(Heavy?ECue::HeavySwing:ECue::Swing);SwingWindowsPlayed.Add(I);}
+        }
+    }
+    else if(!Swing)
+    {
+        if(K->HeavyAttacks>LastHeavy)PlayCue(ECue::HeavySwing);
+        else if(K->LightAttacks>LastLight)PlayCue(ECue::Swing);
+    }
+    LastSwingAction=K->Action;LastSwingClip=K->RequestedPresentationClip;LastSwingElapsed=K->GetActionElapsed();
     if (D->GetSwordContactCount() > LastSwordContact)
         PlayCue(ECue::Contact, D->GetHeadBonusHitCount() > LastHeadBonus ? 1.f : .8f);
     if (K->GuardedHits > LastGuardedHits) PlayCue(ECue::Guard);

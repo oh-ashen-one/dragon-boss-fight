@@ -113,10 +113,105 @@ def compatible(canonical, clip):
         raise ValueError("Each named clip file must contain exactly one animation")
 
 
+def source_morph_curves(filename):
+    """Read dense normalized glTF weight channels without changing authored values."""
+    raw=Path(filename).read_bytes();length=struct.unpack_from('<I',raw,12)[0]
+    gltf=json.loads(raw[20:20+length]);binary=raw[28+length:]
+    def values(index):
+        accessor=gltf['accessors'][index]
+        if accessor['componentType'] != 5126 or 'sparse' in accessor:
+            raise ValueError('Normalize source morph channels to dense float before import')
+        view=gltf['bufferViews'][accessor['bufferView']]
+        start=view.get('byteOffset',0)+accessor.get('byteOffset',0)
+        stride=view.get('byteStride',4)
+        return [struct.unpack_from('<f',binary,start+i*stride)[0] for i in range(accessor['count'])]
+    result={}
+    for animation in gltf.get('animations',[]):
+        for channel in animation['channels']:
+            if channel['target']['path'] != 'weights':continue
+            node=gltf['nodes'][channel['target']['node']];mesh=gltf['meshes'][node['mesh']]
+            names=mesh.get('extras',{}).get('targetNames',[])
+            sampler=animation['samplers'][channel['sampler']]
+            if sampler.get('interpolation','LINEAR') != 'LINEAR':
+                raise ValueError('Corrective channel needs explicit linear-normalized source')
+            times=values(sampler['input']);weights=values(sampler['output'])
+            if not names or len(weights) != len(times)*len(names):raise ValueError('Invalid normalized corrective channel')
+            for i,name in enumerate(names):result[name]=(times,weights[i::len(names)])
+    return result
+
+
+def finalize_existing(plan):
+    """Finish the approved native import without reimporting or changing source assets."""
+    import unreal
+    character,version=plan['character'],plan['version']
+    # Per-process test settings only; do not save or change shared editor preferences.
+    settings=unreal.get_default_object(unreal.load_class(None,'/Script/UnrealEd.EditorPerformanceSettings'))
+    settings_path=ROOT/'Local/native-validation-settings.json'
+    if not settings_path.exists():
+        settings_path.write_text(json.dumps({'throttle_cpu_when_not_foreground':settings.get_editor_property('bThrottleCPUWhenNotForeground')},indent=2)+'\n')
+    settings.set_editor_property('bThrottleCPUWhenNotForeground',False,unreal.PropertyAccessChangeNotifyMode.NEVER)
+    world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
+    for command in ('t.MaxFPS 60','t.IdleWhenNotForeground 0','r.ScreenPercentage 100','r.Editor.Viewport.OverridePIEScreenPercentage 0'):
+        unreal.SystemLibrary.execute_console_command(world,command)
+    path=f"/Game/Characters/Customuse/{character}/{version}/DA_{character}"
+    definition=unreal.load_asset(path)
+    if not isinstance(definition,unreal.VeyrVisualDefinition):raise RuntimeError('Native definition missing before finalization')
+    errors=list(definition.validate_definition(True))
+    if errors:raise RuntimeError('Incomplete import: '+'; '.join(errors))
+    clip_entries=dict(definition.clips)
+    for key,clip in clip_entries.items():
+        clip.set_editor_property('gameplay_play_rate',3.0 if character=='KnightB' and str(key).lower()=='lightattack' else 1.0)
+    definition.set_editor_property('clips',clip_entries)
+    runtime_name='Knight' if character=='KnightB' else 'Dragon'
+    runtime=unreal.load_asset('/Game/Characters/Customuse/RuntimeApproved/DA_'+runtime_name)
+    if runtime and runtime.source_sha256==definition.source_sha256:
+        runtime.set_editor_property('clips',clip_entries)
+        unreal.EditorAssetLibrary.save_loaded_asset(runtime,False)
+    record={'character':character,'definition':path,'completeClips':len(definition.clips),'materials':[]}
+    if character=='DragonV3B':
+        import prepare_dragon_visibility_material as visibility
+        mesh=definition.skeletal_mesh
+        slots=list(mesh.get_editor_property('materials'))
+        if len(slots)!=1:raise RuntimeError('Expected the approved single dragon material')
+        source=slots[0].get_editor_property('material_interface')
+        if unreal.EditorAssetLibrary.get_metadata_tag(source,visibility.TAG_OWNER)==visibility.OWNER:
+            material=source
+        else:
+            result=visibility.run(source.get_path_name())
+            material=unreal.load_asset(result['material'])
+        meshes={mesh.get_path_name():mesh}
+        for clip in definition.clips.values():
+            variant=clip.get_editor_property('mesh_override')
+            if variant:meshes[variant.get_path_name()]=variant
+        for target in meshes.values():
+            materials=list(target.get_editor_property('materials'))
+            for slot in materials:slot.set_editor_property('material_interface',material)
+            target.set_editor_property('materials',materials)
+            if not unreal.EditorAssetLibrary.save_loaded_asset(target,False):raise RuntimeError('Could not save approved dragon visibility material binding')
+            record['materials'].append({'mesh':target.get_path_name(),'material':material.get_path_name()})
+    unreal.EditorAssetLibrary.save_loaded_asset(definition,False)
+    receipt=ROOT/'Local/CustomuseImports'/('finalized-'+character+'-'+version+'.json')
+    receipt.write_text(json.dumps(record,indent=2)+'\n')
+    return record
+
+
 def run(plan_file):
     import unreal
     plan = json.loads(Path(plan_file).read_text())
     character, version = plan["character"], plan["version"]
+    if plan.get("restore_editor_settings"):
+        import unreal
+        settings_file=ROOT/'Local/native-validation-settings.json'
+        if settings_file.exists():
+            original=json.loads(settings_file.read_text())
+            settings=unreal.get_default_object(unreal.load_class(None,'/Script/UnrealEd.EditorPerformanceSettings'))
+            settings.set_editor_property('bThrottleCPUWhenNotForeground',original['throttle_cpu_when_not_foreground'],unreal.PropertyAccessChangeNotifyMode.NEVER)
+        return {'definition':f'/Game/Characters/Customuse/{character}/{version}/DA_{character}'}
+    if plan.get("verify_pose_only"):
+        import probe_approved_poses
+        return probe_approved_poses.run(plan)
+    if plan.get("finalize_only"):
+        return finalize_existing(plan)
     if character not in ("KnightB", "DragonV3B") or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,39}", version):
         raise ValueError("Invalid character/version")
     if not plan.get("bones"):
@@ -310,9 +405,29 @@ def run(plan_file):
             if sequence is None:
                 imported = import_one(source, destination + "/Animations/" + specification["name"], skeleton)
                 sequences = [obj for obj in imported if isinstance(obj, unreal.AnimSequence)]
-                if len(sequences) != 1 or sequences[0].get_editor_property("skeleton") != skeleton:
-                    raise RuntimeError("Clip did not bind exclusively to the canonical skeleton")
-                sequence = sequences[0]
+                compatible_sequences = [obj for obj in sequences if obj.get_editor_property("skeleton") == skeleton]
+                if not compatible_sequences:
+                    raise RuntimeError("Clip did not bind to the canonical skeleton")
+                track_counts = {obj.get_path_name(): len(unreal.AnimationLibrary.get_animation_track_names(obj)) for obj in compatible_sequences}
+                sequence = max(compatible_sequences, key=lambda obj: track_counts[obj.get_path_name()])
+                if track_counts[sequence.get_path_name()] == 0:
+                    raise RuntimeError("Imported action has no bone tracks")
+                # glTF Interchange may emit an additional morph-only sequence and
+                # duplicate/default curves on the skeletal sequence. Reconstruct
+                # float curves from the exact approved normalized weight channel.
+                merged_curves = []
+                existing_curves = {str(n) for n in unreal.AnimationLibrary.get_animation_curve_names(sequence, unreal.RawCurveTrackTypes.RCT_FLOAT)}
+                for curve_name, (times, values) in source_morph_curves(source["file"]).items():
+                    if curve_name in existing_curves:
+                        unreal.AnimationLibrary.remove_curve(sequence, curve_name, False)
+                    unreal.AnimationLibrary.add_curve(sequence, curve_name, unreal.RawCurveTrackTypes.RCT_FLOAT, False)
+                    unreal.AnimationLibrary.add_float_curve_keys(sequence, curve_name, times, values)
+                    unreal.AnimationLibrary.set_curve_meta_data_morph_target(skeleton, curve_name, True)
+                    actual_times, actual_values = unreal.AnimationLibrary.get_float_keys(sequence, curve_name)
+                    if len(actual_values) != len(values) or max((abs(a-b) for a,b in zip(actual_values,values)), default=0.) > 1.e-6:
+                        raise RuntimeError("Native corrective curve differs from approved source: " + curve_name)
+                    merged_curves.append(curve_name)
+                receipt.setdefault("nativeAnimationMerges", {})[specification["name"]] = {"boneTrackCounts": track_counts, "selectedSequence": sequence.get_path_name(), "mergedCurves": merged_curves, "curveSource": "exact approved GLB weights"}
                 imported_sequences[source["sha256"]] = sequence
             root_policy = specification.get("root_motion_policy", "preserve")
             if root_policy not in ("preserve", "lock_root"):
@@ -339,6 +454,7 @@ def run(plan_file):
                 entry.set_editor_property("approved_source_sha256", specification.get("approved_source_sha256", ""))
                 entry.set_editor_property("damage_windows", [unreal.Vector2D(*window) for window in specification.get("damage_windows", [])])
                 entry.set_editor_property("nominal_speed_cm_per_second", specification.get("nominal_speed_cm_per_second", 0.0))
+                entry.set_editor_property("gameplay_play_rate", specification.get("gameplay_play_rate", 1.0))
                 entry.set_editor_property("root_translation_samples_cm", [unreal.Vector(*point) for point in specification.get("root_translation_samples_cm", [])])
                 entry.set_editor_property("root_yaw_samples_degrees", specification.get("root_yaw_samples_degrees", []))
                 entry.set_editor_property("root_sample_rate", specification.get("root_sample_rate", 60.0))
@@ -348,6 +464,22 @@ def run(plan_file):
             clips[specification["name"]] = entry
             receipt.setdefault("clipLengthsSeconds", {})[specification["name"]] = float(sequence.get_editor_property("sequence_length"))
         definition.set_editor_property("clips", clips)
+        receipt["morphTargets"] = [str(name) for name in definition.get_imported_morph_target_names()]
+        receipt["clipCurveRanges"] = {}
+        for key, entry in clips.items():
+            curve_names = list(unreal.AnimationLibrary.get_animation_curve_names(entry.sequence, unreal.RawCurveTrackTypes.RCT_FLOAT))
+            ranges = {}
+            for curve_name in curve_names:
+                times, values = unreal.AnimationLibrary.get_float_keys(entry.sequence, curve_name)
+                if values:ranges[str(curve_name)] = [min(values), max(values), len(values)]
+            receipt["clipCurveRanges"][key] = ranges
+        if character == "DragonV3B" and version.startswith("v025"):
+            if len(receipt["morphTargets"]) != 8:
+                raise RuntimeError("Approved dragon must retain all eight distinct morph shapes")
+            for key in ("Idle", "Walk", "TurnLeft", "FlightWindup", "FlightActive", "FlightRecovery", "FlightHoverAlternate", "FireActive", "BiteActive"):
+                ranges=receipt["clipCurveRanges"].get(key,{})
+                if not any(bounds[1] > .001 for name,bounds in ranges.items() if "Veyr" in name):
+                    raise RuntimeError("Approved dragon corrective curves absent or zero: " + key)
         errors = list(definition.validate_definition(False))
         receipt["definitionErrors"] = errors
         receipt["completeMovesetErrors"] = list(definition.validate_definition(True))

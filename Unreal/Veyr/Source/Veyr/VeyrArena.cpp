@@ -375,7 +375,9 @@ void AVeyrArena::BuildDistance()
         if(I%2==0)
             Box(Rocks,Radial(Angle,27000.f,-50.f),FVector(6500,14000,850),FRotator(0,Yaw,0));
     }
-    for (int32 I = 0; I < 24; ++I)
+    // Imported cathedral scenes use their authored broken masonry. Keep the
+    // old loose cube rubble only for the explicit primitive fallback layout.
+    for (int32 I = 0; I < (CathedralWallMesh?0:24); ++I)
     {
         const float Angle = Random.FRandRange(0, 2.f * PI);
         const FVector Size(Random.FRandRange(80, 230), Random.FRandRange(90, 230), Random.FRandRange(65, 170));

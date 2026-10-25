@@ -203,6 +203,8 @@ private:
     bool bRepositionAuthoredTurn=false,bRepositionReverseTurn=false;
     FName RepositionTurnClip=NAME_None;
     float RepositionTurnSourceDuration=0.f;
+    FVector LandingLocalCenter=FVector::ZeroVector;
+    float LandingWarningRadius=600.f;
     bool HasAuthoredFlight() const;
     bool IsLandingContactWindow() const;
     float VisualClipDuration(FName ClipName,float Fallback) const;

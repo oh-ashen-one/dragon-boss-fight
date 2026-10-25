@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--engine', type=Path, required=True)
 parser.add_argument('--gpu-slot', type=Path, required=True)
+parser.add_argument('--video-fps',type=int,choices=range(1,16))
 parser.add_argument('--slot-wait-seconds', type=int, default=1800)
 a = parser.parse_args()
 if not 30 <= a.slot_wait_seconds <= 3600:
@@ -40,6 +41,7 @@ command = [str(a.gpu_slot),'capture','--label','veyr-customuse-editor','--timeou
            '-ModelContextProtocolPort=18773','-notraceserver','-NoZenAutoLaunch','-NoCrashReports',
            '-DDC=(EnginePak=InstalledEnginePak,Local)','-LocalDataCachePath='+str(project.parent/'DerivedDataCache'),
            '-windowed','-ResX=1280','-ResY=720','-nosplash','-abslog='+str(run/'editor.log')]
+if a.video_fps:command.append('-VeyrVideoFPS='+str(a.video_fps))
 (run/'launch.json').write_text(json.dumps({'command':command,'autoRestart':False,'rendererLimit':2},indent=2)+'\n')
 environment=os.environ.copy();environment['GPU_SLOT_CAPTURE_SLOTS']='2'
 print('Owned editor run:',run,flush=True)

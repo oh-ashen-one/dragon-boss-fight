@@ -1,38 +1,47 @@
 # Native animation integration — IN PROGRESS, 2026-10-25
 
-Owner approved all 32 rows in the October 24 reviewer and explicitly authorized
-full game integration, builds, gameplay testing and critique agents. This supersedes
-all earlier stop/no-Unreal restrictions below. Exact hashes and quote are recorded
-in `tools/art/integration/owner-approvals-20261025.json`.
+Owner approved all 32 October 24 reviewer candidates and explicitly authorized full
+native integration, gameplay testing and critique agents. Earlier animation-only
+restrictions below are superseded. Exact approvals/hashes are in
+`tools/art/integration/owner-approvals-20261025.json`.
 
-- Branch: `codex/veyr-native-animation-integration-20261025`, isolated worktree.
-- Root is the sole editor/build/runtime owner. Knight and Dragon workers own their
-  actor files; asset worker owns structural GLB conversion under tools/art/integration.
-- Current roles use actual available Codex agents, not the unavailable named Opus roles.
-- Baseline native content was copied from the previous native project; baseline
-  VeyrEditor build succeeded. Native MCP discovered and verified VeyrArena.
-- Source integration builds successfully with full-body Knight actions, blink/VFX,
-  authored timing, native helper-bone props, and Dragon flight/root-turn changes.
-  Independent critique found per-clip skin variants and terminal recovery bugs;
-  both are now addressed in source. Native/runtime proof remains pending.
-- Structural v025b normalization preserves all original geometry/skin/morph/helper
-  motion via four Knight/two Dragon mesh variants. 74 exports pass CPU-skinned
-  reconstruction at seven times each (max3.414e-6 source units). v025a bone-only
-  checks are superseded, and its partial native import is preserved.
-- Native v025a import stopped on a fractional frame boundary in Sweep; v025b
-  importer uses300Hz with ceiling alignment, maximum3.34ms terminal hold.
-- One owned editor crashed during a SIGTERM restart (native macOS signal trampoline);
-  report is preserved in Local/integration-crash-ledger.json. Use normal editor Quit
-  for future shutdown. Current crash count1; stop automatic launches after2.
-- Post-sprint source backup now closes prior handoff gap:154files/6.2GB in five
-  private release assets, knight-dragon-postsprint-20261025; hashes verified.
-- Important open gates: normalize distinct same-name dragon morph targets without
-  losing shape corrections; preserve authored weapon/cup transforms via helper
-  bones; import, map full gameplay clocks/root movement; render and critique native
-  gameplay; package and test the actual application. None is complete yet.
-- Approved originals stay immutable. Hidden failed clips were not approved.
-- No main merge/public release authorized. Private asset backups and task branch
-  pushes are in scope. Keep frequent resumable checkpoints.
+- Branch: `codex/veyr-native-animation-integration-20261025`; isolated worktree.
+  Root is sole engine/build owner. Codex critique agents inspect independently.
+- Latest successful editor build: Local/unreal-build-20261025T064123759141Z,
+  source f96b3ee5c74b210596a2b63768ddaf2ff78b12382823cc41b2911226b2f93cd9.
+- All approved native clips now use RuntimeApproved definitions, exact mesh/skin
+  variants, bone/helper transforms and eight disambiguated Dragon morph targets.
+  Original GLBs/Blends remain immutable. Hidden rejected candidates excluded.
+- Structural reconstruction: 74 exports, seven times each, max3.414e-6 model units.
+  Native source fidelity:68/68 keys,408 samples, zero coverage errors;
+  maximum0.0593cm position/.246degrees rotation/.000944 morph error.
+  Transition endpoints:136 equality checks, maxerror0. Native unit tests7/7 pass.
+- Input-only integration replay PASS:16 action/locomotion/variant/blink exercises,
+  Ready recovery, no fallback/failed pose requests/VFX diagnostics. Evidence:
+  Evidence/pie-integration-20261025T060340Z. This is not combat-contact proof.
+- First core combat replay FAIL: old locked fine-navigation repeatedly triggered
+  the new lateral blink (105 times). Driver now navigates unlocked, locks when
+  positioned, checks facing, and uses unlocked rolls for escapes. Retest running.
+- Critique prompted native camera flight framing, paw-derived landing warning,
+  quieter single-sided blink echoes, player-only moon fill and strike-window
+  audio alignment. Latest camera/warning/audio changes still need runtime proof.
+- Prior terminal recovery bugs are fixed: Knight returns to Ready after victory;
+  Dragon finishes landing after player death. Packaged app tests remain pending.
+- One owned editor crashed during SIGTERM shutdown (native macOS trampoline).
+  Local/integration-crash-ledger.json preserves evidence; subsequent normal Cmd-Q
+  shutdowns were clean. Crash count1; stop automatic relaunch after2. Use native
+  UI Quit, not SIGTERM, for ordinary editor shutdown.
+- Editor uses own loopback MCP18773 and shared GPU slot; only root controls it.
+  Temporary nonforeground throttling override must be restored before shutdown
+  through plan restore_editor_settings (no global config save).
+- Private source delta backup verified:154 files/6.2GB in five release ZIPs at
+  oh-ashen-one/veyr-animation-sources, tag knight-dragon-postsprint-20261025.
+  Receipt: tools/art/integration/source-backup-receipt.json.
+- Remaining gates: combat/legs/stance/guard/heal/death/victory gameplay tests;
+  fresh visual critique; cook/package/signature and actual packaged runtime;
+  backup native content and deliver app. Do not report completion before these.
+- No main merge/public release authorized. Task branch pushes/private backups
+  are authorized. Preserve other checkouts and unrelated processes/files.
 
 ---
 

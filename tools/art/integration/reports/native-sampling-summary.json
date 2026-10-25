@@ -1,0 +1,20 @@
+[
+  {
+    "character": "DragonV3B",
+    "clipCount": 43,
+    "samples": 258,
+    "transitionChecks": 129,
+    "failedRequests": 0,
+    "passed": true,
+    "scope": "Native sampling and evaluator acceptance; not a rendered quality or gameplay verdict"
+  },
+  {
+    "character": "KnightB",
+    "clipCount": 25,
+    "samples": 150,
+    "transitionChecks": 75,
+    "failedRequests": 0,
+    "passed": true,
+    "scope": "Native sampling and evaluator acceptance; not a rendered quality or gameplay verdict"
+  }
+]

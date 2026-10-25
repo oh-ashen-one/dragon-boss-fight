@@ -1,0 +1,20 @@
+[
+  {
+    "character": "DragonV3B",
+    "samples": 258,
+    "transitionChecks": 129,
+    "endpointChecks": 86,
+    "maximumEndpointError": 0.0,
+    "failures": [],
+    "passed": true
+  },
+  {
+    "character": "KnightB",
+    "samples": 150,
+    "transitionChecks": 75,
+    "endpointChecks": 50,
+    "maximumEndpointError": 0.0,
+    "failures": [],
+    "passed": true
+  }
+]

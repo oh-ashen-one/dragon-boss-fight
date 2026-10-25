@@ -9,12 +9,15 @@ def run():
     if existing:
         if not isinstance(existing,unreal.Material) or unreal.EditorAssetLibrary.get_metadata_tag(existing,'VeyrOwner') != OWNER:
             raise RuntimeError('Preserving material at occupied blink path')
+        existing.set_editor_property('two_sided',False)
+        unreal.MaterialEditingLibrary.recompile_material(existing)
+        unreal.EditorAssetLibrary.save_loaded_asset(existing,False)
         return existing
     material=unreal.AssetToolsHelpers.get_asset_tools().create_asset('M_BlinkAfterimage','/Game/ArtPass/Materials',unreal.Material,unreal.MaterialFactoryNew())
     if not material:raise RuntimeError('Blink material creation failed')
     material.set_editor_property('blend_mode',unreal.BlendMode.BLEND_TRANSLUCENT)
     material.set_editor_property('shading_model',unreal.MaterialShadingModel.MSM_UNLIT)
-    material.set_editor_property('two_sided',True)
+    material.set_editor_property('two_sided',False)
     material.set_editor_property('used_with_skeletal_mesh',True)
     library=unreal.MaterialEditingLibrary
     tint=library.create_material_expression(material,unreal.MaterialExpressionVectorParameter,-300,0)

@@ -7,6 +7,7 @@
 
 class AVeyrDragon;
 class UCameraComponent;
+class UPointLightComponent;
 class USpringArmComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
@@ -133,6 +134,7 @@ protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
+    UPROPERTY() TObjectPtr<UPointLightComponent> ReadabilityFill;
     UPROPERTY() TObjectPtr<USceneComponent> SwordPivot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> BoatWeapon;
     bool bBoatReleased=false;
@@ -192,6 +194,7 @@ private:
     float CameraFloorZ = 0.f;
     float CameraObstructionHold = 0.f;
     float LockHeadBlend = 0.f;
+    float FlightCameraBlend = 0.f;
     TWeakObjectPtr<APlayerController> OcclusionController;
     TMap<TWeakObjectPtr<UPrimitiveComponent>, float> CameraHiddenParts;
     TWeakObjectPtr<APlayerController> MouseInputController;
@@ -219,6 +222,7 @@ private:
     bool IsBlinkAction() const;
     bool IsRollPrefix() const;
     bool HasVisualClip(FName Name) const;
+    float VisualClipPlayRate(FName Name) const;
     float VisualClipDuration(FName Name,float Fallback) const;
     float VisualClipSpeed(FName Name) const;
     FName ChooseAttackClip(bool bHeavy) const;

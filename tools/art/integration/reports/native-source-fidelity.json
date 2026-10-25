@@ -1,0 +1,682 @@
+[
+  {
+    "clip": "Idle",
+    "maxPositionErrorCm": 0.005660337159147426,
+    "maxRotationErrorDegrees": 0.08288396746351606,
+    "maxScaleError": 3.5762786865234375e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "IdleTwoHand",
+    "maxPositionErrorCm": 0.005876010617855042,
+    "maxRotationErrorDegrees": 0.08059189467386896,
+    "maxScaleError": 1.7881393432617188e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "LightAttack",
+    "maxPositionErrorCm": 0.00390995765459316,
+    "maxRotationErrorDegrees": 0.037936554833725065,
+    "maxScaleError": 9.775161742942018e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "LightAttackTwoHand",
+    "maxPositionErrorCm": 0.004580851654746083,
+    "maxRotationErrorDegrees": 0.054064657039732,
+    "maxScaleError": 9.5367431640625e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "HeavyAttack",
+    "maxPositionErrorCm": 0.00401439639350427,
+    "maxRotationErrorDegrees": 0.09480952295964708,
+    "maxScaleError": 1.6510486602783203e-05,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "HeavyAttackAlternate",
+    "maxPositionErrorCm": 0.004518849109401118,
+    "maxRotationErrorDegrees": 0.07599873025187474,
+    "maxScaleError": 1.627206802368164e-05,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "HeavyAttackTwoHand",
+    "maxPositionErrorCm": 0.00477909317688508,
+    "maxRotationErrorDegrees": 0.05509392132728385,
+    "maxScaleError": 1.192092895729857e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "HeavyAttackTwoHandAlternate",
+    "maxPositionErrorCm": 0.004119304978550674,
+    "maxRotationErrorDegrees": 0.04740489175713069,
+    "maxScaleError": 8.940696714088148e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "LightCombo",
+    "maxPositionErrorCm": 0.006015778341452788,
+    "maxRotationErrorDegrees": 0.17329132992448273,
+    "maxScaleError": 1.1920928955078125e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "RollAttack",
+    "maxPositionErrorCm": 0.007284271617809957,
+    "maxRotationErrorDegrees": 0.09160426702478304,
+    "maxScaleError": 2.0265579223632812e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "GuardBreak",
+    "maxPositionErrorCm": 0.004298892040649618,
+    "maxRotationErrorDegrees": 0.07359469556668402,
+    "maxScaleError": 1.668930053932982e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "GuardTwoHand",
+    "maxPositionErrorCm": 0.005199330979950073,
+    "maxRotationErrorDegrees": 0.03081591213051329,
+    "maxScaleError": 8.94069671852904e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Heal",
+    "maxPositionErrorCm": 0.005392157561637613,
+    "maxRotationErrorDegrees": 0.10111392168282433,
+    "maxScaleError": 1.2516975405052477e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Walk",
+    "maxPositionErrorCm": 0.0031442748949264215,
+    "maxRotationErrorDegrees": 0.07118461476778758,
+    "maxScaleError": 7.748603819690558e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "WalkTwoHand",
+    "maxPositionErrorCm": 0.003455344346954578,
+    "maxRotationErrorDegrees": 0.08407094921773178,
+    "maxScaleError": 1.430511474609375e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Run",
+    "maxPositionErrorCm": 0.003683752371803403,
+    "maxRotationErrorDegrees": 0.15100993171098978,
+    "maxScaleError": 2.4437904357910156e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "RunAlternate",
+    "maxPositionErrorCm": 0.0033198297611017656,
+    "maxRotationErrorDegrees": 0.09543733841726645,
+    "maxScaleError": 3.2186508178710938e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "RunStop",
+    "maxPositionErrorCm": 0.0032735117473467294,
+    "maxRotationErrorDegrees": 0.11489841559509337,
+    "maxScaleError": 2.3066997528076172e-05,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Backpedal",
+    "maxPositionErrorCm": 0.005271371271649816,
+    "maxRotationErrorDegrees": 0.03130077843987661,
+    "maxScaleError": 1.07288360590152e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "BackpedalStep",
+    "maxPositionErrorCm": 0.004838629179787359,
+    "maxRotationErrorDegrees": 0.11183028438797857,
+    "maxScaleError": 1.2516975401721808e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "BlinkLeft",
+    "maxPositionErrorCm": 0.003800089175946038,
+    "maxRotationErrorDegrees": 0.10144139983635819,
+    "maxScaleError": 7.152557373046875e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "BlinkRight",
+    "maxPositionErrorCm": 0.005923283779855794,
+    "maxRotationErrorDegrees": 0.10141519552376302,
+    "maxScaleError": 7.152557373601987e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Stagger",
+    "maxPositionErrorCm": 0.005515104703799529,
+    "maxRotationErrorDegrees": 0.08393144359768272,
+    "maxScaleError": 9.5367431640625e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Death",
+    "maxPositionErrorCm": 0.0037509930595841807,
+    "maxRotationErrorDegrees": 0.06661180224833937,
+    "maxScaleError": 2.3245811459071675e-06,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Roll",
+    "maxPositionErrorCm": 0.05925494045821654,
+    "maxRotationErrorDegrees": 0.24596275751036906,
+    "maxScaleError": 9.238719940185547e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "KnightB",
+    "pass": true
+  },
+  {
+    "clip": "Buckle0",
+    "maxPositionErrorCm": 0.005125382915139198,
+    "maxRotationErrorDegrees": 0.14037500044220136,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Buckle1",
+    "maxPositionErrorCm": 0.004052426666021347,
+    "maxRotationErrorDegrees": 0.05834681278523459,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Buckle2",
+    "maxPositionErrorCm": 0.005125382915139198,
+    "maxRotationErrorDegrees": 0.07442511027817805,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Buckle3",
+    "maxPositionErrorCm": 0.004052426666021347,
+    "maxRotationErrorDegrees": 0.05834681278523459,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Claw0Active",
+    "maxPositionErrorCm": 3.824102537328829e-05,
+    "maxRotationErrorDegrees": 0.14187354576876052,
+    "maxScaleError": 8.331675880324241e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Claw0Recovery",
+    "maxPositionErrorCm": 3.82410253726511e-05,
+    "maxRotationErrorDegrees": 0.10447719563336212,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Claw0Windup",
+    "maxPositionErrorCm": 3.824102537013709e-05,
+    "maxRotationErrorDegrees": 0.16872459551037725,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Claw1Active",
+    "maxPositionErrorCm": 3.8241025369543165e-05,
+    "maxRotationErrorDegrees": 0.13431794056394367,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Claw1Recovery",
+    "maxPositionErrorCm": 3.824102537391662e-05,
+    "maxRotationErrorDegrees": 0.14536143444077673,
+    "maxScaleError": 8.331675882544687e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Claw1Windup",
+    "maxPositionErrorCm": 3.824102537703342e-05,
+    "maxRotationErrorDegrees": 0.11657507363289582,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "ClawActive",
+    "maxPositionErrorCm": 3.824102537328829e-05,
+    "maxRotationErrorDegrees": 0.14187354576876052,
+    "maxScaleError": 8.331675880324241e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "ClawRecovery",
+    "maxPositionErrorCm": 3.82410253726511e-05,
+    "maxRotationErrorDegrees": 0.10447719563336212,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "ClawWindup",
+    "maxPositionErrorCm": 3.824102537013709e-05,
+    "maxRotationErrorDegrees": 0.16872459551037725,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Collapse",
+    "maxPositionErrorCm": 0.0035364851355552673,
+    "maxRotationErrorDegrees": 0.11752545793338497,
+    "maxScaleError": 8.331675880324241e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Death",
+    "maxPositionErrorCm": 0.0020444095134735107,
+    "maxRotationErrorDegrees": 0.06480743315822145,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "DeathDown",
+    "maxPositionErrorCm": 3.824102537141147e-05,
+    "maxRotationErrorDegrees": 0.05725978080392015,
+    "maxScaleError": 8.33167588365491e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Exposed",
+    "maxPositionErrorCm": 3.8241025367623084e-05,
+    "maxRotationErrorDegrees": 0.020769964078098665,
+    "maxScaleError": 8.331675878103795e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Rise",
+    "maxPositionErrorCm": 0.003575071692466736,
+    "maxRotationErrorDegrees": 0.13972321454289424,
+    "maxScaleError": 8.331675880324241e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Stomp2Active",
+    "maxPositionErrorCm": 0.0021234303722256044,
+    "maxRotationErrorDegrees": 0.027589166689991694,
+    "maxScaleError": 8.331675882544687e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Stomp2Recovery",
+    "maxPositionErrorCm": 0.002512453705561511,
+    "maxRotationErrorDegrees": 0.08370177831094783,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Stomp2Windup",
+    "maxPositionErrorCm": 0.00042967324764754417,
+    "maxRotationErrorDegrees": 0.04810341388200747,
+    "maxScaleError": 8.331675882544687e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Stomp3Active",
+    "maxPositionErrorCm": 0.0021234303722256044,
+    "maxRotationErrorDegrees": 0.03246588277625057,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Stomp3Recovery",
+    "maxPositionErrorCm": 0.00409711124508325,
+    "maxRotationErrorDegrees": 0.08708468519037765,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Stomp3Windup",
+    "maxPositionErrorCm": 0.002697872396015771,
+    "maxRotationErrorDegrees": 0.05636088618079807,
+    "maxScaleError": 8.331675882544687e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "TailActive",
+    "maxPositionErrorCm": 3.824102536636608e-05,
+    "maxRotationErrorDegrees": 0.05766875570749755,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "TailRecovery",
+    "maxPositionErrorCm": 3.824102537120475e-05,
+    "maxRotationErrorDegrees": 0.08430430323924044,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "TailWindup",
+    "maxPositionErrorCm": 3.824102537179868e-05,
+    "maxRotationErrorDegrees": 0.08038917643166575,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "TurnRight",
+    "maxPositionErrorCm": 0.001318603754043579,
+    "maxRotationErrorDegrees": 0.15414663055742897,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "TurnLeftFine",
+    "maxPositionErrorCm": 0.0015677586197853088,
+    "maxRotationErrorDegrees": 0.11600982500810281,
+    "maxScaleError": 8.331675879214018e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "TurnRightFine",
+    "maxPositionErrorCm": 0.001318603754043579,
+    "maxRotationErrorDegrees": 0.15414663055742897,
+    "maxScaleError": 8.331675881434464e-07,
+    "maxMorphWeightError": 0.0,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Idle",
+    "maxPositionErrorCm": 0.006300468681518399,
+    "maxRotationErrorDegrees": 0.06737136454264034,
+    "maxScaleError": 0.00015753507614157947,
+    "maxMorphWeightError": 0.0009438395500183105,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "Walk",
+    "maxPositionErrorCm": 0.008603613989728615,
+    "maxRotationErrorDegrees": 0.16207113457789812,
+    "maxScaleError": 0.00019729137420643195,
+    "maxMorphWeightError": 0.0006230473518371582,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "TurnLeft",
+    "maxPositionErrorCm": 0.003988924339349208,
+    "maxRotationErrorDegrees": 0.09280740351787191,
+    "maxScaleError": 2.805025301033659e-06,
+    "maxMorphWeightError": 0.0005408227443695068,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "FlightWindup",
+    "maxPositionErrorCm": 0.003425598147801068,
+    "maxRotationErrorDegrees": 0.07924234682040747,
+    "maxScaleError": 7.929063819944737e-05,
+    "maxMorphWeightError": 0.0006129145622253418,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "FlightActive",
+    "maxPositionErrorCm": 0.007932688054759855,
+    "maxRotationErrorDegrees": 0.08512558096427274,
+    "maxScaleError": 3.4010717492316545e-06,
+    "maxMorphWeightError": 0.0005742907524108887,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "FlightRecovery",
+    "maxPositionErrorCm": 0.00670484056547186,
+    "maxRotationErrorDegrees": 0.14494549750157007,
+    "maxScaleError": 7.929063819867022e-05,
+    "maxMorphWeightError": 0.0007622241973876953,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "FlightHoverAlternate",
+    "maxPositionErrorCm": 0.0050730228791095264,
+    "maxRotationErrorDegrees": 0.08512558096427274,
+    "maxScaleError": 2.142950467631799e-06,
+    "maxMorphWeightError": 0.0005742907524108887,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "FireWindup",
+    "maxPositionErrorCm": 0.00539165775393444,
+    "maxRotationErrorDegrees": 0.07946183275423069,
+    "maxScaleError": 8.714199066151007e-05,
+    "maxMorphWeightError": 0.0003941655158996582,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "FireActive",
+    "maxPositionErrorCm": 0.0034245641512989874,
+    "maxRotationErrorDegrees": 0.11405470765652272,
+    "maxScaleError": 0.0002132058143617943,
+    "maxMorphWeightError": 0.0007913112640380859,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "FireRecovery",
+    "maxPositionErrorCm": 0.0035542873111103837,
+    "maxRotationErrorDegrees": 0.0815350489899667,
+    "maxScaleError": 0.00021827220916748047,
+    "maxMorphWeightError": 0.0008797645568847656,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "BiteWindup",
+    "maxPositionErrorCm": 0.0024280096303565227,
+    "maxRotationErrorDegrees": 0.13292426750429004,
+    "maxScaleError": 7.958866142254717e-05,
+    "maxMorphWeightError": 0.0006486773490905762,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "BiteActive",
+    "maxPositionErrorCm": 0.004408230006310172,
+    "maxRotationErrorDegrees": 0.14225098708030728,
+    "maxScaleError": 7.943394883680455e-05,
+    "maxMorphWeightError": 0.00054931640625,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  },
+  {
+    "clip": "BiteRecovery",
+    "maxPositionErrorCm": 0.0023890222690051434,
+    "maxRotationErrorDegrees": 0.10854722230976573,
+    "maxScaleError": 7.952905677777178e-05,
+    "maxMorphWeightError": 0.0007827877998352051,
+    "samples": 6,
+    "character": "DragonV3B",
+    "pass": true
+  }
+]

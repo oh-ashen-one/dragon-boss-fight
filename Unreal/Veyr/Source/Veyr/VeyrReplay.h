@@ -81,6 +81,25 @@ private:
     bool bStanceInterrupted=false,bStancePassed=false;
     TSharedPtr<FJsonObject> StanceCurrentTrial;
     TArray<TSharedPtr<FJsonValue>> StanceTrials;
+    // Input-only integration coverage. These clocks/counters belong to the replay,
+    // never to the Knight or encounter simulation.
+    int32 IntegrationStage=0,IntegrationPhase=0,IntegrationAttempt=0;
+    int32 IntegrationCompleted=0,IntegrationMaxKnightFailures=0,IntegrationMaxDragonFailures=0;
+    int32 IntegrationContactsBefore=0,IntegrationHitsBefore=0,IntegrationEchoesBefore=0;
+    int32 IntegrationRollsBefore=0,IntegrationRollAttacksBefore=0;
+    float IntegrationStageStarted=0,IntegrationConfiguredAt=0,IntegrationObservedSeconds=0;
+    float IntegrationRequestedAt=0,IntegrationRecoveryStarted=0,IntegrationLastObservedAt=0;
+    bool bIntegrationIssued=false,bIntegrationAccepted=false,bIntegrationMidCapture=false;
+    bool bIntegrationRollPrefix=false,bIntegrationRollQueued=false,bIntegrationRunStop=false;
+    bool bIntegrationHiddenSeen=false,bIntegrationEchoVisible=false,bIntegrationFallback=false;
+    FVector IntegrationOrigin=FVector::ZeroVector,IntegrationDirection=FVector::ZeroVector;
+    FString IntegrationFeature;
+    FName IntegrationExpectedClip=NAME_None;
+    TMap<FName,int32> IntegrationKnightClips,IntegrationDragonClips;
+    TSharedPtr<FJsonObject> IntegrationTrial;
+    TArray<TSharedPtr<FJsonValue>> IntegrationTrials;
+    TSharedPtr<FJsonObject> IntegrationEvidence(bool bIncludeTrials=false) const;
+    bool DriveIntegrationInputs();
     TArray<TSharedPtr<FJsonValue>> Samples, Events;
     TArray<TSharedPtr<FJsonValue>> CaptureStates;
     TArray<FString> CaptureQueue, CaptureNames, CaptureFiles;

@@ -18,7 +18,7 @@ def require_project():
 def plan_for(character):
     if character not in CHARACTERS:
         raise ValueError('character must be KnightB or DragonV3B')
-    return ROOT / 'Local/CustomuseAssets/Integration20261025' / ('import-plan-' + character + '.json')
+    return ROOT / 'Local/CustomuseAssets/Integration20261025b' / ('import-plan-' + character + '.json')
 
 
 @unreal.uclass()
@@ -106,3 +106,27 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         if not result or not unreal.EditorAssetLibrary.save_loaded_asset(result,False):
             raise RuntimeError('Saving the new runtime definition failed')
         return result
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def start_input_validation(mode: str) -> str:
+        """Starts the game's input-only validation in a fresh owned PIE world.
+
+        Args:
+            mode: core, controls, integration, stance, guard, healing, avoidance, death, victory, or leg0..leg3.
+        Returns:
+            Absolute private evidence directory. The game writes completion and captures there.
+        """
+        require_project()
+        allowed={'core','controls','integration','stance','guard','healing','avoidance','death','victory','leg0','leg1','leg2','leg3'}
+        if mode not in allowed:raise ValueError('Unknown Veyr validation mode')
+        world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_game_world()
+        if not world:raise RuntimeError('Start a fresh PIE world first')
+        game=unreal.GameplayStatics.get_game_mode(world)
+        if not isinstance(game,unreal.VeyrGameMode):raise RuntimeError('The live world is not Veyr')
+        import datetime
+        output=ROOT/'Evidence'/('pie-'+mode+'-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ'))
+        output.mkdir(parents=True,exist_ok=False)
+        if not game.start_native_validation(mode,str(output)):
+            raise RuntimeError('Validation requires a fresh untouched world and no active replay')
+        return str(output)

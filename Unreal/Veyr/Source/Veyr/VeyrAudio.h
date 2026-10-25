@@ -47,6 +47,10 @@ private:
     double VoiceEndTimes[VoiceCount] = {};
     int32 LastLight = 0, LastHeavy = 0, LastSwordContact = 0, LastHeadBonus = 0;
     int32 LastHitsTaken = 0, LastGuardedHits = 0, LastHeals = 0, LastCollapses = 0, LastFireAttacks = 0;
+    EVeyrKnightAction LastSwingAction=EVeyrKnightAction::Ready;
+    FName LastSwingClip=NAME_None;
+    float LastSwingElapsed=0.f;
+    TSet<int32> SwingWindowsPlayed;
     EVeyrDragonState LastDragonState = EVeyrDragonState::Idle;
     bool bWasAirborne = false, bInitialized = false, bTerminal = false, bBossDeathSeen = false;
 

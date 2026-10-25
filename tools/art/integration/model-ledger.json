@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-25",
+  "runtimeOwner": "root",
+  "model": "Codex session model; exact model/effort identifiers were not exposed by this client",
+  "delegation": "Inherited parent model; no unavailable Opus or Fable access claimed",
+  "rounds": [
+    {"piece": "Knight integration", "agent": "knight_integration_critic", "role": "initial audit then implementation", "result": "compiled; native asset sampling passed; gameplay review pending"},
+    {"piece": "Dragon integration", "agent": "dragon_integration_critic", "role": "initial audit then implementation", "result": "compiled; native corrective morph and source-pose checks passed; gameplay review pending"},
+    {"piece": "Structural asset conversion", "agent": "asset_import_audit", "role": "asset audit and conversion", "result": "v025b preserves exact approved skin/geometry variants; 74 structural checks pass"},
+    {"piece": "Independent review", "agent": "native_runtime_critic", "role": "read-only critic", "result": "found skin substitution and terminal recovery bugs; fixes independently rechecked; requested stronger native coverage/endpoint tests and better Knight lighting"},
+    {"piece": "Native sampling", "agent": "root", "role": "editor owner and verifier", "result": "68 clip keys, 408 sampled poses, 204 evaluable transitions; coverage and source fidelity pass; endpoint comparison rerun pending"}
+  ],
+  "ownerApproval": "32 exact reviewed inputs approved; integrated gameplay acceptance remains a separate test and owner playtest gate"
+}

@@ -1235,6 +1235,30 @@ bool AVeyrDragon::CacheImportedAttackWarnings()
             LocalAttackWarnings.Add(Clip,MoveTemp(Envelope));
         }
     }
+    LandingLocalCenter=FVector::ZeroVector;LandingWarningRadius=600.f;
+    if(HasAuthoredFlight())
+    {
+        const FVeyrVisualClip& Land=VisualDefinition->Clips.FindChecked(TEXT("FlightRecovery"));
+        const float Impact=Land.ImpactSeconds>=0.f?Land.ImpactSeconds-Land.StartSeconds:.833333f;
+        TArray<FVector> Feet;
+        for(int32 Sample=0;Sample<=8;++Sample)
+        {
+            if(!AttackPoseProbe->SampleClipTime(TEXT("FlightRecovery"),Impact+.2f*Sample/8.f))
+            {ImportedCombatDiagnostic=TEXT("Landing envelope pose failed");return false;}
+            for(int32 Foot=0;Foot<4;++Foot)
+            {
+                FTransform T;
+                if(!AttackPoseProbe->GetBoneTargetWorldTransform(FName(*FString::Printf(TEXT("foot%d"),Foot)),T))
+                {ImportedCombatDiagnostic=TEXT("Landing envelope foot missing");return false;}
+                Feet.Add(Ground(Actor.InverseTransformPosition(T.GetLocation())));
+            }
+        }
+        for(const FVector& Foot:Feet)LandingLocalCenter+=Foot;
+        LandingLocalCenter/=Feet.Num();LandingWarningRadius=0.f;
+        // The telegraph and damage share one envelope enclosing every landing paw.
+        for(const FVector& Foot:Feet)LandingWarningRadius=FMath::Max(LandingWarningRadius,
+            static_cast<float>(FVector::Dist2D(Foot,LandingLocalCenter))+230.f+KnightRadius);
+    }
     ImportedCombatDiagnostic=TEXT("Bone attack envelopes cached; native visual/contact verification pending");return true;
 }
 
@@ -1244,7 +1268,9 @@ void AVeyrDragon::CommitImportedWarning()
     if(!bImportedAttackCacheReady)return;
     if(Move==EVeyrDragonMove::FlyAway)
     {
-        FVeyrDragonFootprint F;F.Shape=EVeyrDangerShape::Circle;F.Origin=MoveEnd;F.OuterRadius=600.f;CommittedWarning.Add(F);return;
+        FVeyrDragonFootprint F;F.Shape=EVeyrDangerShape::Circle;
+        F.Origin=MoveEnd+GetActorQuat().RotateVector(LandingLocalCenter);F.Origin.Z=MoveEnd.Z;
+        F.OuterRadius=LandingWarningRadius;AttackOrigin=F.Origin;CommittedWarning.Add(F);return;
     }
     const auto* Local=LocalAttackWarnings.Find(ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Active")));
     if(!Local)return;
