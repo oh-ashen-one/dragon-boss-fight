@@ -1,0 +1,21 @@
+{
+  "sourceId": "071ecd4dad4ccf441599d3c70e99e881bcf43e815f0afc3e8874938b3d3ed3c4",
+  "poseSamples": 258,
+  "poseEquivalencePassed": true,
+  "maxLocalTransformError": 0.0,
+  "maxMorphCurveError": 0.0,
+  "cpuProbeHasNoRenderState": true,
+  "allVisibleLODsEligible": true,
+  "observedRasterSkinCacheEntries": [
+    [
+      "Dragon_FlyHover_Blender_v1",
+      "0",
+      "Off",
+      "2789.453"
+    ]
+  ],
+  "actualAllocationObserved": true,
+  "logSHA256": "676f7894da70c86130165306eca07f0c12a8c22397ab96e5f1d88a72403a1c1e",
+  "scope": "CPU pose equivalence and per-LOD eligibility for43clips; actual non-RT allocation observed for meshes listed. Packaged interactive stress pending.",
+  "logEvidencePath": "Local/CustomuseImports/skin-cache-allocation-snapshot.log"
+}

@@ -104,6 +104,9 @@ void AVeyrArena::BeginPlay()
     FloorWet = MakeBatch(TEXT("OriginalBroadWetPaverAreas"), CubeMesh, WetStone);
     UMaterialInterface* FloorMaterial=CathedralFloorParent?CathedralFloorParent.Get():Flagstone;
     FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
+    // Continue the same world-space paving through the rectangular court's
+    // perimeter instead of exposing a different smooth material past the disc.
+    Floor->SetMaterial(0,FloorMaterial);
     auto* FoundationStone=MakeMaterial(TEXT("RecessedCourtFoundationStone"),FLinearColor(.075f,.080f,.085f),.92f);
     Foundations=MakeBatch(TEXT("ConnectedCathedralFoundations"),CubeMesh,FoundationStone);
     auto* CutStone=MakeMaterial(TEXT("RestrainedFloorCarving"),FLinearColor(.045f,.050f,.054f),.9f,false);

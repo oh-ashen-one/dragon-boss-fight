@@ -13,3 +13,5 @@ The boat greatsword and major cathedral facade, wall, arch and brazier meshes we
 Original authoring tools remain available as source. A tool's MIT license does not grant rights to its third-party inputs or automatically relicense generated character derivatives.
 
 No reference-game models, textures, audio, animation or footage are included. Research citations for Kalameet, Sinh and Midir convey no redistribution rights and are not asset sources.
+
+The October25 combat/cathedral pass adds twelve privately generated Tripo modules: cloister gallery, apse, processional stair, collapsed vault rubble, retaining rock, gatehouse, fallen bell, funerary niche, city roof block, paving, corner buttress and dead tree. Built-in image generation supplied five map concepts, three HUD concepts, the fire atlas and smoke-density texture. The targeted flight, two-hand run, grip and rolling-weapon revisions were authored in Blender, with editable scenes and exported clips retained privately. These additions do not change the redistribution boundaries above. Private source/native backup receipts are recorded in docs/polish-20261025.

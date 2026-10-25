@@ -1,0 +1,75 @@
+{
+  "status": "Targeted Skin Cache / CPU-only probe candidate under packaged interactive stress validation; earlier serialization candidate failed.",
+  "currentDiagnosticSourceId": "071ecd4dad4ccf441599d3c70e99e881bcf43e815f0afc3e8874938b3d3ed3c4",
+  "nativeMechanicalChecks": [
+    {
+      "scenario": "integration",
+      "sourceId": "b37ef43135c0346be1c5465efaac66f8719c1575ab6110973bd021c639b7001a",
+      "passed": true,
+      "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+      "durationSeconds": 80.31796264648438,
+      "evidenceSHA256": "fffa35b1d7ae24fd8cc7b20eed9fb5bd69c6d1e5362521d9700bfd4964f238a7"
+    },
+    {
+      "scenario": "guard",
+      "sourceId": "b37ef43135c0346be1c5465efaac66f8719c1575ab6110973bd021c639b7001a",
+      "passed": true,
+      "reason": "front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified",
+      "durationSeconds": 42.845367431640625,
+      "evidenceSHA256": "4f535dfcd9705a33767b58c4deddc9cb7743df6ec53dace642498ad5bece213e"
+    },
+    {
+      "scenario": "collision",
+      "sourceId": "b37ef43135c0346be1c5465efaac66f8719c1575ab6110973bd021c639b7001a",
+      "passed": true,
+      "reason": "eight collision stages: front sprint/roll/blink, both flanks, rear, head/neck, and native natural-landing push without persistent penetration",
+      "durationSeconds": 52.06800842285156,
+      "evidenceSHA256": "9da02aed873fad302c23d7b304e629a862cbaf542c50a7722b850008340b748c",
+      "completed": 8,
+      "required": 8,
+      "actualBodyHitEvents": 120,
+      "landingRecoveryPushes": 8,
+      "maximumPostPhysicsPenetrationCm": 0.38730576634407043,
+      "maximumPersistentPenetrationSeconds": 0
+    },
+    {
+      "scenario": "victory-two-hand",
+      "sourceId": "b37ef43135c0346be1c5465efaac66f8719c1575ab6110973bd021c639b7001a",
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "durationSeconds": 278.91278076171875,
+      "evidenceSHA256": "c890cf451b4bb5240924436fb59fb6fc6bf5179ea55a40d9ef7c58dcc1f81f01",
+      "terminalSeconds": 272.8497314453125,
+      "victoryWithinThreeToFiveMinutes": true,
+      "restartResourcesVerified": true,
+      "restartMovementVerified": true,
+      "restartAttackVerified": true,
+      "victoryGripTransitionCompleted": true
+    }
+  ],
+  "nativePoseFidelity": {
+    "clips": 71,
+    "samples": 426,
+    "passedClips": 71,
+    "recheckedAfterRuntimeMaterialAndSkeletonSave": true
+  },
+  "priorPackagedCrash": {
+    "sourceId": "915822930120be1b5a6bbeffca2f7670d66e7ba3ad21658b2511383e2822d94c",
+    "function": "FMorphVertexBufferPool::GetReadingIndex",
+    "engineSourceLine": 336,
+    "assertion": "Index == 1",
+    "exactBinaryReturnOffset": 192,
+    "interpretation": "Current index0 was unupdated while morph double buffering was enabled; invalid RHI allocation is not established.",
+    "rawReportKeptPrivate": true
+  },
+  "repairCandidate": {
+    "visibleDragon": "Explicit Skin Cache opt-in before initial and variant mesh renderer creation",
+    "hiddenProbe": "CPU pose only; no render state or mesh object",
+    "poseEquivalence": "258 samples, zero bone and morph-curve differences",
+    "actualAllocation": "Non-RT Dragon LOD0 entry observed,2789.453KB",
+    "pauseCapture": "Deferred callback-safe viewport focus/native capture and100ms/two-frame look settling retained",
+    "interactiveStress": "In progress; no final release claim"
+  },
+  "ownerAuthorization": "Explicit continuation instruction received after packaged crash; project AGENTS and handoff updated; no blind relaunch script",
+  "serializationCandidateFailed": true
+}

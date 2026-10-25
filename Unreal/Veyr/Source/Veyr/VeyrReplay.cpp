@@ -681,14 +681,22 @@ bool AVeyrReplay::DriveAnatomyCollisionInputs()
     if(CollisionStageStarted<=0.f)CollisionStageStarted=Elapsed;
     if(Elapsed-CollisionStageStarted>(Landing?150.f:75.f))
     {Finish(false,FString(TEXT("collision scenario unreached within bounded ordinary-input navigation: "))+Label);return true;}
-    auto Input=[&](FVector Direction,bool Sprint=false,bool Roll=false)
-    {Knight->SetSprintRequested(Sprint);Knight->SetReplayInput(Direction,false,false,Roll,false,false,false);};
+    auto Input=[&](FVector Direction,bool Sprint=false,bool Roll=false,bool Guard=false)
+    {Knight->SetSprintRequested(Sprint);Knight->SetReplayInput(Direction,false,false,Roll,false,false,Guard);};
     if(Knight->bLockedOn)Knight->ToggleLockOn();
     const FVector Feet=Knight->GetFootLocation();const FVector Boss=Dragon->GetActorLocation();
     const bool Ready=Knight->Action==EVeyrKnightAction::Ready&&Knight->IsGrounded();
     const bool Flight=Dragon->Move==EVeyrDragonMove::FlyAway&&
         (Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||Dragon->State==EVeyrDragonState::Recovery);
-    if(Knight->Health<70.f&&Knight->HealingCharges>0&&!Flight)
+    const bool HeadBiteWindow=CollisionStage==6&&Dragon->Move==EVeyrDragonMove::Bite&&
+        (Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||
+         (Dragon->State==EVeyrDragonState::Recovery&&Dragon->GetStateElapsed()<.2f));
+    if(CollisionStage==6&&!HeadBiteWindow)
+    {
+        CollisionHeadGuardedHitsBefore=Knight->GuardedHits;
+        CollisionHeadDamageContactsBefore=Dragon->GetDamageContactCount();
+    }
+    if(Knight->Health<70.f&&Knight->HealingCharges>0&&!Flight&&!HeadBiteWindow&&!bCollisionRegionContactObserved)
     {
         if(Ready&&SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.1f)
         {Input(FVector::ZeroVector);Knight->TryHeal();}
@@ -741,10 +749,37 @@ bool AVeyrReplay::DriveAnatomyCollisionInputs()
         Input(Ready&&FVector::Dist2D(Feet,Boss)<2100.f?EscapeDirection():FVector::ZeroVector,Ready);
         return true;
     }
-    if(bCollisionRegionContactObserved&&Ready&&CollisionIndependentDepth<=2.f)
-    {Complete();return true;}
+    if(bCollisionRegionContactObserved)
+    {
+        Input(FVector::ZeroVector); // Release guard before requiring full Ready recovery.
+        if(Ready&&CollisionIndependentDepth<=2.f)Complete();
+        return true;
+    }
+    if(CollisionStage==6)
+    {
+        if(APlayerController* PlayerController=Cast<APlayerController>(Knight->GetController()))
+        {
+            const float AimYaw=(Dragon->GetMouthLocation()-Knight->GetActorLocation()).Rotation().Yaw;
+            const float Error=FMath::FindDeltaAngleDegrees(PlayerController->GetControlRotation().Yaw,AimYaw);
+            const float YawScale=UInputSettings::GetInputSettings()->bEnableLegacyInputScales?PlayerController->InputYawScale_DEPRECATED:1.f;
+            if(FMath::Abs(YawScale)>.01f)PlayerController->AddYawInput(FMath::Clamp(Error*.18f/YawScale,-8.f,8.f));
+        }
+        const bool ContactSpent=Knight->GuardedHits>CollisionHeadGuardedHitsBefore||
+            Dragon->GetDamageContactCount()>CollisionHeadDamageContactsBefore;
+        const bool AtApproach=FVector::Dist2D(Feet,HeadApproachGoal())<120.f;
+        const bool Prearm=!Flight&&!HeadBiteWindow&&AtApproach&&Knight->Stamina>=50.f&&
+            (Dragon->State==EVeyrDragonState::Idle||Dragon->State==EVeyrDragonState::Reposition);
+        // Guard is stationary in the real game. Raise it before a natural Bite,
+        // then release after a real consumed damage contact and walk normally
+        // into the still-low head. Push counters cannot satisfy the OnHit gate.
+        if((Prearm||(HeadBiteWindow&&!ContactSpent))&&Knight->Stamina>5.f&&
+           (Ready||Knight->Action==EVeyrKnightAction::Guard))
+        {Input(FVector::ZeroVector,false,false,true);return true;}
+    }
     if(!Ready){Input(FVector::ZeroVector);return true;}
-    if(Knight->IsTwoHanded()){Input(FVector::ZeroVector);Knight->ToggleGrip();return true;}
+    // Head-stage guard already uses two hands; preserve that grip so a new
+    // transition cannot consume the remaining reachable bite-contact window.
+    if(CollisionStage!=6&&Knight->IsTwoHanded()){Input(FVector::ZeroVector);Knight->ToggleGrip();return true;}
     const bool Threat=Contains(Dragon->GetWarningFootprints(),Feet,50.f);
     if(Flight)
     {

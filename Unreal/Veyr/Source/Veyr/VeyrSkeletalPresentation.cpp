@@ -3,6 +3,7 @@
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/SkinnedAssetCommon.h"
 
 UVeyrSkeletalPresentation::UVeyrSkeletalPresentation()
 {
@@ -19,6 +20,73 @@ UVeyrSkeletalPresentation::UVeyrSkeletalPresentation()
     SetCanEverAffectNavigation(false);
 }
 
+bool UVeyrSkeletalPresentation::ConfigureRenderPolicy(bool bInCPUPoseOnly, bool bInRequestSkinCache)
+{
+    if(IsRegistered()||IsRenderStateCreated())
+        return Fail(TEXT("Presentation render policy must be configured before registration"));
+    if(bInCPUPoseOnly&&bInRequestSkinCache)
+        return Fail(TEXT("A CPU-only pose probe cannot request a GPU Skin Cache renderer"));
+    bCPUPoseOnly=bInCPUPoseOnly;bSkinCacheRequested=bInRequestSkinCache;
+    // Cover LOD0 even if a component receives its mesh during registration.
+    if(bSkinCacheRequested)SkinCacheUsage.Init(ESkinCacheUsage::Enabled,1);
+    else if(bCPUPoseOnly)SkinCacheUsage.Init(ESkinCacheUsage::Disabled,1);
+    return true;
+}
+
+bool UVeyrSkeletalPresentation::ShouldCreateRenderState() const
+{
+    return !bCPUPoseOnly&&Super::ShouldCreateRenderState();
+}
+
+bool UVeyrSkeletalPresentation::ApplyMeshRenderPolicy(USkeletalMesh* Mesh)
+{
+    if(!Mesh)return Fail(TEXT("Cannot apply rendering policy to a null skeletal mesh"));
+    const int32 LODCount=Mesh->GetLODNum();
+    if((bCPUPoseOnly||bSkinCacheRequested)&&LODCount<=0)
+        return Fail(TEXT("Presentation rendering policy requires at least one mesh LOD"));
+    // Set this BEFORE SetSkeletalMesh: its render-state recreation selects the
+    // GPU technique while constructing the new mesh object, not at first draw.
+    if(bSkinCacheRequested)SkinCacheUsage.Init(ESkinCacheUsage::Enabled,LODCount);
+    else if(bCPUPoseOnly)SkinCacheUsage.Init(ESkinCacheUsage::Disabled,LODCount);
+    SkinCacheRequestedLODCount=bSkinCacheRequested?LODCount:0;
+    return true;
+}
+
+bool UVeyrSkeletalPresentation::RefreshRenderPolicyEvidence()
+{
+    bCPUPoseOnlyVerified=bCPUPoseOnly&&!IsRenderStateCreated()&&GetMeshObject()==nullptr;
+    SkinCacheAllowedLODs.Reset();bSkinCacheAllRequestedLODsAllowed=false;
+    if(bSkinCacheRequested)
+    {
+        bool bAllLODsRequested=true;
+        for(int32 LOD=0;LOD<SkinCacheRequestedLODCount;++LOD)
+        {
+            const bool Requested=SkinCacheUsage.IsValidIndex(LOD)&&SkinCacheUsage[LOD]==ESkinCacheUsage::Enabled;
+            const bool Allowed=IsSkinCacheAllowed(LOD);
+            bAllLODsRequested&=Requested;
+            if(Allowed)SkinCacheAllowedLODs.Add(LOD);
+            UE_LOG(LogTemp,Display,TEXT("VEYR_SKINCACHE_ELIGIBILITY component=%s mesh=%s lod=%d requested=%d allowed=%d allocationAndTechniqueObserved=0"),
+                *GetName(),*GetPathNameSafe(GetSkeletalMeshAsset()),LOD,Requested,Allowed);
+        }
+        bSkinCacheAllRequestedLODsAllowed=bAllLODsRequested&&SkinCacheRequestedLODCount>0&&
+            SkinCacheAllowedLODs.Num()==SkinCacheRequestedLODCount;
+    }
+    if(bCPUPoseOnly||bSkinCacheRequested)
+    {
+        RenderPolicyDiagnostic=FString::Printf(TEXT("component=%s mesh=%s cpuPoseOnly=%d renderState=%d meshObject=%d skinCacheRequested=%d allowedLODs=%d/%d; eligibility only, GPU allocation/technique not observed"),
+            *GetName(),*GetPathNameSafe(GetSkeletalMeshAsset()),bCPUPoseOnly,IsRenderStateCreated(),GetMeshObject()!=nullptr,
+            bSkinCacheRequested,SkinCacheAllowedLODs.Num(),SkinCacheRequestedLODCount);
+        UE_LOG(LogTemp,Display,TEXT("VEYR_PRESENTATION_RENDER_POLICY %s"),*RenderPolicyDiagnostic);
+    }
+    if(bCPUPoseOnly&&!bCPUPoseOnlyVerified)
+        return Fail(TEXT("CPU pose probe unexpectedly owns rendering state or a mesh object"));
+    // Do not silently accept the crash-prone inline path if project startup
+    // settings or the target platform cannot honor the Dragon's request.
+    if(bSkinCacheRequested&&!bSkinCacheAllRequestedLODsAllowed)
+        return Fail(TEXT("Requested Skin Cache is not allowed for every presentation LOD; verify startup configuration"));
+    return true;
+}
+
 bool UVeyrSkeletalPresentation::Fail(const FString& Reason)
 {
     bPoseEvaluated=false;
@@ -32,6 +100,11 @@ bool UVeyrSkeletalPresentation::CheckReady()
 {
     if(!IsInGameThread())return false; // Do not mutate component diagnostics from a worker.
     if(!IsRegistered())return Fail(TEXT("Component must be registered before explicit sampling"));
+    if(bCPUPoseOnly)
+    {
+        bCPUPoseOnlyVerified=!IsRenderStateCreated()&&GetMeshObject()==nullptr;
+        if(!bCPUPoseOnlyVerified)return Fail(TEXT("CPU pose probe unexpectedly acquired rendering state"));
+    }
     if(!VisualDefinition||!VisualDefinition->SkeletalMesh)return Fail(TEXT("No applied skeletal visual definition"));
     bool KnownMesh=GetSkeletalMeshAsset()==VisualDefinition->SkeletalMesh;
     if(!KnownMesh)for(const auto& Entry:VisualDefinition->Clips)
@@ -59,6 +132,7 @@ bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDef
 #endif
     HandleExistingParallelEvaluationTask(true,true);
     VisualDefinition=InDefinition;
+    if(!ApplyMeshRenderPolicy(InDefinition->SkeletalMesh))return false;
     SetSkeletalMesh(InDefinition->SkeletalMesh,true);
     SetRelativeTransform(InDefinition->MeshRelativeTransform);
     SetLeaderPoseComponent(nullptr);
@@ -71,6 +145,7 @@ bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDef
     SetComponentTickEnabled(false);
     SetForcedLOD(1); // UE is one-based here: retain LOD0 target bones.
     SetPredictedLODLevel(0);
+    if(!RefreshRenderPolicyEvidence())return false;
     return SampleReferencePose();
 }
 
@@ -97,8 +172,11 @@ bool UVeyrSkeletalPresentation::EvaluatePoseSynchronously()
     const FString EvaluationError=Instance->GetExplicitEvaluationError();
     if(!EvaluationError.IsEmpty())return Fail(EvaluationError);
     UpdateBounds();
-    MarkRenderTransformDirty();
-    MarkRenderDynamicDataDirty();
+    if(!bCPUPoseOnly)
+    {
+        MarkRenderTransformDirty();
+        MarkRenderDynamicDataDirty();
+    }
     bPoseEvaluated=true;
     ++SuccessfulPoseEvaluations;
     LastError.Reset();
@@ -146,7 +224,9 @@ bool UVeyrSkeletalPresentation::ResolveClip(FName ClipName, const FVeyrVisualCli
         if(DesiredMesh->IsCompiling())return Fail(TEXT("Approved mesh variant compilation is pending"));
 #endif
         // Compatible skin variants retain the native instance and frozen transition pose.
+        if(!ApplyMeshRenderPolicy(DesiredMesh))return false;
         SetSkeletalMesh(DesiredMesh,false);
+        if(!RefreshRenderPolicyEvidence())return false;
         if(!CheckReady())return false;
     }
     UAnimSequence* Sequence=OutClip->Sequence;

@@ -1,0 +1,40 @@
+{
+  "sourceId": "0ad3e6aa64f301e152760558afc88bfafe6438891dee34b3d72cce79614e2f95",
+  "pauseWallSeconds": 466.933,
+  "worldTimeBefore": 8.067,
+  "worldTimeAfter": 8.067,
+  "worldTimeFrozen": true,
+  "displayModesExercised": [
+    "Windowed",
+    "Borderless",
+    "Windowed"
+  ],
+  "resolutionsExercised": [
+    [
+      1280,
+      720
+    ],
+    [
+      1600,
+      900
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      1280,
+      720
+    ]
+  ],
+  "rdgParallelSetupVerified": 0,
+  "allocatorVerified": "ANSI",
+  "deferredResumeCaptureConfirmed": true,
+  "ordinaryGripAfterResumeObserved": true,
+  "initialCameraCaptureStable": true,
+  "nativeNormalExitVerified": true,
+  "survivedSecondsAfterLongResume": 136.618,
+  "crashFreeThroughNormalExit": true,
+  "logSHA256": "f57caccd201d14e4b2285b26d9f9b1ef2cf4c9e5e262b8210b05fc5b0b862602",
+  "scope": "One graphical diagnostic reproduction; does not establish unlimited-session stability or isolated performance. Mouse menu activation via Cua was not confirmed; keyboard UI navigation and settings actions were confirmed."
+}

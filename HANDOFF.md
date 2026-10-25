@@ -13,30 +13,45 @@ before interacting with an app; a UI state refresh can reopen a closed app.
 
 ## Current candidate and crash repair
 
-- Current diagnostic source: `0ad3e6aa64f301e152760558afc88bfafe6438891dee34b3d72cce79614e2f95`.
-  Build and package static dependency/signature/archive checks pass. Graphical
-  validation is in progress; this is not yet a verified final delivery.
-- Package receipt: `Local/package-20261025T185536Z/receipt.json`.
-  Current app/log/GPU ownership: `Local/polish-repair-graphical.log` and
-  `Local/polish-repair-gpu.json`. Use the app path in that package receipt.
-- Prior source91582293 packaged app crashed after a long pause and display changes.
-  The exact binary offset identifies UE5.8 `GetReadingIndex` line336: current
-  morph buffer0 was unupdated while double buffering was enabled. It does not
-  establish invalid RHI allocation. Raw report, failed app and logs remain private.
-- New candidate applies project-local `r.RDG.ParallelSetup=0`, preserving morph
-  shapes/weights while testing setup ordering. This is a mitigation hypothesis
-  until stress validation passes. Do not disable morphs or suppress assertions.
-- Confirmed pause-resume focus defect is repaired: recapture waits for the Slate
-  callback to finish; native focus/capture must be confirmed before gameplay
-  input; look ignores capture-warp deltas for100ms/twoframes. The packaged log
-  now confirms successful deferred recapture and initial camera stability.
-- Two earlier crashes in this pass are preserved in `Local/polish-crash-ledger.json`:
-  static import async-build assertion, then packaged morph-buffer assertion.
-  Owner-authorized continuation and the resolved launch hold are recorded there.
-- Crashing Downloads candidate is explicitly labeled
-  `Veyr-Cathedral-Polish-20261025-UNVALIDATED`; retain it for diagnosis. The older
-  approved-animation app is separate and unchanged. Do not deliver the crashing
-  candidate as final. LaunchServices wrapper exit0 is NOT an app success signal.
+- Current Skin Cache candidate source:
+  `071ecd4dad4ccf441599d3c70e99e881bcf43e815f0afc3e8874938b3d3ed3c4`.
+  Editor and standalone compile, fresh shader cook, dependencies, signature and
+  extracted archive verify. Package: `Local/package-20261025T205028Z/receipt.json`.
+- Current owned interactive app/log/slot: `Local/skin-cache-graphical.log` and
+  `Local/skin-cache-graphical-gpu.json`; use the app path in that receipt and
+  verify the live PID before UI calls. There is no autorelaunch driver.
+- The earlier RDG serialization workaround proved insufficient: sourcebc73714c
+  reproduced the SAME GetReadingIndex line336 assertion during final interactive
+  checking. Three current-pass crashes are preserved; one occurred after the
+  owner's explicit continuation instruction. Do not call the failed candidate ready.
+- Targeted replacement: visible Dragon opts into GPU Skin Cache for every LOD
+  BEFORE each initial/variant mesh renderer is created. Hidden AttackPoseProbe
+  is CPU-pose-only, with no render state or mesh object. Approved morphs, weights
+  and meshes are unchanged. Ordinary RDG parallel setup is restored.
+- Verified in the owned editor:43clips×6phases=258 samples have ZERO local-bone or
+  morph-curve difference between visible and CPU-only probes. All requested
+  visible LODs eligible; hidden probe has no GPU state. Native LogSkinCache shows
+  a real non-RT Dragon LOD0 allocation of2789.453KB. See
+  `docs/polish-20261025/skin-cache-policy-proof.json`. Packaged allocation also
+  appears in the current interactive log; stress validation is still in progress.
+- New render-policy editor checks pass18integration and all8collision stages.
+  The current packaged interactive process has survived initial play and normal
+  restarts and is undergoing long pause/display/resume stress. This is not yet
+  final release acceptance.
+- Pause/resume focus repair is retained: deferred viewport focus/native capture,
+  followed by100ms/two-frame look settling. Prior native logs confirm recapture
+  and stable initial camera; no forced recapture after unrelated focus loss.
+- Failed Downloads candidates are labeled UNVALIDATED. Private release
+  `combat-arena-polish-game-20261025` is now explicitly an UNVALIDATED diagnostic
+  archive forbc73714c; its manifest records the interactive failure. The older
+  approved-animation app remains separate and unchanged.
+- LaunchServices wrapper exit0 does NOT prove app success. UI observation can
+  reopen a dead app: check the exact owned PID before reading UI, inspect real
+  exit logs/crash reports, and close any unintended reopened diagnostic instance.
+- Mac build tooling now waits for the shared UBT mutex, skips stale-data copying
+  during code finalization, and stages fresh cooks in an owned private temporary
+  folder. Earlier generated payloads are preserved. Fresh-stage ownership,
+  executable identity, map manifest, dependencies and ZIP signatures are checked.
 
 ## Implemented and verified evidence
 

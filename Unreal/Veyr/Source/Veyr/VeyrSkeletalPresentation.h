@@ -19,6 +19,25 @@ class VEYR_API UVeyrSkeletalPresentation : public USkeletalMeshComponent
 public:
     UVeyrSkeletalPresentation();
 
+    /** Construction-time policy only. CPU pose probes remain registered for
+     * animation/bone queries but never create a rendering-thread mesh object.
+     * A visible Skin Cache request is applied before each mesh activation.
+     */
+    bool ConfigureRenderPolicy(bool bInCPUPoseOnly, bool bInRequestSkinCache);
+    virtual bool ShouldCreateRenderState() const override;
+
+    UFUNCTION(BlueprintPure, Category="Veyr|Presentation|RenderEvidence")
+    bool HasPresentationRenderState() const { return IsRenderStateCreated(); }
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|RenderEvidence") bool bCPUPoseOnly=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|RenderEvidence") bool bCPUPoseOnlyVerified=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|RenderEvidence") bool bSkinCacheRequested=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|RenderEvidence") int32 SkinCacheRequestedLODCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|RenderEvidence") TArray<int32> SkinCacheAllowedLODs;
+    /** Eligibility observed at mesh activation, not proof of GPU allocation or raster technique. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|RenderEvidence") bool bSkinCacheAllRequestedLODsAllowed=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|RenderEvidence") FString RenderPolicyDiagnostic;
+
     /** Validates and applies a definition, then explicitly evaluates its reference pose.
      * Partial movesets are allowed only when bRequireCompleteMoveset is false;
      * attempting to sample an absent clip still fails. Never sets art acceptance.
@@ -107,6 +126,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") TArray<FString> DefinitionErrors;
 
 private:
+    bool ApplyMeshRenderPolicy(USkeletalMesh* Mesh);
+    bool RefreshRenderPolicyEvidence();
     bool Fail(const FString& Reason);
     bool CheckReady();
     bool ResolveClip(FName ClipName, const FVeyrVisualClip*& OutClip, float& OutEnd);

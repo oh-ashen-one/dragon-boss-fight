@@ -125,6 +125,7 @@ private:
     TMap<FName,int32> CollisionComponentHits,CollisionComponentPushes;
     TMap<FName,float> CollisionComponentMaximumDepth;
     int32 CollisionLastObservedPushes=0,CollisionLandingPushes=0,CollisionLandingAttempts=0;
+    int32 CollisionHeadGuardedHitsBefore=0,CollisionHeadDamageContactsBefore=0;
     bool bCollisionRegionContactObserved=false,bCollisionFlightObserved=false,bCollisionLandingObserved=false,bCollisionTorsoProbeHit=false;
     float CollisionTorsoProbeHeight=0.f;
     FName CollisionRegionContactShape=NAME_None;

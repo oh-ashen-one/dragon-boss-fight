@@ -228,6 +228,19 @@ def run(plan_file):
     import unreal
     plan = json.loads(Path(plan_file).read_text())
     character, version = plan["character"], plan["version"]
+    if plan.get("verify_render_policy_only"):
+        import importlib, probe_render_policy
+        importlib.reload(probe_render_policy)
+        probe_render_policy.run()
+        return {'definition':'/Game/Characters/Customuse/DragonV3B/v026/DA_DragonV3B'}
+    if plan.get("print_skin_cache_only"):
+        subsystem=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
+        world=subsystem.get_game_world() or subsystem.get_editor_world()
+        if not world:raise RuntimeError('Skin Cache diagnostics require an owned world')
+        # Arm a bounded render-frame window before starting PIE. The import
+        # entry point deliberately refuses to run during a live play session.
+        unreal.SystemLibrary.execute_console_command(world,'r.SkinCache.PrintMemorySummary 240')
+        return {'definition':'/Game/Characters/Customuse/RuntimePolish/DA_Dragon'}
     if plan.get("inspect_dirty_content_only"):
         packages=unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()
         (ROOT/'Local/native-dirty-content.json').write_text(json.dumps([p.get_path_name() for p in packages],indent=2)+'\n')

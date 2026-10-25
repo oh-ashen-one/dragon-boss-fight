@@ -333,12 +333,27 @@ def sign_copy(app):
     return result
 
 
-def repair_copy(source, staged, destination, receipt, engine):
+def repair_copy(source, staged, destination, receipt, engine, *, owned_stage_root=None):
     source, staged, destination = source.resolve(), staged.resolve(), destination.resolve()
     if not source.is_relative_to(ROOT / 'Builds') or not destination.is_relative_to(ROOT / 'Builds'):
         raise ValueError('repair source and output must be task-local Builds paths')
-    if not staged.is_relative_to(PROJECT / 'Saved/StagedBuilds'):
-        raise ValueError('payload source must be this task\'s staged build')
+    if owned_stage_root is None:
+        if not staged.is_relative_to(PROJECT / 'Saved/StagedBuilds'):
+            raise ValueError('payload source must be this task\'s staged build')
+    else:
+        # Only the exact fresh stage created by this task's packager is accepted;
+        # never broaden this to arbitrary temporary apps or another checkout.
+        supplied=Path(owned_stage_root)
+        stage_root=supplied.resolve()
+        if supplied.is_symlink() or stage_root.parent!=Path('/private/tmp') or not stage_root.name.startswith('veyr-stage-'):
+            raise ValueError('unexpected fresh stage root')
+        marker=stage_root/'veyr-stage-owner.json'
+        owner=json.loads(marker.read_text()) if marker.is_file() else {}
+        owner_receipt=Path(owner.get('receiptDirectory','/')).resolve()
+        if owner.get('project')!=str(PROJECT.resolve()) or not owner_receipt.is_relative_to(ROOT/'Local'):
+            raise ValueError('fresh stage ownership does not match this task')
+        if staged!=stage_root/'Mac/Veyr.app':
+            raise ValueError('payload source is outside the exact owned fresh stage')
     if destination.exists() or destination.is_relative_to(source) or source.is_relative_to(destination):
         raise ValueError('repair requires a new nonoverlapping output app; source stays unchanged')
     original = manifest(source)

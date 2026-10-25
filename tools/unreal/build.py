@@ -37,7 +37,7 @@ def finalize_standalone(build_tool, configuration, evidence):
     """
     result = {"projectGenerationExitCode": None, "exitCode": None, "success": False,
               "codeSigningAllowed": False, "provisioningUpdatesAllowed": False}
-    generate = [str(build_tool), "-Mode=GenerateProjectFiles",
+    generate = [str(build_tool), "-WaitMutex", "-Mode=GenerateProjectFiles",
                 "-project=" + str(PROJECT / "Veyr.uproject"), "-game", "-platforms=Mac",
                 "-DeployOnly", "-NoIntellisense", "-NoDotNet", "-IgnoreJunk", "-development",
                 "-IncludeTempTargets", "-projectfileformat=XCode", "-automated", "-singletarget=Veyr"]
@@ -55,9 +55,20 @@ def finalize_standalone(build_tool, configuration, evidence):
     if selected.returncode != 0 or not xcodebuild.is_absolute() or not xcodebuild.is_file():
         result["reason"] = "selected Xcode build tool unavailable"
         return result
+    # This phase finalizes code, before UAT cooks and stages the matching data.
+    # Preserve a previous generated payload instead of copying stale staged
+    # files (including FileProvider conflict placeholders) into the new binary.
+    prior_payload = standalone_bundle(configuration)[0] / "Contents/UE"
+    if prior_payload.exists():
+        if prior_payload.is_symlink() or not prior_payload.resolve().is_relative_to(PROJECT.resolve() / "Binaries"):
+            result["reason"] = "generated payload path is redirected; preserving it"
+            return result
+        preserved = evidence / "prior-staged-payload"
+        prior_payload.rename(preserved)
+        result["preservedPriorStagedPayload"] = str(preserved)
     command = [str(xcodebuild), "build", "-workspace", str(workspace), "-scheme", "Veyr",
                "-configuration", configuration, "-destination", "generic/platform=macOS",
-               "CODE_SIGNING_ALLOWED=NO", "UE_XCODE_BUILD_MODE=PostBuildSync", "-hideShellScriptEnvironment"]
+               "CODE_SIGNING_ALLOWED=NO", "UE_XCODE_BUILD_MODE=PostBuildSync", "UE_SKIP_STAGEDDATA_SYNC=1", "-hideShellScriptEnvironment"]
     environment = os.environ.copy()
     environment["UBT_NO_POST_DEPLOY"] = "true"
     result["exitCode"] = run_logged(command, evidence / "xcode-finalize.log", env=environment)
@@ -207,7 +218,7 @@ def main():
     evidence.mkdir(mode=0o700, exist_ok=False)
     command = [str(build_tool), args.target, "Mac", args.configuration,
                str(PROJECT / "Veyr.uproject"), "-NoUBA", "-NoXGE", "-NoFASTBuild",
-               "-NoSNDBS", "-MaxParallelActions=4", "-NoHotReloadFromIDE"]
+               "-NoSNDBS", "-MaxParallelActions=4", "-NoHotReloadFromIDE", "-WaitMutex"]
     log = evidence / "build.log"
     print("Build log:", log, flush=True)
     environment = None

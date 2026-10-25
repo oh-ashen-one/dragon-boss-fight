@@ -80,10 +80,12 @@ AVeyrDragon::AVeyrDragon()
         SolidBodyCapsules.Add(Part);
     }
     ImportedPresentation=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("CustomuseDragonPresentation"));
+    ImportedPresentation->ConfigureRenderPolicy(false,true);
     ImportedPresentation->SetupAttachment(SceneRoot);
     ImportedPresentation->LightingChannels.bChannel1=true;
     ImportedPresentation->SetVisibility(false);
     AttackPoseProbe=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("HiddenAttackEnvelopeProbe"));
+    AttackPoseProbe->ConfigureRenderPolicy(true,false);
     AttackPoseProbe->SetupAttachment(SceneRoot);
     AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
     AttackPoseProbe->SetCastShadow(false);AttackPoseProbe->SetRenderInMainPass(false);
