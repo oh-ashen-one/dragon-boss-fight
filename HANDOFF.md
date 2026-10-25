@@ -1,3 +1,32 @@
+# Fab 3D Rig Testing — isolated localhost comparison, 2026-10-25
+
+Current branch: `Fab-3D-Rig-Testing`, based on `327d3ac`.
+Owner explicitly requested no game integration. Delivered five current-versus-
+sourced motion pairs on the same knight and complete boat sword at:
+http://127.0.0.1:8777/#walk
+Chrome comparison tab is selected and playing at1x/original timing.
+
+Downloaded real source files through the Mixamo and Fab browser UI, then retargeted
+through owned Blender MCP. Walk/slash/block are Mixamo; run/roll are VanillaLoop's
+free Fab sample. Rig/geometry preservation and actual export timing audited.
+Independent critic: usable comparison; source styles/weapon adaptation remain
+limitations. Fixed stale skinned bounds hiding the roll and a Blender-only prop
+axis mismatch; final exact-export evidence is `Local/FabRigTesting/Evidence/export_*`.
+
+`docs/fab-rig-testing/README.md` contains results, source/license/access findings,
+restoration and next steps. Manifest has before/source/after/blend hashes.
+Private restore release: `oh-ashen-one/veyr-animation-sources`,
+`fab-rig-testing-20261025`; remote archive digest verified in the receipt.
+Reviewer uses explicit loopback allowlist and is left running on8777.
+No Unreal source/content/config, packaged app, or original animation was edited.
+Do not treat these tests as game-ready or owner-approved replacements.
+
+Next: owner compares motion/style, then select compatible source bases and adapt
+weapon carry, contacts and transitions only if asked to proceed beyond this test.
+Original hover reviewer8776 and original authoring reviewer8775 are preserved.
+
+---
+
 # Dragon hover correction — review candidate, 2026-10-25
 
 Current branch: `codex/veyr-dragon-dangling-hover-20261025`.
