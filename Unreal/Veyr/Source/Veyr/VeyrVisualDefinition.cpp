@@ -62,6 +62,13 @@ TArray<FString> UVeyrVisualDefinition::ValidateDefinition(bool bRequireCompleteM
            Clip.StartSeconds<0||End<=Clip.StartSeconds||End>Clip.Sequence->GetPlayLength()||
            (Clip.ImpactSeconds>=0&&(Clip.ImpactSeconds<Clip.StartSeconds||Clip.ImpactSeconds>End)))
             Errors.Add(TEXT("Clip timing invalid: ")+Entry.Key.ToString());
+        for(const FVector2D& Window:Clip.DamageWindows)
+            if(!FMath::IsFinite(Window.X)||!FMath::IsFinite(Window.Y)||Window.X<0||Window.Y<=Window.X||Window.Y>End-Clip.StartSeconds+.001f)
+                Errors.Add(TEXT("Damage window invalid: ")+Entry.Key.ToString());
+        if(!Clip.RootTranslationSamplesCm.IsEmpty()&&(!FMath::IsFinite(Clip.RootSampleRate)||Clip.RootSampleRate<=0.f))
+            Errors.Add(TEXT("Root sample rate invalid: ")+Entry.Key.ToString());
+        for(const FVector& Point:Clip.RootTranslationSamplesCm)
+            if(Point.ContainsNaN())Errors.Add(TEXT("Nonfinite root path: ")+Entry.Key.ToString());
     }
     if(bRequireCompleteMoveset)
         for(FName Required:RequiredClips)

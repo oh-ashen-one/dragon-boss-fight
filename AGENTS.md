@@ -12,4 +12,4 @@ Owner instruction after the Veyr Knight walk review: always use Blender to autho
 - Run heavy authoring/rendering on a verified Studio in the task's own Blender instance under the current shared GPU rules. Export for the requested viewer/engine, inspect the actual exported playback, and distinguish a saved scene, checked candidate and owner-approved result.
 - Browser viewers remain review tools. Do not silently fall back to script-only animation if Blender is unavailable; report the missing capability and continue authorized preparation.
 
-Use the existing review branch for this work thread. Do not rebuild Unreal or replace the installed game as part of asset review.
+The owner authorized full native integration, builds, gameplay testing and critique agents on 2026-10-25. Work on the dedicated integration branch; preserve review sources and approved asset hashes. Earlier asset-review-only restrictions no longer apply to this integration pass.

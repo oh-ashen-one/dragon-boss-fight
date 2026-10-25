@@ -6,6 +6,7 @@
 
 class USkeletalMesh;
 class UAnimSequence;
+class UStaticMesh;
 
 USTRUCT(BlueprintType)
 struct FVeyrVisualClip
@@ -17,6 +18,18 @@ struct FVeyrVisualClip
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float EndSeconds=-1.f;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float ImpactSeconds=-1.f;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bLoop=false;
+    /** Active strike windows in seconds relative to the trimmed clip start. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FVector2D> DamageWindows;
+    /** Exact approved rigid weapon variant, animated by the helper bone. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMesh> WeaponMesh;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) float NominalSpeedCmPerSecond=0.f;
+    /** Extracted original root path, in imported mesh-local centimetres. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FVector> RootTranslationSamplesCm;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<float> RootYawSamplesDegrees;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) float RootSampleRate=60.f;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bRootMotionRemoved=false;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) FString ApprovedSourceFile;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) FString ApprovedSourceSHA256;
 };
 
 USTRUCT(BlueprintType)
@@ -37,6 +50,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMesh> SkeletalMesh;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FTransform MeshRelativeTransform=FTransform::Identity;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName,FVeyrVisualClip> Clips;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName,TObjectPtr<UStaticMesh>> Props;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName,FVeyrVisualBoneTarget> BoneTargets;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FName> RequiredClips;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FName> RequiredBoneTargets;

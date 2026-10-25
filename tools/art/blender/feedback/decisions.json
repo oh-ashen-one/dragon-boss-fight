@@ -47,6 +47,198 @@
         "WalkTwoHand_Blender_v3.glb",
         "WalkTwoHand_Blender_v4.glb"
       ]
+    },
+    {
+      "file": "Backpedal_Blender_v4r5.glb",
+      "sha256": "5b2ac980dec8cd5b3e69867b807c02d50d966748a200cb11b1256a16ab2d6d83",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "HeavyAttackOneHand_Blender_v4r3.glb",
+      "sha256": "9acff6fe597bc01e7b863370674c370f95b33042526b4f744a6726137a3e3d19",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "RunOneHand_Blender_meshy_r3.glb",
+      "sha256": "991b1454a6d65afcf0cc70c259fcad000ade3bef8e99be163e297848a810ebec",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "WalkOneHand_Blender_v2r2.glb",
+      "sha256": "6c05e3bf99fb270e9a88d44db7172515d60a76eab80085de33b2d4336844574a",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "RunOneHand_Blender_tripo_r2.glb",
+      "sha256": "7b7055fce2f679638050df5c24391d4b8316dddff44df286c81395cb43522998",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "StrafeLeft_Blender_v4r2.glb",
+      "sha256": "f43d81b87d51bcafe7c0a5ecd2436df5cfc54215d2ecbc46596f68e329f99fac",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "StrafeRight_Blender_v4r2.glb",
+      "sha256": "bbec21befe860a573259ed3d948f1d6958544c358e309c91d7834f8f73e51fdf",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Death_Blender_v2r3.glb",
+      "sha256": "2f3a8a326f741d95423ac22cffb1047e3e8c46ede3d1f063f5d8b8cfdb2ba804",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "WalkTwoHand_Blender_v6r2.glb",
+      "sha256": "fa70485dfff672fd9b19fdf30a12af9e27dfc04252d87460c95ad1a85db3f48f",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "IdleOneHand_Blender_v2r4.glb",
+      "sha256": "0ea615d1b0f5978e78d0d7f3e69f2dea7498a71525616cdaf6c7e769590f8493",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "IdleTwoHand_Blender_v2r4.glb",
+      "sha256": "98e3bc6da65dbff373b72fccf5a453d26b24ff83f929b6699fab1172b96c0182",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "LightAttack_BlackKnightReference_Blender_v2r3.glb",
+      "sha256": "15f5a60c1f3b457ce25675e71ce6920419cf94e7a936cd2afdb41039737e27d7",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Backpedal_Blender_loop_v1r3.glb",
+      "sha256": "7e92b2ab6dc6bb6302b8410d749bab219088f78d6d670a67b092ad51743ce737",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "StrongAttackTwoHand_Sweep_Blender_v2r3.glb",
+      "sha256": "9a80d30a24d1d1371a558756eab1f2228cb9e7e394009d4d783a9e9376a2f0fc",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "StrongAttackTwoHand_Thrust_Blender_v2r4.glb",
+      "sha256": "6f8f5af34c7867cdbc0310184e4f39ff199a7747ca86c57faac429c80209d7b3",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "LightAttackTwoHand_Compact_Blender_v2r3.glb",
+      "sha256": "3dab85375eb6dccfcd495a89426eda253e00057f423ec607aeb1e67e4fa951e8",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "GuardReadyTwoHand_Blender_v4r4.glb",
+      "sha256": "6d926dab7b79e78e2d80cf924003424f1fad404e2c8d8ac9e1ca1174271b6d81",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "RunStop_Blender_v1r2.glb",
+      "sha256": "bd5ee8f30e6198ffa39475c9a44e4a8f474c1673c4d29b2e9b22ba23782d4aee",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "HeavyAttackOneHand_Blender_v4r5.glb",
+      "sha256": "c49935418de2c2284edffc12df3314b9ef6c57bbeb60d66f221682b16932fbf0",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "LightCombo_Blender_v5.glb",
+      "sha256": "bc17c661a2efea6ea2a8d1726631bfd27071373eb89c760f1b225cf634c8a7f2",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Stagger_Blender_v2r5.glb",
+      "sha256": "c4692bfb7634a9de2cc19cd1a73b3acc6f17e24259aed51a463c968202702707",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "GuardBreakStagger_Blender_v1r2.glb",
+      "sha256": "9f61e24f76959b53ce34198b67509ba9d19d9bdb1f72bf12b72ceb93b3fac548",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_FlyHover_Blender_v1.glb",
+      "sha256": "4742b046c05df936cb9f6d9beec7d3c565ad443c048bd06b4d0e3f2f4ba0e89f",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_Takeoff_Blender_v1.glb",
+      "sha256": "459f8ff0454612d78dda5d39346e0e9d5b44f11c4ba681a6e1c3a561f12ac752",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_Land_Blender_v1.glb",
+      "sha256": "dbef03948ab0d7ced6625a3302c0eee549aaac1d7be2b2acab302332e8fc0fac",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_Idle_Blender_v1r3.glb",
+      "sha256": "7c057fd666e3dbbf91ecdbf8f9707a36cb767d16ab461f5565ecd229f5f4c6f8",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_Walk_Blender_v1r2.glb",
+      "sha256": "8919042832443e6bff6943ada1854c1b75e4f83874f9a366896f290a20939d24",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_Turn_Blender_v1r2.glb",
+      "sha256": "9b1ecd268dac928799c078599337784056f53d5df2de746e3e5c0dab2c878a80",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_FireBreath_Blender_v1.glb",
+      "sha256": "2d7bca2eefb7f28a3e8321f7732125a138aa5b6523f943c7d81b710db126c428",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_FlyHover_Blender_v1r2.glb",
+      "sha256": "0cc106b8460a3048b3370b77326eeeea88aad0863770aeacfb66e7f64e216532",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "RollAttack_Blender_v1.glb",
+      "sha256": "1e69b429c6c59c3447a72a883b02222420d592eaecb7cebf334cc2a9598bef78",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
+    },
+    {
+      "file": "Dragon_Bite_Blender_v2.glb",
+      "sha256": "97d859eaaa521bbd0fee485c19c254db27648a438208c632e481a717060dcd63",
+      "quote": "Okay all of these are approved.",
+      "date": "2026-10-25"
     }
   ],
   "removed": [

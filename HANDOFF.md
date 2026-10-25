@@ -1,3 +1,26 @@
+# Native animation integration — IN PROGRESS, 2026-10-25
+
+Owner approved all 32 rows in the October 24 reviewer and explicitly authorized
+full game integration, builds, gameplay testing and critique agents. This supersedes
+all earlier stop/no-Unreal restrictions below. Exact hashes and quote are recorded
+in `tools/art/integration/owner-approvals-20261025.json`.
+
+- Branch: `codex/veyr-native-animation-integration-20261025`, isolated worktree.
+- Root is the sole editor/build/runtime owner. Knight and Dragon workers own their
+  actor files; asset worker owns structural GLB conversion under tools/art/integration.
+- Current roles use actual available Codex agents, not the unavailable named Opus roles.
+- Baseline native content was copied from the previous native project; baseline
+  VeyrEditor build succeeded. Native MCP discovered and verified VeyrArena.
+- Important open gates: normalize distinct same-name dragon morph targets without
+  losing shape corrections; preserve authored weapon/cup transforms via helper
+  bones; import, map full gameplay clocks/root movement; render and critique native
+  gameplay; package and test the actual application. None is complete yet.
+- Approved originals stay immutable. Hidden failed clips were not approved.
+- No main merge/public release authorized. Private asset backups and task branch
+  pushes are in scope. Keep frequent resumable checkpoints.
+
+---
+
 # START HERE — autonomous Elden Ring pass ended 2026-10-22 ~01:45 CST after a 45-min extension
 
 ## State
