@@ -1,0 +1,57 @@
+{
+  "sourceId": "071ecd4dad4ccf441599d3c70e99e881bcf43e815f0afc3e8874938b3d3ed3c4",
+  "skinCacheAllocationObserved": true,
+  "rasterEntries": [
+    [
+      "Dragon_FlyHover_Blender_v1",
+      "0",
+      "Off",
+      "2789.453"
+    ]
+  ],
+  "cpuProbeNoGPUStateObserved": true,
+  "pausePairs": [
+    {
+      "wallSeconds": 48.123,
+      "worldTimeBefore": 82.382,
+      "worldTimeAfter": 82.382,
+      "frozen": true
+    },
+    {
+      "wallSeconds": 720.84,
+      "worldTimeBefore": 1.856,
+      "worldTimeAfter": 1.856,
+      "frozen": true
+    }
+  ],
+  "longPauseSeconds": 720.84,
+  "displayModesExercised": [
+    "Windowed",
+    "Borderless",
+    "Windowed"
+  ],
+  "resolutionsExercised": [
+    [
+      1280,
+      720
+    ],
+    [
+      1600,
+      900
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      1280,
+      720
+    ]
+  ],
+  "nativeCaptureConfirmations": 4,
+  "freshWorldStarts": 3,
+  "normalShutdownVerified": true,
+  "crashObserved": false,
+  "logSHA256": "0828398fd3b414169d1c9be34195b4b77c1b1c730af82cde7ac801528b146803",
+  "scope": "One interactive diagnostic run with ordinary input, deaths/restarts and long paused display changes. Finite stability evidence; performance analyzed separately under shared GPU contention."
+}

@@ -1,106 +1,101 @@
-# Veyr combat and cathedral polish — native repair validation in progress
+# Veyr cathedral and combat polish — delivered for owner review, 2026-10-25
 
-## Current authorization and ownership
+The extracted final app is open at its fresh start screen in
+`~/Downloads/Veyr-Cathedral-Polish-20261025/Veyr.app`.
+`PLAYING.txt` and `ASSET-CREDITS.md` are beside it. No ZIP extraction or editor
+installation is needed. Do not take over or close the owner's play session.
+The process/slot record is `Local/owner-handoff-gpu.json`; its reservation lasts
+until the app closes, with no auto-relaunch or automatic play-session cutoff.
 
-The owner explicitly authorized continued Veyr diagnostic launches after reviewing
-the October25 packaged crash, and requested that the project rules reflect it.
-AGENTS.md records that authorization. Do not repeat routine permission questions.
-Use a concrete repair/diagnostic change for each run; preserve crash evidence,
-shared renderer slots and foreign processes. No blind crash/relaunch script.
-Branch: `codex/veyr-combat-arena-polish-20261025`. Root owns the native runtime;
-critique agents have no engine/UI authority. Read Local run/ownership records
-before interacting with an app; a UI state refresh can reopen a closed app.
+- Branch: `codex/veyr-combat-arena-polish-20261025`.
+- Delivered source identity:
+  `9c27e533e1e67028fc467fe787113c6bee2471f4e03f974b7afe3f3b4f83c3dc`.
+- Package receipt: `Local/package-20261025T211849Z/receipt.json`.
+- Archive SHA256: `5addba207e728421ea9e3b01958e1a6d06622f4f60f4c82d3d07713a3c2f6514`.
+- Current private backup: `combat-arena-polish-game-20261025`, asset
+  `Veyr-Mac-9c27e533.zip`, in `oh-ashen-one/veyr-animation-sources`.
+  Remote digest verified. The older bc73714c archive is a failed diagnostic,
+  explicitly not the delivery. See `docs/polish-20261025/game-backup-receipt.json`.
+- Actual final native capture:
+  `<task-output>/veyr-polish-20261025/Veyr-Final-9c27e533.mp4`.
+  Silent variable-rate evidence capture, approximately6–8 captured frames/second,
+  preserved timestamps and no interpolation; not a gameplay FPS benchmark.
 
-## Current candidate and crash repair
+## Controls and changes
 
-- Current Skin Cache candidate source:
-  `071ecd4dad4ccf441599d3c70e99e881bcf43e815f0afc3e8874938b3d3ed3c4`.
-  Editor and standalone compile, fresh shader cook, dependencies, signature and
-  extracted archive verify. Package: `Local/package-20261025T205028Z/receipt.json`.
-- Current owned interactive app/log/slot: `Local/skin-cache-graphical.log` and
-  `Local/skin-cache-graphical-gpu.json`; use the app path in that receipt and
-  verify the live PID before UI calls. There is no autorelaunch driver.
-- The earlier RDG serialization workaround proved insufficient: sourcebc73714c
-  reproduced the SAME GetReadingIndex line336 assertion during final interactive
-  checking. Three current-pass crashes are preserved; one occurred after the
-  owner's explicit continuation instruction. Do not call the failed candidate ready.
-- Targeted replacement: visible Dragon opts into GPU Skin Cache for every LOD
-  BEFORE each initial/variant mesh renderer is created. Hidden AttackPoseProbe
-  is CPU-pose-only, with no render state or mesh object. Approved morphs, weights
-  and meshes are unchanged. Ordinary RDG parallel setup is restored.
-- Verified in the owned editor:43clips×6phases=258 samples have ZERO local-bone or
-  morph-curve difference between visible and CPU-only probes. All requested
-  visible LODs eligible; hidden probe has no GPU state. Native LogSkinCache shows
-  a real non-RT Dragon LOD0 allocation of2789.453KB. See
-  `docs/polish-20261025/skin-cache-policy-proof.json`. Packaged allocation also
-  appears in the current interactive log; stress validation is still in progress.
-- New render-policy editor checks pass18integration and all8collision stages.
-  The current packaged interactive process has survived initial play and normal
-  restarts and is undergoing long pause/display/resume stress. This is not yet
-  final release acceptance.
-- Pause/resume focus repair is retained: deferred viewport focus/native capture,
-  followed by100ms/two-frame look settling. Prior native logs confirm recapture
-  and stable initial camera; no forced recapture after unrelated focus loss.
-- Failed Downloads candidates are labeled UNVALIDATED. Private release
-  `combat-arena-polish-game-20261025` is now explicitly an UNVALIDATED diagnostic
-  archive forbc73714c; its manifest records the interactive failure. The older
-  approved-animation app remains separate and unchanged.
-- LaunchServices wrapper exit0 does NOT prove app success. UI observation can
-  reopen a dead app: check the exact owned PID before reading UI, inspect real
-  exit logs/crash reports, and close any unintended reopened diagnostic instance.
-- Mac build tooling now waits for the shared UBT mutex, skips stale-data copying
-  during code finalization, and stages fresh cooks in an owned private temporary
-  folder. Earlier generated payloads are preserved. Fresh-stage ownership,
-  executable identity, map manifest, dependencies and ZIP signatures are checked.
+WASD jog; Shift sprint; LMB attack chain(repeat/hold); RMB guard; Q directional
+roll; Space directional blink; E one/two hands on the same sword; R heal;
+Tab lock; Escape full pause/settings/controls; Enter terminal restart.
+Ctrl walk and C-combo bindings are removed; jump stays removed.
+Both grips jog380/sprint580cm/s, with visible authored grip transitions.
 
-## Implemented and verified evidence
+Kept the approved Knight/Dragon designs. Targeted revisions were authored in
+Blender: flight hover/takeoff/landing, two-hand run, grip transitions and rolling
+weapon motion. Editable scenes and approved originals remain preserved.
+New textured fire has a restrained hot core, orange tongues, smoke and embers.
+The HUD is restrained and the larger controls remain at bottom right.
 
-- Controls: LMB attack chain, RMB guard, Shift sprint, Q roll, Space directional
-  blink, E grip, R heal, Tab lock, Enter terminal restart, Escape pause/settings.
-  Ctrl walk/C-combo removed. Both grips jog380/sprint580cm/s with authored grip transitions.
-- Five built-in ImageGen map references; twelve private Tripo H3.1/8K modules,
-  780credits total. All exported/normalized/imported with150k/60k/15k LODs,
-  capped4K textures and real geometry collision. Retaining wallv002, othersv001.
-- Connected cathedral court, cloisters/stairs, rock foundations, fallen bell,
-  city masses and clear central fight space. Native critique corrected raised
-  paving skirts, texture discontinuity, upper support slabs, repeated silhouette,
-  light wash and character shadow readability. Last lighting/paving candidate
-  rendered in the packaged app; final warmed gameplay/video review remains.
-- Eight Blender revisions preserve the approved original sources: Dragon hoverv1,
-  takeoffv3, landv4; Knight two-hand run, both grip transitions, roll/roll-attackv2.
-  Native v026 definitions are in RuntimePolish, separate from RuntimeApproved.
-  All71native keys/426samples passed source fidelity again after saved material/
-  skeleton metadata. Allfour idle/flight joins<.001cm; roll-prefix skin matches.
-- Source d801 passed18integration features, stance damage/speed, healing,
-  allfour independent leg tests, six-move avoidance, death/restart. Its one-hand
-  conservative fight defeated the boss384.58s; restart measurement failed due
-  to a fixed subsecond movement window during reload. That driver was repaired
-  to measure actual movement, recovery and accepted primary attack in order.
-- Source b37ef431 passed18integration, guard(front/rear/exhausted), eight collision
-  stages and two-hand fullfight+restart. Boss defeat272.85s (4m33s), restart
-  proof278.91s. Collision120actual hits, front sprint/roll/blink, both flanks,
-  rear/tail, head,8natural landing pushes; maxindependent penetration.38731cm,
-  persistent>2cm duration0. Independent critic audited these claims.
-- The old packaged GUI test proved world-time frozen across405.4wallseconds,
-  controls/settings layout, saved volume/sensitivity and resolution changes.
-  It exposed the capture bug and later crashed, so it is not release acceptance.
+Five built-in ImageGen map concepts informed a connected cathedral court.
+Twelve private Tripo modules were generated/exported/imported(780credits total),
+with real geometry collision and150k/60k/15k LODs. The flat paving and distant roof
+blocks useLOD2; characters and near architecture remain unchanged. Native critics
+reviewed warm paving/roof silhouettes, fire, flight feet, blink echoes and camera.
+A body-visibility sweep now shortens the real camera arm around low rubble.
 
-## Recovery and remaining work
+## Verification and crash repair
 
-Private repository `oh-ashen-one/veyr-animation-sources`:
-- `combat-arena-polish-sources-20261025`: editable animation/GLB/films and references.
-- `combat-arena-polish-native-20261025`: three native archives plus the post-runtime
-  material/skeleton-save overlay. All remote digests verified. Apply over the
-  earlier native-integration base; see docs/polish-20261025 receipts.
-- Corrected local animation review is available at http://127.0.0.1:8776/.
-  Original8775 service remains a read-only authoring-checkout service.
+Final packaged source passed18animation/control exercises, all8collision stages,
+fullfight, victory and responsive restart. Boss defeat176.86s(about2m57s), restart
+proof183.08s. Native pose fidelity remains71keys/426samples; the new CPU-only
+probe exactly matches visible poses across43clips×6phases(258samples).
+Earlier unchanged-gameplay checks covered allfour independent legs, guard,
+healing, allsix attack avoidances and death/restart. Detailed source/version
+boundaries and finite coverage: `docs/polish-20261025/final-validation.json`.
 
-Finish long pause/display-change/resume stress, warmed packaged animation/fire/
-blink review, packaged controls/collision/fullfight as warranted, performance
-measurement with shared-workload limits reported, then deliver the verified app
-in a fresh Downloads folder with controls, exact source/build and evidence.
-If RDG serialization fails, investigate the hidden GPU pose probe and targeted
-Dragon SkinCache path; preserve deformation quality and test one changed strategy.
+The recurring UE5.8 assertion was the morph double-buffer GetReadingIndex
+invariant atline336. RDG serialization alone failed and is no longer the fix.
+The visible Dragon now opts into GPU Skin Cache before renderer creation, with
+all approved morphs retained. The hidden attack probe creates no GPU state.
+Actual non-RT Dragon LOD0 allocation was observed(~2.7MB), beyond merely setting
+an eligibility flag. Targeted build survived interactive play, normal restarts,
+a720.84s paused display/resolution stress, resumed controls and normal shutdown.
+The final optimized copy also passed manual play/pause and normal shutdown,
+then was reopened fresh for the owner. No unbounded-stability claim is made.
+
+Three failed runs in this pass remain preserved privately(import assertion,
+then two packaged morph assertions). The owner explicitly authorized continued
+diagnostic launches after reviewing the failure; AGENTS.md records that authority.
+Use concrete repair/diagnostic changes, preserve reports and verify the actual
+app outcome. A LaunchServices wrapper exit0 is not crash evidence. UI observation
+may reopen a dead app; verify the exact live PID before reading UI.
+
+## Performance and remaining owner review
+
+At1280×720,100%screen percentage,60FPS requested cap, the final confirmed-input
+manual sample measured47.95FPS throughput, frame-time p50/p95/p99
+20.302/26.684/37.420ms. Another Unreal renderer was active with reported100%shared
+GPU use. This is not an isolated60FPS certification or a causal optimization
+comparison. See `docs/polish-20261025/performance.json` for method and limits.
+Native video readback/replay were absent from that sample; CSV/logging/compositor
+and external UI screenshots remained. Human gameplay feel remains owner-judged.
+Native menu mouse-click automation was unreliable; keyboard menu navigation,
+settings changes and real pause/resume were verified.
+
+## Recovery
+
+Private source release: `combat-arena-polish-sources-20261025`.
+Native content release: `combat-arena-polish-native-20261025`(three parts plus
+post-runtime material/skeleton overlay), applied over the earlier native base.
+All corresponding remote hashes are verified in docs/polish-20261025 receipts.
+Raw generated/provider assets and crash logs stay outside public Git.
+Corrected model/animation reviewer: http://127.0.0.1:8776/.
+The original8775 authoring-checkout service remains untouched.
+
+Next work should follow owner playtest feedback. An isolated representative
+performance run would resolve the shared-GPU limit. Preserve the delivered build,
+source/Blender assets, private backups and failed-run evidence. Routine Mac build
+staging now uses fresh owned temporary directories and waits for the shared UBT
+mutex; never clear foreign processes or locks to make a build proceed.
 
 ---
 

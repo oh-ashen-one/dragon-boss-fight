@@ -257,12 +257,25 @@ void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Ya
     const FRotator Rotation(0,Yaw,0);
     const FVector LocalAnchor(Bounds.GetCenter().X,bFrontAnchor?Bounds.Max.Y:Bounds.GetCenter().Y,Bounds.Min.Z);
     const FTransform Transform(Rotation,Anchor-Rotation.RotateVector(LocalAnchor*Scale),Scale);
-    const FName BatchName(*FString::Printf(TEXT("CourtKit_%s_%s"),*Name.ToString(),bBlocking?TEXT("Solid"):TEXT("Distant")));
+    // The 0.6 cm paving relief is shaded with world-space stone, and the
+    // outer city roof blocks contribute silhouettes. Their measured 15k LOD
+    // preserves that purpose without paying for 60k/150k geometry per copy.
+    // Keep the two nearer west roof blocks on automatic LOD selection.
+    const bool bPaving=Name==FName(TEXT("WornPavingPatch"));
+    const bool bFarRoof=!bBlocking&&Name==FName(TEXT("RuinedCityRoofBlock"))&&Anchor.SizeSquared2D()>=FMath::Square(10000.f);
+    const bool bUseMeasuredLOD2=bPaving||bFarRoof;
+    const FName BatchName(*FString::Printf(TEXT("CourtKit_%s_%s%s"),*Name.ToString(),bBlocking?TEXT("Solid"):TEXT("Distant"),bUseMeasuredLOD2?TEXT("_LOD2"):TEXT("")));
     UInstancedStaticMeshComponent* Batch=PolishBatches.FindRef(BatchName);
     if(!Batch)
     {
         Batch=NewObject<UInstancedStaticMeshComponent>(this,BatchName);AddInstanceComponent(Batch);
         Batch->SetupAttachment(GetRootComponent());Batch->SetMobility(EComponentMobility::Static);Batch->SetStaticMesh(Mesh);
+        if(bUseMeasuredLOD2)
+        {
+            // UE's forced LOD index is one-based: 3 selects imported LOD2.
+            if(Mesh->GetNumLODs()>=3)Batch->SetForcedLodModel(3);
+            else UE_LOG(LogTemp,Warning,TEXT("VEYR_COURT_LOD2_UNAVAILABLE %s has %d LODs; retaining automatic selection"),*Name.ToString(),Mesh->GetNumLODs());
+        }
         // The court material uses world-position UVs. Share it across the
         // shallow generated paving so the surface continues through its edge
         // instead of looking like a differently textured rectangular rug.

@@ -1,0 +1,234 @@
+{
+  "schema": 1,
+  "created_utc": "2026-10-25T21:34:46.166378+00:00",
+  "source_id": "9c27e533e1e67028fc467fe787113c6bee2471f4e03f974b7afe3f3b4f83c3dc",
+  "configuration": {
+    "resolution": [
+      1280,
+      720
+    ],
+    "screen_percentage": 100,
+    "fps_cap": 60,
+    "frames": 2400,
+    "capture_duration_seconds": 50.907582,
+    "force_log_flush": false,
+    "skin_cache_memory_summary": false,
+    "native_replay_driver": false,
+    "native_video_or_screenshot_readback": false
+  },
+  "method": {
+    "warmup": "Exactly the first 300 frames excluded as declared before analysis; all remaining 2100 retained, including outliers. Full 2400 also reported.",
+    "percentiles": "Sorted linear interpolation at (N-1)*p. Milliseconds. Throughput = 1000 / mean(FrameTime).",
+    "active_window": "Every complete frame after native capture confirmation through CSV end. No death logged during capture. Manual route includes sprint/strafe, roll, grip change, blink and heal per operator record; not dead-character time.",
+    "alignment_uncertainty_seconds": 0.000161,
+    "sum_frame_time_vs_metadata_error_seconds": 3.4700000014709076e-05
+  },
+  "conditions_and_limits": [
+    "Another Unreal renderer was active and shared GPU utilization was reported at 100%; no isolated performance or sustained 60 FPS claim.",
+    "No force-log-flush, Skin Cache memory summaries, native Replay driver or native video/screenshot readback. CSV profiling, ordinary logging, compositor and external UI review screenshots remain.",
+    "Manual route notes and alive/health observations come from operator review; CSV itself has no health or action-state channel.",
+    "Earlier captures had different scene activity/instrumentation and uncontrolled shared GPU load. Comparisons are descriptive only; no causal optimization gain attributed.",
+    "GameThread, RenderThread and GPU measurements overlap and must not be added; RenderThread includes waits."
+  ],
+  "interpretation": "During the post-confirmation manual route, GPU p50 is 19.188 ms versus GameThread p50 1.542 ms and RenderThread p50 20.305 ms. The shared render/GPU path is the likely primary limit; GameThread p99 8.157 ms indicates some CPU tail work but does not establish gameplay CPU saturation. This is descriptive evidence under contention, not an isolated bottleneck attribution.",
+  "windows": {
+    "all_recorded_frames": {
+      "frames": 2400,
+      "frame_index_zero_based": [
+        0,
+        2399
+      ],
+      "start_relative_seconds": 0.0,
+      "end_relative_seconds": 50.90761670000001,
+      "statistics": {
+        "FrameTime": {
+          "mean_ms": 21.211506958333334,
+          "p50_ms": 19.53185,
+          "p95_ms": 28.07000499999998,
+          "p99_ms": 44.20513299999991,
+          "max_ms": 1391.3645
+        },
+        "GameThreadTime": {
+          "mean_ms": 1.8324176666666665,
+          "p50_ms": 1.5471499999999998,
+          "p95_ms": 3.722539999999994,
+          "p99_ms": 7.018328999999994,
+          "max_ms": 25.0407
+        },
+        "RenderThreadTime": {
+          "mean_ms": 21.223020791666666,
+          "p50_ms": 19.535800000000002,
+          "p95_ms": 28.08311999999999,
+          "p99_ms": 44.18874299999991,
+          "max_ms": 871.8203
+        },
+        "GPUTime": {
+          "mean_ms": 19.388733625,
+          "p50_ms": 18.54915,
+          "p95_ms": 25.27359,
+          "p99_ms": 39.18025199999984,
+          "max_ms": 225.0849
+        },
+        "RHIThreadTime": {
+          "mean_ms": 2.09074225,
+          "p50_ms": 2.0562,
+          "p95_ms": 2.3809949999999995,
+          "p99_ms": 3.262283999999998,
+          "max_ms": 4.6215
+        }
+      },
+      "throughput_fps": 47.144222330093875,
+      "frames_over_16_667ms": 1929,
+      "frames_over_33_333ms": 67,
+      "frames_over_50ms": 8,
+      "event_wait_statistics": {
+        "Exclusive/RenderThread/EventWait": {
+          "mean_ms": 3.1149765416666666,
+          "p50_ms": 2.8308999999999997,
+          "p95_ms": 4.307505,
+          "p99_ms": 5.932531999999981,
+          "max_ms": 59.1789
+        },
+        "Exclusive/GameThread/EventWait": {
+          "mean_ms": 18.48318925,
+          "p50_ms": 17.38445,
+          "p95_ms": 25.81609999999999,
+          "p99_ms": 41.48324999999997,
+          "max_ms": 279.6506
+        }
+      }
+    },
+    "first_300_frames_removed": {
+      "frames": 2100,
+      "frame_index_zero_based": [
+        300,
+        2399
+      ],
+      "start_relative_seconds": 7.154876199999998,
+      "end_relative_seconds": 50.90761670000001,
+      "statistics": {
+        "FrameTime": {
+          "mean_ms": 20.834638333333334,
+          "p50_ms": 19.82995,
+          "p95_ms": 28.913574999999994,
+          "p99_ms": 44.575476999999985,
+          "max_ms": 55.9409
+        },
+        "GameThreadTime": {
+          "mean_ms": 1.8604139523809522,
+          "p50_ms": 1.5433,
+          "p95_ms": 4.24521,
+          "p99_ms": 7.1383169999999305,
+          "max_ms": 14.2896
+        },
+        "RenderThreadTime": {
+          "mean_ms": 20.830842142857144,
+          "p50_ms": 19.81555,
+          "p95_ms": 28.921094999999994,
+          "p99_ms": 44.55011699999998,
+          "max_ms": 55.8561
+        },
+        "GPUTime": {
+          "mean_ms": 19.525059761904764,
+          "p50_ms": 18.78095,
+          "p95_ms": 25.922574999999995,
+          "p99_ms": 39.83213799999992,
+          "max_ms": 65.6881
+        },
+        "RHIThreadTime": {
+          "mean_ms": 2.094341142857143,
+          "p50_ms": 2.0515499999999998,
+          "p95_ms": 2.4034099999999996,
+          "p99_ms": 3.2945469999999966,
+          "max_ms": 4.6215
+        }
+      },
+      "throughput_fps": 47.996993468329144,
+      "frames_over_16_667ms": 1723,
+      "frames_over_33_333ms": 65,
+      "frames_over_50ms": 6,
+      "event_wait_statistics": {
+        "Exclusive/RenderThread/EventWait": {
+          "mean_ms": 3.1053421904761906,
+          "p50_ms": 2.8398,
+          "p95_ms": 4.347225,
+          "p99_ms": 5.870814999999985,
+          "max_ms": 50.6055
+        },
+        "Exclusive/GameThread/EventWait": {
+          "mean_ms": 18.691281999999998,
+          "p50_ms": 17.62295,
+          "p95_ms": 26.428649999999998,
+          "p99_ms": 41.61203899999988,
+          "max_ms": 53.9006
+        }
+      }
+    },
+    "post_capture_confirmed_complete_frames": {
+      "frames": 1463,
+      "frame_index_zero_based": [
+        937,
+        2399
+      ],
+      "start_relative_seconds": 20.39417620000001,
+      "end_relative_seconds": 50.90761670000001,
+      "statistics": {
+        "FrameTime": {
+          "mean_ms": 20.85676042378674,
+          "p50_ms": 20.3019,
+          "p95_ms": 26.6837,
+          "p99_ms": 37.41966199999997,
+          "max_ms": 55.9409
+        },
+        "GameThreadTime": {
+          "mean_ms": 1.971593984962406,
+          "p50_ms": 1.5425,
+          "p95_ms": 4.910689999999995,
+          "p99_ms": 8.156527999999991,
+          "max_ms": 14.2896
+        },
+        "RenderThreadTime": {
+          "mean_ms": 20.852981203007516,
+          "p50_ms": 20.3048,
+          "p95_ms": 26.64085,
+          "p99_ms": 37.33838799999996,
+          "max_ms": 55.8561
+        },
+        "GPUTime": {
+          "mean_ms": 19.61698858509911,
+          "p50_ms": 19.188,
+          "p95_ms": 24.506739999999997,
+          "p99_ms": 33.46345999999992,
+          "max_ms": 62.3526
+        },
+        "RHIThreadTime": {
+          "mean_ms": 2.0695455228981547,
+          "p50_ms": 2.0346,
+          "p95_ms": 2.33729,
+          "p99_ms": 3.2207599999999994,
+          "max_ms": 4.6215
+        }
+      },
+      "throughput_fps": 47.94608461146819,
+      "frames_over_16_667ms": 1268,
+      "frames_over_33_333ms": 21,
+      "frames_over_50ms": 3,
+      "event_wait_statistics": {
+        "Exclusive/RenderThread/EventWait": {
+          "mean_ms": 3.0515618591934386,
+          "p50_ms": 2.7916,
+          "p95_ms": 4.218119999999999,
+          "p99_ms": 5.0190239999999955,
+          "max_ms": 50.6055
+        },
+        "Exclusive/GameThread/EventWait": {
+          "mean_ms": 18.717925632262475,
+          "p50_ms": 18.1139,
+          "p95_ms": 24.616109999999995,
+          "p99_ms": 33.63578599999999,
+          "max_ms": 53.9006
+        }
+      }
+    }
+  }
+}

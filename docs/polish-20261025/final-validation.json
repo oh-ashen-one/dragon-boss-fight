@@ -1,0 +1,80 @@
+{
+  "status": "Delivered owner-review build; all listed final package checks passed",
+  "sourceId": "9c27e533e1e67028fc467fe787113c6bee2471f4e03f974b7afe3f3b4f83c3dc",
+  "nativePackagedChecks": [
+    {
+      "mode": "integration",
+      "finished": true,
+      "passed": true,
+      "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+      "durationSeconds": 90.6630859375,
+      "terminalSeconds": -1,
+      "evidenceSHA256": "4253583a25de31a2c863f1a9ad64c358c44d889304dd8295f62b289ef2c0b2ed",
+      "cameraBlockedSamples": 0
+    },
+    {
+      "mode": "victory",
+      "finished": true,
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "durationSeconds": 183.0799560546875,
+      "terminalSeconds": 176.85983276367188,
+      "evidenceSHA256": "13db52f6f8f404fde68c242209c7cb9fb12e21e93e0e9692c9495ddbe90c9dbc",
+      "cameraBlockedSamples": 0,
+      "restart": {
+        "restartResourcesVerified": true,
+        "restartMovementVerified": true,
+        "restartAttackVerified": true
+      }
+    },
+    {
+      "mode": "collision",
+      "finished": true,
+      "passed": true,
+      "reason": "eight collision stages: front sprint/roll/blink, both flanks, rear, head/neck, and native natural-landing push without persistent penetration",
+      "durationSeconds": 75.00237274169922,
+      "terminalSeconds": -1,
+      "evidenceSHA256": "c9c64763ae948b580d2b2eca815cfcf6d32912471ca11461d2eac3208648ee78",
+      "cameraBlockedSamples": 0,
+      "collision": {
+        "completed": 8,
+        "required": 8,
+        "actualBodyHitEvents": 156,
+        "maximumPostPhysicsPenetrationCm": 0.3664599657058716,
+        "maximumPersistentPenetrationSeconds": 0,
+        "landingRecoveryPushes": 6
+      }
+    }
+  ],
+  "renderPolicyProof": "skin-cache-policy-proof.json",
+  "interactiveStressProof": "skin-cache-interactive-stress.json",
+  "stressSourceDifference": "071ecd4d -> final: runtime LOD selection for flattened paving and distant roof blocks only; morph path and pause/input fixes unchanged",
+  "visualCritique": {
+    "accepted": true,
+    "cameraBlockedSamples": 0,
+    "lockedLandingSamples": 10,
+    "scope": "Warmed native integration captures; paving, roofs, Dragon shape/flight/fire and player camera visibility reviewed"
+  },
+  "creditsSpent": {
+    "provider": "Tripo",
+    "credits": 780,
+    "modules": 12
+  },
+  "performance": "See performance.json:47.95FPS during confirmed-input manual route with another Unreal renderer active; no isolated60FPS certification.",
+  "rawCrashReportsKeptPrivate": true,
+  "copiedAppInteractiveCheck": {
+    "sourceVerified": true,
+    "nativeCaptureConfirmed": true,
+    "manualInputs": "Enter, Shift movement, Q roll, E grip, Space blink, R heal, Escape pause",
+    "normalShutdownVerified": true,
+    "logSHA256": "fcf51d6af3c4f3d630d37f01d90fcd1323cbe7c4c2b813c8c07e46a0f83af0b1"
+  },
+  "delivery": {
+    "folder": "~/Downloads/Veyr-Cathedral-Polish-20261025",
+    "app": "Veyr.app",
+    "controls": "PLAYING.txt",
+    "archiveSHA256": "5addba207e728421ea9e3b01958e1a6d06622f4f60f4c82d3d07713a3c2f6514",
+    "signatureAndDependenciesVerified": true
+  },
+  "leftOpenAtFreshStartScreen": true
+}
