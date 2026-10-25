@@ -42,6 +42,7 @@
     }
   ],
   "ownerApproval": "32 exact source candidates approved. Automated and critic results do not claim final owner gameplay judgment.",
-  "status": "integration and native validation complete",
-  "deliverySourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6"
+  "status": "native gameplay integration verified; final headed startup repair validation pending",
+  "deliverySourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
+  "deliveryGate": "Second session crash in macOS Unreal allocator startup; app-scoped ANSI repair statically verified; automatic launches stopped."
 }

@@ -10,5 +10,8 @@
   "dependenciesVerified": true,
   "archiveSHA256": "914fcab6003c47b77f1c867b37df53f050b08e56e147b2b1d784c36afd889573",
   "launchHold": true,
-  "reason": "Second session crash occurred during macOS Binned3/LLM startup; fresh owner-directed graphical validation required"
+  "reason": "Second session crash occurred during macOS Binned3/LLM startup; fresh owner-directed graphical validation required",
+  "privateBackupDigestVerified": true,
+  "privateReleaseDraft": true,
+  "privateReleaseId": 423238285
 }

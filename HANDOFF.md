@@ -26,10 +26,13 @@ Approved source GLBs/Blends remain immutable; exact hashes are recorded in
 - Branch: `codex/veyr-native-animation-integration-20261025`.
 - Delivery code commit: `a64ab86`; later commits update documentation/evidence only.
 - Delivery native source identity: `8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6`.
-- Signed archive SHA256: `e7a05c23c79a2b49e484e3ecfad4031279d41cd86b15fa9cc8e1ddd35921eeb6`.
+- Original gameplay-tested archive SHA256: `e7a05c23c79a2b49e484e3ecfad4031279d41cd86b15fa9cc8e1ddd35921eeb6`.
 - Private app backup: `oh-ashen-one/veyr-animation-sources`, release
   `native-game-20261025`, asset `Veyr-Mac-8ebd9783.zip` plus delivery manifest and
-  final validation. GitHub archive digest verified. Local ad-hoc signature,
+  final validation. The app release is now DRAFT pending desktop startup repair.
+  The candidate `Veyr-Mac-8ebd9783-ansi-startup.zip` and startup repair receipt are
+  in that same private release; its digest is verified.
+  Original GitHub archive digest verified. Local ad-hoc signature,
   full cooked payload and binary dependencies verified, then the app was run.
 - Actual native gameplay video:
   `<task-output>/veyr-native-integration/Veyr-Final-8ebd9783.mp4`.
