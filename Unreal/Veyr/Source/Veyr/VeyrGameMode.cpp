@@ -10,6 +10,9 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Misc/App.h"
 #include "Misc/EngineVersion.h"
 #include "Misc/CommandLine.h"
@@ -18,12 +21,20 @@
 AVeyrGameMode::AVeyrGameMode()
 {
     PrimaryActorTick.bCanEverTick=true;
+    bPauseable=true;
     DefaultPawnClass=AVeyrKnight::StaticClass();
     HUDClass=AVeyrHUD::StaticClass();
 }
 void AVeyrGameMode::StartPlay()
 {
     Super::StartPlay();
+    if(GConfig)
+    {
+        GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MasterVolume"),UserMasterVolume,GGameUserSettingsIni);
+        GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
+    }
+    UserMasterVolume=FMath::Clamp(UserMasterVolume,0.f,1.f);
+    UserMouseSensitivity=FMath::Clamp(UserMouseSensitivity,.25f,2.5f);
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     Arena=GetWorld()->SpawnActor<AVeyrArena>(FVector::ZeroVector,FRotator::ZeroRotator,Params);
@@ -47,7 +58,8 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         Knight->Boss=Dragon;
         if(Dragon)Dragon->Target=Knight;
         Audio=GetWorld()->SpawnActor<AVeyrAudio>();
-        if(Audio)Audio->Initialize(Knight,Dragon);
+        if(Audio){Audio->MasterVolume=UserMasterVolume;Audio->Initialize(Knight,Dragon);}
+        Knight->MouseSensitivity=UserMouseSensitivity;
         bPawnPositioned=true;
         FString ReplayMode,EvidenceDirectory;
         if(FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayMode))
@@ -93,4 +105,38 @@ bool AVeyrGameMode::StartNativeValidation(const FString& Mode,const FString& Evi
     if(Replay->Initialize(Mode,EvidenceDirectory))return true;
     Replay->Destroy();Replay=nullptr;
     return false;
+}
+
+bool AVeyrGameMode::SetPauseMenuOpen(bool bOpen)
+{
+    if(bPauseMenuOpen==bOpen)return true;
+    if(!UGameplayStatics::SetGamePaused(this,bOpen))return false;
+    bPauseMenuOpen=bOpen;
+    UE_LOG(LogTemp,Display,TEXT("VEYR_WORLD_PAUSE open=%d worldTime=%.3f encounter=%.3f"),bOpen,GetWorld()->GetTimeSeconds(),EncounterSeconds);
+    return true;
+}
+void AVeyrGameMode::SetMasterVolume(float Value)
+{
+    const float Previous=UserMasterVolume;UserMasterVolume=FMath::Clamp(Value,0.f,1.f);
+    if(Audio)
+    {
+        Audio->MasterVolume=UserMasterVolume;
+        TInlineComponentArray<UAudioComponent*> Voices;Audio->GetComponents(Voices);
+        for(UAudioComponent* Voice:Voices)if(Voice&&Voice->IsPlaying())
+            Voice->SetVolumeMultiplier(Previous>.001f?Voice->VolumeMultiplier*UserMasterVolume/Previous:.24f*UserMasterVolume);
+    }
+    SaveUserSettings();
+}
+void AVeyrGameMode::SetMouseSensitivity(float Value)
+{
+    UserMouseSensitivity=FMath::Clamp(Value,.25f,2.5f);
+    if(Knight)Knight->MouseSensitivity=UserMouseSensitivity;
+    SaveUserSettings();
+}
+void AVeyrGameMode::SaveUserSettings()
+{
+    if(!GConfig)return;
+    GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MasterVolume"),UserMasterVolume,GGameUserSettingsIni);
+    GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
+    GConfig->Flush(false,GGameUserSettingsIni);
 }

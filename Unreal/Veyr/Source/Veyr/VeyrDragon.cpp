@@ -14,6 +14,8 @@
 #include "Materials/MaterialParameters.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/World.h"
 
 namespace
 {
@@ -61,6 +63,21 @@ AVeyrDragon::AVeyrDragon()
 {
     PrimaryActorTick.bCanEverTick=true;
     SceneRoot=CreateDefaultSubobject<USceneComponent>(TEXT("DragonRulesRoot")); SetRootComponent(SceneRoot);
+    static const TCHAR* SolidNames[]={TEXT("Torso"),TEXT("Chest"),TEXT("NeckBase"),TEXT("Neck"),TEXT("Head"),
+        TEXT("FrontLeftShin"),TEXT("FrontRightShin"),TEXT("HindLeftCalf"),TEXT("HindLeftShin"),
+        TEXT("HindRightCalf"),TEXT("HindRightShin"),TEXT("FrontLeftFoot"),TEXT("FrontRightFoot"),
+        TEXT("HindLeftFoot"),TEXT("HindRightFoot"),TEXT("TailBase"),TEXT("TailMiddle"),TEXT("TailEnd"),TEXT("TailTip")};
+    for(const TCHAR* Name:SolidNames)
+    {
+        UCapsuleComponent* Part=CreateDefaultSubobject<UCapsuleComponent>(*FString::Printf(TEXT("VeyrSolid_%s"),Name));
+        Part->SetupAttachment(SceneRoot);Part->SetAbsolute(true,true,true);
+        Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Part->SetCollisionObjectType(ECC_WorldDynamic);
+        Part->SetCollisionResponseToAllChannels(ECR_Ignore);Part->SetCollisionResponseToChannel(ECC_Pawn,ECR_Block);
+        Part->SetGenerateOverlapEvents(false);Part->SetCanEverAffectNavigation(false);
+        Part->CanCharacterStepUpOn=ECB_No;Part->SetHiddenInGame(true);Part->SetVisibility(false);
+        SolidBodyCapsules.Add(Part);
+    }
     ImportedPresentation=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("CustomuseDragonPresentation"));
     ImportedPresentation->SetupAttachment(SceneRoot);
     ImportedPresentation->SetVisibility(false);
@@ -167,6 +184,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
         Clock+=DeltaSeconds;
         UpdateGaze(DeltaSeconds);
         UpdateTemporaryPresentation(DeltaSeconds);UpdateImportedPresentation();
+        UpdateSolidBody();
         return;
     }
     Clock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
@@ -191,6 +209,10 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     UpdateGaze(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
     UpdateImportedPresentation();
+    // Kinematic anatomy can advance into a stationary player. Publish physical
+    // blockers after attack contact, then resolve genuine penetration through
+    // the native movement component instead of letting the next move tunnel.
+    UpdateSolidBody();
     VisualAccumulator+=DeltaSeconds;
     // Active sweep geometry must use the same current clock as damaging contact.
     if(State==EVeyrDragonState::Active||IsLandingContactWindow()||VisualAccumulator>=.04f) { VisualAccumulator=0; UpdateTelegraphs(); }
@@ -1061,6 +1083,134 @@ bool AVeyrDragon::InitializeAnatomicalLegContacts()
     return true;
 }
 
+bool AVeyrDragon::InitializeSolidBody()
+{
+    bSolidBodyReady=false;bSolidBodyHasPose=false;SolidBodyDiagnostic.Reset();
+    for(UCapsuleComponent* Part:SolidBodyCapsules)if(Part)Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    if(!bAnatomicalLegContactsReady||!ImportedPresentation||!VisualDefinition||SolidBodyCapsules.Num()!=19)return false;
+    const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
+    if(!Head)return false;
+    SolidNeckMiddleBone=ImportedPresentation->GetParentBone(Head->BoneName);
+    SolidNeckBaseBone=ImportedPresentation->GetParentBone(SolidNeckMiddleBone);
+    SolidChestBone=ImportedPresentation->GetParentBone(SolidNeckBaseBone);
+    SolidPelvisBone=ImportedPresentation->GetParentBone(ImportedPresentation->GetParentBone(
+        ImportedPresentation->GetParentBone(ImportedKneeBones[2])));
+    for(FName Bone:{SolidNeckMiddleBone,SolidNeckBaseBone,SolidChestBone,SolidPelvisBone})
+        if(Bone.IsNone()||ImportedPresentation->GetBoneIndex(Bone)==INDEX_NONE)
+        {SolidBodyDiagnostic=TEXT("Solid dragon anatomy binding failed; blocker skeleton missing");return false;}
+    bSolidBodyReady=true;SolidBodyDiagnostic=TEXT("19 evaluated anatomical Pawn blockers; no camera wall; native overlap validation pending");
+    return true;
+}
+
+void AVeyrDragon::UpdateSolidBody()
+{
+    if(!bSolidBodyReady||!bImportedTargetsValid||!ImportedPresentation)return;
+    auto Bone=[&](FName Name){return ImportedPresentation->GetBoneTransform(ImportedPresentation->GetBoneIndex(Name)).GetLocation();};
+    const float Scale=ImportedPresentation->GetComponentTransform().GetScale3D().GetAbsMax()/21.558172f;
+    FVector Starts[19],Ends[19];float Radii[19];
+    auto Place=[&](int32 Index,const FVector& A,const FVector& B,float MeasuredRadius)
+    {
+        Starts[Index]=A;Ends[Index]=B;Radii[Index]=MeasuredRadius*Scale;
+    };
+    const FVector Pelvis=Bone(SolidPelvisBone),Chest=Bone(SolidChestBone),NeckBase=Bone(SolidNeckBaseBone),NeckMiddle=Bone(SolidNeckMiddleBone);
+    // Measured body skin: median radius149 cm, P95 227 cm, torso half-width239.
+    // This covers the mass, leaving the visible spaces between individual legs.
+    Place(0,Pelvis,Chest,225.f);Place(1,Chest,NeckBase,145.f);
+    Place(2,NeckBase,NeckMiddle,110.f);Place(3,NeckMiddle,ImportedHeadWorld,100.f);
+    Place(4,ImportedHeadWorld,ImportedMouthWorld,100.f);
+    Place(5,ImportedKneesWorld[0],ImportedFeetWorld[0],70.f);
+    Place(6,ImportedKneesWorld[1],ImportedFeetWorld[1],75.f);
+    Place(7,ImportedKneesWorld[2],ImportedHocksWorld[2],60.f);Place(8,ImportedHocksWorld[2],ImportedFeetWorld[2],60.f);
+    Place(9,ImportedKneesWorld[3],ImportedHocksWorld[3],60.f);Place(10,ImportedHocksWorld[3],ImportedFeetWorld[3],60.f);
+    for(int32 I=0;I<4;++I)Place(11+I,ImportedFeetWorld[I],ImportedFeetWorld[I],75.f);
+    Place(15,ImportedTailWorld[0],ImportedTailWorld[1],110.f);
+    Place(16,ImportedTailWorld[1],ImportedTailWorld[2],75.f);Place(17,ImportedTailWorld[2],ImportedTailWorld[3],50.f);
+    FTransform Tip;
+    if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("tail_tip"),Tip))return;
+    Place(18,ImportedTailWorld[3],Tip.GetLocation(),25.f);
+    float FurthestMove=0.f;
+    for(int32 I=0;I<19;++I)
+    {
+        if(Starts[I].ContainsNaN()||Ends[I].ContainsNaN())return;
+        if(bSolidBodyHasPose)FurthestMove=FMath::Max(FurthestMove,static_cast<float>(FMath::Max(
+            FVector::Dist(Starts[I],SolidPreviousStarts[I]),FVector::Dist(Ends[I],SolidPreviousEnds[I]))));
+    }
+    const int32 Steps=FMath::Clamp(FMath::CeilToInt(FurthestMove/40.f),1,32);
+    for(int32 Step=1;Step<=Steps;++Step)
+    {
+        const float T=static_cast<float>(Step)/Steps;
+        for(int32 I=0;I<19;++I)
+        {
+            const FVector A=bSolidBodyHasPose?FMath::Lerp(SolidPreviousStarts[I],Starts[I],T):Starts[I];
+            const FVector B=bSolidBodyHasPose?FMath::Lerp(SolidPreviousEnds[I],Ends[I],T):Ends[I];
+            UCapsuleComponent* Part=SolidBodyCapsules[I];const FVector Axis=B-A;
+            const float Radius=Radii[I],HalfHeight=Radius+static_cast<float>(Axis.Size())*.5f;
+            if(!FMath::IsNearlyEqual(Part->GetUnscaledCapsuleRadius(),Radius,.1f)||
+               !FMath::IsNearlyEqual(Part->GetUnscaledCapsuleHalfHeight(),HalfHeight,.25f))Part->SetCapsuleSize(Radius,HalfHeight,false);
+            const FQuat Rotation=Axis.IsNearlyZero()?FQuat::Identity:FQuat::FindBetweenNormals(FVector::UpVector,Axis.GetSafeNormal());
+            Part->SetWorldLocationAndRotation((A+B)*.5,Rotation,false,nullptr,ETeleportType::TeleportPhysics);
+            Part->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+        }
+        // Resolve along the path, not just at its endpoint: a large frame cannot
+        // carry a narrow limb completely past the Knight without a contact query.
+        ResolveKnightBodyPenetration();
+    }
+    for(int32 I=0;I<19;++I){SolidPreviousStarts[I]=Starts[I];SolidPreviousEnds[I]=Ends[I];}
+    bSolidBodyHasPose=true;
+    // Flight/collapse/death use the same evaluated shapes. Elevated parts do
+    // not leave an invisible ground wall; a fallen body remains physically solid.
+}
+
+void AVeyrDragon::ResolveKnightBodyPenetration()
+{
+    SolidBodyPenetrationDepthCm=0.f;
+    if(!bSolidBodyReady||!IsValid(Target)||Target->IsDead())return;
+    UCapsuleComponent* PlayerCapsule=Target->GetCapsuleComponent();
+    UCharacterMovementComponent* Movement=Target->GetCharacterMovement();
+    if(!PlayerCapsule||!Movement||!GetWorld())return;
+    const FCollisionShape Shape=PlayerCapsule->GetCollisionShape();const FQuat Rotation=PlayerCapsule->GetComponentQuat();
+    auto Penetration=[&](const FVector& Point,UCapsuleComponent*& Deepest,FMTDResult& Result)
+    {
+        float Depth=0.f;Deepest=nullptr;
+        for(UCapsuleComponent* Part:SolidBodyCapsules)
+        {
+            FMTDResult MTD;
+            if(Part&&Part->IsQueryCollisionEnabled()&&Part->ComputePenetration(MTD,Shape,Point,Rotation)&&
+               FMath::IsFinite(MTD.Distance)&&!MTD.Direction.ContainsNaN()&&MTD.Distance>Depth)
+            {Depth=MTD.Distance;Deepest=Part;Result=MTD;}
+        }
+        return Depth;
+    };
+    UCapsuleComponent* Deepest=nullptr;FMTDResult MTD;
+    const FVector Start=PlayerCapsule->GetComponentLocation();
+    const float Depth=Penetration(Start,Deepest,MTD);SolidBodyPenetrationDepthCm=Depth;
+    if(Depth<=.5f||!Deepest)return;
+    FVector Direction=MTD.Direction.GetSafeNormal2D();
+    if(Direction.IsNearlyZero())Direction=(Start-Deepest->GetComponentLocation()).GetSafeNormal2D();
+    if(Direction.IsNearlyZero())Direction=GetActorRightVector().GetSafeNormal2D();
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrDragonSolidPush),false,Target);
+    Params.AddIgnoredActor(this); // escape the actual overlap, never cross a wall
+    for(float Extra:{2.f,30.f,80.f,160.f})
+        for(float Angle:{0.f,45.f,-45.f,90.f,-90.f,135.f,-135.f,180.f})
+        {
+            const FVector Adjustment=Direction.RotateAngleAxis(Angle,FVector::UpVector)*FMath::Min(320.f,Depth+Extra);
+            UCapsuleComponent* Other=nullptr;FMTDResult Candidate;
+            if(Penetration(Start+Adjustment,Other,Candidate)>.5f)continue;
+            FHitResult Wall;
+            if(GetWorld()->SweepSingleByChannel(Wall,Start,Start+Adjustment,Rotation,ECC_Pawn,Shape,Params)&&Wall.bBlockingHit)continue;
+            FHitResult ActualOverlap(Deepest->GetOwner(),Deepest,Start,MTD.Direction);
+            ActualOverlap.bStartPenetrating=true;ActualOverlap.bBlockingHit=true;ActualOverlap.PenetrationDepth=Depth;
+            ActualOverlap.TraceStart=Start;ActualOverlap.TraceEnd=Start;
+            if(Movement->ResolvePenetration(Adjustment,ActualOverlap,Rotation))
+            {
+                ++SolidBodyPushCount;LastSolidBodyPushShape=Deepest->GetFName();
+                SolidBodyPenetrationDepthCm=Penetration(PlayerCapsule->GetComponentLocation(),Other,Candidate);
+                return;
+            }
+        }
+    SolidBodyDiagnostic=FString::Printf(TEXT("Solid dragon penetration %.2f cm could not resolve without crossing world geometry"),Depth);
+}
+
 bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
     if(!Definition||!ImportedPresentation)return false;
@@ -1078,6 +1228,7 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         }
     VisualDefinition=Definition;bUsingCustomuseVisual=true;
     InitializeAnatomicalLegContacts();
+    InitializeSolidBody();
     for(UStaticMeshComponent* Part:TemporaryParts)if(Part)Part->SetVisibility(false);
     ImportedPresentation->SetVisibility(true);
     TemporaryLabel->SetVisibility(false);
@@ -1089,6 +1240,7 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     bPresentationMotionInitialized=false;WalkPhase=TurnPhase=0.f;
     GazeSmoothedYaw=GazeSmoothedPitch=GazeYawDegrees=GazePitchDegrees=0.f;
     UpdateImportedPresentation();
+    UpdateSolidBody();
     InitializeCameraOcclusionMaterials();
     return true;
 }
@@ -1338,7 +1490,10 @@ FVeyrDragonFlameBeam AVeyrDragon::GetActiveFlameBeam() const
     if(!bUsingCustomuseVisual||!bImportedTargetsValid||!bImportedAttackCacheReady||
        State!=EVeyrDragonState::Active||Move!=EVeyrDragonMove::Fire||bEncounterStopped||!MissingVisualClip.IsNone())return Beam;
     Beam.Origin=ImportedMouthWorld;Beam.Direction=(ImportedMouthAimWorld-ImportedMouthWorld).GetSafeNormal();
-    Beam.bDamaging=!Beam.Direction.IsNearlyZero();return Beam;
+    // The visible jet reaches full range over 0.18 s. Damage uses this same
+    // advancing front; no invisible full-length hit precedes the emitted flame.
+    Beam.Length*=FMath::Clamp(StateElapsed/.18f,0.f,1.f);
+    Beam.bDamaging=Beam.Length>20.f&&!Beam.Direction.IsNearlyZero();return Beam;
 }
 
 FVeyrDragonFootprint AVeyrDragon::ProjectFlameToGround(const FVeyrDragonFlameBeam& Beam,float Padding) const

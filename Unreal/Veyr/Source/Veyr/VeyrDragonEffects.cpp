@@ -2,274 +2,213 @@
 #include "VeyrDragon.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
-#include "Materials/MaterialInstanceDynamic.h"
-#include "Materials/MaterialParameters.h"
 #include "UObject/ConstructorHelpers.h"
 
 AVeyrDragonEffects::AVeyrDragonEffects()
 {
-    PrimaryActorTick.bCanEverTick=true;
-    PrimaryActorTick.TickGroup=TG_PostUpdateWork;
-    PrimaryActorTick.TickInterval=1.f/30.f;
+    PrimaryActorTick.bCanEverTick=true;PrimaryActorTick.TickGroup=TG_PostUpdateWork;
     SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("DragonEffectsRoot")));
-    Core=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathPaleCore"));
-    Flame=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathOrangeFlame"));
-    Smoke=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathSoftSmoke"));
-    for(UInstancedStaticMeshComponent* Pool:{Core.Get(),Flame.Get(),Smoke.Get()})
+    Core=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathHotCore"));
+    Flame=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathFlameTongues"));
+    Smoke=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathRisingSmoke"));
+    Embers=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathEmbers"));
+    for(UInstancedStaticMeshComponent* Pool:{Core.Get(),Flame.Get(),Smoke.Get(),Embers.Get()})
     {
-        Pool->SetupAttachment(GetRootComponent());
-        Pool->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Pool->SetupAttachment(GetRootComponent());Pool->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Pool->SetGenerateOverlapEvents(false);Pool->SetCanEverAffectNavigation(false);
-        Pool->SetCastShadow(false);Pool->SetVisibility(false);
-        Pool->SetCullDistances(0,9000);
-        Pool->SetNumCustomDataFloats(2); // alpha, stable noise seed
+        Pool->SetCastShadow(false);Pool->SetVisibility(false);Pool->SetCullDistances(0,9000);
+        Pool->SetNumCustomDataFloats(4); // opacity, independent seed, age, heat
+    }
+    for(int32 I=0;I<3;++I)
+    {
+        UPointLightComponent* Light=CreateDefaultSubobject<UPointLightComponent>(*FString::Printf(TEXT("BreathLight%d"),I));
+        Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
+        Light->SetIntensityUnits(ELightUnits::Lumens);
+        Light->SetCastShadows(false);Light->SetIntensity(0.f);Light->SetAttenuationRadius(650.f);
+        Light->SetLightColor(FLinearColor(1.f,.23f,.025f));Light->SetVisibility(false);
+        FireLights.Add(Light);
     }
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Plane(TEXT("/Engine/BasicShapes/Plane.Plane"),LOAD_Quiet|LOAD_NoWarn);
-    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Pale(TEXT("/Game/Veyr/FX/v2/M_VeyrBreathCore.M_VeyrBreathCore"),LOAD_Quiet|LOAD_NoWarn);
-    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Orange(TEXT("/Game/Veyr/FX/v2/M_VeyrBreathFlame.M_VeyrBreathFlame"),LOAD_Quiet|LOAD_NoWarn);
-    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Haze(TEXT("/Game/Veyr/FX/v2/M_VeyrBreathSmoke.M_VeyrBreathSmoke"),LOAD_Quiet|LOAD_NoWarn);
-    SpritePlane=Plane.Get();CoreMaterial=Pale.Get();FlameMaterial=Orange.Get();SmokeMaterial=Haze.Get();
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Pale(TEXT("/Game/Veyr/FX/v3/M_VeyrBreathCore.M_VeyrBreathCore"),LOAD_Quiet|LOAD_NoWarn);
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Orange(TEXT("/Game/Veyr/FX/v3/M_VeyrBreathFlame.M_VeyrBreathFlame"),LOAD_Quiet|LOAD_NoWarn);
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Haze(TEXT("/Game/Veyr/FX/v3/M_VeyrBreathSmoke.M_VeyrBreathSmoke"),LOAD_Quiet|LOAD_NoWarn);
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Spark(TEXT("/Game/Veyr/FX/v3/M_VeyrBreathEmber.M_VeyrBreathEmber"),LOAD_Quiet|LOAD_NoWarn);
+    SpritePlane=Plane.Get();CoreMaterial=Pale.Get();FlameMaterial=Orange.Get();SmokeMaterial=Haze.Get();EmberMaterial=Spark.Get();
 }
 
 void AVeyrDragonEffects::ConfigurePool(UInstancedStaticMeshComponent* Pool,UMaterialInterface* Material,int32 Count)
 {
-    Pool->ClearInstances();Pool->SetStaticMesh(SpritePlane);Pool->SetMaterial(0,Material);
-    Pool->SetNumCustomDataFloats(2);
+    Pool->ClearInstances();Pool->SetStaticMesh(SpritePlane);Pool->SetMaterial(0,Material);Pool->SetNumCustomDataFloats(4);
     for(int32 I=0;I<Count;++I)
     {
         Pool->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
-        Pool->SetCustomDataValue(I,0,0.f,false);
-        Pool->SetCustomDataValue(I,1,FMath::Frac(I*.61803399f),false);
+        Pool->SetCustomDataValue(I,0,0.f,false);Pool->SetCustomDataValue(I,1,FMath::Frac(I*.61803399f),false);
+        Pool->SetCustomDataValue(I,2,0.f,false);Pool->SetCustomDataValue(I,3,1.f,false);
     }
 }
 
 bool AVeyrDragonEffects::Initialize(AVeyrDragon* InDragon)
 {
-    HideEffects();bEffectsReady=false;
-    if(IsValid(Dragon))RemoveTickPrerequisiteActor(Dragon);
-    Dragon=InDragon;
-    if(!IsValid(Dragon)){EffectsDiagnostic=TEXT("No dragon supplied; effects disabled");return false;}
-    // A native authoring pass can create these after the CDO was constructed.
-    // Explicit initialization may retry their exact owned paths quietly.
-    if(!CoreMaterial)CoreMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/FX/v2/M_VeyrBreathCore.M_VeyrBreathCore"),nullptr,LOAD_Quiet|LOAD_NoWarn);
-    if(!FlameMaterial)FlameMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/FX/v2/M_VeyrBreathFlame.M_VeyrBreathFlame"),nullptr,LOAD_Quiet|LOAD_NoWarn);
-    if(!SmokeMaterial)SmokeMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/FX/v2/M_VeyrBreathSmoke.M_VeyrBreathSmoke"),nullptr,LOAD_Quiet|LOAD_NoWarn);
-    if(!SpritePlane||!CoreMaterial||!FlameMaterial||!SmokeMaterial)
-    {EffectsDiagnostic=TEXT("Authored breath material/plane missing; no untextured substitute rendered");return false;}
-    if(CoreMaterial->GetBlendMode()!=BLEND_Additive||FlameMaterial->GetBlendMode()!=BLEND_Additive||SmokeMaterial->GetBlendMode()!=BLEND_Translucent)
-    {EffectsDiagnostic=TEXT("Unexpected breath material blend mode; effects disabled");return false;}
-    // Owned transient overrides retain the original FXv2 shaders. Their pale
-    // six-times-emissive default overwhelmed the orange body after overlap was
-    // fixed; reserve a subdued amber core rather than an unbroken white stripe.
-    for(UMaterialInterface* Material:{CoreMaterial.Get(),FlameMaterial.Get()})
+    HideEffects();bEffectsReady=false;LastActiveClock=-100.f;
+    if(IsValid(Dragon))RemoveTickPrerequisiteActor(Dragon);Dragon=InDragon;
+    if(!IsValid(Dragon)){EffectsDiagnostic=TEXT("No dragon supplied; breath disabled");return false;}
+    auto Load=[&](TObjectPtr<UMaterialInterface>& Material,const TCHAR* Name)
     {
-        float Brightness=0;FLinearColor Tint;
-        if(!Material->GetScalarParameterValue(FHashedMaterialParameterInfo(TEXT("Brightness")),Brightness)||
-           !Material->GetVectorParameterValue(FHashedMaterialParameterInfo(TEXT("Tint")),Tint))
-        {EffectsDiagnostic=TEXT("Original FXv2 Tint/Brightness parameters missing; effects disabled");return false;}
-    }
-    WarmCoreMaterial=UMaterialInstanceDynamic::Create(CoreMaterial,this);
-    WarmFlameMaterial=UMaterialInstanceDynamic::Create(FlameMaterial,this);
-    if(!WarmCoreMaterial||!WarmFlameMaterial){EffectsDiagnostic=TEXT("Transient flame material creation failed");return false;}
-    WarmCoreMaterial->SetFlags(RF_Transient);WarmFlameMaterial->SetFlags(RF_Transient);
-    WarmCoreMaterial->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.45f,.045f,1.f));
-    WarmCoreMaterial->SetScalarParameterValue(TEXT("Brightness"),1.6f);
-    WarmFlameMaterial->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.18f,.008f,1.f));
-    WarmFlameMaterial->SetScalarParameterValue(TEXT("Brightness"),2.6f);
-    ConfigurePool(Core,WarmCoreMaterial,CoreCount);ConfigurePool(Flame,WarmFlameMaterial,FlameCount);ConfigurePool(Smoke,SmokeMaterial,SmokeCount);
-    AddTickPrerequisiteActor(Dragon);
-    bEffectsReady=true;EffectsDiagnostic=TEXT("Original 176-sprite orange turbulent cone with subdued amber core; native visual acceptance pending");
+        if(!Material)Material=LoadObject<UMaterialInterface>(nullptr,*FString::Printf(TEXT("/Game/Veyr/FX/v3/%s.%s"),Name,Name),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    };
+    Load(CoreMaterial,TEXT("M_VeyrBreathCore"));Load(FlameMaterial,TEXT("M_VeyrBreathFlame"));
+    Load(SmokeMaterial,TEXT("M_VeyrBreathSmoke"));Load(EmberMaterial,TEXT("M_VeyrBreathEmber"));
+    if(!SpritePlane||!CoreMaterial||!FlameMaterial||!SmokeMaterial||!EmberMaterial)
+    {EffectsDiagnostic=TEXT("FXv3 atlas/density materials are missing; no flat procedural substitute rendered");return false;}
+    if(CoreMaterial->GetBlendMode()!=BLEND_Additive||FlameMaterial->GetBlendMode()!=BLEND_Additive||
+       SmokeMaterial->GetBlendMode()!=BLEND_Translucent||EmberMaterial->GetBlendMode()!=BLEND_Additive)
+    {EffectsDiagnostic=TEXT("FXv3 blend modes do not match flame/smoke contract");return false;}
+    ConfigurePool(Core,CoreMaterial,CoreCount);ConfigurePool(Flame,FlameMaterial,FlameCount);
+    ConfigurePool(Smoke,SmokeMaterial,SmokeCount);ConfigurePool(Embers,EmberMaterial,EmberCount);
+    AddTickPrerequisiteActor(Dragon);bEffectsReady=true;
+    EffectsDiagnostic=TEXT("FXv3 textured turbulent jet, independent hot core, smoke/embers and three local fire lights; native visual acceptance pending");
     return true;
 }
 
 void AVeyrDragonEffects::HideEffects()
 {
-    Core->SetVisibility(false);Flame->SetVisibility(false);Smoke->SetVisibility(false);
+    for(UInstancedStaticMeshComponent* Pool:{Core.Get(),Flame.Get(),Smoke.Get(),Embers.Get()})Pool->SetVisibility(false);
+    for(UPointLightComponent* Light:FireLights){Light->SetIntensity(0.f);Light->SetVisibility(false);}
     VisibleSpriteCount=0;
 }
 
 void AVeyrDragonEffects::Sprite(UInstancedStaticMeshComponent* Pool,int32 Index,const FVector& Position,
-    const FVector& Camera,float Size,float Alpha,float Seed)
+    const FVector& Camera,float Size,float Alpha,float Seed,float Age,float Heat)
 {
     const FVector Facing=(Camera-Position).GetSafeNormal();
     const FQuat Rotation=FRotationMatrix::MakeFromZ(Facing.IsNearlyZero()?FVector::UpVector:Facing).ToQuat();
-    // Engine plane is 100cm square with local +Z normal. World-space instance
-    // transforms prevent double application of the effects actor transform.
     Pool->UpdateInstanceTransform(Index,FTransform(Rotation,Position,FVector(Size/100.f,Size/100.f,1.f)),true,false,true);
-    const float CameraFade=FMath::Clamp((static_cast<float>(FVector::Distance(Camera,Position))-70.f)/130.f,0.f,1.f);
-    Pool->SetCustomDataValue(Index,0,FMath::Clamp(Alpha*CameraFade,0.f,1.f),false);
-    Pool->SetCustomDataValue(Index,1,Seed,false);
+    const float Fade=FMath::Clamp((static_cast<float>(FVector::Distance(Camera,Position))-60.f)/120.f,0.f,1.f);
+    Pool->SetCustomDataValue(Index,0,FMath::Clamp(Alpha*Fade,0.f,1.f),false);
+    Pool->SetCustomDataValue(Index,1,Seed,false);Pool->SetCustomDataValue(Index,2,Age,false);Pool->SetCustomDataValue(Index,3,Heat,false);
 }
 
 void AVeyrDragonEffects::Streak(UInstancedStaticMeshComponent* Pool,int32 Index,const FVector& Position,
-    const FVector& Camera,const FVector& Axis,float Along,float Across,float Alpha,float Seed)
+    const FVector& Camera,const FVector& Axis,float Along,float Across,float Alpha,float Seed,float Age,float Heat)
 {
-    FVector Facing=(Camera-Position).GetSafeNormal();
-    if(Facing.IsNearlyZero())Facing=FVector::UpVector;
-    const FVector Projected=Axis-Facing*FVector::DotProduct(Axis,Facing);
-    const float Projection=static_cast<float>(Projected.Size());
-    const FQuat Rotation=Projection>.001f?FRotationMatrix::MakeFromXZ(Projected/Projection,Facing).ToQuat():
-        FRotationMatrix::MakeFromZ(Facing).ToQuat();
-    // Axial ellipses overlap along the projected beam. End-on views retain
-    // a round cross-section instead of a long camera-facing ribbon.
-    const float ScreenAlong=FMath::Min(FMath::Lerp(Across,Along,FMath::Clamp(Projection,0.f,1.f)),
-        Along/FMath::Max(.001f,Projection));
+    FVector Facing=(Camera-Position).GetSafeNormal();if(Facing.IsNearlyZero())Facing=FVector::UpVector;
+    const FVector Projected=Axis-Facing*FVector::DotProduct(Axis,Facing);const float Projection=static_cast<float>(Projected.Size());
+    const FQuat Rotation=Projection>.001f?FRotationMatrix::MakeFromXZ(Projected/Projection,Facing).ToQuat():FRotationMatrix::MakeFromZ(Facing).ToQuat();
+    const float ScreenAlong=FMath::Lerp(Across,Along,FMath::Clamp(Projection,0.f,1.f));
     Pool->UpdateInstanceTransform(Index,FTransform(Rotation,Position,FVector(ScreenAlong/100.f,Across/100.f,1.f)),true,false,true);
-    const float CameraFade=FMath::Clamp((static_cast<float>(FVector::Distance(Camera,Position))-70.f)/130.f,0.f,1.f);
-    Pool->SetCustomDataValue(Index,0,FMath::Clamp(Alpha*CameraFade,0.f,1.f),false);
-    Pool->SetCustomDataValue(Index,1,Seed,false);
+    const float Fade=FMath::Clamp((static_cast<float>(FVector::Distance(Camera,Position))-60.f)/120.f,0.f,1.f);
+    Pool->SetCustomDataValue(Index,0,FMath::Clamp(Alpha*Fade,0.f,1.f),false);
+    Pool->SetCustomDataValue(Index,1,Seed,false);Pool->SetCustomDataValue(Index,2,Age,false);Pool->SetCustomDataValue(Index,3,Heat,false);
 }
 
 void AVeyrDragonEffects::Tick(float DeltaSeconds)
 {
-    Super::Tick(DeltaSeconds);
-    if(!bEffectsReady||!IsValid(Dragon)||Dragon->IsDead()||Dragon->IsEncounterStopped()||Dragon->Move!=EVeyrDragonMove::Fire)
-    {HideEffects();return;}
-    if(Dragon->bUsingCustomuseVisual&&!Dragon->HasValidImportedCombatPose()){HideEffects();return;}
-    const bool bWindup=Dragon->State==EVeyrDragonState::Windup;
-    const FVeyrDragonFootprint Footprint=Dragon->GetActiveFootprint();
-    const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
-    const bool bImported=Dragon->bUsingCustomuseVisual;
-    const bool bActive=Dragon->State==EVeyrDragonState::Active&&
-        (bImported?Beam.bDamaging:(Footprint.bDamaging&&Footprint.Shape==EVeyrDangerShape::Sector));
-    if(!bWindup&&!bActive){HideEffects();return;}
+    Super::Tick(DeltaSeconds);EffectsClock+=DeltaSeconds;
+    if(!bEffectsReady||!IsValid(Dragon)){HideEffects();return;}
     APlayerController* Player=UGameplayStatics::GetPlayerController(this,0);
     if(!Player){HideEffects();return;}
     FVector Camera;FRotator View;Player->GetPlayerViewPoint(Camera,View);
-    const FVector Mouth=Dragon->GetMouthLocation();
-    const float Clock=Dragon->GetStateElapsed();
-    Core->SetVisibility(true);Flame->SetVisibility(bActive);Smoke->SetVisibility(bActive);
-    ++PresentationUpdates;
-    if(bWindup)
+    const bool FireMove=Dragon->Move==EVeyrDragonMove::Fire&&!Dragon->IsDead()&&!Dragon->IsEncounterStopped();
+    const bool Windup=FireMove&&Dragon->State==EVeyrDragonState::Windup;
+    const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
+    const bool Active=FireMove&&Dragon->State==EVeyrDragonState::Active&&Beam.bDamaging&&Beam.Length>1.f;
+    if(Dragon->bUsingCustomuseVisual&&!Dragon->HasValidImportedCombatPose()){HideEffects();return;}
+    const float TailAge=EffectsClock-LastActiveClock;
+    if(!Windup&&!Active&&TailAge>=1.2f){HideEffects();return;}
+    ++PresentationUpdates;VisibleSpriteCount=0;
+    Core->SetVisibility(Windup||Active);Flame->SetVisibility(Active);Embers->SetVisibility(Active);
+    if(Windup)
     {
-        const float Anticipation=FMath::Clamp(Clock/FMath::Max(.001f,Dragon->GetStateDuration()),0.f,1.f);
+        const float T=FMath::Clamp(Dragon->GetStateElapsed()/FMath::Max(.001f,Dragon->GetStateDuration()),0.f,1.f);
+        const FVector Mouth=Dragon->GetMouthLocation();
         for(int32 I=0;I<CoreCount;++I)
         {
-            const float Phase=FMath::Frac(Clock*1.6f+I*.618034f);
-            const float Angle=I*2.399963f;
-            const FVector Offset=FVector(FMath::Cos(Angle),FMath::Sin(Angle),Phase)*FMath::Lerp(18.f,75.f,Phase);
-            Sprite(Core,I,Mouth+Offset,Camera,9.f+Phase*13.f,I<16?(1.f-Phase)*(.16f+.30f*Anticipation):0.f,Phase);
+            const float Seed=FMath::Frac(I*.618034f),Age=FMath::Frac(EffectsClock*1.5f+Seed);
+            const FVector Offset=FVector(FMath::Cos(I*2.4f),FMath::Sin(I*2.4f),.5f)*Age*20.f;
+            Sprite(Core,I,Mouth+Offset,Camera,16.f+Age*35.f,(1.f-Age)*T*T*.16f,Seed,Age,1.f);
         }
-        Core->MarkRenderStateDirty();VisibleSpriteCount=16;return;
+        Core->MarkRenderStateDirty();VisibleSpriteCount+=CoreCount;
+        for(int32 I=0;I<FireLights.Num();++I)
+        {
+            FireLights[I]->SetVisibility(I==0);FireLights[I]->SetWorldLocation(Mouth);
+            FireLights[I]->SetIntensity(I==0?800.f*T*T:0.f);
+        }
     }
-    if(bImported)
+    if(Active)
     {
-        // This is the same finite 3D cone used against the knight capsule.
-        // Every flame/core position starts at the actual muzzle and travels
-        // forward; no connector can run back toward the actor origin.
-        const FVector Axis=Beam.Direction.GetSafeNormal();
-        FVector Side=FVector::CrossProduct(Axis,FVector::UpVector).GetSafeNormal();
-        if(Side.IsNearlyZero())Side=FVector::RightVector;
+        LastBeamOrigin=Beam.Origin;LastBeamDirection=Beam.Direction.GetSafeNormal();LastBeamLength=Beam.Length;
+        LastBeamSpread=FMath::Tan(FMath::DegreesToRadians(Beam.HalfAngleDegrees));LastActiveClock=EffectsClock;
+        const FVector Axis=LastBeamDirection;
+        FVector Side=FVector::CrossProduct(Axis,FVector::UpVector).GetSafeNormal();if(Side.IsNearlyZero())Side=FVector::RightVector;
         const FVector Up=FVector::CrossProduct(Side,Axis).GetSafeNormal();
-        const float Spread=FMath::Tan(FMath::DegreesToRadians(Beam.HalfAngleDegrees));
-        auto Point=[&](float U,float SideAmount,float UpAmount)
+        const float T=Dragon->GetStateElapsed(),Startup=FMath::Clamp(T/.08f,0.f,1.f);
+        auto Point=[&](float U,float Radial,float Angle)
         {
-            const float Distance=Beam.Length*U,Radius=Distance*Spread;
-            return Beam.Origin+Axis*Distance+Side*(SideAmount*Radius)+Up*(UpAmount*Radius);
+            const float R=Beam.Length*U*LastBeamSpread;
+            return Beam.Origin+Axis*(Beam.Length*U)+Side*(FMath::Cos(Angle)*R*Radial)+Up*(FMath::Sin(Angle)*R*Radial);
         };
-        const float CoreStep=Beam.Length/CoreCount,BodyStep=Beam.Length/FlameBodyCount;
-        auto BoundedLength=[&](float U,float Desired)
-        {
-            // The finite cone is never connected backward to a proxy origin,
-            // and even elongated cards end at the muzzle/beam endpoint.
-            return FMath::Max(1.f,FMath::Min(Desired,2.f*Beam.Length*FMath::Min(U,1.f-U)));
-        };
+        auto Length=[&](float U,float Wanted){return FMath::Max(1.f,FMath::Min(Wanted,2.f*Beam.Length*FMath::Min(U,1.f-U)));};
         for(int32 I=0;I<CoreCount;++I)
         {
-            const float U=(I+.5f)/CoreCount,Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
-            const float Pulse=FMath::Square(FMath::Sin(Clock*15.f-U*39.f));
-            const float Across=(28.f+Radius*.92f)*(.80f+.30f*Pulse);
-            const float Along=BoundedLength(U,FMath::Max(CoreStep*4.5f,Across));
-            const float Density=FMath::Clamp(CoreStep*2.2f/FMath::Max(CoreStep,Along),.16f,.54f);
-            Streak(Core,I,Point(U,.18f*FMath::Sin(Clock*12.f-U*29.f),.13f*FMath::Cos(Clock*15.f-U*37.f)),
-                Camera,Axis,Along,Across,Density*.28f*(.45f+.55f*Pulse),Seed);
+            const float Seed=FMath::Frac(I*.618034f),U=.015f+.37f*(I+.5f)/CoreCount;
+            const float Pulse=.5f+.5f*FMath::Sin(EffectsClock*18.f-Seed*31.f);
+            const float Width=28.f+Beam.Length*U*LastBeamSpread*.65f;
+            Streak(Core,I,Point(U,.10f,EffectsClock*4.f+I),Camera,Axis,Length(U,150.f+80.f*Pulse),Width,
+                .16f*(1.f-U/.40f)*Startup*(.65f+.35f*Pulse),Seed,FMath::Frac(T*1.2f+Seed),1.f);
         }
-        // Broad, overlapping orange ellipses provide the actual flame body.
-        // FXv2's radial power has a soft edge:2.8*radius card width puts the
-        // damaging cone rim inside that visible feather rather than outside
-        // a tiny155cm puff (the far cone is roughly744cm in diameter).
-        for(int32 I=0;I<FlameBodyCount;++I)
+        // Five desynchronised advecting streams fill the volume with textured
+        // tongues. Their translucent gaps stay visible; this is not a solid cone.
+        for(int32 I=0;I<FlameCount;++I)
         {
-            const float U=(I+.5f)/FlameBodyCount,Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
-            const float Bulge=.94f+.12f*FMath::Square(FMath::Sin(Clock*11.f-U*27.f));
-            const float Across=FMath::Max(40.f,Radius*2.8f)*Bulge;
-            const float Along=BoundedLength(U,FMath::Max(BodyStep*4.f,Across*.48f));
-            const float Density=FMath::Clamp(BodyStep*1.8f/FMath::Max(BodyStep,Along),.075f,.48f);
-            Streak(Flame,I,Point(U,.09f*FMath::Sin(Clock*11.f-U*27.f),.09f*FMath::Cos(Clock*9.f-U*25.f)),
-                Camera,Axis,Along,Across,Density,Seed);
+            const float Seed=FMath::Frac(I*.618034f),Age=FMath::Frac(T*.85f+(I/5+.5f)/16.f+Seed*.035f);
+            const float U=.012f+.976f*Age,R=Beam.Length*U*LastBeamSpread;
+            const float Angle=(I%5)*2.f*PI/5.f+T*.8f+U*4.7f;
+            const float Radial=I%5==0?.08f:.35f+.22f*Seed;
+            const float Life=FMath::Pow(FMath::Max(0.f,FMath::Sin(Age*PI)),.45f);
+            const float Width=FMath::Max(24.f,FMath::Min(FMath::Max(70.f,R*1.8f),2.f*R*(1.f-Radial)));
+            const float Along=Length(U,FMath::Max(150.f,R*1.35f));
+            Streak(Flame,I,Point(U,Radial,Angle),Camera,Axis,Along,Width,
+                (.16f+.08f*Seed)*Life*Startup,Seed,Age,1.f-Age*.65f);
         }
-        // A separate downstream-moving layer breaks up the body silhouette;
-        // it is not responsible for continuity and cannot leave gaps in it.
-        for(int32 I=0;I<FlameTurbulenceCount;++I)
-        {
-            const int32 Index=FlameBodyCount+I;
-            const float U=FMath::Frac((I+.5f)/FlameTurbulenceCount+Clock*.65f);
-            const float Radius=Beam.Length*U*Spread,Seed=FMath::Frac(I*.618034f);
-            const float Angle=I*2.399963f-Clock*7.f+U*9.f,Radial=.55f+.25f*Seed;
-            const float Flicker=FMath::Square(FMath::Sin(Clock*16.f-I*1.73f));
-            const float Across=(50.f+Radius*1.05f)*(.80f+.40f*Flicker);
-            const float Along=BoundedLength(U,FMath::Max(100.f,Across*1.15f));
-            const float Fade=FMath::Clamp(U/.06f,0.f,1.f)*FMath::Clamp((1.f-U)/.15f,0.f,1.f);
-            Streak(Flame,Index,Point(U,FMath::Cos(Angle)*Radial,FMath::Sin(Angle)*Radial),
-                Camera,Axis,Along,Across,(.18f+.10f*Flicker)*Fade,Seed);
-        }
-        const int32 EmberCount=FlameCount-FlameBodyCount-FlameTurbulenceCount;
         for(int32 I=0;I<EmberCount;++I)
         {
-            const float U=FMath::Frac((I+.5f)/EmberCount+Clock*.9f),Seed=FMath::Frac(I*.618034f);
-            const float Angle=I*2.399963f+Clock*2.f;
-            Streak(Flame,FlameBodyCount+FlameTurbulenceCount+I,
-                Point(U,FMath::Cos(Angle)*.82f,FMath::Sin(Angle)*.82f),Camera,Axis,
-                BoundedLength(U,40.f+35.f*Seed),7.f+5.f*Seed,.55f*FMath::Sin(U*PI),Seed);
+            const float Seed=FMath::Frac(I*.618034f),Age=FMath::Frac(T*1.5f+Seed),U=.10f+.88f*Age;
+            const float Angle=I*2.399963f+T*1.2f;
+            Streak(Embers,I,Point(U,.55f+.2f*Seed,Angle)+FVector::UpVector*(Age*Age*70.f),Camera,Axis,
+                Length(U,16.f+30.f*Seed),2.5f+3.f*Seed,(1.f-Age)*.65f*Startup,Seed,Age,1.f);
         }
+        for(int32 I=0;I<FireLights.Num();++I)
+        {
+            const float U=.04f+I*.27f;FVector Position=Beam.Origin+Axis*(Beam.Length*U);
+            Position.Z=FMath::Max(Position.Z,Dragon->GetActorLocation().Z+45.f);
+            const float Flicker=.85f+.15f*FMath::Sin(EffectsClock*19.f-I*2.f);
+            FireLights[I]->SetVisibility(true);FireLights[I]->SetWorldLocation(Position);
+            FireLights[I]->SetAttenuationRadius(550.f+I*120.f);
+            FireLights[I]->SetIntensity((I==0?4200.f:I==1?3000.f:1800.f)*Flicker*Startup);
+        }
+        Core->MarkRenderStateDirty();Flame->MarkRenderStateDirty();Embers->MarkRenderStateDirty();
+        VisibleSpriteCount+=CoreCount+FlameCount+EmberCount;
+    }
+    const float SmokeTail=Active?1.f:FMath::Clamp(1.f-TailAge/1.2f,0.f,1.f);
+    const bool ShowSmoke=SmokeTail>0.f&&LastBeamLength>1.f;Smoke->SetVisibility(ShowSmoke);
+    if(ShowSmoke)
+    {
+        FVector Side=FVector::CrossProduct(LastBeamDirection,FVector::UpVector).GetSafeNormal();if(Side.IsNearlyZero())Side=FVector::RightVector;
         for(int32 I=0;I<SmokeCount;++I)
         {
-            const float U=.25f+.75f*(I+.5f)/SmokeCount,Seed=FMath::Frac(I*.618034f);
-            const float Drift=FMath::Frac(Clock*.8f+Seed),Radius=Beam.Length*U*Spread;
-            const FVector Position=Point(U,(Seed-.5f)*.9f,.25f)+FVector::UpVector*(60.f+Drift*140.f);
-            Streak(Smoke,I,Position,Camera,Axis,220.f+Radius*1.2f,130.f+Radius*1.1f,
-                .035f*(1.f-Drift),Seed);
+            const float Seed=FMath::Frac(I*.618034f),Age=FMath::Frac(EffectsClock*.40f+Seed),U=.26f+.74f*(I+.5f)/SmokeCount;
+            const float R=LastBeamLength*U*LastBeamSpread;
+            FVector Position=LastBeamOrigin+LastBeamDirection*(LastBeamLength*U)+Side*((Seed-.5f)*R*1.4f);
+            Position.Z=FMath::Max(Position.Z,Dragon->GetActorLocation().Z+40.f)+55.f+Age*150.f+(Active?0.f:FMath::Max(0.f,TailAge))*100.f;
+            Sprite(Smoke,I,Position,Camera,150.f+R*1.2f+Age*80.f,(.035f+.025f*Seed)*(1.f-Age)*SmokeTail,Seed,Age,.15f);
         }
-        Core->MarkRenderStateDirty();Flame->MarkRenderStateDirty();Smoke->MarkRenderStateDirty();
-        VisibleSpriteCount=CoreCount+FlameCount+SmokeCount;return;
+        Smoke->MarkRenderStateDirty();VisibleSpriteCount+=SmokeCount;
     }
-    const FVector Forward=Footprint.Forward.GetSafeNormal2D();
-    const FVector Side=FVector::CrossProduct(FVector::UpVector,Forward);
-    const float Inner=FMath::Max(0.f,Footprint.InnerRadius),Outer=Footprint.OuterRadius;
-    if(Forward.IsNearlyZero()||Outer<=Inner){HideEffects();return;}
-    auto BeamPoint=[&](float U,float AngularFraction,float Lift)
-    {
-        const FVector Direction=Forward.RotateAngleAxis(AngularFraction*Footprint.HalfAngleDegrees,FVector::UpVector);
-        FVector Point=Footprint.Origin+Direction*FMath::Lerp(Inner,Outer,U);
-        Point.Z=FMath::Lerp(Mouth.Z,Footprint.Origin.Z+65.f,U)+Lift;
-        return Point;
-    };
-    const FVector ConnectorEnd=BeamPoint(.10f,0.f,0.f);
-    for(int32 I=0;I<CoreCount;++I)
-    {
-        const float Seed=FMath::Frac(I*.618034f);
-        const float U=I<8?I/7.f:(I-8+.5f)/(CoreCount-8.f);
-        const FVector Position=I<8?FMath::Lerp(Mouth,ConnectorEnd,U):BeamPoint(U,.10f*FMath::Sin(Clock*14.f+I),0.f);
-        Sprite(Core,I,Position,Camera,I<8?32.f:42.f+U*23.f,.20f+.10f*FMath::Sin(Clock*18.f+I),Seed);
-    }
-    for(int32 I=0;I<FlameCount;++I)
-    {
-        const float U=(I+.5f)/FlameCount,Seed=FMath::Frac(I*.618034f);
-        const float Flutter=FMath::Sin(Clock*15.f+I*2.399963f);
-        const FVector Position=BeamPoint(U,(Seed-.5f)*1.5f,Flutter*24.f);
-        Sprite(Flame,I,Position,Camera,65.f+85.f*U,.12f+.12f*FMath::Square(Flutter),Seed);
-    }
-    for(int32 I=0;I<SmokeCount;++I)
-    {
-        const float U=.25f+.75f*(I+.5f)/SmokeCount,Seed=FMath::Frac(I*.618034f);
-        const float Drift=FMath::Frac(Clock*.8f+Seed);
-        const FVector Position=BeamPoint(U,(Seed-.5f)*1.1f,70.f+Drift*130.f)+Side*FMath::Sin(Clock+I)*20.f;
-        Sprite(Smoke,I,Position,Camera,95.f+95.f*Drift,.035f*(1.f-Drift),Seed);
-    }
-    Core->MarkRenderStateDirty();Flame->MarkRenderStateDirty();Smoke->MarkRenderStateDirty();
-    VisibleSpriteCount=CoreCount+FlameCount+SmokeCount;
+    if(!Active&&!Windup)
+        for(UPointLightComponent* Light:FireLights){Light->SetIntensity(700.f*FMath::Clamp(1.f-TailAge/.25f,0.f,1.f));Light->SetVisibility(TailAge<.25f);}
 }

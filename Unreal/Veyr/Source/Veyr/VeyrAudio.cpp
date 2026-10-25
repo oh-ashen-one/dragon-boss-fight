@@ -101,17 +101,24 @@ void AVeyrAudio::Tick(float DeltaSeconds)
 
     const bool SwordAction=K->Action==EVeyrKnightAction::LightAttack||K->Action==EVeyrKnightAction::HeavyAttack||
         K->Action==EVeyrKnightAction::Combo||K->Action==EVeyrKnightAction::RollAttack;
-    if(K->Action!=LastSwingAction||K->RequestedPresentationClip!=LastSwingClip||K->GetActionElapsed()<LastSwingElapsed)
+    const FName SourceClip=K->GetActionPresentationClip();
+    const float SourceSeconds=K->GetActionSourceSeconds();
+    if(K->Action!=LastSwingAction||SourceClip!=LastSwingClip||SourceSeconds+.0001f<LastSwingElapsed)
         SwingWindowsPlayed.Reset();
-    const FVeyrVisualClip* Swing=K->CustomuseVisualDefinition?K->CustomuseVisualDefinition->Clips.Find(K->RequestedPresentationClip):nullptr;
+    const FVeyrVisualClip* Swing=K->CustomuseVisualDefinition?K->CustomuseVisualDefinition->Clips.Find(SourceClip):nullptr;
     if(SwordAction&&Swing&&!Swing->DamageWindows.IsEmpty())
     {
         const float Rate=FMath::Max(.1f,Swing->GameplayPlayRate);
+        const float SegmentStart=SourceSeconds-K->GetActionElapsed()*Rate;
+        const float SegmentEnd=SegmentStart+K->GetActionDuration()*Rate;
         for(int32 I=0;I<Swing->DamageWindows.Num();++I)
         {
+            // A future buffered combo segment has not been accepted yet. Do
+            // not play its anticipation sound while only the prior strike runs.
+            if(Swing->DamageWindows[I].X>SegmentEnd+.001f||Swing->DamageWindows[I].Y<SegmentStart-.001f)continue;
             const bool Heavy=K->Action==EVeyrKnightAction::HeavyAttack||(K->Action==EVeyrKnightAction::Combo&&I==2);
-            const float CueAt=FMath::Max(0.f,static_cast<float>(Swing->DamageWindows[I].X)/Rate-(Heavy?.35f:.13f));
-            if(K->GetActionElapsed()>=CueAt&&!SwingWindowsPlayed.Contains(I))
+            const float CueAt=FMath::Max(0.f,static_cast<float>(Swing->DamageWindows[I].X)-(Heavy?.35f:.13f)*Rate);
+            if(SourceSeconds>=CueAt&&!SwingWindowsPlayed.Contains(I))
             {PlayCue(Heavy?ECue::HeavySwing:ECue::Swing);SwingWindowsPlayed.Add(I);}
         }
     }
@@ -120,7 +127,7 @@ void AVeyrAudio::Tick(float DeltaSeconds)
         if(K->HeavyAttacks>LastHeavy)PlayCue(ECue::HeavySwing);
         else if(K->LightAttacks>LastLight)PlayCue(ECue::Swing);
     }
-    LastSwingAction=K->Action;LastSwingClip=K->RequestedPresentationClip;LastSwingElapsed=K->GetActionElapsed();
+    LastSwingAction=K->Action;LastSwingClip=SourceClip;LastSwingElapsed=SourceSeconds;
     if (D->GetSwordContactCount() > LastSwordContact)
         PlayCue(ECue::Contact, D->GetHeadBonusHitCount() > LastHeadBonus ? 1.f : .8f);
     if (K->GuardedHits > LastGuardedHits) PlayCue(ECue::Guard);

@@ -12,6 +12,7 @@ class UStaticMeshComponent;
 class UInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
 class UTextRenderComponent;
+class UCapsuleComponent;
 class UVeyrVisualDefinition;
 class UVeyrSkeletalPresentation;
 
@@ -108,6 +109,12 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetLegContactRadius(int32 Index) const;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") bool bAnatomicalLegContactsReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") FString LegContactDiagnostic;
+    /** Physical blockers follow the evaluated anatomy; hurt regions remain separate. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Collision") bool bSolidBodyReady=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Collision") int32 SolidBodyPushCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Collision") float SolidBodyPenetrationDepthCm=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Collision") FName LastSolidBodyPushShape=NAME_None;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Collision") FString SolidBodyDiagnostic;
     UFUNCTION(BlueprintPure, Category="Combat") float GetLegStagger(int32 Index) const;
     /** Origin is already the world sword/contact center (no extra torso offset). */
     void ReceiveSword(const FVector& Origin, const FVector& Forward, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
@@ -173,6 +180,13 @@ private:
     void ResetCameraOcclusionMaterials();
     bool InitializeCameraOcclusionMaterials();
     UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> AttackPoseProbe;
+    UPROPERTY() TArray<TObjectPtr<UCapsuleComponent>> SolidBodyCapsules;
+    FName SolidPelvisBone=NAME_None,SolidChestBone=NAME_None,SolidNeckBaseBone=NAME_None,SolidNeckMiddleBone=NAME_None;
+    FVector SolidPreviousStarts[19],SolidPreviousEnds[19];
+    bool bSolidBodyHasPose=false;
+    bool InitializeSolidBody();
+    void UpdateSolidBody();
+    void ResolveKnightBodyPenetration();
     bool bImportedTargetsValid=false;
     bool bImportedAttackCacheReady=false;
     bool bPreviousContactPoseValid=false;

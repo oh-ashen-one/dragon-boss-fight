@@ -1,3 +1,50 @@
+# Combat and arena rebuild — IN PROGRESS, 2026-10-25
+
+The owner rejected the latest fire, flight feet, slow two-hand movement, Ctrl walk,
+rolling sword orientation, confusing controls, sparse disconnected arena and
+pass-through dragon. They explicitly authorize autonomous changes, Tripo browser
+creation and as many credits as needed, with no routine confirmation questions.
+This feedback supersedes earlier visual acceptance; preserve approved originals
+and author revised animation candidates in Blender MCP.
+
+- Branch: `codex/veyr-combat-arena-polish-20261025`, same owned integration checkout.
+- Controls chosen: LMB attack chain, RMB guard, Shift sprint, Q roll, Space explicit
+  directional blink, E grip, R heal, Enter terminal restart, Escape full pause.
+  Ctrl walk and C-combo bindings are removed. Both grips jog/sprint normally.
+- Five built-in ImageGen map references are saved in task outputs and
+  `Local/ArtPass20261025/References`; prompts in docs/polish-20261025/image-prompts.json.
+  Direction: enclosed cathedral court with connected cloisters/stairs, fallen bell,
+  masonry/terrain foundations and clear central battle space.
+- Root opened existing localhost8775 reviewer on Dragon_FlyHover_Blender_v1r2.
+  Its server is a read-only reused authoring-checkout service; don't stop it.
+- Tripo through Chrome:12 private H3.1/8K module generations,65 credits each,
+  780 credits total, recorded from the generation buttons and private balance ledger. Job URLs/prompts are private in
+  Local/ArtPass20261025/Tripo/jobs.json. Generation success is not export/import proof.
+  Native Save dialogs must be completed for each export. First CloisterWall GLB
+  is saved; other exports are in progress. No account/subscription changes.
+- One owned Blender MCP session (agent native_runtime_critic) onloopback9891,
+  owner codex-veyr-polish-20261025; process details remain in the local ledger.
+  That authoring session has now exited cleanly.
+  Outputs Local/Blender/polish-20261025: correctedflight suite, RunTwoHand,
+  GripToTwoHand/GripToOneHand, correctedRoll/RollAttack. Critics review beforeimport.
+- File ownership: asset_import_audit Knight/HUD/GameMode/controls andReplay QA;
+  dragon_integration_critic Dragon/collision/Effects/Audio +fire materialhelper;
+  animator new Blender recipe/outputfolder; rootArena/imports/Tripo/references.
+- Initial controls/pause/HUD/fire/collision C++ build passes (de531b56).
+  ConnectedArena and revisedasset imports remain in progress; native visual/
+  gameplay/performance acceptance is pending. Root is soleUnrealowner.
+- Fire generatedatlas/density inLocal/ArtPass20261025/FX; helper
+  tools/unreal/create_fire_materials_v3.py createsnew /Game/Veyr/FX/v3 assets.
+- Preserve app-scoped ANSI allocator startuprepair and sharedGPU safety. No
+  currentVeyr/Unrealprocess atstartup; Blenderhasone slot. Neverlaunchforeigninstances.
+
+Remaining: finishTripoexports/geometryinspection, buildcoherentArena, critiqueand
+normalize/importnewanimations, compile/importnativeassets throughownedMCP,
+exerciseactualcontrols/pause/settings/collision/fire, renderedcomparisonandperf,
+package/launchfromDownloads, backupprivateassets andpushverifiedhandoff.
+
+---
+
 # Native approved animation integration — verified delivery, 2026-10-25
 
 ## Current visual follow-up — HUD concepts, 2026-10-25

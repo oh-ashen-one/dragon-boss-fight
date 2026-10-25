@@ -10,7 +10,23 @@ class VEYR_API AVeyrHUD : public AHUD
     GENERATED_BODY()
 public:
     virtual void DrawHUD() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+    void TogglePauseMenu();
+    bool IsPauseMenuOpen() const { return PauseRoot.IsValid(); }
 private:
+    TSharedPtr<class SWidget> PauseRoot;
+    int32 PausePage=0;
+    bool bRestoreCapture=false;
+    void RebuildPauseMenu();
+    void ClosePauseMenu();
+    void SetPausePage(int32 Page);
+    void ChangeVolume(float Delta);
+    void ChangeSensitivity(float Delta);
+    void ToggleDisplayMode();
+    void CycleResolution();
+    void Circle(float X,float Y,float Radius,const FLinearColor& Color,float Width=1.f);
+    void RelicSlot(float X,float Y,float Size);
+    void ControlLegend(float W,float H,bool bTerminal);
     void Text(const FString& Value,float X,float Y,float Height,const FLinearColor& Color,bool bCentered=false);
     void Line(float X1,float Y1,float X2,float Y2,const FLinearColor& Color,float Width=1.f);
     void Rect(float X,float Y,float Width,float Height,const FLinearColor& Color);

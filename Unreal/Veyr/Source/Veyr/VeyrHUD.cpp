@@ -7,13 +7,26 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GlobalRenderResources.h"
+#include "Engine/GameViewportClient.h"
+#include "GameFramework/GameUserSettings.h"
+#include "GameFramework/PlayerController.h"
+#include "InputCoreTypes.h"
+#include "UnrealClient.h"
+#include "Widgets/SCompoundWidget.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Layout/SBox.h"
+#include "Widgets/Layout/SScrollBox.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Text/STextBlock.h"
+#include "Styling/CoreStyle.h"
 
 namespace
 {
-    const FLinearColor Ivory(.82f,.83f,.78f,1.f);
-    const FLinearColor Quiet(.53f,.57f,.58f,1.f);
-    const FLinearColor Pewter(.31f,.35f,.36f,.85f);
-    const FLinearColor Bronze(.48f,.38f,.23f,1.f);
+    const FLinearColor Ivory(.86f,.81f,.68f,1.f);
+    const FLinearColor Quiet(.63f,.59f,.49f,1.f);
+    const FLinearColor Pewter(.35f,.29f,.19f,.85f);
+    const FLinearColor Bronze(.64f,.48f,.25f,1.f);
     const FLinearColor Ink(.009f,.013f,.017f,.86f);
 }
 
@@ -86,42 +99,59 @@ void AVeyrHUD::Meter(float X,float Y,float Width,float Height,float Value,float 
 
 void AVeyrHUD::SwordIcon(float X,float Y)
 {
-    const float SavedUnit=Unit;Unit*=.75f;X/=.75f;Y/=.75f;
-    // A broad wooden hull, tapered bow, keel and longitudinal planks. The
-    // equipment icon describes the new boat-shaped greatsword, not a steel blade.
-    const TArray<FVector2D> Hull={{X,Y-36},{X+12,Y-22},{X+17,Y-2},{X+13,Y+16},
-        {X,Y+29},{X-13,Y+16},{X-17,Y-2},{X-12,Y-22}};
-    Polygon(Hull,FLinearColor(.36f,.25f,.14f,1.f));
-    for(int32 I=0;I<Hull.Num();++I)
-    {
-        const FVector2D A=Hull[I],B=Hull[(I+1)%Hull.Num()];Line(A.X,A.Y,B.X,B.Y,Bronze,1.2f);
-    }
-    Line(X,Y-31,X,Y+23,FLinearColor(.67f,.52f,.30f),1.4f);
-    Line(X-6,Y-20,X-6,Y+15,FLinearColor(.14f,.11f,.08f),1.f);
-    Line(X+6,Y-20,X+6,Y+15,FLinearColor(.14f,.11f,.08f),1.f);
-    Line(X-13,Y-3,X+13,Y-3,FLinearColor(.17f,.14f,.10f),1.4f);
-    Line(X-10,Y+12,X+10,Y+12,FLinearColor(.17f,.14f,.10f),1.4f);
-    Rect(X-2,Y+28,4,17,FLinearColor(.40f,.39f,.32f));
-    Line(X-10,Y+28,X+10,Y+28,Ivory,2.f);
-    for(int32 I=0;I<3;++I)Line(X-3,Y+32+I*4,X+3,Y+34+I*4,Ink,.8f);
-    Diamond(X,Y+48,3,Bronze,true);
-    Unit=SavedUnit;
+    // A wooden hull on a long handle; diagonal placement reads at relic-slot size.
+    auto P=[&](float Across,float Along){return FVector2D(X+.73f*Along+.68f*Across,Y-.68f*Along+.73f*Across);};
+    const TArray<FVector2D> Hull={P(0,28),P(8,18),P(11,6),P(9,-5),P(0,-13),P(-9,-5),P(-11,6),P(-8,18)};
+    Polygon(Hull,FLinearColor(.22f,.13f,.055f));
+    for(int32 I=0;I<Hull.Num();++I){const auto A=Hull[I],B=Hull[(I+1)%Hull.Num()];Line(A.X,A.Y,B.X,B.Y,Bronze,1.2f);}
+    auto Stroke=[&](FVector2D A,FVector2D B,FLinearColor C,float Width=1.f){Line(A.X,A.Y,B.X,B.Y,C,Width);};
+    Stroke(P(0,-27),P(0,-13),Ivory,3.f);Stroke(P(-5,-12),P(5,-12),Bronze,1.5f);
+    Stroke(P(0,-10),P(0,25),FLinearColor(.72f,.53f,.28f),1.2f);
+    for(float V:{-4.f,4.f,12.f,19.f}){const float R=V>15?6.f:8.f;Stroke(P(-R,V),P(R,V),FLinearColor(.48f,.31f,.14f),1.f);}
 }
 
 void AVeyrHUD::FlaskIcon(float X,float Y,bool bEmpty)
 {
-    const float SavedUnit=Unit;Unit*=.75f;X/=.75f;Y/=.75f;
-    const FLinearColor Glass=bEmpty?FLinearColor(.22f,.25f,.25f):FLinearColor(.53f,.24f,.07f);
-    Polygon({{X-7,Y-10},{X+7,Y-10},{X+13,Y},{X+10,Y+17},{X-10,Y+17},{X-13,Y}},Ink);
-    Polygon({{X-6,Y-7},{X+6,Y-7},{X+10,Y+1},{X+8,Y+14},{X-8,Y+14},{X-10,Y+1}},Glass);
-    if(!bEmpty)
+    // The equipped healing item is a handled cup, matching the actual prop.
+    const FLinearColor Metal=bEmpty?FLinearColor(.24f,.21f,.16f):FLinearColor(.53f,.31f,.12f);
+    Polygon({{X-13,Y-14},{X+13,Y-14},{X+10,Y+14},{X+6,Y+19},{X-6,Y+19},{X-10,Y+14}},Metal);
+    Line(X-13,Y-14,X-10,Y+14,Bronze,1.2f);Line(X+13,Y-14,X+10,Y+14,Bronze,1.2f);
+    for(int32 I=0;I<24;++I)
     {
-        Polygon({{X,Y-3},{X+4,Y+5},{X+2,Y+11},{X-3,Y+11},{X-5,Y+6}},FLinearColor(.92f,.55f,.15f));
-        Line(X-6,Y+2,X-5,Y+9,FLinearColor(.91f,.71f,.36f),1.f);
+        const float A=2.f*PI*I/24.f,B=2.f*PI*(I+1)/24.f;
+        Line(X+13.f*FMath::Cos(A),Y-14+4.f*FMath::Sin(A),X+13.f*FMath::Cos(B),Y-14+4.f*FMath::Sin(B),Bronze,1.f);
     }
-    Rect(X-4,Y-18,8,9,Glass);Rect(X-6,Y-21,12,4,Bronze);
-    Line(X-9,Y+17,X+9,Y+17,Pewter);
-    Unit=SavedUnit;
+    Line(X+13,Y-9,X+21,Y-7,Bronze,2.f);Line(X+21,Y-7,X+20,Y+9,Bronze,2.f);Line(X+20,Y+9,X+10,Y+11,Bronze,2.f);
+    Line(X-7,Y+20,X+7,Y+20,Bronze,2.f);Line(X-9,Y+23,X+9,Y+23,Pewter,2.f);
+    if(!bEmpty){Polygon({{X-7,Y-14},{X-3,Y-24},{X,Y-18},{X+4,Y-27},{X+7,Y-14}},FLinearColor(.82f,.39f,.09f,.85f));}
+}
+
+void AVeyrHUD::Circle(float X,float Y,float Radius,const FLinearColor& Color,float Width)
+{
+    for(int32 I=0;I<48;++I)
+    {
+        const float A=2.f*PI*I/48.f,B=2.f*PI*(I+1)/48.f;
+        Line(X+Radius*FMath::Cos(A),Y+Radius*FMath::Sin(A),X+Radius*FMath::Cos(B),Y+Radius*FMath::Sin(B),Color,Width);
+    }
+}
+void AVeyrHUD::RelicSlot(float X,float Y,float Size)
+{
+    Rect(X,Y,Size,Size,Ink);Rect(X+3,Y+3,Size-6,Size-6,FLinearColor(.045f,.036f,.022f,.72f));
+    Line(X,Y,X+Size,Y,Bronze);Line(X,Y+Size,X+Size,Y+Size,Pewter);
+    Line(X,Y,X,Y+Size,Pewter);Line(X+Size,Y,X+Size,Y+Size,Bronze);
+    for(float A:{0.f,Size})for(float B:{0.f,Size})
+    {
+        const float SX=A==0?1.f:-1.f,SY=B==0?1.f:-1.f;
+        Line(X+A,Y+B,X+A+SX*8,Y+B+SY*3,Bronze);Line(X+A,Y+B,X+A+SX*3,Y+B+SY*8,Bronze);
+    }
+}
+void AVeyrHUD::ControlLegend(float W,float H,bool bTerminal)
+{
+    const float X=W-255.f,Y=H-161.f;
+    Rect(X-10,Y-8,228,100,FLinearColor(.012f,.011f,.009f,.57f));Line(X-10,Y-8,X+218,Y-8,Pewter,.7f);
+    const TCHAR* Rows[]={TEXT("WASD  Move    SHIFT  Sprint"),TEXT("LMB  Attack    RMB  Guard"),TEXT("Q  Dodge    SPACE  Blink"),TEXT("E  Grip    R  Heal"),TEXT("TAB  Lock    ESC  Menu")};
+    for(int32 I=0;I<5;++I)Text(Rows[I],X,Y+I*17,11.5f,I==1?Ivory:Quiet);
+    if(bTerminal)Text(TEXT("ENTER  Restart encounter"),X,Y-26,12,Ivory);
 }
 
 void AVeyrHUD::Keycap(const FString& Key,float X,float Y)
@@ -158,42 +188,47 @@ void AVeyrHUD::DrawHUD()
     DamageTrail(Health,PreviousHealth,HealthTrail,HealthTrailDelay);
     DamageTrail(BossHealth,PreviousBoss,BossTrail,BossTrailDelay);
 
-    const float ResourceWidth=FMath::Min(264.f,W*.34f);
-    Text(TEXT("HEALTH"),Margin+17,29,12,Quiet);
-    Diamond(Margin+3,52,5,FLinearColor(.57f,.21f,.17f),true);
-    Meter(Margin+17,48,ResourceWidth,7,Health,HealthTrail,FLinearColor(.54f,.15f,.13f));
-    Text(TEXT("STAMINA"),Margin+17,69,12,Quiet);
-    Diamond(Margin+3,91,3,FLinearColor(.45f,.56f,.40f),true);
-    Meter(Margin+17,88,ResourceWidth*.82f,4,Stamina,Stamina,FLinearColor(.38f,.49f,.34f));
+    // Ashen Gold: one small heraldic crest, two unlabelled resource gauges,
+    // compact relic slots and a thin boss bar. The combat center stays clear.
+    const float CrestX=Margin+20,CrestY=49;
+    Circle(CrestX,CrestY,23,Ink,5);Circle(CrestX,CrestY,22,Bronze,1.1f);Circle(CrestX,CrestY,19,Pewter,.8f);
+    Diamond(CrestX,CrestY-25,3,Bronze);Diamond(CrestX,CrestY+25,3,Bronze);
+    Line(CrestX,CrestY-14,CrestX,CrestY+13,Bronze,1.4f);
+    for(int32 I=0;I<3;++I)
+    {
+        const float Y=CrestY+7-I*8,Span=10-I*2;
+        Line(CrestX,Y,CrestX-Span,Y-6,Bronze,1.f);Line(CrestX,Y,CrestX+Span,Y-6,Bronze,1.f);
+    }
+    const float ResourceWidth=FMath::Min(292.f,W*.28f);
+    Meter(Margin+52,34,ResourceWidth,8,Health,HealthTrail,FLinearColor(.49f,.075f,.065f));
+    Meter(Margin+52,59,ResourceWidth*.78f,5,Stamina,Stamina,FLinearColor(.35f,.40f,.19f));
 
-    // Only equipped items occupy the lower-left corner. A few short etched
-    // strokes replace large inventory tiles and leave the central floor clear.
-    const float EquipmentX=Margin+20,EquipmentY=H-132;
-    Rect(Margin-4,EquipmentY-32,46,72,FLinearColor(.012f,.017f,.022f,.35f));
-    Line(Margin-4,EquipmentY-32,Margin+7,EquipmentY-32,Pewter);
-    Line(Margin-4,EquipmentY-32,Margin-4,EquipmentY-23,Pewter);
-    Line(Margin+42,EquipmentY+40,Margin+32,EquipmentY+40,Pewter);
-    SwordIcon(EquipmentX,EquipmentY);
-    Text(TEXT("TIMBER GREATSWORD"),Margin+59,EquipmentY-10,12,Ivory);
-    Text(Knight->IsTwoHanded()?TEXT("TWO-HANDED"):TEXT("ONE-HANDED"),Margin+59,EquipmentY+12,11.5f,Quiet);
-    Keycap(TEXT("E"),Margin+154,EquipmentY+8);
-    const float FlaskY=H-68;
-    FlaskIcon(EquipmentX,FlaskY,Knight->HealingCharges<=0);
-    Text(FString::FromInt(Knight->HealingCharges),Margin+40,FlaskY-12,26,Ivory);
-    Text(TEXT("EMBER DRAUGHT"),Margin+75,FlaskY-10,11.5f,Quiet);
-    Keycap(TEXT("Q"),Margin+75,FlaskY+8);
+    const float Slot=58.f,EquipmentY=H-131.f;
+    RelicSlot(Margin,EquipmentY,Slot);RelicSlot(Margin+76,EquipmentY,Slot);
+    SwordIcon(Margin+Slot*.5f,EquipmentY+Slot*.5f);
+    FlaskIcon(Margin+76+Slot*.5f,EquipmentY+Slot*.5f-1,Knight->HealingCharges<=0);
+    Keycap(TEXT("E"),Margin+20,EquipmentY+64);
+    Text(Knight->IsChangingGrip()?TEXT("READYING"):Knight->IsTwoHanded()?TEXT("TWO HANDS"):TEXT("ONE HAND"),Margin+29,EquipmentY+85,10.5f,Ivory,true);
+    Keycap(TEXT("R"),Margin+81,EquipmentY+64);
+    Text(FString::FromInt(Knight->HealingCharges),Margin+111,EquipmentY+62,21,Ivory,true);
 
-    const float BossWidth=FMath::Min(660.f,W*.56f);
-    const float BossX=(W-BossWidth)*.5f;
-    Text(TEXT("Veyr, the Cinder Warden"),W*.5f,H-56,17,Ivory,true);
-    Meter(BossX,H-29,BossWidth,6,BossHealth,BossTrail,FLinearColor(.44f,.12f,.10f));
-    Diamond(BossX-13,H-26,4,Bronze);Diamond(BossX+BossWidth+13,H-26,4,Bronze);
+    const float BossWidth=FMath::Min(650.f,W*.53f),BossX=(W-BossWidth)*.5f;
+    Text(TEXT("VEYR, THE CINDER WARDEN"),W*.5f,H-57,15,Ivory,true);
+    Meter(BossX,H-31,BossWidth,6,BossHealth,BossTrail,FLinearColor(.39f,.055f,.045f));
+    Diamond(BossX-10,H-28,5,Bronze);Diamond(BossX+BossWidth+10,H-28,5,Bronze);
+    if(Knight->bLockedOn&&!Dragon->IsDead())
+    {
+        FVector2D Screen;const FVector Target=Dragon->GetHeadLocation()*.4f+(Dragon->GetLegLocation(0)+Dragon->GetLegLocation(1))*.3f;
+        if(PlayerOwner&&PlayerOwner->ProjectWorldLocationToScreen(Target,Screen)&&Screen.X>20&&Screen.X<Canvas->SizeX-20&&Screen.Y>20&&Screen.Y<Canvas->SizeY-20)
+            Diamond(Screen.X/Unit,Screen.Y/Unit,4,Ivory);
+    }
+    const bool bTerminal=Knight->IsDead()||Dragon->IsDead();
+    ControlLegend(W,H,bTerminal);
 
     const float Now=GetWorld()->GetTimeSeconds();
     const bool bCaptured=Knight->IsMouseCaptured();
     if(bCaptured&&!bWasCaptured)CaptureHintUntil=Now+5.f;
     bWasCaptured=bCaptured;
-    const bool bTerminal=Knight->IsDead()||Dragon->IsDead();
     if(bTerminal)
     {
         const float Y=H*.43f;
@@ -201,7 +236,7 @@ void AVeyrHUD::DrawHUD()
         Line(W*.5f-170,Y-15,W*.5f-10,Y-15,Pewter);Line(W*.5f+10,Y-15,W*.5f+170,Y-15,Pewter);
         Diamond(W*.5f,Y-15,4,Bronze);
         Text(Knight->IsDead()?TEXT("YOU FELL"):TEXT("CINDER EXTINGUISHED"),W*.5f,Y+8,25,Ivory,true);
-        Text(TEXT("R  /  Rise again"),W*.5f,Y+53,14,Ivory,true);
+        Text(TEXT("ENTER  /  Rise again"),W*.5f,Y+53,14,Ivory,true);
     }
     else if(!Knight->IsReplayControlled())
     {
@@ -209,11 +244,164 @@ void AVeyrHUD::DrawHUD()
         {
             const float Y=H*.48f;
             Text(Knight->HasEnteredEncounter()?TEXT("CLICK OR ENTER TO CONTROL"):TEXT("CLICK OR ENTER TO BEGIN"),W*.5f,Y,17,Ivory,true);
-            Text(TEXT("WASD move  /  Ctrl walk  /  Shift dodge  /  Tab lock-on"),W*.5f,Y+28,12,Quiet,true);
-            Text(TEXT("LMB/J light  /  K heavy  /  C combo  /  RMB/F guard  /  Q heal  /  E grip"),W*.5f,Y+48,12,Quiet,true);
-            Text(TEXT("V animation variants  /  Esc releases the mouse"),W*.5f,Y+68,12,Quiet,true);
+            Text(TEXT("Your controls stay in the lower-right corner."),W*.5f,Y+30,12,Quiet,true);
+            Text(TEXT("ESC  /  Pause, settings and controls"),W*.5f,Y+50,12,Quiet,true);
         }
         else if(Now<CaptureHintUntil)
-            Text(TEXT("Esc  /  Release mouse"),W-Margin-145,29,12,Quiet);
+            Text(TEXT("Esc  /  Pause"),W-Margin-145,29,12,Quiet);
     }
+}
+
+namespace
+{
+    class SVeyrPausePanel final : public SCompoundWidget
+    {
+    public:
+        SLATE_BEGIN_ARGS(SVeyrPausePanel) {}
+            SLATE_EVENT(FSimpleDelegate,OnDismiss)
+            SLATE_DEFAULT_SLOT(FArguments,Content)
+        SLATE_END_ARGS()
+        void Construct(const FArguments& Args){Dismiss=Args._OnDismiss;ChildSlot[Args._Content.Widget];}
+        virtual bool SupportsKeyboardFocus() const override { return true; }
+        virtual FReply OnKeyDown(const FGeometry& Geometry,const FKeyEvent& Event) override
+        {
+            if(Event.GetKey()==EKeys::Escape){Dismiss.ExecuteIfBound();return FReply::Handled();}
+            return SCompoundWidget::OnKeyDown(Geometry,Event);
+        }
+    private:
+        FSimpleDelegate Dismiss;
+    };
+}
+
+void AVeyrHUD::TogglePauseMenu()
+{
+    if(PauseRoot.IsValid()){ClosePauseMenu();return;}
+    AVeyrGameMode* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+    if(!Mode||!PlayerOwner||!PlayerOwner->IsLocalController())return;
+    bRestoreCapture=Mode->Knight&&Mode->Knight->IsMouseCaptured();
+    if(Mode->Knight)Mode->Knight->SuspendForPauseMenu();
+    if(!Mode->SetPauseMenuOpen(true))return;
+    PausePage=0;RebuildPauseMenu();
+}
+
+void AVeyrHUD::ClosePauseMenu()
+{
+    if(GetWorld()&&GetWorld()->GetGameViewport()&&PauseRoot.IsValid())
+        GetWorld()->GetGameViewport()->RemoveViewportWidgetContent(PauseRoot.ToSharedRef());
+    PauseRoot.Reset();
+    AVeyrGameMode* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+    if(Mode)
+    {
+        Mode->SetPauseMenuOpen(false);
+        if(Mode->Knight)Mode->Knight->ResumeFromPauseMenu(bRestoreCapture);
+    }
+}
+
+void AVeyrHUD::SetPausePage(int32 Page){PausePage=Page;RebuildPauseMenu();}
+void AVeyrHUD::ChangeVolume(float Delta)
+{
+    if(AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())Mode->SetMasterVolume(Mode->UserMasterVolume+Delta);
+    RebuildPauseMenu();
+}
+void AVeyrHUD::ChangeSensitivity(float Delta)
+{
+    if(AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())Mode->SetMouseSensitivity(Mode->UserMouseSensitivity+Delta);
+    RebuildPauseMenu();
+}
+void AVeyrHUD::ToggleDisplayMode()
+{
+    if(UGameUserSettings* Settings=GEngine?GEngine->GetGameUserSettings():nullptr)
+    {
+        Settings->SetFullscreenMode(Settings->GetFullscreenMode()==EWindowMode::Windowed?EWindowMode::WindowedFullscreen:EWindowMode::Windowed);
+        Settings->ApplyResolutionSettings(false);Settings->ConfirmVideoMode();Settings->SaveSettings();
+    }
+    RebuildPauseMenu();
+}
+void AVeyrHUD::CycleResolution()
+{
+    if(UGameUserSettings* Settings=GEngine?GEngine->GetGameUserSettings():nullptr)
+    {
+        const FIntPoint Current=Settings->GetScreenResolution();
+        const FIntPoint Next=Current.X<1600?FIntPoint(1600,900):Current.X<1920?FIntPoint(1920,1080):FIntPoint(1280,720);
+        Settings->SetScreenResolution(Next);Settings->ApplyResolutionSettings(false);Settings->ConfirmVideoMode();Settings->SaveSettings();
+    }
+    RebuildPauseMenu();
+}
+
+void AVeyrHUD::RebuildPauseMenu()
+{
+    AVeyrGameMode* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+    UGameViewportClient* Viewport=GetWorld()?GetWorld()->GetGameViewport():nullptr;
+    if(!Mode||!Mode->bPauseMenuOpen||!Viewport||!PlayerOwner)return;
+    if(PauseRoot.IsValid())Viewport->RemoveViewportWidgetContent(PauseRoot.ToSharedRef());
+    const TWeakObjectPtr<AVeyrHUD> Self(this);
+    const FSlateFontInfo HeadingFont=FCoreStyle::GetDefaultFontStyle(TEXT("Regular"),28);
+    const FSlateFontInfo BodyFont=FCoreStyle::GetDefaultFontStyle(TEXT("Regular"),16);
+    const FSlateFontInfo SmallFont=FCoreStyle::GetDefaultFontStyle(TEXT("Regular"),13);
+    TSharedRef<SVerticalBox> Content=SNew(SVerticalBox);
+    Content->AddSlot().AutoHeight().Padding(0,0,0,6)
+        [SNew(STextBlock).Text(FText::FromString(PausePage==1?TEXT("SETTINGS"):PausePage==2?TEXT("CONTROLS"):TEXT("PAUSED"))).Font(HeadingFont).ColorAndOpacity(Ivory)];
+    Content->AddSlot().AutoHeight().Padding(0,0,0,22)
+        [SNew(STextBlock).Text(FText::FromString(TEXT("VEYR  /  THE CINDER WARDEN"))).Font(SmallFont).ColorAndOpacity(Bronze)];
+    auto AddButton=[&](const FString& Label,TFunction<void()> Callback)
+    {
+        Content->AddSlot().AutoHeight().Padding(0,4)
+        [SNew(SButton).ContentPadding(FMargin(16,11)).ButtonColorAndOpacity(FLinearColor(.12f,.105f,.075f,1.f))
+            .OnClicked_Lambda([Callback=MoveTemp(Callback)](){Callback();return FReply::Handled();})
+            [SNew(STextBlock).Text(FText::FromString(Label)).Font(BodyFont).ColorAndOpacity(Ivory)]];
+    };
+    if(PausePage==0)
+    {
+        AddButton(TEXT("Resume"),[Self](){if(Self.IsValid())Self->ClosePauseMenu();});
+        AddButton(TEXT("Settings"),[Self](){if(Self.IsValid())Self->SetPausePage(1);});
+        AddButton(TEXT("Controls"),[Self](){if(Self.IsValid())Self->SetPausePage(2);});
+        if(Mode->Knight&&Mode->Dragon&&(Mode->Knight->IsDead()||Mode->Dragon->IsDead()))
+            AddButton(TEXT("Restart encounter"),[Self](){if(Self.IsValid()){AVeyrGameMode* M=Self->GetWorld()->GetAuthGameMode<AVeyrGameMode>();Self->ClosePauseMenu();if(M&&M->Knight)M->Knight->RestartIfTerminal();}});
+    }
+    else if(PausePage==1)
+    {
+        auto SettingRow=[&](const FString& Label,TFunction<void()> Less,TFunction<void()> More)
+        {
+            Content->AddSlot().AutoHeight().Padding(0,7)
+            [SNew(SHorizontalBox)
+                +SHorizontalBox::Slot().FillWidth(1.f).VAlign(VAlign_Center)[SNew(STextBlock).Text(FText::FromString(Label)).Font(BodyFont).ColorAndOpacity(Ivory)]
+                +SHorizontalBox::Slot().AutoWidth().Padding(5,0)[SNew(SButton).ContentPadding(FMargin(13,8)).Text(FText::FromString(TEXT("−"))).OnClicked_Lambda([Less=MoveTemp(Less)](){Less();return FReply::Handled();})]
+                +SHorizontalBox::Slot().AutoWidth()[SNew(SButton).ContentPadding(FMargin(13,8)).Text(FText::FromString(TEXT("+"))).OnClicked_Lambda([More=MoveTemp(More)](){More();return FReply::Handled();})]];
+        };
+        SettingRow(FString::Printf(TEXT("Volume  %d%%"),FMath::RoundToInt(Mode->UserMasterVolume*100.f)),
+            [Self](){if(Self.IsValid())Self->ChangeVolume(-.1f);},[Self](){if(Self.IsValid())Self->ChangeVolume(.1f);});
+        SettingRow(FString::Printf(TEXT("Mouse sensitivity  %.2f×"),Mode->UserMouseSensitivity),
+            [Self](){if(Self.IsValid())Self->ChangeSensitivity(-.1f);},[Self](){if(Self.IsValid())Self->ChangeSensitivity(.1f);});
+        if(UGameUserSettings* Settings=GEngine?GEngine->GetGameUserSettings():nullptr)
+        {
+            AddButton(Settings->GetFullscreenMode()==EWindowMode::Windowed?TEXT("Display  ·  Windowed"):TEXT("Display  ·  Borderless"),[Self](){if(Self.IsValid())Self->ToggleDisplayMode();});
+            const FIntPoint Res=Settings->GetScreenResolution();
+            AddButton(FString::Printf(TEXT("Resolution  ·  %d × %d"),Res.X,Res.Y),[Self](){if(Self.IsValid())Self->CycleResolution();});
+        }
+        Content->AddSlot().AutoHeight().Padding(0,10)[SNew(STextBlock).Text(FText::FromString(TEXT("Changes are saved for this game.\nResolution applies directly in windowed mode."))).Font(SmallFont).ColorAndOpacity(Quiet)];
+        AddButton(TEXT("Back"),[Self](){if(Self.IsValid())Self->SetPausePage(0);});
+    }
+    else
+    {
+        const TCHAR* Lines[]={TEXT("WASD  —  Move / jog"),TEXT("Shift  —  Sprint, in either grip"),TEXT("LMB  —  Attack; repeat or hold to chain"),TEXT("RMB  —  Guard"),TEXT("Q  —  Directional roll / dodge"),TEXT("Space  —  Blink in your movement direction"),TEXT("E  —  One / two hands on the same sword"),TEXT("R  —  Drink Ember Draught"),TEXT("Tab  —  Lock on / release target"),TEXT("Enter  —  Restart after death or victory"),TEXT("Escape  —  Pause / resume")};
+        for(const TCHAR* LineText:Lines)Content->AddSlot().AutoHeight().Padding(0,5)[SNew(STextBlock).Text(FText::FromString(LineText)).Font(BodyFont).ColorAndOpacity(Ivory)];
+        AddButton(TEXT("Back"),[Self](){if(Self.IsValid())Self->SetPausePage(0);});
+    }
+    Content->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(STextBlock).Text(FText::FromString(TEXT("ESC  /  Resume"))).Font(SmallFont).ColorAndOpacity(Quiet)];
+    const float MaxHeight=Viewport->Viewport?FMath::Max(300.f,float(Viewport->Viewport->GetSizeXY().Y)-72.f):600.f;
+    PauseRoot=SNew(SVeyrPausePanel).OnDismiss(FSimpleDelegate::CreateLambda([Self](){if(Self.IsValid())Self->ClosePauseMenu();}))
+    [SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(.005f,.006f,.008f,.76f))
+        .HAlign(HAlign_Center).VAlign(VAlign_Center)
+        [SNew(SBox).WidthOverride(500.f).MaxDesiredHeight(MaxHeight)
+            [SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(.035f,.029f,.020f,.98f)).Padding(28.f)
+                [SNew(SScrollBox)+SScrollBox::Slot()[Content]]]]];
+    Viewport->AddViewportWidgetContent(PauseRoot.ToSharedRef(),1000);
+    FInputModeUIOnly Input;Input.SetWidgetToFocus(PauseRoot);Input.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    PlayerOwner->SetInputMode(Input);PlayerOwner->SetShowMouseCursor(true);
+}
+
+void AVeyrHUD::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if(GetWorld()&&GetWorld()->GetGameViewport()&&PauseRoot.IsValid())GetWorld()->GetGameViewport()->RemoveViewportWidgetContent(PauseRoot.ToSharedRef());
+    PauseRoot.Reset();Super::EndPlay(EndPlayReason);
 }

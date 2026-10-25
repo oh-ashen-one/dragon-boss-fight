@@ -42,6 +42,19 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") bool bTwoHanded = false;
     UFUNCTION(BlueprintPure, Category="Combat") bool IsTwoHanded() const { return bTwoHanded; }
     UFUNCTION(BlueprintCallable, Category="Combat") void ToggleGrip();
+    UFUNCTION(BlueprintCallable, Category="Combat") void TryDirectionalBlink();
+    UFUNCTION(BlueprintCallable, Category="Input") void SetSprintRequested(bool bHeld) { bSprintHeld=bHeld; }
+    UFUNCTION(BlueprintCallable, Category="Input") void PressPrimaryAttack();
+    UFUNCTION(BlueprintCallable, Category="Input") void ReleasePrimaryAttack();
+    UFUNCTION(BlueprintPure, Category="Input") bool IsSprinting() const { return bSprintHeld; }
+    UFUNCTION(BlueprintPure, Category="Combat") bool IsChangingGrip() const { return Action==EVeyrKnightAction::GripToTwoHand||Action==EVeyrKnightAction::GripToOneHand; }
+    /** Elapsed trimmed source seconds, including a primary-combo segment offset. */
+    UFUNCTION(BlueprintPure, Category="Combat") float GetActionSourceSeconds() const;
+    UFUNCTION(BlueprintPure, Category="Combat") FName GetActionPresentationClip() const { return ActionPresentationClip; }
+    void SuspendForPauseMenu();
+    void ResumeFromPauseMenu(bool bRecapture);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Input",meta=(ClampMin="0.25",ClampMax="2.5")) float MouseSensitivity=1.f;
+
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 LightAttacks = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 HeavyAttacks = 0;
@@ -161,7 +174,12 @@ private:
 
     float BlinkCooldownRemaining=0.f;
     bool bWasRunning=false;
-    bool bWalkModifier=false;
+    bool bSprintHeld=false;
+    bool bPrimaryAttackHeld=false,bPrimaryAttackBuffered=false,bPrimaryChainActive=false,bStartingPrimaryStep=false;
+    int32 PrimaryChainStep=0,PrimarySwingBase=0;
+    float PrimarySourceOffset=0.f;
+    float BlinkDirectionYaw=0.f;
+    FVector BlinkRequestedDirection=FVector::ZeroVector;
     bool bActionRootBlocked=false;
     FName LastLocomotionClip=NAME_None;
     FName ActionPresentationClip=NAME_None;
@@ -232,8 +250,12 @@ private:
     void ResolveAttackWindows(float PreviousSeconds);
     void ComboPressed();
     void VariantPressed();
-    void WalkModifierPressed();
-    void WalkModifierReleased();
+    void SprintPressed();
+    void SprintReleased();
+    void BlinkPressed();
+    void PausePressed();
+    bool StartPrimaryStep(int32 Step);
+    FVector AuthoredRootDisplacementWorld(const FVector& Delta) const;
     bool CanStartGroundedAction() const;
     void BeginAction(EVeyrKnightAction NewAction, float Duration);
     void FinishAction();
@@ -258,7 +280,7 @@ private:
     void BackPressed(); void BackReleased();
     void LeftPressed(); void LeftReleased();
     void RightPressed(); void RightReleased();
-    bool HumanInputEnabled() const { return bMouseCaptured && !bReplayControlled; }
+    bool HumanInputEnabled() const;
     void UpdateMouseCapture();
     void CaptureMouseOrAttack();
     void BeginControlFromKeyboard();

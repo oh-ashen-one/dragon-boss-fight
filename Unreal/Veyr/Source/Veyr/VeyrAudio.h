@@ -49,7 +49,7 @@ private:
     int32 LastHitsTaken = 0, LastGuardedHits = 0, LastHeals = 0, LastCollapses = 0, LastFireAttacks = 0;
     EVeyrKnightAction LastSwingAction=EVeyrKnightAction::Ready;
     FName LastSwingClip=NAME_None;
-    float LastSwingElapsed=0.f;
+    float LastSwingElapsed=0.f; // trimmed source clock, continuous across buffered combo segments
     TSet<int32> SwingWindowsPlayed;
     EVeyrDragonState LastDragonState = EVeyrDragonState::Idle;
     bool bWasAirborne = false, bInitialized = false, bTerminal = false, bBossDeathSeen = false;

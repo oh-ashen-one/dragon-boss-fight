@@ -8,6 +8,7 @@ class AVeyrKnight;
 class AVeyrDragon;
 class FJsonObject;
 class FJsonValue;
+class UPrimitiveComponent;
 enum class EVeyrDragonMove : uint8;
 
 /** Value-only result: no UObject or replay-owned pointers cross the worker boundary. */
@@ -88,6 +89,9 @@ private:
     int32 IntegrationCompleted=0,IntegrationMaxKnightFailures=0,IntegrationMaxDragonFailures=0;
     int32 IntegrationContactsBefore=0,IntegrationHitsBefore=0,IntegrationEchoesBefore=0;
     int32 IntegrationRollsBefore=0,IntegrationRollAttacksBefore=0;
+    int32 IntegrationLightBefore=0,IntegrationHeavyBefore=0,IntegrationBlinksBefore=0;
+    bool bIntegrationBlinkRequested=false;
+    float IntegrationMaximumSourceTime=0,IntegrationPeakSpeed=0;
     float IntegrationStageStarted=0,IntegrationConfiguredAt=0,IntegrationObservedSeconds=0;
     float IntegrationRequestedAt=0,IntegrationRecoveryStarted=0,IntegrationLastObservedAt=0;
     bool bIntegrationIssued=false,bIntegrationAccepted=false,bIntegrationMidCapture=false;
@@ -101,6 +105,21 @@ private:
     TArray<TSharedPtr<FJsonValue>> IntegrationTrials;
     TSharedPtr<FJsonObject> IntegrationEvidence(bool bIncludeTrials=false) const;
     bool DriveIntegrationInputs();
+    bool bStanceGripPending=false,bStanceGripTarget=false;
+    float StanceGripRequestedAt=0;
+    bool DriveCollisionInputs();
+    TSharedPtr<FJsonObject> CollisionEvidence(bool bIncludeTrials=false) const;
+    UFUNCTION() void ObserveCollisionHit(UPrimitiveComponent* HitComponent,AActor* OtherActor,UPrimitiveComponent* OtherComponent,FVector NormalImpulse,const FHitResult& Hit);
+    int32 CollisionStage=0,CollisionPhase=0,CollisionHits=0,CollisionHitsBefore=0,CollisionRootBlocksBefore=0,CollisionCompleted=0,CollisionAttempts=0;
+    float CollisionStageStarted=0,CollisionInputStarted=0,CollisionSurfaceSeconds=0,CollisionLastObserved=0;
+    float CollisionIndependentDepth=0,CollisionMaximumDepth=0,CollisionPenetratingSeconds=0,CollisionMaximumPersistentSeconds=0;
+    float CollisionPredictedDistance=0,CollisionExpectedFreeTravel=0;
+    bool bCollisionArmed=false,bCollisionActionObserved=false;
+    FName CollisionTargetShape=NAME_None,CollisionLastHitShape=NAME_None;
+    FVector CollisionOrigin=FVector::ZeroVector,CollisionDirection=FVector::ForwardVector;
+    FVector CollisionLastHitPoint=FVector::ZeroVector,CollisionLastHitNormal=FVector::ZeroVector;
+    TArray<TSharedPtr<FJsonValue>> CollisionTrials;
+
     TArray<TSharedPtr<FJsonValue>> Samples, Events;
     TArray<TSharedPtr<FJsonValue>> CaptureStates;
     TArray<FString> CaptureQueue, CaptureNames, CaptureFiles;

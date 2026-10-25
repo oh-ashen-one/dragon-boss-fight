@@ -23,6 +23,9 @@
 #include "Engine/StaticMesh.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PoseableMeshComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "UnrealClient.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformMisc.h"
@@ -99,9 +102,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(bInitialized)return false;
     ReplayMode=Mode.ToLower();
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -110,6 +113,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     }
     Knight=ModeActor->Knight; Dragon=ModeActor->Dragon;
     if(Knight->CameraBoom)AddTickPrerequisiteComponent(Knight->CameraBoom);
+    if(ReplayMode==TEXT("collision"))Knight->GetCapsuleComponent()->OnComponentHit.AddDynamic(this,&AVeyrReplay::ObserveCollisionHit);
     // A new/restarted world never inherits a pending guard trial or readiness latch.
     bGuardRechargeLatched=false;bRearGuardArmed=false;GuardRechargeCount=0;
     LastObservedFullDamageGuardCost=0.f;bGuardSampleValid=false;
@@ -168,9 +172,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
-    DurationLimit=ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
+    DurationLimit=ReplayMode==TEXT("collision")?150.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
     InitializeVideo();
-    if(ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&!Knight->bLockedOn)Knight->ToggleLockOn();
+    if(ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&!Knight->bLockedOn)Knight->ToggleLockOn();
     if(ReplayMode==TEXT("stance"))Event(TEXT("stance_idle_before_input"));
     Event(bResume?TEXT("restart_world_loaded"):TEXT("start")); SaveEvidence(false);
     if(bResume&&!bFreshResourcesVerified)Finish(false,TEXT("restart resource reset failed"));
@@ -182,6 +186,10 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
 {
     TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
     O->SetNumberField(TEXT("seconds"),Elapsed);
+    O->SetNumberField(TEXT("worldTimeSeconds"),GetWorld()->GetTimeSeconds());
+    O->SetBoolField(TEXT("worldPaused"),UGameplayStatics::IsGamePaused(this));
+    if(const AVeyrGameMode* MenuMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())O->SetBoolField(TEXT("pauseMenuOpen"),MenuMode->bPauseMenuOpen);
+    if(ReplayMode==TEXT("collision"))O->SetObjectField(TEXT("collision"),CollisionEvidence());
     if(ReplayMode==TEXT("integration"))O->SetObjectField(TEXT("integration"),IntegrationEvidence());
     O->SetStringField(TEXT("replayStage"),bRestartVerification?TEXT("restart_verification"):bAwaitingReload?TEXT("awaiting_reload"):bTerminalSettling?TEXT("terminal_settling"):TEXT("combat"));
     if(!IsValid(Knight)||!IsValid(Dragon))return O;
@@ -257,6 +265,13 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("struckLeg"),Dragon->GetStruckLegIndex());
     O->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
     O->SetBoolField(TEXT("twoHanded"),Knight->IsTwoHanded());
+    O->SetBoolField(TEXT("gripTransitionActive"),Knight->IsChangingGrip());
+    O->SetBoolField(TEXT("sprintRequested"),Knight->IsSprinting());
+    O->SetNumberField(TEXT("actionSourceSeconds"),Knight->GetActionSourceSeconds());
+    O->SetBoolField(TEXT("dragonSolidBodyReady"),Dragon->bSolidBodyReady);
+    O->SetNumberField(TEXT("dragonSolidPushCount"),Dragon->SolidBodyPushCount);
+    O->SetNumberField(TEXT("dragonCachedPenetrationCm"),Dragon->SolidBodyPenetrationDepthCm);
+    O->SetStringField(TEXT("dragonLastPushShape"),Dragon->LastSolidBodyPushShape.ToString());
     O->SetNumberField(TEXT("stanceTrialIndex"),StanceTrialIndex);
     O->SetNumberField(TEXT("controlStage"),ControlStage);
     O->SetNumberField(TEXT("boundaryStage"),BoundaryStage);
@@ -420,7 +435,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::IntegrationEvidence(bool bIncludeTrials) co
     auto O=MakeShared<FJsonObject>();
     O->SetNumberField(TEXT("stage"),IntegrationStage);O->SetNumberField(TEXT("phase"),IntegrationPhase);
     O->SetStringField(TEXT("feature"),IntegrationFeature);O->SetStringField(TEXT("expectedClip"),IntegrationExpectedClip.ToString());
-    O->SetNumberField(TEXT("completedFeatures"),IntegrationCompleted);O->SetNumberField(TEXT("requiredFeatures"),16);
+    O->SetNumberField(TEXT("completedFeatures"),IntegrationCompleted);O->SetNumberField(TEXT("requiredFeatures"),18);
     O->SetNumberField(TEXT("attempt"),IntegrationAttempt);O->SetBoolField(TEXT("inputIssued"),bIntegrationIssued);
     O->SetBoolField(TEXT("acceptedStateAndClip"),bIntegrationAccepted);
     O->SetBoolField(TEXT("fallbackObserved"),bIntegrationFallback);
@@ -450,28 +465,179 @@ TSharedPtr<FJsonObject> AVeyrReplay::IntegrationEvidence(bool bIncludeTrials) co
     return O;
 }
 
+void AVeyrReplay::ObserveCollisionHit(UPrimitiveComponent* HitComponent,AActor* OtherActor,UPrimitiveComponent* OtherComponent,FVector NormalImpulse,const FHitResult& Hit)
+{
+    if(ReplayMode!=TEXT("collision")||OtherActor!=Dragon||!OtherComponent||!OtherComponent->GetName().StartsWith(TEXT("VeyrSolid_")))return;
+    ++CollisionHits;CollisionLastHitShape=OtherComponent->GetFName();CollisionLastHitPoint=Hit.ImpactPoint;CollisionLastHitNormal=Hit.ImpactNormal;
+}
+
+TSharedPtr<FJsonObject> AVeyrReplay::CollisionEvidence(bool bIncludeTrials) const
+{
+    auto O=MakeShared<FJsonObject>();
+    O->SetNumberField(TEXT("stage"),CollisionStage);O->SetNumberField(TEXT("phase"),CollisionPhase);
+    O->SetNumberField(TEXT("completed"),CollisionCompleted);O->SetNumberField(TEXT("required"),3);
+    O->SetNumberField(TEXT("actualBodyHitEvents"),CollisionHits);
+    O->SetStringField(TEXT("lastHitComponent"),CollisionLastHitShape.ToString());
+    O->SetArrayField(TEXT("lastHitPoint"),VectorJson(CollisionLastHitPoint));O->SetArrayField(TEXT("lastHitNormal"),VectorJson(CollisionLastHitNormal));
+    O->SetStringField(TEXT("targetShape"),CollisionTargetShape.ToString());
+    O->SetNumberField(TEXT("independentPostPhysicsPenetrationCm"),CollisionIndependentDepth);
+    O->SetNumberField(TEXT("maximumPostPhysicsPenetrationCm"),CollisionMaximumDepth);
+    O->SetNumberField(TEXT("maximumPersistentPenetrationSeconds"),CollisionMaximumPersistentSeconds);
+    O->SetNumberField(TEXT("probeHitDistanceCm"),CollisionPredictedDistance);
+    if(bIncludeTrials)
+    {
+        O->SetArrayField(TEXT("trials"),CollisionTrials);
+        O->SetStringField(TEXT("scope"),TEXT("Fresh-world ordinary sprint/Q-roll/Space-blink inputs into actual evaluated Dragon Pawn blockers. Native OnComponentHit, read-only world capsule sweeps, measured travel and independent post-physics penetration are recorded. No state, resources, transforms or collision settings are changed by validation. This does not replace rendered collision/landing critique."));
+    }
+    return O;
+}
+
+bool AVeyrReplay::DriveCollisionInputs()
+{
+    if(ReplayMode!=TEXT("collision"))return false;
+    const float Dt=CollisionLastObserved>0?Elapsed-CollisionLastObserved:0.f;CollisionLastObserved=Elapsed;
+    UCapsuleComponent* Player=Knight->GetCapsuleComponent();
+    if(!Player||!Dragon->bSolidBodyReady){Finish(false,TEXT("collision validation requires the evaluated solid dragon body"));return true;}
+    TInlineComponentArray<UCapsuleComponent*> Parts;Dragon->GetComponents(Parts);
+    const FCollisionShape Shape=Player->GetCollisionShape();const FQuat Rotation=Player->GetComponentQuat();
+    CollisionIndependentDepth=0.f;int32 EnabledShapes=0;
+    for(UCapsuleComponent* Part:Parts)
+    {
+        if(!Part||!Part->GetName().StartsWith(TEXT("VeyrSolid_"))||!Part->IsQueryCollisionEnabled())continue;
+        ++EnabledShapes;FMTDResult MTD;
+        if(Part->ComputePenetration(MTD,Shape,Player->GetComponentLocation(),Rotation))CollisionIndependentDepth=FMath::Max(CollisionIndependentDepth,static_cast<float>(MTD.Distance));
+    }
+    CollisionMaximumDepth=FMath::Max(CollisionMaximumDepth,CollisionIndependentDepth);
+    CollisionPenetratingSeconds=CollisionIndependentDepth>2.f?CollisionPenetratingSeconds+Dt:0.f;
+    CollisionMaximumPersistentSeconds=FMath::Max(CollisionMaximumPersistentSeconds,CollisionPenetratingSeconds);
+    if(EnabledShapes!=19||CollisionIndependentDepth>35.f||CollisionPenetratingSeconds>.25f)
+    {Finish(false,TEXT("solid-body collision missing or persistent/deep penetration observed after movement resolution"));return true;}
+    if(Knight->bPresentationUsingFallback||!Knight->BlinkVFXDiagnostic.IsEmpty())
+    {Finish(false,TEXT("collision exercise encountered an animation/VFX fallback"));return true;}
+    auto Neutral=[&](){Knight->SetSprintRequested(false);Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
+    if(CollisionStage>=3)
+    {
+        Neutral();Finish(CollisionCompleted==3,TEXT("sprint, roll and explicit blink produced actual Dragon blocking contacts/limited travel with no persistent overlap"));return true;
+    }
+    const TCHAR* Labels[]={TEXT("sprint_into_dragon"),TEXT("roll_into_dragon"),TEXT("blink_into_dragon")};
+    if(CollisionStageStarted<=0.f)CollisionStageStarted=Elapsed;
+    if(Elapsed-CollisionStageStarted>45.f){Neutral();Finish(false,FString(TEXT("collision trial timeout: "))+Labels[CollisionStage]);return true;}
+    const FVector Start=Player->GetComponentLocation();const FVector Feet=Knight->GetFootLocation();
+    const bool Ready=Knight->Action==EVeyrKnightAction::Ready&&Knight->IsGrounded();
+    if(Knight->bLockedOn)Knight->ToggleLockOn();
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(VeyrReplayBodySweep),false,Knight);
+    bool Found=false;FVector Goal=FVector::ZeroVector;FHitResult Probe;float Closest=TNumericLimits<float>::Max();
+    for(UCapsuleComponent* Part:Parts)
+    {
+        if(!Part||!Part->GetName().StartsWith(TEXT("VeyrSolid_"))||!Part->IsQueryCollisionEnabled())continue;
+        FVector End=Part->GetComponentLocation();End.Z=Start.Z;
+        FHitResult Hit;
+        if(GetWorld()->SweepSingleByChannel(Hit,Start,End,Rotation,ECC_Pawn,Shape,Query)&&Hit.GetActor()==Dragon&&
+           Hit.GetComponent()&&Hit.GetComponent()->GetName().StartsWith(TEXT("VeyrSolid_"))&&Hit.Distance<Closest)
+        {Found=true;Closest=Hit.Distance;Probe=Hit;Goal=End;CollisionTargetShape=Hit.GetComponent()->GetFName();}
+    }
+    CollisionPredictedDistance=Found?Closest:-1.f;
+    if(CollisionPhase==0)
+    {
+        Neutral();
+        if(!Ready)return true;
+        if(Knight->IsTwoHanded()){Knight->ToggleGrip();return true;}
+        if(Knight->Health<65.f&&Knight->HealingCharges>0&&SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.1f)
+        {Knight->TryHeal();return true;}
+        if(Knight->Stamina<(CollisionStage==0?20.f:60.f))return true;
+        if(!Found||Dragon->IsAirborne())
+        {
+            const bool Threat=Contains(Dragon->GetWarningFootprints(),Feet,80.f);
+            Knight->SetReplayInput(Threat?EscapeDirection():FVector::ZeroVector,false,false,Threat&&DangerContactDelay()<.32f&&Knight->Stamina>=25.f,false,false,false);return true;
+        }
+        const FVector Toward=(Goal-Start).GetSafeNormal2D();
+        const float Minimum=CollisionStage==0?0.f:80.f,Maximum=CollisionStage==0?350.f:CollisionStage==1?250.f:145.f;
+        if(Closest<Minimum)
+        {
+            Knight->SetReplayInput(-Toward,false,false,false,false,false,false);return true;
+        }
+        if(Closest>Maximum)
+        {
+            Knight->SetSprintRequested(true);Knight->SetReplayInput(Toward,false,false,false,false,false,false);return true;
+        }
+        CollisionPhase=1;CollisionInputStarted=Elapsed;CollisionOrigin=Feet;CollisionDirection=Toward;
+        CollisionHitsBefore=CollisionHits;CollisionRootBlocksBefore=Knight->RootMotionBlockedCount;CollisionSurfaceSeconds=0;
+        bCollisionActionObserved=false;bCollisionArmed=false;
+        CollisionExpectedFreeTravel=CollisionStage==1?1180.f*.58f/.78f*AuthoredKnightSeconds(TEXT("Roll"),.78f):0.f;
+        if(CollisionStage==2&&Knight->CustomuseVisualDefinition)
+        {
+            const FVeyrVisualClip* C=Knight->CustomuseVisualDefinition->Clips.Find(TEXT("BlinkRight"));
+            if(C&&C->RootTranslationSamplesCm.Num()>1)CollisionExpectedFreeTravel=Knight->CustomuseVisualDefinition->MeshRelativeTransform.TransformVector(C->RootTranslationSamplesCm.Last()-C->RootTranslationSamplesCm[0]).Size2D();
+        }
+        Knight->SetSprintRequested(CollisionStage==0);
+        Knight->SetReplayInput(Toward,false,false,CollisionStage==1,false,false,false);
+        Event(FString(TEXT("collision_input_"))+Labels[CollisionStage]);return true;
+    }
+    if(CollisionStage==2&&!bCollisionArmed)
+    {
+        Knight->TryDirectionalBlink();bCollisionArmed=true;Neutral();return true;
+    }
+    if(CollisionStage==0)
+    {
+        Knight->SetSprintRequested(true);
+        Knight->SetReplayInput(Found?(Goal-Start).GetSafeNormal2D():CollisionDirection,false,false,false,false,false,false);
+        bCollisionActionObserved|=Knight->GetPlanarSpeed()>100.f||CollisionHits>CollisionHitsBefore;
+        if(Found&&Closest<15.f&&Knight->GetPlanarSpeed()<80.f)CollisionSurfaceSeconds+=Dt;
+    }
+    else
+    {
+        Neutral();
+        if(CollisionStage==1)bCollisionActionObserved|=Knight->Action==EVeyrKnightAction::Roll;
+        else bCollisionActionObserved|=Knight->Action==EVeyrKnightAction::BlinkLeft||Knight->Action==EVeyrKnightAction::BlinkRight;
+    }
+    const bool Recovered=CollisionStage==0?CollisionSurfaceSeconds>.35f:
+        bCollisionActionObserved&&Ready&&Elapsed-CollisionInputStarted>(CollisionStage==1?AuthoredKnightSeconds(TEXT("Roll"),.78f):.7f);
+    const bool Interrupted=Knight->Action==EVeyrKnightAction::Stagger||Knight->Action==EVeyrKnightAction::GuardBreak;
+    if(Recovered||Interrupted||Elapsed-CollisionInputStarted>4.f)
+    {
+        const float Travel=FVector::Dist2D(Feet,CollisionOrigin);
+        const float Along=FVector::DotProduct(Feet-CollisionOrigin,CollisionDirection);
+        const bool Hit=CollisionHits>CollisionHitsBefore;
+        const bool AuthoredBlocked=Knight->RootMotionBlockedCount>CollisionRootBlocksBefore;
+        const bool Limited=CollisionStage==0?CollisionSurfaceSeconds>.35f:CollisionExpectedFreeTravel>100.f&&Along<CollisionExpectedFreeTravel-35.f;
+        const bool Passed=Recovered&&!Interrupted&&bCollisionActionObserved&&(Hit||(CollisionStage==2&&AuthoredBlocked))&&Limited&&CollisionIndependentDepth<=2.f;
+        auto Trial=MakeShared<FJsonObject>();Trial->SetStringField(TEXT("input"),Labels[CollisionStage]);Trial->SetBoolField(TEXT("passed"),Passed);
+        Trial->SetNumberField(TEXT("actualBodyHitEvents"),CollisionHits-CollisionHitsBefore);Trial->SetNumberField(TEXT("authoredRootBlockingHits"),Knight->RootMotionBlockedCount-CollisionRootBlocksBefore);
+        Trial->SetNumberField(TEXT("travelCm"),Travel);Trial->SetNumberField(TEXT("travelAlongInputCm"),Along);Trial->SetNumberField(TEXT("unblockedExpectedTravelCm"),CollisionExpectedFreeTravel);
+        Trial->SetNumberField(TEXT("surfaceBlockedSeconds"),CollisionSurfaceSeconds);Trial->SetNumberField(TEXT("residualPenetrationCm"),CollisionIndependentDepth);
+        Trial->SetStringField(TEXT("lastHitComponent"),CollisionLastHitShape.ToString());Trial->SetBoolField(TEXT("interruptedByNaturalAttack"),Interrupted);Trial->SetNumberField(TEXT("seconds"),Elapsed);
+        CollisionTrials.Add(MakeShared<FJsonValueObject>(Trial));Event(FString(Passed?TEXT("collision_verified_"):TEXT("collision_attempt_failed_"))+Labels[CollisionStage]);Neutral();
+        CollisionPhase=0;
+        if(Passed){++CollisionCompleted;++CollisionStage;CollisionAttempts=0;CollisionStageStarted=Elapsed;}
+        else if(++CollisionAttempts>=3)Finish(false,FString(TEXT("collision input did not obtain valid blocking/recovery evidence after three attempts: "))+Labels[CollisionStage]);
+    }
+    return true;
+}
+
 bool AVeyrReplay::DriveIntegrationInputs()
 {
     if(ReplayMode!=TEXT("integration"))return false;
-    enum class EExercise : uint8 { Walk,Run,Backpedal,Light,Heavy,Combo,RollAttack,BlinkLeft,BlinkRight,Backstep };
+    enum class EExercise : uint8 { Jog,Sprint,Lateral,Light,Heavy,Primary,RollAttack,BlinkLeft,BlinkRight,Backstep };
     struct FExercise
     {
         const TCHAR* Name;const TCHAR* Clip;EExercise Kind;EVeyrKnightAction Action;
         bool Two,Lock;int32 RunVariant,HeavyVariant,TwoHeavyVariant;float MinimumStamina;
     };
     static const FExercise Trials[]={
-        {TEXT("one_hand_walk"),TEXT("Walk"),EExercise::Walk,EVeyrKnightAction::Ready,false,false,0,0,0,25},
-        {TEXT("two_hand_walk"),TEXT("WalkTwoHand"),EExercise::Walk,EVeyrKnightAction::Ready,true,false,0,0,0,25},
-        {TEXT("run_tripo_and_stop"),TEXT("Run"),EExercise::Run,EVeyrKnightAction::Ready,false,false,0,0,0,25},
-        {TEXT("run_meshy_and_stop"),TEXT("RunAlternate"),EExercise::Run,EVeyrKnightAction::Ready,false,false,1,0,0,25},
-        {TEXT("locked_backpedal"),TEXT("Backpedal"),EExercise::Backpedal,EVeyrKnightAction::Ready,false,true,0,0,0,25},
+        {TEXT("one_hand_jog"),TEXT("Run"),EExercise::Jog,EVeyrKnightAction::Ready,false,false,0,0,0,25},
+        {TEXT("two_hand_jog"),TEXT("RunTwoHand"),EExercise::Jog,EVeyrKnightAction::Ready,true,false,0,0,0,25},
+        {TEXT("run_tripo_and_stop"),TEXT("Run"),EExercise::Sprint,EVeyrKnightAction::Ready,false,false,0,0,0,25},
+        {TEXT("run_meshy_and_stop"),TEXT("RunAlternate"),EExercise::Sprint,EVeyrKnightAction::Ready,false,false,1,0,0,25},
+        {TEXT("locked_lateral_jog_without_blink"),TEXT("Run"),EExercise::Lateral,EVeyrKnightAction::Ready,false,true,0,0,0,25},
         {TEXT("one_hand_light"),TEXT("LightAttack"),EExercise::Light,EVeyrKnightAction::LightAttack,false,true,0,0,0,50},
         {TEXT("one_hand_heavy_B"),TEXT("HeavyAttack"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,false,true,0,0,0,60},
         {TEXT("one_hand_heavy_A"),TEXT("HeavyAttackAlternate"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,false,true,0,1,0,60},
         {TEXT("two_hand_light"),TEXT("LightAttackTwoHand"),EExercise::Light,EVeyrKnightAction::LightAttack,true,true,0,0,0,55},
         {TEXT("two_hand_sweep"),TEXT("HeavyAttackTwoHand"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,true,true,0,0,0,65},
         {TEXT("two_hand_thrust"),TEXT("HeavyAttackTwoHandAlternate"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,true,true,0,0,1,65},
-        {TEXT("light_light_heavy_combo"),TEXT("LightCombo"),EExercise::Combo,EVeyrKnightAction::Combo,true,true,0,0,0,95},
+        {TEXT("two_hand_primary_chain"),TEXT("LightCombo"),EExercise::Primary,EVeyrKnightAction::Combo,true,true,0,0,0,100},
+        {TEXT("one_hand_primary_chain"),TEXT("LightAttack"),EExercise::Primary,EVeyrKnightAction::LightAttack,false,true,0,0,0,100},
+        {TEXT("two_hand_sprint"),TEXT("RunTwoHand"),EExercise::Sprint,EVeyrKnightAction::Ready,true,false,0,0,0,25},
         {TEXT("roll_to_light_upgrade"),TEXT("RollAttack"),EExercise::RollAttack,EVeyrKnightAction::RollAttack,false,false,0,0,0,85},
         {TEXT("locked_blink_left"),TEXT("BlinkLeft"),EExercise::BlinkLeft,EVeyrKnightAction::BlinkLeft,false,true,0,0,0,55},
         {TEXT("locked_blink_right"),TEXT("BlinkRight"),EExercise::BlinkRight,EVeyrKnightAction::BlinkRight,false,true,0,0,0,55},
@@ -489,17 +655,19 @@ bool AVeyrReplay::DriveIntegrationInputs()
     if(Elapsed>.25f&&(!Knight->bApprovedNativeDefinitionActive||!Knight->bImportedPresentationActive||!Dragon->bUsingCustomuseVisual||
        bIntegrationFallback||IntegrationMaxKnightFailures||IntegrationMaxDragonFailures||!Dragon->MissingVisualClip.IsNone()||!Knight->BlinkVFXDiagnostic.IsEmpty()))
     {Finish(false,TEXT("integration presentation failed: approved native definition, exact clips and zero fallback/failed requests/VFX diagnostics required"));return true;}
-    auto Neutral=[&](){Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
+    auto Neutral=[&](){Knight->SetSprintRequested(false);Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
     if(IntegrationStage>=UE_ARRAY_COUNT(Trials))
     {
         Neutral();
-        Finish(IntegrationCompleted==UE_ARRAY_COUNT(Trials),TEXT("all16 integration control/motion features accepted and recovered under normal boss AI; actual contacts recorded separately"));
+        Knight->ReleasePrimaryAttack();
+        const bool Grips=IntegrationKnightClips.Contains(TEXT("GripToTwoHand"))&&IntegrationKnightClips.Contains(TEXT("GripToOneHand"));
+        Finish(IntegrationCompleted==UE_ARRAY_COUNT(Trials)&&Grips,TEXT("all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately"));
         return true;
     }
     const FExercise& Trial=Trials[IntegrationStage];
-    const bool MoveTrial=Trial.Kind==EExercise::Walk||Trial.Kind==EExercise::Run||Trial.Kind==EExercise::Backpedal;
+    const bool MoveTrial=Trial.Kind==EExercise::Jog||Trial.Kind==EExercise::Sprint||Trial.Kind==EExercise::Lateral;
     const bool Blink=Trial.Kind==EExercise::BlinkLeft||Trial.Kind==EExercise::BlinkRight;
-    const float RequiredMovementSeconds=Trial.Kind==EExercise::Walk&&Trial.Two?2.4f:1.2f;
+    const float RequiredMovementSeconds=1.2f;
     const FVector Feet=Knight->GetFootLocation();
     const bool Ready=Knight->Action==EVeyrKnightAction::Ready&&Knight->IsGrounded();
     const float BossDistance=FVector::Dist2D(Feet,Dragon->GetActorLocation());
@@ -510,7 +678,7 @@ bool AVeyrReplay::DriveIntegrationInputs()
         IntegrationFeature=Trial.Name;IntegrationExpectedClip=Trial.Clip;IntegrationStageStarted=Elapsed;IntegrationConfiguredAt=Elapsed;
         IntegrationPhase=0;IntegrationObservedSeconds=0;IntegrationOrigin=Feet;
         bIntegrationIssued=bIntegrationAccepted=bIntegrationMidCapture=bIntegrationRollPrefix=bIntegrationRollQueued=bIntegrationRunStop=false;
-        bIntegrationHiddenSeen=bIntegrationEchoVisible=false;
+        bIntegrationHiddenSeen=bIntegrationEchoVisible=bIntegrationBlinkRequested=false;IntegrationMaximumSourceTime=0;IntegrationPeakSpeed=0;
         IntegrationTrial=MakeShared<FJsonObject>();IntegrationTrial->SetStringField(TEXT("feature"),IntegrationFeature);
         IntegrationTrial->SetStringField(TEXT("expectedClip"),IntegrationExpectedClip.ToString());IntegrationTrial->SetNumberField(TEXT("attempt"),IntegrationAttempt+1);
         IntegrationTrial->SetNumberField(TEXT("startedSeconds"),Elapsed);Event(TEXT("integration_begin_")+IntegrationFeature,false);
@@ -521,7 +689,7 @@ bool AVeyrReplay::DriveIntegrationInputs()
     {
         IntegrationTrial->SetBoolField(TEXT("passed"),false);IntegrationTrial->SetStringField(TEXT("reason"),Reason);
         IntegrationTrial->SetNumberField(TEXT("endedSeconds"),Elapsed);IntegrationTrials.Add(MakeShared<FJsonValueObject>(IntegrationTrial));
-        Event(TEXT("integration_interrupted_")+IntegrationFeature,false);IntegrationTrial.Reset();++IntegrationAttempt;Neutral();
+        Event(TEXT("integration_interrupted_")+IntegrationFeature,false);IntegrationTrial.Reset();++IntegrationAttempt;Knight->ReleasePrimaryAttack();Neutral();
         if(IntegrationAttempt>=3)Finish(false,TEXT("integration feature interrupted/rejected three times: ")+IntegrationFeature);
     };
     if(bIntegrationIssued&&(Knight->Action==EVeyrKnightAction::Stagger||Knight->Action==EVeyrKnightAction::GuardBreak))
@@ -540,7 +708,7 @@ bool AVeyrReplay::DriveIntegrationInputs()
             if(Knight->IsTwoHanded())Knight->ToggleGrip();
             FVector Direction=BlinkPathNearEdge?(-Feet).GetSafeNormal2D():EscapeDirection();
             const bool Dodge=Threat&&Knight->Stamina>=25.f&&(Dragon->State==EVeyrDragonState::Active||Remaining<.35f);
-            Knight->SetReplayInput(Direction,false,false,Dodge,false,false,false);IntegrationConfiguredAt=Elapsed;return true;
+            Knight->SetSprintRequested(true);Knight->SetReplayInput(Direction,false,false,Dodge,false,false,false);IntegrationConfiguredAt=Elapsed;return true;
         }
         if(Knight->Health<65.f&&Knight->HealingCharges>0&&
            (Dragon->State==EVeyrDragonState::Recovery||(Dragon->State==EVeyrDragonState::Idle&&BossDistance>2700.f)))
@@ -557,19 +725,29 @@ bool AVeyrReplay::DriveIntegrationInputs()
         if(Elapsed-IntegrationConfiguredAt<.40f)return true;
         IntegrationOrigin=Feet;IntegrationRequestedAt=Elapsed;IntegrationContactsBefore=Dragon->GetSwordContactCount();IntegrationHitsBefore=Knight->HitsTaken;
         IntegrationEchoesBefore=Knight->BlinkEchoCaptures;IntegrationRollsBefore=Knight->Rolls;IntegrationRollAttacksBefore=Knight->RollAttacks;
+        IntegrationLightBefore=Knight->LightAttacks;IntegrationHeavyBefore=Knight->HeavyAttacks;IntegrationBlinksBefore=Knight->BlinkDodges;
         IntegrationTrial->SetNumberField(TEXT("requestedSeconds"),Elapsed);IntegrationTrial->SetNumberField(TEXT("healthBefore"),Knight->Health);
         IntegrationTrial->SetNumberField(TEXT("staminaBefore"),Knight->Stamina);IntegrationTrial->SetArrayField(TEXT("origin"),VectorJson(Feet));
         IntegrationTrial->SetBoolField(TEXT("twoHanded"),Knight->IsTwoHanded());IntegrationTrial->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
-        IntegrationDirection=Trial.Kind==EExercise::Backpedal?-Knight->GetActorForwardVector():Blink?BlinkSide:EscapeDirection();
+        IntegrationDirection=Trial.Kind==EExercise::Lateral?Knight->GetActorRightVector():Blink?BlinkSide:EscapeDirection();
         bIntegrationIssued=true;IntegrationPhase=1;
-        if(Trial.Kind==EExercise::Combo)Knight->TryCombo();
+        if(Trial.Kind==EExercise::Primary)Knight->PressPrimaryAttack();
         else if(Trial.Kind==EExercise::Backstep)Knight->TryBackstep();
-        else Knight->SetReplayInput(MoveTrial?IntegrationDirection*(Trial.Kind==EExercise::Walk&&!Trial.Two?.28f:1.f):
-            Blink||Trial.Kind==EExercise::RollAttack?IntegrationDirection:FVector::ZeroVector,
+        else Knight->SetReplayInput(MoveTrial||Blink||Trial.Kind==EExercise::RollAttack?IntegrationDirection:FVector::ZeroVector,
             Trial.Kind==EExercise::Light,Trial.Kind==EExercise::Heavy,Trial.Kind==EExercise::RollAttack,false,false,false);
+        Knight->SetSprintRequested(Trial.Kind==EExercise::Sprint);
         Event(TEXT("integration_input_")+IntegrationFeature,false);return true;
     }
-    const bool Expected=Knight->Action==Trial.Action&&Knight->bRequestedPresentationClipSampled&&Knight->RequestedPresentationClip==IntegrationExpectedClip;
+    if(Blink&&!bIntegrationBlinkRequested)
+    {
+        // The previous input frame populated MoveIntent, exactly as WASD before Space.
+        Knight->TryDirectionalBlink();bIntegrationBlinkRequested=true;Neutral();return true;
+    }
+    const bool Primary=Trial.Kind==EExercise::Primary;
+    const bool Expected=Knight->bRequestedPresentationClipSampled&&
+        (Primary&&!Trial.Two?((Knight->Action==EVeyrKnightAction::LightAttack&&Knight->RequestedPresentationClip==FName(TEXT("LightAttack")))||
+          (Knight->Action==EVeyrKnightAction::HeavyAttack&&Knight->RequestedPresentationClip==FName(TEXT("HeavyAttack")))):
+          Knight->Action==Trial.Action&&Knight->RequestedPresentationClip==IntegrationExpectedClip);
     if(Expected)
     {
         if(!bIntegrationAccepted)
@@ -577,7 +755,8 @@ bool AVeyrReplay::DriveIntegrationInputs()
             bIntegrationAccepted=true;IntegrationTrial->SetNumberField(TEXT("acceptedSeconds"),Elapsed);
             IntegrationTrial->SetNumberField(TEXT("acceptedDuration"),Knight->GetActionDuration());Event(TEXT("integration_accepted_")+IntegrationFeature);
         }
-        IntegrationObservedSeconds+=ObservedDelta;
+        IntegrationPeakSpeed=FMath::Max(IntegrationPeakSpeed,Knight->GetPlanarSpeed());
+        IntegrationObservedSeconds+=ObservedDelta;IntegrationMaximumSourceTime=FMath::Max(IntegrationMaximumSourceTime,Knight->GetActionSourceSeconds());
         IntegrationTrial->SetNumberField(TEXT("maximumObservedActionElapsed"),Knight->GetActionElapsed());
         if(!MoveTrial&&!bIntegrationMidCapture&&Knight->GetActionElapsed()>=Knight->GetActionDuration()*.5f)
         {bIntegrationMidCapture=true;Event(TEXT("integration_midpoint_")+IntegrationFeature);}
@@ -594,20 +773,22 @@ bool AVeyrReplay::DriveIntegrationInputs()
         if(!bIntegrationRollQueued&&Knight->GetActionElapsed()>=.20f)
         {
             bIntegrationRollQueued=true;IntegrationTrial->SetNumberField(TEXT("rollElapsedAtLightInput"),Knight->GetActionElapsed());
-            Knight->SetReplayInput(FVector::ZeroVector,true,false,false,false,false,false);Event(TEXT("integration_roll_light_queued"),false);return true;
+            Knight->PressPrimaryAttack();Knight->ReleasePrimaryAttack();Event(TEXT("integration_roll_primary_queued"),false);return true;
         }
     }
     if(IntegrationPhase==1&&MoveTrial)
     {
         if(Threat){Retry(TEXT("actual telegraph interrupted locomotion observation"));return true;}
-        const FVector Direction=Trial.Kind==EExercise::Backpedal?-Knight->GetActorForwardVector():EscapeDirection();
-        Knight->SetReplayInput(Direction*(Trial.Kind==EExercise::Walk&&!Trial.Two?.28f:1.f),false,false,false,false,false,false);
+        const FVector Direction=Trial.Kind==EExercise::Lateral?FVector::CrossProduct(FVector::UpVector,(Dragon->GetActorLocation()-Feet).GetSafeNormal2D()):EscapeDirection();
+        Knight->SetSprintRequested(Trial.Kind==EExercise::Sprint);
+        Knight->SetReplayInput(Direction,false,false,false,false,false,false);
+        if(Trial.Kind==EExercise::Lateral&&Knight->BlinkDodges!=IntegrationBlinksBefore){Finish(false,TEXT("held lateral movement incorrectly triggered blink without Space"));return true;}
         if(bIntegrationAccepted&&IntegrationObservedSeconds>=RequiredMovementSeconds&&FVector::Dist2D(Feet,IntegrationOrigin)>50.f)
         {IntegrationPhase=2;IntegrationRecoveryStarted=Elapsed;Neutral();Event(TEXT("integration_release_")+IntegrationFeature,false);}
         return true;
     }
     Neutral();
-    if(Trial.Kind==EExercise::Run&&Knight->Action==EVeyrKnightAction::RunStop&&Knight->RequestedPresentationClip==FName(TEXT("RunStop"))&&Knight->bRequestedPresentationClipSampled)
+    if(Trial.Kind==EExercise::Sprint&&!Trial.Two&&Knight->Action==EVeyrKnightAction::RunStop&&Knight->RequestedPresentationClip==FName(TEXT("RunStop"))&&Knight->bRequestedPresentationClipSampled)
     {
         if(!bIntegrationRunStop){bIntegrationRunStop=true;Event(TEXT("integration_run_stop_accepted_")+IntegrationFeature);}
     }
@@ -616,14 +797,21 @@ bool AVeyrReplay::DriveIntegrationInputs()
     if(IntegrationPhase==2&&Ready&&Knight->GetPlanarSpeed()<10.f&&Elapsed-IntegrationRecoveryStarted>.25f)
     {
         const float Travel=FVector::Dist2D(Feet,IntegrationOrigin);
-        const bool Complete=bIntegrationAccepted&&(!MoveTrial||IntegrationObservedSeconds>=RequiredMovementSeconds)&&
-            (Trial.Kind!=EExercise::Run||bIntegrationRunStop)&&
+        if(Primary)Knight->ReleasePrimaryAttack();
+        const bool PrimaryComplete=!Primary||(Knight->LightAttacks==IntegrationLightBefore+2&&Knight->HeavyAttacks==IntegrationHeavyBefore+1&&(!Trial.Two||IntegrationMaximumSourceTime>3.f));
+        const bool Complete=bIntegrationAccepted&&PrimaryComplete&&(!MoveTrial||IntegrationObservedSeconds>=RequiredMovementSeconds)&&
+            (Trial.Kind!=EExercise::Sprint||IntegrationPeakSpeed>500.f)&&
+            (Trial.Kind!=EExercise::Sprint||Trial.Two||bIntegrationRunStop)&&
             (!Blink||(bIntegrationHiddenSeen&&bIntegrationEchoVisible&&Knight->BlinkEchoCaptures>=IntegrationEchoesBefore+2&&Travel>100.f))&&
             (Trial.Kind!=EExercise::RollAttack||(bIntegrationRollPrefix&&bIntegrationRollQueued&&Knight->Rolls==IntegrationRollsBefore+1&&Knight->RollAttacks==IntegrationRollAttacksBefore+1));
         IntegrationTrial->SetBoolField(TEXT("passed"),Complete);IntegrationTrial->SetBoolField(TEXT("completedRecovery"),true);
         IntegrationTrial->SetNumberField(TEXT("observedSeconds"),IntegrationObservedSeconds);IntegrationTrial->SetNumberField(TEXT("endedSeconds"),Elapsed);
         IntegrationTrial->SetNumberField(TEXT("travelCm"),Travel);IntegrationTrial->SetNumberField(TEXT("actualSwordContacts"),Dragon->GetSwordContactCount()-IntegrationContactsBefore);
         IntegrationTrial->SetNumberField(TEXT("actualHitsTaken"),Knight->HitsTaken-IntegrationHitsBefore);IntegrationTrial->SetNumberField(TEXT("staminaAfter"),Knight->Stamina);
+        IntegrationTrial->SetBoolField(TEXT("primaryButtonChainCompleted"),Primary&&PrimaryComplete);
+        IntegrationTrial->SetNumberField(TEXT("primaryLightSteps"),Knight->LightAttacks-IntegrationLightBefore);IntegrationTrial->SetNumberField(TEXT("primaryHeavySteps"),Knight->HeavyAttacks-IntegrationHeavyBefore);
+        IntegrationTrial->SetNumberField(TEXT("maximumSourceSeconds"),IntegrationMaximumSourceTime);
+        IntegrationTrial->SetNumberField(TEXT("maximumPlanarSpeedCmPerSecond"),IntegrationPeakSpeed);
         IntegrationTrial->SetBoolField(TEXT("runStopObserved"),bIntegrationRunStop);IntegrationTrial->SetBoolField(TEXT("blinkHiddenObserved"),bIntegrationHiddenSeen);
         IntegrationTrial->SetBoolField(TEXT("blinkEchoVisible"),bIntegrationEchoVisible);IntegrationTrial->SetNumberField(TEXT("blinkEchoCaptures"),Knight->BlinkEchoCaptures-IntegrationEchoesBefore);
         IntegrationTrials.Add(MakeShared<FJsonValueObject>(IntegrationTrial));Event(TEXT("integration_recovered_")+IntegrationFeature);
@@ -670,7 +858,25 @@ bool AVeyrReplay::DriveStanceInputs()
     const int32 ModeIndex=Two?1:0,Slot=ModeIndex*2+(Heavy?1:0);
     const EVeyrKnightAction Wanted=Roll?EVeyrKnightAction::Roll:Heavy?EVeyrKnightAction::HeavyAttack:EVeyrKnightAction::LightAttack;
     const int32 Actions=Roll?Knight->Rolls:Heavy?Knight->HeavyAttacks:Knight->LightAttacks;
-    auto Neutral=[&](){Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
+    auto Neutral=[&](){Knight->SetSprintRequested(false);Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
+    if(bStanceGripPending)
+    {
+        Neutral();
+        if(Knight->IsChangingGrip())return true;
+        if(Available&&Knight->IsTwoHanded()==bStanceGripTarget)
+        {bStanceGripPending=false;++StanceSafeSwitches;StanceSwitchAt=Elapsed;Event(TEXT("stance_grip_transition_completed"));return true;}
+        if(Knight->Action==EVeyrKnightAction::Stagger||Knight->Action==EVeyrKnightAction::GuardBreak)
+        {bStanceGripPending=false;Event(TEXT("stance_grip_transition_interrupted"),false);return true;}
+        if(Elapsed-StanceGripRequestedAt>1.5f)Finish(false,TEXT("authored stance grip transition did not complete"));
+        return true;
+    }
+    auto RequestGrip=[&](bool Desired)
+    {
+        Knight->ToggleGrip();Neutral();
+        if(Knight->IsChangingGrip())
+        {bStanceGripPending=true;bStanceGripTarget=Desired;StanceGripRequestedAt=Elapsed;Event(TEXT("stance_grip_transition_requested"),false);}
+        else Finish(false,TEXT("required authored grip transition was not accepted"));
+    };
     if(bStancePending)
     {
         Neutral();
@@ -770,7 +976,7 @@ bool AVeyrReplay::DriveStanceInputs()
         return true;
     }
     if(StanceTrialIndex>=6&&Knight->IsTwoHanded()&&Available)
-    {Knight->ToggleGrip();if(!Knight->IsTwoHanded())++StanceSafeSwitches;Neutral();return true;}
+    {RequestGrip(false);return true;}
     if(StanceTrialIndex>=6)
     {
         bStancePassed=StanceSafeSwitches>=2&&!Knight->IsTwoHanded()&&StanceDamage[2]>StanceDamage[0]&&
@@ -790,9 +996,7 @@ bool AVeyrReplay::DriveStanceInputs()
     const bool DesiredGrip=Two&&(Roll||Distance<80.f);
     if(Knight->IsTwoHanded()!=DesiredGrip&&Available&&Knight->IsGrounded())
     {
-        Knight->ToggleGrip();
-        if(Knight->IsTwoHanded()==DesiredGrip){++StanceSafeSwitches;StanceSwitchAt=Elapsed;Event(TEXT("stance_safe_grip_switch"));}
-        Neutral();return true;
+        RequestGrip(DesiredGrip);return true;
     }
     if(Elapsed-StanceSwitchAt<.35f){Neutral();return true;}
     // Locked lateral input is a discrete blink, not fine navigation.
@@ -832,6 +1036,7 @@ bool AVeyrReplay::DriveStanceInputs()
             }
         }
     }
+    Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!Heal);
     Knight->SetReplayInput(Movement,Light,HeavyInput,RollInput,Heal,false,false);
     return true;
 }
@@ -1030,6 +1235,7 @@ bool AVeyrReplay::DriveBoundaryInputs()
         GuardSampleFacing=FVector::DotProduct(Knight->GetActorForwardVector(),(Threat-Knight->GetActorLocation()).GetSafeNormal2D());
         bGuardSampleValid=true;
     }
+    Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!bGuard&&!bHeal);
     Knight->SetReplayInput(Movement,false,false,false,bHeal,false,bGuard);
     return true;
 }
@@ -1206,6 +1412,7 @@ bool AVeyrReplay::DriveScenarioInputs()
             default:break;
         }
     }
+    Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!bGuard&&!bHeal&&!(ReplayMode==TEXT("controls")&&ControlStage==2));
     Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,bGuard);
     return true;
 }
@@ -1325,6 +1532,7 @@ FVector AVeyrReplay::EscapeDirection() const
 
 void AVeyrReplay::DriveInputs()
 {
+    if(DriveCollisionInputs())return;
     if(DriveIntegrationInputs())return;
     if(DriveStanceInputs())return;
     if(DriveScenarioInputs())return;
@@ -1425,6 +1633,7 @@ void AVeyrReplay::DriveInputs()
         }
     }
     if(Knight->bLockedOn!=bWantLock)Knight->ToggleLockOn();
+    Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!bHeal);
     Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,false);
     TrackFlightWithLookInput();
 }
@@ -1638,6 +1847,7 @@ void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
     }
     if(ObservedWarningContainmentFailures>0){bSuccess=false;VerifiedReason=TEXT("Bone contact escaped committed warning; damage was suppressed");}
     bFinished=true;bPassed=bSuccess;OutcomeReason=VerifiedReason;FinishClock=0;
+    Knight->SetSprintRequested(false);Knight->ReleasePrimaryAttack();
     Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
     CaptureQueue.Reset(); Event(bSuccess?TEXT("result_pass"):TEXT("result_fail")); SaveEvidence(false);
     UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_RESULT pass=%d seconds=%.3f reason=%s"),bPassed,Elapsed,*OutcomeReason);
@@ -1730,6 +1940,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetObjectField(TEXT("presentationAssets"),Presentation);
     Root->SetStringField(TEXT("policy"),TEXT("input-only provisional navigation; runtime tuning required"));
     if(ReplayMode==TEXT("integration"))Root->SetObjectField(TEXT("integration"),IntegrationEvidence(true));
+    if(ReplayMode==TEXT("collision"))Root->SetObjectField(TEXT("collision"),CollisionEvidence(true));
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);
     Root->SetNumberField(TEXT("scenarioLimitGameSeconds"),DurationLimit);
@@ -1860,6 +2071,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
 
 void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    if(IsValid(Knight)&&Knight->GetCapsuleComponent())Knight->GetCapsuleComponent()->OnComponentHit.RemoveDynamic(this,&AVeyrReplay::ObserveCollisionHit);
     if(EndPlayReason==EEndPlayReason::EndPlayInEditor||EndPlayReason==EEndPlayReason::Quit)
     {
         PendingRestartEvidence.Reset();PendingRestartDirectory.Reset();

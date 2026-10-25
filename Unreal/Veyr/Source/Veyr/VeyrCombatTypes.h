@@ -3,7 +3,7 @@
 #include "VeyrCombatTypes.generated.h"
 
 UENUM(BlueprintType)
-enum class EVeyrKnightAction : uint8 { Ready, LightAttack, HeavyAttack, Roll, Guard, Heal, Stagger, Dead, Combo, RollAttack, RunStop, BlinkLeft, BlinkRight, GuardBreak, Backstep };
+enum class EVeyrKnightAction : uint8 { Ready, LightAttack, HeavyAttack, Roll, Guard, Heal, Stagger, Dead, Combo, RollAttack, RunStop, BlinkLeft, BlinkRight, GuardBreak, Backstep, GripToTwoHand, GripToOneHand };
 UENUM(BlueprintType)
 enum class EVeyrDragonState : uint8 { Idle, Windup, Active, Recovery, Reposition, Buckle, Collapse, Exposed, Rise, Dead };
 UENUM(BlueprintType)
