@@ -37,8 +37,10 @@ stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 run = ROOT/'Local'/('owned-editor-'+stamp)
 run.mkdir(mode=0o700,parents=True,exist_ok=False)
 command = [str(a.gpu_slot),'capture','--label','veyr-customuse-editor','--timeout',str(a.slot_wait_seconds),
-           '--json',str(run/'gpu.json'),'--',str(engine),str(project),'-ModelContextProtocolStartServer',
+           '--json',str(run/'gpu.json'),'--','/usr/bin/open','-W','-n','--env','UE4_FORCE_MALLOC_ANSI=1',
+           str(engine.parents[2]),'--args',str(project),'-ModelContextProtocolStartServer',
            '-ModelContextProtocolPort=18773','-notraceserver','-NoZenAutoLaunch','-NoCrashReports',
+           '-asyncstaticmeshcompilation=0','-asyncskinnedassetcompilation=0',
            '-DDC=(EnginePak=InstalledEnginePak,Local)','-LocalDataCachePath='+str(project.parent/'DerivedDataCache'),
            '-windowed','-ResX=1280','-ResY=720','-nosplash','-abslog='+str(run/'editor.log')]
 if a.video_fps:command.append('-VeyrVideoFPS='+str(a.video_fps))

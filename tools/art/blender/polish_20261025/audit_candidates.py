@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation
 ROOT=Path(__file__).resolve().parents[4];sys.path.insert(0,str(ROOT/'tools/art/integration'))
 from normalize_approved import GLB
 OUT=ROOT/'Local/Blender/polish-20261025';REF=Path('/Users/midir/veyr-review-fable-20261021/tools/asset-review/.asset-cache/review')
-NAMES=['Dragon_FlyHover_Blender_polish_v1','Dragon_Takeoff_Blender_polish_v2','Dragon_Land_Blender_polish_v3','RunTwoHand_Blender_polish_v2','GripToTwoHand_Blender_polish_v2','GripToOneHand_Blender_polish_v2','Roll_Blender_polish_v2','RollAttack_Blender_polish_v2']
+NAMES=['Dragon_FlyHover_Blender_polish_v1','Dragon_Takeoff_Blender_polish_v3','Dragon_Land_Blender_polish_v4','RunTwoHand_Blender_polish_v2','GripToTwoHand_Blender_polish_v2','GripToOneHand_Blender_polish_v2','Roll_Blender_polish_v2','RollAttack_Blender_polish_v2']
 g={n:GLB(OUT/(n+'.glb')) for n in NAMES}
 def difference(a,b,times,names,bt=None):
  maxerr=0;maxpos=0;worst=None
@@ -30,7 +30,7 @@ report['rollAttackAfterJoin']=difference(attack,old,np.linspace(.98,2.2,62),old.
 report['finalRightArm']=limb_audit(roll);report['sourceRightArm']=limb_audit(old)
 run=g['RunTwoHand_Blender_polish_v2'];oldrun=GLB(REF/'RunOneHand_Blender_tripo_r2.glb')
 report['runLowerBodyPreservation']=difference(run,oldrun,np.linspace(0,run.duration(),95),[n for n in oldrun.skin_names() if not any(x in n for x in ['Arm','Hand'])])
-for a,ta,b,tb in [('Dragon_Takeoff_Blender_polish_v2',1.5,'Dragon_FlyHover_Blender_polish_v1',0),('Dragon_FlyHover_Blender_polish_v1',2,'Dragon_Land_Blender_polish_v3',0)]:report[a+'->'+b]=difference(g[a],g[b],[ta],g[a].skin_names(),lambda _:tb)
+for a,ta,b,tb in [('Dragon_Takeoff_Blender_polish_v3',1.5,'Dragon_FlyHover_Blender_polish_v1',0),('Dragon_FlyHover_Blender_polish_v1',2,'Dragon_Land_Blender_polish_v4',0)]:report[a+'->'+b]=difference(g[a],g[b],[ta],g[a].skin_names(),lambda _:tb)
 for n,x in g.items():
  row=json.loads((OUT/(n+'.json')).read_text());row['measuredExportDuration']=x.duration();row['boneCount']=len(x.skin_names());row['sha256']=x.sha
  if 'bake'in row:row['bake']['scope']='Pre-restoration generic solver diagnostic; not final pose acceptance'

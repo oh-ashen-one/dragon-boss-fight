@@ -9,8 +9,8 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UStaticMesh;
 
-/** Original native layout, using labelled engine-primitive prototype geometry.
- *  No Customuse asset or finished art is claimed. Centimeters, +X forward, Z up. */
+/** Connected sunken court assembled from measured Tripo architecture.
+ *  Centimeters, +X toward the apse, Z up. Native visual acceptance is separate. */
 UCLASS()
 class VEYR_API AVeyrArena : public AActor
 {
@@ -24,6 +24,12 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingAuthoredFloor=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingImportedBraziers=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") int32 ImportedArchitecturePieces=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bConnectedCourtAssetsReady=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") int32 ConnectedCourtMeshCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") int32 ConnectedCourtInstanceCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") FString ConnectedCourtDiagnostic;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") TMap<FName,FVector> ConnectedMeshDimensionsCm;
+    UFUNCTION(BlueprintPure, Category="Environment") float GetMaximumWalkableHeightNear(const FVector& WorldPoint,float RadiusCm) const;
     /** GLB front is provisionally +Y after import; root verifies native orientation. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Environment") float CathedralFacingYawOffset=90.f;
 
@@ -48,6 +54,9 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInterface> SkyParent;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Batches;
+    UPROPERTY() TMap<FName,TObjectPtr<UStaticMesh>> PolishMeshes;
+    UPROPERTY() TMap<FName,TObjectPtr<UInstancedStaticMeshComponent>> PolishBatches;
+    TArray<FBox> RaisedWalkableBounds;
 
     UInstancedStaticMeshComponent* Stone = nullptr;
     UInstancedStaticMeshComponent* Trim = nullptr;
@@ -82,4 +91,9 @@ private:
     void BuildDistance();
     void BuildLighting();
     void BuildCollision();
+    bool LoadPolishKit();
+    FVector KitSize(FName Name,float Height) const;
+    void KitPiece(FName Name,const FVector& Anchor,float Height,float Yaw,bool bBlocking=true,bool bFrontAnchor=false,float WidthScale=1.f);
+    void KitWallRun(FName Name,const FVector& Start,const FVector& End,const FVector& Inward,float Height,float FloorZ,bool bBlocking=true);
+    void BuildCourtTerrain();
 };

@@ -6,6 +6,7 @@
 #include "VeyrDragon.generated.h"
 
 class AVeyrKnight;
+class AVeyrArena;
 class USceneComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
@@ -63,6 +64,7 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrSkeletalPresentation> ImportedPresentation;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrVisualDefinition> VisualDefinition;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bUsingPolishDefinition=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bUsingCustomuseVisual=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FName MissingVisualClip=NAME_None;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FString LocomotionDiagnostic;
@@ -148,6 +150,9 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") int32 PredictPositionalMove(const FVector& Point) const;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") FString ImportedCombatDiagnostic;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 WarningContainmentFailures=0;
+    /** The connected court has walkable stairs/aisles up to 240 cm. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Evidence") float MaximumWarningFloorHeightCm=240.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 WarningSurfaceTraceCount=0;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointInsideWarning(const FVector& Point) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointInsideActiveDanger(const FVector& Point) const;
 
@@ -196,6 +201,9 @@ private:
     FVector ImportedContactFeetWorld[4], ImportedTailWorld[4];
     TMap<FName,TArray<FVeyrDragonFootprint>> LocalAttackWarnings;
     TArray<FVeyrDragonFootprint> CommittedWarning;
+    TMap<FIntPoint,float> WarningSurfaceHeights;
+    TWeakObjectPtr<AVeyrArena> WarningArena;
+    bool WarningSurfaceHeight(const FVector& Point,float& Height);
     TArray<FVeyrDragonContact> PreviousContacts;
     FVeyrDragonFlameBeam PreviousFlame;
     FName ImportedMoveClip(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Suffix) const;
@@ -203,7 +211,7 @@ private:
     bool ReadImportedContactPose(UVeyrSkeletalPresentation* Presentation,EVeyrDragonMove Attack,int32 Leg,
         TArray<FVeyrDragonContact>& OutContacts,FVeyrDragonFlameBeam& OutBeam) const;
     TArray<FVeyrDragonContact> GetImportedContacts() const;
-    FVeyrDragonFootprint ProjectFlameToGround(const FVeyrDragonFlameBeam& Beam,float Padding=0.f) const;
+    FVeyrDragonFootprint ProjectFlameToGround(const FVeyrDragonFlameBeam& Beam,float Padding=0.f,bool bAllWalkableHeights=false) const;
     bool ImportedContactHitsKnight(const TArray<FVeyrDragonContact>& Contacts) const;
     bool FlameHitsKnight(const FVeyrDragonFlameBeam& Beam) const;
     void CommitImportedWarning();

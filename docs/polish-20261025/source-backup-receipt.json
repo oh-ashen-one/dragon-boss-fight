@@ -1,0 +1,32 @@
+{
+  "privateRepository": "oh-ashen-one/veyr-animation-sources",
+  "release": "combat-arena-polish-sources-20261025",
+  "archives": [
+    {
+      "file": "Veyr-Polish-animations-20261025.zip",
+      "bytes": 522141968,
+      "sha256": "f1fef5201702ee6116d885492cff06cdc25a285ff9f0f1ea9af8503915cfb9a7",
+      "source_file_count": 87,
+      "crc_verified": true,
+      "all_entry_sha256_verified": true
+    },
+    {
+      "file": "Veyr-Polish-environment-20261025.zip",
+      "bytes": 605406535,
+      "sha256": "68318c76c840252558bafb68e41983337e59ce166e47d0fa1396f04a7a996f7f",
+      "source_file_count": 38,
+      "crc_verified": true,
+      "all_entry_sha256_verified": true
+    },
+    {
+      "file": "Veyr-Polish-integration-metadata-20261025.zip",
+      "bytes": 310490,
+      "sha256": "d8dbed17fcadd6e960a605a261499f0e0b439adac8a2bda4daede180f279430a",
+      "source_file_count": 14,
+      "crc_verified": true,
+      "all_entry_sha256_verified": true
+    }
+  ],
+  "allGitHubDigestsMatch": true,
+  "nativeIntegrationComplete": false
+}

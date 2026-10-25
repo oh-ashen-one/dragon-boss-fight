@@ -159,6 +159,7 @@ private:
     void BeginTerminalVerification();
     void AdvanceRestart(float DeltaSeconds);
     FVector EscapeDirection() const;
+    FVector HeadApproachGoal(FName* OutBlocker=nullptr,float* OutSweepDistance=nullptr) const;
     float AuthoredKnightSeconds(FName Clip,float Fallback) const;
     float DragonPhaseSeconds(EVeyrDragonMove Move,const TCHAR* Phase,float Fallback) const;
     float SafeStationarySeconds(const FVector& Point) const;

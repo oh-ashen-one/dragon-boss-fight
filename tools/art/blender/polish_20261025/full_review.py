@@ -7,7 +7,7 @@ def module(name):
 
 def run(kind):
  m=module(kind)
- names=['Dragon_FlyHover_Blender_polish_v1','Dragon_Takeoff_Blender_polish_v2','Dragon_Land_Blender_polish_v3'] if kind=='dragon' else ['RunTwoHand_Blender_polish_v2','GripToTwoHand_Blender_polish_v2','GripToOneHand_Blender_polish_v2','Roll_Blender_polish_v2','RollAttack_Blender_polish_v2']
+ names=['Dragon_FlyHover_Blender_polish_v1','Dragon_Takeoff_Blender_polish_v3','Dragon_Land_Blender_polish_v4'] if kind=='dragon' else ['RunTwoHand_Blender_polish_v2','GripToTwoHand_Blender_polish_v2','GripToOneHand_Blender_polish_v2','Roll_Blender_polish_v2','RollAttack_Blender_polish_v2']
  reports=[]
  for name in names:
   m.open_scene(m.OUT/(name+'.blend'));s=bpy.context.scene;duration=(s.frame_end-s.frame_start)/s.render.fps;N=math.ceil(duration*30);frames=[s.frame_start+(s.frame_end-s.frame_start)*i/N for i in range(N)];folder='fullspeed/'+name

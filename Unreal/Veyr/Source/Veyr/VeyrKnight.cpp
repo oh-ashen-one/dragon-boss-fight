@@ -87,7 +87,7 @@ AVeyrKnight::AVeyrKnight()
     // Optional until the stable native data asset is authored. The definition
     // supplies imported orientation, scale and the capsule-to-feet offset.
     static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> KnightDefinition(
-        TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
+        TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
     CustomuseVisualDefinition = KnightDefinition.Get();
     BoatWeapon=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tripo Timber Greatsword"));
     BoatWeapon->SetupAttachment(GetCapsuleComponent());
@@ -214,6 +214,9 @@ void AVeyrKnight::BeginPlay()
         }
     }
     if (Controller) Controller->SetControlRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
+    if(UVeyrVisualDefinition* Polished=LoadObject<UVeyrVisualDefinition>(nullptr,
+        TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn))
+        CustomuseVisualDefinition=Polished;
     if(!CustomuseVisualDefinition)CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
         TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CustomuseVisualDefinition)
@@ -927,7 +930,8 @@ void AVeyrKnight::SetPresentationDiagnostic(const FString& Diagnostic)
 bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
     CustomuseVisualDefinition = Definition;
-    bApprovedNativeDefinitionActive=Definition&&Definition->GetPathName().Contains(TEXT("/RuntimeApproved/"));
+    bUsingPolishDefinition=Definition&&Definition->GetPathName().Contains(TEXT("/RuntimePolish/"));
+    bApprovedNativeDefinitionActive=Definition&&(bUsingPolishDefinition||Definition->GetPathName().Contains(TEXT("/RuntimeApproved/")));
     ClearBlinkEchoes();
     bPreviousBladePoseValid=false;
     bImportedPresentationActive = bRequestedPresentationClipSampled = bPresentationUsingFallback = false;

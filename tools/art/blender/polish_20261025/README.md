@@ -13,8 +13,8 @@ Use `Local/Blender/polish-20261025/manifest.json` for exact GLB and packed Blend
 | Runtime key | Candidate | Seconds |
 |---|---|---:|
 | FlightActive and FlightHoverAlternate | Dragon_FlyHover_Blender_polish_v1 | 2.0 |
-| FlightWindup | Dragon_Takeoff_Blender_polish_v2 | 1.5 |
-| FlightRecovery | Dragon_Land_Blender_polish_v3 | 1.5 |
+| FlightWindup | Dragon_Takeoff_Blender_polish_v3 | 1.5 |
+| FlightRecovery | Dragon_Land_Blender_polish_v4 | 1.5 |
 | RunTwoHand | RunTwoHand_Blender_polish_v2 | 0.6266667 |
 | GripToTwoHand | GripToTwoHand_Blender_polish_v2 | 0.5 |
 | GripToOneHand | GripToOneHand_Blender_polish_v2 | 0.5 |
@@ -64,3 +64,13 @@ Final8 versions were judged ready for native validation after the run's buried
 forearms, exposed cutaway grip and morph-shape endpoint differences were corrected.
 This is not owner approval or native gameplay acceptance. Earlier candidate drafts
 remain local evidence and must not be imported as final assets.
+
+## Exact ground joins revision
+
+Takeoff v3 and Land v4 supersede the earlier drafts. Their first/last seven frames
+use an editable Blender deform action and `PolishIdleEndpoint` corrective to match
+the approved Idle_r3 frame-zero full surface, while preserving both corrected
+hover joins. All four full-skinned boundaries are below0.001cm. Original CTRL
+NLA authoring remains in each Blend as the base reference; its copy constraints
+are muted so the final editable deform action publishes the boundary correction.
+`ground_join.py` authors this stage entirely through Blender MCP.

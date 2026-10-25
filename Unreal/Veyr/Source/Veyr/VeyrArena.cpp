@@ -15,6 +15,10 @@
 
 namespace
 {
+    const TCHAR* CourtKitNames[]={TEXT("CloisterWall"),TEXT("ApseWall"),TEXT("ProcessionalStair"),
+        TEXT("CollapsedVaultRubble"),TEXT("RockRetainingWall"),TEXT("RuinedGatehouse"),TEXT("FallenGreatBell"),
+        TEXT("FuneraryEffigyNiche"),TEXT("RuinedCityRoofBlock"),TEXT("WornPavingPatch"),TEXT("CornerButtress"),TEXT("AncientDeadTree")};
+    constexpr float CourtHalfX=4900.f,CourtHalfY=4400.f,AisleHeight=144.2f;
     FVector Radial(float Angle, float Radius, float Height = 0.f)
     {
         return FVector(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, Height);
@@ -24,11 +28,18 @@ namespace
 AVeyrArena::AVeyrArena()
 {
     PrimaryActorTick.bCanEverTick = false;
-    USceneComponent* Scene = CreateDefaultSubobject<USceneComponent>(TEXT("PrototypeArenaRoot"));
+    USceneComponent* Scene = CreateDefaultSubobject<USceneComponent>(TEXT("ConnectedCourtRoot"));
     Scene->SetMobility(EComponentMobility::Static);
     SetRootComponent(Scene);
     Tags.Add(TEXT("VeyrOriginalLayout"));
-    Tags.Add(TEXT("PrototypeEnginePrimitives_NotCustomuse"));
+    Tags.Add(TEXT("VeyrConnectedCathedralCourt"));
+    for(const TCHAR* Name:CourtKitNames)
+    {
+        const TCHAR* Version=FCString::Strcmp(Name,TEXT("RockRetainingWall"))==0?TEXT("v002"):TEXT("v001");
+        const FString Path=FString::Printf(TEXT("/Game/ArtPass/Tripo/Polish%s_%s/SM_Polish%s_%s.SM_Polish%s_%s"),Name,Version,Name,Version,Name,Version);
+        ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Mesh(*Path,LOAD_Quiet|LOAD_NoWarn);
+        if(Mesh.Get())PolishMeshes.Add(FName(Name),Mesh.Get());
+    }
 
     // These are Unreal Engine resources, not original mesh/texture deliverables.
     // Hard constructor references make the prototype dependencies cookable.
@@ -72,6 +83,7 @@ void AVeyrArena::BeginPlay()
     if(!CathedralBrazierMesh)CathedralBrazierMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralBrazier_v001/SM_CathedralBrazier_v001.SM_CathedralBrazier_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralFloorParent)CathedralFloorParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Floor/M_CathedralFloor_v001.M_CathedralFloor_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     bUsingAuthoredFloor=CathedralFloorParent!=nullptr;bUsingImportedBraziers=CathedralBrazierMesh!=nullptr;
+    LoadPolishKit();
     if(UMaterialInterface* Authored=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),nullptr,LOAD_Quiet|LOAD_NoWarn))StoneParent=Authored;
     if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !ConeMesh || !StoneParent || !PlainParent) return;
     bBuilt = true;
@@ -92,7 +104,7 @@ void AVeyrArena::BeginPlay()
     FloorWet = MakeBatch(TEXT("OriginalBroadWetPaverAreas"), CubeMesh, WetStone);
     UMaterialInterface* FloorMaterial=CathedralFloorParent?CathedralFloorParent.Get():Flagstone;
     FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
-    Foundations=MakeBatch(TEXT("ConnectedCathedralFoundations"),CubeMesh,FloorMaterial);
+    Foundations=MakeBatch(TEXT("ConnectedCathedralFoundations"),CubeMesh,Ashlar);
     auto* CutStone=MakeMaterial(TEXT("RestrainedFloorCarving"),FLinearColor(.045f,.050f,.054f),.9f,false);
     FloorCarvings=MakeBatch(TEXT("SubtleStoneCarvedRings"),CubeMesh,CutStone);
     auto* ParapetStone=MakeMaterial(TEXT("DarkWeatheredParapetStone"),FLinearColor(.055f,.064f,.072f),.92f);
@@ -109,11 +121,14 @@ void AVeyrArena::BeginPlay()
     Embers = MakeBatch(TEXT("PROTO_BrazierEmberBeds"), SphereMesh, Coal);
     BuildFloor();
     bUsingImportedCathedral=BuildImportedCathedral();
-    if(!bUsingImportedCathedral)BuildCathedral();
+    // Missing kit assets remain an explicit validation failure. Do not silently
+    // dress an old primitive facade as the new reference-matched environment.
     BuildDistance();
     BuildLighting();
     BuildCollision();
-    UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY native prototype: radius=3600cm floorZ=0; %d instanced groups; original layout, engine primitive dependencies."), Batches.Num());
+    UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY connected court: clear fight diameter~7200cm, walkable aisles0..240cm; %d instanced groups."), Batches.Num());
+    UE_LOG(LogTemp,Display,TEXT("VEYR_CONNECTED_COURT ready=%d meshes=%d/12 instances=%d diagnostic=%s"),
+        bConnectedCourtAssetsReady,ConnectedCourtMeshCount,ConnectedCourtInstanceCount,*ConnectedCourtDiagnostic);
     UE_LOG(LogTemp,Display,TEXT("VEYR_ARENA_MATERIAL stone=%s backdrop=%s"),*StoneParent->GetPathName(),*PlainParent->GetPathName());
     UE_LOG(LogTemp,Display,TEXT("VEYR_ARENA_ART architecturePieces=%d facade=%d wall=%d arch=%d nightSky=%d yawOffset=%.1f"),
         ImportedArchitecturePieces,CathedralFacadeMesh!=nullptr,CathedralWallMesh!=nullptr,CathedralArchMesh!=nullptr,bUsingAuthoredNightSky,CathedralFacingYawOffset);
@@ -201,32 +216,113 @@ void AVeyrArena::RoseRing(const FVector& Center, float Radius, float Width)
     }
 }
 
+bool AVeyrArena::LoadPolishKit()
+{
+    ConnectedCourtMeshCount=0;ConnectedCourtDiagnostic.Reset();ConnectedMeshDimensionsCm.Reset();
+    for(const TCHAR* Name:CourtKitNames)
+    {
+        const TCHAR* Version=FCString::Strcmp(Name,TEXT("RockRetainingWall"))==0?TEXT("v002"):TEXT("v001");
+        const FString Path=FString::Printf(TEXT("/Game/ArtPass/Tripo/Polish%s_%s/SM_Polish%s_%s.SM_Polish%s_%s"),Name,Version,Name,Version,Name,Version);
+        UStaticMesh* Mesh=LoadObject<UStaticMesh>(nullptr,*Path,nullptr,LOAD_Quiet|LOAD_NoWarn);
+        if(!Mesh){ConnectedCourtDiagnostic+=FString(Name)+TEXT(" missing; ");continue;}
+        const FVector Size=Mesh->GetBoundingBox().GetSize();
+        if(Size.ContainsNaN()||!FMath::IsFinite(Size.X+Size.Y+Size.Z)||Size.GetMin()<1.f)
+        {ConnectedCourtDiagnostic+=FString(Name)+TEXT(" invalid bounds; ");continue;}
+        PolishMeshes.Add(FName(Name),Mesh);ConnectedMeshDimensionsCm.Add(FName(Name),Size);++ConnectedCourtMeshCount;
+    }
+    bConnectedCourtAssetsReady=ConnectedCourtMeshCount==UE_ARRAY_COUNT(CourtKitNames);
+    if(bConnectedCourtAssetsReady)ConnectedCourtDiagnostic=TEXT("12 measured Tripo kit meshes loaded; connected layout and native collision/visual checks required");
+    else UE_LOG(LogTemp,Error,TEXT("VEYR_CONNECTED_COURT_ASSETS_MISSING %s"),*ConnectedCourtDiagnostic);
+    return bConnectedCourtAssetsReady;
+}
+
+FVector AVeyrArena::KitSize(FName Name,float Height) const
+{
+    UStaticMesh* Mesh=PolishMeshes.FindRef(Name);if(!Mesh)return FVector::ZeroVector;
+    const FVector Size=Mesh->GetBoundingBox().GetSize();return Size*(Height/FMath::Max(1.f,static_cast<float>(Size.Z)));
+}
+
+void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Yaw,bool bBlocking,bool bFrontAnchor,float WidthScale)
+{
+    UStaticMesh* Mesh=PolishMeshes.FindRef(Name);if(!Mesh)return;
+    const FBox Bounds=Mesh->GetBoundingBox();const float Uniform=Height/FMath::Max(1.f,static_cast<float>(Bounds.GetSize().Z));
+    const FVector Scale(Uniform*WidthScale,Uniform,Uniform);const FRotator Rotation(0,Yaw,0);
+    const FVector LocalAnchor(Bounds.GetCenter().X,bFrontAnchor?Bounds.Max.Y:Bounds.GetCenter().Y,Bounds.Min.Z);
+    const FTransform Transform(Rotation,Anchor-Rotation.RotateVector(LocalAnchor*Scale),Scale);
+    const FName BatchName(*FString::Printf(TEXT("CourtKit_%s_%s"),*Name.ToString(),bBlocking?TEXT("Solid"):TEXT("Distant")));
+    UInstancedStaticMeshComponent* Batch=PolishBatches.FindRef(BatchName);
+    if(!Batch)
+    {
+        Batch=NewObject<UInstancedStaticMeshComponent>(this,BatchName);AddInstanceComponent(Batch);
+        Batch->SetupAttachment(GetRootComponent());Batch->SetMobility(EComponentMobility::Static);Batch->SetStaticMesh(Mesh);
+        // Keep every imported PBR material slot. The imported collision LOD uses
+        // the real openings, rather than a bounding box across a walkable arch.
+        Batch->SetCollisionProfileName(bBlocking?TEXT("BlockAll"):TEXT("NoCollision"));
+        Batch->SetCollisionEnabled(bBlocking?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
+        Batch->SetGenerateOverlapEvents(false);Batch->SetCanEverAffectNavigation(false);
+        if(Name!=FName(TEXT("WornPavingPatch"))&&Name!=FName(TEXT("ProcessionalStair")))
+            Batch->SetWalkableSlopeOverride(FWalkableSlopeOverride(WalkableSlope_Unwalkable,0.f));
+        if(!bBlocking){Batch->SetCullDistances(26000,42000);Batch->SetCastShadow(false);}
+        Batch->RegisterComponent();Batches.Add(Batch);PolishBatches.Add(BatchName,Batch);
+    }
+    Batch->AddInstance(Transform);++ConnectedCourtInstanceCount;++ImportedArchitecturePieces;
+}
+
+void AVeyrArena::KitWallRun(FName Name,const FVector& Start,const FVector& End,const FVector& Inward,float Height,float FloorZ,bool bBlocking)
+{
+    const FVector Dimensions=KitSize(Name,Height);const float Length=FVector::Dist2D(Start,End);
+    if(Dimensions.X<=1.f||Length<=1.f)return;
+    const int32 Count=FMath::Max(1,FMath::CeilToInt(Length/(Dimensions.X*.90f)));
+    const float Yaw=Inward.Rotation().Yaw-90.f; // normalized local +Y faces the court
+    for(int32 I=0;I<Count;++I)
+    {
+        FVector Face=FMath::Lerp(Start,End,(I+.5f)/Count);Face.Z=FloorZ;
+        KitPiece(Name,Face,Height,Yaw,bBlocking,true);
+    }
+    // Continuous visible masonry behind the carved bays closes irregular mesh
+    // seams. It sits behind their front face, never across an open passage.
+    if(bBlocking&&FloorZ>0.f)
+    {
+        FVector Support=(Start+End)*.5f-Inward*(Dimensions.Y*.5f);const float H=FloorZ+120.f;
+        Support.Z=FloorZ-H*.5f;
+        Box(Foundations,Support,FVector(Length+100.f,Dimensions.Y+160.f,H),(End-Start).Rotation());
+    }
+    if(bBlocking&&Name==FName(TEXT("CloisterWall")))
+    {
+        const float Depth=FMath::Max(150.f,static_cast<float>(Dimensions.Y)*.65f);
+        FVector Center=(Start+End)*.5f-Inward*(Dimensions.Y*.70f);Center.Z=FloorZ+Height*.475f;
+        Box(Foundations,Center,FVector(Length+80.f,Depth,Height*.95f),(End-Start).Rotation());
+    }
+}
+
 void AVeyrArena::BuildFloor()
 {
-    // A single continuous rendered circle replaces the oversized cube grid.
-    // The generated albedo tiles in world XY at400cm; collision remains Z0.
-    Cylinder(FloorSurface,FVector(0,0,-4.8f),CombatRadius+80.f,10.f);
-    Cylinder(FloorSurface,FVector(0,0,-121.f),7500.f,240.f);
-    Cylinder(DarkDisks,FVector(0,0,-250.f),32000.f,80.f);
-    for(float Radius:{900.f,3140.f})
-        for(int32 I=0;I<128;++I)
-        {
-            const float Angle=(I+.5f)*2.f*PI/128.f;
-            Box(FloorCarvings,Radial(Angle,Radius,.3f),FVector(1.6f,Radius*2.f*PI/128.f+.5f,.25f),FRotator(0,FMath::RadiansToDegrees(Angle),0));
-        }
-    // Four broad remnants read as the former nave boundary, not scattered props.
-    for(float Side:{-1.f,1.f})for(float X:{-1800.f,1800.f})
-        Box(BoundaryStone,FVector(X,Side*3900.f,55.f),FVector(1900.f,170.f,110.f));
-    // A dark, grounded low parapet replaces the bright unbroken curb strip.
-    // Few broad segments have narrow joints; the collision boundary is unchanged.
-    for(int32 I=0;I<32;++I)
+    RaisedWalkableBounds.Reset();
+    // The court and the ground beneath its side aisles are one connected mass.
+    // Generated paving is the close surface; there is no empty 320m blue disk.
+    Box(Floor,FVector(0,0,-20),FVector(CourtHalfX*2+100,CourtHalfY*2+100,40));
+    Cylinder(FloorSurface,FVector(0,0,-4.7f),CombatRadius+60.f,10.f);
+    Box(Foundations,FVector(0,0,-200),FVector(CourtHalfX*2+900,CourtHalfY*2+900,380));
+    // Raised galleries leave a generous margin beyond the 72m combat centre.
+    for(float Side:{-1.f,1.f})
     {
-        const float Angle=I*2.f*PI/32.f;
-        const float Height=(I%7==0)?68.f:94.f;
-        Box(BoundaryStone,Radial(Angle,3635.f,Height*.5f),FVector(105.f,2.f*PI*3635.f/32.f-20.f,Height),
-            FRotator(0,FMath::RadiansToDegrees(Angle),0));
+        Box(Foundations,FVector(0,Side*4250.f,AisleHeight*.5f),FVector(2.f*CourtHalfX,300.f,AisleHeight));
+        Box(Foundations,FVector(Side*4725.f,0,AisleHeight*.5f),FVector(350.f,8200.f,AisleHeight));
+        RaisedWalkableBounds.Add(FBox(FVector(-CourtHalfX,Side*4250.f-150.f,0),FVector(CourtHalfX,Side*4250.f+150.f,AisleHeight)));
+        RaisedWalkableBounds.Add(FBox(FVector(Side*4725.f-175.f,-4100,0),FVector(Side*4725.f+175.f,4100,AisleHeight)));
     }
-
+    for(float Radius:{950.f,3200.f})
+        for(int32 I=0;I<96;++I)
+        {
+            const float A=(I+.5f)*2.f*PI/96.f;
+            Box(FloorCarvings,Radial(A,Radius,.45f),FVector(2.f,Radius*2.f*PI/96.f+1.f,.3f),FRotator(0,FMath::RadiansToDegrees(A),0));
+        }
+    if(!bConnectedCourtAssetsReady)return;
+    for(int32 X=-2;X<=2;++X)for(int32 Y=-2;Y<=2;++Y)
+    {
+        if(FVector2D(X*1350.f,Y*1350.f).Size()>3300.f)continue;
+        KitPiece(TEXT("WornPavingPatch"),FVector(X*1350.f,Y*1350.f,.6f),8.f,((X+Y+8)%4)*90.f,true);
+    }
 }
 
 void AVeyrArena::ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector& Position,float Height,float Yaw,bool bArchitecture)
@@ -250,34 +346,86 @@ void AVeyrArena::ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector&
     Piece->SetRelativeLocation(BasePosition);
     if(bArchitecture&&Foundations)
     {
-        FVector PlinthCenter=BasePosition+Facing.RotateVector(Bounds.GetCenter()*Scale);PlinthCenter.Z=-120.f;
+        FVector PlinthCenter=BasePosition+Facing.RotateVector(Bounds.GetCenter()*Scale);PlinthCenter.Z=Position.Z-120.f;
         const FVector Support(Bounds.GetSize().X*Scale+220.f,Bounds.GetSize().Y*Scale+220.f,240.f);
         Box(Foundations,PlinthCenter,Support,Facing);
-        const float Reach=PlinthCenter.Size2D();
-        FVector Connector=Outward*(Reach*.5f);Connector.Z=-120.5f;
-        Box(Foundations,Connector,FVector(Reach+100.f,1400.f,240.f),Outward.Rotation());
     }
     Piece->SetRelativeRotation(Facing);Piece->SetRelativeScale3D(FVector(Scale));
-    Piece->SetCollisionEnabled(ECollisionEnabled::NoCollision);Piece->SetGenerateOverlapEvents(false);
+    Piece->SetCollisionProfileName(TEXT("BlockAll"));Piece->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);Piece->SetGenerateOverlapEvents(false);
     Piece->SetCanEverAffectNavigation(false);Piece->RegisterComponent();if(bArchitecture)++ImportedArchitecturePieces;
 }
 
 bool AVeyrArena::BuildImportedCathedral()
 {
-    // Reveal the rose/portal beside the boss silhouette, opposite the moon.
-    ImportedPiece(CathedralFacadeMesh,TEXT("TripoCathedralFacade"),FVector(5000,-1100,0),3200,CathedralFacingYawOffset);
-    // Repeated wall bays and arches share two nave lines, with one terminal
-    // facade. Eleven major meshes replace the disconnected radial display.
-    int32 Index=0;
+    if(!bConnectedCourtAssetsReady)return false;
+    const FVector Wall=KitSize(TEXT("CloisterWall"),1400.f),Gate=KitSize(TEXT("RuinedGatehouse"),1600.f);
+    const float GateHalf=FMath::Min(CourtHalfY-1200.f,static_cast<float>(Gate.X)*.46f);
+    KitWallRun(TEXT("CloisterWall"),FVector(-CourtHalfX,-CourtHalfY,0),FVector(CourtHalfX,-CourtHalfY,0),FVector(0,1,0),1400,AisleHeight);
+    KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,CourtHalfY,0),FVector(-CourtHalfX,CourtHalfY,0),FVector(0,-1,0),1400,AisleHeight);
+    KitWallRun(TEXT("CloisterWall"),FVector(-CourtHalfX,-CourtHalfY,0),FVector(-CourtHalfX,-GateHalf,0),FVector(1,0,0),1400,AisleHeight);
+    KitWallRun(TEXT("CloisterWall"),FVector(-CourtHalfX,GateHalf,0),FVector(-CourtHalfX,CourtHalfY,0),FVector(1,0,0),1400,AisleHeight);
+    // This asset is a complete 40.55 m deep cathedral. Its near face, not its
+    // centre, defines the east court boundary; one building is sufficient.
+    const FVector Apse=KitSize(TEXT("ApseWall"),2400.f);
+    KitPiece(TEXT("ApseWall"),FVector(CourtHalfX,0,AisleHeight),2400,90,true,true);
+    const float ApseHalf=static_cast<float>(Apse.X)*.5f-60.f;
+    KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,-CourtHalfY,0),FVector(CourtHalfX,-ApseHalf,0),FVector(-1,0,0),1400,AisleHeight);
+    KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,ApseHalf,0),FVector(CourtHalfX,CourtHalfY,0),FVector(-1,0,0),1400,AisleHeight);
+    Box(Foundations,FVector(CourtHalfX+Apse.Y*.5f,0,(AisleHeight-120.f)*.5f),FVector(Apse.Y+120.f,Apse.X+160.f,AisleHeight+120.f));
+    // A second, recessed gallery gives the long nave its vertical enclosure.
+    // The carved cloister mesh is a solid wall, so its structural backing does
+    // not seal genuine openings. The apse's real windows remain unfilled.
+    KitWallRun(TEXT("CloisterWall"),FVector(-2600,-CourtHalfY-100,0),FVector(CourtHalfX,-CourtHalfY-100,0),FVector(0,1,0),1000,AisleHeight+1340);
+    KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,CourtHalfY+100,0),FVector(-2600,CourtHalfY+100,0),FVector(0,-1,0),1000,AisleHeight+1340);
+    KitPiece(TEXT("RuinedGatehouse"),FVector(-CourtHalfX,0,AisleHeight),1600,-90,true,true);
+    Box(Foundations,FVector(-CourtHalfX-Gate.Y*.5f,0,(AisleHeight-120.f)*.5f),FVector(Gate.Y+120.f,Gate.X+160.f,AisleHeight+120.f));
+    // Closed portcullis is visible solid geometry. Its gaps are narrower than
+    // the Knight capsule; there is no invisible slab across an apparently open gate.
+    const float DoorWidth=FMath::Clamp(static_cast<float>(Gate.X)*.30f,600.f,1200.f),DoorHeight=760.f;
+    const float GateX=-CourtHalfX+30.f;
+    for(float Y=-DoorWidth*.5f;Y<=DoorWidth*.5f+1.f;Y+=70.f)
+        Box(Bronze,FVector(GateX,Y,AisleHeight+DoorHeight*.5f),FVector(18,18,DoorHeight));
+    for(float Z:{110.f,380.f,680.f})Box(Bronze,FVector(GateX,0,AisleHeight+Z),FVector(24,DoorWidth+45.f,24));
+    // Real stairs connect the gallery to the sunken court. Upper landing slabs
+    // meet their measured rear footprint; frame rails do not define placement.
+    const float StairHeight=PolishMeshes.FindChecked(TEXT("ProcessionalStair"))->GetBoundingBox().GetSize().Z;
+    constexpr float StairWidthScale=2.5f; // 2.30 m source becomes a 5.75 m processional stair.
+    FVector Stair=KitSize(TEXT("ProcessionalStair"),StairHeight);Stair.X*=StairWidthScale;
+    KitPiece(TEXT("ProcessionalStair"),FVector(-CourtHalfX+Stair.Y+500.f,0,0),StairHeight,-90,true,true,StairWidthScale);
+    Box(Foundations,FVector(-CourtHalfX+250.f,0,AisleHeight*.5f),FVector(500.f,Stair.X+150.f,AisleHeight));
+    RaisedWalkableBounds.Add(FBox(FVector(-CourtHalfX,-Stair.X*.5f-75.f,0),FVector(-CourtHalfX+500.f+Stair.Y,Stair.X*.5f+75.f,AisleHeight)));
     for(float Side:{-1.f,1.f})
     {
-        const float FacingYaw=CathedralFacingYawOffset+(Side>0.f?90.f:-90.f)-Side*20.f;
-        for(float X:{700.f,3200.f})
-            ImportedPiece(CathedralWallMesh,FName(*FString::Printf(TEXT("TripoNaveWall%d"),Index++)),FVector(X,Side*4100.f,0),2000,FacingYaw);
-        for(float X:{-1200.f,1800.f,4200.f})
-            ImportedPiece(CathedralArchMesh,FName(*FString::Printf(TEXT("TripoNaveArch%d"),Index++)),FVector(X,Side*3900.f,0),1600,FacingYaw);
+        KitPiece(TEXT("ProcessionalStair"),FVector(1700.f,Side*(4100.f-Stair.Y),0),StairHeight,Side>0?180.f:0.f,true,true,StairWidthScale);
+        const float Y0=Side*(4100.f-Stair.Y),Y1=Side*4100.f;
+        RaisedWalkableBounds.Add(FBox(FVector(1700.f-Stair.X*.5f,FMath::Min(Y0,Y1),0),FVector(1700.f+Stair.X*.5f,FMath::Max(Y0,Y1),AisleHeight)));
+        for(float X:{-3900.f,-1700.f,600.f,2900.f,4500.f})
+            KitPiece(TEXT("FuneraryEffigyNiche"),FVector(X,Side*4260.f,AisleHeight),700,Side>0?180.f:0.f,true,true);
+        for(float X:{-CourtHalfX,CourtHalfX})
+            KitPiece(TEXT("CornerButtress"),FVector(X,Side*CourtHalfY,AisleHeight),1400,Side>0?180.f:0.f,true);
     }
-    return ImportedArchitecturePieces>0;
+    // Collapsed vault and the fallen bell form one rubble alcove, not random
+    // isolated objects sprinkled through the combat centre.
+    KitPiece(TEXT("FallenGreatBell"),FVector(-1500,3700,0),500,-25,true);
+    for(int32 I=0;I<6;++I)
+        KitPiece(TEXT("CollapsedVaultRubble"),FVector(-2700.f+I*520.f,3820.f+(I%2)*130.f,0),210.f+(I%3)*25.f,I*61.f,true);
+    for(float Side:{-1.f,1.f})for(int32 I=0;I<5;++I)
+        KitPiece(TEXT("CollapsedVaultRubble"),FVector(3900.f+(I%2)*130.f,Side*(-3000.f+I*1450.f),0),160.f+(I%3)*25.f,I*43.f,true);
+    for(float Side:{-1.f,1.f})
+        KitPiece(TEXT("AncientDeadTree"),FVector(-3900,Side*3950,0),1000,Side*35.f,true);
+    return true;
+}
+
+float AVeyrArena::GetMaximumWalkableHeightNear(const FVector& WorldPoint,float RadiusCm) const
+{
+    const FVector Point=GetActorTransform().InverseTransformPosition(WorldPoint);
+    const float Radius=RadiusCm/FMath::Max(.001f,static_cast<float>(GetActorScale3D().GetAbsMax()));float Height=9.f;
+    for(const FBox& Bounds:RaisedWalkableBounds)
+    {
+        const float X=FMath::Clamp(Point.X,Bounds.Min.X,Bounds.Max.X),Y=FMath::Clamp(Point.Y,Bounds.Min.Y,Bounds.Max.Y);
+        if(FMath::Square(Point.X-X)+FMath::Square(Point.Y-Y)<=FMath::Square(Radius))Height=FMath::Max(Height,static_cast<float>(Bounds.Max.Z));
+    }
+    return GetActorTransform().TransformPosition(FVector(Point.X,Point.Y,Height)).Z;
 }
 
 void AVeyrArena::BuildCathedral()
@@ -357,64 +505,79 @@ void AVeyrArena::BuildCathedral()
     }
 }
 
+void AVeyrArena::BuildCourtTerrain()
+{
+    if(!bConnectedCourtAssetsReady)return;
+    // Connected lower terrace and retaining cliffs replace the empty flat
+    // exterior. Every city block sits on a terrain platform with a real edge.
+    Box(Foundations,FVector(0,0,-310.f),FVector(15200,14000,420));
+    KitWallRun(TEXT("RockRetainingWall"),FVector(-7600,-7000,0),FVector(7600,-7000,0),FVector(0,1,0),1400,-1500,false);
+    KitWallRun(TEXT("RockRetainingWall"),FVector(7600,7000,0),FVector(-7600,7000,0),FVector(0,-1,0),1400,-1500,false);
+    KitWallRun(TEXT("RockRetainingWall"),FVector(-7600,7000,0),FVector(-7600,-7000,0),FVector(1,0,0),1400,-1500,false);
+    KitWallRun(TEXT("RockRetainingWall"),FVector(7600,-7000,0),FVector(7600,7000,0),FVector(-1,0,0),1400,-1500,false);
+    // A northern city terrace and eastern sanctuary terrace create layered
+    // inhabited-scale ruins behind the lower cloister, rather than blue cubes.
+    Box(Foundations,FVector(0,12000,400),FVector(22000,6000,1200));
+    Box(Foundations,FVector(12500,0,850),FVector(6000,20000,1500));
+    KitWallRun(TEXT("RockRetainingWall"),FVector(-11000,9000,0),FVector(11000,9000,0),FVector(0,-1,0),1400,-400,false);
+    KitWallRun(TEXT("RockRetainingWall"),FVector(9500,-10000,0),FVector(9500,10000,0),FVector(-1,0,0),2000,-400,false);
+    for(int32 Row=0;Row<2;++Row)for(int32 I=-3;I<=3;++I)
+    {
+        const float Height=1600.f+((I+Row+8)%3)*200.f;
+        KitPiece(TEXT("RuinedCityRoofBlock"),FVector(I*2850.f,10500.f+Row*2800.f,1000.f),Height,180.f+(I%2)*12.f,false);
+    }
+    for(int32 I=-3;I<=3;++I)
+        KitPiece(TEXT("RuinedCityRoofBlock"),FVector(11900.f+(I%2)*1100.f,I*2600.f,1600.f),1800.f+(I%2)*220.f,-90.f,false);
+    KitPiece(TEXT("RuinedGatehouse"),FVector(-6000,13000,1000),3000,180,false);
+    KitPiece(TEXT("RuinedGatehouse"),FVector(12500,4500,1600),3200,-90,false);
+    ImportedPiece(CathedralFacadeMesh,TEXT("FarCityCathedralSpire"),FVector(1500,13600,1000),4200,180,true);
+    for(float Side:{-1.f,1.f})
+    {
+        for(int32 I=0;I<5;++I)
+            KitPiece(TEXT("CollapsedVaultRubble"),FVector(-5500+I*2500.f,Side*5800.f,-100.f),250.f+(I%2)*65.f,I*57.f,false);
+        KitPiece(TEXT("AncientDeadTree"),FVector(6100,Side*5800,-100),1100,Side*80,false);
+        KitPiece(TEXT("RuinedCityRoofBlock"),FVector(-6500,Side*4800,-100),1800,Side*90,false);
+    }
+}
+
 void AVeyrArena::BuildDistance()
 {
-    FRandomStream Random(6194);
-    for(int32 I=0;I<16;++I)
+    BuildCourtTerrain();
+    UStaticMesh* FlamePlane=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Plane.Plane"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    UMaterialInterface* FlameMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/FX/v3/M_VeyrBreathFlame.M_VeyrBreathFlame"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    UInstancedStaticMeshComponent* FlameCards=nullptr;
+    if(FlamePlane&&FlameMaterial)
     {
-        const float Angle=(I+Random.FRandRange(-.2f,.2f))*2.f*PI/16.f;
-        const float Yaw=FMath::RadiansToDegrees(Angle);
-        const FVector P=Radial(Angle,Random.FRandRange(22000.f,28000.f),-600.f);
-        const float Height=Random.FRandRange(900.f,1600.f);
-        const float CrestYaw=bUsingBasaltCliff?(I%4)*90.f:0.f;
-        // Low distant ridges occupy the haze band. Tall near-black geometric
-        // needles no longer compete with the imported Gothic architecture.
-        Box(Rocks,P+FVector(0,0,Height*.5f),FVector(Random.FRandRange(4000.f,6500.f),Random.FRandRange(5000.f,7500.f),Height),
-            FRotator(Random.FRandRange(-4.f,4.f),Yaw+CrestYaw,Random.FRandRange(-3.f,3.f)));
-        Box(Rocks,P+Radial(Angle+PI*.5f,2100.f,Height*.22f),FVector(3500,4400,Height*.55f),FRotator(0,Yaw-CrestYaw,0));
-        if(I%2==0)
-            Box(Rocks,Radial(Angle,27000.f,-50.f),FVector(6500,14000,850),FRotator(0,Yaw,0));
+        FlameCards=MakeBatch(TEXT("CourtBrazierAtlasFlames"),FlamePlane,FlameMaterial);
+        FlameCards->SetNumCustomDataFloats(4);FlameCards->SetCastShadow(false);
     }
-    // Imported cathedral scenes use their authored broken masonry. Keep the
-    // old loose cube rubble only for the explicit primitive fallback layout.
-    for (int32 I = 0; I < (CathedralWallMesh?0:24); ++I)
+    int32 Index=0;
+    auto Brazier=[&](const FVector& P)
     {
-        const float Angle = Random.FRandRange(0, 2.f * PI);
-        const FVector Size(Random.FRandRange(80, 230), Random.FRandRange(90, 230), Random.FRandRange(65, 170));
-        Box(Stone, Radial(Angle, Random.FRandRange(3930, 4900), Size.Z * .25f - 20), Size,
-            FRotator(Random.FRandRange(-18, 18), Random.FRandRange(0, 180), Random.FRandRange(-12, 12)));
-    }
-    for (int32 I = 0; I < 8; ++I)
-    {
-        const float Angle = (I + .5f) * PI / 4.f;
-        const FVector P = Radial(Angle, 3740);
+        const int32 I=Index++;
         if(CathedralBrazierMesh)
-        {
-            ImportedPiece(CathedralBrazierMesh,FName(*FString::Printf(TEXT("TripoCathedralBrazier%d"),I)),P,180.f,
-                FMath::RadiansToDegrees(Angle),false);
-            Box(Embers,P+FVector(0,0,164),FVector(60,60,9));
-            // Small native ember tongues sit within the imported bowl; the
-            // authored brazier remains the visible structure and keeps its PBR.
-            for(int32 Flame=0;Flame<3;++Flame)
-                Box(Embers,P+FVector((Flame-1)*14.f,0,176.f+Flame*3),FVector(8,8,20+Flame*5),FRotator(0,0,(Flame-1)*12.f));
-        }
-        else
-        {
-            Cylinder(Columns,P+FVector(0,0,60),105,120);
-            Cylinder(ColumnTrim,P+FVector(0,0,126),110,20);
-            Box(Embers,P+FVector(0,0,159),FVector(132,132,28));
-            for(int32 Tine=0;Tine<6;++Tine)
-                Beam(Bronze,P+Radial(Tine*PI/3.f,68,132),P+Radial(Tine*PI/3.f,85,225),7);
-        }
-        auto* Light = NewObject<UPointLightComponent>(this, *FString::Printf(TEXT("PrototypeAmberBrazier%d"), I));
-        AddInstanceComponent(Light); Light->SetupAttachment(GetRootComponent());
-        Light->SetMobility(EComponentMobility::Movable);
-        Light->SetRelativeLocation(P + FVector(0, 0, 205));
-        Light->SetIntensityUnits(ELightUnits::Candelas); Light->SetIntensity(220.f);
-        Light->SetLightColor(FLinearColor(1.f, .44f, .17f), false);
-        Light->SetAttenuationRadius(650); Light->SetSourceRadius(60);
-        Light->SetCastShadows(false); Light->SetSpecularScale(.55f); Light->RegisterComponent();
+            ImportedPiece(CathedralBrazierMesh,FName(*FString::Printf(TEXT("CourtBrazier%02d"),I)),P,180.f,0.f,false);
+        if(FlameCards)
+            for(int32 Cross=0;Cross<3;++Cross)
+            {
+                const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,198),FVector(.72f,.38f,1)));
+                FlameCards->SetCustomDataValue(Instance,0,.45f,false);FlameCards->SetCustomDataValue(Instance,1,FMath::Frac(I*.618f+Cross*.23f),false);
+                FlameCards->SetCustomDataValue(Instance,2,.25f,false);FlameCards->SetCustomDataValue(Instance,3,1.f,false);
+            }
+        else Box(Embers,P+FVector(0,0,165),FVector(55,55,8));
+        auto* Light=NewObject<UPointLightComponent>(this,*FString::Printf(TEXT("CourtAmberBrazier%02d"),I));
+        AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
+        Light->SetRelativeLocation(P+FVector(0,0,210));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(330.f);
+        Light->SetLightColor(FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(1350.f);Light->SetSourceRadius(45.f);
+        Light->SetCastShadows(false);Light->SetSpecularScale(.7f);Light->RegisterComponent();
+    };
+    for(float Side:{-1.f,1.f})
+    {
+        for(float X:{-3300.f,0.f,3300.f})Brazier(FVector(X,Side*3980.f,0));
+        for(float Y:{-2400.f,2400.f})Brazier(FVector(Side*4300.f,Y,0));
+        Brazier(FVector(-4550,Side*750.f,AisleHeight));
     }
+    if(FlameCards)FlameCards->MarkRenderStateDirty();
 }
 
 void AVeyrArena::BuildLighting()
@@ -427,12 +590,12 @@ void AVeyrArena::BuildLighting()
     // Only the moon drives forward/translucent lighting. Keeping priorities
     // distinct avoids the competing-directional-lights warning seen in PIE001.
     Moon->SetForwardShadingPriority(1);
-    Moon->SetIntensity(3.f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
+    Moon->SetIntensity(2.7f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
     Moon->SetCastShadows(true); Moon->SetLightSourceAngle(8.f); Moon->SetSpecularScale(.65f); Moon->RegisterComponent();
     auto* Fill = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeNeutralFrontFill"));
     AddInstanceComponent(Fill); Fill->SetupAttachment(GetRootComponent()); Fill->SetMobility(EComponentMobility::Movable);
     Fill->SetForwardShadingPriority(0);
-    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(2.7f);
+    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(1.35f);
     Fill->SetLightColor(FLinearColor(.86f, .90f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.45f); Fill->RegisterComponent();
 
     if (SkyMesh && (NightSkyParent||SkyParent))
@@ -472,7 +635,7 @@ void AVeyrArena::BuildLighting()
     Ambient->SourceType=SLS_CapturedScene;
     Ambient->SetRealTimeCapture(false);
     Ambient->SkyDistanceThreshold=50000.f;
-    Ambient->SetIntensity(2.5f);Ambient->SetLightColor(FLinearColor(.92f,.96f,1.f));
+    Ambient->SetIntensity(1.15f);Ambient->SetLightColor(FLinearColor(.92f,.96f,1.f));
     Ambient->SetLowerHemisphereColor(FLinearColor(.025f,.035f,.05f));Ambient->RegisterComponent();
 
     auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("PrototypeDrownedCathedralMist"));
@@ -506,20 +669,12 @@ void AVeyrArena::BuildLighting()
 
 void AVeyrArena::BuildCollision()
 {
-    // One perfectly flat contact surface. Decorative paver seams never catch a
-    // capsule. Perimeter blocks also stop the camera; the center has no scenery.
-    auto* Ground = NewObject<UBoxComponent>(this, TEXT("ArenaFloorCollisionZ0"));
-    AddInstanceComponent(Ground); Ground->SetupAttachment(GetRootComponent());
-    Ground->SetRelativeLocation(FVector(0, 0, -50)); Ground->SetBoxExtent(FVector(3690, 3690, 50));
-    Ground->SetCollisionProfileName(TEXT("BlockAll")); Ground->SetGenerateOverlapEvents(false); Ground->RegisterComponent();
-    for (int32 I = 0; I < 48; ++I)
-    {
-        const float Angle = (I + .5f) * 2.f * PI / 48.f;
-        auto* Wall = NewObject<UBoxComponent>(this, *FString::Printf(TEXT("ArenaBoundary%02d"), I));
-        AddInstanceComponent(Wall); Wall->SetupAttachment(GetRootComponent());
-        Wall->SetRelativeLocation(Radial(Angle, 3670, 600));
-        Wall->SetRelativeRotation(FRotator(0, FMath::RadiansToDegrees(Angle), 0));
-        Wall->SetBoxExtent(FVector(65, 245, 600));
-        Wall->SetCollisionProfileName(TEXT("BlockAll")); Wall->SetGenerateOverlapEvents(false); Wall->RegisterComponent();
-    }
+    // Collision corresponds to rendered masonry, floors, portcullis bars and
+    // imported meshes. There is deliberately no invisible radius wall.
+    for(UInstancedStaticMeshComponent* Batch:{Floor,FloorSurface,Foundations,BoundaryStone,Bronze})
+        if(Batch)
+        {
+            Batch->SetCollisionProfileName(TEXT("BlockAll"));Batch->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            Batch->SetGenerateOverlapEvents(false);
+        }
 }

@@ -1,0 +1,506 @@
+{
+  "schema": 1,
+  "created_utc": "2026-10-25T17:08:48.056785+00:00",
+  "status": "PASS: 12 source-to-normalized offline structural audits",
+  "method": "Independent GLB binary parser; compare complete decoded index/UV/color arrays and exact embedded image payload hashes; verify every position against ground-center affine scale, dimensions and identity scene; flattened normal inverse transpose with tangent orthogonalization/handedness validation. Source and output receipt hashes checked.",
+  "units": "glTF meters, Y up; native import conversion expected (X,Z,Y)*100 centimeters. This audit verifies source units/pivot only, not native import or visual quality.",
+  "limitations": [
+    "No native editor, engine render, material appearance, LOD reduction, arena placement or collision acceptance is implied.",
+    "Uniform-scale source normals retained byte-equivalent; correctness of original source shading is not independently certified."
+  ],
+  "assets": [
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/AncientDeadTree_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishAncientDeadTree_v001.glb",
+      "source_sha256": "53d5d573aa307e58c6a6b3326d8de3ef066f76e26824e75461c30fc238eb38e3",
+      "normalized_sha256": "496f047b8d42e2764bdc1afe6ac90ff15011b6f8834421b9ab9c058fff9750b2",
+      "vertices": 964771,
+      "triangles": 1812673,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "ae5c693ff4ad1444f81ec2b1891bb075a52ba8e63adaf462afecadee1449aab3",
+        "37d9b96b2977126b2308ee36eaeb5b184c1985441891d46d8ee1716696356654",
+        "8c5694aa5285afd792e2edd21934d3a24a3bb59555f746a50fa6058e0e6c970b"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        10.47436389208541,
+        10.47436389208541,
+        10.47436389208541
+      ],
+      "bounds_m": [
+        [
+          -4.999840259552002,
+          0.0,
+          -4.427183151245117
+        ],
+        [
+          4.999840259552002,
+          10.0,
+          4.427183151245117
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 4.767761900836831e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/ApseWall_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishApseWall_v001.glb",
+      "source_sha256": "0d8928441ec10b8559d89452bfcb4c4936611a7ca54e683b134db17ced8c939c",
+      "normalized_sha256": "69e7381bead93cd9fe4b984591507dc856a175c26ec38efe690dba90c7a2104c",
+      "vertices": 1000824,
+      "triangles": 1860374,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "f455d3df1da45b4ee215491260d973f702121741e9475fc9a0e34e92d6559232",
+        "3534ed98bf9ec949098dcc4a4698a04426060ba4595309c977732f743e3bf0c5",
+        "8ea00b3d1b16e7e2127b66b4bdad5d3f5ad0f493968feaf25a5c1506a5dd5a56"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        41.423860942849615,
+        41.423860942849615,
+        41.423860942849615
+      ],
+      "bounds_m": [
+        [
+          -8.250514030456543,
+          0.0,
+          -20.273900985717773
+        ],
+        [
+          8.250514030456543,
+          24.0,
+          20.273900985717773
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 9.536240845875454e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/CloisterWall_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishCloisterWall_v001.glb",
+      "source_sha256": "4f5e59fb997df269309b1e61542bd7d821536424d304be748eed70f656d2ade1",
+      "normalized_sha256": "a8946cf7fc6f8e7aff406cc3ad45f800e2caef3d3caad33c7cb9ab98e94a4468",
+      "vertices": 999616,
+      "triangles": 1893595,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "5316fff6297990eab9a11e73305a875feed65a1768d0a1d84fa26ea6ca452035",
+        "7269116dd69521921148a9cf76e44a3d25eec4964483df12ff56f5180bd1b2e7",
+        "3b1bf80eac5522e3ecf91b328cb9fb6788da69a8e5f37b6ff0b7f942669a4855"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        19.07572040417481,
+        19.07572040417481,
+        19.07572040417481
+      ],
+      "bounds_m": [
+        [
+          -9.337602615356445,
+          0.0,
+          -3.0635368824005127
+        ],
+        [
+          9.337602615356445,
+          14.0,
+          3.0635368824005127
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 4.768173305080836e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/CollapsedVaultRubble_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishCollapsedVaultRubble_v001.glb",
+      "source_sha256": "de93339f54c834187f6f70bcf7601d43fad0c4b90288bc5fcd4859e65d07efe4",
+      "normalized_sha256": "8970eb4209cdd0bf2722c58f4ba35da197de089eb766859b7e61e6e23963126b",
+      "vertices": 1001796,
+      "triangles": 1839946,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "1db3632b0690fdd08b73ad4c082830ba9d20b098c7daea4aea4fdadef67b453c",
+        "3051893ee26bb437d00aa2c75e1d1ac91206553a5b0ecc9edb809950b0ffc26e",
+        "fe1de9375fc557aaa3492fc2a4c9867b28b29dc9a32cc941c43bc091c890c321"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        4.743760495685911,
+        4.743760495685911,
+        4.743760495685911
+      ],
+      "bounds_m": [
+        [
+          -2.16819167137146,
+          0.0,
+          -2.2470178604125977
+        ],
+        [
+          2.16819167137146,
+          2.5,
+          2.2470178604125977
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 1.1920238618401413e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/CornerButtress_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishCornerButtress_v001.glb",
+      "source_sha256": "fc445f3989d03b3052acb8c97688f1155e1493330ac8e68d467881e5670c0a43",
+      "normalized_sha256": "d44560e9745f5989d432a03a5bbca7fd1929ceabac60cd201d78482e6bd719f9",
+      "vertices": 1019192,
+      "triangles": 1941973,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "9ddf95594082ed81947c9cf37d1b2b2d72d8f9c44e14deadb1acaa5ae8059c0e",
+        "f5187fe15e5ab7018e58d7b3eb34f7f7c61a4ae172953924ce3446f171006dc5",
+        "32d3f0c998f8b5e56ab4f582f71557a340cd8516923a91afa86fcecd38eb7c30"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        15.27849197362286,
+        15.27849197362286,
+        15.27849197362286
+      ],
+      "bounds_m": [
+        [
+          -7.494937896728516,
+          0.0,
+          -4.851229190826416
+        ],
+        [
+          7.494937896728516,
+          14.0,
+          4.851229190826416
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 4.768053969428365e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/FallenGreatBell_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishFallenGreatBell_v001.glb",
+      "source_sha256": "da5ba474c5b8f7e53480dd158228ef2a839d6cb93090839c0b9eb821dd035e44",
+      "normalized_sha256": "c17009e4b6af18eec120615a2081ecf9d8111ec3224e633da11fd18986fdb655",
+      "vertices": 973976,
+      "triangles": 1885869,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "6a9d929c076e5bdfa88aacc5769b52273e903389fb8c89bd33abecdd556e7a76",
+        "3f3f335971428636719efb3eb20c7f1d6b43e0e26cc2b7532f5fb984f5d6bf15",
+        "9caf919fa374948e2ccccbe0eed8dbf46ae4f62bf5bdcad554f99198ab7324f6"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        6.561211004765528,
+        6.561211004765528,
+        6.561211004765528
+      ],
+      "bounds_m": [
+        [
+          -2.4686636924743652,
+          0.0,
+          -3.2129271030426025
+        ],
+        [
+          2.4686636924743652,
+          5.0,
+          3.2129271030426025
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 2.3838993534752717e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/FuneraryEffigyNiche_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishFuneraryEffigyNiche_v001.glb",
+      "source_sha256": "a59e4d0f680388cb732762bfa7ec431be039c7f0a3801a2529abd52b7762909f",
+      "normalized_sha256": "a863bd4942a0d550fe2fcb873cc3b813f80d475282496cec263e10773ea2de19",
+      "vertices": 988853,
+      "triangles": 1895372,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "def9ffc2f2cbd41d7c3b843e96f3eff9bbf649528d203b8c555e69498354bbc9",
+        "bea8e217d8e74959232b3285c9454581fc2f141a6ad8a2763a7022bad835971b",
+        "5d726aa7d6d52a30a79ba531908b81dcd220993b33df82b708f515b81c93a69b"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        7.946509613719037,
+        7.946509613719037,
+        7.946509613719037
+      ],
+      "bounds_m": [
+        [
+          -3.892378330230713,
+          0.0,
+          -1.2350943088531494
+        ],
+        [
+          3.892378330230713,
+          7.0,
+          1.2350943088531494
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 2.384103199304377e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/ProcessionalStair_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishProcessionalStair_v001.glb",
+      "source_sha256": "6d3b7be9f8fb04f99be995d767b98134a64f5335662a2ff130f586f26205f7f4",
+      "normalized_sha256": "918196405af15fcb7570d38d00b075394c041d8e9c2df893472db143e3ee8f62",
+      "vertices": 1018437,
+      "triangles": 1933823,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "428a94b37d168acd0acc9a7ae456c63997bccca7406cecbeb19bda3c31dd82cb",
+        "e5064886b08d3613638329dede7e106eafa5b207a80b92cc85c62dbe227c9851",
+        "9a1cc49f9d19165045ceefbdc91c444e3043adb6a7a273b86f42e8fb986b04be"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        3.215701668302257,
+        3.215701668302257,
+        3.215701668302257
+      ],
+      "bounds_m": [
+        [
+          -1.1499509811401367,
+          0.0,
+          -1.5801275968551636
+        ],
+        [
+          1.1499509811401367,
+          2.4000000953674316,
+          1.5801275968551636
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 1.1918589226667109e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/RockRetainingWall_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishRockRetainingWall_v001.glb",
+      "source_sha256": "3d6049d2388c78e6266e1de98659e66d67d064b6b759bbcd1005fdba63e0c514",
+      "normalized_sha256": "5304dc070ce90915f957a5bc779a82499989d78f4bb3301fea11df86fbd249cc",
+      "vertices": 1050396,
+      "triangles": 1969154,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "0efb9ce4f0698acfd53d4faaca6ede92d01d3957c1f6fb799ed4179123047a15",
+        "54376d637b2bbc7dec2aba74b7c26cf4b4a96951deb75b1ccce868eaa2b50aad",
+        "528936c69cb5f5b59353889238cfa7bad93545cc542bace52d7618e58d65c7af"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        20.303252932064616,
+        20.303252932064616,
+        20.303252932064616
+      ],
+      "bounds_m": [
+        [
+          -9.948705673217773,
+          0.0,
+          -5.438902378082275
+        ],
+        [
+          9.948705673217773,
+          14.0,
+          5.438902378082275
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 4.768160550838729e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/RuinedCityRoofBlock_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishRuinedCityRoofBlock_v001.glb",
+      "source_sha256": "826594020bf6c364f594b19922717c7162aeb9d8c0e44f01fe17b5f0511726e6",
+      "normalized_sha256": "c14d2b46d868c501d3c801fa7caba46321eba5b699cadab15900dc944d66f78d",
+      "vertices": 990886,
+      "triangles": 1830049,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "93e04068ea4e94553c46f8de19da4fa4895df31038321a30583deb91912111be",
+        "28aed137e0b18e7fe1726024181ec5a2afc636a4738bdcae8335fad3c9c262e4",
+        "5aedaf2c91886733bef37f1e14e18f5050cc267be209298328ce0cf40d2676d0"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        18.351711263223397,
+        18.351711263223397,
+        18.351711263223397
+      ],
+      "bounds_m": [
+        [
+          -8.473272323608398,
+          0.0,
+          -7.111793041229248
+        ],
+        [
+          8.473272323608398,
+          18.0,
+          7.111793041229248
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 9.53555623794955e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/RuinedGatehouse_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishRuinedGatehouse_v001.glb",
+      "source_sha256": "25d199131f7918cfc982609d2c1c669b5de00f4c10edc138006838cae824e068",
+      "normalized_sha256": "afd79607fc77491f41cb620ba06cc9803a010931ed9ecb49c78bb88f5578c460",
+      "vertices": 984691,
+      "triangles": 1824982,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "9105445d5775825a69ba2edac14867aa4f29783bba4fc214e43e5f1923888e8b",
+        "2a07a2d279eb8d5ddd8288194a2f0e7c03706c65aef51d8f97606a84203f633d",
+        "c55cf9d32d7a27ac87042156cc80bad26fb953d6c5f9882a47ce891eaff340cc"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        16.575656022763198,
+        16.575656022763198,
+        16.575656022763198
+      ],
+      "bounds_m": [
+        [
+          -8.13961410522461,
+          0.0,
+          -4.661145210266113
+        ],
+        [
+          8.13961410522461,
+          16.0,
+          4.661145210266113
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 4.7680700809848986e-07,
+      "flattened": false,
+      "max_inverse_transpose_normal_error": null,
+      "tangent_check": null,
+      "pass": true
+    },
+    {
+      "source": "Local/ArtPass20261025/Tripo/Source/WornPavingPatch_Source.glb",
+      "normalized": "Local/ArtPass20261025/Tripo/Normalized/PolishWornPavingPatch_v001.glb",
+      "source_sha256": "cf78319d072e6fbc842db9d443b6fe0ebe7222f7c62fe13a6d1da5f2cbffcc9a",
+      "normalized_sha256": "193ec5396ad8801ff15e809acf3b19983a352a0bf3741cb28009b0515f31461a",
+      "vertices": 988990,
+      "triangles": 1898360,
+      "exact_preservation": {
+        "indices": true,
+        "TEXCOORD_0": true
+      },
+      "embedded_image_sha256": [
+        "833d11e31ffa5d085e4d725c69178c90a5ff77be41efa3390dff334d5ce419c1",
+        "864749c2d75e52b9efa060b34617a3adeb916a9da79632b23ef7577d7e97b7c8",
+        "d0efc2be5548940b00b368004f127c2eeaef2639f2cf2b0226d1d932ce69f38d"
+      ],
+      "materials_preserved_except_names": true,
+      "scale_xyz": [
+        8.174373508198782,
+        0.8072487497604549,
+        8.174373508198782
+      ],
+      "bounds_m": [
+        [
+          -4.0,
+          0.0,
+          -3.995384693145752
+        ],
+        [
+          4.0,
+          0.07999999821186066,
+          3.995384693145752
+        ]
+      ],
+      "ground_center_pivot": true,
+      "max_position_error_m": 1.1920072973126139e-07,
+      "flattened": true,
+      "max_inverse_transpose_normal_error": 2.9802297185632654e-08,
+      "tangent_check": null,
+      "pass": true
+    }
+  ],
+  "all_pass": true
+}

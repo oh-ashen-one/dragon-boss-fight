@@ -110,6 +110,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 CurrentDamageWindow=INDEX_NONE;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bBlinkHidden=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bApprovedNativeDefinitionActive=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bUsingPolishDefinition=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 BlinkEchoCaptures=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FString BlinkVFXDiagnostic;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bLateralDodgeBlocked=false;

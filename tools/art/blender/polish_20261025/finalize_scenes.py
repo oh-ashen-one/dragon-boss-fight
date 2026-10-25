@@ -1,7 +1,7 @@
 """Pack task-owned candidate scenes for portable review; no source scene writes."""
 from pathlib import Path
 exec(compile((Path(__file__).parent/'common.py').read_text(),str(Path(__file__).parent/'common.py'),'exec'))
-NAMES=['Dragon_FlyHover_Blender_polish_v1','Dragon_Takeoff_Blender_polish_v2','Dragon_Land_Blender_polish_v3','RunTwoHand_Blender_polish_v2','GripToTwoHand_Blender_polish_v2','GripToOneHand_Blender_polish_v2','Roll_Blender_polish_v2','RollAttack_Blender_polish_v2']
+NAMES=['Dragon_FlyHover_Blender_polish_v1','Dragon_Takeoff_Blender_polish_v3','Dragon_Land_Blender_polish_v4','RunTwoHand_Blender_polish_v2','GripToTwoHand_Blender_polish_v2','GripToOneHand_Blender_polish_v2','Roll_Blender_polish_v2','RollAttack_Blender_polish_v2']
 rows=[]
 for name in NAMES:
  path=OUT/(name+'.blend');open_scene(path);s=bpy.context.scene

@@ -1,5 +1,6 @@
 #include "VeyrDragon.h"
 #include "VeyrKnight.h"
+#include "VeyrArena.h"
 #include "VeyrVisualDefinition.h"
 #include "Animation/AnimSequence.h"
 #include "VeyrSkeletalPresentation.h"
@@ -85,7 +86,7 @@ AVeyrDragon::AVeyrDragon()
     AttackPoseProbe->SetupAttachment(SceneRoot);
     AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
     AttackPoseProbe->SetCastShadow(false);AttackPoseProbe->SetRenderInMainPass(false);
-    static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> ImportedDefinition(TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Dragon.DA_Dragon"));
+    static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> ImportedDefinition(TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Dragon.DA_Dragon"));
     VisualDefinition=ImportedDefinition.Get();
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
@@ -140,6 +141,7 @@ UStaticMeshComponent* AVeyrDragon::CreateTemporaryPart(FName Name,UStaticMesh* M
 void AVeyrDragon::BeginPlay()
 {
     Super::BeginPlay(); Health=MaxHealth;
+    WarningArena=Cast<AVeyrArena>(UGameplayStatics::GetActorOfClass(this,AVeyrArena::StaticClass()));
     UMaterialInterface* Base=LoadObject<UMaterialInterface>(nullptr,TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
     if(Base)
     {
@@ -159,8 +161,18 @@ void AVeyrDragon::BeginPlay()
         WarningLines->SetMaterial(0,WarningMaterial); DangerLines->SetMaterial(0,DangerMaterial);
     }
     UpdateTemporaryPresentation(0); EnterState(EVeyrDragonState::Idle,2.2f);
-    if(!VisualDefinition)VisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
-        TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Dragon.DA_Dragon"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    // CDO construction may precede the owned MCP import; resolve the new asset
+    // again at BeginPlay even if an older definition was supplied previously.
+    if(UVeyrVisualDefinition* Polish=LoadObject<UVeyrVisualDefinition>(nullptr,
+        TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Dragon.DA_Dragon"),nullptr,LOAD_Quiet|LOAD_NoWarn))
+    {VisualDefinition=Polish;bUsingPolishDefinition=true;}
+    else
+    {
+        bUsingPolishDefinition=false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_DRAGON_POLISH_DEFINITION_MISSING final polish validation must fail"));
+        if(!VisualDefinition)VisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
+            TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Dragon.DA_Dragon"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    }
     if(!VisualDefinition)
     {
         VisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
@@ -978,12 +990,37 @@ void AVeyrDragon::UpdateTemporaryPresentation(float DeltaSeconds)
     }
 }
 
+bool AVeyrDragon::WarningSurfaceHeight(const FVector& Point,float& Height)
+{
+    // Static terrain only: never project the warning onto the dragon, player,
+    // or overhead architecture. Half-centimetre keys retain actual stair edges.
+    const FIntPoint Key(FMath::RoundToInt(Point.X*2.f),FMath::RoundToInt(Point.Y*2.f));
+    if(const float* Cached=WarningSurfaceHeights.Find(Key)){Height=*Cached;return Height>-10000.f;}
+    Height=-100000.f;
+    if(!GetWorld())return false;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrWarningSurface),true,this);
+    TArray<FHitResult> Hits;
+    const FVector Top(Point.X,Point.Y,MaximumWarningFloorHeightCm+200.f),Bottom(Point.X,Point.Y,-150.f);
+    ++WarningSurfaceTraceCount;
+    GetWorld()->LineTraceMultiByObjectType(Hits,Top,Bottom,FCollisionObjectQueryParams(ECC_WorldStatic),Params);
+    for(const FHitResult& Hit:Hits)
+        if(!Hit.bStartPenetrating&&Hit.ImpactNormal.Z>.6f&&Hit.ImpactPoint.Z<=MaximumWarningFloorHeightCm+12.f)
+            Height=FMath::Max(Height,static_cast<float>(Hit.ImpactPoint.Z));
+    if(WarningSurfaceHeights.Num()<16384)WarningSurfaceHeights.Add(Key,Height);
+    return Height>-10000.f;
+}
+
 void AVeyrDragon::AddGroundLine(UInstancedStaticMeshComponent* Lines,const FVector& A,const FVector& B,float Width)
 {
-    FVector Start=Ground(A),End=Ground(B);Start.Z=9;End.Z=9;
-    const FVector Delta=End-Start;
-    if(Delta.SizeSquared()<.01)return;
-    Lines->AddInstance(FTransform(Delta.Rotation(),(Start+End)*.5,FVector(Delta.Size()/100,Width/100,6.f/100)),true);
+    const int32 Pieces=FMath::Max(1,FMath::CeilToInt(FVector::Dist2D(A,B)/45.f));
+    for(int32 I=0;I<Pieces;++I)
+    {
+        FVector Start=FMath::Lerp(A,B,static_cast<float>(I)/Pieces),End=FMath::Lerp(A,B,static_cast<float>(I+1)/Pieces);
+        float Z0,Z1;if(!WarningSurfaceHeight(Start,Z0)||!WarningSurfaceHeight(End,Z1))continue;
+        Start.Z=Z0+9.f;End.Z=Z1+9.f;const FVector Delta=End-Start;
+        if(Delta.SizeSquared()<.01)continue;
+        Lines->AddInstance(FTransform(Delta.Rotation(),(Start+End)*.5,FVector(Delta.Size()/100,Width/100,6.f/100)),true);
+    }
 }
 
 void AVeyrDragon::DrawFootprint(UInstancedStaticMeshComponent* Lines,const FVeyrDragonFootprint& F,bool bBright,const TArray<FVeyrDragonFootprint>* Union,int32 OwnIndex)
@@ -1227,6 +1264,7 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
             return false;
         }
     VisualDefinition=Definition;bUsingCustomuseVisual=true;
+    bUsingPolishDefinition=Definition->GetPathName().StartsWith(TEXT("/Game/Characters/Customuse/RuntimePolish/"));
     InitializeAnatomicalLegContacts();
     InitializeSolidBody();
     for(UStaticMeshComponent* Part:TemporaryParts)if(Part)Part->SetVisibility(false);
@@ -1358,6 +1396,9 @@ void AVeyrDragon::UpdateImportedPresentation()
         if(LastImportedClip!=Clip||LastImportedState!=State)
         {
             const FVeyrVisualClip* Previous=VisualDefinition->Clips.Find(LastImportedClip);
+            const bool AliasOnly=Previous&&LastImportedState==State&&Previous->Sequence==Config.Sequence&&
+                Previous->MeshOverride==Config.MeshOverride&&Previous->bLoop==Config.bLoop&&
+                FMath::IsNearlyEqual(Previous->StartSeconds,Config.StartSeconds)&&FMath::IsNearlyEqual(Previous->EndSeconds,Config.EndSeconds);
             const bool AdjacentAttackTrim=Previous&&Previous->Sequence&&!Config.bLoop&&
                 !Config.ApprovedSourceSHA256.IsEmpty()&&Config.ApprovedSourceSHA256==Previous->ApprovedSourceSHA256&&
                 Previous->EndSeconds>=0.f&&FMath::IsNearlyEqual(Previous->EndSeconds,Config.StartSeconds,.002f)&&
@@ -1367,7 +1408,7 @@ void AVeyrDragon::UpdateImportedPresentation()
             // do not freeze a blend from the bind pose before encounter input.
             // Adjacent trims are one continuous authored action: another blend
             // would soften the bite's fastest lunge and change its impact time.
-            bImportedTransitionReady=!LastImportedClip.IsNone()&&!AdjacentAttackTrim&&ImportedPresentation->BeginTransition();
+            bImportedTransitionReady=!LastImportedClip.IsNone()&&!AdjacentAttackTrim&&!AliasOnly&&ImportedPresentation->BeginTransition();
             // The legacy rise finishes with raised wings; give their fold into
             // the approved resting silhouette weight instead of snapping shut.
             ImportedTransitionSeconds=LastImportedState==EVeyrDragonState::Rise&&State==EVeyrDragonState::Idle?.55f:
@@ -1496,7 +1537,7 @@ FVeyrDragonFlameBeam AVeyrDragon::GetActiveFlameBeam() const
     Beam.bDamaging=Beam.Length>20.f&&!Beam.Direction.IsNearlyZero();return Beam;
 }
 
-FVeyrDragonFootprint AVeyrDragon::ProjectFlameToGround(const FVeyrDragonFlameBeam& Beam,float Padding) const
+FVeyrDragonFootprint AVeyrDragon::ProjectFlameToGround(const FVeyrDragonFlameBeam& Beam,float Padding,bool bAllWalkableHeights) const
 {
     FVeyrDragonFootprint F;
     if(!Beam.bDamaging)return F;
@@ -1512,7 +1553,13 @@ FVeyrDragonFootprint AVeyrDragon::ProjectFlameToGround(const FVeyrDragonFlameBea
     {
         const float Along=I*Step;const FVector P=Beam.Origin+Beam.Direction*Along;
         const float R=Along*K+Radius+Padding+Step*.5f*(1.f+K);
-        const float Dz=FMath::Max(0.f,FMath::Max(static_cast<float>(Radius-P.Z),static_cast<float>(P.Z-(2.f*HalfHeight-Radius))));
+        // Reusable local caches cover every court height. Committed and live
+        // geometry use the actual nearby stair/aisle bounds, so raised-floor
+        // coverage does not paint a fictitious low hazard across the whole arena.
+        const float FloorHeight=bAllWalkableHeights?MaximumWarningFloorHeightCm:
+            WarningArena.IsValid()?WarningArena->GetMaximumWalkableHeightNear(P,R):9.f;
+        const float Dz=FMath::Max(0.f,FMath::Max(static_cast<float>(Radius-P.Z),
+            static_cast<float>(P.Z-(2.f*HalfHeight-Radius+FloorHeight))));
         if(Dz>R)continue;
         const float GroundRadius=FMath::Sqrt(FMath::Max(0.f,R*R-Dz*Dz));
         if(!Found){F.Origin=Ground(P);Found=true;}
@@ -1566,7 +1613,7 @@ bool AVeyrDragon::CacheImportedAttackWarnings()
                 {
                     // Adjacent fire yaw steps are4 degrees. Extra100cm covers
                     // the far-edge chord and mouth translation between poses.
-                    auto F=ProjectFlameToGround(Beam,100.f);if(F.Shape!=EVeyrDangerShape::None)Sample.Add(F);
+                    auto F=ProjectFlameToGround(Beam,100.f,true);if(F.Shape!=EVeyrDangerShape::None)Sample.Add(F);
                 }
                 else for(int32 J=0;J<Contacts.Num();++J)
                 {
@@ -1623,12 +1670,31 @@ bool AVeyrDragon::CacheImportedAttackWarnings()
 void AVeyrDragon::CommitImportedWarning()
 {
     CommittedWarning.Reset();
+    WarningSurfaceHeights.Reset();WarningSurfaceTraceCount=0;
     if(!bImportedAttackCacheReady)return;
     if(Move==EVeyrDragonMove::FlyAway)
     {
         FVeyrDragonFootprint F;F.Shape=EVeyrDangerShape::Circle;
         F.Origin=MoveEnd+GetActorQuat().RotateVector(LandingLocalCenter);F.Origin.Z=MoveEnd.Z;
         F.OuterRadius=LandingWarningRadius;AttackOrigin=F.Origin;CommittedWarning.Add(F);return;
+    }
+    if(Move==EVeyrDragonMove::Fire)
+    {
+        // The definition cache is position-independent. Fire commits a tighter
+        // world-space envelope against the current court elevations instead.
+        if(!AttackPoseProbe->SetComponentSpaceBoneRotations({}))return;
+        for(int32 I=0;I<=32;++I)
+        {
+            if(!AttackPoseProbe->SampleClipPhase(TEXT("FireActive"),I/32.f))
+            {ImportedCombatDiagnostic=AttackPoseProbe->LastError;CommittedWarning.Reset();return;}
+            TArray<FVeyrDragonContact> Contacts;FVeyrDragonFlameBeam Beam;
+            if(!ReadImportedContactPose(AttackPoseProbe,EVeyrDragonMove::Fire,0,Contacts,Beam))
+            {ImportedCombatDiagnostic=TEXT("Committed fire pose unavailable");CommittedWarning.Reset();return;}
+            auto F=ProjectFlameToGround(Beam,100.f);F.bDamaging=false;
+            if(F.Shape!=EVeyrDangerShape::None)CommittedWarning.Add(F);
+        }
+        if(!CommittedWarning.IsEmpty())AttackOrigin=CommittedWarning[0].Origin;
+        return;
     }
     const auto* Local=LocalAttackWarnings.Find(ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Active")));
     if(!Local)return;

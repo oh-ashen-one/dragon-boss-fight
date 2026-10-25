@@ -5,11 +5,13 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from normalize_approved import GLB,UE
 
-def run(root):
+def run(root,plan_dir=None,label=""):
+ plan_dir=plan_dir or root/"Local/CustomuseAssets/Integration20261025b"
+ suffix=("-"+label) if label else ""
  conversion=np.eye(4);conversion[:3,:3]=UE
  rows=[];coverage_errors=[]
- for character,version in [('KnightB','v025b'),('DragonV3B','v025d')]:
-  plan=json.loads((root/'Local/CustomuseAssets/Integration20261025b'/('import-plan-'+character+'.json')).read_text());clips={c['name']:c for c in plan['clips']};proof=json.loads((root/'Local/CustomuseImports'/('native-pose-proof-'+character+'-'+version+'.json')).read_text());cache={};metrics={}
+ for character in ['KnightB','DragonV3B']:
+  plan=json.loads((plan_dir/('import-plan-'+character+'.json')).read_text());version=plan['version'];clips={c['name']:c for c in plan['clips']};proof=json.loads((root/'Local/CustomuseImports'/('native-pose-proof-'+character+'-'+version+'.json')).read_text());cache={};metrics={}
   expected_clips=set(clips);observed_clips={f['clip'] for f in proof['samples']}
   if observed_clips!=expected_clips:coverage_errors.append({'character':character,'missingClips':sorted(expected_clips-observed_clips),'unexpectedClips':sorted(observed_clips-expected_clips)})
   for frame in proof['samples']:
@@ -37,8 +39,8 @@ def run(root):
   for row in metrics.values():
    if row['samples']!=6:coverage_errors.append({'character':character,'clip':row['clip'],'sampleCount':row['samples'],'expectedSamples':6})
   for row in metrics.values():row['character']=character;row['pass']=row['maxPositionErrorCm']<.15 and row['maxRotationErrorDegrees']<.5 and row['maxScaleError']<.001 and row['maxMorphWeightError']<.005;rows.append(row)
- out=root/'Local/CustomuseImports/native-source-fidelity.json';out.write_text(json.dumps(rows,indent=2)+'\n');print(json.dumps({'clips':len(rows),'passed':sum(x['pass'] for x in rows),'failed':[x for x in rows if not x['pass']]},indent=2))
- (root/'Local/CustomuseImports/native-source-coverage.json').write_text(json.dumps({'clips':len(rows),'samples':sum(x['samples'] for x in rows),'coverageErrors':coverage_errors,'passed':not coverage_errors},indent=2)+'\n')
+ out=root/'Local/CustomuseImports'/('native-source-fidelity'+suffix+'.json');out.write_text(json.dumps(rows,indent=2)+'\n');print(json.dumps({'clips':len(rows),'passed':sum(x['pass'] for x in rows),'failed':[x for x in rows if not x['pass']]},indent=2))
+ (root/'Local/CustomuseImports'/('native-source-coverage'+suffix+'.json')).write_text(json.dumps({'clips':len(rows),'samples':sum(x['samples'] for x in rows),'coverageErrors':coverage_errors,'passed':not coverage_errors},indent=2)+'\n')
  return not coverage_errors and all(x['pass'] for x in rows)
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[3]);a=p.parse_args();raise SystemExit(0 if run(a.root.resolve()) else 1)
+ p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[3]);p.add_argument('--plans',type=Path);p.add_argument('--label',default='');a=p.parse_args();raise SystemExit(0 if run(a.root.resolve(),a.plans.resolve() if a.plans else None,a.label) else 1)

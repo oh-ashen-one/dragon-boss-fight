@@ -45,3 +45,6 @@ Unreal/Veyr/Content/Veyr/Materials/M_CathedralStone_v2.uasset
 
 # Private Tripo models and generated art-pass presentation assets
 Unreal/Veyr/Content/ArtPass/
+
+# Private generated fire textures and their native material derivatives
+Unreal/Veyr/Content/Veyr/FX/v3/

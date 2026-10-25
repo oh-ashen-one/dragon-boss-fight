@@ -178,7 +178,10 @@ def finalize_existing(plan):
         clip.set_editor_property('gameplay_play_rate',3.0 if character=='KnightB' and str(key).lower()=='lightattack' else 1.0)
     definition.set_editor_property('clips',clip_entries)
     runtime_name='Knight' if character=='KnightB' else 'Dragon'
-    runtime=unreal.load_asset('/Game/Characters/Customuse/RuntimeApproved/DA_'+runtime_name)
+    runtime_folder=plan.get('runtime_folder','RuntimeApproved')
+    if runtime_folder not in ('RuntimeApproved','RuntimePolish'):
+        raise ValueError('Unexpected runtime definition namespace')
+    runtime=unreal.load_asset('/Game/Characters/Customuse/'+runtime_folder+'/DA_'+runtime_name)
     if runtime and runtime.source_sha256==definition.source_sha256:
         runtime.set_editor_property('clips',clip_entries)
         unreal.EditorAssetLibrary.save_loaded_asset(runtime,False)
@@ -494,13 +497,22 @@ def run(plan_file):
                 times, values = unreal.AnimationLibrary.get_float_keys(entry.sequence, curve_name)
                 if values:ranges[str(curve_name)] = [min(values), max(values), len(values)]
             receipt["clipCurveRanges"][key] = ranges
-        if character == "DragonV3B" and version.startswith("v025"):
-            if len(receipt["morphTargets"]) != 8:
-                raise RuntimeError("Approved dragon must retain all eight distinct morph shapes")
-            for key in ("Idle", "Walk", "TurnLeft", "FlightWindup", "FlightActive", "FlightRecovery", "FlightHoverAlternate", "FireActive", "BiteActive"):
-                ranges=receipt["clipCurveRanges"].get(key,{})
-                if not any(bounds[1] > .001 for name,bounds in ranges.items() if "Veyr" in name):
-                    raise RuntimeError("Approved dragon corrective curves absent or zero: " + key)
+        if character == "DragonV3B":
+            raw=Path(canonical['file']).read_bytes()
+            length=struct.unpack_from('<I',raw,12)[0]
+            document=json.loads(raw[20:20+length])
+            body=next(node for node in document['nodes'] if 'skin' in node and 'mesh' in node)
+            expected=list(document['meshes'][body['mesh']].get('extras',{}).get('targetNames',[]))
+            receipt['expectedMorphTargets']=expected
+            if len(expected)<8 or set(receipt['morphTargets'])!=set(expected):
+                raise RuntimeError('Dragon native morph identities differ from the complete source union')
+            for specification,checked in checked_clips:
+                ranges=receipt['clipCurveRanges'].get(specification['name'],{})
+                for name,(_,values) in source_morph_curves(checked['file']).items():
+                    if not values or max(abs(v) for v in values)<=.00001:continue
+                    actual=ranges.get(name)
+                    if actual is None or abs(actual[0]-min(values))>.0001 or abs(actual[1]-max(values))>.0001:
+                        raise RuntimeError('Dragon corrective curve range differs from source: '+specification['name']+'/'+name)
         errors = list(definition.validate_definition(False))
         receipt["definitionErrors"] = errors
         receipt["completeMovesetErrors"] = list(definition.validate_definition(True))

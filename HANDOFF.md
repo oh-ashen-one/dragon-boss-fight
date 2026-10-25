@@ -38,7 +38,17 @@ and author revised animation candidates in Blender MCP.
 - Preserve app-scoped ANSI allocator startuprepair and sharedGPU safety. No
   currentVeyr/Unrealprocess atstartup; Blenderhasone slot. Neverlaunchforeigninstances.
 
-Remaining: finishTripoexports/geometryinspection, buildcoherentArena, critiqueand
+Current import checkpoint:12Tripoexports are saved and structurally verified;
+8 native modules are imported/reduced/saved. RetainingWall v001 hit an Unreal
+AsyncTask mesh-build assertion; originalpartial is preserved, v002 is the fresh
+retry. Currentpass crash count1, rootdriver stopped andownedreporterterminated.
+Importer now uses supported synchronous compilation plus native finishbarrier.
+Editorrestart is sourcechanged, not a blindretry. Remaining4imports resume.
+Private sourcebackup verified atcombat-arena-polish-sources-20261025 (3ZIPs).
+Final animationplans/audit:Local/CustomuseAssets/Polish20261025/idle-joins;
+10dragonmorphs, allfourflightIdlejoins<.001cm, normalizedrollprefixexact.
+
+Remaining: finishTripo native imports/geometryinspection, buildcoherentArena, critiqueand
 normalize/importnewanimations, compile/importnativeassets throughownedMCP,
 exerciseactualcontrols/pause/settings/collision/fire, renderedcomparisonandperf,
 package/launchfromDownloads, backupprivateassets andpushverifiedhandoff.

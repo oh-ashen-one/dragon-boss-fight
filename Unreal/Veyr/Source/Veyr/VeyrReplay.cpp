@@ -237,6 +237,18 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("hitsTaken"),Knight->HitsTaken); O->SetNumberField(TEXT("guardedHits"),Knight->GuardedHits);
     O->SetNumberField(TEXT("guardBreaks"),Knight->GuardBreaks); O->SetNumberField(TEXT("healsCompleted"),Knight->SuccessfulHeals);
     O->SetBoolField(TEXT("approvedKnightDefinition"),Knight->bApprovedNativeDefinitionActive);
+    O->SetBoolField(TEXT("knightRuntimePolishReady"),Knight->bUsingPolishDefinition);
+    O->SetBoolField(TEXT("dragonRuntimePolishReady"),Dragon->bUsingPolishDefinition);
+    const AVeyrGameMode* SnapshotMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+    const AVeyrArena* SnapshotArena=SnapshotMode?SnapshotMode->Arena.Get():nullptr;
+    O->SetBoolField(TEXT("connectedCourtAssetsReady"),SnapshotArena&&SnapshotArena->bConnectedCourtAssetsReady);
+    O->SetStringField(TEXT("connectedCourtDiagnostic"),SnapshotArena?SnapshotArena->ConnectedCourtDiagnostic:TEXT("Arena missing"));
+    FName ApproachBlocker;float ApproachSweepDistance=0.f;
+    const FVector HeadGoal=HeadApproachGoal(&ApproachBlocker,&ApproachSweepDistance);
+    O->SetArrayField(TEXT("headApproachGoal"),VectorJson(HeadGoal));
+    O->SetNumberField(TEXT("headApproachGoalDistanceCm"),FVector::Dist2D(Knight->GetFootLocation(),HeadGoal));
+    O->SetStringField(TEXT("headApproachBlocker"),ApproachBlocker.ToString());
+    O->SetNumberField(TEXT("headApproachSweepDistanceCm"),ApproachSweepDistance);
     O->SetStringField(TEXT("knightClip"),Knight->RequestedPresentationClip.ToString());
     O->SetStringField(TEXT("knightPresentationDiagnostic"),Knight->PresentationDiagnostic);
     O->SetBoolField(TEXT("knightFallback"),Knight->bPresentationUsingFallback);
@@ -1509,6 +1521,37 @@ void AVeyrReplay::TrackFlightWithLookInput()
     if(FMath::Abs(PitchScale)>.01f)PC->AddPitchInput(FMath::Clamp(FMath::FindDeltaAngleDegrees(View.Pitch,FMath::Clamp(Aim.Pitch,-25.f,55.f))*.12f/PitchScale,-4.f,4.f));
 }
 
+FVector AVeyrReplay::HeadApproachGoal(FName* OutBlocker,float* OutSweepDistance) const
+{
+    if(OutBlocker)*OutBlocker=NAME_None;
+    if(OutSweepDistance)*OutSweepDistance=0.f;
+    const FVector Head=Dragon->GetHeadLocation();
+    const FVector Forward=Dragon->GetActorForwardVector().GetSafeNormal2D();
+    const UCapsuleComponent* Player=Knight->GetCapsuleComponent();
+    const FVector CenterOffset=Player->GetComponentLocation()-Knight->GetFootLocation();
+    FVector End=Head;End.Z=Knight->GetFootLocation().Z;End+=CenterOffset;
+    TInlineComponentArray<UCapsuleComponent*> Parts;Dragon->GetComponents(Parts);
+    float Outside=600.f;
+    for(const UCapsuleComponent* Part:Parts)
+        if(Part&&Part->GetName().StartsWith(TEXT("VeyrSolid_"))&&Part->IsQueryCollisionEnabled()&&Part->GetCollisionResponseToChannel(ECC_Pawn)==ECR_Block)
+            Outside=FMath::Max(Outside,static_cast<float>(FVector::DotProduct(Part->Bounds.Origin-End,Forward)+Part->Bounds.SphereRadius+Player->GetScaledCapsuleRadius()+100.f));
+    const FVector Start=End+Forward*Outside;
+    float Nearest=Outside;bool bFound=false;FHitResult Boundary;
+    for(UCapsuleComponent* Part:Parts)
+    {
+        if(!Part||!Part->GetName().StartsWith(TEXT("VeyrSolid_"))||!Part->IsQueryCollisionEnabled()||Part->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block)continue;
+        FHitResult Hit;
+        // Read-only narrow-phase query against the live collider, using the
+        // same Pawn shape and rotation as movement. No collision/state writes.
+        if(Part->SweepComponent(Hit,Start,End,Player->GetComponentQuat(),Player->GetCollisionShape(),false)&&!Hit.bStartPenetrating&&Hit.Distance<Nearest)
+        {Nearest=Hit.Distance;Boundary=Hit;bFound=true;if(OutBlocker)*OutBlocker=Part->GetFName();}
+    }
+    if(OutSweepDistance)*OutSweepDistance=bFound?Nearest:0.f;
+    // 20cm clearance exceeds the unchanged 15cm arrival tolerance. Where the
+    // head is airborne and no body blocks this path, retain the old stand-off.
+    return bFound?Boundary.Location-CenterOffset+Forward*20.f:End-CenterOffset+Forward*290.f;
+}
+
 FVector AVeyrReplay::EscapeDirection() const
 {
     const FVector Feet=Knight->GetFootLocation();
@@ -1568,12 +1611,12 @@ void AVeyrReplay::DriveInputs()
             const FVector Head=Dragon->GetHeadLocation();
             const FVector Forward=Dragon->GetActorForwardVector(),Right=Dragon->GetActorRightVector();
             const FVector Relative=Feet-Head;
-            // The exposed snout extends 206.54cm from this target. A 42cm
-            // pawn needs at least 248.54cm stand-off; 290 +/-15 leaves room.
-            // Route beside the low head instead of walking through its mouth.
+            // Route beside the head, then approach the actual solid-body
+            // boundary. A fixed snout offset omitted its 100cm blocker radius
+            // and asked the Pawn to navigate inside the dragon.
             bHeadWaypoint=FVector::DotProduct(Relative,Forward)<150.f;
             const float Side=FVector::DotProduct(Relative,Right)<0.f?-1.f:1.f;
-            Goal=bHeadWaypoint?Head+Forward*200.f+Right*(Side*360.f):Head+Forward*290.f;
+            Goal=bHeadWaypoint?Head+Forward*200.f+Right*(Side*360.f):HeadApproachGoal();
         }
         else
         {
@@ -1833,6 +1876,10 @@ void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
 {
     if(bFinished)return;
     FString VerifiedReason=Reason;
+    const AVeyrGameMode* FinishMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+    const AVeyrArena* FinishArena=FinishMode?FinishMode->Arena.Get():nullptr;
+    if(bSuccess&&(!Knight->bUsingPolishDefinition||!Dragon->bUsingPolishDefinition||!FinishArena||!FinishArena->bConnectedCourtAssetsReady))
+    {bSuccess=false;VerifiedReason=TEXT("RuntimePolish characters and connected-court assets must be active at completion");}
     if(bSuccess&&(!Knight->bApprovedNativeDefinitionActive||Knight->bPresentationUsingFallback||
         !Dragon->bAnatomicalLegContactsReady||!Dragon->bBiteGroundAimReady||!Dragon->HasValidImportedCombatPose()))
     {bSuccess=false;VerifiedReason=TEXT("Approved native pose, anatomical legs or grounded bite was not active at completion");}
@@ -1922,6 +1969,9 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     TSharedPtr<FJsonObject> Presentation=MakeShared<FJsonObject>();
     const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     const AVeyrArena* Arena=Mode?Mode->Arena.Get():nullptr;
+    Presentation->SetBoolField(TEXT("knightRuntimePolishReady"),Knight&&Knight->bUsingPolishDefinition);
+    Presentation->SetBoolField(TEXT("dragonRuntimePolishReady"),Dragon&&Dragon->bUsingPolishDefinition);
+    Presentation->SetBoolField(TEXT("connectedCourtAssetsReady"),Arena&&Arena->bConnectedCourtAssetsReady);
     Presentation->SetBoolField(TEXT("importedCathedral"),Arena&&Arena->bUsingImportedCathedral);
     Presentation->SetNumberField(TEXT("majorArchitecturePieces"),Arena?Arena->ImportedArchitecturePieces:0);
     Presentation->SetBoolField(TEXT("generatedNightSky"),Arena&&Arena->bUsingAuthoredNightSky);

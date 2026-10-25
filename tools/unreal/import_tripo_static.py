@@ -41,6 +41,10 @@ import uuid
 ROOT=Path(__file__).resolve().parents[2]
 PROJECT=ROOT/'Unreal/Veyr'
 SOURCES=ROOT/'Local/art-pass-20261019/tripo'
+PRIVATE_SOURCES=(SOURCES,ROOT/'Local/ArtPass20261025/Tripo')
+
+def private_source_path(path):
+    return any(Path(path).resolve().is_relative_to(folder.resolve()) for folder in PRIVATE_SOURCES)
 
 
 def digest(path):
@@ -49,7 +53,7 @@ def digest(path):
 
 def inspect_source(entry):
     path=Path(entry['file']).resolve()
-    if path.suffix.lower()!='.glb' or not path.is_relative_to(SOURCES.resolve()):
+    if path.suffix.lower()!='.glb' or not private_source_path(path):
         raise ValueError('Use a normalized private GLB inside the task Tripo directory')
     data=path.read_bytes();sha=hashlib.sha256(data).hexdigest()
     if entry.get('sha256')!=sha:raise ValueError('Source SHA256 mismatch: '+path.name)
@@ -104,18 +108,32 @@ def validate_plan(plan):
         destination=f'/Game/ArtPass/Tripo/{name}_{version}'
         if destination in destinations:raise ValueError('Duplicate plan destination')
         destinations.add(destination)
+        texture_limit=int(item.get('texture_max_size',8192))
+        collision_lod=int(item.get('collision_lod',2))
+        if texture_limit not in (1024,2048,4096,8192) or collision_lod not in (0,1,2):
+            raise ValueError('Unsupported texture/collision budget')
         checked.append({'name':name,'version':version,'kind':item['kind'],'source':source,
-                        'destination':destination,'lodTargets':targets,'screenSizes':screens})
+                        'destination':destination,'lodTargets':targets,'screenSizes':screens,
+                        'complexCollision':bool(item.get('complex_collision',False)),
+                        'collisionLOD':collision_lod,'textureMaxSize':texture_limit})
     return checked
 
 
 def run(plan_file):
     import unreal
     plan_path=Path(plan_file).resolve()
-    if not plan_path.is_relative_to(SOURCES.resolve()):raise ValueError('Plan must remain in the private Tripo directory')
+    if not private_source_path(plan_path):raise ValueError('Plan must remain in the private Tripo directory')
     checked=validate_plan(json.loads(plan_path.read_text()))
     if Path(unreal.Paths.project_dir()).resolve()!=PROJECT.resolve():raise RuntimeError('Wrong owned project')
     if unreal.EditorLevelLibrary.get_pie_worlds(False):raise RuntimeError('Stop PIE before import')
+    world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
+    # Sequential reflected property changes can race a previous asynchronous
+    # static-mesh build even after RenderData becomes readable. UE's native
+    # finish barrier clears AsyncTask before any further PostEditChange.
+    unreal.SystemLibrary.execute_console_command(world,'Editor.AsyncStaticMeshCompilation 0')
+    unreal.SystemLibrary.execute_console_command(world,'Editor.AsyncStaticMeshCompilationFinishAll')
+    if unreal.SystemLibrary.get_console_variable_int_value('Editor.AsyncStaticMeshCompilation')!=0:
+        raise RuntimeError('Owned import requires synchronous static-mesh compilation')
     library=unreal.EditorAssetLibrary
     for item in checked:
         folder=PROJECT/'Content'/item['destination'].removeprefix('/Game/')
@@ -131,7 +149,8 @@ def run(plan_file):
     if not hasattr(unreal.StaticMesh,'get_num_tex_coords'):
         raise RuntimeError('Required render-buffer UV query get_num_tex_coords unavailable')
     stamp=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:8]
-    receipts=SOURCES/'native-imports';receipts.mkdir(parents=True,exist_ok=True)
+    source_root=next(folder for folder in PRIVATE_SOURCES if plan_path.is_relative_to(folder.resolve()))
+    receipts=source_root/'native-imports';receipts.mkdir(parents=True,exist_ok=True)
     receipt_path=receipts/(stamp+'.json')
     receipt={'success':False,'planSHA256':digest(plan_path),'scriptSHA256':digest(Path(__file__)),
              'nativeVisualAcceptance':False,'naniteEnabled':False,'assets':[]}
@@ -179,6 +198,7 @@ def run(plan_file):
                 if not isinstance(obj,(unreal.StaticMesh,unreal.MaterialInterface,unreal.Texture)):
                     raise RuntimeError('Unexpected returned asset class; metadata sanitation needs explicit support')
                 sanitize(obj,source['sha256'])
+                if isinstance(obj,unreal.Texture2D):obj.set_editor_property('max_texture_size',item['textureMaxSize'])
             mesh=meshes[0];before=int(mesh.get_num_triangles(0));record['importedTriangles']=before;record['importedBoundsCm']=bounds(mesh)
             if before<=0:raise RuntimeError('No built native triangles')
             if max(abs(a-b) for aa,bb in zip(record['importedBoundsCm'],source['expectedBoundsCm']) for a,b in zip(aa,bb))>1.:
@@ -186,6 +206,23 @@ def run(plan_file):
             materials=[slot.material_interface.get_path_name() if slot.material_interface else None for slot in mesh.get_editor_property('static_materials')]
             if not materials or any(m is None for m in materials):raise RuntimeError('Imported PBR material slot missing')
             record['materials']=materials
+            if item['kind']=='architecture':
+                usage=unreal.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES
+                for material_path in materials:
+                    material=library.load_asset(material_path)
+                    if unreal.MaterialEditingLibrary.has_material_usage(material,usage):continue
+                    if not material.get_path_name().startswith(destination+'/'):
+                        raise RuntimeError('Refusing to alter a shared material outside the owned import')
+                    if isinstance(material,unreal.Material):
+                        unreal.MaterialEditingLibrary.set_base_material_usage(material,usage,True)
+                        errors=list(unreal.MaterialEditingLibrary.recompile_material(material))
+                        if errors:raise RuntimeError('Instanced material compilation failed: '+str(errors))
+                    elif isinstance(material,unreal.MaterialInstanceConstant):
+                        unreal.MaterialEditingLibrary.set_material_usage_override(material,usage,True,True)
+                        unreal.MaterialEditingLibrary.update_material_instance(material)
+                    else:raise RuntimeError('Unsupported private material class')
+                    if not unreal.MaterialEditingLibrary.has_material_usage(material,usage):
+                        raise RuntimeError('Instanced static mesh usage did not persist')
             original_slots={int(subsystem.get_lod_material_slot(mesh,0,i)) for i in range(int(mesh.get_num_sections(0)))}
             record['originalSectionMaterialSlots']=sorted(original_slots)
             if source['sourceImageCount'] and not any(isinstance(o,unreal.Texture) for o in objects):raise RuntimeError('GLB images did not yield native textures')
@@ -217,6 +254,17 @@ def run(plan_file):
             if [s.material_interface.get_path_name() if s.material_interface else None for s in mesh.get_editor_property('static_materials')]!=materials:
                 raise RuntimeError('Reduction altered material assignments')
             record['reducedBoundsCm']=bounds(mesh)
+            if item['complexCollision']:
+                mesh.set_editor_property('lod_for_collision',item['collisionLOD'])
+                body=mesh.get_editor_property('body_setup')
+                if body is None:raise RuntimeError('Imported static mesh has no native BodySetup')
+                body.set_editor_property('collision_trace_flag',unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+                for section in range(int(mesh.get_num_sections(item['collisionLOD']))):
+                    subsystem.enable_section_collision(mesh,True,item['collisionLOD'],section)
+                if subsystem.get_collision_complexity(mesh)!=unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE:
+                    raise RuntimeError('Native collision complexity did not persist')
+                record['collision']={'type':'native triangle geometry','lod':item['collisionLOD'],
+                                     'openingsPreserved':True,'nativeGameplayVerified':False}
             canonical=destination+'/SM_'+item['name']+'_'+item['version']
             if library.does_asset_exist(canonical):raise RuntimeError('Canonical mesh unexpectedly exists')
             if not library.rename_asset(mesh.get_path_name(),canonical):raise RuntimeError('Canonical rename failed')
@@ -244,7 +292,7 @@ def inspect_partial(receipt_file):
     """
     import unreal
     receipt_path=Path(receipt_file).resolve()
-    if not receipt_path.is_relative_to((SOURCES/'native-imports').resolve()):
+    if not any(receipt_path.is_relative_to((folder/'native-imports').resolve()) for folder in PRIVATE_SOURCES):
         raise ValueError("Expected this task's exact private import receipt")
     if Path(unreal.Paths.project_dir()).resolve()!=PROJECT.resolve():raise RuntimeError('Wrong owned project')
     if unreal.EditorLevelLibrary.get_pie_worlds(False):raise RuntimeError('Stop PIE before partial finalization')
@@ -307,7 +355,8 @@ def finish_partial(receipt_file):
         if library.does_asset_exist(canonical):raise RuntimeError('Canonical target exists; do not overwrite or retry')
         record['canonicalTarget']=canonical
     stamp=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:8]
-    path=SOURCES/'native-imports'/('finalize-'+stamp+'.json')
+    source_root=next(folder for folder in PRIVATE_SOURCES if Path(receipt_file).resolve().is_relative_to(folder.resolve()))
+    path=source_root/'native-imports'/('finalize-'+stamp+'.json')
     result.update(success=False,validationOnly=False,parentReceipt=str(Path(receipt_file).resolve()),
                   operation='VALIDATE_EXISTING_RENAME_SAVE_NO_IMPORT_NO_REDUCTION')
     def save():
