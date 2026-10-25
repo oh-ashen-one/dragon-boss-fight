@@ -1,5 +1,5 @@
 {
-  "status": "signed offline repair; graphical launch not attempted",
+  "status": "graphical startup verified; left open at start screen",
   "nativeSourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
   "gameCodeIdentityUnchanged": true,
   "startupEnvironment": {
@@ -9,9 +9,11 @@
   "signatureVerified": true,
   "dependenciesVerified": true,
   "archiveSHA256": "914fcab6003c47b77f1c867b37df53f050b08e56e147b2b1d784c36afd889573",
-  "launchHold": true,
-  "reason": "Second session crash occurred during macOS Binned3/LLM startup; fresh owner-directed graphical validation required",
+  "launchHold": false,
+  "reason": "Owner-authorized graphical launch passed; app-scoped allocator avoids the prior startup failure",
   "privateBackupDigestVerified": true,
-  "privateReleaseDraft": true,
-  "privateReleaseId": 423238285
+  "privateReleaseDraft": false,
+  "privateReleaseId": 423238285,
+  "graphicalLaunchVerified": true,
+  "observedAllocator": "ANSI"
 }

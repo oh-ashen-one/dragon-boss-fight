@@ -1,5 +1,5 @@
 {
-  "status": "gameplay tests passed; final headed startup repair requires bounded validation",
+  "status": "native gameplay tests and repaired graphical startup verified",
   "mechanicsSourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
   "runs": [
     {
@@ -190,10 +190,13 @@
   },
   "sourceDeltaReport": "delivery-delta.json",
   "desktopLaunch": {
-    "passed": false,
-    "failure": "Unreal Binned3/LLM startup exception before game begins",
-    "automaticLaunchHold": true,
-    "offlineMitigation": "App-scoped UE4_FORCE_MALLOC_ANSI=1; game code unchanged",
-    "repairRuntimeVerified": false
+    "passed": true,
+    "allocator": "ANSI",
+    "method": "LaunchServices with app-scoped Info.plist environment",
+    "windowRendered": true,
+    "startScreenObserved": true,
+    "gameplayCodeUnchanged": true,
+    "automaticLaunchHold": false,
+    "scope": "Graphical startup verified after fresh owner authorization; full gameplay test results remain associated with their recorded source/builds."
   }
 }

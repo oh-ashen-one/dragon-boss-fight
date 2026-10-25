@@ -1,17 +1,15 @@
-# Native gameplay integration verified — desktop startup repair pending, 2026-10-25
+# Native approved animation integration — verified delivery, 2026-10-25
 
-**Current delivery gate:** the final headed launch from Downloads exited139
-before the game log/window, in Unreal FMallocBinned3 / low-level memory tracking
-during LaunchServices startup. This is the second integration-session crash.
-Automatic engine launches are stopped under the shared two-crash rule. All
-packaged gameplay results below remain valid; do not claim headed delivery works.
+**Delivery is open and verified.** After the owner authorized continuation, the
+repaired app launched through macOS LaunchServices, logged `Allocator: ANSI`,
+and rendered a stable start screen. The same game code and assets that passed
+the native gameplay suite remain intact. The startup setting is scoped to this
+app only; no global environment or security setting was changed.
 
-Offline repair: app-scoped `UE4_FORCE_MALLOC_ANSI=1` (supported directly by
-Epic's MacPlatformMemory.cpp), preserving game code and security settings.
-The signed repair candidate requires one freshly authorized bounded graphical
-launch. `Local/ENGINE_LAUNCH_HOLD.json` remains in force. No further engine launch
-was attempted after the second crash. Source integration and private backups
-are preserved; current raw crash reports stay local.
+The two earlier crashes remain preserved in the local crash ledger. The latest
+launch was explicitly owner-directed and succeeded; there is no active launch
+hold. The current app is left open for owner review. Do not take over or close
+that play session; inspect live process/slot ownership before future launches.
 
 The owner approved all32 October24 review candidates and authorized full native
 integration, gameplay testing and critique agents. They are now integrated into
@@ -24,13 +22,14 @@ Approved source GLBs/Blends remain immutable; exact hashes are recorded in
 - Extracted Studio app: `~/Downloads/Veyr-Approved-Animations-20261025/Veyr.app`
 - Controls beside it: `PLAYING.txt`. No ZIP extraction is needed locally.
 - Branch: `codex/veyr-native-animation-integration-20261025`.
-- Delivery code commit: `a64ab86`; later commits update documentation/evidence only.
+- Gameplay code commit: `a64ab86`; later commits add startup packaging fixes,
+  validation tooling and documentation.
 - Delivery native source identity: `8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6`.
 - Original gameplay-tested archive SHA256: `e7a05c23c79a2b49e484e3ecfad4031279d41cd86b15fa9cc8e1ddd35921eeb6`.
 - Private app backup: `oh-ashen-one/veyr-animation-sources`, release
   `native-game-20261025`, asset `Veyr-Mac-8ebd9783.zip` plus delivery manifest and
-  final validation. The app release is now DRAFT pending desktop startup repair.
-  The candidate `Veyr-Mac-8ebd9783-ansi-startup.zip` and startup repair receipt are
+  final validation. The verified app uses the ANSI-startup archive below.
+  The verified `Veyr-Mac-8ebd9783-ansi-startup.zip` and startup repair receipt are
   in that same private release; its digest is verified.
   Original GitHub archive digest verified. Local ad-hoc signature,
   full cooked payload and binary dependencies verified, then the app was run.
@@ -101,8 +100,7 @@ See `tools/art/integration/model-ledger.json` and linked reports for limits.
 
 ## Remaining review notes and ownership
 
-The animation integration and gameplay tests are complete; graphical startup
-validation of the repaired delivery remains open. Owner gameplay feel/visual
+The animation integration, gameplay tests and repaired graphical startup are verified. Owner gameplay feel/visual
 judgment is not asserted by automated tests. Two minor visual notes remain:
 a brief upper wingtip crop at flight entry, and a hard lower fold edge already
 present in the approved Dragon source. Keep originals locked; any later art
@@ -115,10 +113,11 @@ through native UI; automation exercises the normal game action/input paths.
 
 Two crashes occurred in this integration: an early editor SIGTERM shutdown and
 the final headed app startup. Other editor quits and automated packaged exits
-were normal. Crash count2 is in `Local/integration-crash-ledger.json`; no automatic
-engine relaunch is allowed until fresh owner direction.
-Use ordinary UI Quit. The owned native editor MCP server is closed. The owner-facing app is currently closed. Check live process/slot state before
-any explicitly authorized future launch. Never take over an owner playtest.
+were normal. Crash count2 is preserved in `Local/integration-crash-ledger.json`.
+The owner subsequently authorized the repaired launch, which passed. Stop and
+report any new crash rather than automatically retrying.
+Use ordinary UI Quit. The owned native editor MCP server is closed. The owner-facing app is open at the start screen through the shared GPU slot.
+Check live process/slot state before future launches. Never take over an owner playtest.
 
 The source checkout and useful failed/passing evidence remain for continuity.
 Duplicate generated builds and verified upload ZIPs may be removed; never delete
