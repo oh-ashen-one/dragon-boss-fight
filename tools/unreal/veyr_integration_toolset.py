@@ -40,6 +40,15 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
 
     @toolset_registry.tool_call
     @staticmethod
+    def import_moonlit_hud() -> unreal.Texture2D:
+        """Imports the fixed project-local Moonlit Silver artwork without replacing conflicting assets."""
+        require_project()
+        import import_moonlit_hud
+        importlib.reload(import_moonlit_hud)
+        return import_moonlit_hud.run()
+
+    @toolset_registry.tool_call
+    @staticmethod
     def inspect_project() -> dict[str, str]:
         """Returns the bound checkout, current level and active definition asset paths."""
         require_project()

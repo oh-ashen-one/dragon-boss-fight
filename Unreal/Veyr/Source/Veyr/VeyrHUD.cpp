@@ -20,29 +20,78 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Styling/CoreStyle.h"
+#include "Engine/Texture2D.h"
+#include "Engine/Font.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Misc/Paths.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Fonts/FontMeasure.h"
+#include "Rendering/SlateRenderer.h"
 
 namespace
 {
-    const FLinearColor Ivory(.86f,.81f,.68f,1.f);
-    const FLinearColor Quiet(.63f,.59f,.49f,1.f);
-    const FLinearColor Pewter(.35f,.29f,.19f,.85f);
-    const FLinearColor Bronze(.64f,.48f,.25f,1.f);
+    const FLinearColor Ivory(.86f,.85f,.79f,1.f);
+    const FLinearColor Quiet(.57f,.61f,.64f,1.f);
+    const FLinearColor Pewter(.34f,.39f,.43f,.85f);
+    const FLinearColor Silver(.64f,.66f,.64f,1.f);
     const FLinearColor Ink(.009f,.013f,.017f,.86f);
+}
+
+AVeyrHUD::AVeyrHUD()
+{
+    static ConstructorHelpers::FObjectFinderOptional<UTexture2D> Art(TEXT("/Game/UI/MoonlitB/T_MoonlitSilverAtlas_v1.T_MoonlitSilverAtlas_v1"),LOAD_Quiet|LOAD_NoWarn);
+    MoonlitAtlas=Art.Get();
 }
 
 void AVeyrHUD::Text(const FString& Value,float X,float Y,float Height,const FLinearColor& Color,bool bCentered)
 {
-    UFont* Font=GEngine->GetMediumFont();
-    float BaseWidth=0.f,BaseHeight=0.f;
-    GetTextSize(TEXT("Ag"),BaseWidth,BaseHeight,Font,1.f);
-    const float FontScale=Height*Unit/FMath::Max(1.f,BaseHeight);
-    float Width=0.f,MeasuredHeight=0.f;
-    GetTextSize(Value,Width,MeasuredHeight,Font,FontScale);
-    const float ScreenX=X*Unit-(bCentered?Width*.5f:0.f);
-    // Small crisp shadow keeps type readable on fire and pale stone without
-    // surrounding every label with an opaque rectangle.
-    DrawText(Value,FLinearColor(0,0,0,Color.A*.9f),ScreenX+Unit,Y*Unit+Unit,Font,FontScale,false);
-    DrawText(Value,Color,ScreenX,Y*Unit,Font,FontScale,false);
+    if(!MoonlitFont)
+    {
+        MoonlitFont=NewObject<UFont>(this);
+        MoonlitFont->FontCacheType=EFontCacheType::Runtime;
+        MoonlitFont->LegacyFontSize=32;
+        MoonlitFont->GetMutableInternalCompositeFont().DefaultTypeface.Fonts.Add(
+            FTypefaceEntry(TEXT("Regular"),FPaths::ProjectContentDir()/TEXT("UI/Fonts/CormorantGaramond.ttf"),EFontHinting::Auto,EFontLoadingPolicy::LazyLoad));
+    }
+    const FSlateFontInfo Font(MoonlitFont,32,TEXT("Regular"));
+    const auto Measure=FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+    const FVector2D Base=Measure->Measure(TEXT("Ag"),Font);
+    const float Scale=Height*Unit/FMath::Max(1.f,float(Base.Y));
+    const FVector2D Size=Measure->Measure(Value,Font)*Scale;
+    const FVector2D Position(X*Unit-(bCentered?Size.X*.5f:0.f),Y*Unit);
+    FCanvasTextItem Item(Position,FText::FromString(Value),Font,Color);
+    Item.Scale=FVector2D(Scale);Item.EnableShadow(FLinearColor(0,0,0,.95f),FVector2D(Unit));
+    Canvas->DrawItem(Item);
+}
+
+void AVeyrHUD::Atlas(float X,float Y,float Width,float Height,float U,float V,float UW,float VH)
+{
+    if(!MoonlitAtlas)return;
+    DrawTexture(MoonlitAtlas,X*Unit,Y*Unit,Width*Unit,Height*Unit,U/1672.f,V/941.f,UW/1672.f,VH/941.f,FLinearColor::White,BLEND_Translucent);
+}
+
+void AVeyrHUD::ArcMeter(float X,float Y,float Radius,float Width,float Start,float Sweep,float Value,float Trail,const FLinearColor& Color)
+{
+    auto Band=[&](float Amount,float R,float Thickness,FLinearColor Tint)
+    {
+        const int32 Steps=FMath::Max(1,FMath::CeilToInt(Sweep*FMath::Clamp(Amount,0.f,1.f)));
+        for(int32 I=0;I<Steps;++I)
+        {
+            const float A=FMath::DegreesToRadians(Start+Sweep*Amount*I/Steps),B=FMath::DegreesToRadians(Start+Sweep*Amount*(I+1)/Steps);
+            auto P=[&](float Angle,float Rad){const float C=FMath::Cos(Angle);const float Fit=C<0.f?(Radius>80.f?.92f:.84f):1.f;return FVector2D(X+C*Rad*Fit,Y+FMath::Sin(Angle)*Rad);};
+            Polygon({P(A,R-Thickness*.5f),P(A,R+Thickness*.5f),P(B,R+Thickness*.5f),P(B,R-Thickness*.5f)},Tint);
+        }
+    };
+    Value=FMath::Clamp(Value,0.f,1.f);Trail=FMath::Clamp(Trail,Value,1.f);
+    Band(1.f,Radius,Width,FLinearColor(.012f,.020f,.026f,.95f));
+    if(Trail>Value)Band(Trail,Radius,Width,FLinearColor(.37f,.25f,.24f,.8f));
+    if(Value>.001f)
+    {
+        Band(Value,Radius,Width+1.2f,FLinearColor(Color.R,Color.G,Color.B,.20f));
+        Band(Value,Radius,Width-.8f,Color*.65f+FLinearColor(0,0,0,.35f));
+        Band(Value,Radius,Width*.65f,Color);
+        Band(Value,Radius+Width*.29f,Width*.13f,FLinearColor(.77f,.78f,.69f,.5f));
+    }
 }
 
 void AVeyrHUD::Line(float X1,float Y1,float X2,float Y2,const FLinearColor& Color,float Width)
@@ -78,89 +127,29 @@ void AVeyrHUD::Diamond(float X,float Y,float Radius,const FLinearColor& Color,bo
     }
 }
 
-void AVeyrHUD::Meter(float X,float Y,float Width,float Height,float Value,float Trail,const FLinearColor& Color)
-{
-    Value=FMath::Clamp(Value,0.f,1.f);Trail=FMath::Clamp(Trail,Value,1.f);
-    Rect(X-1,Y-2,Width+2,Height+4,Ink);
-    Rect(X,Y,Width,Height,FLinearColor(.095f,.105f,.105f,.8f));
-    if(Trail>Value)Rect(X,Y,Width*Trail,Height,FLinearColor(.40f,.31f,.22f,.85f));
-    const float Filled=Width*Value;
-    if(Filled>.1f)
-    {
-        const float Bevel=FMath::Min(Height*.5f,Filled*.5f);
-        Polygon({{X,Y},{X+Filled-Bevel,Y},{X+Filled,Y+Height*.5f},{X+Filled-Bevel,Y+Height},{X,Y+Height}},Color);
-        Line(X,Y+.5f,X+FMath::Max(0.f,Filled-Bevel),Y+.5f,FLinearColor(.83f,.82f,.72f,.25f),.7f);
-    }
-    Line(X,Y-3,X+Width,Y-3,Pewter,.7f);
-    Line(X,Y+Height+3,X+Width,Y+Height+3,FLinearColor(.19f,.23f,.24f,.7f),.7f);
-    Line(X-4,Y-4,X-4,Y+Height+4,Bronze);
-    Line(X+Width+4,Y-4,X+Width+4,Y+Height+4,Pewter);
-}
-
-void AVeyrHUD::SwordIcon(float X,float Y)
-{
-    // A wooden hull on a long handle; diagonal placement reads at relic-slot size.
-    auto P=[&](float Across,float Along){return FVector2D(X+.73f*Along+.68f*Across,Y-.68f*Along+.73f*Across);};
-    const TArray<FVector2D> Hull={P(0,28),P(8,18),P(11,6),P(9,-5),P(0,-13),P(-9,-5),P(-11,6),P(-8,18)};
-    Polygon(Hull,FLinearColor(.22f,.13f,.055f));
-    for(int32 I=0;I<Hull.Num();++I){const auto A=Hull[I],B=Hull[(I+1)%Hull.Num()];Line(A.X,A.Y,B.X,B.Y,Bronze,1.2f);}
-    auto Stroke=[&](FVector2D A,FVector2D B,FLinearColor C,float Width=1.f){Line(A.X,A.Y,B.X,B.Y,C,Width);};
-    Stroke(P(0,-27),P(0,-13),Ivory,3.f);Stroke(P(-5,-12),P(5,-12),Bronze,1.5f);
-    Stroke(P(0,-10),P(0,25),FLinearColor(.72f,.53f,.28f),1.2f);
-    for(float V:{-4.f,4.f,12.f,19.f}){const float R=V>15?6.f:8.f;Stroke(P(-R,V),P(R,V),FLinearColor(.48f,.31f,.14f),1.f);}
-}
-
-void AVeyrHUD::FlaskIcon(float X,float Y,bool bEmpty)
-{
-    // The equipped healing item is a handled cup, matching the actual prop.
-    const FLinearColor Metal=bEmpty?FLinearColor(.24f,.21f,.16f):FLinearColor(.53f,.31f,.12f);
-    Polygon({{X-13,Y-14},{X+13,Y-14},{X+10,Y+14},{X+6,Y+19},{X-6,Y+19},{X-10,Y+14}},Metal);
-    Line(X-13,Y-14,X-10,Y+14,Bronze,1.2f);Line(X+13,Y-14,X+10,Y+14,Bronze,1.2f);
-    for(int32 I=0;I<24;++I)
-    {
-        const float A=2.f*PI*I/24.f,B=2.f*PI*(I+1)/24.f;
-        Line(X+13.f*FMath::Cos(A),Y-14+4.f*FMath::Sin(A),X+13.f*FMath::Cos(B),Y-14+4.f*FMath::Sin(B),Bronze,1.f);
-    }
-    Line(X+13,Y-9,X+21,Y-7,Bronze,2.f);Line(X+21,Y-7,X+20,Y+9,Bronze,2.f);Line(X+20,Y+9,X+10,Y+11,Bronze,2.f);
-    Line(X-7,Y+20,X+7,Y+20,Bronze,2.f);Line(X-9,Y+23,X+9,Y+23,Pewter,2.f);
-    if(!bEmpty){Polygon({{X-7,Y-14},{X-3,Y-24},{X,Y-18},{X+4,Y-27},{X+7,Y-14}},FLinearColor(.82f,.39f,.09f,.85f));}
-}
-
-void AVeyrHUD::Circle(float X,float Y,float Radius,const FLinearColor& Color,float Width)
-{
-    for(int32 I=0;I<48;++I)
-    {
-        const float A=2.f*PI*I/48.f,B=2.f*PI*(I+1)/48.f;
-        Line(X+Radius*FMath::Cos(A),Y+Radius*FMath::Sin(A),X+Radius*FMath::Cos(B),Y+Radius*FMath::Sin(B),Color,Width);
-    }
-}
-void AVeyrHUD::RelicSlot(float X,float Y,float Size)
-{
-    Rect(X,Y,Size,Size,Ink);Rect(X+3,Y+3,Size-6,Size-6,FLinearColor(.045f,.036f,.022f,.72f));
-    Line(X,Y,X+Size,Y,Bronze);Line(X,Y+Size,X+Size,Y+Size,Pewter);
-    Line(X,Y,X,Y+Size,Pewter);Line(X+Size,Y,X+Size,Y+Size,Bronze);
-    for(float A:{0.f,Size})for(float B:{0.f,Size})
-    {
-        const float SX=A==0?1.f:-1.f,SY=B==0?1.f:-1.f;
-        Line(X+A,Y+B,X+A+SX*8,Y+B+SY*3,Bronze);Line(X+A,Y+B,X+A+SX*3,Y+B+SY*8,Bronze);
-    }
-}
 void AVeyrHUD::ControlLegend(float W,float H,bool bTerminal)
 {
     // MediumFont's visible glyphs occupy roughly 80% of its measured line
     // height: 17 layout pixels gives about 13–14 readable pixels at 1280x720.
-    const float X=W-334.f,Y=H-178.f;
-    Rect(X-12,Y-10,310,122,FLinearColor(.012f,.011f,.009f,.64f));Line(X-12,Y-10,X+298,Y-10,Pewter,.7f);
+    const float X=W-263.f,Y=H-275.f;
+    Rect(X-8,Y-7,250,89,FLinearColor(.008f,.014f,.023f,.48f));
     const TCHAR* Rows[]={TEXT("WASD  Move    SHIFT  Sprint"),TEXT("LMB  Attack    RMB  Guard"),TEXT("Q  Roll    SPACE  Blink"),TEXT("E  Grip    R  Heal"),TEXT("TAB  Lock    ESC  Menu")};
-    for(int32 I=0;I<5;++I)Text(Rows[I],X,Y+I*22,17.f,Ivory);
+    UFont* LegendFont=GEngine->GetMediumFont();float TW=0.f,TH=0.f;GetTextSize(TEXT("Ag"),TW,TH,LegendFont);
+    const float LegendScale=16.f*Unit/FMath::Max(1.f,TH);
+    for(int32 I=0;I<5;++I)DrawText(Rows[I],Ivory,X*Unit,(Y+I*16)*Unit,LegendFont,LegendScale,false);
     if(bTerminal)Text(TEXT("ENTER  Restart encounter"),X,Y-30,17,Ivory);
 }
 
 void AVeyrHUD::Keycap(const FString& Key,float X,float Y)
 {
-    Rect(X,Y,18,18,FLinearColor(.02f,.025f,.03f,.65f));
-    Line(X,Y+17,X+18,Y+17,Pewter);
-    Text(Key,X+9,Y+2,12,Ivory,true);
+    Rect(X,Y,24,24,FLinearColor(.015f,.022f,.028f,.88f));
+    for(float D:{0.f,1.5f})
+    {
+        const FLinearColor C=D==0?Silver:Pewter;
+        Line(X+D,Y+D,X+24-D,Y+D,C,.7f);Line(X+D,Y+24-D,X+24-D,Y+24-D,C,.7f);
+        Line(X+D,Y+D,X+D,Y+24-D,C,.7f);Line(X+24-D,Y+D,X+24-D,Y+24-D,C,.7f);
+    }
+    Text(Key,X+12,Y-1,25,Ivory,true);
 }
 
 void AVeyrHUD::DrawHUD()
@@ -190,34 +179,35 @@ void AVeyrHUD::DrawHUD()
     DamageTrail(Health,PreviousHealth,HealthTrail,HealthTrailDelay);
     DamageTrail(BossHealth,PreviousBoss,BossTrail,BossTrailDelay);
 
-    // Ashen Gold: one small heraldic crest, two unlabelled resource gauges,
-    // compact relic slots and a thin boss bar. The combat center stays clear.
-    const float CrestX=Margin+20,CrestY=49;
-    Circle(CrestX,CrestY,23,Ink,5);Circle(CrestX,CrestY,22,Bronze,1.1f);Circle(CrestX,CrestY,19,Pewter,.8f);
-    Diamond(CrestX,CrestY-25,3,Bronze);Diamond(CrestX,CrestY+25,3,Bronze);
-    Line(CrestX,CrestY-14,CrestX,CrestY+13,Bronze,1.4f);
-    for(int32 I=0;I<3;++I)
-    {
-        const float Y=CrestY+7-I*8,Span=10-I*2;
-        Line(CrestX,Y,CrestX-Span,Y-6,Bronze,1.f);Line(CrestX,Y,CrestX+Span,Y-6,Bronze,1.f);
-    }
-    const float ResourceWidth=FMath::Min(292.f,W*.28f);
-    Meter(Margin+52,34,ResourceWidth,8,Health,HealthTrail,FLinearColor(.49f,.075f,.065f));
-    Meter(Margin+52,59,ResourceWidth*.78f,5,Stamina,Stamina,FLinearColor(.35f,.40f,.19f));
+    if(!MoonlitAtlas)MoonlitAtlas=LoadObject<UTexture2D>(nullptr,TEXT("/Game/UI/MoonlitB/T_MoonlitSilverAtlas_v1.T_MoonlitSilverAtlas_v1"));
+    // Moonlit Silver reference B: top boss gauge, lunar vitals at lower left,
+    // painted equipment reliquaries at lower right, clear center/feet region.
+    const float BossWidth=FMath::Min(656.f,W*.515f),BossX=(W-BossWidth)*.5f;
+    const float Cap=36.f,BarWidth=BossWidth-2.f*Cap;
+    Atlas(BossX,22,Cap,60.5f,240,50,100,110);
+    Atlas(BossX+Cap,22,BarWidth,60.5f,340,50,990,110);
+    Atlas(BossX+BossWidth-Cap,22,Cap,60.5f,1330,50,110,110);
+    Text(TEXT("Veyr, the Cinder Warden"),W*.5f,7,27,Ivory,true);
+    const float BX=BossX+Cap+2,BY=44.8f,BW=BarWidth-4;
+    Rect(BX,BY,BW,8.4f,FLinearColor(.013f,.018f,.023f,.94f));
+    if(BossTrail>BossHealth)Rect(BX,BY,BW*BossTrail,8.4f,FLinearColor(.31f,.20f,.20f,.9f));
+    Rect(BX,BY,BW*BossHealth,8.4f,FLinearColor(.32f,.045f,.06f,1.f));
+    Rect(BX,BY+2,BW*BossHealth,3.8f,FLinearColor(.49f,.10f,.12f,1.f));
+    Line(BX,BY+.5f,BX+BW*BossHealth,BY+.5f,FLinearColor(.77f,.54f,.50f,.6f),.7f);
 
-    const float Slot=58.f,EquipmentY=H-131.f;
-    RelicSlot(Margin,EquipmentY,Slot);RelicSlot(Margin+76,EquipmentY,Slot);
-    SwordIcon(Margin+Slot*.5f,EquipmentY+Slot*.5f);
-    FlaskIcon(Margin+76+Slot*.5f,EquipmentY+Slot*.5f-1,Knight->HealingCharges<=0);
-    Keycap(TEXT("E"),Margin+20,EquipmentY+64);
-    Text(Knight->IsChangingGrip()?TEXT("READYING"):Knight->IsTwoHanded()?TEXT("TWO HANDS"):TEXT("ONE HAND"),Margin+29,EquipmentY+85,10.5f,Ivory,true);
-    Keycap(TEXT("R"),Margin+81,EquipmentY+64);
-    Text(FString::FromInt(Knight->HealingCharges),Margin+111,EquipmentY+62,21,Ivory,true);
+    ArcMeter(108.f,H-100.f,90.7f,7.2f,198.f,125.f,Health,HealthTrail,FLinearColor(.59f,.105f,.12f,1.f));
+    ArcMeter(108.f,H-100.f,76.8f,9.f,155.f,191.f,Stamina,Stamina,FLinearColor(.34f,.53f,.38f,1.f));
+    Atlas(19.2f,H-203.2f,192.f,187.2f,20,550,400,390);
 
-    const float BossWidth=FMath::Min(650.f,W*.53f),BossX=(W-BossWidth)*.5f;
-    Text(TEXT("VEYR, THE CINDER WARDEN"),W*.5f,H-57,15,Ivory,true);
-    Meter(BossX,H-31,BossWidth,6,BossHealth,BossTrail,FLinearColor(.39f,.055f,.045f));
-    Diamond(BossX-10,H-28,5,Bronze);Diamond(BossX+BossWidth+10,H-28,5,Bronze);
+    Atlas(W-219.f,H-170.f,110.f,123.2f,1205,630,250,280);
+    Atlas(W-106.f,H-159.f,96.8f,121.f,1450,640,220,275);
+    Text(Knight->IsChangingGrip()?TEXT("READYING"):Knight->IsTwoHanded()?TEXT("— TWO HANDS —"):TEXT("— ONE HAND —"),W-161.f,H-59.f,16,Ivory,true);
+    Keycap(TEXT("E"),W-173.f,H-37.f);
+    Keycap(TEXT("R"),W-73.f,H-37.f);
+    TArray<FVector2D> ChargeBacking;
+    for(int32 I=0;I<32;++I){const float A=2.f*PI*I/32.f;ChargeBacking.Add(FVector2D(W-41.f+15.f*FMath::Cos(A),H-72.f+15.f*FMath::Sin(A)));}
+    Polygon(ChargeBacking,FLinearColor(.008f,.014f,.022f,.78f));
+    Text(FString::FromInt(Knight->HealingCharges),W-41.f,H-94.f,40,Ivory,true);
     if(Knight->bLockedOn&&!Dragon->IsDead())
     {
         FVector2D Screen;const FVector Target=Dragon->GetHeadLocation()*.4f+(Dragon->GetLegLocation(0)+Dragon->GetLegLocation(1))*.3f;
@@ -236,7 +226,7 @@ void AVeyrHUD::DrawHUD()
         const float Y=H*.43f;
         Rect(W*.5f-215,Y-16,430,105,FLinearColor(.008f,.012f,.018f,.72f));
         Line(W*.5f-170,Y-15,W*.5f-10,Y-15,Pewter);Line(W*.5f+10,Y-15,W*.5f+170,Y-15,Pewter);
-        Diamond(W*.5f,Y-15,4,Bronze);
+        Diamond(W*.5f,Y-15,4,Silver);
         Text(Knight->IsDead()?TEXT("YOU FELL"):TEXT("CINDER EXTINGUISHED"),W*.5f,Y+8,25,Ivory,true);
         Text(TEXT("ENTER  /  Rise again"),W*.5f,Y+53,14,Ivory,true);
     }
@@ -345,11 +335,11 @@ void AVeyrHUD::RebuildPauseMenu()
     Content->AddSlot().AutoHeight().Padding(0,0,0,6)
         [SNew(STextBlock).Text(FText::FromString(PausePage==1?TEXT("SETTINGS"):PausePage==2?TEXT("CONTROLS"):TEXT("PAUSED"))).Font(HeadingFont).ColorAndOpacity(Ivory)];
     Content->AddSlot().AutoHeight().Padding(0,0,0,22)
-        [SNew(STextBlock).Text(FText::FromString(TEXT("VEYR  /  THE CINDER WARDEN"))).Font(SmallFont).ColorAndOpacity(Bronze)];
+        [SNew(STextBlock).Text(FText::FromString(TEXT("VEYR  /  THE CINDER WARDEN"))).Font(SmallFont).ColorAndOpacity(Silver)];
     auto AddButton=[&](const FString& Label,TFunction<void()> Callback)
     {
         Content->AddSlot().AutoHeight().Padding(0,4)
-        [SNew(SButton).ContentPadding(FMargin(16,11)).ButtonColorAndOpacity(FLinearColor(.12f,.105f,.075f,1.f))
+        [SNew(SButton).ContentPadding(FMargin(16,11)).ButtonColorAndOpacity(FLinearColor(.075f,.095f,.12f,1.f))
             .OnClicked_Lambda([Callback=MoveTemp(Callback)](){Callback();return FReply::Handled();})
             [SNew(STextBlock).Text(FText::FromString(Label)).Font(BodyFont).ColorAndOpacity(Ivory)]];
     };
@@ -396,7 +386,7 @@ void AVeyrHUD::RebuildPauseMenu()
     [SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(.005f,.006f,.008f,.76f))
         .HAlign(HAlign_Center).VAlign(VAlign_Center)
         [SNew(SBox).WidthOverride(500.f).MaxDesiredHeight(MaxHeight)
-            [SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(.035f,.029f,.020f,.98f)).Padding(28.f)
+            [SNew(SBorder).BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush"))).BorderBackgroundColor(FLinearColor(.018f,.028f,.042f,.98f)).Padding(28.f)
                 [SNew(SScrollBox)+SScrollBox::Slot()[Content]]]]];
     Viewport->AddViewportWidgetContent(PauseRoot.ToSharedRef(),1000);
     FInputModeUIOnly Input;Input.SetWidgetToFocus(PauseRoot);Input.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);

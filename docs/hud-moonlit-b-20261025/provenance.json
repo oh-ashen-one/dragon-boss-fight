@@ -1,0 +1,12 @@
+{
+  "selectedReference": "B Moonlit Silver",
+  "referenceSHA256": "d38bc5995c80af91469cf9aa062fb1311b03068d206e2a3791e77bdafd34ec8e",
+  "atlasSHA256": "938c4601b830ac8ab1a68ae7264589d0e07c31361a4ee464f485491c78901c27",
+  "method": "built-in image_gen edit: isolate original HUD artwork as RGBA; remove scene/text/fills; preserve engraved silver/crescent/painted equipment forms",
+  "runtimeDifferences": [
+    "R healing hint follows current controls; Q remains roll",
+    "Persistent controls remain above bottom-right equipment"
+  ],
+  "font": "Cormorant Garamond, SIL OFL1.1; official google/fonts source, license bundled",
+  "status": "native visual validation pending"
+}

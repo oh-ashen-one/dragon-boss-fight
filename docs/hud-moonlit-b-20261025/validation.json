@@ -1,0 +1,40 @@
+{
+  "selectedReference": "B Moonlit Silver",
+  "nativeVisualReview": "Accepted final composition, engraved-rail alignment and equipment grouping; not a pixel-identical screenshot",
+  "intentionalDifferences": [
+    "R healing hint matches actual binding; Q is roll",
+    "Persistent controls above equipment retained",
+    "Live values and current game environment differ from concept still"
+  ],
+  "checks": [
+    {
+      "mode": "healing",
+      "sourceId": "cb07bb5d362128efaf0948311253d39dbad40e7f2000f9d05bdc2b2e46915c5b",
+      "passed": true,
+      "reason": "four real heal completions consumed four charges; 100 HP cap and injured empty-flask rejection verified",
+      "durationSeconds": 41.79679489135742,
+      "terminalSeconds": -1,
+      "restartMovementVerified": false,
+      "restartAttackVerified": false
+    },
+    {
+      "mode": "victory",
+      "sourceId": "cb07bb5d362128efaf0948311253d39dbad40e7f2000f9d05bdc2b2e46915c5b",
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "durationSeconds": 216.00942993164062,
+      "terminalSeconds": 209.85935974121094,
+      "restartMovementVerified": true,
+      "restartAttackVerified": true
+    }
+  ],
+  "signatureAndDependenciesVerified": true,
+  "copiedAppGraphicallyVerified": true,
+  "archive": {
+    "file": "Veyr-Moonlit-Silver-B-cb07bb5d.zip",
+    "sha256": "efd2a1403b49bd699a28c261fd6d9f0089d0d654f4d6ab4ea3078aed2eb1c810"
+  },
+  "fontLicense": "SIL OFL1.1 bundled",
+  "assetTool": "built-in image_gen",
+  "providerCreditsSpentThisPass": 0
+}

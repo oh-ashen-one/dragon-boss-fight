@@ -3,17 +3,22 @@
 #include "GameFramework/HUD.h"
 #include "VeyrHUD.generated.h"
 
-/** Restrained native encounter HUD. Original vector silhouettes; no asset dependency. */
+/** Moonlit Silver HUD: generated reference artwork with live resource gauges. */
 UCLASS()
 class VEYR_API AVeyrHUD : public AHUD
 {
     GENERATED_BODY()
 public:
+    AVeyrHUD();
     virtual void DrawHUD() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     void TogglePauseMenu();
     bool IsPauseMenuOpen() const { return PauseRoot.IsValid(); }
 private:
+    UPROPERTY() TObjectPtr<class UTexture2D> MoonlitAtlas;
+    UPROPERTY() TObjectPtr<class UFont> MoonlitFont;
+    void Atlas(float X,float Y,float Width,float Height,float U,float V,float UW,float VH);
+    void ArcMeter(float X,float Y,float Radius,float Width,float Start,float Sweep,float Value,float Trail,const FLinearColor& Color);
     TSharedPtr<class SWidget> PauseRoot;
     int32 PausePage=0;
     bool bRestoreCapture=false;
@@ -24,17 +29,12 @@ private:
     void ChangeSensitivity(float Delta);
     void ToggleDisplayMode();
     void CycleResolution();
-    void Circle(float X,float Y,float Radius,const FLinearColor& Color,float Width=1.f);
-    void RelicSlot(float X,float Y,float Size);
     void ControlLegend(float W,float H,bool bTerminal);
     void Text(const FString& Value,float X,float Y,float Height,const FLinearColor& Color,bool bCentered=false);
     void Line(float X1,float Y1,float X2,float Y2,const FLinearColor& Color,float Width=1.f);
     void Rect(float X,float Y,float Width,float Height,const FLinearColor& Color);
     void Polygon(const TArray<FVector2D>& Points,const FLinearColor& Color);
     void Diamond(float X,float Y,float Radius,const FLinearColor& Color,bool bFilled=false);
-    void Meter(float X,float Y,float Width,float Height,float Value,float Trail,const FLinearColor& Color);
-    void SwordIcon(float X,float Y);
-    void FlaskIcon(float X,float Y,bool bEmpty);
     void Keycap(const FString& Key,float X,float Y);
     float Unit=1.f;
     float HealthTrail=1.f,BossTrail=1.f;

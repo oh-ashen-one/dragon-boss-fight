@@ -1,3 +1,41 @@
+# Moonlit Silver HUD B — delivered for owner review, 2026-10-25
+
+The owner selected concept B, superseding the earlier A recommendation.
+The new app is open at a fresh start screen:
+`~/Downloads/Veyr-Moonlit-Silver-B-20261025/Veyr.app`.
+Do not take over or close the owner's review session. Current process/log/slot:
+`Local/HUDMoonlitB/owner-review.log` and `owner-review-gpu.json`.
+
+- Branch: `codex/veyr-moonlit-silver-hud-20261025`.
+- Build source: `cb07bb5d362128efaf0948311253d39dbad40e7f2000f9d05bdc2b2e46915c5b`.
+- Package: `Local/package-20261025T222002Z/receipt.json`.
+- Boss name/bar moved to top center with engraved silver crescent frame.
+  Player health/stamina are live curved gauges around the lower-left moon crest.
+  Painted boat-sword/cup medallions and live grip/charge labels are lower right.
+  Old Ashen Gold bars and square/vector equipment slots were removed.
+- Built-in ImageGen isolated artwork from the selected B reference into a genuine
+  RGBA atlas. Canvas gauges/text remain live. Native Texture2D is under
+  `/Game/UI/MoonlitB`; original source/provenance in `Local/HUDMoonlitB`.
+- Cormorant Garamond is bundled under OFL1.1 for reference-like serif labels.
+  Existing controls remain: R heal, Q roll; the concept's older Q-heal label is
+  corrected. Persistent controls remain above equipment in readable sans type.
+- Native visual critique accepted final composition and corrected arc endpoints.
+  Same-build packaged healing passed allfour charges/cap/empty rejection;
+  fullfight passed boss defeat, terminal pose, resource reset, movement and attack
+  after restart. Details: `docs/hud-moonlit-b-20261025/validation.json`.
+- Actual final captures: `<task-output>/veyr-hud-b-20261025/`.
+  `Moonlit-B-Ready.png` shows the delivered app; live-resource captures show
+  depletion. The world/map differs from the older concept backdrop by design.
+- Private generated source/native backup release: `hud-moonlit-silver-20261025`
+  in `oh-ashen-one/veyr-animation-sources`. Font and original code are in Git.
+  Prior cathedral/SkinCache build remains preserved separately below.
+
+The prior Skin Cache crash repair, gameplay, approved animations, collision and
+camera fixes are unchanged. This pass changes HUD presentation and stages its
+font/artwork; it does not establish a new isolated performance benchmark.
+
+---
+
 # Veyr cathedral and combat polish — delivered for owner review, 2026-10-25
 
 The extracted final app is open at its fresh start screen in
