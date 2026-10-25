@@ -1019,14 +1019,14 @@ void AVeyrDragon::AddGroundLine(UInstancedStaticMeshComponent* Lines,const FVect
         float Z0,Z1;if(!WarningSurfaceHeight(Start,Z0)||!WarningSurfaceHeight(End,Z1))continue;
         Start.Z=Z0+9.f;End.Z=Z1+9.f;const FVector Delta=End-Start;
         if(Delta.SizeSquared()<.01)continue;
-        Lines->AddInstance(FTransform(Delta.Rotation(),(Start+End)*.5,FVector(Delta.Size()/100,Width/100,6.f/100)),true);
+        Lines->AddInstance(FTransform(Delta.Rotation(),(Start+End)*.5,FVector(Delta.Size()/100,Width/100,1.f/100)),true);
     }
 }
 
 void AVeyrDragon::DrawFootprint(UInstancedStaticMeshComponent* Lines,const FVeyrDragonFootprint& F,bool bBright,const TArray<FVeyrDragonFootprint>* Union,int32 OwnIndex)
 {
     if(F.Shape==EVeyrDangerShape::None)return;
-    const float Width=bBright?22.f:13.f;
+    const float Width=bBright?9.f:7.f;
     auto Line=[&](const FVector& A,const FVector& B,float W)
     {
         const int32 Pieces=Union&&Union->Num()>1?FMath::Max(1,FMath::CeilToInt(FVector::Dist(A,B)/40.f)):1;

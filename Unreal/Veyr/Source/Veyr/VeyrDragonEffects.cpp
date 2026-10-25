@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 
 AVeyrDragonEffects::AVeyrDragonEffects()
@@ -68,8 +69,19 @@ bool AVeyrDragonEffects::Initialize(AVeyrDragon* InDragon)
     if(CoreMaterial->GetBlendMode()!=BLEND_Additive||FlameMaterial->GetBlendMode()!=BLEND_Additive||
        SmokeMaterial->GetBlendMode()!=BLEND_Translucent||EmberMaterial->GetBlendMode()!=BLEND_Additive)
     {EffectsDiagnostic=TEXT("FXv3 blend modes do not match flame/smoke contract");return false;}
-    ConfigurePool(Core,CoreMaterial,CoreCount);ConfigurePool(Flame,FlameMaterial,FlameCount);
-    ConfigurePool(Smoke,SmokeMaterial,SmokeCount);ConfigurePool(Embers,EmberMaterial,EmberCount);
+    // Transient instances tune only this dragon; the imported atlas materials
+    // and the arena's brazier users retain their authored defaults.
+    auto PresentationMaterial=[&](UMaterialInterface* Parent,const FLinearColor& Tint,float Brightness)
+    {
+        UMaterialInstanceDynamic* Material=UMaterialInstanceDynamic::Create(Parent,this);
+        Material->SetScalarParameterValue(TEXT("Brightness"),Brightness);
+        Material->SetVectorParameterValue(TEXT("Tint"),Tint);
+        return Material;
+    };
+    ConfigurePool(Core,PresentationMaterial(CoreMaterial,FLinearColor(1.f,.92f,.72f),3.3f),CoreCount);
+    ConfigurePool(Flame,PresentationMaterial(FlameMaterial,FLinearColor(1.f,.60f,.25f),2.2f),FlameCount);
+    ConfigurePool(Smoke,PresentationMaterial(SmokeMaterial,FLinearColor(.34f,.32f,.29f),.12f),SmokeCount);
+    ConfigurePool(Embers,EmberMaterial,EmberCount);
     AddTickPrerequisiteActor(Dragon);bEffectsReady=true;
     EffectsDiagnostic=TEXT("FXv3 textured turbulent jet, independent hot core, smoke/embers and three local fire lights; native visual acceptance pending");
     return true;
@@ -155,11 +167,12 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         auto Length=[&](float U,float Wanted){return FMath::Max(1.f,FMath::Min(Wanted,2.f*Beam.Length*FMath::Min(U,1.f-U)));};
         for(int32 I=0;I<CoreCount;++I)
         {
-            const float Seed=FMath::Frac(I*.618034f),U=.015f+.37f*(I+.5f)/CoreCount;
+            const float Seed=FMath::Frac(I*.618034f),U=.012f+.218f*(I+.5f)/CoreCount;
             const float Pulse=.5f+.5f*FMath::Sin(EffectsClock*18.f-Seed*31.f);
-            const float Width=28.f+Beam.Length*U*LastBeamSpread*.65f;
-            Streak(Core,I,Point(U,.10f,EffectsClock*4.f+I),Camera,Axis,Length(U,150.f+80.f*Pulse),Width,
-                .16f*(1.f-U/.40f)*Startup*(.65f+.35f*Pulse),Seed,FMath::Frac(T*1.2f+Seed),1.f);
+            const float Width=18.f+Beam.Length*U*LastBeamSpread*.40f;
+            const float CoreLength=FMath::Min(90.f+45.f*Pulse,2.f*Beam.Length*FMath::Min(U,.28f-U));
+            Streak(Core,I,Point(U,.10f,EffectsClock*4.f+I),Camera,Axis,CoreLength,Width,
+                .095f*(1.f-U/.28f)*Startup*(.65f+.35f*Pulse),Seed,FMath::Frac(T*1.2f+Seed),1.f);
         }
         // Five desynchronised advecting streams fill the volume with textured
         // tongues. Their translucent gaps stay visible; this is not a solid cone.
@@ -168,12 +181,15 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
             const float Seed=FMath::Frac(I*.618034f),Age=FMath::Frac(T*.85f+(I/5+.5f)/16.f+Seed*.035f);
             const float U=.012f+.976f*Age,R=Beam.Length*U*LastBeamSpread;
             const float Angle=(I%5)*2.f*PI/5.f+T*.8f+U*4.7f;
-            const float Radial=I%5==0?.08f:.35f+.22f*Seed;
+            const float Curl=FMath::Sin(T*7.5f+Seed*19.f+U*9.f);
+            const float Radial=I%5==0?.14f:.48f+.12f*Curl+.07f*Seed;
             const float Life=FMath::Pow(FMath::Max(0.f,FMath::Sin(Age*PI)),.45f);
             const float Width=FMath::Max(24.f,FMath::Min(FMath::Max(70.f,R*1.8f),2.f*R*(1.f-Radial)));
-            const float Along=Length(U,FMath::Max(150.f,R*1.35f));
-            Streak(Flame,I,Point(U,Radial,Angle),Camera,Axis,Along,Width,
-                (.16f+.08f*Seed)*Life*Startup,Seed,Age,1.f-Age*.65f);
+            const float Along=Length(U,FMath::Max(100.f,R*.85f));
+            const FVector TongueAxis=(Axis+Side*(Curl*.12f)+Up*(FMath::Cos(T*6.f+Seed*23.f)*.08f)).GetSafeNormal();
+            const float ImpactFade=1.f-.45f*FMath::Clamp((U-.62f)/.38f,0.f,1.f);
+            Streak(Flame,I,Point(U,Radial,Angle),Camera,TongueAxis,Along,Width,
+                (.11f+.055f*Seed)*Life*Startup*ImpactFade,Seed,Age,.90f-Age*.55f);
         }
         for(int32 I=0;I<EmberCount;++I)
         {
@@ -201,11 +217,13 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         FVector Side=FVector::CrossProduct(LastBeamDirection,FVector::UpVector).GetSafeNormal();if(Side.IsNearlyZero())Side=FVector::RightVector;
         for(int32 I=0;I<SmokeCount;++I)
         {
-            const float Seed=FMath::Frac(I*.618034f),Age=FMath::Frac(EffectsClock*.40f+Seed),U=.26f+.74f*(I+.5f)/SmokeCount;
+            const float Seed=FMath::Frac(I*.618034f),Age=FMath::Frac(EffectsClock*.40f+Seed),U=.60f+.34f*(I+.5f)/SmokeCount;
             const float R=LastBeamLength*U*LastBeamSpread;
-            FVector Position=LastBeamOrigin+LastBeamDirection*(LastBeamLength*U)+Side*((Seed-.5f)*R*1.4f);
-            Position.Z=FMath::Max(Position.Z,Dragon->GetActorLocation().Z+40.f)+55.f+Age*150.f+(Active?0.f:FMath::Max(0.f,TailAge))*100.f;
-            Sprite(Smoke,I,Position,Camera,150.f+R*1.2f+Age*80.f,(.035f+.025f*Seed)*(1.f-Age)*SmokeTail,Seed,Age,.15f);
+            const FVector Behind=(LastBeamOrigin-Camera).GetSafeNormal2D();
+            FVector Position=LastBeamOrigin+LastBeamDirection*(LastBeamLength*U)+Side*((Seed-.5f)*R*1.25f)+Behind*(35.f+Age*70.f);
+            Position.Z=FMath::Max(Position.Z,Dragon->GetActorLocation().Z+40.f)+70.f+Age*190.f+(Active?0.f:FMath::Max(0.f,TailAge))*100.f;
+            const float FadeIn=FMath::Clamp(Age/.12f,0.f,1.f);
+            Sprite(Smoke,I,Position,Camera,130.f+R*.85f+Age*90.f,(.065f+.03f*Seed)*FadeIn*(1.f-Age)*SmokeTail,Seed,Age,.5f);
         }
         Smoke->MarkRenderStateDirty();VisibleSpriteCount+=SmokeCount;
     }

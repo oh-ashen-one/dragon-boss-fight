@@ -147,11 +147,13 @@ void AVeyrHUD::RelicSlot(float X,float Y,float Size)
 }
 void AVeyrHUD::ControlLegend(float W,float H,bool bTerminal)
 {
-    const float X=W-255.f,Y=H-161.f;
-    Rect(X-10,Y-8,228,100,FLinearColor(.012f,.011f,.009f,.57f));Line(X-10,Y-8,X+218,Y-8,Pewter,.7f);
-    const TCHAR* Rows[]={TEXT("WASD  Move    SHIFT  Sprint"),TEXT("LMB  Attack    RMB  Guard"),TEXT("Q  Dodge    SPACE  Blink"),TEXT("E  Grip    R  Heal"),TEXT("TAB  Lock    ESC  Menu")};
-    for(int32 I=0;I<5;++I)Text(Rows[I],X,Y+I*17,11.5f,I==1?Ivory:Quiet);
-    if(bTerminal)Text(TEXT("ENTER  Restart encounter"),X,Y-26,12,Ivory);
+    // MediumFont's visible glyphs occupy roughly 80% of its measured line
+    // height: 17 layout pixels gives about 13–14 readable pixels at 1280x720.
+    const float X=W-334.f,Y=H-178.f;
+    Rect(X-12,Y-10,310,122,FLinearColor(.012f,.011f,.009f,.64f));Line(X-12,Y-10,X+298,Y-10,Pewter,.7f);
+    const TCHAR* Rows[]={TEXT("WASD  Move    SHIFT  Sprint"),TEXT("LMB  Attack    RMB  Guard"),TEXT("Q  Roll    SPACE  Blink"),TEXT("E  Grip    R  Heal"),TEXT("TAB  Lock    ESC  Menu")};
+    for(int32 I=0;I<5;++I)Text(Rows[I],X,Y+I*22,17.f,Ivory);
+    if(bTerminal)Text(TEXT("ENTER  Restart encounter"),X,Y-30,17,Ivory);
 }
 
 void AVeyrHUD::Keycap(const FString& Key,float X,float Y)

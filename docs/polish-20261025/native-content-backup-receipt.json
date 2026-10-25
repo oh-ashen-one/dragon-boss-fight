@@ -1,0 +1,30 @@
+{
+  "privateRepository": "oh-ashen-one/veyr-animation-sources",
+  "release": "combat-arena-polish-native-20261025",
+  "restore": "Apply over native-integration-20261025 base plus its prop-material overlay. Extract all ZIPs at repository root and verify manifest hashes. RuntimePolish remains separate from RuntimeApproved.",
+  "archives": [
+    {
+      "file": "Veyr-Polish-Native-20261025-part1.zip",
+      "sha256": "21877255d89c6c4b40a3af3e934e3de457185d01bfdb515271aa2bc05ace713b",
+      "bytes": 876233196,
+      "verifiedFiles": 42,
+      "CRCAndAllFileHashesVerified": true
+    },
+    {
+      "file": "Veyr-Polish-Native-20261025-part2.zip",
+      "sha256": "b41c60c19a96dada5f05082e1bb2f4b178f4d832fd8c6f3bc03a276aceaf0210",
+      "bytes": 826725875,
+      "verifiedFiles": 87,
+      "CRCAndAllFileHashesVerified": true
+    },
+    {
+      "file": "Veyr-Polish-Native-20261025-part3.zip",
+      "sha256": "81d57504e18a59d3f516e95dc1e8cdc2b175931df137e59421e804335e58d5bd",
+      "bytes": 413797593,
+      "verifiedFiles": 98,
+      "CRCAndAllFileHashesVerified": true
+    }
+  ],
+  "allGitHubDigestsMatch": true,
+  "verifiedFiles": 227
+}

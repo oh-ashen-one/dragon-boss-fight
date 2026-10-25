@@ -104,7 +104,8 @@ void AVeyrArena::BeginPlay()
     FloorWet = MakeBatch(TEXT("OriginalBroadWetPaverAreas"), CubeMesh, WetStone);
     UMaterialInterface* FloorMaterial=CathedralFloorParent?CathedralFloorParent.Get():Flagstone;
     FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
-    Foundations=MakeBatch(TEXT("ConnectedCathedralFoundations"),CubeMesh,Ashlar);
+    auto* FoundationStone=MakeMaterial(TEXT("RecessedCourtFoundationStone"),FLinearColor(.075f,.080f,.085f),.92f);
+    Foundations=MakeBatch(TEXT("ConnectedCathedralFoundations"),CubeMesh,FoundationStone);
     auto* CutStone=MakeMaterial(TEXT("RestrainedFloorCarving"),FLinearColor(.045f,.050f,.054f),.9f,false);
     FloorCarvings=MakeBatch(TEXT("SubtleStoneCarvedRings"),CubeMesh,CutStone);
     auto* ParapetStone=MakeMaterial(TEXT("DarkWeatheredParapetStone"),FLinearColor(.055f,.064f,.072f),.92f);
@@ -246,7 +247,11 @@ void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Ya
 {
     UStaticMesh* Mesh=PolishMeshes.FindRef(Name);if(!Mesh)return;
     const FBox Bounds=Mesh->GetBoundingBox();const float Uniform=Height/FMath::Max(1.f,static_cast<float>(Bounds.GetSize().Z));
-    const FVector Scale(Uniform*WidthScale,Uniform,Uniform);const FRotator Rotation(0,Yaw,0);
+    FVector Scale(Uniform*WidthScale,Uniform,Uniform);
+    // Preserve the full eight-metre paving footprint while burying its skirt.
+    // Uniform height normalization would shrink the footprint with its depth.
+    if(Name==FName(TEXT("WornPavingPatch")))Scale.Z*=.075f;
+    const FRotator Rotation(0,Yaw,0);
     const FVector LocalAnchor(Bounds.GetCenter().X,bFrontAnchor?Bounds.Max.Y:Bounds.GetCenter().Y,Bounds.Min.Z);
     const FTransform Transform(Rotation,Anchor-Rotation.RotateVector(LocalAnchor*Scale),Scale);
     const FName BatchName(*FString::Printf(TEXT("CourtKit_%s_%s"),*Name.ToString(),bBlocking?TEXT("Solid"):TEXT("Distant")));
@@ -283,7 +288,10 @@ void AVeyrArena::KitWallRun(FName Name,const FVector& Start,const FVector& End,c
     // seams. It sits behind their front face, never across an open passage.
     if(bBlocking&&FloorZ>0.f)
     {
-        FVector Support=(Start+End)*.5f-Inward*(Dimensions.Y*.5f);const float H=FloorZ+120.f;
+        FVector Support=(Start+End)*.5f-Inward*(Dimensions.Y*.5f);
+        // The upper gallery already rests on the lower wall. A full-height
+        // second support exposed a featureless slab through its carved bays.
+        const float H=FloorZ>AisleHeight+500.f?180.f:FloorZ+120.f;
         Support.Z=FloorZ-H*.5f;
         Box(Foundations,Support,FVector(Length+100.f,Dimensions.Y+160.f,H),(End-Start).Rotation());
     }
@@ -321,7 +329,7 @@ void AVeyrArena::BuildFloor()
     for(int32 X=-2;X<=2;++X)for(int32 Y=-2;Y<=2;++Y)
     {
         if(FVector2D(X*1350.f,Y*1350.f).Size()>3300.f)continue;
-        KitPiece(TEXT("WornPavingPatch"),FVector(X*1350.f,Y*1350.f,.6f),8.f,((X+Y+8)%4)*90.f,true);
+        KitPiece(TEXT("WornPavingPatch"),FVector(X*1350.f,Y*1350.f,-.1f),8.f,((X+Y+8)%4)*90.f,true);
     }
 }
 
@@ -377,6 +385,17 @@ bool AVeyrArena::BuildImportedCathedral()
     // not seal genuine openings. The apse's real windows remain unfilled.
     KitWallRun(TEXT("CloisterWall"),FVector(-2600,-CourtHalfY-100,0),FVector(CourtHalfX,-CourtHalfY-100,0),FVector(0,1,0),1000,AisleHeight+1340);
     KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,CourtHalfY+100,0),FVector(-2600,CourtHalfY+100,0),FVector(0,-1,0),1000,AisleHeight+1340);
+    // Three grounded masses interrupt the repeated arcade skyline. Their
+    // front faces stay outside the court and leave the combat floor unchanged.
+    auto SkylineMass=[&](FName Name,float X,float Height)
+    {
+        const FVector Size=KitSize(Name,Height);const float FrontY=CourtHalfY+40.f;
+        KitPiece(Name,FVector(X,FrontY,AisleHeight),Height,180.f,true,true);
+        Box(Foundations,FVector(X,FrontY+Size.Y*.5f,(AisleHeight-120.f)*.5f),FVector(Size.X+100.f,Size.Y+100.f,AisleHeight+120.f));
+    };
+    SkylineMass(TEXT("RuinedGatehouse"),-450.f,3400.f);
+    SkylineMass(TEXT("CornerButtress"),-3250.f,2100.f);
+    SkylineMass(TEXT("CornerButtress"),3350.f,2250.f);
     KitPiece(TEXT("RuinedGatehouse"),FVector(-CourtHalfX,0,AisleHeight),1600,-90,true,true);
     Box(Foundations,FVector(-CourtHalfX-Gate.Y*.5f,0,(AisleHeight-120.f)*.5f),FVector(Gate.Y+120.f,Gate.X+160.f,AisleHeight+120.f));
     // Closed portcullis is visible solid geometry. Its gaps are narrower than
@@ -419,7 +438,7 @@ bool AVeyrArena::BuildImportedCathedral()
 float AVeyrArena::GetMaximumWalkableHeightNear(const FVector& WorldPoint,float RadiusCm) const
 {
     const FVector Point=GetActorTransform().InverseTransformPosition(WorldPoint);
-    const float Radius=RadiusCm/FMath::Max(.001f,static_cast<float>(GetActorScale3D().GetAbsMax()));float Height=9.f;
+    const float Radius=RadiusCm/FMath::Max(.001f,static_cast<float>(GetActorScale3D().GetAbsMax()));float Height=.5f;
     for(const FBox& Bounds:RaisedWalkableBounds)
     {
         const float X=FMath::Clamp(Point.X,Bounds.Min.X,Bounds.Max.X),Y=FMath::Clamp(Point.Y,Bounds.Min.Y,Bounds.Max.Y);
@@ -567,8 +586,8 @@ void AVeyrArena::BuildDistance()
         else Box(Embers,P+FVector(0,0,165),FVector(55,55,8));
         auto* Light=NewObject<UPointLightComponent>(this,*FString::Printf(TEXT("CourtAmberBrazier%02d"),I));
         AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
-        Light->SetRelativeLocation(P+FVector(0,0,210));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(330.f);
-        Light->SetLightColor(FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(1350.f);Light->SetSourceRadius(45.f);
+        Light->SetRelativeLocation(P+FVector(0,0,210));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(190.f);
+        Light->SetLightColor(FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(1000.f);Light->SetSourceRadius(45.f);
         Light->SetCastShadows(false);Light->SetSpecularScale(.7f);Light->RegisterComponent();
     };
     for(float Side:{-1.f,1.f})

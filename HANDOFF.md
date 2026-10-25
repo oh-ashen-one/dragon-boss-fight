@@ -1,57 +1,68 @@
 # Combat and arena rebuild — IN PROGRESS, 2026-10-25
 
-The owner rejected the latest fire, flight feet, slow two-hand movement, Ctrl walk,
+The owner rejected fire quality, flight feet, slow two-hand movement, Ctrl walk,
 rolling sword orientation, confusing controls, sparse disconnected arena and
-pass-through dragon. They explicitly authorize autonomous changes, Tripo browser
-creation and as many credits as needed, with no routine confirmation questions.
-This feedback supersedes earlier visual acceptance; preserve approved originals
-and author revised animation candidates in Blender MCP.
+pass-through dragon. They explicitly authorize autonomous fixes, Tripo browser
+creation and credits without routine confirmation questions. Preserve the old
+approved sources; new Blender revisions are separate candidates.
 
-- Branch: `codex/veyr-combat-arena-polish-20261025`, same owned integration checkout.
-- Controls chosen: LMB attack chain, RMB guard, Shift sprint, Q roll, Space explicit
-  directional blink, E grip, R heal, Enter terminal restart, Escape full pause.
+- Branch: `codex/veyr-combat-arena-polish-20261025`, owned integration checkout.
+- Controls: LMB attack chain, RMB guard, Shift sprint, Q roll, Space directional
+  blink, E grip, R heal, Enter terminal restart, Escape full pause/settings.
   Ctrl walk and C-combo bindings are removed. Both grips jog/sprint normally.
-- Five built-in ImageGen map references are saved in task outputs and
-  `Local/ArtPass20261025/References`; prompts in docs/polish-20261025/image-prompts.json.
-  Direction: enclosed cathedral court with connected cloisters/stairs, fallen bell,
-  masonry/terrain foundations and clear central battle space.
-- Root opened existing localhost8775 reviewer on Dragon_FlyHover_Blender_v1r2.
-  Its server is a read-only reused authoring-checkout service; don't stop it.
-- Tripo through Chrome:12 private H3.1/8K module generations,65 credits each,
-  780 credits total, recorded from the generation buttons and private balance ledger. Job URLs/prompts are private in
-  Local/ArtPass20261025/Tripo/jobs.json. Generation success is not export/import proof.
-  Native Save dialogs must be completed for each export. First CloisterWall GLB
-  is saved; other exports are in progress. No account/subscription changes.
-- One owned Blender MCP session (agent native_runtime_critic) onloopback9891,
-  owner codex-veyr-polish-20261025; process details remain in the local ledger.
-  That authoring session has now exited cleanly.
-  Outputs Local/Blender/polish-20261025: correctedflight suite, RunTwoHand,
-  GripToTwoHand/GripToOneHand, correctedRoll/RollAttack. Critics review beforeimport.
-- File ownership: asset_import_audit Knight/HUD/GameMode/controls andReplay QA;
-  dragon_integration_critic Dragon/collision/Effects/Audio +fire materialhelper;
-  animator new Blender recipe/outputfolder; rootArena/imports/Tripo/references.
-- Initial controls/pause/HUD/fire/collision C++ build passes (de531b56).
-  ConnectedArena and revisedasset imports remain in progress; native visual/
-  gameplay/performance acceptance is pending. Root is soleUnrealowner.
-- Fire generatedatlas/density inLocal/ArtPass20261025/FX; helper
-  tools/unreal/create_fire_materials_v3.py createsnew /Game/Veyr/FX/v3 assets.
-- Preserve app-scoped ANSI allocator startuprepair and sharedGPU safety. No
-  currentVeyr/Unrealprocess atstartup; Blenderhasone slot. Neverlaunchforeigninstances.
+- Five built-in ImageGen map concepts are saved under task outputs and
+  `Local/ArtPass20261025/References`; prompts are in docs/polish-20261025.
+  Direction: enclosed cathedral court, connected cloisters, stairs, rock
+  foundations, fallen bell and city context around a clear battle floor.
+- All12 private Tripo H3.1/8K modules were generated through Chrome, exported,
+  normalized, imported and saved. Cost780credits (12x65). Native meshes use
+  150k/60k/15k triangle LODs, capped4K textures and real triangle collision.
+  Retaining wall is v002; other modules are v001.
+- Revised Blender clips: Dragon hoverv1, takeoffv3, landv4; Knight two-handrun,
+  both grip transitions, roll and roll-attackv2. Editable .blends, GLBs and
+  three-view films are preserved. Blender instances exited cleanly.
+- Normalization/import plans: `Local/CustomuseAssets/Polish20261025/idle-joins`.
+  Allfour flight/idle surface joins <.001cm; roll/roll-attack prefix exact.
+  Both characters imported v026 and activated in separate RuntimePolish defs.
+  Native fidelity passed all71 keys/426 sampled poses, with all10 Dragon morphs.
+  Original RuntimeApproved and approved authoring sources remain unchanged.
+- Dragon has19 bone-following solid capsules plus swept movement/depenetration.
+  Fire uses generated atlas/smoke textures and four saved FXv3 materials.
+- Current editor PID48195, loopbackMCP18773, root sole owner; run directory
+  `Local/owned-editor-20261025T173421Z`. Source identity d801d7fc. Do not launch a
+  duplicate or take over another engine. Use normal owned editor shutdown.
+- Native d801 checks passed: all18 animation/control exercises, both-grip stance
+  damage/speed, four heal completions/empty rejection, initial front-foot
+  sprint/roll/blink blocking. Guard front/rear contacts passed; exhausted guard
+  breaks occurred but the driver aimed off-center and failed its strict facing
+  qualification. Agent is fixing normal-input aim, preserving the gate.
+- Further native suite is running. Collision QA is being extended to flanks,
+  rear/head approach and natural landing. Initial front test does not establish
+  complete body/flight coverage. Escape stopped PIE through the editor shortcut;
+  packaged Escape/settings/world-freeze verification remains required.
+- Actual-frame critique found raised paving edges and oversized support slabs.
+  Source follow-up flattens/recesses paving, uses shallow upper support courses,
+  breaks arcade repetition, reduces orange light wash, enlarges the control legend,
+  separates fire tongues/core/smoke and thins warnings. These follow-up edits
+  still require compilation and new native visual checks.
+- Current-pass crash count1: native retaining-wall async mesh-build assertion.
+  Supported synchronous compilation and native finish barrier resolved imports
+  on fresh v002. See Local/polish-crash-ledger.json. Stop after a second crash;
+  never blind-relaunch. Earlier allocator crashes are historical; the verified
+  app-scoped ANSI startup repair remains required for packaging/launches.
+- Private source backup: `combat-arena-polish-sources-20261025` in
+  `oh-ashen-one/veyr-animation-sources`, three archives with verified remote
+  digests. Incremental native backup `combat-arena-polish-native-20261025` is
+  being uploaded; verify its digests before claiming remote completion.
+- Corrected local animation reviewer: http://127.0.0.1:8776/ (PID32395).
+  Original8775 reviewer remains a read-only authoring-checkout service.
 
-Current import checkpoint:12Tripoexports are saved and structurally verified;
-8 native modules are imported/reduced/saved. RetainingWall v001 hit an Unreal
-AsyncTask mesh-build assertion; originalpartial is preserved, v002 is the fresh
-retry. Currentpass crash count1, rootdriver stopped andownedreporterterminated.
-Importer now uses supported synchronous compilation plus native finishbarrier.
-Editorrestart is sourcechanged, not a blindretry. Remaining4imports resume.
-Private sourcebackup verified atcombat-arena-polish-sources-20261025 (3ZIPs).
-Final animationplans/audit:Local/CustomuseAssets/Polish20261025/idle-joins;
-10dragonmorphs, allfourflightIdlejoins<.001cm, normalizedrollprefixexact.
-
-Remaining: finishTripo native imports/geometryinspection, buildcoherentArena, critiqueand
-normalize/importnewanimations, compile/importnativeassets throughownedMCP,
-exerciseactualcontrols/pause/settings/collision/fire, renderedcomparisonandperf,
-package/launchfromDownloads, backupprivateassets andpushverifiedhandoff.
+Remaining: complete strict gameplay/collision/full-fight tests, compile visual
+follow-up, verify actual fire/map/animations and pause/settings, measure runtime
+performance, package and graphically launch the repaired app, deliver an extracted
+new Downloads folder, finish private backups and push the verified handoff.
+Do not present concepts, source checks or passing narrow tests as final gameplay
+or visual acceptance. Root owns Unreal; agents must not operate its UI.
 
 ---
 
