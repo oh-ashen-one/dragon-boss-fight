@@ -140,6 +140,21 @@ def source_morph_curves(filename):
     return result
 
 
+def prepare_rigid_prop(mesh):
+    """Preserve full rigid geometry on the ordinary material path, including translucent echoes."""
+    import unreal
+    subsystem=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    settings=subsystem.get_nanite_settings(mesh)
+    before=bool(settings.get_editor_property('enabled'))
+    if before:
+        settings.set_editor_property('enabled',False)
+        subsystem.set_nanite_settings(mesh,settings,True)
+    after=bool(subsystem.get_nanite_settings(mesh).get_editor_property('enabled'))
+    if after:raise RuntimeError('Rigid prop still uses Nanite: '+mesh.get_path_name())
+    if not unreal.EditorAssetLibrary.save_loaded_asset(mesh,False):raise RuntimeError('Could not save rigid prop material-path settings')
+    return {'mesh':mesh.get_path_name(),'naniteBefore':before,'naniteAfter':after,'reason':'Small rigid props and translucent blink weapon echoes use original LOD0 materials'}
+
+
 def finalize_existing(plan):
     """Finish the approved native import without reimporting or changing source assets."""
     import unreal
@@ -168,6 +183,11 @@ def finalize_existing(plan):
         runtime.set_editor_property('clips',clip_entries)
         unreal.EditorAssetLibrary.save_loaded_asset(runtime,False)
     record={'character':character,'definition':path,'completeClips':len(definition.clips),'materials':[]}
+    if character=='KnightB':
+        props={mesh.get_path_name():mesh for mesh in definition.props.values() if mesh}
+        for clip in definition.clips.values():
+            if clip.weapon_mesh:props[clip.weapon_mesh.get_path_name()]=clip.weapon_mesh
+        record['rigidProps']=[prepare_rigid_prop(mesh) for mesh in props.values()]
     if character=='DragonV3B':
         import prepare_dragon_visibility_material as visibility
         mesh=definition.skeletal_mesh
@@ -394,6 +414,7 @@ def run(plan_file):
             static_meshes = [obj for obj in imported if isinstance(obj, unreal.StaticMesh)]
             if len(static_meshes) != 1:
                 raise RuntimeError("Expected one rigid approved prop: " + filename)
+            prepare_rigid_prop(static_meshes[0])
             props_by_file[filename] = static_meshes[0]
         if props_by_file:
             definition.set_editor_property("props", {"Cup": props_by_file["DrinkingCup.glb"]} if "DrinkingCup.glb" in props_by_file else {})

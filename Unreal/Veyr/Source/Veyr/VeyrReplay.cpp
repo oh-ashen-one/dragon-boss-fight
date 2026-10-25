@@ -1144,14 +1144,56 @@ bool AVeyrReplay::DriveScenarioInputs()
                 break;
             case 7:
             {
-                const FVector Goal=Dragon->GetActorTransform().TransformPosition(FVector(850,0,0));
-                const bool AtGuardPosition=FVector::Dist2D(Feet,Goal)<100.f;
+                if(Knight->GuardedHits>0){Next();break;}
+                // Earlier controls can legitimately take damage. Preserve a
+                // living real-input guard trial instead of approaching at3 HP.
                 const bool Threatened=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
-                const bool WantLock=AtGuardPosition||Threatened;
-                if(Knight->bLockedOn!=WantLock)Knight->ToggleLockOn();
-                Toward(Goal);
-                bGuard=WantLock&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active);
-                if(Knight->GuardedHits>0)Next();
+                const bool Flight=Dragon->Move==EVeyrDragonMove::FlyAway&&
+                    (Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending());
+                if(Knight->bLockedOn)Knight->ToggleLockOn(); // Navigation must not become a lateral blink.
+                if(Knight->Health<75.f&&Knight->HealingCharges>0)
+                {
+                    if(Knight->Action!=EVeyrKnightAction::Heal)Movement=EscapeDirection();
+                    if(bAvailable&&SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f)
+                    {bHeal=true;Movement=FVector::ZeroVector;}
+                    else bRoll=bAvailable&&Threatened&&Knight->Stamina>=25.f&&DangerContactDelay()<.32f;
+                    break;
+                }
+                if(Flight)
+                {
+                    if(Threatened)
+                    {Movement=EscapeDirection();bRoll=bAvailable&&Knight->Stamina>=25.f&&DangerContactDelay()<.32f;}
+                    break; // Wait outside landing; seek a front guard contact after touchdown.
+                }
+                if(Knight->Stamina<40.f)bGuardRechargeLatched=true;
+                if(bGuardRechargeLatched&&Knight->Stamina>=75.f)bGuardRechargeLatched=false;
+                if(bGuardRechargeLatched)
+                {Movement=Threatened?EscapeDirection():FVector::ZeroVector;break;}
+                FVector Goal=FVector::ZeroVector;
+                for(float Distance:{850.f,700.f,550.f})
+                {
+                    const FVector Candidate=Dragon->GetActorTransform().TransformPosition(FVector(Distance,0,0));
+                    if(Candidate.Size2D()<2950.f){Goal=Candidate;break;}
+                }
+                const bool AtGuardPosition=FVector::Dist2D(Feet,Goal)<100.f;
+                if(AtGuardPosition||Threatened)
+                {
+                    // Guard faces controller yaw, not an automatic target bone.
+                    // The roll/navigation stage left that yaw pointing elsewhere.
+                    // Use normal look input and raise guard before the next attack;
+                    // no actor/control rotation assignment or forced boss hit.
+                    Movement=FVector::ZeroVector;bGuard=true;
+                    const FVector Source=(Dragon->Move==EVeyrDragonMove::Fire||Dragon->Move==EVeyrDragonMove::Bite)?
+                        Dragon->GetMouthLocation():Threatened?Dragon->GetWarningFootprint().Origin:Dragon->GetActorLocation();
+                    if(APlayerController* Player=Cast<APlayerController>(Knight->GetController()))
+                    {
+                        const float AimYaw=(Source-Knight->GetActorLocation()).Rotation().Yaw;
+                        const float Error=FMath::FindDeltaAngleDegrees(Player->GetControlRotation().Yaw,AimYaw);
+                        const float Scale=UInputSettings::GetInputSettings()->bEnableLegacyInputScales?Player->InputYawScale_DEPRECATED:1.f;
+                        if(FMath::Abs(Scale)>.01f)Player->AddYawInput(FMath::Clamp(Error*.25f,-12.f,12.f)/Scale);
+                    }
+                }
+                else Toward(Goal);
                 break;
             }
             case 8:

@@ -11,5 +11,16 @@
     "SHA256SUMS.txt": "38e5fc84b8089bf04730463a314b78496cde0f77ce6df00d463b3d0b872b2b3f"
   },
   "allGitHubDigestsMatch": true,
-  "restore": "Download all three independent ZIPs, verify SHA256SUMS.txt, extract each at the game repository root, then verify manifest.json file hashes."
+  "restore": "Download all three independent ZIPs, verify SHA256SUMS.txt, extract each at the game repository root, then verify manifest.json file hashes. Then verify and extract Veyr-NativeContent-20261025-prop-material-fix.zip over the base; validate prop-material-fix-manifest.json.",
+  "overlay": {
+    "filesChanged": 4,
+    "assets": {
+      "prop-material-fix-manifest.json": "344e58afbdc51aeb7563ea3ff5abc08c38324603bd3be4ff5ede350e031e09a8",
+      "Veyr-NativeContent-20261025-prop-material-fix.zip": "4bbf3e7cc890c60d561cf8cce9223bfbacad8d662eb10c9fcc0af1485636bc5c",
+      "prop-material-fix-SHA256SUMS.txt": "540eb51af15e30b26ccd5ac930130a4363a3670b8ddf508aa1e9322468080525"
+    },
+    "allGitHubDigestsMatch": true,
+    "applyAfterBase": true,
+    "reason": "Rigid prop material-path repair"
+  }
 }

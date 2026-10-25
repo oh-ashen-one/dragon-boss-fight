@@ -1,0 +1,150 @@
+{
+  "status": "delivery material and mixed-controls retest pending",
+  "mechanicsSourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+  "runs": [
+    {
+      "mode": "stance",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "one/two-handed light/heavy leg contacts, slower higher-damage two-hand attacks, blocked active switches and unchanged roll verified",
+      "durationSeconds": 59.4191780090332,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-stance-20261025T074041Z/unreal-stance-20261025T074048Z-EC539C0A/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.00119147475073
+    },
+    {
+      "mode": "leg0",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "leg 0 isolated light/heavy stagger, correct buckle and collapse observed; other three legs unchanged",
+      "durationSeconds": 24.258344650268555,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg0-20261025T074132Z/unreal-leg0-20261025T074135Z-4D59C538/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.01908250630848
+    },
+    {
+      "mode": "leg1",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "leg 1 isolated light/heavy stagger, correct buckle and collapse observed; other three legs unchanged",
+      "durationSeconds": 28.061817169189453,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg1-20261025T074203Z/unreal-leg1-20261025T074205Z-EED8CBD4/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.0165024391202
+    },
+    {
+      "mode": "leg2",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "leg 2 isolated light/heavy stagger, correct buckle and collapse observed; other three legs unchanged",
+      "durationSeconds": 24.988828659057617,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg2-20261025T074237Z/unreal-leg2-20261025T074239Z-3F8440D6/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.00061399330696
+    },
+    {
+      "mode": "leg3",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "leg 3 isolated light/heavy stagger, correct buckle and collapse observed; other three legs unchanged",
+      "durationSeconds": 37.298431396484375,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg3-20261025T074308Z/unreal-leg3-20261025T074310Z-C3BD26E8/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.01888752961918
+    },
+    {
+      "mode": "guard",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified",
+      "durationSeconds": 78.4187240600586,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-guard-20261025T074226Z/unreal-guard-20261025T074229Z-9AC2A0D7/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.00249757393274
+    },
+    {
+      "mode": "healing",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "four real heal completions consumed four charges; 100 HP cap and injured empty-flask rejection verified",
+      "durationSeconds": 70.47289276123047,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-healing-20261025T074350Z/unreal-healing-20261025T074353Z-F81D6DA1/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.0004762932292
+    },
+    {
+      "mode": "victory",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and attack after restart verified",
+      "durationSeconds": 225.4114532470703,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-victory-20261025T074429Z/unreal-victory-20261025T074432Z-BC8E4DBE/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.00000421151873
+    },
+    {
+      "mode": "avoidance",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "all six naturally selected moves threatened the player in windup and completed recovery without a damaging hit",
+      "durationSeconds": 53.71391677856445,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-avoidance-20261025T074821Z/unreal-avoidance-20261025T074824Z-645D1328/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.00105486512456
+    },
+    {
+      "mode": "death",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "death terminal pose, resource reset, movement and attack after restart verified",
+      "durationSeconds": 18.436187744140625,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-death-20261025T074921Z/unreal-death-20261025T074924Z-04FFC5FC/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.00200400004235
+    },
+    {
+      "mode": "core",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "jump-disabled light heavy collapse head bonus completed rise and dodge contact observed",
+      "durationSeconds": 35.09565734863281,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-core-20261025T074945Z/unreal-core-20261025T074948Z-3AFFD68A/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 230.00955759457656
+    },
+    {
+      "mode": "integration",
+      "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+      "passed": true,
+      "reason": "all16 integration control/motion features accepted and recovered under normal boss AI; actual contacts recorded separately",
+      "durationSeconds": 76.03981018066406,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-integration-20261025T075027Z/unreal-integration-20261025T075030Z-0E50F2CD/evidence.json",
+      "nativeAnatomyAlwaysReady": true,
+      "minimumCameraFloorClearanceCm": 227.89614837716556
+    }
+  ],
+  "victory": {
+    "terminalSeconds": 219.74732971191406,
+    "victoryWithinThreeToFiveMinutes": true,
+    "restartResourcesVerified": true,
+    "restartMovementVerified": true,
+    "restartAttackVerified": true
+  },
+  "execution": "Packaged signed native Mac app, ordinary action inputs and normal AI. No forced HP, stamina, boss states or actor transforms. At most two owned renderer processes; capture and concurrent tests affect performance.",
+  "limitations": [
+    "The approved source wing fold has a hard lower boundary; originals preserved.",
+    "Brief upper wingtip crop at flight entry was visible; body/player/warning remained readable."
+  ]
+}

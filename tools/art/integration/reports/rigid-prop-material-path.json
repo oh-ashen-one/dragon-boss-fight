@@ -1,0 +1,30 @@
+{
+  "props": [
+    {
+      "mesh": "/Game/Characters/Customuse/KnightB/v025b/Props/DrinkingCup/DrinkingCup.DrinkingCup",
+      "naniteBefore": true,
+      "naniteAfter": false,
+      "reason": "Small rigid props and translucent blink weapon echoes use original LOD0 materials"
+    },
+    {
+      "mesh": "/Game/Characters/Customuse/KnightB/v025b/Props/BoatGreatsword_OneHand_v4/BoatGreatsword_OneHand_v4.BoatGreatsword_OneHand_v4",
+      "naniteBefore": true,
+      "naniteAfter": false,
+      "reason": "Small rigid props and translucent blink weapon echoes use original LOD0 materials"
+    },
+    {
+      "mesh": "/Game/Characters/Customuse/KnightB/v025b/Props/BoatGreatsword_Grip_v6/BoatGreatsword_Grip_v6.BoatGreatsword_Grip_v6",
+      "naniteBefore": true,
+      "naniteAfter": false,
+      "reason": "Small rigid props and translucent blink weapon echoes use original LOD0 materials"
+    },
+    {
+      "mesh": "/Game/Characters/Customuse/KnightB/v025b/Props/BoatGreatsword_StrongGrip_v1/BoatGreatsword_StrongGrip_v1.BoatGreatsword_StrongGrip_v1",
+      "naniteBefore": true,
+      "naniteAfter": false,
+      "reason": "Small rigid props and translucent blink weapon echoes use original LOD0 materials"
+    }
+  ],
+  "nativeSaved": true,
+  "packagedVerificationPending": true
+}

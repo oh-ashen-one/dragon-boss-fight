@@ -1,0 +1,116 @@
+{
+  "sourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+  "allPassed": true,
+  "legs": [
+    {
+      "leg": 0,
+      "passed": true,
+      "contacts": [
+        {
+          "seconds": 15.251206398010254,
+          "damage": 28,
+          "region": 0
+        },
+        {
+          "seconds": 19.523603439331055,
+          "damage": 62,
+          "region": 0
+        },
+        {
+          "seconds": 23.59888458251953,
+          "damage": 62,
+          "region": 0
+        }
+      ],
+      "otherLegStaggerAlwaysZero": true,
+      "nativeAnatomyAlwaysReady": true,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg0-20261025T074132Z/unreal-leg0-20261025T074135Z-4D59C538/evidence.json"
+    },
+    {
+      "leg": 1,
+      "passed": true,
+      "contacts": [
+        {
+          "seconds": 14.999822616577148,
+          "damage": 28,
+          "region": 1
+        },
+        {
+          "seconds": 19.668115615844727,
+          "damage": 28,
+          "region": 1
+        },
+        {
+          "seconds": 23.393875122070312,
+          "damage": 62,
+          "region": 1
+        },
+        {
+          "seconds": 27.400135040283203,
+          "damage": 62,
+          "region": 1
+        }
+      ],
+      "otherLegStaggerAlwaysZero": true,
+      "nativeAnatomyAlwaysReady": true,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg1-20261025T074203Z/unreal-leg1-20261025T074205Z-EED8CBD4/evidence.json"
+    },
+    {
+      "leg": 2,
+      "passed": true,
+      "contacts": [
+        {
+          "seconds": 16.22808837890625,
+          "damage": 28,
+          "region": 2
+        },
+        {
+          "seconds": 20.637643814086914,
+          "damage": 62,
+          "region": 2
+        },
+        {
+          "seconds": 24.337007522583008,
+          "damage": 62,
+          "region": 2
+        }
+      ],
+      "otherLegStaggerAlwaysZero": true,
+      "nativeAnatomyAlwaysReady": true,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg2-20261025T074237Z/unreal-leg2-20261025T074239Z-3F8440D6/evidence.json"
+    },
+    {
+      "leg": 3,
+      "passed": true,
+      "contacts": [
+        {
+          "seconds": 18.83163833618164,
+          "damage": 28,
+          "region": 3
+        },
+        {
+          "seconds": 23.016603469848633,
+          "damage": 28,
+          "region": 3
+        },
+        {
+          "seconds": 32.000308990478516,
+          "damage": 62,
+          "region": 3
+        },
+        {
+          "seconds": 36.58890151977539,
+          "damage": 28,
+          "region": 3
+        }
+      ],
+      "otherLegStaggerAlwaysZero": true,
+      "nativeAnatomyAlwaysReady": true,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-leg3-20261025T074308Z/unreal-leg3-20261025T074310Z-C3BD26E8/evidence.json"
+    }
+  ]
+}
