@@ -1,0 +1,12 @@
+{
+  "mechanicsTestedSourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
+  "deliverySourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
+  "changedFiles": [
+    "Content/Characters/Customuse/KnightB/v025b/Props/BoatGreatsword_Grip_v6/BoatGreatsword_Grip_v6.uasset",
+    "Content/Characters/Customuse/KnightB/v025b/Props/BoatGreatsword_OneHand_v4/BoatGreatsword_OneHand_v4.uasset",
+    "Content/Characters/Customuse/KnightB/v025b/Props/BoatGreatsword_StrongGrip_v1/BoatGreatsword_StrongGrip_v1.uasset",
+    "Content/Characters/Customuse/KnightB/v025b/Props/DrinkingCup/DrinkingCup.uasset",
+    "Source/Veyr/VeyrReplay.cpp"
+  ],
+  "scope": "Four rigid prop Nanite settings and mixed-controls replay driver only; gameplay actor/combat/animation code unchanged from the complete mechanics suite."
+}

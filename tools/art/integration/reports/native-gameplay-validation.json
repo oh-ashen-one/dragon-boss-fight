@@ -1,5 +1,5 @@
 {
-  "status": "delivery material and mixed-controls retest pending",
+  "status": "passed",
   "mechanicsSourceId": "21ff305457e66b0cd0808b6c943bedd7274e887b437fff3c06905019328d9e74",
   "runs": [
     {
@@ -146,5 +146,47 @@
   "limitations": [
     "The approved source wing fold has a hard lower boundary; originals preserved.",
     "Brief upper wingtip crop at flight entry was visible; body/player/warning remained readable."
-  ]
+  ],
+  "deliverySourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
+  "deliveryCodeCommit": "a64ab86",
+  "deliveryChecks": [
+    {
+      "mode": "controls",
+      "sourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
+      "passed": true,
+      "reason": "movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed",
+      "durationSeconds": 30.524768829345703,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-controls-20261025T080335Z/unreal-controls-20261025T080343Z-6F469A15/evidence.json",
+      "materialFallbackWarnings": 0
+    },
+    {
+      "mode": "integration",
+      "sourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
+      "passed": true,
+      "reason": "all16 integration control/motion features accepted and recovered under normal boss AI; actual contacts recorded separately",
+      "durationSeconds": 76.15982055664062,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-integration-20261025T080427Z/unreal-integration-20261025T080430Z-AFF8FE29/evidence.json",
+      "materialFallbackWarnings": 0
+    },
+    {
+      "mode": "victory",
+      "sourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6",
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and attack after restart verified",
+      "durationSeconds": 206.485595703125,
+      "warningContainmentFailures": 0,
+      "evidence": "Evidence/native-victory-20261025T080426Z/unreal-victory-20261025T080428Z-66D024AC/evidence.json",
+      "materialFallbackWarnings": 0
+    }
+  ],
+  "deliveryVictory": {
+    "terminalSeconds": 200.8544158935547,
+    "victoryWithinThreeToFiveMinutes": true,
+    "restartResourcesVerified": true,
+    "restartMovementVerified": true,
+    "restartAttackVerified": true
+  },
+  "sourceDeltaReport": "delivery-delta.json"
 }

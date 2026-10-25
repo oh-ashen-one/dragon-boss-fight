@@ -1,81 +1,111 @@
-# Native animation integration — IN PROGRESS, 2026-10-25
+# Native approved animation integration — COMPLETE, 2026-10-25
 
-Owner approved all 32 October 24 reviewer candidates and explicitly authorized full
-native integration, gameplay testing and critique agents. Earlier animation-only
-restrictions below are superseded. Exact approvals/hashes are in
+The owner approved all32 October24 review candidates and authorized full native
+integration, gameplay testing and critique agents. They are now integrated into
+Veyr. Earlier animation-only/no-Unreal restrictions below are superseded.
+Approved source GLBs/Blends remain immutable; exact hashes are recorded in
 `tools/art/integration/owner-approvals-20261025.json`.
 
-- Branch: `codex/veyr-native-animation-integration-20261025`; isolated worktree.
-  Root is sole engine/build owner. Codex critique agents inspect independently.
-- Latest successful editor build: Local/unreal-build-20261025T064123759141Z,
-  source f96b3ee5c74b210596a2b63768ddaf2ff78b12382823cc41b2911226b2f93cd9.
-- All approved native clips now use RuntimeApproved definitions, exact mesh/skin
-  variants, bone/helper transforms and eight disambiguated Dragon morph targets.
-  Original GLBs/Blends remain immutable. Hidden rejected candidates excluded.
-- Structural reconstruction: 74 exports, seven times each, max3.414e-6 model units.
-  Native source fidelity:68/68 keys,408 samples, zero coverage errors;
-  maximum0.0593cm position/.246degrees rotation/.000944 morph error.
-  Transition endpoints:136 equality checks, maxerror0. Native unit tests7/7 pass.
-- Input-only integration replay PASS:16 action/locomotion/variant/blink exercises,
-  Ready recovery, no fallback/failed pose requests/VFX diagnostics. Evidence:
-  Evidence/pie-integration-20261025T060340Z. This is not combat-contact proof.
-- First core combat replay FAIL: old locked fine-navigation repeatedly triggered
-  the new lateral blink (105 times). Driver now navigates unlocked, locks when
-  positioned, checks facing, and uses unlocked rolls for escapes. Retest running.
-- Critique prompted native camera flight framing, paw-derived landing warning,
-  quieter single-sided blink echoes, player-only moon fill and strike-window
-  audio alignment. Latest camera/warning/audio changes still need runtime proof.
-- Prior terminal recovery bugs are fixed: Knight returns to Ready after victory;
-  Dragon finishes landing after player death. Packaged app tests remain pending.
-- One owned editor crashed during SIGTERM shutdown (native macOS trampoline).
-  Local/integration-crash-ledger.json preserves evidence; subsequent normal Cmd-Q
-  shutdowns were clean. Crash count1; stop automatic relaunch after2. Use native
-  UI Quit, not SIGTERM, for ordinary editor shutdown.
-- Editor uses own loopback MCP18773 and shared GPU slot; only root controls it.
-  Temporary nonforeground throttling override must be restored before shutdown
-  through plan restore_editor_settings (no global config save).
-- Private source delta backup verified:154 files/6.2GB in five release ZIPs at
-  oh-ashen-one/veyr-animation-sources, tag knight-dragon-postsprint-20261025.
-  Receipt: tools/art/integration/source-backup-receipt.json.
-- Additional native results: death/restart PASS at59.27s, with terminal pose,
-  full resource reset, movement and attack after restart. Latest core proved
-  light/heavy leg hits but died after two landing hits: driver ignored damaging
-  flight Recovery. Stance verified1h light28/.933s,1h heavy62/1.4s,2h light43.4/1.2s,
-  then timed out before2h heavy. Replay fixes remain in progress.
-- Native content backup is verified:734assets/maps,2.82GB uncompressed in three
-  private release ZIPs, tag native-integration-20261025. See
-  tools/art/integration/native-content-backup-receipt.json for restoration.
-- Editor run070025 closed normally (exit0); crash count remains1.
-- Remaining gates: combat/legs/stance/guard/heal/victory gameplay tests;
-  fresh visual critique; cook/package/signature and actual packaged runtime;
-  backup native content and deliver app. Do not report completion before these.
-- No main merge/public release authorized. Task branch pushes/private backups
-  are authorized. Preserve other checkouts and unrelated processes/files.
+## Play and source
 
-## Contact-fix checkpoint (07:34 UTC)
+- Extracted Studio app: `~/Downloads/Veyr-Approved-Animations-20261025/Veyr.app`
+- Controls beside it: `PLAYING.txt`. No ZIP extraction is needed locally.
+- Branch: `codex/veyr-native-animation-integration-20261025`.
+- Delivery code commit: `a64ab86`; later commits update documentation/evidence only.
+- Delivery native source identity: `8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6`.
+- Signed archive SHA256: `e7a05c23c79a2b49e484e3ecfad4031279d41cd86b15fa9cc8e1ddd35921eeb6`.
+- Private app backup: `oh-ashen-one/veyr-animation-sources`, release
+  `native-game-20261025`, asset `Veyr-Mac-8ebd9783.zip` plus delivery manifest and
+  final validation. GitHub archive digest verified. Local ad-hoc signature,
+  full cooked payload and binary dependencies verified, then the app was run.
+- Actual native gameplay video:
+  `<task-output>/veyr-native-integration/Veyr-Final-8ebd9783.mp4`.
+  Silent, actual capture timestamps, no interpolated frames. Capture averaged
+  about7.7FPS; this is evidence footage, not a game-rendering FPS benchmark.
 
-- First signed cooked app source494183bf launches cleanly; all16 animation
-  exercises pass in76.05s. Death/restart previously passed in editor. Private
-  native content restore is already verified and unchanged by later C++ fixes.
-- Packaged core survives180s at100HP, onecollapse/threeheadpunishes, but fails
-  heavy-leg contact. Stance confirms ten accepted Heavy B swings miss visible
-  calf. Geometry audit proves the blade hits shin while old75cm ankle sphere
-  misses; report heavy-leg-contact-audit.json documents measurements/limits.
-- New bounded calf capsules preserve four regions, oldankle/head radii and8cm
-  blade thickness. Front knee/ankle70/75cm; hind knee/hock/ankle60cm.
-- Approved Bite was aboveground-player reach. Runtime aiming now bends the
-  three neck joints20/20/10degrees max, preserving source/bone lengths/radius.
-  Same modifier feeds live pose/contact and warning probe. Native proof pending.
-- Camera solver now uses fullarm for upward-pitch clearance and230cm margin
-  above225cm guard; new ordered evidence must confirm. Blink opacity critique
-  is closed in packaged captures. Minor upperwingtip crop atflightentry remains.
-- New native build e164aaefb67e9bc9df7407a41199364c34a07bbbf0682878ef9d13cea5134ab7
-  compiled successfully; package073412 is being signed/audited. No editor open.
-- Healing used allfourcharges and verifiedcap, but empty-flask trial timedout
-  waiting for injury because oldbite couldnot reach. Retest correctedpackage.
-- Critic notes legacy Rise→newIdle wing fold completes too abruptly at.12s;
-  refine transition after contact-fix baseline tests. Approved fold shape has
-  a hard lowerboundary in original source; do not silently alter lockedart.
+## Implemented and verified
+
+- Exact per-clip meshes/skin weights, eight distinct Dragon morph shapes,
+  helper-bone sword/cup attachments and source-preserving root-motion conversion.
+- Full-body Knight locomotion/attacks, one/two-hand same-sword grip, approved
+  variants, combo, roll-to-attack, blink sidesteps/afterimages, guard entry,
+  guard break, healing, stagger/death and RunStop. Jump remains removed.
+- Active Dragon idle/gaze/walk/turn, takeoff/hover/landing, fire/bite timing,
+  smooth rise-to-idle wings and retained complete legacy combat/reaction set.
+- Grounded bite uses a bounded20/20/10degree neck aiming layer. Visible pose,
+  live contact and warning probes share the same layer; no source stretch or
+  invisible hit-radius increase. Actual grounded contact/avoidance and oblique
+  native views were reviewed.
+- Measured lower-leg capsules fix visible shin hits missed by ankle-only regions.
+  Four independent regions, existing ankle/head radii and blade thickness retained.
+- Small rigid swords/cup use standard full-resolution meshes, avoiding cooked
+  Nanite/default-material fallback and preserving translucent weapon echoes.
+
+Validation records: `tools/art/integration/reports/native-gameplay-validation.json`
+and `delivery-delta.json`. The complete mechanical suite used source21ff3054;
+the only later changes were the four rigid-prop Nanite settings and the mixed
+controls test driver. Delivery-source controls, all16 animation exercises and a
+complete victory/restart were rerun successfully with zero material-fallback
+warnings. Gameplay actor/combat/animation code is unchanged between those builds.
+
+Passed:
+- 74 structural exports;68 native clip keys/408 sampled poses;136 transition
+  endpoint equalities;7 native import unit tests.
+- All16 animation/control exercises, with accepted native clips and Ready recovery.
+- Every leg independently: light/heavy contact, correct buckle/collapse, no
+  other-region hit or stagger. Independent JSON event/sample audit also passes.
+- One/two-hand stance:28/62 versus43.4/96.1 damage, slower two-hand attacks,
+  rejected mid-attack grip switch, identical0.78s rolls and25 stamina cost.
+- Front guard chip, rear full damage, exhausted guard break.
+- Four heal completions/charges,100HP cap and injured empty-flask rejection.
+- All six naturally selected Dragon moves threatened the Knight and were avoided
+  through recovery without damage; warning containment failures0.
+- Death/restart and victory/restart restore resources and accept movement/attack.
+- Delivery full fight: boss defeat200.854s (3m21s), complete restart proof206.486s.
+- Same-frame camera sampling remained above225cm clearance in the tested suite.
+
+Critique used actual available Codex agents. The reviewers found and closed
+skin-variant loss, terminal freezes, grounded bite reach, shin contact, camera
+framing/clearance, opaque blink echoes and cooked prop material fallback.
+See `tools/art/integration/model-ledger.json` and linked reports for limits.
+
+## Restore native assets and continue
+
+- Base native assets: release `native-integration-20261025`, three independent
+  ZIPs plus manifest/checksums.734 assets/maps,2.82GB uncompressed.
+- Apply `Veyr-NativeContent-20261025-prop-material-fix.zip` AFTER that base.
+  Its four-file manifest/checksums are in the same release; hashes verified.
+- Restore receipt: `tools/art/integration/native-content-backup-receipt.json`.
+- Post-sprint approved authoring source: release `knight-dragon-postsprint-20261025`,
+  154 files/6.2GB in five ZIPs; receipt `source-backup-receipt.json`.
+- Prior original sources remain in the authoring checkout and earlier private
+  source releases. Do not clean or overwrite the other authoring checkout.
+- Generated art remains private; see ASSET-LICENSE.md. No main merge or public
+  generated-asset publication was performed.
+
+## Remaining review notes and ownership
+
+The requested integration/test work is complete. Owner gameplay feel/visual
+judgment is not asserted by automated tests. Two minor visual notes remain:
+a brief upper wingtip crop at flight entry, and a hard lower fold edge already
+present in the approved Dragon source. Keep originals locked; any later art
+revision should be a separate candidate.
+
+Tests were1280x720,100% screen percentage,60FPS cap; PNG capture and occasional
+concurrent owned tests affect pacing, so this is not an isolated performance
+benchmark. Physical start/grip/guard/light/restart routes were also exercised
+through native UI; automation exercises the normal game action/input paths.
+
+Only one editor crash occurred in this integration (during an early SIGTERM
+shutdown). Subsequent editor quits and all packaged exits were normal. Crash
+count1 remains in `Local/integration-crash-ledger.json`; never auto-relaunch after2.
+Use ordinary UI Quit. The owned native editor MCP server is closed. The owner-facing
+app may be left at its start screen through the shared GPU slot; check live
+process/slot state before a future launch and never take over an owner playtest.
+
+The source checkout and useful failed/passing evidence remain for continuity.
+Duplicate generated builds and verified upload ZIPs may be removed; never delete
+unrelated authoring checkouts or approved originals.
 
 ---
 

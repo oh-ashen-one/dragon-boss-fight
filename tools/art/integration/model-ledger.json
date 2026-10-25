@@ -4,11 +4,44 @@
   "model": "Codex session model; exact model/effort identifiers were not exposed by this client",
   "delegation": "Inherited parent model; no unavailable Opus or Fable access claimed",
   "rounds": [
-    {"piece": "Knight integration", "agent": "knight_integration_critic", "role": "initial audit then implementation", "result": "compiled; native asset sampling passed; gameplay review pending"},
-    {"piece": "Dragon integration", "agent": "dragon_integration_critic", "role": "initial audit then implementation", "result": "compiled; native corrective morph and source-pose checks passed; gameplay review pending"},
-    {"piece": "Structural asset conversion", "agent": "asset_import_audit", "role": "asset audit and conversion", "result": "v025b preserves exact approved skin/geometry variants; 74 structural checks pass"},
-    {"piece": "Independent review", "agent": "native_runtime_critic", "role": "read-only critic", "result": "found skin substitution and terminal recovery bugs; fixes independently rechecked; requested stronger native coverage/endpoint tests and better Knight lighting"},
-    {"piece": "Native sampling", "agent": "root", "role": "editor owner and verifier", "result": "68 clip keys, 408 sampled poses, 204 evaluable transitions; coverage and source fidelity pass; endpoint comparison rerun pending"}
+    {
+      "piece": "Structural and native fidelity",
+      "agents": [
+        "asset_import_audit",
+        "root",
+        "native_runtime_critic"
+      ],
+      "result": "74 exports,68 native keys/408 samples,136 endpoint checks and7 native unit tests pass; exact mesh variants and all morphs preserved."
+    },
+    {
+      "piece": "Knight gameplay integration",
+      "agents": [
+        "knight_integration_critic",
+        "root",
+        "native_runtime_critic"
+      ],
+      "result": "All16 exercises, grip/damage comparison, guard/heal/terminal checks pass; textured props and translucent echoes visually confirmed in final package."
+    },
+    {
+      "piece": "Dragon gameplay integration",
+      "agents": [
+        "dragon_integration_critic",
+        "asset_import_audit",
+        "root",
+        "native_runtime_critic"
+      ],
+      "result": "Grounded bite and anatomical shin contacts corrected; all4 independent legs,6 move avoidance, fullfight and restarts pass. Oblique bite shape and sampled flight/collapse joins reviewed."
+    },
+    {
+      "piece": "Delivery",
+      "agents": [
+        "root",
+        "native_runtime_critic"
+      ],
+      "result": "Source8ebd packaged controls/integration/victory pass with0 materialfallback warnings; private asset/app digests and extracted signature verified."
+    }
   ],
-  "ownerApproval": "32 exact reviewed inputs approved; integrated gameplay acceptance remains a separate test and owner playtest gate"
+  "ownerApproval": "32 exact source candidates approved. Automated and critic results do not claim final owner gameplay judgment.",
+  "status": "integration and native validation complete",
+  "deliverySourceId": "8ebd9783f9448abef331b33cc50a9b3b33cadb71bbf4c9c057339e2fecce65b6"
 }
