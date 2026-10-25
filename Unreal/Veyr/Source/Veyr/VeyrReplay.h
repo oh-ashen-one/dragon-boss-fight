@@ -41,6 +41,8 @@ private:
     bool bLightLegContact=false, bHeavyLegContact=false, bSawRise=false, bRiseCompleted=false;
     bool bTerminalSettling=false, bAwaitingReload=false, bRestartVerification=false;
     bool bFreshResourcesVerified=false, bRestartMoved=false, bRestartAttackAccepted=false;
+    bool bRestartAttackInputIssued=false;
+    bool bVictoryStartTwoHandedRequested=false,bVictoryGripInputIssued=false,bVictoryGripTransitionCompleted=false;
     float TerminalSeconds=-1, TerminalClock=0, RestartClock=0;
     FVector RestartOrigin=FVector::ZeroVector;
     float Elapsed=0, SampleClock=0, SaveClock=0, CaptureClock=0, FinishClock=0;

@@ -86,6 +86,12 @@ def sign_local_bundle(configuration, evidence):
     if not app.is_dir() or app.is_symlink() or app.resolve() != expected:
         result["reason"] = "expected task-owned generated app is missing or redirected"
         return result
+    # Establish the app-scoped startup policy before taking the immutable
+    # payload snapshot. The signer applies this same policy idempotently.
+    # Otherwise its legitimate Info.plist repair looks like payload corruption
+    # in the FileProvider-safe signing fallback below.
+    from audit_bundle import configure_startup_allocator
+    result["startupPolicy"] = configure_startup_allocator(app)
     attributes = ("com.apple.FinderInfo", "com.apple.ResourceFork")
     try:
         # Validate the complete path set before modifying anything. Internal

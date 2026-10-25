@@ -155,10 +155,9 @@ def prepare_rigid_prop(mesh):
     return {'mesh':mesh.get_path_name(),'naniteBefore':before,'naniteAfter':after,'reason':'Small rigid props and translucent blink weapon echoes use original LOD0 materials'}
 
 
-def finalize_existing(plan):
-    """Finish the approved native import without reimporting or changing source assets."""
+def prepare_validation_settings():
+    """Apply reversible per-process validation settings, without editing assets."""
     import unreal
-    character,version=plan['character'],plan['version']
     # Per-process test settings only; do not save or change shared editor preferences.
     settings=unreal.get_default_object(unreal.load_class(None,'/Script/UnrealEd.EditorPerformanceSettings'))
     settings_path=ROOT/'Local/native-validation-settings.json'
@@ -168,6 +167,13 @@ def finalize_existing(plan):
     world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
     for command in ('t.MaxFPS 60','t.IdleWhenNotForeground 0','r.ScreenPercentage 100','r.Editor.Viewport.OverridePIEScreenPercentage 0'):
         unreal.SystemLibrary.execute_console_command(world,command)
+
+
+def finalize_existing(plan):
+    """Finish the approved native import without reimporting or changing source assets."""
+    import unreal
+    character,version=plan['character'],plan['version']
+    prepare_validation_settings()
     path=f"/Game/Characters/Customuse/{character}/{version}/DA_{character}"
     definition=unreal.load_asset(path)
     if not isinstance(definition,unreal.VeyrVisualDefinition):raise RuntimeError('Native definition missing before finalization')
@@ -222,6 +228,13 @@ def run(plan_file):
     import unreal
     plan = json.loads(Path(plan_file).read_text())
     character, version = plan["character"], plan["version"]
+    if plan.get("inspect_dirty_content_only"):
+        packages=unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()
+        (ROOT/'Local/native-dirty-content.json').write_text(json.dumps([p.get_path_name() for p in packages],indent=2)+'\n')
+        return {'definition':f'/Game/Characters/Customuse/{character}/{version}/DA_{character}'}
+    if plan.get("prepare_validation_settings_only"):
+        prepare_validation_settings()
+        return {'definition':f'/Game/Characters/Customuse/{character}/{version}/DA_{character}'}
     if plan.get("restore_editor_settings"):
         import unreal
         settings_file=ROOT/'Local/native-validation-settings.json'
@@ -229,6 +242,10 @@ def run(plan_file):
             original=json.loads(settings_file.read_text())
             settings=unreal.get_default_object(unreal.load_class(None,'/Script/UnrealEd.EditorPerformanceSettings'))
             settings.set_editor_property('bThrottleCPUWhenNotForeground',original['throttle_cpu_when_not_foreground'],unreal.PropertyAccessChangeNotifyMode.NEVER)
+        if plan.get("quit_owned_editor_after_restore"):
+            if unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages():raise RuntimeError('Preserving dirty content; inspect and save before shutdown')
+            if unreal.EditorLevelLibrary.get_game_world() is not None:raise RuntimeError('Stop PIE before normal owned-editor shutdown')
+            unreal.SystemLibrary.quit_editor()
         return {'definition':f'/Game/Characters/Customuse/{character}/{version}/DA_{character}'}
     if plan.get("verify_pose_only"):
         import probe_approved_poses

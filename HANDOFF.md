@@ -1,68 +1,91 @@
-# Combat and arena rebuild — IN PROGRESS, 2026-10-25
+# Veyr combat and cathedral polish — native repair validation in progress
 
-The owner rejected fire quality, flight feet, slow two-hand movement, Ctrl walk,
-rolling sword orientation, confusing controls, sparse disconnected arena and
-pass-through dragon. They explicitly authorize autonomous fixes, Tripo browser
-creation and credits without routine confirmation questions. Preserve the old
-approved sources; new Blender revisions are separate candidates.
+## Current authorization and ownership
 
-- Branch: `codex/veyr-combat-arena-polish-20261025`, owned integration checkout.
+The owner explicitly authorized continued Veyr diagnostic launches after reviewing
+the October25 packaged crash, and requested that the project rules reflect it.
+AGENTS.md records that authorization. Do not repeat routine permission questions.
+Use a concrete repair/diagnostic change for each run; preserve crash evidence,
+shared renderer slots and foreign processes. No blind crash/relaunch script.
+Branch: `codex/veyr-combat-arena-polish-20261025`. Root owns the native runtime;
+critique agents have no engine/UI authority. Read Local run/ownership records
+before interacting with an app; a UI state refresh can reopen a closed app.
+
+## Current candidate and crash repair
+
+- Current diagnostic source: `0ad3e6aa64f301e152760558afc88bfafe6438891dee34b3d72cce79614e2f95`.
+  Build and package static dependency/signature/archive checks pass. Graphical
+  validation is in progress; this is not yet a verified final delivery.
+- Package receipt: `Local/package-20261025T185536Z/receipt.json`.
+  Current app/log/GPU ownership: `Local/polish-repair-graphical.log` and
+  `Local/polish-repair-gpu.json`. Use the app path in that package receipt.
+- Prior source91582293 packaged app crashed after a long pause and display changes.
+  The exact binary offset identifies UE5.8 `GetReadingIndex` line336: current
+  morph buffer0 was unupdated while double buffering was enabled. It does not
+  establish invalid RHI allocation. Raw report, failed app and logs remain private.
+- New candidate applies project-local `r.RDG.ParallelSetup=0`, preserving morph
+  shapes/weights while testing setup ordering. This is a mitigation hypothesis
+  until stress validation passes. Do not disable morphs or suppress assertions.
+- Confirmed pause-resume focus defect is repaired: recapture waits for the Slate
+  callback to finish; native focus/capture must be confirmed before gameplay
+  input; look ignores capture-warp deltas for100ms/twoframes. The packaged log
+  now confirms successful deferred recapture and initial camera stability.
+- Two earlier crashes in this pass are preserved in `Local/polish-crash-ledger.json`:
+  static import async-build assertion, then packaged morph-buffer assertion.
+  Owner-authorized continuation and the resolved launch hold are recorded there.
+- Crashing Downloads candidate is explicitly labeled
+  `Veyr-Cathedral-Polish-20261025-UNVALIDATED`; retain it for diagnosis. The older
+  approved-animation app is separate and unchanged. Do not deliver the crashing
+  candidate as final. LaunchServices wrapper exit0 is NOT an app success signal.
+
+## Implemented and verified evidence
+
 - Controls: LMB attack chain, RMB guard, Shift sprint, Q roll, Space directional
-  blink, E grip, R heal, Enter terminal restart, Escape full pause/settings.
-  Ctrl walk and C-combo bindings are removed. Both grips jog/sprint normally.
-- Five built-in ImageGen map concepts are saved under task outputs and
-  `Local/ArtPass20261025/References`; prompts are in docs/polish-20261025.
-  Direction: enclosed cathedral court, connected cloisters, stairs, rock
-  foundations, fallen bell and city context around a clear battle floor.
-- All12 private Tripo H3.1/8K modules were generated through Chrome, exported,
-  normalized, imported and saved. Cost780credits (12x65). Native meshes use
-  150k/60k/15k triangle LODs, capped4K textures and real triangle collision.
-  Retaining wall is v002; other modules are v001.
-- Revised Blender clips: Dragon hoverv1, takeoffv3, landv4; Knight two-handrun,
-  both grip transitions, roll and roll-attackv2. Editable .blends, GLBs and
-  three-view films are preserved. Blender instances exited cleanly.
-- Normalization/import plans: `Local/CustomuseAssets/Polish20261025/idle-joins`.
-  Allfour flight/idle surface joins <.001cm; roll/roll-attack prefix exact.
-  Both characters imported v026 and activated in separate RuntimePolish defs.
-  Native fidelity passed all71 keys/426 sampled poses, with all10 Dragon morphs.
-  Original RuntimeApproved and approved authoring sources remain unchanged.
-- Dragon has19 bone-following solid capsules plus swept movement/depenetration.
-  Fire uses generated atlas/smoke textures and four saved FXv3 materials.
-- Current editor PID48195, loopbackMCP18773, root sole owner; run directory
-  `Local/owned-editor-20261025T173421Z`. Source identity d801d7fc. Do not launch a
-  duplicate or take over another engine. Use normal owned editor shutdown.
-- Native d801 checks passed: all18 animation/control exercises, both-grip stance
-  damage/speed, four heal completions/empty rejection, initial front-foot
-  sprint/roll/blink blocking. Guard front/rear contacts passed; exhausted guard
-  breaks occurred but the driver aimed off-center and failed its strict facing
-  qualification. Agent is fixing normal-input aim, preserving the gate.
-- Further native suite is running. Collision QA is being extended to flanks,
-  rear/head approach and natural landing. Initial front test does not establish
-  complete body/flight coverage. Escape stopped PIE through the editor shortcut;
-  packaged Escape/settings/world-freeze verification remains required.
-- Actual-frame critique found raised paving edges and oversized support slabs.
-  Source follow-up flattens/recesses paving, uses shallow upper support courses,
-  breaks arcade repetition, reduces orange light wash, enlarges the control legend,
-  separates fire tongues/core/smoke and thins warnings. These follow-up edits
-  still require compilation and new native visual checks.
-- Current-pass crash count1: native retaining-wall async mesh-build assertion.
-  Supported synchronous compilation and native finish barrier resolved imports
-  on fresh v002. See Local/polish-crash-ledger.json. Stop after a second crash;
-  never blind-relaunch. Earlier allocator crashes are historical; the verified
-  app-scoped ANSI startup repair remains required for packaging/launches.
-- Private source backup: `combat-arena-polish-sources-20261025` in
-  `oh-ashen-one/veyr-animation-sources`, three archives with verified remote
-  digests. Incremental native backup `combat-arena-polish-native-20261025` is
-  being uploaded; verify its digests before claiming remote completion.
-- Corrected local animation reviewer: http://127.0.0.1:8776/ (PID32395).
-  Original8775 reviewer remains a read-only authoring-checkout service.
+  blink, E grip, R heal, Tab lock, Enter terminal restart, Escape pause/settings.
+  Ctrl walk/C-combo removed. Both grips jog380/sprint580cm/s with authored grip transitions.
+- Five built-in ImageGen map references; twelve private Tripo H3.1/8K modules,
+  780credits total. All exported/normalized/imported with150k/60k/15k LODs,
+  capped4K textures and real geometry collision. Retaining wallv002, othersv001.
+- Connected cathedral court, cloisters/stairs, rock foundations, fallen bell,
+  city masses and clear central fight space. Native critique corrected raised
+  paving skirts, texture discontinuity, upper support slabs, repeated silhouette,
+  light wash and character shadow readability. Last lighting/paving candidate
+  rendered in the packaged app; final warmed gameplay/video review remains.
+- Eight Blender revisions preserve the approved original sources: Dragon hoverv1,
+  takeoffv3, landv4; Knight two-hand run, both grip transitions, roll/roll-attackv2.
+  Native v026 definitions are in RuntimePolish, separate from RuntimeApproved.
+  All71native keys/426samples passed source fidelity again after saved material/
+  skeleton metadata. Allfour idle/flight joins<.001cm; roll-prefix skin matches.
+- Source d801 passed18integration features, stance damage/speed, healing,
+  allfour independent leg tests, six-move avoidance, death/restart. Its one-hand
+  conservative fight defeated the boss384.58s; restart measurement failed due
+  to a fixed subsecond movement window during reload. That driver was repaired
+  to measure actual movement, recovery and accepted primary attack in order.
+- Source b37ef431 passed18integration, guard(front/rear/exhausted), eight collision
+  stages and two-hand fullfight+restart. Boss defeat272.85s (4m33s), restart
+  proof278.91s. Collision120actual hits, front sprint/roll/blink, both flanks,
+  rear/tail, head,8natural landing pushes; maxindependent penetration.38731cm,
+  persistent>2cm duration0. Independent critic audited these claims.
+- The old packaged GUI test proved world-time frozen across405.4wallseconds,
+  controls/settings layout, saved volume/sensitivity and resolution changes.
+  It exposed the capture bug and later crashed, so it is not release acceptance.
 
-Remaining: complete strict gameplay/collision/full-fight tests, compile visual
-follow-up, verify actual fire/map/animations and pause/settings, measure runtime
-performance, package and graphically launch the repaired app, deliver an extracted
-new Downloads folder, finish private backups and push the verified handoff.
-Do not present concepts, source checks or passing narrow tests as final gameplay
-or visual acceptance. Root owns Unreal; agents must not operate its UI.
+## Recovery and remaining work
+
+Private repository `oh-ashen-one/veyr-animation-sources`:
+- `combat-arena-polish-sources-20261025`: editable animation/GLB/films and references.
+- `combat-arena-polish-native-20261025`: three native archives plus the post-runtime
+  material/skeleton-save overlay. All remote digests verified. Apply over the
+  earlier native-integration base; see docs/polish-20261025 receipts.
+- Corrected local animation review is available at http://127.0.0.1:8776/.
+  Original8775 service remains a read-only authoring-checkout service.
+
+Finish long pause/display-change/resume stress, warmed packaged animation/fire/
+blink review, packaged controls/collision/fullfight as warranted, performance
+measurement with shared-workload limits reported, then deliver the verified app
+in a fresh Downloads folder with controls, exact source/build and evidence.
+If RDG serialization fails, investigate the hidden GPU pose probe and targeted
+Dragon SkinCache path; preserve deformation quality and test one changed strategy.
 
 ---
 

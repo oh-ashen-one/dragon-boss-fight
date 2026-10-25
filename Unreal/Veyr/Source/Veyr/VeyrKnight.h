@@ -229,6 +229,9 @@ private:
     bool bMouseCaptured = false;
     bool bHasEverCapturedMouse = false;
     bool bMouseCaptureConfirmationPending = false;
+    bool bResumeCapturePending = false;
+    uint64 ResumeCaptureRequestedFrame = 0,MouseLookEnableAfterFrame = 0;
+    double MouseLookEnableAfterTime = 0.;
     float MouseCaptureRequestedAt = 0.f;
     bool bReplayJumpHeld = false;
     bool bReplayLight = false, bReplayHeavy = false, bReplayRoll = false, bReplayHeal = false, bReplayJump = false, bReplayGuard = false;
@@ -271,6 +274,7 @@ private:
     void UpdateHealFlask();
     void SetPresentationDiagnostic(const FString& Diagnostic);
     UStaticMeshComponent* CreateProxyPart(const TCHAR* Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location, const FVector& Size);
+    bool MouseLookReady() const;
     void LookYaw(float Value);
     void LookPitch(float Value);
     void ZoomIn();

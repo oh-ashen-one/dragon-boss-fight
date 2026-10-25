@@ -101,6 +101,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
 {
     if(bInitialized)return false;
     ReplayMode=Mode.ToLower();
+    bVictoryStartTwoHandedRequested=ReplayMode==TEXT("victory")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
     if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
@@ -125,6 +126,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     {
         const TSharedPtr<FJsonObject> Saved=PendingRestartEvidence;
         RunDirectory=PendingRestartDirectory;
+        Saved->TryGetBoolField(TEXT("victoryStartTwoHandedRequested"),bVictoryStartTwoHandedRequested);
+        Saved->TryGetBoolField(TEXT("victoryGripInputIssued"),bVictoryGripInputIssued);
+        Saved->TryGetBoolField(TEXT("victoryGripTransitionCompleted"),bVictoryGripTransitionCompleted);
         Elapsed=Saved->GetNumberField(TEXT("durationSeconds"));TerminalSeconds=Saved->GetNumberField(TEXT("terminalSeconds"));
         FrameCount=Saved->GetNumberField(TEXT("frameCount"));MaximumFrameSeconds=Saved->GetNumberField(TEXT("maximumFrameSeconds"));
         Samples=Saved->GetArrayField(TEXT("samples"));Events=Saved->GetArrayField(TEXT("events"));
@@ -1777,6 +1781,19 @@ void AVeyrReplay::DriveInputs()
     if(DriveIntegrationInputs())return;
     if(DriveStanceInputs())return;
     if(DriveScenarioInputs())return;
+    if(bVictoryStartTwoHandedRequested&&!bVictoryGripTransitionCompleted)
+    {
+        Knight->SetSprintRequested(false);Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
+        if(!bVictoryGripInputIssued&&Knight->Action==EVeyrKnightAction::Ready&&Knight->IsGrounded())
+        {
+            Knight->ToggleGrip();bVictoryGripInputIssued=true;
+            Event(TEXT("victory_requested_normal_two_hand_grip"));
+        }
+        if(bVictoryGripInputIssued&&Knight->IsTwoHanded()&&!Knight->IsChangingGrip())
+        {bVictoryGripTransitionCompleted=true;Event(TEXT("victory_two_hand_grip_transition_completed"));}
+        else if(Elapsed>8.f)Finish(false,TEXT("requested initial two-hand grip did not complete through normal input"));
+        return;
+    }
     FVector Movement=FVector::ZeroVector;
     bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false;
     bool bWantLock=true;
@@ -2130,14 +2147,26 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
     }
     if(!bRestartVerification)return;
     if(Knight->IsDead()||Dragon->IsDead()){Finish(false,TEXT("fresh world became terminal before response verification"));return;}
-    const bool bMove=RestartClock>.2f&&RestartClock<.9f;
-    const bool bAttack=RestartClock>1.f&&Knight->LightAttacks==0;
-    Knight->SetReplayInput(bMove?FVector::ForwardVector:FVector::ZeroVector,bAttack,false,false,false,false,false);
-    if(!bRestartMoved&&FVector::Dist2D(Knight->GetFootLocation(),RestartOrigin)>90.f){bRestartMoved=true;Event(TEXT("restart_movement_confirmed"));}
-    if(!bRestartAttackAccepted&&Knight->LightAttacks>0){bRestartAttackAccepted=true;Event(TEXT("restart_attack_accepted"));}
+    if(RestartClock>12.f)
+    {Finish(false,bRestartMoved?TEXT("fresh pawn primary attack was not accepted after movement recovery"):TEXT("fresh pawn did not complete 90cm ordinary movement within restart deadline"));return;}
+    Knight->SetSprintRequested(false);
+    if(Knight->bLockedOn)Knight->ToggleLockOn();
+    if(!bRestartMoved&&FVector::Dist2D(Knight->GetFootLocation(),RestartOrigin)>90.f)
+    {bRestartMoved=true;Event(TEXT("restart_movement_confirmed"));}
+    // Keep requesting ordinary movement until its observed displacement passes.
+    // A short timer window can expire in one startup/capture-heavy frame.
+    const bool bMove=!bRestartMoved&&RestartClock>.2f;
+    Knight->SetReplayInput(bMove?FVector::ForwardVector:FVector::ZeroVector,false,false,false,false,false,false);
+    if(bRestartMoved&&!bRestartAttackInputIssued&&Knight->Action==EVeyrKnightAction::Ready&&Knight->IsGrounded()&&Knight->GetPlanarSpeed()<10.f)
+    {
+        bRestartAttackInputIssued=true;
+        Knight->PressPrimaryAttack();Knight->ReleasePrimaryAttack();
+        Event(TEXT("restart_primary_input_requested"),false);
+    }
+    if(!bRestartAttackAccepted&&bRestartAttackInputIssued&&Knight->LightAttacks>0)
+    {bRestartAttackAccepted=true;Event(TEXT("restart_attack_accepted"));}
     if(bFreshResourcesVerified&&bRestartMoved&&bRestartAttackAccepted)
-        Finish(true,ReplayMode+TEXT(" terminal pose, resource reset, movement and attack after restart verified"));
-    else if(RestartClock>12.f)Finish(false,TEXT("fresh pawn did not respond to movement and attack inputs"));
+        Finish(true,ReplayMode+TEXT(" terminal pose, resource reset, movement and primary attack after restart verified"));
 }
 
 void AVeyrReplay::SaveEvidence(bool bFinal)
@@ -2245,6 +2274,10 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetStringField(TEXT("avoidanceCoverageDefinition"),TEXT("inside actual warning at least once during windup, then no HitsTaken increase through completed recovery; no boss move forcing"));
     Root->SetNumberField(TEXT("terminalSeconds"),TerminalSeconds);
     Root->SetBoolField(TEXT("victoryWithinThreeToFiveMinutes"),ReplayMode==TEXT("victory")&&TerminalSeconds>=180.f&&TerminalSeconds<=300.f);
+    Root->SetBoolField(TEXT("victoryStartTwoHandedRequested"),bVictoryStartTwoHandedRequested);
+    Root->SetBoolField(TEXT("victoryGripInputIssued"),bVictoryGripInputIssued);
+    Root->SetBoolField(TEXT("victoryGripTransitionCompleted"),bVictoryGripTransitionCompleted);
+    Root->SetBoolField(TEXT("restartPrimaryInputIssued"),bRestartAttackInputIssued);
     Root->SetBoolField(TEXT("restartRequested"),bAwaitingReload||bRestartVerification);Root->SetBoolField(TEXT("restartResourcesVerified"),bFreshResourcesVerified);
     Root->SetBoolField(TEXT("restartMovementVerified"),bRestartMoved);Root->SetBoolField(TEXT("restartAttackVerified"),bRestartAttackAccepted);
     Root->SetNumberField(TEXT("restartLoadWallSeconds"),RestartLoadSeconds);

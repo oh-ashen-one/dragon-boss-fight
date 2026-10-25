@@ -18,6 +18,7 @@ p.add_argument('--gpu-slot', type=Path, required=True)
 p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision'], required=True)
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--video-fps', type=int, choices=range(1,16), help='Optional native capture cadence; adds measurable overhead')
+p.add_argument('--start-two-handed', action='store_true', help='Victory QA uses the ordinary authored grip input before combat')
 p.add_argument('--width', type=int, default=1280)
 p.add_argument('--height', type=int, default=720)
 a = p.parse_args()
@@ -55,6 +56,9 @@ if not executable.is_file():
 cmd = [str(a.gpu_slot), 'capture', '--label', 'veyr-' + a.mode, '--timeout', str(a.slot_wait_seconds), '--json', str(run/'gpu.json'), '--', *launch, '-RenderOffScreen', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
 if a.video_fps:
     cmd.append('-VeyrVideoFPS='+str(a.video_fps))
+if a.start_two_handed:
+    if a.mode!='victory':p.error('--start-two-handed applies only to victory validation')
+    cmd.append('-VeyrReplayStartTwoHanded')
 print('Native run:', run, flush=True)
 with (run/'launcher.log').open('w') as output:
     environment = os.environ.copy()

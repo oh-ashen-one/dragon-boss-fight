@@ -81,6 +81,7 @@ AVeyrDragon::AVeyrDragon()
     }
     ImportedPresentation=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("CustomuseDragonPresentation"));
     ImportedPresentation->SetupAttachment(SceneRoot);
+    ImportedPresentation->LightingChannels.bChannel1=true;
     ImportedPresentation->SetVisibility(false);
     AttackPoseProbe=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("HiddenAttackEnvelopeProbe"));
     AttackPoseProbe->SetupAttachment(SceneRoot);

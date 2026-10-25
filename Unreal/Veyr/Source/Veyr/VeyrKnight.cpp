@@ -15,6 +15,9 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
+#include "Framework/Application/SlateApplication.h"
+#include "HAL/PlatformTime.h"
+#include "CoreGlobals.h"
 #include "UnrealClient.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -65,13 +68,13 @@ AVeyrKnight::AVeyrKnight()
     CombatCamera->bUsePawnControlRotation = false;
     CombatCamera->FieldOfView = 72.f;
     // Soft moon-bounce fill preserves dark metal while exposing hands/shoulders.
-    // Channel1 confines this light to the player and held props, not the arena.
+    // Channel1 lights the Knight, held props and dragon while excluding the arena.
     ReadabilityFill=CreateDefaultSubobject<UPointLightComponent>(TEXT("Knight moon bounce fill"));
     ReadabilityFill->SetupAttachment(CombatCamera);
     ReadabilityFill->SetRelativeLocation(FVector(40,-100,100));
     ReadabilityFill->SetIntensityUnits(ELightUnits::Lumens);
-    ReadabilityFill->SetIntensity(1800.f);
-    ReadabilityFill->SetAttenuationRadius(2600.f);
+    ReadabilityFill->SetIntensity(2800.f);
+    ReadabilityFill->SetAttenuationRadius(3600.f);
     ReadabilityFill->SetLightColor(FLinearColor(.80f,.86f,1.f));
     ReadabilityFill->SetCastShadows(false);
     ReadabilityFill->SourceRadius=80.f;
@@ -1377,27 +1380,51 @@ void AVeyrKnight::UpdateMouseCapture()
         MouseInputController = Player;
         ReleaseMouse(); // New world/possession starts with an explicitly free cursor.
     }
+    if (bResumeCapturePending)
+    {
+        UGameViewportClient* Viewport=GetWorld()->GetGameViewport();
+        if(!Viewport||!Viewport->Viewport||!Viewport->Viewport->IsForegroundWindow()||
+           !FSlateApplication::IsInitialized()||!FSlateApplication::Get().IsActive()||UGameplayStatics::IsGamePaused(this))
+        {
+            UE_LOG(LogTemp,Display,TEXT("VEYR_MOUSE_RESUME_CAPTURE_CANCELLED reason=inactive_context"));
+            ReleaseMouse();return;
+        }
+        if(GFrameCounter>ResumeCaptureRequestedFrame)
+        {
+            // The pause button/Escape FReply has now unwound. Its release/focus
+            // operations cannot overwrite this game-viewport focus request.
+            bResumeCapturePending=false;
+            FSlateApplication::Get().SetAllUserFocusToGameViewport();
+            UE_LOG(LogTemp,Display,TEXT("VEYR_MOUSE_RESUME_CAPTURE_DEFERRED applying_viewport_focus=1"));
+            CaptureMouseOrAttack();
+            return;
+        }
+    }
     if (bMouseCaptured)
     {
         UGameViewportClient* Viewport = GetWorld()->GetGameViewport();
         if (Viewport && Viewport->Viewport)
         {
             const bool bFocused = Viewport->Viewport->HasFocus(), bForeground = Viewport->Viewport->IsForegroundWindow();
-            if (!bFocused || !bForeground)
+            if (!bForeground || (!bMouseCaptureConfirmationPending && !bFocused))
             {
                 UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_RELEASE reason=focus_loss focused=%d foreground=%d nativeCapture=%d"),
                     bFocused, bForeground, Viewport->Viewport->HasMouseCapture());
                 ReleaseMouse();
             }
-            else if (bMouseCaptureConfirmationPending && Viewport->Viewport->HasMouseCapture())
+            else if (bMouseCaptureConfirmationPending && bFocused && Viewport->Viewport->HasMouseCapture())
             {
                 bMouseCaptureConfirmationPending = false;
                 bHasEverCapturedMouse = true;
+                // macOS can deliver cursor recenter/high-precision transition
+                // deltas around capture. Ignore look until confirmation settles.
+                MouseLookEnableAfterTime=FPlatformTime::Seconds()+.10;
+                MouseLookEnableAfterFrame=GFrameCounter+2;
                 UE_LOG(LogTemp, Display, TEXT("VEYR_MOUSE_CAPTURE_CONFIRMED focused=1 foreground=1 nativeCapture=1 local=%d replay=%d"),Player->IsLocalController(),bReplayControlled);
             }
             else if (bMouseCaptureConfirmationPending && GetWorld()->GetTimeSeconds() - MouseCaptureRequestedAt > .5f)
             {
-                UE_LOG(LogTemp, Warning, TEXT("VEYR_MOUSE_CAPTURE_REJECTED reason=native_capture_timeout focused=%d foreground=%d nativeCapture=0"),bFocused,bForeground);
+                UE_LOG(LogTemp, Warning, TEXT("VEYR_MOUSE_CAPTURE_REJECTED reason=native_capture_timeout focused=%d foreground=%d nativeCapture=%d"),bFocused,bForeground,Viewport->Viewport->HasMouseCapture());
                 ReleaseMouse();
             }
             else if (!bMouseCaptureConfirmationPending && !Viewport->Viewport->HasMouseCapture())
@@ -1451,6 +1478,8 @@ void AVeyrKnight::ReleaseMouse()
         bMouseCaptured,bMouseCaptureConfirmationPending,bReplayControlled);
     bMouseCaptured = false;
     bMouseCaptureConfirmationPending = false;
+    bResumeCapturePending = false;
+    MouseLookEnableAfterTime=0.;MouseLookEnableAfterFrame=0;
     bForwardHeld = bBackHeld = bLeftHeld = bRightHeld = false;bSprintHeld=false;bPrimaryAttackHeld=false;bPrimaryAttackBuffered=false;
     if (!bReplayControlled)
     {
@@ -1482,8 +1511,12 @@ void AVeyrKnight::HeavyPressed() { if (HumanInputEnabled()) TryHeavyAttack(); }
 void AVeyrKnight::RollPressed() { if (HumanInputEnabled()) TryRoll(); }
 void AVeyrKnight::HealPressed() { if (HumanInputEnabled()) TryHeal(); }
 void AVeyrKnight::LockPressed() { if (HumanInputEnabled()) ToggleLockOn(); }
-void AVeyrKnight::LookYaw(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerYawInput(Value * .7f * MouseSensitivity); }
-void AVeyrKnight::LookPitch(float Value) { if (HumanInputEnabled() && !bLockedOn) AddControllerPitchInput(-Value * .6f * MouseSensitivity); }
+bool AVeyrKnight::MouseLookReady() const
+{
+    return HumanInputEnabled()&&GFrameCounter>=MouseLookEnableAfterFrame&&FPlatformTime::Seconds()>=MouseLookEnableAfterTime;
+}
+void AVeyrKnight::LookYaw(float Value) { if (MouseLookReady() && !bLockedOn) AddControllerYawInput(Value * .7f * MouseSensitivity); }
+void AVeyrKnight::LookPitch(float Value) { if (MouseLookReady() && !bLockedOn) AddControllerPitchInput(-Value * .6f * MouseSensitivity); }
 void AVeyrKnight::ZoomIn() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance - 65.f, 500.f, 1100.f); }
 void AVeyrKnight::ZoomOut() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance + 65.f, 500.f, 1100.f); }
 void AVeyrKnight::GuardPressed() { if (HumanInputEnabled()) SetGuard(true); }
@@ -1495,7 +1528,10 @@ void AVeyrKnight::RightPressed() { bRightHeld = HumanInputEnabled(); } void AVey
 
 bool AVeyrKnight::HumanInputEnabled() const
 {
-    return bMouseCaptured&&!bReplayControlled&&!UGameplayStatics::IsGamePaused(this);
+    if(!bMouseCaptured||bMouseCaptureConfirmationPending||bResumeCapturePending||bReplayControlled||UGameplayStatics::IsGamePaused(this))return false;
+    const UGameViewportClient* Viewport=GetWorld()->GetGameViewport();
+    return Viewport&&Viewport->Viewport&&Viewport->Viewport->HasFocus()&&
+        Viewport->Viewport->IsForegroundWindow()&&Viewport->Viewport->HasMouseCapture();
 }
 void AVeyrKnight::BlinkPressed(){if(HumanInputEnabled())TryDirectionalBlink();}
 void AVeyrKnight::PausePressed()
@@ -1506,5 +1542,12 @@ void AVeyrKnight::PausePressed()
 void AVeyrKnight::SuspendForPauseMenu(){ReleaseMouse();}
 void AVeyrKnight::ResumeFromPauseMenu(bool bRecapture)
 {
-    if(bRecapture)CaptureMouseOrAttack();else ReleaseMouse();
+    ReleaseMouse();
+    if(bRecapture&&!bReplayControlled)
+    {
+        // Closing the menu is the explicit capture gesture; no automatic
+        // recapture after unrelated focus loss or when returning from background.
+        bResumeCapturePending=true;ResumeCaptureRequestedFrame=GFrameCounter;
+        UE_LOG(LogTemp,Display,TEXT("VEYR_MOUSE_RESUME_CAPTURE_QUEUED awaiting_slate_callback_unwind=1"));
+    }
 }

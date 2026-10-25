@@ -13,3 +13,16 @@ Owner instruction after the Veyr Knight walk review: always use Blender to autho
 - Browser viewers remain review tools. Do not silently fall back to script-only animation if Blender is unavailable; report the missing capability and continue authorized preparation.
 
 The owner authorized full native integration, builds, gameplay testing and critique agents on 2026-10-25. Work on the dedicated integration branch; preserve review sources and approved asset hashes. Earlier asset-review-only restrictions no longer apply to this integration pass.
+
+## Owner-directed crash investigation — 2026-10-25
+
+After receiving the packaged Veyr crash report, the owner explicitly authorized
+continued diagnostic launches for this Veyr pass and asked that this authorization
+be recorded here. Treat it as fresh authorization to test repaired candidates;
+do not repeat the same permission question for routine validation in this pass.
+Each launch must follow a concrete repair or diagnostic change, retain earlier
+crash evidence and verify the actual app outcome rather than the LaunchServices
+wrapper exit code. Keep renderer slots and process ownership intact. This is
+task-specific authority, not authority to take over other sessions or run a
+blind crash/relaunch script. Record the current candidate and remaining checks
+in HANDOFF.md; source changes and successful builds are not runtime acceptance.

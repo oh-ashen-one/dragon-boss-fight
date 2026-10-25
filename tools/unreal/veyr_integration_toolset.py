@@ -125,6 +125,23 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
 
     @toolset_registry.tool_call
     @staticmethod
+    def verify_polish_character_poses(character: str) -> str:
+        """Samples the saved current revision without reimporting or changing motion.
+
+        Args:
+            character: KnightB or DragonV3B from the hash-locked active manifest.
+        Returns:
+            JSON report with sampled native poses and transition endpoint checks.
+        """
+        require_project()
+        if unreal.EditorLevelLibrary.get_game_world() is not None:raise RuntimeError('Stop PIE before pose verification')
+        import probe_approved_poses
+        importlib.reload(probe_approved_poses)
+        plan=json.loads(polish_plan_for(character).read_text())
+        return json.dumps(probe_approved_poses.run(plan))
+
+    @toolset_registry.tool_call
+    @staticmethod
     def activate_polish_character(character: str) -> unreal.Object:
         """Activates the complete current revision in the separate RuntimePolish slot.
 

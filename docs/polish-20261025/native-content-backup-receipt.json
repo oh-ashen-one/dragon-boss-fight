@@ -1,7 +1,7 @@
 {
   "privateRepository": "oh-ashen-one/veyr-animation-sources",
   "release": "combat-arena-polish-native-20261025",
-  "restore": "Apply over native-integration-20261025 base plus its prop-material overlay. Extract all ZIPs at repository root and verify manifest hashes. RuntimePolish remains separate from RuntimeApproved.",
+  "restore": "Apply over native-integration-20261025 base plus its prop-material overlay. Extract all ZIPs at repository root and verify manifest hashes. RuntimePolish remains separate from RuntimeApproved. Finally apply the material-skeleton-save ZIP and verify its manifest.",
   "archives": [
     {
       "file": "Veyr-Polish-Native-20261025-part1.zip",
@@ -26,5 +26,22 @@
     }
   ],
   "allGitHubDigestsMatch": true,
-  "verifiedFiles": 227
+  "verifiedFiles": 227,
+  "postRuntimeSaveOverlay": {
+    "assets": [
+      {
+        "file": "Veyr-Polish-Native-20261025-material-skeleton-save.zip",
+        "sha256": "6ae2bec85d1f1f25424d098a5e271381287dced6cd8fe9a16b05dc104814c819",
+        "bytes": 109854
+      },
+      {
+        "file": "material-skeleton-save-manifest.json",
+        "sha256": "0b455cf67669dec8eef5c44f3f69b5f457564d7bb5395beb8f42611522eb9117",
+        "bytes": 1780
+      }
+    ],
+    "allGitHubDigestsMatch": true,
+    "applyAfterBase": true,
+    "reason": "Persist native material usage and skeleton metadata after first runtime evaluation; all six files are v026."
+  }
 }

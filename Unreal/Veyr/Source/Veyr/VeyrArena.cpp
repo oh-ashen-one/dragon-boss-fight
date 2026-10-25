@@ -260,7 +260,13 @@ void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Ya
     {
         Batch=NewObject<UInstancedStaticMeshComponent>(this,BatchName);AddInstanceComponent(Batch);
         Batch->SetupAttachment(GetRootComponent());Batch->SetMobility(EComponentMobility::Static);Batch->SetStaticMesh(Mesh);
-        // Keep every imported PBR material slot. The imported collision LOD uses
+        // The court material uses world-position UVs. Share it across the
+        // shallow generated paving so the surface continues through its edge
+        // instead of looking like a differently textured rectangular rug.
+        if(Name==FName(TEXT("WornPavingPatch"))&&FloorSurface&&FloorSurface->GetMaterial(0))
+            for(int32 Slot=0;Slot<Mesh->GetStaticMaterials().Num();++Slot)
+                Batch->SetMaterial(Slot,FloorSurface->GetMaterial(0));
+        // Other modules keep their imported PBR slots. The collision LOD uses
         // the real openings, rather than a bounding box across a walkable arch.
         Batch->SetCollisionProfileName(bBlocking?TEXT("BlockAll"):TEXT("NoCollision"));
         Batch->SetCollisionEnabled(bBlocking?ECollisionEnabled::QueryAndPhysics:ECollisionEnabled::NoCollision);
