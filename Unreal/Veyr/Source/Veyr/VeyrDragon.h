@@ -199,6 +199,7 @@ private:
     FName LastImportedClip=NAME_None;
     EVeyrDragonState LastImportedState=EVeyrDragonState::Idle;
     float ImportedTransitionStarted=0.f;
+    float ImportedTransitionSeconds=.12f;
     FVector ImportedHeadWorld=FVector::ZeroVector;
     FVector ImportedFeetWorld[4];
     FName ImportedKneeBones[4],ImportedHockBones[4];

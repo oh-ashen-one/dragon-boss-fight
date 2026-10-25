@@ -1216,10 +1216,13 @@ void AVeyrDragon::UpdateImportedPresentation()
             // Adjacent trims are one continuous authored action: another blend
             // would soften the bite's fastest lunge and change its impact time.
             bImportedTransitionReady=!LastImportedClip.IsNone()&&!AdjacentAttackTrim&&ImportedPresentation->BeginTransition();
+            // The legacy rise finishes with raised wings; give their fold into
+            // the approved resting silhouette weight instead of snapping shut.
+            ImportedTransitionSeconds=LastImportedState==EVeyrDragonState::Rise&&State==EVeyrDragonState::Idle?.55f:
+                HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active?.2f:.12f;
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
         }
-        const bool Hover=HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active;
-        const float TransitionSeconds=Hover?.2f:.12f;
+        const float TransitionSeconds=ImportedTransitionSeconds;
         const float Alpha=bImportedTransitionReady?FMath::Clamp((Clock-ImportedTransitionStarted)/TransitionSeconds,0.f,1.f):1.f;
         const bool Loop=VisualDefinition->Clips[Clip].bLoop;
         Sampled=Loop||AuthoredTurn?ImportedPresentation->SampleClipTimeBlended(Clip,SampleSeconds,Alpha):

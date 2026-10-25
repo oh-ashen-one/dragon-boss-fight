@@ -1581,9 +1581,21 @@ void AVeyrReplay::StopVideoCapture(const FString& Reason)
 void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
 {
     if(bFinished)return;
-    if(ObservedWarningContainmentFailures>0)bSuccess=false;
-    bFinished=true;bPassed=bSuccess;OutcomeReason=ObservedWarningContainmentFailures>0?
-        TEXT("Bone contact escaped committed warning; damage was suppressed"):Reason;FinishClock=0;
+    FString VerifiedReason=Reason;
+    if(bSuccess&&(!Knight->bApprovedNativeDefinitionActive||Knight->bPresentationUsingFallback||
+        !Dragon->bAnatomicalLegContactsReady||!Dragon->bBiteGroundAimReady||!Dragon->HasValidImportedCombatPose()))
+    {bSuccess=false;VerifiedReason=TEXT("Approved native pose, anatomical legs or grounded bite was not active at completion");}
+    if(bSuccess)
+    {
+        for(AActor* Actor:{static_cast<AActor*>(Knight.Get()),static_cast<AActor*>(Dragon.Get())})
+        {
+            TInlineComponentArray<UVeyrSkeletalPresentation*> Presentations;Actor->GetComponents(Presentations);
+            for(const UVeyrSkeletalPresentation* Presentation:Presentations)
+                if(Presentation->FailedRequests>0){bSuccess=false;VerifiedReason=TEXT("Native skeletal presentation recorded a failed pose request");}
+        }
+    }
+    if(ObservedWarningContainmentFailures>0){bSuccess=false;VerifiedReason=TEXT("Bone contact escaped committed warning; damage was suppressed");}
+    bFinished=true;bPassed=bSuccess;OutcomeReason=VerifiedReason;FinishClock=0;
     Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
     CaptureQueue.Reset(); Event(bSuccess?TEXT("result_pass"):TEXT("result_fail")); SaveEvidence(false);
     UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_RESULT pass=%d seconds=%.3f reason=%s"),bPassed,Elapsed,*OutcomeReason);
