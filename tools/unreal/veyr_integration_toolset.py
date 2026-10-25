@@ -58,7 +58,7 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         plan = plan_for(character)
         if not plan.is_file():
             raise FileNotFoundError('Prepare the normalized approved import plan first')
-        if unreal.EditorLevelLibrary.is_playing_a_game():
+        if unreal.EditorLevelLibrary.get_game_world() is not None:
             raise RuntimeError('Stop PIE before importing approved assets')
         import import_customuse
         importlib.reload(import_customuse)
@@ -66,4 +66,43 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         result = unreal.load_asset(receipt['definition'])
         if not result:
             raise RuntimeError('Imported definition could not be reloaded')
+        return result
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def create_blink_material() -> unreal.Material:
+        """Creates or returns the owned cyan afterimage material; rejects unrelated path collisions."""
+        require_project()
+        import create_blink_material
+        importlib.reload(create_blink_material)
+        return create_blink_material.run()
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def activate_approved_character(character: str) -> unreal.Object:
+        """Copies a fully validated import to the new RuntimeApproved slot, preserving the legacy slot.
+
+        Args:
+            character: KnightB or DragonV3B, using the corresponding prepared import plan.
+        Returns:
+            The saved runtime definition used by the integrated native actor.
+        """
+        require_project()
+        plan=json.loads(plan_for(character).read_text())
+        source_path='/Game/Characters/Customuse/'+character+'/'+plan['version']+'/DA_'+character
+        source=unreal.load_asset(source_path)
+        if not isinstance(source,unreal.VeyrVisualDefinition):
+            raise RuntimeError('Complete the approved import before activation')
+        errors=list(source.validate_definition(True))
+        if errors:raise RuntimeError('Definition is incomplete: '+'; '.join(errors))
+        label='Knight' if character=='KnightB' else 'Dragon'
+        destination='/Game/Characters/Customuse/RuntimeApproved/DA_'+label
+        existing=unreal.load_asset(destination)
+        if existing:
+            if existing.get_editor_property('source_sha256') != source.get_editor_property('source_sha256'):
+                raise RuntimeError('Preserving a different existing approved definition')
+            return existing
+        result=unreal.EditorAssetLibrary.duplicate_asset(source_path,destination)
+        if not result or not unreal.EditorAssetLibrary.save_loaded_asset(result,False):
+            raise RuntimeError('Saving the new runtime definition failed')
         return result

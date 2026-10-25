@@ -68,6 +68,12 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") float GazeYawDegrees=0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") float GazePitchDegrees=0.f;
     UFUNCTION(BlueprintCallable, Category="Presentation") bool ApplyCustomuseVisual(UVeyrVisualDefinition* Definition);
+    /** Select the approved tucked hover on subsequent flights; transitions still
+     * enter/leave through the v1 hover pose shared by takeoff and landing. */
+    UFUNCTION(BlueprintCallable, Category="Presentation") void SetHoverAlternate(bool bEnabled) { bPreferHoverAlternate=bEnabled; }
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Presentation") bool bPreferHoverAlternate=false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Presentation") bool bAlternateHoverVariants=true;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bHoverAlternateThisFlight=false;
     /** Parameter binding readiness; rendered mask acceptance is a separate gate. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") bool bCameraOcclusionReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation|Camera") bool bCameraOcclusionEnabled=false;
@@ -193,6 +199,16 @@ private:
     bool bPresentationMotionInitialized=false,bRepositionWalking=false;
     float RepositionTurnDuration=0.f,RepositionTravelDuration=0.f;
     float RepositionYawDelta=0.f;
+    FTransform RepositionStartTransform=FTransform::Identity;
+    bool bRepositionAuthoredTurn=false,bRepositionReverseTurn=false;
+    FName RepositionTurnClip=NAME_None;
+    float RepositionTurnSourceDuration=0.f;
+    bool HasAuthoredFlight() const;
+    bool IsLandingContactWindow() const;
+    float VisualClipDuration(FName ClipName,float Fallback) const;
+    float WalkCycleDistance() const;
+    bool ReadTurnTrajectory(float SourceSeconds,FVector& Translation,float& YawDegrees) const;
+    FTransform RepositionTurnTransform(float Phase) const;
 
     float LegStagger[4] = {0,0,0,0};
     float LegFlash[4] = {0,0,0,0};

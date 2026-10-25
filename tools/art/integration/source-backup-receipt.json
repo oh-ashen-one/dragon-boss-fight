@@ -1,0 +1,14 @@
+{
+  "release": "knight-dragon-postsprint-20261025",
+  "privateRepository": "oh-ashen-one/veyr-animation-sources",
+  "verifiedFiles": 154,
+  "bytes": 6207561682,
+  "archives": {
+    "Veyr-PostSprint-20261025-part1.zip": "40c97ad15fba40f3d6ada07a37f2563602c6fd4b98f2086d2312f8a3f86a3fdb",
+    "Veyr-PostSprint-20261025-part2.zip": "21a9daa440ffc72f229636c1a0ec77eefe896e797c8e92c894eaa356f908896f",
+    "Veyr-PostSprint-20261025-part3.zip": "69a803eb57490714f050771fb804d99bd14511eb5424276878ba31350843ad75",
+    "Veyr-PostSprint-20261025-part4.zip": "7cb682eb5959f20778cfb7ac42cb1e0c1b6f43d618b18167381332e36cbae5aa",
+    "Veyr-PostSprint-20261025-part5.zip": "21d9cd46375d4754dd16f08e87b3f372cb2a405673dad47ae3554aa657f2093e"
+  },
+  "allGitHubDigestsMatch": true
+}

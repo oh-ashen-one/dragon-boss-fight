@@ -14,11 +14,12 @@ from pathlib import Path
 
 
 class NativeMCP:
-    def __init__(self):
+    def __init__(self, timeout=60):
         self.url = "http://127.0.0.1:18773/mcp"
         self.session = None
         self.version = "2025-06-18"
         self.sequence = 0
+        self.timeout = timeout
 
     def request(self, method, params=None, notification=False):
         self.sequence += 1
@@ -33,7 +34,7 @@ class NativeMCP:
             headers["Mcp-Session-Id"] = self.session
             headers["MCP-Protocol-Version"] = self.version
         request = urllib.request.Request(self.url, json.dumps(payload).encode(), headers)
-        with urllib.request.urlopen(request, timeout=60) as response:
+        with urllib.request.urlopen(request, timeout=self.timeout) as response:
             self.session = response.headers.get("Mcp-Session-Id", self.session)
             content_type = response.headers.get("Content-Type", "")
             if "text/event-stream" in content_type:

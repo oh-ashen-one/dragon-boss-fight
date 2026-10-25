@@ -131,7 +131,8 @@ def run(plan_file):
         if clip.get("root_motion_policy", "preserve") not in ("preserve", "lock_root"):
             raise ValueError("Unknown root-motion policy")
         checked = inspect_glb(clip)
-        compatible(canonical, checked)
+        variant_spec = plan.get("mesh_variants", {}).get(clip.get("mesh_variant"))
+        compatible(inspect_glb(variant_spec) if variant_spec else canonical, checked)
         checked_clips.append((clip, checked))
     destination = f"/Game/Characters/Customuse/{character}/{version}"
     folder = PROJECT / "Content/Characters/Customuse" / character / version
@@ -156,23 +157,28 @@ def run(plan_file):
             json.dump(receipt, stream, indent=2)
             stream.write("\n")
 
-    def import_one(source, target, skeleton=None):
+    def import_one(source, target, skeleton=None, static=False, mesh_variant=False):
         pipeline = unreal.InterchangeGenericAssetsPipeline()
         common = pipeline.get_editor_property("common_skeletal_meshes_and_animations_properties")
-        common.set_editor_property("import_only_animations", skeleton is not None)
+        common.set_editor_property("import_only_animations", skeleton is not None and not mesh_variant)
         common.set_editor_property("try_auto_select_skeleton", False)
         common.set_editor_property("use_t0_as_ref_pose", False)
         if skeleton is not None:
             common.set_editor_property("skeleton", skeleton)
         mesh = pipeline.get_editor_property("mesh_pipeline")
-        mesh.set_editor_property("import_skeletal_meshes", skeleton is None)
-        mesh.set_editor_property("import_static_meshes", False)
+        mesh.set_editor_property("import_skeletal_meshes", (skeleton is None or mesh_variant) and not static)
+        mesh.set_editor_property("import_static_meshes", static)
+        mesh.set_editor_property("import_morph_targets", True)
+        mesh.set_editor_property("merge_morph_targets_with_same_name", False)
         mesh.set_editor_property("update_skeleton_reference_pose", False)
-        pipeline.get_editor_property("animation_pipeline").set_editor_property("import_animations", skeleton is not None)
+        animation_pipeline = pipeline.get_editor_property("animation_pipeline")
+        animation_pipeline.set_editor_property("import_animations", skeleton is not None and not mesh_variant)
+        animation_pipeline.set_editor_property("custom_bone_animation_sample_rate", 300)
+        animation_pipeline.set_editor_property("frame_alignment", unreal.InterchangeFrameAlignment.SNAP_TO_CEILING)
         materials = pipeline.get_editor_property("material_pipeline")
-        materials.set_editor_property("import_materials", skeleton is None)
+        materials.set_editor_property("import_materials", skeleton is None or mesh_variant)
         materials.set_editor_property("reuse_existing_materials", False)
-        materials.get_editor_property("texture_pipeline").set_editor_property("import_textures", skeleton is None)
+        materials.get_editor_property("texture_pipeline").set_editor_property("import_textures", skeleton is None or mesh_variant)
         params = unreal.ImportAssetParameters()
         params.set_editor_property("is_automated", True)
         params.set_editor_property("force_show_dialog", False)
@@ -274,13 +280,40 @@ def run(plan_file):
                                     "rotationQuaternion": [rotation.x, rotation.y, rotation.z, rotation.w],
                                     "scale": [bone_scale.x, bone_scale.y, bone_scale.z]}
         receipt["importedReferenceBones"] = reference
+        mesh_variants = {}
+        for variant_name, variant in plan.get("mesh_variants", {}).items():
+            variant_checked = inspect_glb(variant)
+            if variant_checked["jointNames"] != canonical["jointNames"] or variant_checked["jointParents"] != canonical["jointParents"]:
+                raise RuntimeError("Mesh variant changed the canonical bone layout")
+            objects = import_one(variant, destination + "/MeshVariants/" + variant_name, skeleton, mesh_variant=True)
+            variants = [obj for obj in objects if isinstance(obj, unreal.SkeletalMesh)]
+            if len(variants) != 1 or variants[0].get_editor_property("skeleton") != skeleton:
+                raise RuntimeError("Variant did not bind to the shared skeleton: " + variant_name)
+            mesh_variants[variant_name] = variants[0]
+        props_by_file = {}
+        for filename, prop in plan.get("props", {}).items():
+            source_path = Path(prop["file"]).resolve()
+            if not source_path.is_relative_to(SOURCE_ROOT.resolve()) or hashlib.sha256(source_path.read_bytes()).hexdigest() != prop["sha256"]:
+                raise ValueError("Static prop provenance mismatch: " + filename)
+            imported = import_one(prop, destination + "/Props/" + Path(filename).stem, static=True)
+            static_meshes = [obj for obj in imported if isinstance(obj, unreal.StaticMesh)]
+            if len(static_meshes) != 1:
+                raise RuntimeError("Expected one rigid approved prop: " + filename)
+            props_by_file[filename] = static_meshes[0]
+        if props_by_file:
+            definition.set_editor_property("props", {"Cup": props_by_file["DrinkingCup.glb"]} if "DrinkingCup.glb" in props_by_file else {})
         clips = {}
+        imported_sequences = {}
         for specification, source in checked_clips:
-            imported = import_one(source, destination + "/Animations/" + specification["name"], skeleton)
-            sequences = [obj for obj in imported if isinstance(obj, unreal.AnimSequence)]
-            if len(sequences) != 1 or sequences[0].get_editor_property("skeleton") != skeleton:
-                raise RuntimeError("Clip did not bind exclusively to the canonical skeleton")
-            sequence = sequences[0]
+            # Phase aliases share the same native sequence; only trim windows differ.
+            sequence = imported_sequences.get(source["sha256"])
+            if sequence is None:
+                imported = import_one(source, destination + "/Animations/" + specification["name"], skeleton)
+                sequences = [obj for obj in imported if isinstance(obj, unreal.AnimSequence)]
+                if len(sequences) != 1 or sequences[0].get_editor_property("skeleton") != skeleton:
+                    raise RuntimeError("Clip did not bind exclusively to the canonical skeleton")
+                sequence = sequences[0]
+                imported_sequences[source["sha256"]] = sequence
             root_policy = specification.get("root_motion_policy", "preserve")
             if root_policy not in ("preserve", "lock_root"):
                 raise ValueError("Unknown root-motion policy")
@@ -297,8 +330,21 @@ def run(plan_file):
                 raise RuntimeError("Saving explicit root-motion policy failed")
             entry = unreal.VeyrVisualClip()
             entry.set_editor_property("sequence", sequence)
+            if specification.get("mesh_variant"):
+                entry.set_editor_property("mesh_override", mesh_variants[specification["mesh_variant"]])
             for field, default in (("start_seconds", 0), ("end_seconds", -1), ("impact_seconds", -1), ("loop", False)):
                 entry.set_editor_property(field, specification.get(field, default))
+            if specification.get("approved_source_file"):
+                entry.set_editor_property("approved_source_file", specification["approved_source_file"])
+                entry.set_editor_property("approved_source_sha256", specification.get("approved_source_sha256", ""))
+                entry.set_editor_property("damage_windows", [unreal.Vector2D(*window) for window in specification.get("damage_windows", [])])
+                entry.set_editor_property("nominal_speed_cm_per_second", specification.get("nominal_speed_cm_per_second", 0.0))
+                entry.set_editor_property("root_translation_samples_cm", [unreal.Vector(*point) for point in specification.get("root_translation_samples_cm", [])])
+                entry.set_editor_property("root_yaw_samples_degrees", specification.get("root_yaw_samples_degrees", []))
+                entry.set_editor_property("root_sample_rate", specification.get("root_sample_rate", 60.0))
+                entry.set_editor_property("root_motion_removed", specification.get("root_motion_removed", False))
+                if specification.get("weapon_file"):
+                    entry.set_editor_property("weapon_mesh", props_by_file[specification["weapon_file"]])
             clips[specification["name"]] = entry
             receipt.setdefault("clipLengthsSeconds", {})[specification["name"]] = float(sequence.get_editor_property("sequence_length"))
         definition.set_editor_property("clips", clips)

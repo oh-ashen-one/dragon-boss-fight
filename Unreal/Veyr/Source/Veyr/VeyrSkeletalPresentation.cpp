@@ -33,7 +33,10 @@ bool UVeyrSkeletalPresentation::CheckReady()
     if(!IsInGameThread())return false; // Do not mutate component diagnostics from a worker.
     if(!IsRegistered())return Fail(TEXT("Component must be registered before explicit sampling"));
     if(!VisualDefinition||!VisualDefinition->SkeletalMesh)return Fail(TEXT("No applied skeletal visual definition"));
-    if(GetSkeletalMeshAsset()!=VisualDefinition->SkeletalMesh)return Fail(TEXT("Component mesh differs from the applied visual definition"));
+    bool KnownMesh=GetSkeletalMeshAsset()==VisualDefinition->SkeletalMesh;
+    if(!KnownMesh)for(const auto& Entry:VisualDefinition->Clips)
+        if(Entry.Value.MeshOverride==GetSkeletalMeshAsset()){KnownMesh=true;break;}
+    if(!KnownMesh)return Fail(TEXT("Component mesh is not an approved definition variant"));
 #if WITH_EDITOR
     if(GetSkeletalMeshAsset()->IsCompiling())return Fail(TEXT("Skeletal mesh compilation is still in progress"));
 #endif
@@ -129,6 +132,23 @@ bool UVeyrSkeletalPresentation::ResolveClip(FName ClipName, const FVeyrVisualCli
     if(!CheckReady())return false;
     OutClip=VisualDefinition->Clips.Find(ClipName);
     if(!OutClip||!OutClip->Sequence)return Fail(TEXT("Requested clip is missing: ")+ClipName.ToString());
+    USkeletalMesh* DesiredMesh=OutClip->MeshOverride?OutClip->MeshOverride.Get():VisualDefinition->SkeletalMesh.Get();
+    if(DesiredMesh!=GetSkeletalMeshAsset())
+    {
+        const FReferenceSkeleton& Old=GetSkeletalMeshAsset()->GetRefSkeleton();
+        const FReferenceSkeleton& Next=DesiredMesh->GetRefSkeleton();
+        if(DesiredMesh->GetSkeleton()!=VisualDefinition->SkeletalMesh->GetSkeleton()||Old.GetNum()!=Next.GetNum())
+            return Fail(TEXT("Approved mesh variant has an incompatible skeleton"));
+        for(int32 I=0;I<Old.GetNum();++I)
+            if(Old.GetBoneName(I)!=Next.GetBoneName(I)||Old.GetParentIndex(I)!=Next.GetParentIndex(I))
+                return Fail(TEXT("Approved mesh variant changed the bone layout"));
+#if WITH_EDITOR
+        if(DesiredMesh->IsCompiling())return Fail(TEXT("Approved mesh variant compilation is pending"));
+#endif
+        // Compatible skin variants retain the native instance and frozen transition pose.
+        SetSkeletalMesh(DesiredMesh,false);
+        if(!CheckReady())return false;
+    }
     UAnimSequence* Sequence=OutClip->Sequence;
     if(Sequence->GetSkeleton()!=GetSkeletalMeshAsset()->GetSkeleton())return Fail(TEXT("Clip skeleton mismatch: ")+ClipName.ToString());
     // Single-node additive playback is editor-only in the native implementation.

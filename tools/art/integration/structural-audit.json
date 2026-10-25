@@ -1,0 +1,1119 @@
+{
+  "scope": "Structural representation and imported-skin compatibility; not native rendering, gameplay or artistic approval. Body skin uses selected canonical approved idle; known weight fixes differ from older approved clip meshes.",
+  "clips": [
+    {
+      "file": "Heal_Blender_v4.glb",
+      "sourceSHA256": "54a3a0b5ad615a363509fbeb790ca613da3058bdb9079f999414f68e9560413f",
+      "normalizedSHA256": "bbcff479cafb2c71c1efd341f0454b906c00b7acd44a00d76498d4efb34e248d",
+      "rootMode": "none",
+      "duration": 2.4000000953674316,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 1.7208456881689926e-15,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Backpedal_Blender_v4r5.glb",
+      "sourceSHA256": "5b2ac980dec8cd5b3e69867b807c02d50d966748a200cb11b1256a16ab2d6d83",
+      "normalizedSHA256": "39446b385b689514fac6281dfc470f7ec75c9fb537199aeba905b6e6731fed5c",
+      "rootMode": "planar",
+      "duration": 2.4000000953674316,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 2.2533359511633932e-08,
+        "weapon": 2.253335945612278e-08,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "HeavyAttackOneHand_Blender_v4r3.glb",
+      "sourceSHA256": "9acff6fe597bc01e7b863370674c370f95b33042526b4f744a6726137a3e3d19",
+      "normalizedSHA256": "5d7cce59e4cd0bd76d6dc42e33da7042f102003e527992f8380620e2a16bc24e",
+      "rootMode": "none",
+      "duration": 1.399999976158142,
+      "bindShapeError": 1.5138387106095053e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "RunOneHand_Blender_meshy_r3.glb",
+      "sourceSHA256": "991b1454a6d65afcf0cc70c259fcad000ade3bef8e99be163e297848a810ebec",
+      "normalizedSHA256": "247bd43d21a8f79e4c088b053c05476d6189d307b94e36c0aa280440c65f4dee",
+      "rootMode": "none",
+      "duration": 0.6000000238418579,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "WalkOneHand_Blender_v2r2.glb",
+      "sourceSHA256": "6c05e3bf99fb270e9a88d44db7172515d60a76eab80085de33b2d4336844574a",
+      "normalizedSHA256": "1db2a4aceb978696feea78d75a965e31ccc476bee37d9d2415cfb7a432ddfc81",
+      "rootMode": "none",
+      "duration": 1.2000000476837158,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "RunOneHand_Blender_tripo_r2.glb",
+      "sourceSHA256": "7b7055fce2f679638050df5c24391d4b8316dddff44df286c81395cb43522998",
+      "normalizedSHA256": "b7d6bb076689df8e762f5497dcc312f43d088269f86c7215a567ec0b3ade273f",
+      "rootMode": "none",
+      "duration": 0.6266666650772095,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "StrafeLeft_Blender_v4r2.glb",
+      "sourceSHA256": "f43d81b87d51bcafe7c0a5ecd2436df5cfc54215d2ecbc46596f68e329f99fac",
+      "normalizedSHA256": "957e5300135a8de9651303ada3c55105625e04a3dc7c9e326af3557bfb1e4feb",
+      "rootMode": "planar",
+      "duration": 0.699999988079071,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 4.050650170839276e-08,
+        "weapon": 4.050650115328125e-08,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "StrafeRight_Blender_v4r2.glb",
+      "sourceSHA256": "bbec21befe860a573259ed3d948f1d6958544c358e309c91d7834f8f73e51fdf",
+      "normalizedSHA256": "40244ea9d894a03ba199541bb456973c44b66a964577ba5c8dee589084307c89",
+      "rootMode": "planar",
+      "duration": 0.699999988079071,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 2.9707770465847716e-08,
+        "weapon": 2.970777024380311e-08,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Death_Blender_v2r3.glb",
+      "sourceSHA256": "2f3a8a326f741d95423ac22cffb1047e3e8c46ede3d1f063f5d8b8cfdb2ba804",
+      "normalizedSHA256": "385e3468c161b2a488e0db32169b2bfaf99f32c96ef95f94ab1c7f81cdb6ea6b",
+      "rootMode": "none",
+      "duration": 4.400000095367432,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "WalkTwoHand_Blender_v6r2.glb",
+      "sourceSHA256": "fa70485dfff672fd9b19fdf30a12af9e27dfc04252d87460c95ad1a85db3f48f",
+      "normalizedSHA256": "c96f5e4e2b5360e5cffdb9722a2148d579ca692252d08d6cef5f8db2806602c7",
+      "rootMode": "none",
+      "duration": 2.4000000953674316,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "IdleOneHand_Blender_v2r4.glb",
+      "sourceSHA256": "0ea615d1b0f5978e78d0d7f3e69f2dea7498a71525616cdaf6c7e769590f8493",
+      "normalizedSHA256": "ce7d74d9a051ba6e3c2d4f045c0f1fb9e847c485565115a02e26d78128b289d2",
+      "rootMode": "none",
+      "duration": 4.0,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "IdleTwoHand_Blender_v2r4.glb",
+      "sourceSHA256": "98e3bc6da65dbff373b72fccf5a453d26b24ff83f929b6699fab1172b96c0182",
+      "normalizedSHA256": "3fd2cc8069652712401d110dd842297f6e05ff105de98abfbd081538ccddbdc5",
+      "rootMode": "none",
+      "duration": 4.0,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "LightAttack_BlackKnightReference_Blender_v2r3.glb",
+      "sourceSHA256": "15f5a60c1f3b457ce25675e71ce6920419cf94e7a936cd2afdb41039737e27d7",
+      "normalizedSHA256": "3fd7ddf49c5226dfe8861e481c44582f6aad191fa400e13b0e393dc1b5c4e736",
+      "rootMode": "none",
+      "duration": 2.799999952316284,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Backpedal_Blender_loop_v1r3.glb",
+      "sourceSHA256": "7e92b2ab6dc6bb6302b8410d749bab219088f78d6d670a67b092ad51743ce737",
+      "normalizedSHA256": "048988c92c1672ee9984da3b0561d198dd9d180e8d6a6c1f6e404cdc370062ce",
+      "rootMode": "none",
+      "duration": 1.2000000476837158,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "StrongAttackTwoHand_Sweep_Blender_v2r3.glb",
+      "sourceSHA256": "9a80d30a24d1d1371a558756eab1f2228cb9e7e394009d4d783a9e9376a2f0fc",
+      "normalizedSHA256": "37cec8d59e3e0d628c593a389d31cde8b2ea9be024b6402d8759f8572a108063",
+      "rootMode": "none",
+      "duration": 1.6133333444595337,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "StrongAttackTwoHand_Thrust_Blender_v2r4.glb",
+      "sourceSHA256": "6f8f5af34c7867cdbc0310184e4f39ff199a7747ca86c57faac429c80209d7b3",
+      "normalizedSHA256": "a7177f78c4cd440bfff19bc6cf34f29d7ed8b95d3fd5538063121d7d47bcf5ea",
+      "rootMode": "none",
+      "duration": 2.306666612625122,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "LightAttackTwoHand_Compact_Blender_v2r3.glb",
+      "sourceSHA256": "3dab85375eb6dccfcd495a89426eda253e00057f423ec607aeb1e67e4fa951e8",
+      "normalizedSHA256": "869b44d4bf043644fe9483cf1d9ddd7d78e23a513c430843004826fccdbdf98d",
+      "rootMode": "none",
+      "duration": 1.2000000476837158,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "GuardReadyTwoHand_Blender_v4r4.glb",
+      "sourceSHA256": "6d926dab7b79e78e2d80cf924003424f1fad404e2c8d8ac9e1ca1174271b6d81",
+      "normalizedSHA256": "1a625a82191d5a11f947903d0bb3dce0770c357666504ae2a96111fc286eb3e8",
+      "rootMode": "none",
+      "duration": 0.699999988079071,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "RunStop_Blender_v1r2.glb",
+      "sourceSHA256": "bd5ee8f30e6198ffa39475c9a44e4a8f474c1673c4d29b2e9b22ba23782d4aee",
+      "normalizedSHA256": "97bb8c7eb6146e082ca65b2773aab75ce586d87aa45f42ae3580da1b542ecead",
+      "rootMode": "none",
+      "duration": 0.6000000238418579,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "HeavyAttackOneHand_Blender_v4r5.glb",
+      "sourceSHA256": "c49935418de2c2284edffc12df3314b9ef6c57bbeb60d66f221682b16932fbf0",
+      "normalizedSHA256": "b2ae56dd44fbf0c41eaa146e4b5a89f774f616e1f9e8cbcc2c336edd692e3762",
+      "rootMode": "none",
+      "duration": 1.399999976158142,
+      "bindShapeError": 1.5138387106095053e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "LightCombo_Blender_v5.glb",
+      "sourceSHA256": "bc17c661a2efea6ea2a8d1726631bfd27071373eb89c760f1b225cf634c8a7f2",
+      "normalizedSHA256": "09698ebec5a3ad86f7027fc66b42034849a48de014748caed3b007f5b7da0056",
+      "rootMode": "none",
+      "duration": 3.319999933242798,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Stagger_Blender_v2r5.glb",
+      "sourceSHA256": "c4692bfb7634a9de2cc19cd1a73b3acc6f17e24259aed51a463c968202702707",
+      "normalizedSHA256": "c7d54d14302a81d15bd5b8364aeb1ed822187cf81ad578875045e9add75d2bff",
+      "rootMode": "none",
+      "duration": 0.41999998688697815,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "GuardBreakStagger_Blender_v1r2.glb",
+      "sourceSHA256": "9f61e24f76959b53ce34198b67509ba9d19d9bdb1f72bf12b72ceb93b3fac548",
+      "normalizedSHA256": "a176e4a41a04ea0fc801d1a74184dcfe69abf755c22d1c0d128c472848dbfa69",
+      "rootMode": "planar",
+      "duration": 1.2000000476837158,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 1.5947046239084273e-08,
+        "weapon": 1.5947046211328697e-08,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_FlyHover_Blender_v1.glb",
+      "sourceSHA256": "4742b046c05df936cb9f6d9beec7d3c565ad443c048bd06b4d0e3f2f4ba0e89f",
+      "normalizedSHA256": "285c28dfdec03dc584faac0bdfe04375d449da760e5582dfa7865e273c9f615e",
+      "rootMode": "none",
+      "duration": 2.0,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_Takeoff_Blender_v1.glb",
+      "sourceSHA256": "459f8ff0454612d78dda5d39346e0e9d5b44f11c4ba681a6e1c3a561f12ac752",
+      "normalizedSHA256": "8434298390e68d6ee2dbef2a067d49447bf1c7fd0e7f16b2c37ab4502adc0e96",
+      "rootMode": "none",
+      "duration": 1.5,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_Land_Blender_v1.glb",
+      "sourceSHA256": "dbef03948ab0d7ced6625a3302c0eee549aaac1d7be2b2acab302332e8fc0fac",
+      "normalizedSHA256": "cd534d08e8f0a9cd7aa51f11b822667149537c91a5bc0abdf0fd7fed72a830a8",
+      "rootMode": "none",
+      "duration": 1.5,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_Idle_Blender_v1r3.glb",
+      "sourceSHA256": "7c057fd666e3dbbf91ecdbf8f9707a36cb767d16ab461f5565ecd229f5f4c6f8",
+      "normalizedSHA256": "ae6b6a8329d5aa66c2080d7f04d07e91f2932575646ef159a20937387cc761e5",
+      "rootMode": "none",
+      "duration": 6.0,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_Walk_Blender_v1r2.glb",
+      "sourceSHA256": "8919042832443e6bff6943ada1854c1b75e4f83874f9a366896f290a20939d24",
+      "normalizedSHA256": "090d54010b67589362bb3d900c0d011e423a9ced555dd487fa01238a15d1c33d",
+      "rootMode": "none",
+      "duration": 3.200000047683716,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_Turn_Blender_v1r2.glb",
+      "sourceSHA256": "9b1ecd268dac928799c078599337784056f53d5df2de746e3e5c0dab2c878a80",
+      "normalizedSHA256": "cc555304841ccc8f3cd11558144da5777b993cc788a0799ed89b26a0f06ca786",
+      "rootMode": "turn",
+      "duration": 2.799999952316284,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 3.4065846723496662e-06,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_FireBreath_Blender_v1.glb",
+      "sourceSHA256": "2d7bca2eefb7f28a3e8321f7732125a138aa5b6523f943c7d81b710db126c428",
+      "normalizedSHA256": "7d45815ff89ae9596944aeeceb20c023c046c3cfed9ae09e08b51d2b2a69f355",
+      "rootMode": "none",
+      "duration": 3.5,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_FlyHover_Blender_v1r2.glb",
+      "sourceSHA256": "0cc106b8460a3048b3370b77326eeeea88aad0863770aeacfb66e7f64e216532",
+      "normalizedSHA256": "cb10a1f9c31652e79c429d384a3ec5beaa24ba3e399d63e7e8277917a60f2a4a",
+      "rootMode": "none",
+      "duration": 2.0,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "RollAttack_Blender_v1.glb",
+      "sourceSHA256": "1e69b429c6c59c3447a72a883b02222420d592eaecb7cebf334cc2a9598bef78",
+      "normalizedSHA256": "ec7fd01fdf0efaacae42425481d6dd1d9b8d29947995d3c77996645199898190",
+      "rootMode": "planar",
+      "duration": 2.200000047683716,
+      "bindShapeError": 5.573854171270209e-07,
+      "reconstructionErrors": {
+        "bone": 5.468726305135618e-09,
+        "weapon": 5.468726138602165e-09,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Dragon_Bite_Blender_v2.glb",
+      "sourceSHA256": "97d859eaaa521bbd0fee485c19c254db27648a438208c632e481a717060dcd63",
+      "normalizedSHA256": "0dd9c6f2b08e87906fd3c67c4fdf8a8b9af5159f56051fa6fcb49f2f68d64648",
+      "rootMode": "none",
+      "duration": 1.7999999523162842,
+      "bindShapeError": 9.208049299421657e-07,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Roll.glb",
+      "sourceSHA256": "49b944d006472c3c5fb0a531e13a7c8fc97d14055c2afd4e1e3674708d532129",
+      "normalizedSHA256": "e814aa627e390699c3007aef4128f40a56c64b0579f693cdc816cda202901529",
+      "rootMode": "none",
+      "duration": 0.7799999713897705,
+      "bindShapeError": 1.3068877353639152e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_BiteActive.glb",
+      "sourceSHA256": "b7d33cb40eaf7ff16b4e92d28391abe8345be1c7700d1a0816f63c020d34aec6",
+      "normalizedSHA256": "b68ca45facda4ab7405bb829d2924d9867fec992071674bc019996fc43d6cf1e",
+      "rootMode": "none",
+      "duration": 0.30000001192092896,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_BiteRecovery.glb",
+      "sourceSHA256": "1fa56f3c881f17672b34e365ea84d88b3510bd7b1cadec46a9accf3074c8a502",
+      "normalizedSHA256": "1a60435b47409493194681dcaf68d3b906972d3ead6d39a84744bdde1d40a7d3",
+      "rootMode": "none",
+      "duration": 1.600000023841858,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_BiteWindup.glb",
+      "sourceSHA256": "1e2b11c29f51327717f0dd7d0f4f59aa4186dc8978cfead5acad535450889e24",
+      "normalizedSHA256": "219857b4ec4d631ba50814c9f1c83083af49c3b9d14b6f628c5903e08e8ccd09",
+      "rootMode": "none",
+      "duration": 1.0499999523162842,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Buckle0.glb",
+      "sourceSHA256": "f9a0fdd6c40fd57f6ee6a63846ee5248916bd48a8f1ce2c035db2051e7c261c8",
+      "normalizedSHA256": "fabb4bb65d909361ebbad9d3aa20bc849017c9f515cbfa465be66a43b5673221",
+      "rootMode": "none",
+      "duration": 0.6499999761581421,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Buckle1.glb",
+      "sourceSHA256": "dc1b8ad0bae2b1d311eeed695e1844f5c7bfd8753bd801bade8cab75b3cf9830",
+      "normalizedSHA256": "d8affd587a6713bd5f4f6c978df03f5ce9cc9e420c0567f5a78610431db69e4b",
+      "rootMode": "none",
+      "duration": 0.6499999761581421,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Buckle2.glb",
+      "sourceSHA256": "cc914ca258d23caea9282f750263626d13c46846d31eae33c4d9b379304c5436",
+      "normalizedSHA256": "de4ba0ef7ec6f68904bb02f331cb6143c41c7c763d542a89cb8c7b0a1ffa0aa4",
+      "rootMode": "none",
+      "duration": 0.6499999761581421,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Buckle3.glb",
+      "sourceSHA256": "2b64fd9be3a0cadbb1c61fa8716efdcbcc660a98c48a1714d442ff937602cd4c",
+      "normalizedSHA256": "1f1c4395df3c151bcd53e5cbe1e31660ceaa9cafe212604a5150d4522995dd36",
+      "rootMode": "none",
+      "duration": 0.6499999761581421,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Claw0Active.glb",
+      "sourceSHA256": "1fcb0f09c5a642e28b8fafc346e8de664b9b3adb3c780b25a20a826ac3ec1bf3",
+      "normalizedSHA256": "fc70804a5c004736d3d7c3592e610d26691b1899234b41c6a8e8fda4c95af20a",
+      "rootMode": "none",
+      "duration": 0.47999998927116394,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Claw0Recovery.glb",
+      "sourceSHA256": "90484dc701788d77918c3d0047ede3e046cd0314f83560f43b9d7644de7ec018",
+      "normalizedSHA256": "1536318139cc31c52abc8cf7ec59ce29bef247d4d2d1db8b8e66a744470a78df",
+      "rootMode": "none",
+      "duration": 1.600000023841858,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Claw0Windup.glb",
+      "sourceSHA256": "8293b05a5c499d2bb7da305bf7d16830f88450404522c292ce71723f6507d71b",
+      "normalizedSHA256": "5c8b00b0fd699ba15b238f0cee4e40feccb561fff259a6ec1ac7c6ff25f9ff46",
+      "rootMode": "none",
+      "duration": 1.149999976158142,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Claw1Active.glb",
+      "sourceSHA256": "8649bc6eecc0c81dc968a9b4bef36264a6148665919970bdaf12189e4300103b",
+      "normalizedSHA256": "437fb3b03e7043f82fee5d1a72cb7ecb99d2a9ca9cdaa6fa3de35d86c7108c28",
+      "rootMode": "none",
+      "duration": 0.47999998927116394,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Claw1Recovery.glb",
+      "sourceSHA256": "15b368f2119a6e87667a6f3d9db041c2d6645e7c8eccc3155b75983d3bd67960",
+      "normalizedSHA256": "7324690f22774b6bd5e9d72335082119e590f49e3aaf9e0af3cb50878fb69c3e",
+      "rootMode": "none",
+      "duration": 1.600000023841858,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Claw1Windup.glb",
+      "sourceSHA256": "4275dea274984fcdc34cb796c520884714905876a40f24bcd438487288902448",
+      "normalizedSHA256": "e4faea508eea3b9e7bcb97c4ced1222c24918e4f417722c4122941ff4230e24d",
+      "rootMode": "none",
+      "duration": 1.149999976158142,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_ClawActive.glb",
+      "sourceSHA256": "a1fee078f0c0e25ee68edbc8974ba742de6824f19d7f2ea50e7232879cd24b84",
+      "normalizedSHA256": "45444b92a8e56c7eabd687fe1039ef0ecffca5fc78c3a0cf6c8f06e25965f579",
+      "rootMode": "none",
+      "duration": 0.47999998927116394,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_ClawRecovery.glb",
+      "sourceSHA256": "0d92efd82cc46fb0e0710750041f84bea7b073b90b5ac88f9b95b202348bbf35",
+      "normalizedSHA256": "aecc99285f8150cb0937e7683694cbf793d21b4b9d74e514db50e966da7a2f9e",
+      "rootMode": "none",
+      "duration": 1.600000023841858,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_ClawWindup.glb",
+      "sourceSHA256": "e55f4eb2898248a7cd24d6ee0a127d45646b3d378e56bbef802f02df16433f5a",
+      "normalizedSHA256": "56313475d82ecbea67842e5dc478329fc3391b394d9477652c1561b5f9a26f73",
+      "rootMode": "none",
+      "duration": 1.149999976158142,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Collapse.glb",
+      "sourceSHA256": "8818864db69bed9380876ab460edea9636d2722a7ae594612ab175cdf05d24ab",
+      "normalizedSHA256": "068863029a57f135a1d63b36cfce0db472cd9025431a25082b9e68f42b4c4d85",
+      "rootMode": "none",
+      "duration": 1.0,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Death.glb",
+      "sourceSHA256": "d29c6a25f14d0f43510bf7aadedaa9183c091b14baea7a853bb412b2e6d86b83",
+      "normalizedSHA256": "b0e73f34be591b20d0927f2743eea5b875b0c6c5b6183cd8975781132fc11e9a",
+      "rootMode": "none",
+      "duration": 3.4000000953674316,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_DeathDown.glb",
+      "sourceSHA256": "bea43efbe306ff7d37e50e61f43596f00fa84d02f41c0156a253f45251bdf58e",
+      "normalizedSHA256": "17725c7aa480626f8883aa430507f04fcbaae89f99eb743c8d35f09fe139e7e6",
+      "rootMode": "none",
+      "duration": 3.4000000953674316,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Exposed.glb",
+      "sourceSHA256": "53d4cc1df083f84d78faf5c8efeee418f574feeeb8e5ff85532460d7e9a82fbb",
+      "normalizedSHA256": "dbf8a4e6c739de450991391fe0e0a7b253ab2e390ccc9853b2186a494b34030a",
+      "rootMode": "none",
+      "duration": 7.0,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_FireActive.glb",
+      "sourceSHA256": "573c7c15c95605657e04e9644cc96045bc6c2d96ed85cef9dedeb27554e83163",
+      "normalizedSHA256": "449e9caf86f85f09a8503a885bcd0f699225bc8fc4d5606c6ca5d1c4d7e35b25",
+      "rootMode": "none",
+      "duration": 2.0999999046325684,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_FireRecovery.glb",
+      "sourceSHA256": "2af0b0d13f0dad6e85a5a5941fa6701dfdd0b7ea6b1b8e4673b4e700775b36ff",
+      "normalizedSHA256": "5beafe5de36debcff4c6ab896fba9bd993914ecd5df045e34d24022a31694b84",
+      "rootMode": "none",
+      "duration": 2.0,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_FireWindup.glb",
+      "sourceSHA256": "4a2aa1508cfa2b07e10644a9cdba82954475994b8ba92bdb2b4aed10dde1f4c4",
+      "normalizedSHA256": "62b6519e7949aa9c5778fd039ab2e16058f1cd27761bfeb94bc8e14992bbda96",
+      "rootMode": "none",
+      "duration": 1.75,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_FlightActive.glb",
+      "sourceSHA256": "a0e6f3d86618e4e937b7fb52546a8cb0f0ca0aac1878de0004e0601d5d58e74c",
+      "normalizedSHA256": "608aae1e87d5772453b6eacb429b5d0caf64ee2a79afea1214ebf45c54ce5aa0",
+      "rootMode": "none",
+      "duration": 2.75,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_FlightRecovery.glb",
+      "sourceSHA256": "def24b19ea024b8fc6806768e1d64a166bf98e186b29ca47d6d7bb0a86895acc",
+      "normalizedSHA256": "586bc7a219b6c3e3bfabcfb892a2bb04819838f4aa4124b32e40ef3f49695f03",
+      "rootMode": "none",
+      "duration": 2.299999952316284,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_FlightWindup.glb",
+      "sourceSHA256": "9e62b1838707d767f6e373f3f4386f59950e11812efe19da09492874349a9dfa",
+      "normalizedSHA256": "bb6d95df38002685d8e16ec0ab2a1bf289f41472fd876380bff5409000504038",
+      "rootMode": "none",
+      "duration": 1.600000023841858,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Idle.glb",
+      "sourceSHA256": "b5bc6538d9f57af2cbad85e27120d10ed582205f74d2a7669a228545c61c1666",
+      "normalizedSHA256": "9c40f9eeec862f43d948c32d8b1289e91bfa36e8b143e04b955cf181d984ceee",
+      "rootMode": "none",
+      "duration": 8.0,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Rise.glb",
+      "sourceSHA256": "e01ec91f3258534f8b9113561eed1c9c90d12b4ae5076a24f9004c915a7ed409",
+      "normalizedSHA256": "4b9b1479804d0d57d7999e088f4aa3af0f1eaaf22d79b2847d4c1b3c739e5683",
+      "rootMode": "none",
+      "duration": 2.0,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Stomp2Active.glb",
+      "sourceSHA256": "06c185b7e06e8281cdac446f13861647ec187675a6c2a5043f69ea8188b6a008",
+      "normalizedSHA256": "0a0d8f80d544709c8d740043b21ff934da626a5f0f633116683fb4da2a928cc3",
+      "rootMode": "none",
+      "duration": 0.2800000011920929,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Stomp2Recovery.glb",
+      "sourceSHA256": "497cac7969ac57b8ae9b9322c9bcf5cff673a666dddc1b59764885c98f084e8e",
+      "normalizedSHA256": "868dd43a72fe8a2907b02f5960bd31a0cdd8861a1a294e6995c4fc1fe6475c0e",
+      "rootMode": "none",
+      "duration": 1.5,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Stomp2Windup.glb",
+      "sourceSHA256": "ebf9d7b5cd74a75dbcc04ce73a60ff2b71ebc547ab5b70358114eab609161f4d",
+      "normalizedSHA256": "2f3d41606b946842ea1f168d74c9349b975cafe4ef8faf7baabef8a688173f07",
+      "rootMode": "none",
+      "duration": 1.25,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Stomp3Active.glb",
+      "sourceSHA256": "51191d543172852f5aa4543071180a270d7dcd5c9822aa1275d44d538bd967f8",
+      "normalizedSHA256": "22f7dcd2ef1c619aacad45443083de00754e73389fb033a39a93d469bc962bc6",
+      "rootMode": "none",
+      "duration": 0.2800000011920929,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Stomp3Recovery.glb",
+      "sourceSHA256": "a15bfeee24aa4e295f84caebd254fafe4b3c2ebdcd02c0ac18d7feabe663e039",
+      "normalizedSHA256": "048731148697d7692761db32789f4cd8309e0c277e9cb340880fc0831b595616",
+      "rootMode": "none",
+      "duration": 1.5,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Stomp3Windup.glb",
+      "sourceSHA256": "56e4ba292a091a1670678ec22cec329898d95310e2f104617dbe13b6b675d9f1",
+      "normalizedSHA256": "4bd5ba89cd686908aad616617ba3bf7378e7f6a7427d76881e43cdfd3c1e2151",
+      "rootMode": "none",
+      "duration": 1.25,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_TailActive.glb",
+      "sourceSHA256": "b370c93eb5550aa072e390c717026a1c842a73c993c5269aab2d981c3287f413",
+      "normalizedSHA256": "0869c6025108057a93cd7003261b9f8cc343719dd7c5199038094d159fc4202a",
+      "rootMode": "none",
+      "duration": 0.6499999761581421,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_TailRecovery.glb",
+      "sourceSHA256": "fd4ae6bdd091e85e892535c07df356f8128b9d989a3e1628a512a0cc187719d6",
+      "normalizedSHA256": "2c9a0328bb876d45b74804f88c62dc22b811aa48114f89ea3239c11912f4ed0f",
+      "rootMode": "none",
+      "duration": 1.7999999523162842,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_TailWindup.glb",
+      "sourceSHA256": "c149c929aa6d7e3f495550244fce116af3b3afd9b3c24f55159d21227e1979c7",
+      "normalizedSHA256": "518cfaf7d5ba41cbac3ce460e9e6830dc507e0c62efff9e06c6847da46a44be4",
+      "rootMode": "none",
+      "duration": 1.4500000476837158,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_TurnLeft.glb",
+      "sourceSHA256": "85132572c386383f8ee88d23eba08c86343138363f4b379382d2d9d4cf5c2da4",
+      "normalizedSHA256": "be6e4ec3feb138d5ce41778acf607ea79a72a1cde1f5c0f41298c9c13f4ec2c7",
+      "rootMode": "none",
+      "duration": 1.7999999523162842,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_TurnRight.glb",
+      "sourceSHA256": "2e8f2db700377242c84451b1e3b9bfefe051c1c6123b0413437f11d40819f2f2",
+      "normalizedSHA256": "26f24622af676041471b324b2fceb93bd5b906e45ecce5e16363a19de00d4352",
+      "rootMode": "none",
+      "duration": 1.7999999523162842,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    },
+    {
+      "file": "Legacy_Walk.glb",
+      "sourceSHA256": "812a393fa6a4e89504141e9c5cd338ded45a5de619334384e7449855ad8f8d37",
+      "normalizedSHA256": "65a32fe54ef520feef86cf4b064a2d495b64be21da320e2f6de086bc1b66f4b5",
+      "rootMode": "none",
+      "duration": 1.100000023841858,
+      "bindShapeError": 2.1357971484725624e-06,
+      "reconstructionErrors": {
+        "bone": 0.0,
+        "weapon": 0.0,
+        "cup": 0.0,
+        "morph": 0.0
+      },
+      "pass": true
+    }
+  ],
+  "morphTargetVariants": 8,
+  "maximumReconstructionError": 3.4065846723496662e-06,
+  "maximumBindShapeError": 2.1357971484725624e-06,
+  "pass": true
+}

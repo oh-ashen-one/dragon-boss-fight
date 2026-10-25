@@ -8,6 +8,8 @@
 #include "Components/InputComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
@@ -67,7 +69,7 @@ AVeyrKnight::AVeyrKnight()
     // Optional until the stable native data asset is authored. The definition
     // supplies imported orientation, scale and the capsule-to-feet offset.
     static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> KnightDefinition(
-        TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
+        TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Knight.DA_Knight"),LOAD_Quiet|LOAD_NoWarn);
     CustomuseVisualDefinition = KnightDefinition.Get();
     BoatWeapon=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tripo Timber Greatsword"));
     BoatWeapon->SetupAttachment(GetCapsuleComponent());
@@ -90,6 +92,28 @@ AVeyrKnight::AVeyrKnight()
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> EchoMaterial(
+        TEXT("/Game/ArtPass/Materials/M_BlinkAfterimage.M_BlinkAfterimage"),LOAD_Quiet|LOAD_NoWarn);
+    BlinkEchoMaterial=EchoMaterial.Get();
+    for(int32 I=0;I<2;++I)
+    {
+        auto* Echo=CreateDefaultSubobject<UPoseableMeshComponent>(I==0?TEXT("Blink departure silhouette"):TEXT("Blink arrival silhouette"));
+        Echo->SetupAttachment(GetCapsuleComponent());Echo->SetAbsolute(true,true,true);
+        Echo->SetCollisionEnabled(ECollisionEnabled::NoCollision);Echo->SetGenerateOverlapEvents(false);
+        Echo->SetCanEverAffectNavigation(false);Echo->SetVisibility(false);Echo->CastShadow=false;
+        BlinkEchoBodies.Add(Echo);
+        auto* WeaponEcho=CreateDefaultSubobject<UStaticMeshComponent>(I==0?TEXT("Blink departure sword"):TEXT("Blink arrival sword"));
+        WeaponEcho->SetupAttachment(GetCapsuleComponent());WeaponEcho->SetAbsolute(true,true,true);
+        WeaponEcho->SetCollisionEnabled(ECollisionEnabled::NoCollision);WeaponEcho->SetGenerateOverlapEvents(false);
+        WeaponEcho->SetCanEverAffectNavigation(false);WeaponEcho->SetVisibility(false);WeaponEcho->CastShadow=false;
+        BlinkEchoWeapons.Add(WeaponEcho);BlinkEchoMaterials.Add(nullptr);
+    }
+    ApprovedHealCup=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Approved handled healing cup"));
+    ApprovedHealCup->SetupAttachment(GetCapsuleComponent());
+    ApprovedHealCup->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    ApprovedHealCup->SetGenerateOverlapEvents(false);
+    ApprovedHealCup->SetCanEverAffectNavigation(false);
+    ApprovedHealCup->SetVisibility(false);
     HealFlaskRoot=CreateDefaultSubobject<USceneComponent>(TEXT("Original Ember Draught"));
     HealFlaskRoot->SetupAttachment(GetCapsuleComponent());
     HealFlaskRoot->SetAbsolute(false,false,true);
@@ -171,7 +195,12 @@ void AVeyrKnight::BeginPlay()
     }
     if (Controller) Controller->SetControlRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
     if(!CustomuseVisualDefinition)CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
-        TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!CustomuseVisualDefinition)
+    {
+        CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        if(CustomuseVisualDefinition)UE_LOG(LogTemp,Warning,TEXT("VEYR_LEGACY_DEFINITION approved native definition missing; old art is not integration acceptance"));
+    }
     if (CustomuseVisualDefinition) ApplyCustomuseVisual(CustomuseVisualDefinition);
     else SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported visual definition unavailable"));
     UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_READY collisionHeight=244cm art=%s light=%.3f/%.3f heavy=%.3f/%.3f roll=.08-.44/%.2f"),
@@ -181,29 +210,92 @@ void AVeyrKnight::BeginPlay()
 }
 
 bool AVeyrKnight::IsGrounded() const { return GetCharacterMovement() && GetCharacterMovement()->IsMovingOnGround(); }
-bool AVeyrKnight::IsRollingInvulnerable() const { return Action == EVeyrKnightAction::Roll && ActionElapsed > .08f && ActionElapsed < .44f; }
+bool AVeyrKnight::IsBlinkAction() const { return Action==EVeyrKnightAction::BlinkLeft||Action==EVeyrKnightAction::BlinkRight; }
+bool AVeyrKnight::IsRollPrefix() const { return Action==EVeyrKnightAction::Roll||(Action==EVeyrKnightAction::RollAttack&&ActionElapsed<.78f); }
+bool AVeyrKnight::IsAttackAction() const { return Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack||Action==EVeyrKnightAction::Combo||Action==EVeyrKnightAction::RollAttack; }
+bool AVeyrKnight::IsRollingInvulnerable() const { return (IsRollPrefix()||IsBlinkAction())&&ActionElapsed>.08f&&ActionElapsed<.44f; }
 float AVeyrKnight::GetPlanarSpeed() const { return GetVelocity().Size2D(); }
-FVector AVeyrKnight::GetFootLocation() const { return GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()); }
-float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return bTwoHanded?(bHeavy?1.20f:.90f):(bHeavy?.90f:.66f); }
-float AVeyrKnight::GetAttackContactTime(bool bHeavy) const { return bTwoHanded?(bHeavy?.64f:.46f):(bHeavy?.45f:.33f); }
-float AVeyrKnight::GetSwordContactTime() const { return Action == EVeyrKnightAction::HeavyAttack ? GetAttackContactTime(true) : Action == EVeyrKnightAction::LightAttack ? GetAttackContactTime(false) : -1.f; }
-bool AVeyrKnight::IsTerminal() const { return IsDead() || (IsValid(Boss) && Boss->IsDead()); }
-bool AVeyrKnight::CanStartGroundedAction() const { return GripTransitionRemaining<=0.f && !IsTerminal() && IsGrounded() && !bPressedJump && (Action == EVeyrKnightAction::Ready || Action == EVeyrKnightAction::Guard); }
-
-void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction, float Duration)
+FVector AVeyrKnight::GetFootLocation() const { return GetActorLocation()-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()); }
+bool AVeyrKnight::HasVisualClip(FName Name) const
 {
-    if (NewAction == EVeyrKnightAction::Guard && !bTwoHanded)
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
+    return C&&C->Sequence;
+}
+float AVeyrKnight::VisualClipDuration(FName Name,float Fallback) const
+{
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
+    if(!C||!C->Sequence)return Fallback;
+    const float End=C->EndSeconds<0.f?C->Sequence->GetPlayLength():C->EndSeconds;
+    return FMath::IsFinite(End)&&End>C->StartSeconds?End-C->StartSeconds:Fallback;
+}
+float AVeyrKnight::VisualClipSpeed(FName Name) const
+{
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
+    if(C&&FMath::IsFinite(C->NominalSpeedCmPerSecond)&&C->NominalSpeedCmPerSecond>1.f)return C->NominalSpeedCmPerSecond;
+    const float* Legacy=PresentationNominalSpeeds.Find(Name);
+    return Legacy&&*Legacy>0.f?*Legacy:0.f;
+}
+FName AVeyrKnight::ChooseAttackClip(bool bHeavy) const
+{
+    if(bHeavy)
     {
-        bTwoHanded = true; GripTransitionRemaining = .28f;
+        if(bTwoHanded)return TwoHandHeavyAnimationVariant==1?TEXT("HeavyAttackTwoHandAlternate"):TEXT("HeavyAttackTwoHand");
+        return HeavyAnimationVariant==1?TEXT("HeavyAttackAlternate"):TEXT("HeavyAttack");
     }
-    Action = NewAction; ActionElapsed = 0.f; ActionDuration = Duration;
-    bContactSent = false; bHealGranted = false; bPreviousBladePoseValid=false;
-    if(NewAction==EVeyrKnightAction::LightAttack||NewAction==EVeyrKnightAction::HeavyAttack)
+    return bTwoHanded?TEXT("LightAttackTwoHand"):TEXT("LightAttack");
+}
+float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return VisualClipDuration(ChooseAttackClip(bHeavy),bTwoHanded?(bHeavy?1.20f:.90f):(bHeavy?.90f:.66f)); }
+float AVeyrKnight::GetAttackContactTime(bool bHeavy) const
+{
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ChooseAttackClip(bHeavy)):nullptr;
+    if(C&&!C->DamageWindows.IsEmpty())return C->DamageWindows[0].X;
+    if(C&&C->ImpactSeconds>=0.f)return C->ImpactSeconds-C->StartSeconds;
+    return GetAttackDuration(bHeavy)*.5f;
+}
+float AVeyrKnight::GetSwordContactTime() const { return IsAttackAction()?GetAttackContactTime(Action==EVeyrKnightAction::HeavyAttack):-1.f; }
+bool AVeyrKnight::IsTerminal() const { return IsDead()||(IsValid(Boss)&&Boss->IsDead()); }
+bool AVeyrKnight::CanStartGroundedAction() const
+{
+    return GripTransitionRemaining<=0.f&&!IsTerminal()&&IsGrounded()&&!bPressedJump&&
+        (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::RunStop);
+}
+FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
+{
+    switch(NewAction)
     {
-        // Authored foot plants and short steps are in-place. Do not slide the
-        // capsule under a fixed support foot when a movement key stays held.
+        case EVeyrKnightAction::LightAttack:return ChooseAttackClip(false);
+        case EVeyrKnightAction::HeavyAttack:return ChooseAttackClip(true);
+        case EVeyrKnightAction::Combo:return TEXT("LightCombo");
+        case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
+        case EVeyrKnightAction::Roll:return TEXT("Roll");
+        case EVeyrKnightAction::RunStop:return TEXT("RunStop");
+        case EVeyrKnightAction::BlinkLeft:return TEXT("BlinkLeft");
+        case EVeyrKnightAction::BlinkRight:return TEXT("BlinkRight");
+        case EVeyrKnightAction::Backstep:return TEXT("BackpedalStep");
+        case EVeyrKnightAction::GuardBreak:return TEXT("GuardBreak");
+        case EVeyrKnightAction::Guard:return TEXT("GuardTwoHand");
+        case EVeyrKnightAction::Heal:return TEXT("Heal");
+        case EVeyrKnightAction::Stagger:return TEXT("Stagger");
+        case EVeyrKnightAction::Dead:return TEXT("Death");
+        default:return bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
+    }
+}
+
+void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
+{
+    if(NewAction==EVeyrKnightAction::Guard&&!bTwoHanded){bTwoHanded=true;GripTransitionRemaining=.28f;}
+    ClearBlinkEchoes();
+    Action=NewAction;ActionElapsed=0.f;ActionDuration=Duration;ActionPresentationClip=ResolveActionClip(NewAction);
+    bContactSent=false;bHealGranted=false;bPreviousBladePoseValid=false;bPreserveRollPrefix=false;
+    bBlinkHidden=false;bLateralDodgeBlocked=false;ContactedDamageWindows.Reset();CurrentDamageWindow=INDEX_NONE;
+    ActionRootTravelCm=0.f;bActionRootBlocked=false;
+    if(NewAction!=EVeyrKnightAction::Ready)bWasRunning=false;
+    if(IsAttackAction()||IsBlinkAction()||NewAction==EVeyrKnightAction::Guard||NewAction==EVeyrKnightAction::Heal||
+       NewAction==EVeyrKnightAction::RunStop||NewAction==EVeyrKnightAction::GuardBreak||NewAction==EVeyrKnightAction::Backstep)
+    {
         ConsumeMovementInputVector();GetCharacterMovement()->StopMovementImmediately();
     }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_KNIGHT_ACTION state=%d clip=%s duration=%.3f"),int32(Action),*ActionPresentationClip.ToString(),ActionDuration);
 }
 
 void AVeyrKnight::FinishAction()
@@ -222,15 +314,25 @@ void AVeyrKnight::ToggleGrip()
 
 void AVeyrKnight::TryLightAttack()
 {
+    if(Action==EVeyrKnightAction::Roll&&!IsTerminal()&&HasVisualClip(TEXT("RollAttack"))&&Stamina>=22.f)
+    {
+        // The imported roll-attack prefix is byte-identical to the praised roll.
+        // Upgrade in place: keep its movement, clock and invulnerability window.
+        Stamina-=22.f;RegenDelay=.9f;++LightAttacks;++RollAttacks;ActionSwingBase=++SwingId;
+        Action=EVeyrKnightAction::RollAttack;ActionPresentationClip=TEXT("RollAttack");
+        ActionDuration=VisualClipDuration(ActionPresentationClip,2.2f);bSwingTwoHanded=false;
+        ContactedDamageWindows.Reset();bPreviousBladePoseValid=false;bPreserveRollPrefix=true;
+        UE_LOG(LogTemp,Display,TEXT("VEYR_ROLL_ATTACK_QUEUED preservedTime=%.3f"),ActionElapsed);return;
+    }
     if (!CanStartGroundedAction())
     {
-        if(!IsTerminal()&&(Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack)&&
+        if(!IsTerminal()&&IsAttackAction()&&
            ActionDuration-ActionElapsed<=.18f) { BufferedAttackRemaining=.20f;bBufferedHeavy=false; }
         return;
     }
     const float Cost=bTwoHanded?28.f:22.f;
     if(Stamina<Cost)return;
-    Stamina-=Cost;RegenDelay=.75f;++SwingId;++LightAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
+    Stamina-=Cost;RegenDelay=.75f;ActionSwingBase=++SwingId;++LightAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
     BeginAction(EVeyrKnightAction::LightAttack,GetAttackDuration(false));
 }
 
@@ -238,31 +340,70 @@ void AVeyrKnight::TryHeavyAttack()
 {
     if (!CanStartGroundedAction())
     {
-        if(!IsTerminal()&&(Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack)&&
+        if(!IsTerminal()&&IsAttackAction()&&
            ActionDuration-ActionElapsed<=.18f) { BufferedAttackRemaining=.20f;bBufferedHeavy=true; }
         return;
     }
     const float Cost=bTwoHanded?40.f:34.f;
     if(Stamina<Cost)return;
-    Stamina-=Cost;RegenDelay=1.f;++SwingId;++HeavyAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
+    Stamina-=Cost;RegenDelay=1.f;ActionSwingBase=++SwingId;++HeavyAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
     BeginAction(EVeyrKnightAction::HeavyAttack,GetAttackDuration(true));
 }
 
 void AVeyrKnight::TryRoll()
 {
     if (!CanStartGroundedAction() || Stamina < 25.f) return;
+    const float Side=FVector::DotProduct(MoveIntent.GetSafeNormal2D(),GetActorRightVector());
+    const float Forward=FVector::DotProduct(MoveIntent.GetSafeNormal2D(),GetActorForwardVector());
+    if(bLockedOn&&FMath::Abs(Side)>FMath::Abs(Forward)){TryBlink(Side<0.f);return;}
     Stamina -= 25.f; RegenDelay = .7f; ++Rolls;
     RollDirection = MoveIntent.GetSafeNormal2D();
     if (RollDirection.IsNearlyZero()) RollDirection = GetActorForwardVector().GetSafeNormal2D();
-    BeginAction(EVeyrKnightAction::Roll, bImportedPresentationActive?.78f:.58f);
+    BeginAction(EVeyrKnightAction::Roll,VisualClipDuration(TEXT("Roll"),bImportedPresentationActive?.78f:.58f));
 }
 
 void AVeyrKnight::TryHeal()
 {
     if (!CanStartGroundedAction() || HealingCharges <= 0 || Health >= 100.f) return;
     --HealingCharges;
-    BeginAction(EVeyrKnightAction::Heal, 1.25f);
+    BeginAction(EVeyrKnightAction::Heal,VisualClipDuration(TEXT("Heal"),1.25f));
 }
+
+bool AVeyrKnight::TryBlink(bool bLeft)
+{
+    if(!CanStartGroundedAction()||BlinkCooldownRemaining>0.f||Stamina<25.f)return false;
+    const FName Clip=bLeft?TEXT("BlinkLeft"):TEXT("BlinkRight");
+    if(!HasVisualClip(Clip)){SetPresentationDiagnostic(TEXT("Approved blink clip missing: ")+Clip.ToString());return false;}
+    Stamina-=25.f;RegenDelay=.7f;++BlinkDodges;
+    BeginAction(bLeft?EVeyrKnightAction::BlinkLeft:EVeyrKnightAction::BlinkRight,VisualClipDuration(Clip,.7f));
+    BlinkCooldownRemaining=ActionDuration+.10f;return true;
+}
+void AVeyrKnight::TryCombo()
+{
+    if(!CanStartGroundedAction()||Stamina<70.f||!HasVisualClip(TEXT("LightCombo")))return;
+    Stamina-=70.f;RegenDelay=1.f;++ComboAttacks;LightAttacks+=2;++HeavyAttacks;
+    ActionSwingBase=SwingId+1;SwingId+=3;bTwoHanded=true;bSwingTwoHanded=true;
+    BeginAction(EVeyrKnightAction::Combo,VisualClipDuration(TEXT("LightCombo"),3.32f));
+}
+void AVeyrKnight::TryBackstep()
+{
+    if(!CanStartGroundedAction()||!HasVisualClip(TEXT("BackpedalStep")))return;
+    BeginAction(EVeyrKnightAction::Backstep,VisualClipDuration(TEXT("BackpedalStep"),2.4f));
+}
+void AVeyrKnight::VeyrBackstep(){TryBackstep();}
+void AVeyrKnight::VeyrCombo(){TryCombo();}
+void AVeyrKnight::VeyrSetVariants(int32 RunVariant,int32 HeavyVariant,int32 TwoHandHeavyVariant)
+{
+    if(!CanStartGroundedAction())return;
+    RunAnimationVariant=FMath::Clamp(RunVariant,0,1);HeavyAnimationVariant=FMath::Clamp(HeavyVariant,0,1);
+    TwoHandHeavyAnimationVariant=FMath::Clamp(TwoHandHeavyVariant,0,1);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_VARIANTS run=%d heavy=%d twoHandHeavy=%d"),RunAnimationVariant,HeavyAnimationVariant,TwoHandHeavyAnimationVariant);
+}
+void AVeyrKnight::CycleAnimationVariants(){VeyrSetVariants(1-RunAnimationVariant,1-HeavyAnimationVariant,1-TwoHandHeavyAnimationVariant);}
+void AVeyrKnight::ComboPressed(){if(HumanInputEnabled())TryCombo();}
+void AVeyrKnight::VariantPressed(){if(HumanInputEnabled())CycleAnimationVariants();}
+void AVeyrKnight::WalkModifierPressed(){if(HumanInputEnabled())bWalkModifier=true;}
+void AVeyrKnight::WalkModifierReleased(){bWalkModifier=false;}
 
 void AVeyrKnight::SetGuard(bool bHeld)
 {
@@ -281,7 +422,8 @@ void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnb
     if (DamageGrace > 0.f) return;
     const FVector ToSource = (Source - GetActorLocation()).GetSafeNormal2D();
     const bool bFacingThreat = !ToSource.IsNearlyZero() && FVector::DotProduct(GetActorForwardVector(), ToSource) >= .5f;
-    const bool bCanBlock = Action == EVeyrKnightAction::Guard && IsGrounded() && !bUnblockable && bFacingThreat;
+    const bool bGuardRaised=ActionElapsed>=FMath::Min(.30f,VisualClipDuration(TEXT("GuardTwoHand"),.7f)*.43f);
+    const bool bCanBlock = Action == EVeyrKnightAction::Guard && bGuardRaised && IsGrounded() && !bUnblockable && bFacingThreat;
     bool bBroken = false;
     if (bCanBlock)
     {
@@ -322,9 +464,9 @@ void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnb
     if (!bCanBlock || bBroken)
     {
         bGuardBroken = bBroken;
-        BeginAction(EVeyrKnightAction::Stagger, bBroken ? .9f : .42f);
+        BeginAction(bBroken?EVeyrKnightAction::GuardBreak:EVeyrKnightAction::Stagger,VisualClipDuration(bBroken?TEXT("GuardBreak"):TEXT("Stagger"),bBroken?1.2f:.42f));
         const FVector Away = (GetActorLocation() - Source).GetSafeNormal2D();
-        GetCharacterMovement()->AddImpulse(Away * (bBroken ? 190.f : 120.f), true);
+        if(!bBroken)GetCharacterMovement()->AddImpulse(Away*120.f,true); // Guard-break travel comes from its approved root track.
     }
 }
 
@@ -334,6 +476,7 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     if (DeltaSeconds <= 0.f) return;
     UpdateMouseCapture();
     VisualClock += DeltaSeconds;
+    BlinkCooldownRemaining=FMath::Max(0.f,BlinkCooldownRemaining-DeltaSeconds);
     RegenDelay = FMath::Max(0.f, RegenDelay - DeltaSeconds);
     DamageGrace = FMath::Max(0.f, DamageGrace - DeltaSeconds);
     const FRotator ViewYaw(0.f, Controller ? Controller->GetControlRotation().Yaw : GetActorRotation().Yaw, 0.f);
@@ -354,9 +497,20 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     UpdateMovement(DeltaSeconds);
     if (IsDead()) { ActionElapsed += DeltaSeconds; UpdateImportedPresentation(DeltaSeconds); }
     else if (!IsTerminal()) AdvanceCombat(DeltaSeconds);
-    else { GetCharacterMovement()->StopMovementImmediately(); bLockedOn = false; UpdateImportedPresentation(DeltaSeconds); }
+    else
+    {
+        // Victory stops combat immediately, but the visible recovery must finish.
+        GetCharacterMovement()->StopMovementImmediately();bLockedOn=false;bGuardRequested=false;
+        if(Action!=EVeyrKnightAction::Ready)
+        {
+            ActionElapsed+=DeltaSeconds;
+            if(ActionDuration<=0.f||ActionElapsed>=ActionDuration)FinishAction();
+        }
+        UpdateImportedPresentation(DeltaSeconds);
+    }
     UpdateEquippedWeapon();
     UpdateHealFlask();
+    UpdateBlinkEchoes();
     UpdateCamera(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
 }
@@ -365,57 +519,12 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
 {
     GripTransitionRemaining=FMath::Max(0.f,GripTransitionRemaining-DeltaSeconds);
     BufferedAttackRemaining=FMath::Max(0.f,BufferedAttackRemaining-DeltaSeconds);
-    ActionElapsed += DeltaSeconds;
-    // Evaluate the strike at the UPDATED action time, synchronously, before
-    // gameplay resolves contact. Imported strikes use evaluated blade sweeps.
+    const float PreviousSeconds=ActionElapsed;
+    ActionElapsed+=DeltaSeconds;
+    ApplyAuthoredRootMotion(PreviousSeconds,ActionElapsed);
     UpdateImportedPresentation(DeltaSeconds);
-    if (Action == EVeyrKnightAction::LightAttack || Action == EVeyrKnightAction::HeavyAttack)
-    {
-        const bool bHeavy=Action==EVeyrKnightAction::HeavyAttack;
-        if(bImportedPresentationActive)
-        {
-            FVector Base,Tip;
-            // A visible imported sword resolves contact only from its evaluated
-            // blade. Missing targets cannot silently fall back to proxy damage.
-            const bool bBladeReady=bRequestedPresentationClipSampled&&
-                GetWeaponSweep(Base,Tip);
-            if(bBladeReady)
-            {
-                const float Start=ActionDuration*.38f,End=ActionDuration*(bHeavy?.675f:.667f);
-                if(!bContactSent&&ActionElapsed>=Start&&ActionElapsed-DeltaSeconds<=End&&IsValid(Boss))
-                {
-                    FVector FromBase=bPreviousBladePoseValid?PreviousBladeBase:Base;
-                    FVector FromTip=bPreviousBladePoseValid?PreviousBladeTip:Tip;
-                    FVector ToBase=Base,ToTip=Tip;
-                    const float Alpha=ImportedPresentation->CurrentTransitionAlpha;
-                    bool bResampled=false,bWindowValid=true;
-                    auto SampleBoundary=[&](float Time,FVector& OutBase,FVector& OutTip)
-                    {
-                        bResampled=true;
-                        if(!ImportedPresentation->SampleClipPhaseBlended(RequestedPresentationClip,Time/ActionDuration,Alpha))return false;
-                        return GetWeaponSweep(OutBase,OutTip);
-                    };
-                    // Clip collision to the actual active interval even when a
-                    // slow frame crosses its beginning or end; never include
-                    // windup/recovery merely because an entire frame was long.
-                    if(ActionElapsed-DeltaSeconds<Start||!bPreviousBladePoseValid)
-                        bWindowValid=SampleBoundary(FMath::Max(Start,ActionElapsed-DeltaSeconds),FromBase,FromTip);
-                    if(ActionElapsed>End)bWindowValid=SampleBoundary(End,ToBase,ToTip)&&bWindowValid;
-                    if(bResampled)bWindowValid=ImportedPresentation->SampleClipPhaseBlended(RequestedPresentationClip,
-                        FMath::Clamp(ActionElapsed/ActionDuration,0.f,1.f),Alpha)&&bWindowValid;
-                    if(bWindowValid)bContactSent=Boss->ReceiveSwordSweep(FromBase,FromTip,ToBase,ToTip,bHeavy,SwingId,bSwingTwoHanded?1.55f:1.f);
-                }
-                PreviousBladeBase=Base;PreviousBladeTip=Tip;bPreviousBladePoseValid=true;
-            }
-            else bPreviousBladePoseValid=false;
-        }
-        else if (!bContactSent && ActionElapsed >= GetSwordContactTime())
-        {
-            bContactSent = true;
-            if (IsValid(Boss)) Boss->ReceiveSword(GetFootLocation() + FVector(0,0,125), GetActorForwardVector(), bHeavy, SwingId,bSwingTwoHanded?1.55f:1.f);
-        }
-    }
-    else if (Action == EVeyrKnightAction::Heal && !bHealGranted && ActionElapsed >= .85f)
+    if(IsAttackAction())ResolveAttackWindows(PreviousSeconds);
+    else if (Action == EVeyrKnightAction::Heal && bRequestedPresentationClipSampled && !bHealGranted && ActionElapsed >= VisualClipDuration(TEXT("Heal"),1.25f)*.55f)
     {
         bHealGranted = true; Health = FMath::Min(100.f, Health + 55.f); ++SuccessfulHeals;
     }
@@ -446,35 +555,47 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
         Movement->Velocity.X = Movement->Velocity.Y = 0.f;
         return;
     }
-    const bool bAttack = Action == EVeyrKnightAction::LightAttack || Action == EVeyrKnightAction::HeavyAttack;
-    Movement->bOrientRotationToMovement = !bLockedOn && !bAttack && Action != EVeyrKnightAction::Roll && Action != EVeyrKnightAction::Guard;
-    if (Action == EVeyrKnightAction::Roll)
+    if(Action==EVeyrKnightAction::RunStop&&!MoveIntent.IsNearlyZero())FinishAction();
+    if(Action==EVeyrKnightAction::Ready&&bWasRunning&&MoveIntent.IsNearlyZero()&&HasVisualClip(TEXT("RunStop")))
     {
-        // Preserve the original 684.4cm intended travel while giving the
-        // imported .78s roll its full action window. Invulnerability is unchanged.
-        const float RollSpeed=1180.f*.58f/FMath::Max(.001f,ActionDuration);
-        Movement->MaxWalkSpeed = RollSpeed;
-        Movement->Velocity.X = RollDirection.X * RollSpeed;
-        Movement->Velocity.Y = RollDirection.Y * RollSpeed;
-        AddMovementInput(RollDirection, 1.f);
+        ++RunStops;BeginAction(EVeyrKnightAction::RunStop,VisualClipDuration(TEXT("RunStop"),.6f));
+    }
+    bLateralDodgeBlocked=false;
+    if(Action==EVeyrKnightAction::Ready&&bLockedOn&&!MoveIntent.IsNearlyZero())
+    {
+        const float Side=FVector::DotProduct(MoveIntent.GetSafeNormal2D(),GetActorRightVector());
+        const float Forward=FVector::DotProduct(MoveIntent.GetSafeNormal2D(),GetActorForwardVector());
+        if(FMath::Abs(Side)>FMath::Abs(Forward))
+        {
+            if(!TryBlink(Side<0.f))bLateralDodgeBlocked=true;
+        }
+    }
+    const bool bAttack=IsAttackAction();
+    Movement->bOrientRotationToMovement=!bLockedOn&&Action==EVeyrKnightAction::Ready;
+    if(IsRollPrefix())
+    {
+        const float RollSpeed=1180.f*.58f/.78f;
+        Movement->MaxWalkSpeed=RollSpeed;
+        Movement->Velocity.X=RollDirection.X*RollSpeed;Movement->Velocity.Y=RollDirection.Y*RollSpeed;
+        AddMovementInput(RollDirection,1.f);
+    }
+    else if(Action==EVeyrKnightAction::Ready&&!bLateralDodgeBlocked)
+    {
+        FVector EffectiveMove=MoveIntent;
+        Movement->MaxWalkSpeed=bTwoHanded?FMath::Clamp(VisualClipSpeed(TEXT("WalkTwoHand")),120.f,380.f):bWalkModifier?FMath::Clamp(VisualClipSpeed(TEXT("Walk")),100.f,300.f):580.f;
+        if(bLockedOn)
+        {
+            const float Forward=FVector::DotProduct(MoveIntent,GetActorForwardVector());
+            EffectiveMove=GetActorForwardVector()*Forward; // Lateral travel belongs to a discrete blink.
+            if(Forward<0.f)Movement->MaxWalkSpeed=FMath::Clamp(VisualClipSpeed(TEXT("Backpedal")),100.f,300.f);
+        }
+        AddMovementInput(EffectiveMove,1.f);
     }
     else
     {
-        Movement->MaxWalkSpeed = Action == EVeyrKnightAction::Guard ? 240.f : Action == EVeyrKnightAction::Heal ? 120.f :
-            bAttack ? 0.f : Action == EVeyrKnightAction::Stagger ? 0.f : 580.f;
-        if(bImportedPresentationActive&&bLockedOn&&Action==EVeyrKnightAction::Ready)
-        {
-            const FVector Direction=MoveIntent.GetSafeNormal2D();
-            const float Forward=FVector::DotProduct(Direction,GetActorForwardVector());
-            const float Right=FVector::DotProduct(Direction,GetActorRightVector());
-            // A locked combat step is deliberate; free movement and forward
-            // running retain full speed, and rolls retain their original travel.
-            if(FMath::Abs(Right)>FMath::Abs(Forward))Movement->MaxWalkSpeed=300.f;
-            else if(Forward<0.f)Movement->MaxWalkSpeed=240.f;
-        }
-        if (Action != EVeyrKnightAction::Stagger) AddMovementInput(MoveIntent, 1.f);
+        ConsumeMovementInputVector();Movement->StopMovementImmediately();Movement->MaxWalkSpeed=0.f;
     }
-    if (bLockedOn && IsValid(Boss) && !bAttack && Action != EVeyrKnightAction::Roll && Action != EVeyrKnightAction::Stagger)
+    if (bLockedOn && IsValid(Boss) && !bAttack && Action==EVeyrKnightAction::Ready)
     {
         const FVector Toward = (Boss->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
         if (!Toward.IsNearlyZero()) SetActorRotation(FMath::RInterpTo(GetActorRotation(), Toward.Rotation(), DeltaSeconds, 10.f));
@@ -701,6 +822,8 @@ void AVeyrKnight::SetPresentationDiagnostic(const FString& Diagnostic)
 bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
     CustomuseVisualDefinition = Definition;
+    bApprovedNativeDefinitionActive=Definition&&Definition->GetPathName().Contains(TEXT("/RuntimeApproved/"));
+    ClearBlinkEchoes();
     bPreviousBladePoseValid=false;
     bImportedPresentationActive = bRequestedPresentationClipSampled = bPresentationUsingFallback = false;
     RequestedPresentationClip = FailedPresentationClip = NAME_None;
@@ -742,16 +865,29 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 
 FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
 {
-    const FVector Direction=GetVelocity().GetSafeNormal2D();
-    const float Forward=FVector::DotProduct(Direction,GetActorForwardVector());
-    const float Right=FVector::DotProduct(Direction,GetActorRightVector());
-    if(FMath::Abs(Right)>FMath::Abs(Forward))return Right<0.f?FName(TEXT("StrafeLeft")):FName(TEXT("StrafeRight"));
-    if(Forward<0.f)return TEXT("Backpedal");
-    return bAllowRun&&GetPlanarSpeed()>360.f?FName(TEXT("Run")):FName(TEXT("Walk"));
+    const float Forward=FVector::DotProduct(GetVelocity().GetSafeNormal2D(),GetActorForwardVector());
+    if(bLockedOn&&Forward<-.15f)return TEXT("Backpedal");
+    if(bTwoHanded)return TEXT("WalkTwoHand");
+    if(bAllowRun&&!bWalkModifier&&GetPlanarSpeed()>360.f)return RunAnimationVariant==1?TEXT("RunAlternate"):TEXT("Run");
+    return TEXT("Walk");
 }
 
 bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
 {
+    FTransform Authored;
+    if(CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_socket")))
+    {
+        if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Authored))return false;
+        const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(RequestedPresentationClip);
+        UStaticMesh* Mesh=C?C->WeaponMesh.Get():nullptr;
+        if(!Mesh)return false;
+        const FBox Box=Mesh->GetBoundingBox();const FVector Size=Box.GetSize();
+        const int32 Axis=Size.X>Size.Y?(Size.X>Size.Z?0:2):(Size.Y>Size.Z?1:2);
+        const float Near=FMath::Abs(Box.Min[Axis])<FMath::Abs(Box.Max[Axis])?Box.Min[Axis]:Box.Max[Axis];
+        const float Far=Near==Box.Min[Axis]?Box.Max[Axis]:Box.Min[Axis];
+        FVector A=Box.GetCenter(),B=A;A[Axis]=FMath::Lerp(Near,Far,.28f);B[Axis]=Far;
+        Base=Authored.TransformPosition(A);Tip=Authored.TransformPosition(B);return true;
+    }
     FTransform Grip;
     if(BoatWeapon&&BoatWeapon->GetStaticMesh()&&CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_grip"))&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_grip"),Grip))
     {
@@ -770,6 +906,14 @@ bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
 void AVeyrKnight::UpdateEquippedWeapon()
 {
     if(!BoatWeapon)return;
+    if(CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_socket")))
+    {
+        FTransform Authored;const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(RequestedPresentationClip);
+        const bool Valid=bImportedPresentationActive&&bRequestedPresentationClipSampled&&C&&C->WeaponMesh&&
+            ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Authored);
+        if(Valid){BoatWeapon->SetStaticMesh(C->WeaponMesh);BoatWeapon->SetWorldTransform(Authored);}
+        BoatWeapon->SetVisibility(Valid&&!bBlinkHidden);bBoatReleased=false;return;
+    }
     if(!BoatWeapon->GetStaticMesh())BoatWeapon->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,
         TEXT("/Game/ArtPass/Tripo/BoatGreatsword_v004/SM_BoatGreatsword_v004.SM_BoatGreatsword_v004"),nullptr,LOAD_Quiet|LOAD_NoWarn));
     FTransform Grip;
@@ -812,129 +956,198 @@ void AVeyrKnight::UpdateEquippedWeapon()
 
 void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
 {
-    if (!bImportedPresentationActive || !ImportedPresentation || !CustomuseVisualDefinition) return;
-    const float Speed=GetPlanarSpeed();
-    const bool bMoving=IsGrounded()&&Speed>8.f;
-    const bool bLocomotionHold=Action==EVeyrKnightAction::Ready&&bMoving;
-    const bool bLayerAction=bLocomotionHold||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal;
-    const FName DesiredLower=bLayerAction&&bMoving?SelectDirectionalLocomotion(bLocomotionHold):NAME_None;
-    if(!DesiredLower.IsNone())PresentationLowerClip=DesiredLower;
-    PresentationLowerWeight=FMath::FInterpConstantTo(PresentationLowerWeight,
-        !DesiredLower.IsNone()?1.f:0.f,DeltaSeconds,1.f/.12f);
-    // Other actions already use the full-pose transition. Never carry a leg
-    // overlay into attacks, jumping, rolls, stagger or death.
-    if(!bLayerAction)PresentationLowerWeight=0.f;
-    if(PresentationLowerWeight<=0.f&&DesiredLower.IsNone())PresentationLowerClip=NAME_None;
-    RequestedLowerPresentationClip=PresentationLowerClip;
-
-    // Turn only the imported visual toward the roll vector, leaving gameplay
-    // facing, collision, lock-on and the movement direction untouched.
-    const float DesiredRollYaw=Action==EVeyrKnightAction::Roll?
-        FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw):0.f;
-    PresentationRollYaw=FMath::RInterpTo(FRotator(0,PresentationRollYaw,0),
-        FRotator(0,DesiredRollYaw,0),DeltaSeconds,20.f).Yaw;
-    const FQuat BaseRotation=CustomuseVisualDefinition->MeshRelativeTransform.GetRotation();
-    ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*BaseRotation);
-
-    FName Clip=bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
-    bool bUsePhase=false;
-    float Time=VisualClock,Phase=FMath::Clamp(ActionElapsed/FMath::Max(.001f,ActionDuration),0.f,1.f);
-    switch (Action)
+    if(!bImportedPresentationActive||!ImportedPresentation||!CustomuseVisualDefinition)return;
+    const bool Moving=Action==EVeyrKnightAction::Ready&&IsGrounded()&&GetPlanarSpeed()>8.f&&!bLateralDodgeBlocked;
+    FName Clip=Action==EVeyrKnightAction::Ready?(Moving?SelectDirectionalLocomotion(true):(bTwoHanded?FName(TEXT("IdleTwoHand")):FName(TEXT("Idle")))):ActionPresentationClip;
+    float Time=Action==EVeyrKnightAction::Ready?VisualClock:ActionElapsed;
+    if(Moving)
     {
-        case EVeyrKnightAction::LightAttack: Clip=bSwingTwoHanded?TEXT("LightAttackTwoHand"):TEXT("LightAttack"); bUsePhase=true; break;
-        case EVeyrKnightAction::HeavyAttack: Clip=bSwingTwoHanded?TEXT("HeavyAttackTwoHand"):TEXT("HeavyAttack"); bUsePhase=true; break;
-        case EVeyrKnightAction::Roll: Clip=TEXT("Roll"); bUsePhase=true; break;
-        case EVeyrKnightAction::Heal: Clip=TEXT("Heal"); bUsePhase=true; break;
-        case EVeyrKnightAction::Stagger: Clip=TEXT("Stagger"); bUsePhase=true; break;
-        case EVeyrKnightAction::Dead: Clip=TEXT("Death"); bUsePhase=true; break;
-        case EVeyrKnightAction::Guard: Clip=TEXT("GuardTwoHand"); Time=ActionElapsed; break;
-        default:
-            if (bMoving)
-            {
-                Clip=bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
-                Time=VisualClock;
-            }
-            break;
+        const float Nominal=VisualClipSpeed(Clip);
+        if(Nominal<=0.f){bRequestedPresentationClipSampled=false;bPresentationUsingFallback=true;SetPresentationDiagnostic(TEXT("Missing locomotion speed: ")+Clip.ToString());return;}
+        if(LastLocomotionClip!=Clip)
+        {
+            const float OldDuration=VisualClipDuration(LastLocomotionClip,1.f),NewDuration=VisualClipDuration(Clip,1.f);
+            PresentationLocomotionTime=FMath::Fmod(PresentationLocomotionTime,OldDuration)/OldDuration*NewDuration;
+            LastLocomotionClip=Clip;
+        }
+        PresentationLocomotionTime+=DeltaSeconds*GetPlanarSpeed()/Nominal;Time=PresentationLocomotionTime;
     }
-    PresentationJumpPhase=0.f;
+    bWasRunning=Moving&&(Clip==FName(TEXT("Run"))||Clip==FName(TEXT("RunAlternate")));
+    PresentationLowerClip=PresentationTransitionLowerClip=RequestedLowerPresentationClip=NAME_None;
+    PresentationLowerWeight=PresentationLowerTime=PresentationJumpPhase=0.f;
+    const float DesiredRollYaw=IsRollPrefix()?FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw):0.f;
+    PresentationRollYaw=FMath::RInterpTo(FRotator(0,PresentationRollYaw,0),FRotator(0,DesiredRollYaw,0),DeltaSeconds,20.f).Yaw;
+    ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*CustomuseVisualDefinition->MeshRelativeTransform.GetRotation());
     RequestedPresentationClip=Clip;
-    const FVeyrVisualClip* Config=CustomuseVisualDefinition->Clips.Find(Clip);
-    const FVeyrVisualClip* Lower=PresentationLowerClip.IsNone()?nullptr:CustomuseVisualDefinition->Clips.Find(PresentationLowerClip);
-    FString Error;
-    bool bSampled=false;
-    const bool bLocomotion=false; // Locomotion is the explicit lower layer; upper pose retains the grip.
-    const float* Nominal=PresentationNominalSpeeds.Find(bLocomotion?Clip:PresentationLowerClip);
-    if (!Config || !Config->Sequence) Error=TEXT("Requested imported clip is missing: ")+Clip.ToString();
-    else if (!PresentationLowerClip.IsNone()&&(!Lower||!Lower->Sequence))
-        Error=TEXT("Requested directional lower clip is missing: ")+PresentationLowerClip.ToString();
-    else if ((bLocomotion||!PresentationLowerClip.IsNone())&&(!Nominal||!FMath::IsFinite(*Nominal)||*Nominal<=0.f))
-        Error=TEXT("Missing or invalid nominal speed for locomotion clip: ")+(bLocomotion?Clip:PresentationLowerClip).ToString();
-    else if (FailedPresentationClip==Clip) Error=FailedPresentationReason;
-    else
+    const bool Restarted=Action!=EVeyrKnightAction::Ready&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
+    if(Clip!=PresentationTransitionClip||Restarted)
     {
-        if(Lower)PresentationLowerTime+=DeltaSeconds*Speed/(*Nominal);
-        const bool bActionRestarted=bUsePhase&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
-        const float ClipEnd=Config->EndSeconds<0.f?Config->Sequence->GetPlayLength():Config->EndSeconds;
-        const float ClipDuration=ClipEnd-Config->StartSeconds;
-        const bool bLoopWrapped=!bUsePhase&&Config->bLoop&&ClipDuration>0.f&&ImportedPresentation->CurrentClip==Clip&&
-            FMath::Fmod(Time,ClipDuration)+.0001f<ImportedPresentation->CurrentTrimmedSeconds;
-        if(Clip!=PresentationTransitionClip||PresentationLowerClip!=PresentationTransitionLowerClip||bActionRestarted||bLoopWrapped)
-        {
-            bPresentationTransitionActive=!PresentationTransitionClip.IsNone()&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
-            PresentationTransitionStarted=VisualClock;
-            PresentationTransitionClip=Clip;
-            PresentationTransitionLowerClip=PresentationLowerClip;
-        }
-        const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/(GripTransitionRemaining>0.f?.28f:.12f),0.f,1.f):1.f;
-        if(Lower)
-            bSampled=ImportedPresentation->SampleLayeredClips(Clip,bUsePhase?Phase*ClipDuration:Time,
-                PresentationLowerClip,PresentationLowerTime,PresentationLowerWeight,Alpha);
-        else
-            bSampled=bUsePhase?ImportedPresentation->SampleClipPhaseBlended(Clip,Phase,Alpha):
-                ImportedPresentation->SampleClipTimeBlended(Clip,Time,Alpha);
-        if(Alpha>=1.f)bPresentationTransitionActive=false;
-        if (!bSampled)
-        {
-            // A lower-layer rejection must not blacklist the stationary upper
-            // Guard/Heal clip. Missing directions remain explicit diagnostics.
-            if(!Lower) { FailedPresentationClip=Clip;FailedPresentationReason=ImportedPresentation->LastError; }
-            Error=ImportedPresentation->LastError;
-        }
+        const bool PreservePrefix=bPreserveRollPrefix&&PresentationTransitionClip==FName(TEXT("Roll"))&&Clip==FName(TEXT("RollAttack"));
+        bPresentationTransitionActive=!PreservePrefix&&!PresentationTransitionClip.IsNone()&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
+        PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    bRequestedPresentationClipSampled=bSampled;
-    bPresentationUsingFallback=!bSampled;
-    PresentationPreviousActionElapsed=bUsePhase?ActionElapsed:-1.f;
-    if (bSampled) { SetPresentationDiagnostic(FString()); return; }
+    const float BlendSeconds=GripTransitionRemaining>0.f?.28f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
+    const bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,Time,Alpha);
+    if(Alpha>=1.f)bPresentationTransitionActive=false;
+    bRequestedPresentationClipSampled=Sampled;bPresentationUsingFallback=!Sampled;
+    PresentationPreviousActionElapsed=Action==EVeyrKnightAction::Ready?-1.f:ActionElapsed;
+    bBlinkHidden=IsBlinkAction()&&!IsTerminal()&&ActionElapsed>=.18f&&ActionElapsed<.34f;
+    ImportedPresentation->SetVisibility(!bBlinkHidden,true);ImportedPresentation->SetHiddenInGame(bBlinkHidden,true);
+    if(Sampled){SetPresentationDiagnostic(FString());return;}
+    SetPresentationDiagnostic(TEXT("Native approved clip evaluation failed: ")+Clip.ToString()+TEXT("; ")+ImportedPresentation->LastError);
+    // Keep failures explicit and harmless: never substitute an attack or deal fallback damage.
+}
 
-    bPresentationTransitionActive=false;
-    PresentationTransitionClip=PresentationTransitionLowerClip=NAME_None;
-    const FVeyrVisualClip* Idle=CustomuseVisualDefinition->Clips.Find(TEXT("Idle"));
-    bool bHeldIdle=false;
-    if (Idle && Idle->Sequence && !bIdleFallbackRejected && FailedPresentationClip!=FName(TEXT("Idle")))
+FVector AVeyrKnight::RootTranslationAt(float Seconds) const
+{
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
+    if(!C||C->RootTranslationSamplesCm.IsEmpty()||C->RootSampleRate<=0.f)return FVector::ZeroVector;
+    const float Frame=FMath::Clamp(Seconds*C->RootSampleRate,0.f,float(C->RootTranslationSamplesCm.Num()-1));
+    const int32 A=FMath::FloorToInt(Frame),B=FMath::Min(A+1,C->RootTranslationSamplesCm.Num()-1);
+    return FMath::Lerp(C->RootTranslationSamplesCm[A],C->RootTranslationSamplesCm[B],Frame-A);
+}
+void AVeyrKnight::ClearBlinkEchoes()
+{
+    for(int32 I=0;I<2;++I)
     {
-        bHeldIdle=ImportedPresentation->SampleClipTime(TEXT("Idle"),0.f);
-        bIdleFallbackRejected=!bHeldIdle;
+        bBlinkEchoCaptured[I]=false;
+        if(BlinkEchoBodies.IsValidIndex(I))BlinkEchoBodies[I]->SetVisibility(false);
+        if(BlinkEchoWeapons.IsValidIndex(I))BlinkEchoWeapons[I]->SetVisibility(false);
     }
-    if (bHeldIdle || ImportedPresentation->SampleReferencePose())
+}
+bool AVeyrKnight::CaptureBlinkEcho(int32 Index,float SourceSeconds)
+{
+    if(!ImportedPresentation||!ImportedPresentation->GetSkeletalMeshAsset()||!CustomuseVisualDefinition)return false;
+    if(!BlinkEchoMaterial)BlinkEchoMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Materials/M_BlinkAfterimage.M_BlinkAfterimage"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!BlinkEchoMaterial){BlinkVFXDiagnostic=TEXT("Approved blink afterimage material unavailable");return false;}
+    const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(ActionPresentationClip);
+    if(!C||!C->WeaponMesh)return false;
+    const float RestoreSeconds=ImportedPresentation->CurrentTrimmedSeconds,Alpha=ImportedPresentation->CurrentTransitionAlpha;
+    if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,SourceSeconds,Alpha))return false;
+    auto* Echo=BlinkEchoBodies[Index].Get();auto* WeaponEcho=BlinkEchoWeapons[Index].Get();
+    Echo->SetSkinnedAssetAndUpdate(ImportedPresentation->GetSkeletalMeshAsset(),true);
+    Echo->CopyPoseFromSkeletalComponent(ImportedPresentation);Echo->RefreshBoneTransforms();
+    // Mesh roots are in-place. Freeze the echo at the corresponding swept actor position,
+    // not at the actor's later transit position if one slow frame crossed the visibility event.
+    FVector Offset=RootTranslationAt(SourceSeconds)-RootTranslationAt(ActionElapsed);Offset.Z=0.f;
+    Offset=GetActorQuat().RotateVector(CustomuseVisualDefinition->MeshRelativeTransform.TransformVector(Offset));Offset.Z=0.f;
+    if(bActionRootBlocked)Offset=FVector::ZeroVector;
+    FTransform World=ImportedPresentation->GetComponentTransform();World.AddToTranslation(Offset);Echo->SetWorldTransform(World);
+    FTransform Weapon;const bool HasWeapon=ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Weapon);
+    if(HasWeapon){Weapon.AddToTranslation(Offset);WeaponEcho->SetStaticMesh(C->WeaponMesh);WeaponEcho->SetWorldTransform(Weapon);}
+    if(!BlinkEchoMaterials[Index])BlinkEchoMaterials[Index]=UMaterialInstanceDynamic::Create(BlinkEchoMaterial,this);
+    auto* Material=BlinkEchoMaterials[Index].Get();
+    for(int32 Slot=0;Slot<Echo->GetNumMaterials();++Slot)Echo->SetMaterial(Slot,Material);
+    for(int32 Slot=0;Slot<WeaponEcho->GetNumMaterials();++Slot)WeaponEcho->SetMaterial(Slot,Material);
+    Material->SetScalarParameterValue(TEXT("Opacity"),Index==0?.32f:.22f);
+    Echo->SetVisibility(true);WeaponEcho->SetVisibility(HasWeapon);
+    bBlinkEchoCaptured[Index]=true;BlinkEchoStarted[Index]=ActionElapsed;++BlinkEchoCaptures;
+    const bool Restored=ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,RestoreSeconds,Alpha);
+    BlinkVFXDiagnostic=Restored?FString():TEXT("Could not restore live pose after afterimage capture");
+    return Restored;
+}
+void AVeyrKnight::UpdateBlinkEchoes()
+{
+    if(!IsBlinkAction()||IsTerminal()){ClearBlinkEchoes();return;}
+    if(!bBlinkEchoCaptured[0]&&ActionElapsed>=.16f&&ActionElapsed<.36f)CaptureBlinkEcho(0,.16f);
+    if(!bBlinkEchoCaptured[1]&&ActionElapsed>=.34f&&ActionElapsed<.46f)CaptureBlinkEcho(1,.34f);
+    for(int32 I=0;I<2;++I)
     {
-        SetPresentationDiagnostic(Error+(bHeldIdle ? TEXT("; holding Idle fallback (action animation unverified)") :
-            TEXT("; holding reference pose fallback (action animation unavailable)")));
-        return;
+        if(!bBlinkEchoCaptured[I])continue;
+        const float Age=ActionElapsed-BlinkEchoStarted[I],Life=I==0?.20f:.09f;
+        const bool Visible=Age<Life;
+        BlinkEchoBodies[I]->SetVisibility(Visible);BlinkEchoWeapons[I]->SetVisibility(Visible);
+        if(BlinkEchoMaterials[I])BlinkEchoMaterials[I]->SetScalarParameterValue(TEXT("Opacity"),(I==0?.32f:.22f)*FMath::Clamp(1.f-Age/Life,0.f,1.f));
     }
-    bImportedPresentationActive=false;
-    ImportedPresentation->SetVisibility(false,true);
-    ImportedPresentation->SetHiddenInGame(true,true);
-    if (TemporaryVisual) TemporaryVisual->SetVisibility(true,true);
-    SetPresentationDiagnostic(Error+TEXT("; fallback evaluation failed, temporary primitives restored"));
+}
+
+void AVeyrKnight::ApplyAuthoredRootMotion(float PreviousSeconds,float NewSeconds)
+{
+    if(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal||
+       Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::Dead||Action==EVeyrKnightAction::Stagger)return;
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
+    if(!C||!C->bRootMotionRemoved||C->RootTranslationSamplesCm.Num()<2||C->RootSampleRate<=0.f)return;
+    if(Action==EVeyrKnightAction::RollAttack){PreviousSeconds=FMath::Max(.78f,PreviousSeconds);if(NewSeconds<=PreviousSeconds)return;}
+    FVector Delta=RootTranslationAt(NewSeconds)-RootTranslationAt(PreviousSeconds);Delta.Z=0.f;
+    Delta=CustomuseVisualDefinition->MeshRelativeTransform.TransformVector(Delta);
+    Delta=GetActorQuat().RotateVector(Delta);Delta.Z=0.f;
+    if(Delta.IsNearlyZero())return;
+    const FVector Before=GetActorLocation();FHitResult Hit;
+    GetCharacterMovement()->SafeMoveUpdatedComponent(Delta,GetActorQuat(),true,Hit);
+    if(Hit.IsValidBlockingHit()){++RootMotionBlockedCount;bActionRootBlocked=true;}
+    ActionRootTravelCm+=(GetActorLocation()-Before).Size2D();
+}
+
+void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)
+{
+    CurrentDamageWindow=INDEX_NONE;
+    if(!bImportedPresentationActive||!bRequestedPresentationClipSampled||!IsValid(Boss))return;
+    const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(ActionPresentationClip);
+    if(!C)return;
+    TArray<FVector2D> Windows=C->DamageWindows;
+    if(Windows.IsEmpty())
+    {
+        // Legacy definitions retain one authored contact; new imports must supply windows.
+        const float Impact=C->ImpactSeconds>=0.f?C->ImpactSeconds-C->StartSeconds:ActionDuration*.5f;
+        Windows.Add(FVector2D(FMath::Max(0.f,Impact-.06f),FMath::Min(ActionDuration,Impact+.08f)));
+    }
+    const float Alpha=ImportedPresentation->CurrentTransitionAlpha;
+    bool Resampled=false;
+    auto SampleBlade=[&](float Seconds,FVector& Base,FVector& Tip)
+    {
+        Resampled=true;
+        if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,Seconds,Alpha)||!GetWeaponSweep(Base,Tip))return false;
+        if(C->bRootMotionRemoved&&!bActionRootBlocked)
+        {
+            FVector Offset=RootTranslationAt(Seconds)-RootTranslationAt(ActionElapsed);Offset.Z=0.f;
+            Offset=GetActorQuat().RotateVector(CustomuseVisualDefinition->MeshRelativeTransform.TransformVector(Offset));Offset.Z=0.f;
+            Base+=Offset;Tip+=Offset;
+        }
+        return true;
+    };
+    for(int32 I=0;I<Windows.Num();++I)
+    {
+        const float Start=Windows[I].X,End=Windows[I].Y;
+        if(ContactedDamageWindows.Contains(I)||ActionElapsed<Start||PreviousSeconds>End)continue;
+        CurrentDamageWindow=I;
+        FVector A,B,CurrA,CurrB;
+        const float From=FMath::Max(Start,PreviousSeconds),To=FMath::Min(End,ActionElapsed);
+        const int32 Steps=FMath::Clamp(FMath::CeilToInt((To-From)*90.f),1,12);
+        if(!SampleBlade(From,A,B))continue;
+        for(int32 Step=1;Step<=Steps;++Step)
+        {
+            if(!SampleBlade(FMath::Lerp(From,To,float(Step)/Steps),CurrA,CurrB))break;
+            const bool Heavy=Action==EVeyrKnightAction::HeavyAttack||(Action==EVeyrKnightAction::Combo&&I>=2);
+            if(Boss->ReceiveSwordSweep(A,B,CurrA,CurrB,Heavy,ActionSwingBase+I,bSwingTwoHanded?1.55f:1.f))
+            {
+                ContactedDamageWindows.Add(I);++SuccessfulStrikeWindows;bContactSent=true;
+                UE_LOG(LogTemp,Display,TEXT("VEYR_STRIKE_WINDOW clip=%s window=%d time=%.3f heavy=%d"),*ActionPresentationClip.ToString(),I,ActionElapsed,Heavy);break;
+            }
+            A=CurrA;B=CurrB;
+        }
+    }
+    if(Resampled)bRequestedPresentationClipSampled=ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,FMath::Min(ActionElapsed,ActionDuration),Alpha);
+
 }
 
 void AVeyrKnight::UpdateHealFlask()
 {
     bHealFlaskVisible=false;
+    if(ApprovedHealCup)ApprovedHealCup->SetVisibility(false);
     if(HealFlaskRoot)HealFlaskRoot->SetVisibility(false,true);
     if(Action!=EVeyrKnightAction::Heal||!bImportedPresentationActive||!bRequestedPresentationClipSampled)
     {
         HealFlaskDiagnostic.Reset();return;
+    }
+    if(CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("cup_socket")))
+    {
+        FTransform Cup;UStaticMesh* Mesh=CustomuseVisualDefinition->Props.FindRef(TEXT("Cup"));
+        const bool Valid=Mesh&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("cup_socket"),Cup);
+        const bool Visible=Valid&&Cup.GetScale3D().GetAbsMax()>.001f&&!bBlinkHidden;
+        if(Valid){ApprovedHealCup->SetStaticMesh(Mesh);ApprovedHealCup->SetWorldTransform(Cup);}
+        ApprovedHealCup->SetVisibility(Visible);bHealFlaskVisible=Visible;
+        HealFlaskDiagnostic=Valid?FString():TEXT("Approved cup mesh/socket unavailable");return;
     }
     FTransform Grip,Spout;
     FString Error;
@@ -1022,6 +1235,10 @@ void AVeyrKnight::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::J, IE_Pressed, this, &AVeyrKnight::LightPressed); Input->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AVeyrKnight::CaptureMouseOrAttack);
     Input->BindKey(EKeys::K, IE_Pressed, this, &AVeyrKnight::HeavyPressed);
     Input->BindKey(EKeys::E, IE_Pressed, this, &AVeyrKnight::GripPressed);
+    Input->BindKey(EKeys::C, IE_Pressed, this, &AVeyrKnight::ComboPressed);
+    Input->BindKey(EKeys::V, IE_Pressed, this, &AVeyrKnight::VariantPressed);
+    Input->BindKey(EKeys::LeftControl, IE_Pressed, this, &AVeyrKnight::WalkModifierPressed);
+    Input->BindKey(EKeys::LeftControl, IE_Released, this, &AVeyrKnight::WalkModifierReleased);
     Input->BindKey(EKeys::LeftShift, IE_Pressed, this, &AVeyrKnight::RollPressed);
     Input->BindKey(EKeys::F, IE_Pressed, this, &AVeyrKnight::GuardPressed); Input->BindKey(EKeys::F, IE_Released, this, &AVeyrKnight::GuardReleased);
     Input->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AVeyrKnight::GuardPressed); Input->BindKey(EKeys::RightMouseButton, IE_Released, this, &AVeyrKnight::GuardReleased);
@@ -1114,7 +1331,7 @@ void AVeyrKnight::ReleaseMouse()
         bMouseCaptured,bMouseCaptureConfirmationPending,bReplayControlled);
     bMouseCaptured = false;
     bMouseCaptureConfirmationPending = false;
-    bForwardHeld = bBackHeld = bLeftHeld = bRightHeld = false;
+    bForwardHeld = bBackHeld = bLeftHeld = bRightHeld = false;bWalkModifier=false;
     if (!bReplayControlled)
     {
         SetGuard(false); StopJumping();

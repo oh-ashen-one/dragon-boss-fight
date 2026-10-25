@@ -1,6 +1,7 @@
 #include "VeyrVisualDefinition.h"
 #include "Engine/SkeletalMesh.h"
 #include "Animation/AnimSequence.h"
+#include "Animation/MorphTarget.h"
 
 TArray<FName> UVeyrVisualDefinition::GetImportedBoneNames() const
 {
@@ -57,6 +58,8 @@ TArray<FString> UVeyrVisualDefinition::ValidateDefinition(bool bRequireCompleteM
         if(!Clip.Sequence){Errors.Add(TEXT("Clip asset missing: ")+Entry.Key.ToString());continue;}
         if(Clip.Sequence->GetSkeleton()!=SkeletalMesh->GetSkeleton())
             Errors.Add(TEXT("Clip uses a different skeleton: ")+Entry.Key.ToString());
+        if(Clip.MeshOverride&&Clip.MeshOverride->GetSkeleton()!=SkeletalMesh->GetSkeleton())
+            Errors.Add(TEXT("Clip mesh variant uses a different skeleton: ")+Entry.Key.ToString());
         const float End=Clip.EndSeconds<0?Clip.Sequence->GetPlayLength():Clip.EndSeconds;
         if(!FMath::IsFinite(Clip.StartSeconds)||!FMath::IsFinite(Clip.EndSeconds)||!FMath::IsFinite(Clip.ImpactSeconds)||
            Clip.StartSeconds<0||End<=Clip.StartSeconds||End>Clip.Sequence->GetPlayLength()||
@@ -74,4 +77,13 @@ TArray<FString> UVeyrVisualDefinition::ValidateDefinition(bool bRequireCompleteM
         for(FName Required:RequiredClips)
             if(!Clips.Contains(Required))Errors.Add(TEXT("Required clip missing: ")+Required.ToString());
     return Errors;
+}
+
+TArray<FName> UVeyrVisualDefinition::GetImportedMorphTargetNames(FName ClipName) const
+{
+    USkeletalMesh* Mesh=SkeletalMesh;
+    if(const FVeyrVisualClip* Clip=Clips.Find(ClipName))if(Clip->MeshOverride)Mesh=Clip->MeshOverride;
+    TArray<FName> Names;
+    if(Mesh)for(const UMorphTarget* Target:Mesh->GetMorphTargets())if(Target)Names.Add(Target->GetFName());
+    return Names;
 }

@@ -1,0 +1,2955 @@
+{
+  "evidence": "Read-only measurement of owner-approved GLB exports, 2026-10-25; no source animation modifications. Phase choices below are integration recommendations, not measured gameplay acceptance.",
+  "clips": [
+    {
+      "file": "Dragon_Idle_Blender_v1r3.glb",
+      "sha256": "7c057fd666e3dbbf91ecdbf8f9707a36cb767d16ab461f5565ecd229f5f4c6f8",
+      "durationSeconds": 6.0,
+      "fps": 30,
+      "frames": 180,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        40.948321,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootDeltaRangeCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "Idle",
+        "loop": true,
+        "fps": 30,
+        "authoring": "Blender 5.2 layered NLA on DRAGON_CTRL; baked visual keys; rig v008-weightfix; r3 flank fold FOLD3 + projection corrective VeyrWingFold (1); VeyrBreath r3 (animated)",
+        "morphTargets": "VeyrWingFold=1 constant, VeyrBreath animated"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 6.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_Walk_Blender_v1r2.glb",
+      "sha256": "8919042832443e6bff6943ada1854c1b75e4f83874f9a366896f290a20939d24",
+      "durationSeconds": 3.2,
+      "fps": 30,
+      "frames": 96,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        40.948321,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootDeltaRangeCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "Walk",
+        "loop": true,
+        "fps": 30,
+        "authoring": "Blender 5.2 layered NLA on DRAGON_CTRL; baked visual keys; rig v008-weightfix; r3 fold FOLD3 + VeyrWingFoldWalk (swept-leg corrective, 1), VeyrBreath subtle",
+        "inPlace": true,
+        "strideCmPerCycle": 215.58,
+        "groundSpeedCmPerSec": 67.37,
+        "cycleSeconds": 3.2,
+        "gait": "lateral sequence LH LF RH RF, duty 0.76",
+        "runtimeNote": "VeyrDragon.cpp WalkPhase += travel/134 cm; set divisor to 215.58 for foot lock"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 3.2,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_Turn_Blender_v1r2.glb",
+      "sha256": "9b1ecd268dac928799c078599337784056f53d5df2de746e3e5c0dab2c878a80",
+      "durationSeconds": 2.8,
+      "fps": 30,
+      "frames": 84,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        40.948321,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        381.57982,
+        0.0,
+        381.57982
+      ],
+      "rootDeltaRangeCm": [
+        381.57982,
+        4e-06,
+        381.57982
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        5e-06,
+        90.000016,
+        -1e-05
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "TurnLeft",
+        "loop": false,
+        "fps": 30,
+        "authoring": "Blender 5.2 layered NLA on DRAGON_CTRL (world-space foot controls); baked visual keys; rig v008-weightfix; r3 fold + turn-swept corrective VeyrWingFoldWalk (1)",
+        "rootMotion": true,
+        "rootYawDegrees": 90.0,
+        "turnDirection": "left (CCW from above)",
+        "pivotRigUnits": [
+          0.177,
+          0.0
+        ],
+        "seconds": 2.8,
+        "runtimeNote": "VeyrDragon.cpp drives TurnLeft/TurnRight as a cycle per 20 deg of actor yaw at 22 deg/s; this clip is a one-shot 90 deg root-motion turn"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.033333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.066667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.1,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.133333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.166667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.2,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.233333,
+          "deltaCm": [
+            0.024597,
+            0.0,
+            2.23635
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            0.335819,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.266667,
+          "deltaCm": [
+            0.106297,
+            0.0,
+            7.584161
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            1.138935,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.3,
+          "deltaCm": [
+            0.256961,
+            0.0,
+            14.001564
+          ],
+          "relativeRotationVectorDegrees": [
+            -2e-06,
+            2.102865,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.333333,
+          "deltaCm": [
+            0.488701,
+            0.0,
+            19.875763
+          ],
+          "relativeRotationVectorDegrees": [
+            -2e-06,
+            2.985615,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.366667,
+          "deltaCm": [
+            0.814625,
+            0.0,
+            25.310205
+          ],
+          "relativeRotationVectorDegrees": [
+            -2e-06,
+            3.803045,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.4,
+          "deltaCm": [
+            1.248089,
+            0.0,
+            30.837389
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            4.635422,
+            -1e-06
+          ]
+        },
+        {
+          "seconds": 0.433333,
+          "deltaCm": [
+            1.802018,
+            0.0,
+            36.874745
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            5.54576,
+            -1e-06
+          ]
+        },
+        {
+          "seconds": 0.466667,
+          "deltaCm": [
+            2.487602,
+            4e-06,
+            43.379308
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            6.527923,
+            -1e-06
+          ]
+        },
+        {
+          "seconds": 0.5,
+          "deltaCm": [
+            3.3156,
+            0.0,
+            50.193017
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            7.558594,
+            -2e-06
+          ]
+        },
+        {
+          "seconds": 0.533333,
+          "deltaCm": [
+            4.298212,
+            0.0,
+            57.187839
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            8.619092,
+            -2e-06
+          ]
+        },
+        {
+          "seconds": 0.566667,
+          "deltaCm": [
+            5.453385,
+            4e-06,
+            64.355822
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            9.709207,
+            -2e-06
+          ]
+        },
+        {
+          "seconds": 0.6,
+          "deltaCm": [
+            6.800499,
+            0.0,
+            71.718976
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            10.833348,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 0.633333,
+          "deltaCm": [
+            8.352824,
+            0.0,
+            79.293017
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            11.994684,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 0.666667,
+          "deltaCm": [
+            10.099141,
+            4e-06,
+            87.068019
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            13.19144,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 0.7,
+          "deltaCm": [
+            12.022127,
+            0.0,
+            95.02776
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            14.420585,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.733333,
+          "deltaCm": [
+            14.125971,
+            0.0,
+            103.150064
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            15.679466,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.766667,
+          "deltaCm": [
+            16.500997,
+            4e-06,
+            111.389462
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            16.966693,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.8,
+          "deltaCm": [
+            19.259025,
+            0.0,
+            119.694609
+          ],
+          "relativeRotationVectorDegrees": [
+            0.0,
+            18.281264,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.833333,
+          "deltaCm": [
+            22.28518,
+            0.0,
+            128.094652
+          ],
+          "relativeRotationVectorDegrees": [
+            0.0,
+            19.622055,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.866667,
+          "deltaCm": [
+            25.425111,
+            4e-06,
+            136.629214
+          ],
+          "relativeRotationVectorDegrees": [
+            0.0,
+            20.98759,
+            -0.0
+          ]
+        },
+        {
+          "seconds": 0.9,
+          "deltaCm": [
+            28.731576,
+            0.0,
+            145.262831
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            22.37631,
+            3e-06
+          ]
+        },
+        {
+          "seconds": 0.933333,
+          "deltaCm": [
+            32.34268,
+            0.0,
+            153.929183
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            23.786704,
+            2e-06
+          ]
+        },
+        {
+          "seconds": 0.966667,
+          "deltaCm": [
+            36.316896,
+            4e-06,
+            162.590235
+          ],
+          "relativeRotationVectorDegrees": [
+            1e-06,
+            25.217293,
+            2e-06
+          ]
+        },
+        {
+          "seconds": 1.0,
+          "deltaCm": [
+            40.587631,
+            0.0,
+            171.2527
+          ],
+          "relativeRotationVectorDegrees": [
+            -4e-06,
+            26.666673,
+            4e-06
+          ]
+        },
+        {
+          "seconds": 1.033333,
+          "deltaCm": [
+            45.102269,
+            0.0,
+            179.918136
+          ],
+          "relativeRotationVectorDegrees": [
+            -4e-06,
+            28.133454,
+            3e-06
+          ]
+        },
+        {
+          "seconds": 1.066667,
+          "deltaCm": [
+            49.864306,
+            4e-06,
+            188.566964
+          ],
+          "relativeRotationVectorDegrees": [
+            -4e-06,
+            29.616132,
+            3e-06
+          ]
+        },
+        {
+          "seconds": 1.1,
+          "deltaCm": [
+            54.891297,
+            0.0,
+            197.174417
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            31.11329,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.133333,
+          "deltaCm": [
+            60.196258,
+            0.0,
+            205.717428
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            32.623481,
+            -4e-06
+          ]
+        },
+        {
+          "seconds": 1.166667,
+          "deltaCm": [
+            65.774334,
+            4e-06,
+            214.178956
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            34.145225,
+            -4e-06
+          ]
+        },
+        {
+          "seconds": 1.2,
+          "deltaCm": [
+            71.616082,
+            0.0,
+            222.543565
+          ],
+          "relativeRotationVectorDegrees": [
+            6e-06,
+            35.677096,
+            -7e-06
+          ]
+        },
+        {
+          "seconds": 1.233333,
+          "deltaCm": [
+            77.712668,
+            0.0,
+            230.795756
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            37.217649,
+            -7e-06
+          ]
+        },
+        {
+          "seconds": 1.266667,
+          "deltaCm": [
+            84.057083,
+            4e-06,
+            238.919482
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            38.765444,
+            -8e-06
+          ]
+        },
+        {
+          "seconds": 1.3,
+          "deltaCm": [
+            90.642864,
+            0.0,
+            246.898425
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            40.319013,
+            -8e-06
+          ]
+        },
+        {
+          "seconds": 1.333333,
+          "deltaCm": [
+            97.462741,
+            0.0,
+            254.717035
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            41.876943,
+            -8e-06
+          ]
+        },
+        {
+          "seconds": 1.366667,
+          "deltaCm": [
+            104.506259,
+            4e-06,
+            262.36126
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            43.437768,
+            -8e-06
+          ]
+        },
+        {
+          "seconds": 1.4,
+          "deltaCm": [
+            111.762142,
+            0.0,
+            269.81767
+          ],
+          "relativeRotationVectorDegrees": [
+            4e-06,
+            45.000012,
+            -2e-06
+          ]
+        },
+        {
+          "seconds": 1.433333,
+          "deltaCm": [
+            119.218753,
+            0.0,
+            277.073368
+          ],
+          "relativeRotationVectorDegrees": [
+            4e-06,
+            46.562288,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.466667,
+          "deltaCm": [
+            126.862978,
+            4e-06,
+            284.116726
+          ],
+          "relativeRotationVectorDegrees": [
+            4e-06,
+            48.123083,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.5,
+          "deltaCm": [
+            134.681356,
+            0.0,
+            290.937013
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            49.680975,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.533333,
+          "deltaCm": [
+            142.659985,
+            0.0,
+            297.523629
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            51.234572,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.566667,
+          "deltaCm": [
+            150.78355,
+            4e-06,
+            303.868542
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            52.782353,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.6,
+          "deltaCm": [
+            159.036223,
+            0.0,
+            309.96369
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            54.322922,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 1.633333,
+          "deltaCm": [
+            167.402101,
+            0.0,
+            315.802005
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            55.854819,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 1.666667,
+          "deltaCm": [
+            175.864176,
+            4e-06,
+            321.378347
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            57.376593,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 1.7,
+          "deltaCm": [
+            184.405372,
+            0.0,
+            326.688508
+          ],
+          "relativeRotationVectorDegrees": [
+            6e-06,
+            58.88676,
+            -1.2e-05
+          ]
+        },
+        {
+          "seconds": 1.733333,
+          "deltaCm": [
+            193.00823,
+            0.0,
+            331.72844
+          ],
+          "relativeRotationVectorDegrees": [
+            6e-06,
+            60.383912,
+            -1.2e-05
+          ]
+        },
+        {
+          "seconds": 1.766667,
+          "deltaCm": [
+            201.654826,
+            4e-06,
+            336.496634
+          ],
+          "relativeRotationVectorDegrees": [
+            6e-06,
+            61.866578,
+            -1.2e-05
+          ]
+        },
+        {
+          "seconds": 1.8,
+          "deltaCm": [
+            210.327073,
+            0.0,
+            340.992157
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            63.333338,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 1.833333,
+          "deltaCm": [
+            219.006901,
+            0.0,
+            345.214529
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            64.78273,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 1.866667,
+          "deltaCm": [
+            227.676208,
+            0.0,
+            349.165772
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            66.213336,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 1.9,
+          "deltaCm": [
+            236.316973,
+            0.0,
+            352.848201
+          ],
+          "relativeRotationVectorDegrees": [
+            -2e-06,
+            67.623729,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.933333,
+          "deltaCm": [
+            244.911094,
+            0.0,
+            356.264737
+          ],
+          "relativeRotationVectorDegrees": [
+            -2e-06,
+            69.012436,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 1.966667,
+          "deltaCm": [
+            253.439986,
+            0.0,
+            359.420328
+          ],
+          "relativeRotationVectorDegrees": [
+            -2e-06,
+            70.377998,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 2.0,
+          "deltaCm": [
+            261.885195,
+            0.0,
+            362.320757
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            71.718765,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 2.033333,
+          "deltaCm": [
+            270.228763,
+            0.0,
+            364.971742
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            73.033342,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 2.066667,
+          "deltaCm": [
+            278.455769,
+            0.0,
+            367.38141
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            74.320566,
+            -3e-06
+          ]
+        },
+        {
+          "seconds": 2.1,
+          "deltaCm": [
+            286.552125,
+            0.0,
+            369.557663
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            75.579438,
+            -6e-06
+          ]
+        },
+        {
+          "seconds": 2.133333,
+          "deltaCm": [
+            294.501513,
+            0.0,
+            371.5094
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            76.808597,
+            -7e-06
+          ]
+        },
+        {
+          "seconds": 2.166667,
+          "deltaCm": [
+            302.27984,
+            0.0,
+            373.246291
+          ],
+          "relativeRotationVectorDegrees": [
+            3e-06,
+            78.005323,
+            -7e-06
+          ]
+        },
+        {
+          "seconds": 2.2,
+          "deltaCm": [
+            309.86086,
+            0.0,
+            374.77929
+          ],
+          "relativeRotationVectorDegrees": [
+            7e-06,
+            79.166665,
+            -1.2e-05
+          ]
+        },
+        {
+          "seconds": 2.233333,
+          "deltaCm": [
+            317.226777,
+            0.0,
+            376.11874
+          ],
+          "relativeRotationVectorDegrees": [
+            7e-06,
+            80.290812,
+            -1.3e-05
+          ]
+        },
+        {
+          "seconds": 2.266667,
+          "deltaCm": [
+            324.393812,
+            0.0,
+            377.276399
+          ],
+          "relativeRotationVectorDegrees": [
+            7e-06,
+            81.380939,
+            -1.3e-05
+          ]
+        },
+        {
+          "seconds": 2.3,
+          "deltaCm": [
+            331.386767,
+            0.0,
+            378.264186
+          ],
+          "relativeRotationVectorDegrees": [
+            4e-06,
+            82.441436,
+            -9e-06
+          ]
+        },
+        {
+          "seconds": 2.333333,
+          "deltaCm": [
+            338.19973,
+            0.0,
+            379.094275
+          ],
+          "relativeRotationVectorDegrees": [
+            4e-06,
+            83.47211,
+            -9e-06
+          ]
+        },
+        {
+          "seconds": 2.366667,
+          "deltaCm": [
+            344.704557,
+            0.0,
+            379.779163
+          ],
+          "relativeRotationVectorDegrees": [
+            4e-06,
+            84.454285,
+            -9e-06
+          ]
+        },
+        {
+          "seconds": 2.4,
+          "deltaCm": [
+            350.742396,
+            0.0,
+            380.331731
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            85.364608,
+            -9e-06
+          ]
+        },
+        {
+          "seconds": 2.433333,
+          "deltaCm": [
+            356.269845,
+            0.0,
+            380.764637
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            86.196996,
+            -9e-06
+          ]
+        },
+        {
+          "seconds": 2.466667,
+          "deltaCm": [
+            361.704166,
+            0.0,
+            381.090762
+          ],
+          "relativeRotationVectorDegrees": [
+            2e-06,
+            87.014403,
+            -9e-06
+          ]
+        },
+        {
+          "seconds": 2.5,
+          "deltaCm": [
+            367.578235,
+            0.0,
+            381.322859
+          ],
+          "relativeRotationVectorDegrees": [
+            7e-06,
+            87.897181,
+            -1.1e-05
+          ]
+        },
+        {
+          "seconds": 2.533333,
+          "deltaCm": [
+            373.99562,
+            0.0,
+            381.47365
+          ],
+          "relativeRotationVectorDegrees": [
+            7e-06,
+            88.861103,
+            -1.1e-05
+          ]
+        },
+        {
+          "seconds": 2.566667,
+          "deltaCm": [
+            379.343431,
+            0.0,
+            381.555245
+          ],
+          "relativeRotationVectorDegrees": [
+            7e-06,
+            89.664228,
+            -1.1e-05
+          ]
+        },
+        {
+          "seconds": 2.6,
+          "deltaCm": [
+            381.57982,
+            0.0,
+            381.57982
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            90.000016,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 2.633333,
+          "deltaCm": [
+            381.57982,
+            0.0,
+            381.57982
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            90.000016,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 2.666667,
+          "deltaCm": [
+            381.57982,
+            0.0,
+            381.57982
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            90.000016,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 2.7,
+          "deltaCm": [
+            381.57982,
+            0.0,
+            381.57982
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            90.000016,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 2.733333,
+          "deltaCm": [
+            381.57982,
+            0.0,
+            381.57982
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            90.000016,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 2.766667,
+          "deltaCm": [
+            381.57982,
+            0.0,
+            381.57982
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            90.000016,
+            -1e-05
+          ]
+        },
+        {
+          "seconds": 2.8,
+          "deltaCm": [
+            381.57982,
+            0.0,
+            381.57982
+          ],
+          "relativeRotationVectorDegrees": [
+            5e-06,
+            90.000016,
+            -1e-05
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_FlyHover_Blender_v1.glb",
+      "sha256": "4742b046c05df936cb9f6d9beec7d3c565ad443c048bd06b4d0e3f2f4ba0e89f",
+      "durationSeconds": 2.0,
+      "fps": 30,
+      "frames": 60,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        342.762843,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootDeltaRangeCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "FlightHover",
+        "loop": true,
+        "fps": 30,
+        "authoring": "Blender 5.2 layered NLA on DRAGON_CTRL (IK feet ride chest/hips, tucked); baked visual keys; rig v008-weightfix; wings spread, fold keys 0",
+        "rootAltitudeCm": 301.8,
+        "rootAltitudeRigUnits": 0.14,
+        "beatsPerLoop": 1,
+        "downstrokeFrames": 22,
+        "bodyBobCm": 20.5,
+        "runtimeNote": "root holds a constant 302 cm altitude shared with TakeoffLand; no runtime hover clip exists yet (FlightActive is the nearest)"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 2.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_FlyHover_Blender_v1r2.glb",
+      "sha256": "0cc106b8460a3048b3370b77326eeeea88aad0863770aeacfb66e7f64e216532",
+      "durationSeconds": 2.0,
+      "fps": 30,
+      "frames": 60,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        342.762843,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootDeltaRangeCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "FlightHover",
+        "loop": true,
+        "fps": 30,
+        "authoring": "flight_r2: v1 hover + tucked legs (front under chest, hinds back along tail), deeper cupped downstroke, per-frame neck counter-rotation; baked visual keys; rig v008-weightfix",
+        "rootAltitudeCm": 301.8,
+        "beatsPerLoop": 1,
+        "downstrokeFrames": 22,
+        "basedOn": "Dragon_FlyHover_Blender_v1"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 2.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_Takeoff_Blender_v1.glb",
+      "sha256": "459f8ff0454612d78dda5d39346e0e9d5b44f11c4ba681a6e1c3a561f12ac752",
+      "durationSeconds": 1.5,
+      "fps": 30,
+      "frames": 45,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        40.948321,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        -0.0,
+        301.814521,
+        0.0
+      ],
+      "rootDeltaRangeCm": [
+        1.1e-05,
+        327.684325,
+        2.6e-05
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "FlightWindup",
+        "loop": false,
+        "fps": 30,
+        "authoring": "Blender 5.2 NLA on DRAGON_CTRL (world-space IK feet, per-frame keys while airborne); baked visual keys; rig v008-weightfix; r3 fold -> spread",
+        "rootMotion": true,
+        "rootAltitudeEndCm": 301.8,
+        "seconds": 1.5,
+        "endsAt": "Dragon_FlyHover_Blender_v1 frame 0",
+        "set": "Dragon_TakeoffLand_Blender_v1"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.033333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.066667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.1,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.133333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.166667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.2,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.233333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.266667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.3,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.333333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.366667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.4,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.433333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.466667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.5,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.533333,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.566667,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.6,
+          "deltaCm": [
+            -0.0,
+            1.743508,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.633333,
+          "deltaCm": [
+            -0.0,
+            6.838281,
+            -1e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.666667,
+          "deltaCm": [
+            -1e-06,
+            15.08067,
+            -2e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.7,
+          "deltaCm": [
+            -2e-06,
+            26.26704,
+            -4e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.733333,
+          "deltaCm": [
+            -3e-06,
+            40.193748,
+            -6e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.766667,
+          "deltaCm": [
+            -4e-06,
+            56.657164,
+            -9e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.8,
+          "deltaCm": [
+            -0.0,
+            75.45363,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.833333,
+          "deltaCm": [
+            -1e-06,
+            96.326717,
+            -3e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.866667,
+          "deltaCm": [
+            -3e-06,
+            118.808817,
+            -7e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.9,
+          "deltaCm": [
+            -5e-06,
+            142.379525,
+            -1e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.933333,
+          "deltaCm": [
+            -6e-06,
+            166.518381,
+            -1.4e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.966667,
+          "deltaCm": [
+            -8e-06,
+            190.705022,
+            -1.8e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.0,
+          "deltaCm": [
+            -1e-05,
+            214.41902,
+            -2.2e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.033333,
+          "deltaCm": [
+            -0.0,
+            237.139979,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.066667,
+          "deltaCm": [
+            -1e-06,
+            258.35624,
+            -3e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.1,
+          "deltaCm": [
+            -3e-06,
+            277.591435,
+            -6e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.133333,
+          "deltaCm": [
+            -4e-06,
+            294.377899,
+            -9e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.166667,
+          "deltaCm": [
+            -5e-06,
+            308.248001,
+            -1.1e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.2,
+          "deltaCm": [
+            -6e-06,
+            318.734237,
+            -1.3e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.233333,
+          "deltaCm": [
+            -6e-06,
+            325.368878,
+            -1.4e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.266667,
+          "deltaCm": [
+            -0.0,
+            327.684325,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.3,
+          "deltaCm": [
+            0.0,
+            326.25133,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.333333,
+          "deltaCm": [
+            0.0,
+            322.555602,
+            1e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.366667,
+          "deltaCm": [
+            1e-06,
+            317.502338,
+            2e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.4,
+          "deltaCm": [
+            1e-06,
+            311.996509,
+            2e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.433333,
+          "deltaCm": [
+            1e-06,
+            306.943245,
+            3e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.466667,
+          "deltaCm": [
+            2e-06,
+            303.247549,
+            4e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.5,
+          "deltaCm": [
+            -0.0,
+            301.814521,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_Land_Blender_v1.glb",
+      "sha256": "dbef03948ab0d7ced6625a3302c0eee549aaac1d7be2b2acab302332e8fc0fac",
+      "durationSeconds": 1.5,
+      "fps": 30,
+      "frames": 45,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        342.762843,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        0.0,
+        -301.814521,
+        -0.0
+      ],
+      "rootDeltaRangeCm": [
+        9e-06,
+        301.814521,
+        2e-05
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "FlightRecovery",
+        "loop": false,
+        "fps": 30,
+        "authoring": "Blender 5.2 NLA on DRAGON_CTRL (world-space IK feet, per-frame keys while airborne); baked visual keys; rig v008-weightfix; spread -> r3 fold",
+        "rootMotion": true,
+        "rootAltitudeStartCm": 301.8,
+        "seconds": 1.5,
+        "startsAt": "Dragon_FlyHover_Blender_v1 frame 0",
+        "endsAt": "idle r3 stance",
+        "set": "Dragon_TakeoffLand_Blender_v1"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.033333,
+          "deltaCm": [
+            0.0,
+            -0.433291,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.066667,
+          "deltaCm": [
+            0.0,
+            -1.78013,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.1,
+          "deltaCm": [
+            0.0,
+            -4.110965,
+            1e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.133333,
+          "deltaCm": [
+            1e-06,
+            -7.496212,
+            1e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.166667,
+          "deltaCm": [
+            1e-06,
+            -12.00632,
+            2e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.2,
+          "deltaCm": [
+            1e-06,
+            -17.711737,
+            3e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.233333,
+          "deltaCm": [
+            2e-06,
+            -24.682944,
+            4e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.266667,
+          "deltaCm": [
+            2e-06,
+            -32.990324,
+            5e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.3,
+          "deltaCm": [
+            3e-06,
+            -42.704326,
+            7e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.333333,
+          "deltaCm": [
+            0.0,
+            -53.895431,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.366667,
+          "deltaCm": [
+            1e-06,
+            -66.633572,
+            2e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.4,
+          "deltaCm": [
+            2e-06,
+            -80.986741,
+            4e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.433333,
+          "deltaCm": [
+            3e-06,
+            -97.022463,
+            7e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.466667,
+          "deltaCm": [
+            4e-06,
+            -114.808263,
+            1e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.5,
+          "deltaCm": [
+            6e-06,
+            -134.411665,
+            1.3e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.533333,
+          "deltaCm": [
+            7e-06,
+            -155.900195,
+            1.6e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.566667,
+          "deltaCm": [
+            9e-06,
+            -179.341362,
+            2e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.6,
+          "deltaCm": [
+            0.0,
+            -204.802707,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.633333,
+          "deltaCm": [
+            2e-06,
+            -231.848048,
+            4e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.666667,
+          "deltaCm": [
+            4e-06,
+            -258.026502,
+            8e-06
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.7,
+          "deltaCm": [
+            5e-06,
+            -280.383441,
+            1.2e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.733333,
+          "deltaCm": [
+            6e-06,
+            -295.964321,
+            1.4e-05
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.766667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.8,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.833333,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.866667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.9,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.933333,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 0.966667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.0,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.033333,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.066667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.1,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.133333,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.166667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.2,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.233333,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.266667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.3,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.333333,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.366667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.4,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.433333,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.466667,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.5,
+          "deltaCm": [
+            0.0,
+            -301.814521,
+            -0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_FireBreath_Blender_v1.glb",
+      "sha256": "2d7bca2eefb7f28a3e8321f7732125a138aa5b6523f943c7d81b710db126c428",
+      "durationSeconds": 3.5,
+      "fps": 30,
+      "frames": 105,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        40.948321,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootDeltaRangeCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "Fire",
+        "loop": false,
+        "fps": 30,
+        "authoring": "Blender 5.2 NLA on DRAGON_CTRL; baked visual keys; rig v008-weightfix; r3 fold half-flaring; VeyrBreath to 1.8",
+        "inPlace": true,
+        "seconds": 3.5,
+        "phases": {
+          "windup": [
+            0,
+            30
+          ],
+          "thrust": [
+            31,
+            36
+          ],
+          "holdFullExtension": [
+            36,
+            39
+          ],
+          "sweepLeftToRight": [
+            39,
+            84
+          ],
+          "recoil": [
+            84,
+            92
+          ],
+          "settle": [
+            92,
+            105
+          ]
+        },
+        "sweepDegrees": 30,
+        "mouthOpenDeg": 28,
+        "runtimeNote": "runtime splits Fire into Windup/Active/Recovery; frame ranges above map onto them"
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 3.5,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Dragon_Bite_Blender_v2.glb",
+      "sha256": "97d859eaaa521bbd0fee485c19c254db27648a438208c632e481a717060dcd63",
+      "durationSeconds": 1.8,
+      "fps": 30,
+      "frames": 54,
+      "rootBone": "tripo::Root",
+      "coordinateConvention": "glTF RH X/Y/Z, Y up; cm uses authored CM=2155.818 and requires native component-scale verification",
+      "rootInitialPositionCm": [
+        -0.0,
+        40.948321,
+        0.0
+      ],
+      "rootDeltaEndCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootDeltaRangeCm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rootEndRelativeRotationVectorDegrees": [
+        -0.0,
+        -0.0,
+        0.0
+      ],
+      "animationExtras": {
+        "veyr_runtime_clip": "Bite",
+        "loop": false,
+        "fps": 30,
+        "authoring": "Blender 5.2 NLA on DRAGON_CTRL; baked visual keys; rig v008-weightfix; r3 fold + bite-v2-swept corrective VeyrWingFold (1)",
+        "inPlace": true,
+        "seconds": 1.8,
+        "pawsStepOutAndBack": true,
+        "phases": {
+          "drawBack": [
+            0,
+            12
+          ],
+          "lunge": [
+            12,
+            18
+          ],
+          "snapShut": 18,
+          "hold": [
+            18,
+            20
+          ],
+          "shake": [
+            20,
+            31
+          ],
+          "recover": [
+            31,
+            54
+          ]
+        }
+      },
+      "rootSamples": [
+        {
+          "seconds": 0.0,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "seconds": 1.8,
+          "deltaCm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "relativeRotationVectorDegrees": [
+            -0.0,
+            -0.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  ],
+  "recommendedPhaseTrims": {
+    "Fire": {
+      "source": "Dragon_FireBreath_Blender_v1.glb",
+      "windup": [
+        0,
+        1.133333
+      ],
+      "active": [
+        1.133333,
+        2.8
+      ],
+      "recovery": [
+        2.8,
+        3.5
+      ],
+      "notes": "Open jaw and committed thrust at f34; visible sweep through f84. Play trims at 1x; preserve pre-ignition windup VFX, turn flame off at recovery."
+    },
+    "Bite": {
+      "source": "Dragon_Bite_Blender_v2.glb",
+      "windup": [
+        0,
+        0.4
+      ],
+      "active": [
+        0.4,
+        1.033333
+      ],
+      "recovery": [
+        1.033333,
+        1.8
+      ],
+      "notes": "Lunge starts f12 and jaw closes f18; active includes f20-31 shake. One damage contact per attack remains current policy."
+    },
+    "Flight": {
+      "takeoffSource": "Dragon_Takeoff_Blender_v1.glb",
+      "takeoffSeconds": 1.5,
+      "takeoffFrontLiftoffSeconds": 0.533333,
+      "takeoffHindLiftoffSeconds": 0.7,
+      "hoverSourceForExactJoins": "Dragon_FlyHover_Blender_v1.glb",
+      "hoverLoopSeconds": 2.0,
+      "approvedAlternateHover": "Dragon_FlyHover_Blender_v1r2.glb",
+      "landSource": "Dragon_Land_Blender_v1.glb",
+      "landSeconds": 1.5,
+      "hindContactSeconds": 0.733333,
+      "frontContactSeconds": 0.833333,
+      "suggestedLandingDamageSeconds": 0.833333,
+      "notes": "Takeoff/land endpoints authored against Hover v1 frame0. r2 has different tucked pose; require checked transition if used. Do not add old 1400cm actor sine altitude on top of 302cm authored root altitude."
+    }
+  },
+  "locomotion": {
+    "walkCycleDistanceCm": 215.5818,
+    "walkCycleSeconds": 3.2,
+    "authoredWalkSpeedCmPerSecond": 67.369312,
+    "turnAngleDegrees": 90,
+    "turnSeconds": 2.8,
+    "turnYawWindowSeconds": [
+      0.2,
+      2.6
+    ],
+    "turnPivotBlenderRigUnits": [
+      0.177,
+      0,
+      0
+    ],
+    "notes": "Turn is nonlooping with actual yaw plus pivot translation. Neither /20 degree cycling nor actor yaw plus unstripped authored yaw preserves it. Derive actor root transform from native converted root, or strip that root and apply equivalent curve to actor; account for component scale and offset. A right turn needs an explicitly mirrored/reversed integration derivative, not the unmodified left turn aliased to both directions."
+  }
+}

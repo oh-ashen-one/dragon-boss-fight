@@ -45,7 +45,7 @@ AVeyrDragon::AVeyrDragon()
     AttackPoseProbe->SetupAttachment(SceneRoot);
     AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
     AttackPoseProbe->SetCastShadow(false);AttackPoseProbe->SetRenderInMainPass(false);
-    static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> ImportedDefinition(TEXT("/Game/Characters/Customuse/Runtime/DA_Dragon.DA_Dragon"));
+    static ConstructorHelpers::FObjectFinderOptional<UVeyrVisualDefinition> ImportedDefinition(TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Dragon.DA_Dragon"));
     VisualDefinition=ImportedDefinition.Get();
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
@@ -120,7 +120,13 @@ void AVeyrDragon::BeginPlay()
     }
     UpdateTemporaryPresentation(0); EnterState(EVeyrDragonState::Idle,2.2f);
     if(!VisualDefinition)VisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
-        TEXT("/Game/Characters/Customuse/Runtime/DA_Dragon.DA_Dragon"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        TEXT("/Game/Characters/Customuse/RuntimeApproved/DA_Dragon.DA_Dragon"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!VisualDefinition)
+    {
+        VisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
+            TEXT("/Game/Characters/Customuse/Runtime/DA_Dragon.DA_Dragon"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        UE_LOG(LogTemp,Warning,TEXT("VEYR_DRAGON_APPROVED_DEFINITION_MISSING using legacy Runtime definition"));
+    }
     if(VisualDefinition)ApplyCustomuseVisual(VisualDefinition);
 }
 
@@ -136,6 +142,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
         // Combat waits for deliberate input; the creature still breathes and
         // shifts its weight while the player studies the opening view.
         Clock+=DeltaSeconds;
+        UpdateGaze(DeltaSeconds);
         UpdateTemporaryPresentation(DeltaSeconds);UpdateImportedPresentation();
         return;
     }
@@ -144,15 +151,26 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     for(float& Flash:LegFlash)Flash=FMath::Max(0.f,Flash-DeltaSeconds*4.f);
     if(!IsDead()&&IsValid(Target)&&Target->IsDead()&&!bEncounterStopped)
     {
-        bEncounterStopped=true; EnterState(EVeyrDragonState::Idle,TNumericLimits<float>::Max());
+        const bool FinishLanding=HasAuthoredFlight()&&IsAirborne();
+        bEncounterStopped=true;
+        if(FinishLanding)
+        {
+            // Combat stops immediately, but a flying creature settles through
+            // its landing action instead of snapping to a grounded idle.
+            MoveEnd=Ground(GetActorLocation());
+            EnterState(EVeyrDragonState::Recovery,VisualClipDuration(TEXT("FlightRecovery"),1.5f));
+        }
+        else EnterState(EVeyrDragonState::Idle,TNumericLimits<float>::Max());
     }
     if(!bEncounterStopped||IsDead())AdvanceState(DeltaSeconds);
+    else if(State==EVeyrDragonState::Recovery&&Move==EVeyrDragonMove::FlyAway&&StateElapsed>=StateDuration)
+        EnterState(EVeyrDragonState::Idle,TNumericLimits<float>::Max());
     UpdateGaze(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
     UpdateImportedPresentation();
     VisualAccumulator+=DeltaSeconds;
     // Active sweep geometry must use the same current clock as damaging contact.
-    if(State==EVeyrDragonState::Active||VisualAccumulator>=.04f) { VisualAccumulator=0; UpdateTelegraphs(); }
+    if(State==EVeyrDragonState::Active||IsLandingContactWindow()||VisualAccumulator>=.04f) { VisualAccumulator=0; UpdateTelegraphs(); }
 }
 
 void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
@@ -165,7 +183,8 @@ void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
     }
     State=Next; StateElapsed=0; StateDuration=Duration;
     bPreviousContactPoseValid=false;PreviousContacts.Reset();
-    if(Next!=EVeyrDragonState::Windup&&Next!=EVeyrDragonState::Active)CommittedWarning.Reset();
+    const bool Landing=Next==EVeyrDragonState::Recovery&&Move==EVeyrDragonMove::FlyAway&&HasAuthoredFlight();
+    if(Next!=EVeyrDragonState::Windup&&Next!=EVeyrDragonState::Active&&!Landing)CommittedWarning.Reset();
     WarningLines->ClearInstances(); DangerLines->ClearInstances(); VisualAccumulator=.04f;bWarningDrawn=false;
 }
 
@@ -180,11 +199,14 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
         {
             // Separate planted turning from translation. Both presentation
             // phases are measured from the resulting transform below.
-            const float TurnT=RepositionTurnDuration>.001f?Ease(StateElapsed/RepositionTurnDuration):1.f;
-            SetActorRotation(FQuat::Slerp(TurnStart.Quaternion(),TurnEnd.Quaternion(),TurnT));
+            const float TurnT=RepositionTurnDuration>.001f?FMath::Clamp(StateElapsed/RepositionTurnDuration,0.f,1.f):1.f;
+            if(bRepositionAuthoredTurn&&StateElapsed<RepositionTurnDuration)
+                SetActorTransform(RepositionTurnTransform(TurnT));
+            else SetActorRotation(FQuat::Slerp(TurnStart.Quaternion(),TurnEnd.Quaternion(),bRepositionAuthoredTurn?1.f:Ease(TurnT)));
             bRepositionWalking=StateElapsed>=RepositionTurnDuration&&RepositionTravelDuration>.001f;
-            const float TravelT=bRepositionWalking?Ease((StateElapsed-RepositionTurnDuration)/RepositionTravelDuration):0.f;
-            SetActorLocation(FMath::Lerp(MoveStart,MoveEnd,TravelT));
+            const float TravelT=bRepositionWalking?FMath::Clamp((StateElapsed-RepositionTurnDuration)/RepositionTravelDuration,0.f,1.f):0.f;
+            if(!bRepositionAuthoredTurn||StateElapsed>=RepositionTurnDuration)
+                SetActorLocation(FMath::Lerp(MoveStart,MoveEnd,TravelT));
             if(StateElapsed>=StateDuration){bJustRepositioned=true;EnterState(EVeyrDragonState::Idle,.75f);}
             break;
         }
@@ -201,8 +223,11 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
         case EVeyrDragonState::Active:
             if(Move==EVeyrDragonMove::FlyAway)
             {
-                const float T=FMath::Clamp(StateElapsed/FlightSeconds,0.f,1.f);
-                FVector Position=FMath::Lerp(MoveStart,MoveEnd,Ease(T)); Position.Z+=FMath::Sin(T*PI)*1400.f;
+                const float T=FMath::Clamp(StateElapsed/(HasAuthoredFlight()?ActiveDuration:FlightSeconds),0.f,1.f);
+                FVector Position=FMath::Lerp(MoveStart,MoveEnd,Ease(T));
+                // New takeoff/hover/landing already contain the approved root
+                // altitude. Actor travel supplies only the horizontal route.
+                if(!HasAuthoredFlight())Position.Z+=FMath::Sin(T*PI)*1400.f;
                 SetActorLocation(Position);
             }
             UpdateImportedPresentation();
@@ -214,6 +239,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             }
             break;
         case EVeyrDragonState::Recovery:
+            if(IsLandingContactWindow()){UpdateImportedPresentation();TryDamageTarget();}
             if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,.9f);}
             break;
         case EVeyrDragonState::Buckle:
@@ -269,6 +295,73 @@ void AVeyrDragon::ChooseAttack()
     BeginAttack(Next);
 }
 
+float AVeyrDragon::VisualClipDuration(FName ClipName,float Fallback) const
+{
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(ClipName):nullptr;
+    if(!Clip||!Clip->Sequence)return Fallback;
+    const float End=Clip->EndSeconds<0.f?Clip->Sequence->GetPlayLength():Clip->EndSeconds;
+    return End>Clip->StartSeconds?End-Clip->StartSeconds:Fallback;
+}
+
+bool AVeyrDragon::HasAuthoredFlight() const
+{
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(TEXT("FlightWindup")):nullptr;
+    return Clip&&Clip->Sequence&&Clip->ApprovedSourceFile.Contains(TEXT("Dragon_Takeoff_Blender_"));
+}
+
+bool AVeyrDragon::IsLandingContactWindow() const
+{
+    if(!HasAuthoredFlight()||Move!=EVeyrDragonMove::FlyAway||State!=EVeyrDragonState::Recovery)return false;
+    const FVeyrVisualClip* Land=VisualDefinition->Clips.Find(TEXT("FlightRecovery"));
+    const float Impact=Land&&Land->ImpactSeconds>=0.f?Land->ImpactSeconds:25.f/30.f;
+    return StateElapsed>=Impact&&StateElapsed<Impact+.20f;
+}
+
+float AVeyrDragon::WalkCycleDistance() const
+{
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(TEXT("Walk")):nullptr;
+    if(Clip&&Clip->NominalSpeedCmPerSecond>0.f)
+        return Clip->NominalSpeedCmPerSecond*VisualClipDuration(TEXT("Walk"),3.2f);
+    return 134.f;
+}
+
+bool AVeyrDragon::ReadTurnTrajectory(float SourceSeconds,FVector& Translation,float& YawDegrees) const
+{
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(RepositionTurnClip):nullptr;
+    if(!Clip||!Clip->bRootMotionRemoved||Clip->RootTranslationSamplesCm.Num()<2||
+       Clip->RootYawSamplesDegrees.Num()!=Clip->RootTranslationSamplesCm.Num()||Clip->RootSampleRate<=0.f)return false;
+    const float Sample=FMath::Clamp((Clip->StartSeconds+SourceSeconds)*Clip->RootSampleRate,0.f,
+        static_cast<float>(Clip->RootTranslationSamplesCm.Num()-1));
+    const int32 I=FMath::FloorToInt(Sample),J=FMath::Min(I+1,Clip->RootTranslationSamplesCm.Num()-1);
+    Translation=FMath::Lerp(Clip->RootTranslationSamplesCm[I],Clip->RootTranslationSamplesCm[J],Sample-I);
+    YawDegrees=FMath::Lerp(Clip->RootYawSamplesDegrees[I],Clip->RootYawSamplesDegrees[J],Sample-I);
+    return !Translation.ContainsNaN()&&FMath::IsFinite(YawDegrees);
+}
+
+FTransform AVeyrDragon::RepositionTurnTransform(float Phase) const
+{
+    FVector Delta,End;float Yaw=0.f,EndYaw=0.f;
+    const float T=FMath::Clamp(Phase,0.f,1.f)*RepositionTurnSourceDuration;
+    if(!ReadTurnTrajectory(bRepositionReverseTurn?RepositionTurnSourceDuration-T:T,Delta,Yaw))return RepositionStartTransform;
+    FQuat RootRotation(FVector::UpVector,FMath::DegreesToRadians(Yaw));
+    if(bRepositionReverseTurn)
+    {
+        if(!ReadTurnTrajectory(RepositionTurnSourceDuration,End,EndYaw))return RepositionStartTransform;
+        const FQuat InverseEnd=FQuat(FVector::UpVector,FMath::DegreesToRadians(EndYaw)).Inverse();
+        Delta=InverseEnd.RotateVector(Delta-End);RootRotation=InverseEnd*RootRotation;
+    }
+    const FTransform& Component=VisualDefinition->MeshRelativeTransform;
+    const FQuat ActorDeltaRotation=Component.GetRotation()*RootRotation*Component.GetRotation().Inverse();
+    // C*M*C^-1: scale/rotate the displacement and compensate the imported
+    // mesh's offset pivot. Adding the offset directly would double translation.
+    const FVector ActorDelta=Component.TransformVector(Delta)+Component.GetTranslation()-
+        ActorDeltaRotation.RotateVector(Component.GetTranslation());
+    FTransform Result=RepositionStartTransform;
+    Result.SetLocation(RepositionStartTransform.TransformPosition(ActorDelta));
+    Result.SetRotation((RepositionStartTransform.GetRotation()*ActorDeltaRotation).GetNormalized());
+    return Result;
+}
+
 void AVeyrDragon::BeginReposition()
 {
     MoveStart=Ground(GetActorLocation());
@@ -279,6 +372,36 @@ void AVeyrDragon::BeginReposition()
     const float DesiredYaw=Toward.Rotation().Yaw;
     RepositionYawDelta=FMath::Clamp(FMath::FindDeltaAngleDegrees(TurnStart.Yaw,DesiredYaw),-75.f,75.f);
     TurnEnd=FRotator(0,TurnStart.Yaw+RepositionYawDelta,0);
+    bRepositionAuthoredTurn=false;bRepositionReverseTurn=false;RepositionTurnClip=TEXT("TurnLeft");
+    RepositionStartTransform=GetActorTransform();RepositionTurnSourceDuration=VisualClipDuration(RepositionTurnClip,0.f);
+    FVector RootEnd;float RootYaw=0.f;
+    const bool HasRootTurn=ReadTurnTrajectory(RepositionTurnSourceDuration,RootEnd,RootYaw)&&FMath::Abs(RootYaw)>45.f;
+    if(HasRootTurn)
+    {
+        // The approved turn is a complete planted 90-degree step, not a 20-degree
+        // loop. Use retained small-turn gait for fine steering; larger errors take
+        // one complete step so a partial source frame never leaves feet airborne.
+        const float DesiredDelta=FMath::FindDeltaAngleDegrees(TurnStart.Yaw,DesiredYaw);
+        if(FMath::Abs(DesiredDelta)>=45.f)
+        {
+            bRepositionAuthoredTurn=true;bRepositionReverseTurn=DesiredDelta*RootYaw<0.f;
+            const FTransform Finish=RepositionTurnTransform(1.f);
+            MoveStart=Ground(Finish.GetLocation());TurnEnd=Finish.Rotator();
+            RepositionYawDelta=FMath::FindDeltaAngleDegrees(TurnStart.Yaw,TurnEnd.Yaw);
+        }
+        else
+        {
+            const FName Fine=DesiredDelta>=0.f?FName(TEXT("TurnRightFine")):FName(TEXT("TurnLeftFine"));
+            const FVeyrVisualClip* FineClip=VisualDefinition->Clips.Find(Fine);
+            if(FineClip&&FineClip->Sequence)RepositionTurnClip=Fine;
+            else
+            {
+                // Do not silently run part of the 90-degree turn as a tiny loop.
+                TurnEnd=TurnStart;RepositionYawDelta=0.f;
+                LocomotionDiagnostic=TEXT("Retained fine-turn clip missing: ")+Fine.ToString();
+            }
+        }
+    }
     // Travel along the final facing, including a reverse gait when yielding
     // space. Do not make a forward gait slide sideways toward a distant target.
     MoveEnd=MoveStart+TurnEnd.Vector()*Travel;
@@ -294,8 +417,11 @@ void AVeyrDragon::BeginReposition()
         }
         MoveEnd=FMath::Lerp(MoveStart,MoveEnd,Lo);
     }
-    RepositionTurnDuration=FMath::Abs(RepositionYawDelta)>.5f?FMath::Max(.3f,FMath::Abs(RepositionYawDelta)/22.f):0.f;
-    RepositionTravelDuration=FVector::Dist2D(MoveStart,MoveEnd)/160.f;
+    RepositionTurnDuration=bRepositionAuthoredTurn?RepositionTurnSourceDuration:
+        FMath::Abs(RepositionYawDelta)>.5f?FMath::Max(.3f,FMath::Abs(RepositionYawDelta)/22.f):0.f;
+    const FVeyrVisualClip* Walk=VisualDefinition?VisualDefinition->Clips.Find(TEXT("Walk")):nullptr;
+    const float WalkSpeed=Walk&&Walk->NominalSpeedCmPerSecond>0.f?Walk->NominalSpeedCmPerSecond:160.f;
+    RepositionTravelDuration=FVector::Dist2D(MoveStart,MoveEnd)/WalkSpeed;
     bRepositionWalking=RepositionTurnDuration<=.001f;
     RepeatedMoveCount=0;
     EnterState(EVeyrDragonState::Reposition,FMath::Max(.35f,RepositionTurnDuration+RepositionTravelDuration));
@@ -333,6 +459,30 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
         case EVeyrDragonMove::Bite:
             WindupDuration=1.05f; ActiveDuration=.3f; RecoveryDuration=1.6f; AttackDamage=34.f;
             AttackOrigin=Ground(GetActorTransform().TransformPosition(FVector(300,0,0))); break;
+    }
+    if(bUsingCustomuseVisual&&VisualDefinition)
+    {
+        const FName Windup=ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Windup"));
+        const FVeyrVisualClip* Config=VisualDefinition->Clips.Find(Windup);
+        if((Move==EVeyrDragonMove::Fire||Move==EVeyrDragonMove::Bite)&&Config&&
+           Config->ApprovedSourceFile.StartsWith(TEXT("Dragon_")))
+        {
+            WindupDuration=VisualClipDuration(Windup,WindupDuration);
+            ActiveDuration=VisualClipDuration(ImportedMoveClip(Move,0,TEXT("Active")),ActiveDuration);
+            RecoveryDuration=VisualClipDuration(ImportedMoveClip(Move,0,TEXT("Recovery")),RecoveryDuration);
+        }
+        if(Move==EVeyrDragonMove::FlyAway&&HasAuthoredFlight())
+        {
+            WindupDuration=VisualClipDuration(TEXT("FlightWindup"),1.5f);
+            // Two complete wingbeats return to the same frame-zero pose before
+            // Land. A global Clock or partial hover would break that join.
+            ActiveDuration=2.f*VisualClipDuration(TEXT("FlightActive"),2.f);
+            RecoveryDuration=VisualClipDuration(TEXT("FlightRecovery"),1.5f);
+            bHoverAlternateThisFlight=bPreferHoverAlternate||
+                (bAlternateHoverVariants&&CompletedAttacks[MoveIndex(Move)]%2==1);
+            const FVeyrVisualClip* Alternate=VisualDefinition->Clips.Find(TEXT("FlightHoverAlternate"));
+            bHoverAlternateThisFlight&=Alternate&&Alternate->Sequence;
+        }
     }
     EnterState(EVeyrDragonState::Windup,WindupDuration);
     if(bUsingCustomuseVisual)CommitImportedWarning();
@@ -409,7 +559,8 @@ void AVeyrDragon::TryDamageTarget()
             PreviousFlame=Beam;
         }
         else if(Move==EVeyrDragonMove::FlyAway)
-            bHit=StateElapsed>=FlightSeconds&&ContainsAny(GetActiveFootprints(),Target->GetFootLocation());
+            bHit=(HasAuthoredFlight()?IsLandingContactWindow():StateElapsed>=FlightSeconds)&&
+                ContainsAny(GetActiveFootprints(),Target->GetFootLocation());
         else
         {
             bHit=ImportedContactHitsKnight(Contacts);
@@ -532,7 +683,16 @@ FVector AVeyrDragon::GetHeadLocation() const {return bUsingCustomuseVisual?Impor
 FVector AVeyrDragon::GetLegLocation(int32 Index) const {const int32 I=FMath::Clamp(Index,0,3);return bUsingCustomuseVisual?ImportedFeetWorld[I]:GetActorTransform().TransformPosition(LegLocal[I]);}
 float AVeyrDragon::GetLegStagger(int32 Index) const {return LegStagger[FMath::Clamp(Index,0,3)];}
 float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,7.f-StateElapsed):0.f;}
-bool AVeyrDragon::IsAirborne() const {return State==EVeyrDragonState::Active&&Move==EVeyrDragonMove::FlyAway&&StateElapsed<FlightSeconds;}
+bool AVeyrDragon::IsAirborne() const
+{
+    if(Move!=EVeyrDragonMove::FlyAway)return false;
+    if(!HasAuthoredFlight())return State==EVeyrDragonState::Active&&StateElapsed<FlightSeconds;
+    if(State==EVeyrDragonState::Windup)return StateElapsed>=16.f/30.f;
+    if(State==EVeyrDragonState::Active)return true;
+    const FVeyrVisualClip* Land=VisualDefinition->Clips.Find(TEXT("FlightRecovery"));
+    const float Contact=Land&&Land->ImpactSeconds>=0.f?Land->ImpactSeconds:25.f/30.f;
+    return State==EVeyrDragonState::Recovery&&StateElapsed<Contact;
+}
 int32 AVeyrDragon::GetAttackCount(EVeyrDragonMove Attack) const {const int32 I=MoveIndex(Attack);return I>=0&&I<6?StartedAttacks[I]:0;}
 int32 AVeyrDragon::GetCompletedAttackCount(EVeyrDragonMove Attack) const {const int32 I=MoveIndex(Attack);return I>=0&&I<6?CompletedAttacks[I]:0;}
 
@@ -546,7 +706,10 @@ FText AVeyrDragon::GetStateLabel() const
         case EVeyrDragonState::Exposed:return FText::FromString(TEXT("HEAD EXPOSED — STRIKE THE CROWN"));
         case EVeyrDragonState::Rise:return FText::FromString(TEXT("VEYR RISES — WITHDRAW"));
         case EVeyrDragonState::Dead:return FText::FromString(TEXT("CINDER EXTINGUISHED"));
-        case EVeyrDragonState::Recovery:return FText::FromString(TEXT("OPENING — STRIKE OR HEAL"));
+        case EVeyrDragonState::Recovery:
+            if(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&(IsAirborne()||IsLandingContactWindow()))
+                return FText::FromString(TEXT("LANDING — CLEAR THE CIRCLE"));
+            return FText::FromString(TEXT("OPENING — STRIKE OR HEAL"));
         case EVeyrDragonState::Reposition:return FText::FromString(TEXT("REPOSITIONING — FOLLOW THE FOOTFALLS"));
         case EVeyrDragonState::Idle:return FText::FromString(TEXT("VEYR WATCHES"));
         default:break;
@@ -713,6 +876,8 @@ void AVeyrDragon::DrawFootprint(UInstancedStaticMeshComponent* Lines,const FVeyr
 void AVeyrDragon::UpdateTelegraphs()
 {
     DangerLines->ClearInstances();
+    if(bWarningDrawn&&HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&
+       State==EVeyrDragonState::Recovery&&!IsAirborne()&&!IsLandingContactWindow())WarningLines->ClearInstances();
     if(!bWarningDrawn)
     {
         WarningLines->ClearInstances();const auto Warning=GetWarningFootprints();
@@ -763,7 +928,8 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 void AVeyrDragon::UpdateGaze(float DeltaSeconds)
 {
     const bool Allowed=!bEncounterStopped&&IsValid(Target)&&!Target->IsDead()&&
-        (State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition);
+        (State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)&&
+        !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery);
     float DesiredYaw=0.f,DesiredPitch=0.f,Weight=0.f;
     if(Allowed)
     {
@@ -774,6 +940,7 @@ void AVeyrDragon::UpdateGaze(float DeltaSeconds)
         // Zero before commitment. No tracking in Windup/Active, no modifiers on
         // the attack-envelope probe, and no target-following committed warnings.
         Weight=Ease(FMath::Min(StateElapsed/.25f,(StateDuration-StateElapsed)/.35f));
+        if(State==EVeyrDragonState::Idle&&!Target->HasEnteredEncounter())Weight=Ease(Clock/.25f);
     }
     GazeSmoothedYaw=FMath::FInterpConstantTo(GazeSmoothedYaw,DesiredYaw,DeltaSeconds,24.f);
     GazeSmoothedPitch=FMath::FInterpConstantTo(GazeSmoothedPitch,DesiredPitch,DeltaSeconds,14.f);
@@ -790,16 +957,24 @@ void AVeyrDragon::UpdateImportedPresentation()
     {
         const FVector Travel=Ground(CurrentLocation-LastPresentationLocation);
         const float SignedTravel=static_cast<float>(FVector::DotProduct(Travel,GetActorForwardVector()));
-        WalkPhase=FMath::Fmod(WalkPhase+SignedTravel/134.f,1.f);
-        if(WalkPhase<0.f)WalkPhase+=1.f;
-        TurnPhase=FMath::Fmod(TurnPhase+FMath::Abs(FMath::FindDeltaAngleDegrees(LastPresentationYaw,CurrentYaw))/20.f,1.f);
+        if(bRepositionWalking)
+        {
+            WalkPhase=FMath::Fmod(WalkPhase+SignedTravel/FMath::Max(1.f,WalkCycleDistance()),1.f);
+            if(WalkPhase<0.f)WalkPhase+=1.f;
+        }
+        if(!bRepositionAuthoredTurn)
+            TurnPhase=FMath::Fmod(TurnPhase+FMath::Abs(FMath::FindDeltaAngleDegrees(LastPresentationYaw,CurrentYaw))/20.f,1.f);
     }
     LastPresentationLocation=CurrentLocation;LastPresentationYaw=CurrentYaw;bPresentationMotionInitialized=true;
     TMap<FName,FRotator> Gaze;
-    if(State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)
+    if((State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)&&
+       !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery))
     {
-        Gaze.Add(TEXT("bone_4"),FRotator(GazePitchDegrees*.6f,GazeYawDegrees*.6f,0));
-        Gaze.Add(TEXT("bone_5"),FRotator(GazePitchDegrees*.4f,GazeYawDegrees*.4f,0));
+        const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
+        const FVeyrVisualBoneTarget* Neck=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
+        const bool SeparateNeck=Neck&&Head&&Neck->BoneName!=Head->BoneName;
+        if(SeparateNeck)Gaze.Add(Neck->BoneName,FRotator(GazePitchDegrees*.6f,GazeYawDegrees*.6f,0));
+        if(Head)Gaze.Add(Head->BoneName,FRotator(GazePitchDegrees*(SeparateNeck?.4f:1.f),GazeYawDegrees*(SeparateNeck?.4f:1.f),0));
     }
     if(!ImportedPresentation->SetComponentSpaceBoneRotations(Gaze))return;
     FString Name;
@@ -807,7 +982,9 @@ void AVeyrDragon::UpdateImportedPresentation()
     {
         case EVeyrDragonState::Idle:Name=TEXT("Idle");break;
         case EVeyrDragonState::Reposition:
-            Name=bRepositionWalking?TEXT("Walk"):RepositionYawDelta>=0.f?TEXT("TurnRight"):TEXT("TurnLeft");
+            Name=bRepositionWalking?TEXT("Walk"):(bRepositionAuthoredTurn||RepositionTurnClip==FName(TEXT("TurnLeftFine"))||
+                RepositionTurnClip==FName(TEXT("TurnRightFine")))?RepositionTurnClip.ToString():
+                RepositionYawDelta>=0.f?TEXT("TurnRight"):TEXT("TurnLeft");
             if(!bRepositionWalking&&(!VisualDefinition->Clips.Contains(FName(*Name))||!VisualDefinition->Clips[FName(*Name)].Sequence))
             {
                 LocomotionDiagnostic=TEXT("Optional stepping-turn clip absent; stationary Idle fallback during actor turn: ")+Name;
@@ -828,6 +1005,9 @@ void AVeyrDragon::UpdateImportedPresentation()
             if(Move==EVeyrDragonMove::ClawSwipe)
                 Name=ImportedMoveClip(Move,ClawLeg,TEXT("")).ToString();
             Name+=State==EVeyrDragonState::Windup?TEXT("Windup"):State==EVeyrDragonState::Active?TEXT("Active"):TEXT("Recovery");
+            if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&HasAuthoredFlight()&&
+               bHoverAlternateThisFlight&&StateElapsed>=.2f&&StateElapsed<ActiveDuration-.2f)
+                Name=TEXT("FlightHoverAlternate");
             break;
         }
     }
@@ -838,20 +1018,33 @@ void AVeyrDragon::UpdateImportedPresentation()
         const FVeyrVisualClip& Config=VisualDefinition->Clips[Clip];
         const float End=Config.EndSeconds<0.f?Config.Sequence->GetPlayLength():Config.EndSeconds;
         const float Duration=End-Config.StartSeconds;
-        const float SampleSeconds=Clip==FName(TEXT("Walk"))?WalkPhase*Duration:
-            (Clip==FName(TEXT("TurnLeft"))||Clip==FName(TEXT("TurnRight")))?TurnPhase*Duration:Clock;
-        const bool bLoopWrapped=Clip==FName(TEXT("Idle"))&&Config.bLoop&&Duration>0.f&&ImportedPresentation->CurrentClip==Clip&&
-            FMath::Fmod(SampleSeconds,Duration)+.0001f<ImportedPresentation->CurrentTrimmedSeconds;
-        if(LastImportedClip!=Clip||LastImportedState!=State||bLoopWrapped)
+        const bool Turning=State==EVeyrDragonState::Reposition&&!bRepositionWalking;
+        float SampleSeconds=Clip==FName(TEXT("Walk"))?WalkPhase*Duration:Turning?TurnPhase*Duration:Clock;
+        const bool AuthoredTurn=State==EVeyrDragonState::Reposition&&!bRepositionWalking&&bRepositionAuthoredTurn;
+        if(AuthoredTurn)SampleSeconds=bRepositionReverseTurn?Duration-FMath::Min(StateElapsed,Duration):FMath::Min(StateElapsed,Duration);
+        if(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)SampleSeconds=StateElapsed;
+        // Authored cyclic curves already close their loop. Freezing/reblending
+        // every idle wrap adds a visible hitch and changes the breathing timing.
+        if(LastImportedClip!=Clip||LastImportedState!=State)
         {
+            const FVeyrVisualClip* Previous=VisualDefinition->Clips.Find(LastImportedClip);
+            const bool AdjacentAttackTrim=Previous&&Previous->Sequence&&!Config.bLoop&&
+                !Config.ApprovedSourceSHA256.IsEmpty()&&Config.ApprovedSourceSHA256==Previous->ApprovedSourceSHA256&&
+                Previous->EndSeconds>=0.f&&FMath::IsNearlyEqual(Previous->EndSeconds,Config.StartSeconds,.002f)&&
+                ((LastImportedState==EVeyrDragonState::Windup&&State==EVeyrDragonState::Active)||
+                 (LastImportedState==EVeyrDragonState::Active&&State==EVeyrDragonState::Recovery));
             // Definition activation starts in the authored pose immediately;
             // do not freeze a blend from the bind pose before encounter input.
-            bImportedTransitionReady=!LastImportedClip.IsNone()&&ImportedPresentation->BeginTransition();
+            // Adjacent trims are one continuous authored action: another blend
+            // would soften the bite's fastest lunge and change its impact time.
+            bImportedTransitionReady=!LastImportedClip.IsNone()&&!AdjacentAttackTrim&&ImportedPresentation->BeginTransition();
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
         }
-        const float Alpha=bImportedTransitionReady?FMath::Clamp((Clock-ImportedTransitionStarted)/.12f,0.f,1.f):1.f;
+        const bool Hover=HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active;
+        const float TransitionSeconds=Hover?.2f:.12f;
+        const float Alpha=bImportedTransitionReady?FMath::Clamp((Clock-ImportedTransitionStarted)/TransitionSeconds,0.f,1.f):1.f;
         const bool Loop=VisualDefinition->Clips[Clip].bLoop;
-        Sampled=Loop?ImportedPresentation->SampleClipTimeBlended(Clip,SampleSeconds,Alpha):
+        Sampled=Loop||AuthoredTurn?ImportedPresentation->SampleClipTimeBlended(Clip,SampleSeconds,Alpha):
             ImportedPresentation->SampleClipPhaseBlended(Clip,StateElapsed/FMath::Max(.001f,StateDuration),Alpha);
     }
     MissingVisualClip=Sampled?NAME_None:Clip;
@@ -1067,7 +1260,12 @@ void AVeyrDragon::CommitImportedWarning()
 TArray<FVeyrDragonFootprint> AVeyrDragon::GetWarningFootprints() const
 {
     if(bUsingCustomuseVisual)
-        return !bEncounterStopped&&(State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active)?CommittedWarning:TArray<FVeyrDragonFootprint>();
+    {
+        const bool Landing=HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery&&
+            (IsAirborne()||IsLandingContactWindow());
+        return !bEncounterStopped&&(State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||Landing)?
+            CommittedWarning:TArray<FVeyrDragonFootprint>();
+    }
     const auto F=GetWarningFootprint();return F.Shape==EVeyrDangerShape::None?TArray<FVeyrDragonFootprint>():TArray<FVeyrDragonFootprint>{F};
 }
 
@@ -1076,11 +1274,15 @@ TArray<FVeyrDragonFootprint> AVeyrDragon::GetActiveFootprints() const
     if(!bUsingCustomuseVisual)
     {const auto F=GetActiveFootprint();return F.Shape==EVeyrDangerShape::None?TArray<FVeyrDragonFootprint>():TArray<FVeyrDragonFootprint>{F};}
     TArray<FVeyrDragonFootprint> Result;
-    if(State!=EVeyrDragonState::Active||bEncounterStopped||!bImportedTargetsValid||!bImportedAttackCacheReady||!MissingVisualClip.IsNone())return Result;
+    if((State!=EVeyrDragonState::Active&&!IsLandingContactWindow())||bEncounterStopped||!bImportedTargetsValid||!bImportedAttackCacheReady||!MissingVisualClip.IsNone())return Result;
     if(Move==EVeyrDragonMove::Fire)
     {auto F=ProjectFlameToGround(GetActiveFlameBeam());if(F.Shape!=EVeyrDangerShape::None)Result.Add(F);return Result;}
     if(Move==EVeyrDragonMove::FlyAway)
-    {if(StateElapsed>=FlightSeconds){Result=CommittedWarning;for(auto& F:Result)F.bDamaging=true;}return Result;}
+    {
+        if(HasAuthoredFlight()?IsLandingContactWindow():StateElapsed>=FlightSeconds)
+        {Result=CommittedWarning;for(auto& F:Result)F.bDamaging=true;}
+        return Result;
+    }
     const float KnightRadius=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleRadius():40.f;
     for(const auto& C:GetImportedContacts())
     {

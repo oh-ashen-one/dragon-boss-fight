@@ -13,6 +13,8 @@ struct FVeyrVisualClip
 {
     GENERATED_BODY()
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UAnimSequence> Sequence;
+    /** Same skeleton, exact approved skin/topology variant for this clip. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMesh> MeshOverride;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float StartSeconds=0.f;
     /** Negative means the actual sequence end. Times use imported clip seconds. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float EndSeconds=-1.f;
@@ -64,6 +66,10 @@ public:
     /** Exposes the actual imported names, including importer sanitization. */
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     TArray<FName> GetImportedBoneNames() const;
+
+    /** Morph names on the canonical mesh or a named clip's exact mesh variant. */
+    UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
+    TArray<FName> GetImportedMorphTargetNames(FName ClipName=NAME_None) const;
 
     /** Reference pose in imported mesh component space, before actor/component offsets. */
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")

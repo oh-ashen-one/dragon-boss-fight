@@ -11,6 +11,21 @@ in `tools/art/integration/owner-approvals-20261025.json`.
 - Current roles use actual available Codex agents, not the unavailable named Opus roles.
 - Baseline native content was copied from the previous native project; baseline
   VeyrEditor build succeeded. Native MCP discovered and verified VeyrArena.
+- Source integration builds successfully with full-body Knight actions, blink/VFX,
+  authored timing, native helper-bone props, and Dragon flight/root-turn changes.
+  Independent critique found per-clip skin variants and terminal recovery bugs;
+  both are now addressed in source. Native/runtime proof remains pending.
+- Structural v025b normalization preserves all original geometry/skin/morph/helper
+  motion via four Knight/two Dragon mesh variants. 74 exports pass CPU-skinned
+  reconstruction at seven times each (max3.414e-6 source units). v025a bone-only
+  checks are superseded, and its partial native import is preserved.
+- Native v025a import stopped on a fractional frame boundary in Sweep; v025b
+  importer uses300Hz with ceiling alignment, maximum3.34ms terminal hold.
+- One owned editor crashed during a SIGTERM restart (native macOS signal trampoline);
+  report is preserved in Local/integration-crash-ledger.json. Use normal editor Quit
+  for future shutdown. Current crash count1; stop automatic launches after2.
+- Post-sprint source backup now closes prior handoff gap:154files/6.2GB in five
+  private release assets, knight-dragon-postsprint-20261025; hashes verified.
 - Important open gates: normalize distinct same-name dragon morph targets without
   losing shape corrections; preserve authored weapon/cup transforms via helper
   bones; import, map full gameplay clocks/root movement; render and critique native

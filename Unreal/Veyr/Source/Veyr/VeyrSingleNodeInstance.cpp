@@ -4,6 +4,8 @@
 #include "Animation/AttributesRuntime.h"
 #include "Animation/AnimSequence.h"
 #include "AnimationRuntime.h"
+#include "Engine/SkeletalMesh.h"
+#include "Animation/Skeleton.h"
 
 namespace
 {
@@ -14,6 +16,8 @@ namespace
         TArray<FTransform> LocalTransforms;
         TArray<FBoneIndexType> BoneMap;
         TWeakObjectPtr<UObject> LayoutAsset;
+        TWeakObjectPtr<const USkeleton> LayoutSkeleton;
+        TArray<FName> LayoutBoneNames;
         FBlendedHeapCurve Curve;
         UE::Anim::FHeapAttributeContainer Attributes;
         bool bValid=false;
@@ -23,6 +27,11 @@ namespace
             LocalTransforms=Pose.Pose.GetBones();
             BoneMap=Pose.Pose.GetBoneContainer().GetBoneIndicesArray();
             LayoutAsset=Pose.Pose.GetBoneContainer().GetAsset();
+            const USkeletalMesh* Mesh=Cast<USkeletalMesh>(LayoutAsset.Get());
+            LayoutSkeleton=Mesh?Mesh->GetSkeleton():nullptr;
+            LayoutBoneNames.Reset();
+            const auto& Reference=Pose.Pose.GetBoneContainer().GetReferenceSkeleton();
+            for(int32 I=0;I<Reference.GetNum();++I)LayoutBoneNames.Add(Reference.GetBoneName(I));
             Curve.CopyFrom(Pose.Curve);
             Attributes.CopyFrom(Pose.CustomAttributes);
             bValid=true;
@@ -31,13 +40,21 @@ namespace
         void CopyFrom(const FVeyrPoseSnapshot& Other)
         {
             LocalTransforms=Other.LocalTransforms;BoneMap=Other.BoneMap;LayoutAsset=Other.LayoutAsset;
+            LayoutSkeleton=Other.LayoutSkeleton;LayoutBoneNames=Other.LayoutBoneNames;
             Curve.CopyFrom(Other.Curve);Attributes.CopyFrom(Other.Attributes);bValid=Other.bValid;
         }
 
         bool Matches(const FPoseContext& Pose) const
         {
-            return bValid&&LayoutAsset.Get()==Pose.Pose.GetBoneContainer().GetAsset()&&
-                BoneMap==Pose.Pose.GetBoneContainer().GetBoneIndicesArray()&&LocalTransforms.Num()==Pose.Pose.GetNumBones();
+            const auto& Container=Pose.Pose.GetBoneContainer();
+            if(!bValid||BoneMap!=Container.GetBoneIndicesArray()||LocalTransforms.Num()!=Pose.Pose.GetNumBones())return false;
+            if(LayoutAsset.Get()==Container.GetAsset())return true;
+            const USkeletalMesh* Mesh=Cast<USkeletalMesh>(Container.GetAsset());
+            if(!Mesh||!LayoutSkeleton.IsValid()||LayoutSkeleton.Get()!=Mesh->GetSkeleton())return false;
+            const auto& Reference=Container.GetReferenceSkeleton();
+            if(LayoutBoneNames.Num()!=Reference.GetNum())return false;
+            for(int32 I=0;I<Reference.GetNum();++I)if(LayoutBoneNames[I]!=Reference.GetBoneName(I))return false;
+            return true;
         }
     };
 

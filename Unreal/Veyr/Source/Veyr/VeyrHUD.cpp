@@ -209,7 +209,9 @@ void AVeyrHUD::DrawHUD()
         {
             const float Y=H*.48f;
             Text(Knight->HasEnteredEncounter()?TEXT("CLICK OR ENTER TO CONTROL"):TEXT("CLICK OR ENTER TO BEGIN"),W*.5f,Y,17,Ivory,true);
-            Text(TEXT("Esc releases the mouse"),W*.5f,Y+28,12,Quiet,true);
+            Text(TEXT("WASD move  /  Ctrl walk  /  Shift dodge  /  Tab lock-on"),W*.5f,Y+28,12,Quiet,true);
+            Text(TEXT("LMB/J light  /  K heavy  /  C combo  /  RMB/F guard  /  Q heal  /  E grip"),W*.5f,Y+48,12,Quiet,true);
+            Text(TEXT("V animation variants  /  Esc releases the mouse"),W*.5f,Y+68,12,Quiet,true);
         }
         else if(Now<CaptureHintUntil)
             Text(TEXT("Esc  /  Release mouse"),W-Margin-145,29,12,Quiet);

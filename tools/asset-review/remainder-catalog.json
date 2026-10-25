@@ -32,7 +32,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "strafe_left",
@@ -126,7 +126,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "run_meshy",
@@ -137,7 +137,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "walk_v2",
@@ -148,7 +148,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "run_tripo",
@@ -159,7 +159,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "strafe_left_v4",
@@ -170,7 +170,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false,
+      "ownerApproved": true,
       "blink": {
         "vanish": 0.18,
         "reappear": 0.34,
@@ -188,7 +188,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false,
+      "ownerApproved": true,
       "blink": {
         "vanish": 0.18,
         "reappear": 0.34,
@@ -206,7 +206,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "walk_two_v6",
@@ -217,7 +217,7 @@
       "swordFile": "BoatGreatsword_StrongGrip_v1.glb",
       "reviewBatch": "remainder",
       "revision": 6,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "idle_one_v2",
@@ -228,7 +228,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "idle_two_v2",
@@ -239,7 +239,7 @@
       "swordFile": "BoatGreatsword_Grip_v6.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "overhead_v2",
@@ -250,7 +250,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "backpedal_loop",
@@ -261,7 +261,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "sweep_v2",
@@ -272,7 +272,7 @@
       "swordFile": "BoatGreatsword_StrongGrip_v1.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "thrust_v2",
@@ -283,7 +283,7 @@
       "swordFile": "BoatGreatsword_StrongGrip_v1.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "compact_v2",
@@ -294,7 +294,7 @@
       "swordFile": "BoatGreatsword_Grip_v6.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "guard_two_v4",
@@ -305,7 +305,7 @@
       "swordFile": "BoatGreatsword_Grip_v6.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "run_stop",
@@ -316,7 +316,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "heavy_r4",
@@ -327,7 +327,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 4,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "combo",
@@ -338,7 +338,7 @@
       "swordFile": "BoatGreatsword_Grip_v6.glb",
       "reviewBatch": "remainder",
       "revision": 5,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "stagger_v2",
@@ -349,7 +349,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "guard_break",
@@ -360,7 +360,7 @@
       "swordFile": "BoatGreatsword_Grip_v6.glb",
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_hover",
@@ -370,7 +370,7 @@
       "reviewOrder": 20.1,
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_takeoff",
@@ -380,7 +380,7 @@
       "reviewOrder": 20.2,
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_land",
@@ -390,7 +390,7 @@
       "reviewOrder": 20.3,
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_idle",
@@ -400,7 +400,7 @@
       "reviewOrder": 19.1,
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_walk",
@@ -410,7 +410,7 @@
       "reviewOrder": 19.2,
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_turn",
@@ -420,7 +420,7 @@
       "reviewOrder": 19.3,
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_fire",
@@ -430,7 +430,7 @@
       "reviewOrder": 20.4,
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_hover_r2",
@@ -440,7 +440,7 @@
       "reviewOrder": 20.15,
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "roll_attack",
@@ -451,7 +451,7 @@
       "swordFile": "BoatGreatsword_OneHand_v4.glb",
       "reviewBatch": "remainder",
       "revision": 1,
-      "ownerApproved": false
+      "ownerApproved": true
     },
     {
       "job": "dragon_bite",
@@ -461,7 +461,7 @@
       "reviewOrder": 20.5,
       "reviewBatch": "remainder",
       "revision": 2,
-      "ownerApproved": false
+      "ownerApproved": true
     }
   ]
 }
