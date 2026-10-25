@@ -1,5 +1,19 @@
 # Native approved animation integration — verified delivery, 2026-10-25
 
+## Current visual follow-up — HUD concepts, 2026-10-25
+
+The owner rejected the current HUD and requested three built-in image-generation
+alternatives. Three concept images are complete: A Ashen Gold, B Moonlit Silver,
+and C Iron & Ember. These are image mockups only; no HUD code was changed and
+none has been selected for implementation. Keep this rejection separate from
+the passing gameplay and startup checks below.
+
+Prompts: `docs/hud-concepts-20261025/prompts.json`. PNGs and a ZIP are in the task
+output folder `veyr-hud-concepts-20261025`. Private backup release:
+`oh-ashen-one/veyr-animation-sources`, `hud-concepts-20261025`.
+Next: use the owner's preferred design or requested combination for the HUD pass.
+
+
 **Delivery is open and verified.** After the owner authorized continuation, the
 repaired app launched through macOS LaunchServices, logged `Allocator: ANSI`,
 and rendered a stable start screen. The same game code and assets that passed

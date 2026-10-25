@@ -1,0 +1,33 @@
+{
+  "status": "three generated concepts; awaiting visual selection",
+  "privateBackup": "oh-ashen-one/veyr-animation-sources/releases/tag/hud-concepts-20261025",
+  "archive": "Veyr-HUD-Concepts-20261025.zip",
+  "sha256": "23c8256e2bbaa3f176ac438fffd47ff15944753badc9ec1fe51cd0ba90a4a806",
+  "verified": true,
+  "images": [
+    {
+      "id": "A",
+      "name": "Ashen Gold",
+      "filename": "a-ashen-gold.png",
+      "sha256": "ef9c8ece8b91e23ea8367c3a592ad9f01d4ccb76e9dd40e9905add8196e59e91",
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "id": "B",
+      "name": "Moonlit Silver",
+      "filename": "b-moonlit-silver.png",
+      "sha256": "d38bc5995c80af91469cf9aa062fb1311b03068d206e2a3791e77bdafd34ec8e",
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "id": "C",
+      "name": "Iron & Ember",
+      "filename": "c-iron-and-ember.png",
+      "sha256": "5637367545da401f779bf346cbbb5fd36d81ff34c4094ed31633111cfa044428",
+      "width": 1672,
+      "height": 941
+    }
+  ]
+}
