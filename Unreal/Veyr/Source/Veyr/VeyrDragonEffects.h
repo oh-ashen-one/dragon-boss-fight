@@ -22,6 +22,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|FX") bool bEffectsReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|FX") int32 VisibleSpriteCount=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|FX") int32 PresentationUpdates=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Veyr|FX") int32 ImpactSpriteCount=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|FX") FString EffectsDiagnostic;
 private:
     UPROPERTY() TObjectPtr<AVeyrDragon> Dragon;
@@ -29,6 +30,7 @@ private:
     UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Flame;
     UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Smoke;
     UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Embers;
+    UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Impacts;
     UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> FireLights;
     UPROPERTY() TObjectPtr<UStaticMesh> SpritePlane;
     UPROPERTY() TObjectPtr<UMaterialInterface> CoreMaterial;
@@ -37,6 +39,9 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInterface> EmberMaterial;
     static constexpr int32 CoreCount=24,FlameCount=80,SmokeCount=32,EmberCount=24;
     float EffectsClock=0.f,LastActiveClock=-100.f;
+    int32 LastSwordContacts=0;
+    float ImpactAge=100.f;
+    FVector ImpactOrigin=FVector::ZeroVector;
     FVector LastBeamOrigin=FVector::ZeroVector,LastBeamDirection=FVector::ForwardVector;
     float LastBeamLength=0.f,LastBeamSpread=0.f;
     void HideEffects();

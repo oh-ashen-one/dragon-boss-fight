@@ -1,4 +1,11 @@
 #include "VeyrArena.h"
+#include "VeyrGameMode.h"
+#include "VeyrDragon.h"
+#include "VeyrAudio.h"
+#include "VeyrSkeletalPresentation.h"
+#include "VeyrVisualDefinition.h"
+#include "Components/CapsuleComponent.h"
+#include "Engine/World.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -27,7 +34,8 @@ namespace
 
 AVeyrArena::AVeyrArena()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.TickInterval=1.f/30.f;
     USceneComponent* Scene = CreateDefaultSubobject<USceneComponent>(TEXT("ConnectedCourtRoot"));
     Scene->SetMobility(EComponentMobility::Static);
     SetRootComponent(Scene);
@@ -129,6 +137,8 @@ void AVeyrArena::BeginPlay()
     // dress an old primitive facade as the new reference-matched environment.
     BuildDistance();
     BuildLighting();
+    BuildOverarchingArchitecture();
+    BuildInteractiveDetails();
     BuildCollision();
     UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY connected court: clear fight diameter~7200cm, walkable aisles0..240cm; %d instanced groups."), Batches.Num());
     UE_LOG(LogTemp,Display,TEXT("VEYR_CONNECTED_COURT ready=%d meshes=%d/12 instances=%d diagnostic=%s"),
@@ -390,10 +400,20 @@ bool AVeyrArena::BuildImportedCathedral()
     if(!bConnectedCourtAssetsReady)return false;
     const FVector Wall=KitSize(TEXT("CloisterWall"),1400.f),Gate=KitSize(TEXT("RuinedGatehouse"),1600.f);
     const float GateHalf=FMath::Min(CourtHalfY-1200.f,static_cast<float>(Gate.X)*.46f);
-    KitWallRun(TEXT("CloisterWall"),FVector(-CourtHalfX,-CourtHalfY,0),FVector(CourtHalfX,-CourtHalfY,0),FVector(0,1,0),1400,AisleHeight);
-    KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,CourtHalfY,0),FVector(-CourtHalfX,CourtHalfY,0),FVector(0,-1,0),1400,AisleHeight);
-    KitWallRun(TEXT("CloisterWall"),FVector(-CourtHalfX,-CourtHalfY,0),FVector(-CourtHalfX,-GateHalf,0),FVector(1,0,0),1400,AisleHeight);
-    KitWallRun(TEXT("CloisterWall"),FVector(-CourtHalfX,GateHalf,0),FVector(-CourtHalfX,CourtHalfY,0),FVector(1,0,0),1400,AisleHeight);
+    // Broken polygonal transepts turn the rectangular build boundary into
+    // an irregular court; all permanent masses remain outside combat space.
+    for(float Side:{-1.f,1.f})
+    {
+        const FVector Points[]={FVector(-4900,Side*2700,0),FVector(-3300,Side*4100,0),
+            FVector(1800,Side*4550,0),FVector(4900,Side*2800,0)};
+        for(int32 I=0;I<3;++I)
+        {
+            const FVector D=(Points[I+1]-Points[I]).GetSafeNormal2D();FVector Inward(-D.Y,D.X,0);
+            if(FVector::DotProduct(Inward,-(Points[I]+Points[I+1])*.5f)<0.f)Inward=-Inward;
+            KitWallRun(TEXT("CloisterWall"),Points[I],Points[I+1],Inward,I==1?1550.f:1850.f,AisleHeight);
+        }
+        KitWallRun(TEXT("CloisterWall"),FVector(-CourtHalfX,Side*2700,0),FVector(-CourtHalfX,Side*GateHalf,0),FVector(1,0,0),1400,AisleHeight);
+    }
     // This asset is a complete 40.55 m deep cathedral. Its near face, not its
     // centre, defines the east court boundary; one building is sufficient.
     const FVector Apse=KitSize(TEXT("ApseWall"),2400.f);
@@ -402,11 +422,6 @@ bool AVeyrArena::BuildImportedCathedral()
     KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,-CourtHalfY,0),FVector(CourtHalfX,-ApseHalf,0),FVector(-1,0,0),1400,AisleHeight);
     KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,ApseHalf,0),FVector(CourtHalfX,CourtHalfY,0),FVector(-1,0,0),1400,AisleHeight);
     Box(Foundations,FVector(CourtHalfX+Apse.Y*.5f,0,(AisleHeight-120.f)*.5f),FVector(Apse.Y+120.f,Apse.X+160.f,AisleHeight+120.f));
-    // A second, recessed gallery gives the long nave its vertical enclosure.
-    // The carved cloister mesh is a solid wall, so its structural backing does
-    // not seal genuine openings. The apse's real windows remain unfilled.
-    KitWallRun(TEXT("CloisterWall"),FVector(-2600,-CourtHalfY-100,0),FVector(CourtHalfX,-CourtHalfY-100,0),FVector(0,1,0),1000,AisleHeight+1340);
-    KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,CourtHalfY+100,0),FVector(-2600,CourtHalfY+100,0),FVector(0,-1,0),1000,AisleHeight+1340);
     // Three grounded masses interrupt the repeated arcade skyline. Their
     // front faces stay outside the court and leave the combat floor unchanged.
     auto SkylineMass=[&](FName Name,float X,float Height)
@@ -718,4 +733,165 @@ void AVeyrArena::BuildCollision()
             Batch->SetCollisionProfileName(TEXT("BlockAll"));Batch->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
             Batch->SetGenerateOverlapEvents(false);
         }
+}
+
+void AVeyrArena::BuildOverarchingArchitecture()
+{
+    if(!bConnectedCourtAssetsReady)return;
+    // Each terrace has a load-bearing retaining mass, an arcade, and buttress
+    // supports. Their increasing height and recession create depth from the
+    // close gameplay camera while preserving a wide open flight corridor.
+    UStaticMesh* Vault=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/GeneratedVault_v001/SM_GeneratedVault_v001.SM_GeneratedVault_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(Vault)++GeneratedArchitectureMeshCount;
+    for(float Side:{-1.f,1.f})for(int32 Tier=0;Tier<3;++Tier)
+    {
+        const float Y=Side*(5200.f+Tier*1050.f),Z=1100.f+Tier*1550.f;
+        const float Half=4600.f-Tier*700.f;
+        KitWallRun(TEXT("RockRetainingWall"),FVector(-Half,Y,0),FVector(Half,Y,0),FVector(0,-Side,0),Z+160.f,0,false);
+        KitWallRun(TEXT("CloisterWall"),FVector(-Half,Y-Side*100.f,0),FVector(Half,Y-Side*100.f,0),FVector(0,-Side,0),1300.f,Z,false);
+        for(float X:{-Half,0.f,Half})
+            KitPiece(TEXT("CornerButtress"),FVector(X,Y-Side*180.f,0),Z+1550.f,Side>0?180.f:0.f,false);
+        KitPiece(TEXT("RuinedCityRoofBlock"),FVector(-Half*.5f,Y+Side*750.f,Z+800.f),1800.f+Tier*300.f,Side>0?180.f:0.f,false);
+    }
+    ImportedPiece(CathedralFacadeMesh,TEXT("HighApseCrown"),FVector(9200,400,0),7300,90,false);
+    for(float Side:{-1.f,1.f})
+    {
+        KitPiece(TEXT("RuinedGatehouse"),FVector(6200,Side*5600,0),5700,Side>0?155.f:25.f,false);
+        for(int32 I=0;I<2;++I)
+        {
+            // Generated module is a complete portal with piers, so place its
+            // base on the ground and its span above the layered galleries.
+            const FVector P(-2600.f+I*5200.f,Side*(6400.f+I*400.f),0.f);
+            ImportedPiece(Vault?Vault:CathedralArchMesh.Get(),FName(*FString::Printf(TEXT("HighFlyingArcade_%d_%d"),Side>0,I)),P,4800.f+I*500.f,Side>0?180.f:0.f,false);
+        }
+    }
+}
+
+void AVeyrArena::SpawnBreakable(UStaticMesh* Mesh,const FVector& Position,float Height,float Yaw)
+{
+    if(!Mesh)return;
+    const FBox B=Mesh->GetBoundingBox();const float Scale=Height/FMath::Max(1.f,static_cast<float>(B.GetSize().Z));
+    auto* Part=NewObject<UStaticMeshComponent>(this);AddInstanceComponent(Part);Part->SetupAttachment(GetRootComponent());
+    Part->SetMobility(EComponentMobility::Movable);Part->SetStaticMesh(Mesh);
+    Part->SetWorldScale3D(FVector(Scale));Part->SetWorldRotation(FRotator(0,Yaw,0));
+    Part->SetWorldLocation(Position-FVector(0,0,B.Min.Z*Scale));
+    Part->SetCollisionEnabled(ECollisionEnabled::QueryOnly);Part->SetCollisionResponseToAllChannels(ECR_Ignore);
+    Part->SetCollisionResponseToChannel(ECC_Camera,ECR_Block);Part->SetCollisionResponseToChannel(ECC_Pawn,ECR_Block);Part->RegisterComponent();
+    BreakableProps.Add(Part);PropHealth.Add(1.f);PropFallSpeed.Add(0.f);
+}
+void AVeyrArena::BuildInteractiveDetails()
+{
+    if(!bConnectedCourtAssetsReady)return;
+    for(int32 I=0;I<10;++I)
+    {
+        const float A=I*2.f*PI/10.f+.18f;
+        SpawnBreakable(PolishMeshes.FindChecked(TEXT("FuneraryEffigyNiche")),Radial(A,3100.f+(I%2)*200.f),360.f+(I%3)*70.f,FMath::RadiansToDegrees(A)+90.f);
+    }
+    UStaticMesh* Chandelier=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/GeneratedChandelier_v001/SM_GeneratedChandelier_v001.SM_GeneratedChandelier_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(Chandelier)++GeneratedArchitectureMeshCount;
+    for(int32 I=0;I<4&&Chandelier;++I)
+    {
+        const FVector P(I<2?-1600.f:1600.f,I%2?-1800.f:1800.f,1250.f);
+        SpawnBreakable(Chandelier,P,600.f,I*37.f);
+        Beam(Bronze,P+FVector(0,0,600),P+FVector(0,0,2800),12.f);
+        auto* Glow=NewObject<UPointLightComponent>(this);AddInstanceComponent(Glow);Glow->SetupAttachment(BreakableProps.Last());
+        Glow->SetMobility(EComponentMobility::Movable);Glow->SetRelativeLocation(FVector(0,0,120));
+        Glow->SetLightColor(FLinearColor(1.f,.48f,.17f));Glow->SetIntensityUnits(ELightUnits::Candelas);Glow->SetIntensity(500.f);
+        Glow->SetAttenuationRadius(1800.f);Glow->SetCastShadows(false);Glow->RegisterComponent();
+    }
+    UVeyrVisualDefinition* Dragon=LoadObject<UVeyrVisualDefinition>(nullptr,TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Dragon.DA_Dragon"));
+    for(int32 I=0;I<2&&Dragon;++I)
+    {
+        auto* Flyby=NewObject<UVeyrSkeletalPresentation>(this);AddInstanceComponent(Flyby);Flyby->SetupAttachment(GetRootComponent());
+        Flyby->SetMobility(EComponentMobility::Movable);Flyby->ConfigureRenderPolicy(false,true);Flyby->SetCastShadow(false);
+        Flyby->SetCollisionEnabled(ECollisionEnabled::NoCollision);Flyby->RegisterComponent();
+        if(Flyby->SetVisualDefinition(Dragon,false))
+        {
+            FTransform Basis=Flyby->GetRelativeTransform();Basis.SetScale3D(Basis.GetScale3D()*.45f);
+            SkyDragonBasis.Add(Basis);SkyDragons.Add(Flyby);
+        }
+    }
+    BreakablePropCount=BreakableProps.Num();BackgroundDragonCount=SkyDragons.Num();
+    bOverhaulAssetsReady=GeneratedArchitectureMeshCount==2&&BreakablePropCount==14&&BackgroundDragonCount==2;
+    UE_LOG(LogTemp,Display,TEXT("VEYR_OVERHAUL_ASSETS ready=%d generated=%d breakables=%d skyDragons=%d"),bOverhaulAssetsReady,GeneratedArchitectureMeshCount,BreakablePropCount,BackgroundDragonCount);
+}
+void AVeyrArena::BreakProp(int32 Index)
+{
+    if(!BreakableProps.IsValidIndex(Index)||PropHealth[Index]==0.f)return;
+    auto* Prop=BreakableProps[Index].Get();
+    const bool Hanging=Prop->GetStaticMesh()->GetName().Contains(TEXT("Chandelier"));
+    if(Hanging&&PropHealth[Index]>0.f)
+    {
+        PropHealth[Index]=-1.f;Prop->SetCollisionEnabled(ECollisionEnabled::NoCollision);return;
+    }
+    PropHealth[Index]=0.f;++BrokenProps;const FVector Origin=Prop->Bounds.Origin;
+    Prop->SetVisibility(false,true);Prop->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->Audio)Mode->Audio->PlayDestruction(Origin);
+    // Fixed small debris budget; no recursive fractures or persistent collision.
+    for(int32 I=0;I<6&&Debris.Num()<96;++I)
+    {
+        auto* Piece=NewObject<UStaticMeshComponent>(this);AddInstanceComponent(Piece);Piece->SetupAttachment(GetRootComponent());
+        Piece->SetMobility(EComponentMobility::Movable);Piece->SetStaticMesh(Hanging?CubeMesh.Get():PolishMeshes.FindChecked(TEXT("CollapsedVaultRubble")).Get());
+        if(Hanging&&Bronze)Piece->SetMaterial(0,Bronze->GetMaterial(0));
+        const float Height=30.f+(I%3)*18.f;const float Scale=Height/FMath::Max(1.f,static_cast<float>(Piece->GetStaticMesh()->GetBoundingBox().GetSize().Z));
+        Piece->SetWorldScale3D(Hanging?FVector(.5f,.06f,.08f):FVector(Scale));Piece->SetWorldLocation(Origin);Piece->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Piece->SetCastShadow(false);Piece->RegisterComponent();Debris.Add(Piece);DebrisAge.Add(0.f);
+        const float A=I*2.f*PI/6.f;DebrisVelocity.Add(FVector(FMath::Cos(A)*240.f,FMath::Sin(A)*240.f,120.f+I*25.f));
+    }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_DESTRUCTION broken=%d debris=%d"),BrokenProps,Debris.Num());
+}
+void AVeyrArena::DamagePropsAlongSweep(const FVector& PreviousBase,const FVector& PreviousTip,const FVector& Base,const FVector& Tip)
+{
+    for(int32 I=0;I<BreakableProps.Num();++I)
+    {
+        if(PropHealth[I]<=0.f)continue;
+        const FBox Box=BreakableProps[I]->Bounds.GetBox().ExpandBy(30.f);
+        if(FMath::LineBoxIntersection(Box,Base,Tip,Tip-Base)||FMath::LineBoxIntersection(Box,PreviousTip,Tip,Tip-PreviousTip)||
+            FMath::LineBoxIntersection(Box,PreviousBase,Base,Base-PreviousBase))BreakProp(I);
+    }
+}
+void AVeyrArena::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);AtmosphereClock+=DeltaSeconds;
+    auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+    if(Mode&&Mode->Dragon&&!Mode->Dragon->IsDead())
+    {
+        TInlineComponentArray<UCapsuleComponent*> Anatomy;Mode->Dragon->GetComponents(Anatomy);
+        for(int32 I=0;I<BreakableProps.Num();++I)
+        {
+            if(PropHealth[I]<=0.f)continue;
+            for(auto* Part:Anatomy)
+            {
+                if(!Part->GetName().StartsWith(TEXT("VeyrSolid_")))continue;
+                const float Half=FMath::Max(0.f,Part->GetScaledCapsuleHalfHeight()-Part->GetScaledCapsuleRadius());
+                const FVector A=Part->GetComponentLocation()-Part->GetUpVector()*Half,B=Part->GetComponentLocation()+Part->GetUpVector()*Half;
+                const FBox Box=BreakableProps[I]->Bounds.GetBox().ExpandBy(Part->GetScaledCapsuleRadius());
+                if(FMath::LineBoxIntersection(Box,A,B,B-A)||Box.IsInside(A)){BreakProp(I);break;}
+            }
+        }
+    }
+    for(int32 I=0;I<BreakableProps.Num();++I)
+    {
+        if(PropHealth[I]>=0.f)continue;
+        auto* P=BreakableProps[I].Get();PropFallSpeed[I]+=980.f*DeltaSeconds;
+        P->AddWorldOffset(FVector(0,0,-PropFallSpeed[I]*DeltaSeconds));
+        P->AddWorldRotation(FRotator(8,0,12)*DeltaSeconds);
+        if(P->Bounds.Origin.Z-P->Bounds.BoxExtent.Z<=35.f)BreakProp(I);
+    }
+    for(int32 I=0;I<Debris.Num();++I)
+    {
+        auto* Piece=Debris[I].Get();DebrisAge[I]+=DeltaSeconds;
+        if(DebrisAge[I]>8.f){Piece->SetVisibility(false);continue;}
+        FVector P=Piece->GetComponentLocation();DebrisVelocity[I].Z-=980.f*DeltaSeconds;P+=DebrisVelocity[I]*DeltaSeconds;
+        if(P.Z<35.f){P.Z=35.f;DebrisVelocity[I]*=.25f;DebrisVelocity[I].Z=FMath::Abs(DebrisVelocity[I].Z);}
+        Piece->SetWorldLocation(P);if(P.Z>36.f)Piece->AddWorldRotation(FRotator(45,30,80)*DeltaSeconds);
+    }
+    for(int32 I=0;I<SkyDragons.Num();++I)
+    {
+        auto* D=SkyDragons[I].Get();const float A=AtmosphereClock*.035f+I*2.8f;
+        const FVector Position(FMath::Cos(A)*12000.f,FMath::Sin(A)*13000.f,6500.f+I*1800.f);
+        if(FMath::FloorToInt(AtmosphereClock*10.f)!=FMath::FloorToInt((AtmosphereClock-DeltaSeconds)*10.f))
+            D->SampleClipTime(TEXT("FlightActive"),FMath::Fmod(AtmosphereClock+I*.6f,2.f));
+        D->SetWorldTransform(SkyDragonBasis[I]*FTransform(FRotator(0,FMath::RadiansToDegrees(A)+90.f,0),Position));
+    }
 }

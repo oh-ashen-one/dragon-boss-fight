@@ -184,11 +184,23 @@ def verify_sourced_definition(plan,definition,check_replacements=True):
     expected=plan.get('replace_runtime_source')
     baseline=unreal.load_asset(expected)
     if not baseline:raise RuntimeError('Preservation baseline definition missing')
-    baseline_guard=guard_signature(baseline);actual_guard=guard_signature(definition)
-    if baseline_guard!=actual_guard:raise RuntimeError('Original guard sequence/weapon/timing changed')
-    if actual_guard['source']!=plan['preserved_guard']['source_sha256']:raise RuntimeError('Original guard source hash changed')
-    if not check_replacements:return {'guard':actual_guard}
-    clips=_clip_map(definition);checked=[]
+    actual_guard={}
+    if plan['character']=='KnightB':
+        baseline_guard=guard_signature(baseline);actual_guard=guard_signature(definition)
+        if baseline_guard!=actual_guard:raise RuntimeError('Original guard sequence/weapon/timing changed')
+        if actual_guard['source']!=plan['preserved_guard']['source_sha256']:raise RuntimeError('Original guard source hash changed')
+    baseline_clips=_clip_map(baseline);clips=_clip_map(definition)
+    replacements={c['name'] for c in plan['clips']} if check_replacements else set()
+    preserved=[]
+    for key,old in baseline_clips.items():
+        if key in replacements:continue
+        new=clips.get(key)
+        if not new:raise RuntimeError('Inherited clip missing: '+key)
+        for field in ('sequence','mesh_override','weapon_mesh','approved_source_sha256','start_seconds','end_seconds','gameplay_play_rate','loop'):
+            if old.get_editor_property(field)!=new.get_editor_property(field):raise RuntimeError('Inherited clip changed: '+key+'/'+field)
+        preserved.append(key)
+    if not check_replacements:return {'guard':actual_guard,'preservedClips':preserved}
+    checked=[]
     for spec in plan['clips']:
         c=clips.get(spec['name'])
         if not c or c.approved_source_sha256!=spec['approved_source_sha256'] or c.approved_source_file!=spec['approved_source_file']:raise RuntimeError('Imported source identity differs: '+spec['name'])
@@ -201,7 +213,7 @@ def verify_sourced_definition(plan,definition,check_replacements=True):
         if len(windows)!=len(spec['damage_windows']) or any(max(abs(v.x-p[0]),abs(v.y-p[1]))>1e-5 for v,p in zip(windows,spec['damage_windows'])):raise RuntimeError('Imported strike windows differ: '+spec['name'])
         if abs(c.sequence.get_play_length()-spec['source_duration'])>1./300+.001:raise RuntimeError('Imported sequence duration differs: '+spec['name'])
         checked.append(spec['name'])
-    return {'guard':actual_guard,'replacementMetadataVerified':checked}
+    return {'guard':actual_guard,'preservedClips':preserved,'replacementMetadataVerified':checked}
 
 def finalize_existing(plan):
     """Finish the approved native import without reimporting or changing source assets."""

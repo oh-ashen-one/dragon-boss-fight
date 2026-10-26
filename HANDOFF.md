@@ -1,8 +1,11 @@
 # Active overhaul — started 2026-10-26 at 13:30 Eastern
 
 Branch `codex/veyr-cathedral-overhaul-20261026`, base `3310d64`.
-Owner approved the full playtest backlog. Implementation and asset preparation are
-in progress; no new build is delivered or runtime-approved. See
+Owner approved the full playtest backlog. Implementation and generated/source-adapted
+asset preparation are in progress; no new build is delivered or runtime-approved.
+New3D assets now use Meshy/Tripo only for this pass, with direct headless downloads;
+animation remains sourced. Parent editor58320 is actively rebuilding the old DDC
+before native MCP18773 can accept imports. Preserve its progress and slot. See
 `docs/overhaul-20261026/README.md` for the acceptance checklist and compile evidence.
 Preserve the prior v027 Downloads app and existing authoring/viewer assets.
 

@@ -75,7 +75,7 @@ public:
      * enter/leave through the v1 hover pose shared by takeoff and landing. */
     UFUNCTION(BlueprintCallable, Category="Presentation") void SetHoverAlternate(bool bEnabled) { bPreferHoverAlternate=bEnabled; }
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Presentation") bool bPreferHoverAlternate=false;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Presentation") bool bAlternateHoverVariants=true;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Presentation") bool bAlternateHoverVariants=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bHoverAlternateThisFlight=false;
     /** Bounded native aiming layer; source animation and contact radii stay unchanged. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bBiteGroundAimReady=false;
@@ -93,8 +93,9 @@ public:
     bool SetViewOcclusion(const FVector& CameraWorld,const FVector& FocusWorld,bool bEnabled);
 
     // Calibrated for the native characters' safe approach and head-punish
-    // cadence. Damage, independent leg thresholds and enemy moves are unchanged.
+    // cadence. October26 tuning reduces the health burden while retaining independent leg thresholds.
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 2800.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") FVector LastSwordContactWorld=FVector::ZeroVector;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 2800.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonState State = EVeyrDragonState::Idle;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonMove Move = EVeyrDragonMove::ClawSwipe;
@@ -232,7 +233,10 @@ private:
     FVector LastPresentationLocation=FVector::ZeroVector;
     float LastPresentationYaw=0.f,WalkPhase=0.f,TurnPhase=0.f;
     float GazeSmoothedYaw=0.f,GazeSmoothedPitch=0.f;
-    float NextFlightAt=10.f;
+    float NextFlightAt=10.f,EncounterClock=0.f;
+    FVector TerminalDescentStart=FVector::ZeroVector;
+    float TerminalDescentElapsed=0.f;
+    bool bTerminalDescent=false;
     FVector AerialFireTarget=FVector::ZeroVector;
     bool bAerialFireConsumed=false;
     bool bPresentationMotionInitialized=false,bRepositionWalking=false;

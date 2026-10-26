@@ -31,7 +31,15 @@ def main():
         p.error('Fresh output and positive dimensions required')
     g=GLB(source);assert not g.json.get('skins') and not g.json.get('animations')
     nodes=[n for n in g.json['nodes'] if 'mesh' in n]
-    assert len(nodes)==1 and all(k not in nodes[0] for k in ['matrix','translation','rotation','scale'])
+    assert len(nodes)==1
+    # Providers may explicitly serialize identity node transforms. Removing
+    # those identities does not bake or alter any source geometry.
+    identity={'matrix':np.eye(4).reshape(-1).tolist(),'translation':[0,0,0],'rotation':[0,0,0,1],'scale':[1,1,1]}
+    for node in g.json['nodes']:
+        for key,expected in identity.items():
+            if key in node:
+                assert np.allclose(node[key],expected,rtol=0,atol=1e-8),'Nonidentity transform requires Blender normalization'
+                node.pop(key)
     primitives=g.json['meshes'][nodes[0]['mesh']]['primitives']
     accessors=sorted({q['attributes']['POSITION'] for q in primitives})
     positions=np.concatenate([g.accessor(i) for i in accessors])

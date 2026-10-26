@@ -1,0 +1,53 @@
+{
+  "name": "GeneratedVault",
+  "provider": "Meshy",
+  "prompt": "A monumental ruined Gothic flying-buttress and pointed arch module for a dark fantasy cathedral. Two massive clustered stone piers joined by a very tall pointed arch with three parallel carved rib moldings and broken upper tracery. Open passage under the arch, real thick masonry, deep architectural sides and underside. Weathered grey limestone ashlar, soot-dark recesses and subtle damp moss. One coherent freestanding structural module with stable flat pier bases, no floor platform, no scene, no people, no text. Intended as an eighteen-meter-tall repeated vaulted bridge bay above a dragon arena.",
+  "tasks": [
+    {
+      "id": "01a1796e-b465-74db-8dce-685036aba7ad",
+      "stage": "preview",
+      "request": {
+        "mode": "preview",
+        "prompt": "A monumental ruined Gothic flying-buttress and pointed arch module for a dark fantasy cathedral. Two massive clustered stone piers joined by a very tall pointed arch with three parallel carved rib moldings and broken upper tracery. Open passage under the arch, real thick masonry, deep architectural sides and underside. Weathered grey limestone ashlar, soot-dark recesses and subtle damp moss. One coherent freestanding structural module with stable flat pier bases, no floor platform, no scene, no people, no text. Intended as an eighteen-meter-tall repeated vaulted bridge bay above a dragon arena.",
+        "ai_model": "meshy-7.1",
+        "should_remesh": true,
+        "topology": "triangle",
+        "target_polycount": 50000,
+        "target_formats": [
+          "glb"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "consumed_credits": 20,
+      "created_at": 1793038663265,
+      "finished_at": 1793038761645
+    },
+    {
+      "id": "01a17972-ea73-7233-8241-2884417d7450",
+      "stage": "refine",
+      "request": {
+        "mode": "refine",
+        "preview_task_id": "01a1796e-b465-74db-8dce-685036aba7ad",
+        "enable_pbr": true,
+        "texture_resolution": "2k",
+        "texture_prompt": "A monumental ruined Gothic flying-buttress and pointed arch module for a dark fantasy cathedral. Two massive clustered stone piers joined by a very tall pointed arch with three parallel carved rib moldings and broken upper tracery. Open passage under the arch, real thick masonry, deep architectural sides and underside. Weathered grey limestone ashlar, soot-dark recesses and subtle damp moss. One coherent freestanding structural module with stable flat pier bases, no floor platform, no scene, no people, no text. Intended as an eighteen-meter-tall repeated vaulted bridge bay above a dragon arena.",
+        "target_formats": [
+          "glb"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "consumed_credits": 10,
+      "created_at": 1793038937014,
+      "finished_at": 1793038970114,
+      "download": {
+        "file": "Local/Overhaul20261026/Meshy/GeneratedVault/GeneratedVault_Source.glb",
+        "sha256": "3ddedf8a54a636e2f63e8f024a320d1670c1397652e79db6ef2068b74130e1b2",
+        "bytes": 9447564
+      }
+    }
+  ],
+  "balanceBefore": 997,
+  "balanceAfter": 957
+}

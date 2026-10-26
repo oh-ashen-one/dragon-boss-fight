@@ -38,6 +38,7 @@ private:
     UPROPERTY() TObjectPtr<AVeyrDragon> Dragon;
     FString ReplayMode, RunDirectory, OutcomeReason;
     bool bInitialized=false, bFinished=false, bFinalSaved=false, bPassed=false, bQuit=false;
+    bool bPerformanceMode=false;
     bool bLightLegContact=false, bHeavyLegContact=false, bSawRise=false, bRiseCompleted=false;
     bool bTerminalSettling=false, bAwaitingReload=false, bRestartVerification=false;
     bool bFreshResourcesVerified=false, bRestartMoved=false, bRestartAttackAccepted=false;

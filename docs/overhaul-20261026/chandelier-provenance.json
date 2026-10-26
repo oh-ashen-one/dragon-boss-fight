@@ -1,0 +1,10 @@
+{
+  "source": "https://www.fab.com/listings/8205433d-52b5-40ae-add1-577e769655f5",
+  "creator": "Mikhail Kadilnikov",
+  "license": "CC BY 4.0",
+  "licenseURL": "https://creativecommons.org/licenses/by/4.0/",
+  "modifications": "Applied transforms, normalized to4m diameter, reduced to50k triangles if needed, textures resized at most2K in Blender MCP; removed fabric shade islands, retaining original iron scrollwork, candles, stem and suspension chain",
+  "trianglesBefore": 5056,
+  "trianglesAfter": 4816,
+  "sha256": "2a6657427c46560854fd8769303426b5f494760abc9d05b291d0594dc0dade96"
+}

@@ -1,4 +1,6 @@
 #include "VeyrKnight.h"
+#include "VeyrArena.h"
+#include "VeyrGameMode.h"
 #include "VeyrDragon.h"
 #include "VeyrHUD.h"
 #include "VeyrSkeletalPresentation.h"
@@ -724,7 +726,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 {
     // A player camera, including during flight. Only world collision may
     // shorten this arm; combat state never widens the lens or pulls it back.
-    constexpr float Arm=440.f;
+    constexpr float Arm=560.f;
     CameraDistance=Arm;FlightCameraBlend=0.f;CameraPitchCeiling=68.f;
     CameraBoom->TargetArmLength=Arm;
     CameraBoom->SetRelativeLocation(FVector(0,0,170.f-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
@@ -1050,7 +1052,7 @@ bool AVeyrKnight::CaptureBlinkEcho(int32 Index,float SourceSeconds)
     const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(ActionPresentationClip);
     if(!C||!C->WeaponMesh)return false;
     const float RestoreSeconds=ImportedPresentation->CurrentTrimmedSeconds,Alpha=ImportedPresentation->CurrentTransitionAlpha;
-    if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,SourceSeconds,Alpha))return false;
+    if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,SourceSeconds*VisualClipPlayRate(ActionPresentationClip),Alpha))return false;
     auto* Echo=BlinkEchoBodies[Index].Get();auto* WeaponEcho=BlinkEchoWeapons[Index].Get();
     Echo->SetSkinnedAssetAndUpdate(ImportedPresentation->GetSkeletalMeshAsset(),true);
     Echo->CopyPoseFromSkeletalComponent(ImportedPresentation);Echo->RefreshBoneTransforms();
@@ -1158,6 +1160,7 @@ void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)
         {
             if(!SampleBlade(FMath::Lerp(From,To,float(Step)/Steps),CurrA,CurrB))break;
             const bool Heavy=Action==EVeyrKnightAction::HeavyAttack||(Action==EVeyrKnightAction::Combo&&I>=2);
+            if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->Arena)Mode->Arena->DamagePropsAlongSweep(A,B,CurrA,CurrB);
             if(Boss->ReceiveSwordSweep(A,B,CurrA,CurrB,Heavy,ActionSwingBase+I,bSwingTwoHanded?1.55f:1.f,BladeContactRadius))
             {
                 ContactedDamageWindows.Add(I);++SuccessfulStrikeWindows;bContactSent=true;

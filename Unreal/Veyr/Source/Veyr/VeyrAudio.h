@@ -30,6 +30,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Audio|Evidence") int32 CuesStarted = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Audio|Evidence") int32 CuesDropped = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Audio|Evidence") int32 ActiveVoices = 0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 RecordedCuesLoaded=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") bool bMusicLoaded=false;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") bool bAmbienceLoaded=false;
 
 protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -50,8 +53,10 @@ private:
     TArray<uint8> BedPCM[2];
     int32 BedOffsets[2]={};
     float VoiceLevels[VoiceCount]={};
+    bool VoiceFollowsDragon[VoiceCount]={};
     int32 LastRolls=0,LastBlinks=0;
     float FootstepClock=0.f,WingClock=0.f,RoarClock=8.f;
+    FVector DestructionLocation=FVector::ZeroVector;
     void UpdateBeds();
     void LoadRecordedSamples();
     float Durations[CueCount] = {};

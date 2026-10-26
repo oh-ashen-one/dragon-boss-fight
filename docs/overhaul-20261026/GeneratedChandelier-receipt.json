@@ -1,0 +1,53 @@
+{
+  "name": "GeneratedChandelier",
+  "provider": "Meshy",
+  "prompt": "One monumental Gothic cathedral chandelier, an intact single hanging prop: two thick wrought-iron crown rings, twelve substantial candle cups with ivory wax candles, pointed Gothic tracery and connected forged scroll arms. Three sturdy suspension chains join a central top eye. Oxidized dark iron, aged bronze details, realistic soot and wax. Complete detailed underside, thick connected structure, four-meter diameter, no fabric lampshade. Isolated object only; no room, floor, pedestal, people, text, logos, flames or fog.",
+  "tasks": [
+    {
+      "id": "01a1796e-aaa9-776d-ad05-a196a0700165",
+      "stage": "preview",
+      "request": {
+        "mode": "preview",
+        "prompt": "One monumental Gothic cathedral chandelier, an intact single hanging prop: two thick wrought-iron crown rings, twelve substantial candle cups with ivory wax candles, pointed Gothic tracery and connected forged scroll arms. Three sturdy suspension chains join a central top eye. Oxidized dark iron, aged bronze details, realistic soot and wax. Complete detailed underside, thick connected structure, four-meter diameter, no fabric lampshade. Isolated object only; no room, floor, pedestal, people, text, logos, flames or fog.",
+        "ai_model": "meshy-7.1",
+        "should_remesh": true,
+        "topology": "triangle",
+        "target_polycount": 50000,
+        "target_formats": [
+          "glb"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "consumed_credits": 20,
+      "created_at": 1793038660156,
+      "finished_at": 1793038778281
+    },
+    {
+      "id": "01a17972-e582-7336-afc9-cec9dbb93602",
+      "stage": "refine",
+      "request": {
+        "mode": "refine",
+        "preview_task_id": "01a1796e-aaa9-776d-ad05-a196a0700165",
+        "enable_pbr": true,
+        "texture_resolution": "2k",
+        "texture_prompt": "One monumental Gothic cathedral chandelier, an intact single hanging prop: two thick wrought-iron crown rings, twelve substantial candle cups with ivory wax candles, pointed Gothic tracery and connected forged scroll arms. Three sturdy suspension chains join a central top eye. Oxidized dark iron, aged bronze details, realistic soot and wax. Complete detailed underside, thick connected structure, four-meter diameter, no fabric lampshade. Isolated object only; no room, floor, pedestal, people, text, logos, flames or fog.",
+        "target_formats": [
+          "glb"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "consumed_credits": 10,
+      "created_at": 1793038936159,
+      "finished_at": 1793038974973,
+      "download": {
+        "file": "Local/Overhaul20261026/Meshy/GeneratedChandelier/GeneratedChandelier_Source.glb",
+        "sha256": "801c15e0942a32f74b0f9b21222ffdcf43e2ce8a8fbf75bf81165b3521c5255e",
+        "bytes": 11858640
+      }
+    }
+  ],
+  "balanceBefore": 1017,
+  "balanceAfter": 957
+}

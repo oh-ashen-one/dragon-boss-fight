@@ -173,7 +173,14 @@ def normalize(src,canonical,kind,union,out):
   if source_morphs:
    oldweights=sweights.get(source_body_i,src.g['meshes'][source_body['mesh']].get('weights',[0.]*len(source_morphs)));newweights=nweights.get(body_index,g['meshes'][0]['weights']);oldsum=np.zeros_like(source_morphs[0]['arrays']['POSITION']);newsum=np.zeros_like(oldsum)
    for j,entry in enumerate(source_morphs):oldsum+=entry['arrays']['POSITION']*oldweights[j]
-   for j,entry in enumerate(union):newsum+=entry['arrays']['POSITION']*newweights[j]
+   for j,entry in enumerate(union):
+    delta=entry['arrays']['POSITION']
+    if len(delta)!=len(newsum):
+     # A different source mesh variant carries an inactive zero-filled target.
+     # Never apply another topology's deltas or accept a nonzero weight for it.
+     assert abs(newweights[j])<1e-7,('Foreign-topology morph active',entry['name'])
+     continue
+    newsum+=delta*newweights[j]
    errors['morph']=max(errors['morph'],float(abs(oldsum-newsum).max()))
  if max(errors.values())>2e-4:raise RuntimeError(('Reconstruction error',out.name,errors))
  local_ue=np.array([UE@mat[:3,3]*100 for mat in motion]);yaw_ue=[float(-Rotation.from_matrix(mat[:3,:3]).as_rotvec()[1]*180/math.pi) for mat in motion]

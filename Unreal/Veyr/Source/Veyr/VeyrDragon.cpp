@@ -202,7 +202,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
         UpdateSolidBody();
         return;
     }
-    Clock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
+    Clock+=DeltaSeconds; EncounterClock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
     StaggerProtection=FMath::Max(0.f,StaggerProtection-DeltaSeconds);
     for(float& Flash:LegFlash)Flash=FMath::Max(0.f,Flash-DeltaSeconds*4.f);
     if(!IsDead()&&IsValid(Target)&&Target->IsDead()&&!bEncounterStopped)
@@ -214,6 +214,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
             // Combat stops immediately, but a flying creature settles through
             // its landing action instead of snapping to a grounded idle.
             MoveEnd=Ground(GetActorLocation());
+            TerminalDescentStart=GetActorLocation();bTerminalDescent=true;TerminalDescentElapsed=0.f;
             EnterState(EVeyrDragonState::Recovery,VisualClipDuration(TEXT("FlightRecovery"),1.5f));
         }
         else EnterState(EVeyrDragonState::Idle,TNumericLimits<float>::Max());
@@ -221,6 +222,13 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     if(!bEncounterStopped||IsDead())AdvanceState(DeltaSeconds);
     else if(State==EVeyrDragonState::Recovery&&Move==EVeyrDragonMove::FlyAway&&StateElapsed>=StateDuration)
         EnterState(EVeyrDragonState::Idle,TNumericLimits<float>::Max());
+    if(bTerminalDescent)
+    {
+        TerminalDescentElapsed+=DeltaSeconds;
+        const float T=FMath::Clamp(TerminalDescentElapsed/1.3f,0.f,1.f);
+        SetActorLocation(FMath::Lerp(TerminalDescentStart,Ground(TerminalDescentStart),Ease(T)));
+        if(T>=1.f)bTerminalDescent=false;
+    }
     UpdateGaze(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
     UpdateImportedPresentation();
@@ -237,6 +245,7 @@ void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
 {
     if(Next==EVeyrDragonState::Dead)
     {
+        if(GetActorLocation().Z>1.f){TerminalDescentStart=GetActorLocation();bTerminalDescent=true;TerminalDescentElapsed=0.f;}
         DeathStartDown=GetDownAmount();
         DeathStartBuckle=State==EVeyrDragonState::Buckle?Ease(StateElapsed/StateDuration):
             State==EVeyrDragonState::Collapse?1-Ease(StateElapsed/StateDuration):0.f;
@@ -284,7 +293,8 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             if(Move==EVeyrDragonMove::FlyAway)
             {
                 const float T=FMath::Clamp(StateElapsed/(HasAuthoredFlight()?ActiveDuration:FlightSeconds),0.f,1.f);
-                FVector Position=FMath::Lerp(MoveStart,MoveEnd,Ease(T));
+                const float Travel=T<.35f?.35f*Ease(T/.35f):T<.75f?.35f:.35f+.65f*Ease((T-.75f)/.25f);
+                FVector Position=FMath::Lerp(MoveStart,MoveEnd,Travel);
                 // New takeoff/hover/landing already contain the approved root
                 // altitude. Actor travel supplies only the horizontal route.
                 Position.Z+=FMath::Square(FMath::Sin(T*PI))*(HasAuthoredFlight()?850.f:1400.f);
@@ -331,10 +341,10 @@ void AVeyrDragon::ChooseAttack()
         if(!bImportedTargetsValid||!bImportedAttackCacheReady)
         {EnterState(EVeyrDragonState::Idle,1.f);return;}
         const int32 Positional=PredictPositionalMove(Target->GetFootLocation());
-        if(Clock>=NextFlightAt){BeginAttack(EVeyrDragonMove::FlyAway);return;}
+        if(EncounterClock>=NextFlightAt){BeginAttack(EVeyrDragonMove::FlyAway);return;}
         if(Positional<0){BeginReposition();return;}
         EVeyrDragonMove Next=static_cast<EVeyrDragonMove>(Positional);
-        if(TotalAttacks%4==3&&Clock+6.f>=NextFlightAt)Next=EVeyrDragonMove::FlyAway;
+        if(TotalAttacks%4==3&&EncounterClock+6.f>=NextFlightAt)Next=EVeyrDragonMove::FlyAway;
         if(Next==LastMove&&RepeatedMoveCount>=2){BeginReposition();return;}
         if(Next==EVeyrDragonMove::ClawSwipe)
             ClawLeg=CachedWarningContains(ImportedMoveClip(Next,0,TEXT("Active")),Target->GetFootLocation())?0:1;
@@ -369,7 +379,7 @@ float AVeyrDragon::VisualClipDuration(FName ClipName,float Fallback) const
 bool AVeyrDragon::HasAuthoredFlight() const
 {
     const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(TEXT("FlightWindup")):nullptr;
-    return Clip&&Clip->Sequence&&Clip->ApprovedSourceFile.Contains(TEXT("Dragon_Takeoff_Blender_"));
+    return Clip&&Clip->Sequence&&Clip->ApprovedSourceFile.StartsWith(TEXT("Dragon_Takeoff_"));
 }
 
 bool AVeyrDragon::IsLandingContactWindow() const
@@ -580,11 +590,11 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
             AttackOrigin=Ground(GetActorTransform().TransformPosition(FVector(470,0,0))); break;
         case EVeyrDragonMove::FlyAway:
         {
-            NextFlightAt=Clock+20.f;bAerialFireConsumed=false;
+            NextFlightAt=EncounterClock+20.f;bAerialFireConsumed=false;
             AerialFireTarget=Ground(Target->GetFootLocation());
             WindupDuration=1.6f; ActiveDuration=FlightSeconds+.35f; RecoveryDuration=2.3f; AttackDamage=38.f;
             const FVector Side=GetActorRightVector()*(TotalAttacks%2==0?1.f:-1.f);
-            MoveEnd=ClampArena(Ground(Target->GetActorLocation())+Side*350.f,2500.f);
+            MoveEnd=ClampArena(Ground(Target->GetActorLocation())+Side*900.f,2500.f);
             // Fixed from the first anticipation frame, never tracks the target in flight.
             AttackOrigin=MoveEnd; break;
         }
@@ -682,13 +692,14 @@ bool AVeyrDragon::IsPointInsideActiveDanger(const FVector& Point) const {return 
 void AVeyrDragon::TryDamageTarget()
 {
     if(!IsValid(Target)||Target->IsDead()||IsDead())return;
-    if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&!bEncounterStopped&&!bAerialFireConsumed)
+    if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&!bEncounterStopped&&!bAerialFireConsumed&&bImportedTargetsValid&&bImportedAttackCacheReady&&MissingVisualClip.IsNone())
     {
         const auto Beam=GetActiveFlameBeam();
         if(Beam.bDamaging&&FVector::Dist2D(Target->GetFootLocation(),AerialFireTarget)<=430.f&&FlameHitsKnight(Beam))
         {
             // Separate one-hit budget from the later landing; guard/dodge rules remain authoritative.
-            Target->ApplyBossDamage(26.f,Beam.Origin);bAerialFireConsumed=true;++DamageContactCount;
+            const float Before=Target->Health;Target->ApplyBossDamage(26.f,Beam.Origin);bAerialFireConsumed=true;++DamageContactCount;
+            if(FMath::IsNearlyEqual(Before,Target->Health))++AvoidedContactCount;
         }
     }
     if(bContactConsumed)return;
@@ -803,7 +814,7 @@ bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& P
             D=FMath::Min(D,static_cast<float>(FVector::Dist(Point,FMath::ClosestPointOnTriangleToPoint(Point,CurrentBase,PreviousTip,PreviousBase))));
         return D;
     };
-    int32 Region=-1;float Best=TNumericLimits<float>::Max();
+    int32 Region=-1;float Best=TNumericLimits<float>::Max();FVector Anchor=GetHeadLocation();
     for(int32 I=0;I<5;++I)
     {
         const float Radius=I<4?75.f:100.f;
@@ -821,8 +832,8 @@ bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& P
                 FMath::Min(LimbDistance(Knee,Hock),LimbDistance(Hock,Ankle))-GetLegContactRadius(I));
         }
         // Keep the existing ankle sphere and head sphere, plus the measured
-        // lower-leg axes. One deepest region wins; blade thickness stays 8 cm.
-        if(SurfaceDistance<=FMath::Clamp(BladeRadius,8.f,42.f)&&SurfaceDistance<Best){Best=SurfaceDistance;Region=I;}
+        // lower-leg axes. One deepest region wins with the measured blade breadth.
+        if(SurfaceDistance<=FMath::Clamp(BladeRadius,8.f,42.f)&&SurfaceDistance<Best){Best=SurfaceDistance;Region=I;Anchor=I<4?FMath::ClosestPointOnSegment((CurrentBase+CurrentTip)*.5f,GetLegKneeLocation(I),GetLegLocation(I)):GetHeadLocation();}
     }
     // Damageable anatomy agrees with solid movement geometry. Reachable
     // neck/body/tail contacts work during takeoff and landing as well.
@@ -838,9 +849,10 @@ bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& P
         const FVector A=Part->GetComponentLocation()-Axis,B=Part->GetComponentLocation()+Axis;
         const float D=FMath::Min(SegmentTriangleDistance(A,B,CurrentBase,CurrentTip,PreviousTip),
             SegmentTriangleDistance(A,B,CurrentBase,PreviousTip,PreviousBase))-Radius;
-        if(D<=FMath::Clamp(BladeRadius,8.f,42.f)&&Region<0){Region=5;Best=D;}
+        if(D<=FMath::Clamp(BladeRadius,8.f,42.f)&&Region<0){Region=5;Best=D;Anchor=FMath::ClosestPointOnSegment((CurrentBase+CurrentTip)*.5f,A,B);}
     }
     if(Region<0)return false;
+    LastSwordContactWorld=FMath::ClosestPointOnSegment(Anchor,CurrentBase,CurrentTip);
     ApplySwordRegion(Region,bHeavy,SwingId,DamageMultiplier);
     return true;
 }
@@ -865,7 +877,7 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
 
 bool AVeyrDragon::CanStagger() const
 {
-    return StaggerProtection<=0&&State!=EVeyrDragonState::Buckle&&State!=EVeyrDragonState::Collapse&&State!=EVeyrDragonState::Exposed&&State!=EVeyrDragonState::Rise&&State!=EVeyrDragonState::Dead;
+    return !IsAirborne()&&StaggerProtection<=0&&State!=EVeyrDragonState::Buckle&&State!=EVeyrDragonState::Collapse&&State!=EVeyrDragonState::Exposed&&State!=EVeyrDragonState::Rise&&State!=EVeyrDragonState::Dead;
 }
 FVector AVeyrDragon::GetMouthLocation() const {return bUsingCustomuseVisual?ImportedMouthWorld:GetHeadLocation();}
 FVector AVeyrDragon::GetHeadLocation() const {return bUsingCustomuseVisual?ImportedHeadWorld:GetActorTransform().TransformPosition(HeadLocal);}
@@ -1423,7 +1435,7 @@ void AVeyrDragon::UpdateImportedPresentation()
         const bool Turning=State==EVeyrDragonState::Reposition&&!bRepositionWalking;
         float SampleSeconds=Clip==FName(TEXT("Walk"))?WalkPhase*Duration:Turning?TurnPhase*Duration:Clock;
         const bool AuthoredTurn=State==EVeyrDragonState::Reposition&&!bRepositionWalking&&bRepositionAuthoredTurn;
-        if(AuthoredTurn)SampleSeconds=bRepositionReverseTurn?Duration-FMath::Min(StateElapsed,Duration):FMath::Min(StateElapsed,Duration);
+        if(AuthoredTurn){const float T=FMath::Clamp(StateElapsed/FMath::Max(.001f,RepositionTurnDuration),0.f,1.f);SampleSeconds=(bRepositionReverseTurn?1.f-T:T)*Duration;}
         if(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)SampleSeconds=StateElapsed;
         // Authored cyclic curves already close their loop. Freezing/reblending
         // every idle wrap adds a visible hitch and changes the breathing timing.
@@ -1454,6 +1466,24 @@ void AVeyrDragon::UpdateImportedPresentation()
         const bool Loop=VisualDefinition->Clips[Clip].bLoop;
         Sampled=Loop||AuthoredTurn?ImportedPresentation->SampleClipTimeBlended(Clip,SampleSeconds,Alpha):
             ImportedPresentation->SampleClipPhaseBlended(Clip,StateElapsed/FMath::Max(.001f,StateDuration),Alpha);
+    }
+    if(Sampled&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)
+    {
+        const float T=StateElapsed/FMath::Max(.01f,ActiveDuration);
+        const float AimWeight=Ease((T-.18f)/.22f)*(1.f-Ease((T-.72f)/.15f));
+        FTransform M,A;
+        const auto* H=VisualDefinition->BoneTargets.Find(TEXT("head"));
+        const auto* J=VisualDefinition->BoneTargets.Find(TEXT("jaw"));
+        if(AimWeight>0.f&&H&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("mouth"),M)&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("mouth_aim"),A))
+        {
+            const FVector From=ImportedPresentation->GetComponentQuat().UnrotateVector((A.GetLocation()-M.GetLocation()).GetSafeNormal());
+            const FVector Toward=ImportedPresentation->GetComponentQuat().UnrotateVector((AerialFireTarget+FVector(0,0,50)-M.GetLocation()).GetSafeNormal());
+            FRotator Offset=FQuat::FindBetweenNormals(From,Toward).Rotator();
+            Offset.Pitch=FMath::Clamp(Offset.Pitch,-65.f,65.f);Offset.Yaw=FMath::Clamp(Offset.Yaw,-50.f,50.f);Offset.Roll=0.f;
+            TMap<FName,FRotator> Aim;Aim.Add(H->BoneName,Offset*AimWeight);
+            if(J)Aim.Add(J->BoneName,FRotator(-22.f*AimWeight,0,0));
+            if(ImportedPresentation->SetComponentSpaceBoneRotations(Aim))ImportedPresentation->SampleClipTime(Clip,StateElapsed);
+        }
     }
     MissingVisualClip=Sampled?NAME_None:Clip;
     if(!Sampled)

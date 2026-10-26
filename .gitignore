@@ -49,3 +49,6 @@ Unreal/Veyr/Content/ArtPass/
 # Private generated fire textures and their native material derivatives
 Unreal/Veyr/Content/Veyr/FX/v3/
 Unreal/Veyr/Content/UI/MoonlitB/
+
+# Reproducible licensed audio, retained in private asset release.
+Unreal/Veyr/Content/Audio/Overhaul/*.pcm

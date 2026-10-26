@@ -209,7 +209,7 @@ private:
     float PresentationTransitionStarted=0.f;
     float PresentationPreviousActionElapsed=-1.f;
     bool bPresentationTransitionActive=false;
-    float CameraDistance = 440.f;
+    float CameraDistance = 560.f;
     float ManualCameraRemaining=0.f;
     float BladeContactRadius=18.f;
     float CameraFloorZ = 0.f;

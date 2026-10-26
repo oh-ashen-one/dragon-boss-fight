@@ -115,7 +115,7 @@ void AVeyrAudio::Tick(float DeltaSeconds)
     FootstepClock-=DeltaSeconds;WingClock-=DeltaSeconds;RoarClock-=DeltaSeconds;
     const float Speed=K->GetVelocity().Size2D();
     if(Speed>60.f&&K->Action==EVeyrKnightAction::Ready&&FootstepClock<=0.f)
-    {PlayCue(ECue::Footstep,.48f);FootstepClock=FMath::Clamp(150.f/Speed,.24f,.55f);}
+    {PlayCue(ECue::Footstep,.48f);FootstepClock=FMath::Clamp(220.f/Speed,.32f,.62f);}
     if(D->IsAirborne()&&WingClock<=0.f){PlayCue(ECue::Wing,.8f);WingClock=1.f;}
     if(RoarClock<=0.f&&D->State==EVeyrDragonState::Windup){PlayCue(ECue::Roar,.85f);RoarClock=17.f;}
     if(D->Move==EVeyrDragonMove::FlyAway&&D->GetActiveFlameBeam().bDamaging)
@@ -203,13 +203,15 @@ void AVeyrAudio::PlayCue(ECue Cue, float Volume)
     VoiceLevels[Slot]=.65f*FMath::Clamp(Volume,0.f,1.f);
     Voice->SetVolumeMultiplier(VoiceLevels[Slot]*MasterVolume*EffectsVolume);
     const bool BossCue=Cue==ECue::Roar||Cue==ECue::Breath||Cue==ECue::Fire||Cue==ECue::Wing||Cue==ECue::Impact;
-    Voice->bAllowSpatialization=BossCue;Voice->bOverrideAttenuation=BossCue;
-    if(BossCue&&Dragon.IsValid())
+    VoiceFollowsDragon[Slot]=BossCue;
+    Voice->bAllowSpatialization=BossCue||Cue==ECue::Break;Voice->bOverrideAttenuation=Voice->bAllowSpatialization;
+    if((BossCue&&Dragon.IsValid())||Cue==ECue::Break)
     {
-        Voice->SetWorldLocation(Dragon->GetMouthLocation());
+        Voice->SetWorldLocation(Cue==ECue::Break?DestructionLocation:Dragon->GetMouthLocation());
         Voice->AttenuationOverrides.bAttenuate=true;Voice->AttenuationOverrides.bSpatialize=true;
         Voice->AttenuationOverrides.AttenuationShapeExtents=FVector(900.f,0,0);Voice->AttenuationOverrides.FalloffDistance=9000.f;
     }
+    Voice->SetPitchMultiplier(Cue==ECue::Footstep||Cue==ECue::Roll||Cue==ECue::Contact?.96f+.08f*FMath::Frac(CuesStarted*.618034f):1.f);
     Voice->Play();
     // Procedural FIFO underflow pads silence; explicitly stop instead of relying on EOF.
     VoiceEndTimes[Slot] = Now + Durations[Index] + .15;
@@ -342,19 +344,24 @@ void AVeyrAudio::LoadRecordedSamples()
     }
     for(int32 I=0;I<2;++I)
         FFileHelper::LoadFileToArray(BedPCM[I],*(FPaths::ProjectContentDir()/TEXT("Audio/Overhaul")/(I==0?TEXT("Music.pcm"):TEXT("Ambience.pcm"))));
+    RecordedCuesLoaded=Loaded;bMusicLoaded=!BedPCM[0].IsEmpty();bAmbienceLoaded=!BedPCM[1].IsEmpty();
     UE_LOG(LogTemp,Display,TEXT("VEYR_RECORDED_AUDIO cues=%d musicBytes=%d ambienceBytes=%d"),Loaded,BedPCM[0].Num(),BedPCM[1].Num());
 }
 void AVeyrAudio::RefreshMix()
 {
-    for(int32 I=0;I<Voices.Num();++I)Voices[I]->SetVolumeMultiplier(VoiceLevels[I]*MasterVolume*EffectsVolume);
+    for(int32 I=0;I<Voices.Num();++I)
+    {
+        Voices[I]->SetVolumeMultiplier(VoiceLevels[I]*MasterVolume*EffectsVolume);
+        if(VoiceEndTimes[I]>0&&VoiceFollowsDragon[I]&&Dragon.IsValid())Voices[I]->SetWorldLocation(Dragon->GetMouthLocation());
+    }
     for(int32 I=0;I<Beds.Num();++I)Beds[I]->SetVolumeMultiplier(MasterVolume*(I==0?MusicVolume*.32f:EffectsVolume*.22f));
 }
 void AVeyrAudio::UpdateBeds()
 {
-    if(!bInitialized||bTerminal)return;
+    if(!bInitialized||bTerminal||(Dragon.IsValid()&&Dragon->IsDead())||(Knight.IsValid()&&Knight->IsDead()))return;
     for(int32 I=0;I<2;++I)
     {
-        if(BedPCM[I].IsEmpty())continue;
+        if(BedPCM[I].IsEmpty()||(I==0&&Knight.IsValid()&&!Knight->HasEnteredEncounter()))continue;
         if(!BedWaves[I])
         {
             auto* Wave=NewObject<USoundWaveProcedural>(this);Wave->SetSampleRate(SampleRate);Wave->NumChannels=1;
@@ -373,5 +380,5 @@ void AVeyrAudio::UpdateBeds()
 }
 void AVeyrAudio::PlayDestruction(const FVector& Position)
 {
-    PlayCue(ECue::Break,.8f);
+    DestructionLocation=Position;PlayCue(ECue::Break,.8f);
 }

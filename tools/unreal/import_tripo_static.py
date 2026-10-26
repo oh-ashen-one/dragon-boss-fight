@@ -41,7 +41,7 @@ import uuid
 ROOT=Path(__file__).resolve().parents[2]
 PROJECT=ROOT/'Unreal/Veyr'
 SOURCES=ROOT/'Local/art-pass-20261019/tripo'
-PRIVATE_SOURCES=(SOURCES,ROOT/'Local/ArtPass20261025/Tripo')
+PRIVATE_SOURCES=(SOURCES,ROOT/'Local/ArtPass20261025/Tripo',ROOT/'Local/Overhaul20261026/architecture')
 
 def private_source_path(path):
     return any(Path(path).resolve().is_relative_to(folder.resolve()) for folder in PRIVATE_SOURCES)
@@ -113,7 +113,7 @@ def validate_plan(plan):
         if texture_limit not in (1024,2048,4096,8192) or collision_lod not in (0,1,2):
             raise ValueError('Unsupported texture/collision budget')
         checked.append({'name':name,'version':version,'kind':item['kind'],'source':source,
-                        'destination':destination,'lodTargets':targets,'screenSizes':screens,
+                        'destination':destination,'provider':item.get('provider','Tripo'),'sourceURL':item.get('source_url',''),'license':item.get('license',''),'creator':item.get('creator',''),'lodTargets':targets,'screenSizes':screens,
                         'complexCollision':bool(item.get('complex_collision',False)),
                         'collisionLOD':collision_lod,'textureMaxSize':texture_limit})
     return checked
@@ -169,7 +169,9 @@ def run(plan_file):
             receipt.setdefault('privateImportMetadataRetained',[]).append(obj.get_path_name())
         for key in library.get_metadata_tag_values(obj):library.remove_metadata_tag(obj,key)
         library.set_metadata_tag(obj,'VeyrSourceSHA256',source_sha)
-        library.set_metadata_tag(obj,'VeyrSourceProvider','Tripo')
+        library.set_metadata_tag(obj,'VeyrSourceProvider',item.get('provider','Tripo'))
+        for key,field in [('VeyrSourceURL','sourceURL'),('VeyrLicense','license'),('VeyrCreator','creator')]:
+            if item.get(field):library.set_metadata_tag(obj,key,item[field])
         library.set_metadata_tag(obj,'VeyrImportRecipe','NativeInterchangeStaticLOD_v1')
     def bounds(mesh):
         b=mesh.get_bounds();origin=[getattr(b.origin,a) for a in ('x','y','z')];extent=[getattr(b.box_extent,a) for a in ('x','y','z')]

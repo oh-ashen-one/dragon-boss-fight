@@ -18,7 +18,8 @@ AVeyrDragonEffects::AVeyrDragonEffects()
     Flame=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathFlameTongues"));
     Smoke=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathRisingSmoke"));
     Embers=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BreathEmbers"));
-    for(UInstancedStaticMeshComponent* Pool:{Core.Get(),Flame.Get(),Smoke.Get(),Embers.Get()})
+    Impacts=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("SwordContactSparks"));
+    for(UInstancedStaticMeshComponent* Pool:{Core.Get(),Flame.Get(),Smoke.Get(),Embers.Get(),Impacts.Get()})
     {
         Pool->SetupAttachment(GetRootComponent());Pool->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Pool->SetGenerateOverlapEvents(false);Pool->SetCanEverAffectNavigation(false);
@@ -82,6 +83,7 @@ bool AVeyrDragonEffects::Initialize(AVeyrDragon* InDragon)
     ConfigurePool(Flame,PresentationMaterial(FlameMaterial,FLinearColor(1.f,.60f,.25f),2.2f),FlameCount);
     ConfigurePool(Smoke,PresentationMaterial(SmokeMaterial,FLinearColor(.34f,.32f,.29f),.12f),SmokeCount);
     ConfigurePool(Embers,EmberMaterial,EmberCount);
+    ConfigurePool(Impacts,EmberMaterial,16);LastSwordContacts=Dragon->GetSwordContactCount();ImpactAge=100.f;
     AddTickPrerequisiteActor(Dragon);bEffectsReady=true;
     EffectsDiagnostic=TEXT("FXv3 textured turbulent jet, independent hot core, smoke/embers and three local fire lights; native visual acceptance pending");
     return true;
@@ -125,6 +127,21 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
     APlayerController* Player=UGameplayStatics::GetPlayerController(this,0);
     if(!Player){HideEffects();return;}
     FVector Camera;FRotator View;Player->GetPlayerViewPoint(Camera,View);
+    ImpactAge+=DeltaSeconds;
+    if(Dragon->GetSwordContactCount()>LastSwordContacts)
+    {LastSwordContacts=Dragon->GetSwordContactCount();ImpactAge=0.f;ImpactOrigin=Dragon->LastSwordContactWorld;}
+    ImpactSpriteCount=ImpactAge<.28f?16:0;Impacts->SetVisibility(ImpactSpriteCount>0);
+    if(ImpactSpriteCount>0)
+    {
+        const float Fade=1.f-ImpactAge/.28f;const FVector Out=(Camera-ImpactOrigin).GetSafeNormal();
+        for(int32 I=0;I<16;++I)
+        {
+            const float A=I*2.399963f;const FVector V=Out*100.f+FVector(FMath::Cos(A)*170.f,FMath::Sin(A)*170.f,80.f+(I%5)*35.f);
+            FVector Position=ImpactOrigin+V*ImpactAge;Position.Z=FMath::Max(5.,Position.Z-300.f*ImpactAge*ImpactAge);
+            Streak(Impacts,I,Position,Camera,V.GetSafeNormal(),8.f+I%4*3.f,1.5f,Fade*.85f,FMath::Frac(I*.618f),1.f-Fade,.8f);
+        }
+        Impacts->MarkRenderStateDirty();
+    }
     const bool FireMove=Dragon->Move==EVeyrDragonMove::Fire&&!Dragon->IsDead()&&!Dragon->IsEncounterStopped();
     const bool Windup=FireMove&&Dragon->State==EVeyrDragonState::Windup;
     const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
@@ -201,7 +218,7 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         for(int32 I=0;I<FireLights.Num();++I)
         {
             const float U=.04f+I*.27f;FVector Position=Beam.Origin+Axis*(Beam.Length*U);
-            Position.Z=FMath::Max(Position.Z,Dragon->GetActorLocation().Z+45.f);
+            Position.Z=FMath::Max(Position.Z,45.f);
             const float Flicker=.85f+.15f*FMath::Sin(EffectsClock*19.f-I*2.f);
             FireLights[I]->SetVisibility(true);FireLights[I]->SetWorldLocation(Position);
             FireLights[I]->SetAttenuationRadius(550.f+I*120.f);
@@ -221,7 +238,7 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
             const float R=LastBeamLength*U*LastBeamSpread;
             const FVector Behind=(LastBeamOrigin-Camera).GetSafeNormal2D();
             FVector Position=LastBeamOrigin+LastBeamDirection*(LastBeamLength*U)+Side*((Seed-.5f)*R*1.25f)+Behind*(35.f+Age*70.f);
-            Position.Z=FMath::Max(Position.Z,Dragon->GetActorLocation().Z+40.f)+70.f+Age*190.f+(Active?0.f:FMath::Max(0.f,TailAge))*100.f;
+            Position.Z=FMath::Max(Position.Z,40.f)+70.f+Age*190.f+(Active?0.f:FMath::Max(0.f,TailAge))*100.f;
             const float FadeIn=FMath::Clamp(Age/.12f,0.f,1.f);
             Sprite(Smoke,I,Position,Camera,130.f+R*.85f+Age*90.f,(.065f+.03f*Seed)*FadeIn*(1.f-Age)*SmokeTail,Seed,Age,.5f);
         }

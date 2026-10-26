@@ -36,11 +36,13 @@ void AVeyrGameMode::StartPlay()
         GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
     }
     UserMasterVolume=FMath::Clamp(UserMasterVolume,0.f,1.f);
+    UserMusicVolume=FMath::Clamp(UserMusicVolume,0.f,1.f);UserEffectsVolume=FMath::Clamp(UserEffectsVolume,0.f,1.f);
     UserMouseSensitivity=FMath::Clamp(UserMouseSensitivity,.25f,2.5f);
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     Arena=GetWorld()->SpawnActor<AVeyrArena>(FVector::ZeroVector,FRotator::ZeroRotator,Params);
     Dragon=GetWorld()->SpawnActor<AVeyrDragon>(FVector(500,0,0),FRotator(0,180,0),Params);
+    if(Arena&&Dragon)Arena->AddTickPrerequisiteActor(Dragon);
     DragonEffects=GetWorld()->SpawnActor<AVeyrDragonEffects>();
     if(DragonEffects)DragonEffects->Initialize(Dragon);
     UE_LOG(LogTemp,Display,TEXT("VEYR_UNREAL_ENCOUNTER_STARTED project=%s engine=%s"),FApp::GetProjectName(),*FEngineVersion::Current().ToString());
@@ -58,7 +60,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         Knight->SetActorLocationAndRotation(FVector(-1600,0,125),FRotator::ZeroRotator,false,nullptr,ETeleportType::TeleportPhysics);
         Knight->GetCharacterMovement()->StopMovementImmediately();
         Knight->Boss=Dragon;
-        if(Dragon)Dragon->Target=Knight;
+        if(Dragon){Dragon->Target=Knight;Knight->AddTickPrerequisiteActor(Dragon);}
         Audio=GetWorld()->SpawnActor<AVeyrAudio>();
         if(Audio){Audio->MasterVolume=UserMasterVolume;Audio->MusicVolume=UserMusicVolume;Audio->EffectsVolume=UserEffectsVolume;Audio->Initialize(Knight,Dragon);}
         Knight->MouseSensitivity=UserMouseSensitivity;

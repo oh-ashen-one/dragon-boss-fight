@@ -26,3 +26,12 @@ wrapper exit code. Keep renderer slots and process ownership intact. This is
 task-specific authority, not authority to take over other sessions or run a
 blind crash/relaunch script. Record the current candidate and remaining checks
 in HANDOFF.md; source changes and successful builds are not runtime acceptance.
+
+
+## Owner-directed October26 overhaul
+
+For this pass, generate needed new 3D assets with Tripo or Meshy; do not spend
+more time searching free 3D model catalogues. Reuse the already generated cathedral
+kit. Animation remains source-first. Download through direct/API paths into the
+owned project without Finder or Save dialogs; do not change browser security or
+permission settings. Generated-provider credits are authorized by the owner.

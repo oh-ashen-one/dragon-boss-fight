@@ -8,6 +8,8 @@ class UInstancedStaticMeshComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UStaticMesh;
+class UStaticMeshComponent;
+class UVeyrSkeletalPresentation;
 
 /** Connected sunken court assembled from measured Tripo architecture.
  *  Centimeters, +X toward the apse, Z up. Native visual acceptance is separate. */
@@ -17,6 +19,13 @@ class VEYR_API AVeyrArena : public AActor
     GENERATED_BODY()
 public:
     AVeyrArena();
+    virtual void Tick(float DeltaSeconds) override;
+    void DamagePropsAlongSweep(const FVector& PreviousBase,const FVector& PreviousTip,const FVector& Base,const FVector& Tip);
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 BrokenProps=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") bool bOverhaulAssetsReady=false;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 GeneratedArchitectureMeshCount=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 BreakablePropCount=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 BackgroundDragonCount=0;
     static constexpr float CombatRadius = 3600.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingBasaltCliff=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingImportedCathedral=false;
@@ -75,6 +84,19 @@ private:
     UInstancedStaticMeshComponent* RockSpurs = nullptr;
     UInstancedStaticMeshComponent* Embers = nullptr;
     bool bBuilt = false;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BreakableProps;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Debris;
+    UPROPERTY() TArray<TObjectPtr<UVeyrSkeletalPresentation>> SkyDragons;
+    TArray<FVector> DebrisVelocity;
+    TArray<float> DebrisAge;
+    TArray<float> PropHealth;
+    TArray<float> PropFallSpeed;
+    TArray<FTransform> SkyDragonBasis;
+    float AtmosphereClock=0.f;
+    void BuildOverarchingArchitecture();
+    void BuildInteractiveDetails();
+    void BreakProp(int32 Index);
+    void SpawnBreakable(UStaticMesh* Mesh,const FVector& Position,float Height,float Yaw);
 
     UMaterialInstanceDynamic* MakeMaterial(const FName Name, const FLinearColor Color, float Roughness,
         bool bUseAuthoredStone=true, float Metallic=0.f, float Emission=0.f);
