@@ -7,5 +7,14 @@
   "priorBaselineRequired": true,
   "scope": "Final authoring delta and licensed selected sources; game code is in task branch; prior Veyr source/native releases remain baseline dependencies.",
   "remoteRelease": "overhaul-authoring-20261026",
-  "remoteDigestVerified": true
+  "remoteDigestVerified": true,
+  "sourceInputSupplement": {
+    "asset": "Veyr-Blink-Source-Inputs-20261026.zip",
+    "bytes": 143998827,
+    "sha256": "2a93f006e048177e56060f3ea98fbf5c35e4103321bcce8c74700dc796a87953",
+    "files": 6,
+    "purpose": "Inputs referenced by the reproducible Blender blink transit correction; final editable v2 is already in the main authoring archive.",
+    "release": "overhaul-authoring-20261026",
+    "remoteDigestVerified": true
+  }
 }

@@ -58,7 +58,9 @@ earlier65Tripo chandelier remains unexported/unused. No new character models.
 Authoring engines are closed. Any final owner-review app/slot is recorded in
 `Local/Overhaul20261026/owner-review-gpu.json`; verify live identity before touching
 it. Preserve foreign jobs. Source/review artifacts and prior stable app remain;
-scoped cleanup receipt records removed redundant staging only. The next session
+scoped cleanup removed redundant builds/staging, rejected intermediates and bulk frames,
+freeing35.54GiB before the small supplemental-archive removal;310 preserved files
+and the delivered signature were reverified. See docs/overhaul-20261026/cleanup.json. The next session
 should start with owner playtest feedback rather than rebuild/re-source the assets.
 
 ---

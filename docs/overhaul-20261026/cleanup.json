@@ -1,0 +1,151 @@
+{
+  "removedEntries": 2044,
+  "removedLogicalBytes": 42565770536,
+  "diskFreeIncreaseBytes": 38156312576,
+  "preservedFilesVerified": 310,
+  "deliveredSignatureReverified": true,
+  "preserved": [
+    "new Downloads app",
+    "prior v027 stable app",
+    "final editable/native assets and required blink inputs",
+    "compact evidence and crash report",
+    "warm project DDC retained for continuing authoring; rebuilding old source meshes took over an hour",
+    "foreign work and processes"
+  ],
+  "removedGroups": {
+    "Builds/Unreal-Mac-20261026T205129Z": {
+      "entries": 1,
+      "logicalBytes": 3266486663
+    },
+    "Builds/Unreal-Mac-20261026T210219Z": {
+      "entries": 1,
+      "logicalBytes": 3266559635
+    },
+    "Builds/Unreal-Mac-20261026T211610Z": {
+      "entries": 1,
+      "logicalBytes": 2898579499
+    },
+    "Builds/Unreal-Mac-20261026T214259Z": {
+      "entries": 1,
+      "logicalBytes": 2898579045
+    },
+    "/private/tmp/veyr-stage-0fblemlo": {
+      "entries": 1,
+      "logicalBytes": 2615326874
+    },
+    "/private/tmp/veyr-stage-2p2xm9ao": {
+      "entries": 1,
+      "logicalBytes": 2795334694
+    },
+    "/private/tmp/veyr-stage-a72jg2zg": {
+      "entries": 1,
+      "logicalBytes": 2795467396
+    },
+    "/private/tmp/veyr-stage-nd0flykc": {
+      "entries": 1,
+      "logicalBytes": 2615326874
+    },
+    "/private/tmp/veyr-verified-bundle-6xmkqbig": {
+      "entries": 1,
+      "logicalBytes": 1500524352
+    },
+    "/private/tmp/veyr-verified-bundle-uye9_xth": {
+      "entries": 1,
+      "logicalBytes": 1667459681
+    },
+    "/private/tmp/veyr-verified-bundle-whhpymzk": {
+      "entries": 1,
+      "logicalBytes": 1500524352
+    },
+    "/private/tmp/veyr-verified-bundle-xpf3lfyn": {
+      "entries": 1,
+      "logicalBytes": 1667526200
+    },
+    "Local/Overhaul20261026/Veyr-Native-Overhaul-v029.zip": {
+      "entries": 1,
+      "logicalBytes": 643304111
+    },
+    "Local/Overhaul20261026/Veyr-Overhaul-Authoring-20261026.zip": {
+      "entries": 1,
+      "logicalBytes": 947768917
+    },
+    "Local/Overhaul20261026/Veyr-Overhaul-Validation-20261026.zip": {
+      "entries": 1,
+      "logicalBytes": 100713588
+    },
+    "Unreal/Veyr/Saved/Cooked": {
+      "entries": 1,
+      "logicalBytes": 2098792773
+    },
+    "Unreal/Veyr/Saved/StagedBuilds": {
+      "entries": 1,
+      "logicalBytes": 5200901286
+    },
+    "Local/Overhaul20261026/architecture/Chandelier_Adapted.blend": {
+      "entries": 1,
+      "logicalBytes": 185681450
+    },
+    "Local/Overhaul20261026/architecture/Chandelier_Adapted.blend1": {
+      "entries": 1,
+      "logicalBytes": 185694284
+    },
+    "Local/Overhaul20261026/architecture/Chandelier_Normalized.glb": {
+      "entries": 1,
+      "logicalBytes": 1218584
+    },
+    "Local/Overhaul20261026/architecture/Chandelier_Fab_Source.glb": {
+      "entries": 1,
+      "logicalBytes": 33712072
+    },
+    "Local/Overhaul20261026/blink/Exports (superseded intermediate retargets)": {
+      "entries": 9,
+      "logicalBytes": 581555305
+    },
+    "Local/Overhaul20261026/flight (rejected v1 files)": {
+      "entries": 29,
+      "logicalBytes": 189808283
+    },
+    "Evidence/pie-collision-20261026T210109Z": {
+      "entries": 158,
+      "logicalBytes": 238993334
+    },
+    "Evidence/pie-stance-20261026T202339Z": {
+      "entries": 14,
+      "logicalBytes": 21598663
+    },
+    "Evidence/pie-stance-20261026T204255Z": {
+      "entries": 284,
+      "logicalBytes": 411223767
+    },
+    "Evidence/pie-integration-20261026T204137Z": {
+      "entries": 100,
+      "logicalBytes": 144643352
+    },
+    "Evidence/pie-integration-20261026T201810Z": {
+      "entries": 100,
+      "logicalBytes": 144786901
+    },
+    "Evidence/native-stance-20261026T212739Z": {
+      "entries": 235,
+      "logicalBytes": 332245673
+    },
+    "Evidence/pie-guard-20261026T205023Z": {
+      "entries": 69,
+      "logicalBytes": 107247233
+    },
+    "Evidence/pie-integration-20261026T200743Z": {
+      "entries": 12,
+      "logicalBytes": 19036059
+    },
+    "Evidence/pie-collision-20261026T205136Z": {
+      "entries": 14,
+      "logicalBytes": 21993203
+    },
+    "Evidence/native-integration-20261026T220014Z": {
+      "entries": 999,
+      "logicalBytes": 1467156433
+    }
+  },
+  "additionalVerifiedSupplementArchiveRemovedBytes": 143998827,
+  "detailedPrivateReceipt": "Local/Overhaul20261026/cleanup-detailed.json"
+}
