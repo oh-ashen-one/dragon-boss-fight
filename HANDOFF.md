@@ -1,5 +1,14 @@
 # Sourced knight animations — delivered for owner play
 
+Storage cleanup completed 2026-10-26 at owner request: removed obsolete local builds,
+old Downloads deliveries, duplicate archives, rejected iterations and bulk PNG
+captures. Actual disk free space increased 82.70 GiB; 123.13 GiB remained immediately
+after deletion. Current app, editable sources, native assets and localhost inputs
+are preserved; 97 retained-file hashes and both viewer inventories passed.
+See `docs/storage-cleanup-20261026/README.md` and `result.json`. Historical receipts
+below may reference intentionally removed build directories or raw frame sequences;
+use the retained compact videos/keyframes and private backups described there.
+
 Branch: `Fab-3D-Rig-Testing`. Native knight bankv027 is active. The owner-approved
 sourced walk/run are fitted in both grip modes, the one-hand primary slash and
 forward roll are replaced, and the roll counter uses the new roll prefix. The

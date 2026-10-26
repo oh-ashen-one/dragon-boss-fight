@@ -1,0 +1,165 @@
+{
+  "completedAt": "2026-10-26T05:13:53.582220+00:00",
+  "branch": "Fab-3D-Rig-Testing",
+  "freeBytesBefore": 43402149888,
+  "freeBytesAfter": 132205518848,
+  "auditFreeBytesBefore": 43654356992,
+  "categories": {
+    "duplicate packaged builds": {
+      "allocatedBytes": 33763663872,
+      "logicalBytes": 35886035195,
+      "files": 580,
+      "targets": 11
+    },
+    "duplicate staging and backup copies": {
+      "allocatedBytes": 9152053248,
+      "logicalBytes": 10213773556,
+      "files": 86,
+      "targets": 14
+    },
+    "obsolete staged payload": {
+      "allocatedBytes": 259751936,
+      "logicalBytes": 1137094506,
+      "files": 33,
+      "targets": 1
+    },
+    "rejected native preflight inputs": {
+      "allocatedBytes": 297484288,
+      "logicalBytes": 297460953,
+      "files": 10,
+      "targets": 1
+    },
+    "superseded Downloads apps": {
+      "allocatedBytes": 8694652928,
+      "logicalBytes": 8694113742,
+      "files": 236,
+      "targets": 6
+    },
+    "duplicate build product": {
+      "allocatedBytes": 440209408,
+      "logicalBytes": 440197795,
+      "files": 7,
+      "targets": 1
+    },
+    "old verified temporary stage": {
+      "allocatedBytes": 1272582144,
+      "logicalBytes": 1272496637,
+      "files": 37,
+      "targets": 1
+    },
+    "verified remote archive duplicates": {
+      "allocatedBytes": 2619478016,
+      "logicalBytes": 2619472456,
+      "files": 4,
+      "targets": 4
+    },
+    "superseded animation fits": {
+      "allocatedBytes": 3371388928,
+      "logicalBytes": 3489842544,
+      "files": 92,
+      "targets": 92
+    },
+    "superseded review renders": {
+      "allocatedBytes": 318722048,
+      "logicalBytes": 347418909,
+      "files": 708,
+      "targets": 708
+    },
+    "redundant gameplay screenshots": {
+      "allocatedBytes": 42724999168,
+      "logicalBytes": 46344319896,
+      "files": 31083,
+      "targets": 31083
+    },
+    "automatic Blender save backups": {
+      "allocatedBytes": 415236096,
+      "logicalBytes": 432695584,
+      "files": 11,
+      "targets": 11
+    },
+    "superseded polish authoring copies": {
+      "allocatedBytes": 1149452288,
+      "logicalBytes": 1258167682,
+      "files": 36,
+      "targets": 36
+    },
+    "authoring render intermediates": {
+      "allocatedBytes": 687480832,
+      "logicalBytes": 746870610,
+      "files": 1892,
+      "targets": 1892
+    },
+    "temporary rig probes": {
+      "allocatedBytes": 37064704,
+      "logicalBytes": 37063307,
+      "files": 1,
+      "targets": 1
+    },
+    "temporary hover iterations": {
+      "allocatedBytes": 34996224,
+      "logicalBytes": 34994056,
+      "files": 2,
+      "targets": 2
+    },
+    "superseded Downloads archives": {
+      "allocatedBytes": 1148657664,
+      "logicalBytes": 1148653163,
+      "files": 2,
+      "targets": 2
+    },
+    "obsolete compiler output copies": {
+      "allocatedBytes": 446259200,
+      "logicalBytes": 3546511640,
+      "files": 17,
+      "targets": 17
+    }
+  },
+  "deletedTargets": 33883,
+  "errors": [],
+  "retainedHashCount": 97,
+  "observedFreeBytesIncrease": 88803368960,
+  "allocatedBytesRemoved": 106834132992,
+  "verification": {
+    "retainedFilesHashChecked": 97,
+    "changedOrMissing": 0,
+    "trackedFilesChangedByCleanup": 0,
+    "finalAppSignature": "codesign --verify --deep --strict passed",
+    "finalAppProcessStillRunning": 97300,
+    "comparison": {
+      "port": 8777,
+      "httpStatus": 200,
+      "pairs": 5,
+      "filesVerified": 26
+    },
+    "polishReviewer": {
+      "port": 8776,
+      "httpStatus": 200,
+      "candidates": 8,
+      "routesVerified": 20
+    },
+    "compactGameplayVideos": "Both full-decode verified without errors using timestamp passthrough"
+  },
+  "preserved": [
+    "Current Downloads/Veyr-Sourced-Animations-v027 app and notes",
+    "Current Unreal Content and project source",
+    "Final fitted Blender/GLB sources and active Sourced20261025b native inputs",
+    "Original guard, source models, first-pass comparison assets and localhost routes",
+    "Compact stance and victory videos, key screenshots, JSON evidence and receipts",
+    "Other projects, original authoring checkout and personal recordings"
+  ],
+  "remoteBackupsVerified": [
+    {
+      "repository": "oh-ashen-one/veyr-animation-sources",
+      "tag": "sourced-animation-authoring-20261025"
+    },
+    {
+      "repository": "oh-ashen-one/veyr-animation-sources",
+      "tag": "sourced-animation-game-v027"
+    },
+    {
+      "repository": "oh-ashen-one/veyr-animation-sources",
+      "tag": "fab-rig-testing-20261025"
+    }
+  ],
+  "measurementNote": "Allocated file footprint is not physical recovery: APFS clones/shared blocks and concurrent disk activity can differ. Free-space delta measured with statvfs directly before and after deletion. No APFS snapshots or shared caches were removed."
+}
