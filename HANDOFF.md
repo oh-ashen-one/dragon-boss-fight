@@ -1,30 +1,51 @@
-# Sourced animations — native v027 active; packaging/packaged QA in progress
+# Sourced knight animations — delivered for owner play
 
-Owner approved game integration of sourced walking, sword attack, running and
-forward roll; keep the original guard. Branch remains `Fab-3D-Rig-Testing`.
-Shared-brain PR22 is merged and synchronized at1bc7f80; see the receipt in
-`docs/sourced-native-20261025`.
+Branch: `Fab-3D-Rig-Testing`. Native knight bankv027 is active. The owner-approved
+sourced walk/run are fitted in both grip modes, the one-hand primary slash and
+forward roll are replaced, and the roll counter uses the new roll prefix. The
+original v026 guard sequence and weapon remain unchanged. Separate heavy styles
+and the two-hand combo are retained; this was the selected comparison scope.
 
-Native v027 is imported, metadata-verified and active in RuntimePolish. Original
-v026 guard sequence/weapon are inherited unchanged. Editor build c37f721e passed
-168 pose evaluations,84 transition checks,18 integration features, eight collision
-stages and guard combat behavior. Source and assets are privately backed up.
-A receipt-writing error after the import was repaired; saved assets were verified
-and finalized without reimporting. No Unreal crash occurred in this pass.
+The verified unpacked app is open at its fresh start screen:
+`/Users/midir/Downloads/Veyr-Sourced-Animations-v027/Veyr.app`.
+Observed process97300; do not take over or close the owner's play session. Its
+slot/log are `Local/FabRigTesting/owner-review-gpu.json` and `owner-review.log`.
+No auto-relaunch or automatic review-session cutoff is enabled.
 
-The owned editor42114 was stopped normally after saving only two new v027 materials.
-Current package job: `Local/package-20261026T041741Z`, stdout
-`Local/FabRigTesting/package-run.log`. Latest game build sourceIDa2e260003cfa1796692ed45b2497efee42171e00621fcc277b20b95cbd9a809b.
-Do not claim packaged acceptance until its own tests finish. Next: packaged stance
-with native capture and actual strike contacts, packaged victory/restart, bundle
-signature/dependency audit, then deliver an unpacked Downloads app and open it.
+Delivered sourceID: a2e260003cfa1796692ed45b2497efee42171e00621fcc277b20b95cbd9a809b.
+Package receipt: `Local/package-20261026T041741Z/receipt.json`.
+Signed archiveSHA256:80a74895ba34d31c37a1379cd52a6d5d6ddeef084c8823b292f1007fbae9b5cc.
+The initial Downloads copy lacked executable bits; source modes were restored,
+signature reverified, and graphical LaunchServices startup confirmed.
 
-Current native plan is hash-locked at
-`Local/CustomuseAssets/Polish20261025/sourced-v027b/import-plan-KnightB.json`;
-its inputs and manifest are under `Local/CustomuseAssets/Sourced20261025b`.
-Do not restore the earlier rejected preflight bank underSourced20261025.
-Final files: walk17,walkTwoHand17,runOneHand18,runTwoHand17,attack17,roll17,
-Sourced_RollAttack_v2. Blender is closed. Preserve v1 comparison sources.
+Verified:168 native pose samples,84 transition checks,18 integration features,
+eight collision stages, original guard combat behavior, packaged stance/contact,
+and packaged victory/reset/movement/attack after restart. Source hashes, rates and
+root samples were verified before activation. An independent critic confirmed the
+recorded one-hand slash/contact timing and found no obvious arm/weapon deformation
+in the inspected native captures. Capture overhead and sparse frames limit
+performance/continuous-motion claims; owner gameplay feel remains the next review.
+See `docs/sourced-native-20261025/validation.json` for exact evidence.
+
+Local comparison: http://127.0.0.1:8777/ . The initial retarget remains an optional
+Before view; the guard row identifies the retained original. Source preview timing
+is distinct from game cadence metadata.
+
+Private backups in `oh-ashen-one/veyr-animation-sources`:
+- `sourced-animation-authoring-20261025`: editable final Blender sources and native inputs.
+- `sourced-animation-game-v027`: native delta and signed game ZIP; remote digests verified.
+Restore details and baseline dependencies are in the adjacent receipts. Never put
+restricted raw motion/model files in public Git.
+
+Shared-brain PR22 is merged and synchronized at1bc7f80. Future sourcing directly
+checks Mixamo, Fab, NVIDIA SimReady and ThreeJS Assets, then wider licensed sources;
+whole-motion custom authoring requires an explicit exception. This session received
+the updated rule. Other running sessions are not claimed to have reloaded.
+
+Native plan: `Local/CustomuseAssets/Polish20261025/sourced-v027b/import-plan-KnightB.json`.
+Final inputs: `Local/CustomuseAssets/Sourced20261025b`. Do not use the rejected first
+preflight bank. Final fitted files are walk17,walkTwoHand17,runOneHand18,runTwoHand17,
+attack17,roll17 andSourced_RollAttack_v2. The authoring editor and Blender are closed.
 
 ---
 

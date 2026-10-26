@@ -72,5 +72,5 @@
     "nativeSourceDefinition": "/Game/Characters/Customuse/KnightB/v026/DA_KnightB",
     "strategy": "inherit exact existing clip/sequence/weapon references; no guard reimport"
   },
-  "packagedValidationPending": true
+  "packagedValidationPending": false
 }

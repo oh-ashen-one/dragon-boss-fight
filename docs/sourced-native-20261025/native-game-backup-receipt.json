@@ -1,0 +1,17 @@
+{
+  "privateRepository": "oh-ashen-one/veyr-animation-sources",
+  "release": "sourced-animation-game-v027",
+  "nativeDelta": {
+    "asset": "Veyr-Native-Sourced-v027.zip",
+    "sha256": "a59f3cb9e8d240568ddbf4b373ca5ffcc9b70fdd741deccb3a0c1c541003ddf2",
+    "bytes": 156081533,
+    "files": 32
+  },
+  "base": "Restore native-integration-20261025 and combat-arena-polish-native-20261025 including their overlays, then hud-moonlit-silver-20261025/source-and-native.zip; apply this v027 delta last. The original guard remains in v026.",
+  "remoteDigestsVerified": true,
+  "gameArchive": {
+    "asset": "Veyr.zip",
+    "sha256": "80a74895ba34d31c37a1379cd52a6d5d6ddeef084c8823b292f1007fbae9b5cc",
+    "bytes": 1078439040
+  }
+}

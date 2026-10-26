@@ -1,0 +1,14 @@
+{
+  "app": "/Users/midir/Downloads/Veyr-Sourced-Animations-v027/Veyr.app",
+  "sourceId": "a2e260003cfa1796692ed45b2497efee42171e00621fcc277b20b95cbd9a809b",
+  "signatureVerified": true,
+  "packageReceipt": "Local/package-20261026T041741Z/receipt.json",
+  "signedArchiveSHA256": "80a74895ba34d31c37a1379cd52a6d5d6ddeef084c8823b292f1007fbae9b5cc",
+  "nativeVersion": "v027",
+  "executableModesPreserved": true,
+  "launchedOnStudio": true,
+  "observedPID": 97300,
+  "startScreenVerified": true,
+  "capture": "Local/FabRigTesting/Veyr-Sourced-Ready.png",
+  "autoQuit": false
+}

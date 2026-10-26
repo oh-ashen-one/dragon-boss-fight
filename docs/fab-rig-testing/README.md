@@ -1,3 +1,5 @@
+> Update: the owner selected game integration after this initial comparison. See [the native integration record](../sourced-native-20261025/README.md). The material below preserves the initial review milestone.
+
 # Fab 3D Rig Testing
 
 Separate review-only branch `Fab-3D-Rig-Testing`, based on `327d3ac`.

@@ -56,8 +56,12 @@ saved assets without repeating the import.
 
 See `validation.json` for current checks and exact evidence paths. Native editor
 verification passed168 pose samples and84 transition checks, all18 integration
-features, eight collision stages and original guard combat behavior. Packaged
-validation is recorded separately; editor success alone is not packaged success.
+features, eight collision stages and original guard combat behavior. Packaged stance/contact and victory/restart also passed on build
+`a2e260003cfa1796692ed45b2497efee42171e00621fcc277b20b95cbd9a809b`.
+The signed unpacked app is delivered at
+`/Users/midir/Downloads/Veyr-Sourced-Animations-v027/Veyr.app` and was observed
+at its fresh start screen. Native capture preserves actual timestamps; recording
+adds overhead and is not an isolated60fps benchmark.
 The original guard `.uasset` SHA256 remains:
 `1d7b990ae0e0e25fce5e97fa34d11d57de3cff86e748b47867d75a61d5efa069`.
 
@@ -74,3 +78,8 @@ are not claimed to have automatically reloaded their context.
 
 Private source/Blender/native-input backup and restore identity are in
 `authoring-backup-receipt.json`. Keep restricted assets out of public Git.
+
+The native delta and signed game archive are backed up in the private release
+`sourced-animation-game-v027`; see `native-game-backup-receipt.json`. The original
+app-copy mode mismatch was repaired by restoring source executable modes; code
+bytes/signature remained unchanged. LaunchServices startup then succeeded.

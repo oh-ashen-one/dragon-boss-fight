@@ -225,7 +225,7 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None):
  bpy.ops.wm.save_as_mainfile(filepath=str(path.with_suffix('.blend')),compress=True)
  meta.update({'name':name,'sourceFPS':source_fps,'fps':s.render.fps,'bakeSampleRate':s.render.fps,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest(),'weaponAdapted':True,'gripMode':'two-handed' if two_hand else 'one-handed','maxPalmTargetError':{side:max(r[side] for r in reach) for side in ('Right','Left')}});path.with_suffix('.json').write_text(json.dumps(meta,indent=2));print(json.dumps(meta))
 
-def run(kinds=('walk','run','guard','roll','attack'),version='v2',grip_override=None,output_name=None):
+def run(kinds=('walk','run','roll','attack'),version='v2',grip_override=None,output_name=None):
  refs={'one':reference('WalkOneHand_Blender_v2r2.glb'),'two':reference('RunTwoHand_Blender_polish_v2.glb'),'guard':reference('GuardReadyTwoHand_Blender_v4r4.glb',True)}
  if 'roll' in kinds:refs['roll']=roll_reference()
  for kind in kinds:fit(kind,refs,version,grip_override,output_name)
