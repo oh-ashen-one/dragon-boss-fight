@@ -1,0 +1,54 @@
+{
+  "stage": "Native editor gameplay verified; packaged validation pending",
+  "nativeDefinition": "/Game/Characters/Customuse/KnightB/v027/DA_KnightB",
+  "runtimeDefinition": "/Game/Characters/Customuse/RuntimePolish/DA_Knight",
+  "poseSamples": 168,
+  "transitionChecks": 84,
+  "nativePoseFailures": [],
+  "importMetadataVerification": {
+    "guard": {
+      "sequence": "/Game/Characters/Customuse/KnightB/v026/Animations/GuardTwoHand/GuardReadyTwoHand_Blender_v4r4.GuardReadyTwoHand_Blender_v4r4",
+      "weapon": "/Game/Characters/Customuse/KnightB/v026/Props/BoatGreatsword_Grip_v6/BoatGreatsword_Grip_v6.BoatGreatsword_Grip_v6",
+      "source": "6d926dab7b79e78e2d80cf924003424f1fad404e2c8d8ac9e1ca1174271b6d81",
+      "start": 0.0,
+      "end": -1.0,
+      "rate": 1.0,
+      "loop": false
+    },
+    "replacementMetadataVerified": [
+      "Walk",
+      "WalkTwoHand",
+      "Run",
+      "RunTwoHand",
+      "LightAttack",
+      "Roll",
+      "RollAttack"
+    ]
+  },
+  "runs": [
+    {
+      "mode": "integration",
+      "passed": true,
+      "finalWrite": true,
+      "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+      "sourceId": "c37f721e27fe1373828d96ff394b178cb586b4816f6ad0d94233a17c3c56893c",
+      "evidence": "Evidence/pie-integration-20261026T035354Z/unreal-integration-20261026T035354Z-0C2AB89B/evidence.json"
+    },
+    {
+      "mode": "collision",
+      "passed": true,
+      "finalWrite": true,
+      "reason": "eight collision stages: front sprint/roll/blink, both flanks, rear, head/neck, and native natural-landing push without persistent penetration",
+      "sourceId": "c37f721e27fe1373828d96ff394b178cb586b4816f6ad0d94233a17c3c56893c",
+      "evidence": "Evidence/pie-collision-20261026T040249Z/unreal-collision-20261026T040249Z-B26F80C3/evidence.json"
+    },
+    {
+      "mode": "guard",
+      "passed": true,
+      "finalWrite": true,
+      "reason": "front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified",
+      "sourceId": "c37f721e27fe1373828d96ff394b178cb586b4816f6ad0d94233a17c3c56893c",
+      "evidence": "Evidence/pie-guard-20261026T041040Z/unreal-guard-20261026T041040Z-30E927D4/evidence.json"
+    }
+  ]
+}

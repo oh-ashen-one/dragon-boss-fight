@@ -1,3 +1,33 @@
+# Sourced animations — native v027 active; packaging/packaged QA in progress
+
+Owner approved game integration of sourced walking, sword attack, running and
+forward roll; keep the original guard. Branch remains `Fab-3D-Rig-Testing`.
+Shared-brain PR22 is merged and synchronized at1bc7f80; see the receipt in
+`docs/sourced-native-20261025`.
+
+Native v027 is imported, metadata-verified and active in RuntimePolish. Original
+v026 guard sequence/weapon are inherited unchanged. Editor build c37f721e passed
+168 pose evaluations,84 transition checks,18 integration features, eight collision
+stages and guard combat behavior. Source and assets are privately backed up.
+A receipt-writing error after the import was repaired; saved assets were verified
+and finalized without reimporting. No Unreal crash occurred in this pass.
+
+The owned editor42114 was stopped normally after saving only two new v027 materials.
+Current package job: `Local/package-20261026T041741Z`, stdout
+`Local/FabRigTesting/package-run.log`. Latest game build sourceIDa2e260003cfa1796692ed45b2497efee42171e00621fcc277b20b95cbd9a809b.
+Do not claim packaged acceptance until its own tests finish. Next: packaged stance
+with native capture and actual strike contacts, packaged victory/restart, bundle
+signature/dependency audit, then deliver an unpacked Downloads app and open it.
+
+Current native plan is hash-locked at
+`Local/CustomuseAssets/Polish20261025/sourced-v027b/import-plan-KnightB.json`;
+its inputs and manifest are under `Local/CustomuseAssets/Sourced20261025b`.
+Do not restore the earlier rejected preflight bank underSourced20261025.
+Final files: walk17,walkTwoHand17,runOneHand18,runTwoHand17,attack17,roll17,
+Sourced_RollAttack_v2. Blender is closed. Preserve v1 comparison sources.
+
+---
+
 # Fab 3D Rig Testing — isolated localhost comparison, 2026-10-25
 
 Current branch: `Fab-3D-Rig-Testing`, based on `327d3ac`.

@@ -1,0 +1,13 @@
+{
+  "repository": "oh-ashen-one/agents-md",
+  "pullRequest": "https://github.com/oh-ashen-one/agents-md/pull/22",
+  "ownerApprovedMerge": true,
+  "mergeCommit": "1bc7f80f2b4b88099ca926fe70282d0fa6d09ff9",
+  "installedRelease": "977e7eb6a333c19703b9",
+  "testsPassed": 52,
+  "validation": "OK: 155 skills, 8 systems, 1189 package files, core 11959 bytes",
+  "sync": "brain sync --force --strict succeeded",
+  "installedRulesVerified": true,
+  "currentSessionReceivedUpdatedRules": true,
+  "otherRunningSessionsAutomaticallyReloaded": false
+}

@@ -169,6 +169,40 @@ def prepare_validation_settings():
         unreal.SystemLibrary.execute_console_command(world,command)
 
 
+def _clip_map(definition):
+    return {str(k):v for k,v in definition.clips.items()}
+
+def guard_signature(definition):
+    clip=_clip_map(definition).get('GuardTwoHand')
+    if not clip:raise RuntimeError('Original two-hand guard is missing')
+    return {'sequence':clip.sequence.get_path_name(),'weapon':clip.weapon_mesh.get_path_name() if clip.weapon_mesh else None,'source':clip.approved_source_sha256,'start':float(clip.start_seconds),'end':float(clip.end_seconds),'rate':float(clip.gameplay_play_rate),'loop':bool(clip.loop)}
+
+def verify_sourced_definition(plan,definition,check_replacements=True):
+    """Verify actual imported bindings/metadata, not just the shared rig hash."""
+    import unreal
+    if not plan.get('inherit_definition'):return {}
+    expected=plan.get('replace_runtime_source')
+    baseline=unreal.load_asset(expected)
+    if not baseline:raise RuntimeError('Preservation baseline definition missing')
+    baseline_guard=guard_signature(baseline);actual_guard=guard_signature(definition)
+    if baseline_guard!=actual_guard:raise RuntimeError('Original guard sequence/weapon/timing changed')
+    if actual_guard['source']!=plan['preserved_guard']['source_sha256']:raise RuntimeError('Original guard source hash changed')
+    if not check_replacements:return {'guard':actual_guard}
+    clips=_clip_map(definition);checked=[]
+    for spec in plan['clips']:
+        c=clips.get(spec['name'])
+        if not c or c.approved_source_sha256!=spec['approved_source_sha256'] or c.approved_source_file!=spec['approved_source_file']:raise RuntimeError('Imported source identity differs: '+spec['name'])
+        for field in ('gameplay_play_rate','nominal_speed_cm_per_second','start_seconds','end_seconds','root_sample_rate'):
+            if abs(float(c.get_editor_property(field))-float(spec[field]))>.001:raise RuntimeError('Imported metadata differs: '+spec['name']+'/'+field)
+        if bool(c.root_motion_removed)!=bool(spec['root_motion_removed']) or bool(c.loop)!=bool(spec['loop']):raise RuntimeError('Imported motion policy differs: '+spec['name'])
+        actual=list(c.root_translation_samples_cm);expected_samples=spec['root_translation_samples_cm']
+        if len(actual)!=len(expected_samples) or any(max(abs(v.x-p[0]),abs(v.y-p[1]),abs(v.z-p[2]))>.001 for v,p in zip(actual,expected_samples)):raise RuntimeError('Imported root samples differ: '+spec['name'])
+        windows=list(c.damage_windows)
+        if len(windows)!=len(spec['damage_windows']) or any(max(abs(v.x-p[0]),abs(v.y-p[1]))>1e-5 for v,p in zip(windows,spec['damage_windows'])):raise RuntimeError('Imported strike windows differ: '+spec['name'])
+        if abs(c.sequence.get_play_length()-spec['source_duration'])>1./300+.001:raise RuntimeError('Imported sequence duration differs: '+spec['name'])
+        checked.append(spec['name'])
+    return {'guard':actual_guard,'replacementMetadataVerified':checked}
+
 def finalize_existing(plan):
     """Finish the approved native import without reimporting or changing source assets."""
     import unreal
@@ -180,23 +214,31 @@ def finalize_existing(plan):
     errors=list(definition.validate_definition(True))
     if errors:raise RuntimeError('Incomplete import: '+'; '.join(errors))
     clip_entries=dict(definition.clips)
+    specifications={str(c['name']).lower():c for c in plan.get('clips',[])}
     for key,clip in clip_entries.items():
-        clip.set_editor_property('gameplay_play_rate',3.0 if character=='KnightB' and str(key).lower()=='lightattack' else 1.0)
+        specification=specifications.get(str(key).lower())
+        if specification and 'gameplay_play_rate' in specification:
+            rate=float(specification['gameplay_play_rate'])
+            if not math.isfinite(rate) or not .1<=rate<=4.:raise ValueError('Invalid explicit gameplay play rate')
+            clip.set_editor_property('gameplay_play_rate',rate)
     definition.set_editor_property('clips',clip_entries)
     runtime_name='Knight' if character=='KnightB' else 'Dragon'
     runtime_folder=plan.get('runtime_folder','RuntimeApproved')
     if runtime_folder not in ('RuntimeApproved','RuntimePolish'):
         raise ValueError('Unexpected runtime definition namespace')
     runtime=unreal.load_asset('/Game/Characters/Customuse/'+runtime_folder+'/DA_'+runtime_name)
-    if runtime and runtime.source_sha256==definition.source_sha256:
+    owns_runtime=runtime and (runtime_folder=='RuntimeApproved' or unreal.EditorAssetLibrary.get_metadata_tag(runtime,'VeyrPolishSourceDefinition')==path)
+    if owns_runtime and runtime.source_sha256==definition.source_sha256:
         runtime.set_editor_property('clips',clip_entries)
         unreal.EditorAssetLibrary.save_loaded_asset(runtime,False)
-    record={'character':character,'definition':path,'completeClips':len(definition.clips),'materials':[]}
+    record={'character':character,'definition':path,'completeClips':len(definition.clips),'materials':[],'sourcedVerification':verify_sourced_definition(plan,definition)}
     if character=='KnightB':
         props={mesh.get_path_name():mesh for mesh in definition.props.values() if mesh}
         for clip in definition.clips.values():
             if clip.weapon_mesh:props[clip.weapon_mesh.get_path_name()]=clip.weapon_mesh
-        record['rigidProps']=[prepare_rigid_prop(mesh) for mesh in props.values()]
+        owned_prefix=f'/Game/Characters/Customuse/{character}/{version}/'
+        record['rigidProps']=[prepare_rigid_prop(mesh) for mesh in props.values() if mesh.get_path_name().startswith(owned_prefix)]
+        record['inheritedPropsPreserved']=[mesh.get_path_name() for mesh in props.values() if not mesh.get_path_name().startswith(owned_prefix)]
     if character=='DragonV3B':
         import prepare_dragon_visibility_material as visibility
         mesh=definition.skeletal_mesh
@@ -354,7 +396,17 @@ def run(plan_file):
 
     save_receipt()
     try:
-        objects = import_one(canonical, destination + "/Rig")
+        inherited=None
+        if plan.get('inherit_definition'):
+            inherited=unreal.load_asset(plan['inherit_definition'])
+            if not isinstance(inherited,unreal.VeyrVisualDefinition):raise RuntimeError('Inherited native definition missing')
+            if unreal.EditorAssetLibrary.get_metadata_tag(inherited,'VeyrPolishSourceDefinition')!=plan.get('replace_runtime_source'):raise RuntimeError('Unexpected inherited runtime version')
+            receipt['preservedBaseline']=verify_sourced_definition(plan,inherited,False)
+            inherited_skeleton=inherited.skeletal_mesh.get_editor_property('skeleton')
+            objects=import_one(canonical,destination+'/Rig',inherited_skeleton,mesh_variant=True)
+            receipt['inheritedDefinition']=inherited.get_path_name()
+        else:
+            objects = import_one(canonical, destination + "/Rig")
         meshes = [obj for obj in objects if isinstance(obj, unreal.SkeletalMesh)]
         if len(meshes) != 1:
             raise RuntimeError("Expected exactly one imported skeletal mesh")
@@ -451,7 +503,7 @@ def run(plan_file):
             props_by_file[filename] = static_meshes[0]
         if props_by_file:
             definition.set_editor_property("props", {"Cup": props_by_file["DrinkingCup.glb"]} if "DrinkingCup.glb" in props_by_file else {})
-        clips = {}
+        clips = _clip_map(inherited) if inherited else {}
         imported_sequences = {}
         for specification, source in checked_clips:
             # Phase aliases share the same native sequence; only trim windows differ.
@@ -518,6 +570,7 @@ def run(plan_file):
             clips[specification["name"]] = entry
             receipt.setdefault("clipLengthsSeconds", {})[specification["name"]] = float(sequence.get_editor_property("sequence_length"))
         definition.set_editor_property("clips", clips)
+        receipt['sourcedVerification']=verify_sourced_definition(plan,definition)
         receipt["morphTargets"] = [str(name) for name in definition.get_imported_morph_target_names()]
         receipt["clipCurveRanges"] = {}
         for key, entry in clips.items():
@@ -526,7 +579,7 @@ def run(plan_file):
             for curve_name in curve_names:
                 times, values = unreal.AnimationLibrary.get_float_keys(entry.sequence, curve_name)
                 if values:ranges[str(curve_name)] = [min(values), max(values), len(values)]
-            receipt["clipCurveRanges"][key] = ranges
+            receipt["clipCurveRanges"][str(key)] = ranges
         if character == "DragonV3B":
             raw=Path(canonical['file']).read_bytes()
             length=struct.unpack_from('<I',raw,12)[0]

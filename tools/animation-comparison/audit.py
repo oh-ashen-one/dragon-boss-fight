@@ -36,7 +36,10 @@ def geometry_error(reference,refblob,d,blob):
  return worst
 reference,refblob=read(BASE/'WalkOneHand_Blender_v2r2.glb');results=[]
 for r in ROWS:
- before=BASE/r['before'];after=NEW/r['after'];d,blob=read(after);finite_motion(d,blob);assert shape(d)['indices']==shape(reference)['indices'] and shape(d)['joints']==shape(reference)['joints'];error=geometry_error(reference,refblob,d,blob);assert error<1e-6,error;meta=json.loads(after.with_suffix('.json').read_text());duration=max(d['accessors'][s['input']]['max'][0] for a in d['animations'] for s in a['samplers']);assert abs(duration-meta['duration'])<1e-5
+ before=BASE/r['before'];after=(BASE if r.get('retainOriginal') else NEW)/r['after']
+ if r.get('retainOriginal'):
+  assert sha(before)==sha(after);results.append({**r,'beforeSHA256':sha(before),'afterSHA256':sha(after),'retainedOriginal':True});continue
+ d,blob=read(after);finite_motion(d,blob);assert shape(d)['indices']==shape(reference)['indices'] and shape(d)['joints']==shape(reference)['joints'];error=geometry_error(reference,refblob,d,blob);assert error<1e-6,error;meta=json.loads(after.with_suffix('.json').read_text());duration=max(d['accessors'][s['input']]['max'][0] for a in d['animations'] for s in a['samplers']);assert abs(duration-meta['duration'])<1e-5
  source=ROOT/meta['source'];results.append({**r,'before':str(before.relative_to(ROOT)),'after':str(after.relative_to(ROOT)),'beforeSHA256':sha(before),'afterSHA256':sha(after),'blend':str(after.with_suffix('.blend').relative_to(ROOT)),'blendSHA256':sha(after.with_suffix('.blend')),'sourceFile':meta['source'],'sourceSHA256':sha(source),'duration':duration,'fps':meta['fps'],'topology':shape(d),'finiteMotion':True,'maxRestGeometryError':error,'vertexSplitNote':'Blender exporter duplicates34 vertices at attribute seams; triangle topology and positions retained'})
 archives=[]
 for name in ['Sword and Shield Pack.zip','freesampleanimationset.unitypackage']:

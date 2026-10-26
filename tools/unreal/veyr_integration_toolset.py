@@ -56,12 +56,16 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         result = {'project_directory': str(PROJECT), 'engine': unreal.SystemLibrary.get_engine_version(),
                   'world': world.get_path_name() if world else ''}
         for label in ('Knight', 'Dragon'):
-            path = '/Game/Characters/Customuse/Runtime/DA_' + label
-            definition = unreal.load_asset(path)
+            path = '/Game/Characters/Customuse/RuntimePolish/DA_' + label
+            definition = unreal.load_asset(path) or unreal.load_asset('/Game/Characters/Customuse/RuntimeApproved/DA_'+label)
             if definition:
                 result[label] = definition.get_path_name()
                 result[label + '_mesh'] = definition.skeletal_mesh.get_path_name()
                 result[label + '_clips'] = ','.join(str(key) for key in definition.clips)
+                result[label+'_source_definition']=unreal.EditorAssetLibrary.get_metadata_tag(definition,'VeyrPolishSourceDefinition')
+                if label=='Knight':
+                    guard=next((v for k,v in definition.clips.items() if str(k)=='GuardTwoHand'),None)
+                    if guard:result['Knight_guard_sequence']=guard.sequence.get_path_name();result['Knight_guard_source_sha']=guard.approved_source_sha256
         return result
 
     @toolset_registry.tool_call
@@ -157,7 +161,7 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         Args:
             character: KnightB or DragonV3B from the active-plan manifest.
         Returns:
-            Saved runtime definition. A conflicting existing slot is preserved and rejected.
+            Saved runtime definition. Promotion requires the explicitly named previous source; other conflicts are preserved.
         """
         require_project()
         if unreal.EditorLevelLibrary.get_game_world() is not None:raise RuntimeError('Stop PIE before activation')
@@ -165,13 +169,25 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         source_path=f"/Game/Characters/Customuse/{character}/{plan['version']}/DA_{character}"
         source=unreal.load_asset(source_path)
         if not source:raise RuntimeError('Import and finalize the revision first')
+        import import_customuse
+        importlib.reload(import_customuse)
+        import_customuse.verify_sourced_definition(plan,source)
         errors=list(source.validate_definition(True))
         if errors:raise RuntimeError('; '.join(errors))
         label='Knight' if character=='KnightB' else 'Dragon';destination='/Game/Characters/Customuse/RuntimePolish/DA_'+label
         existing=unreal.load_asset(destination)
         if existing:
-            if unreal.EditorAssetLibrary.get_metadata_tag(existing,'VeyrPolishSourceDefinition')!=source_path:
-                raise RuntimeError('Different existing runtime revision; preserved')
+            previous=unreal.EditorAssetLibrary.get_metadata_tag(existing,'VeyrPolishSourceDefinition')
+            if previous!=source_path:
+                if not plan.get('replace_runtime_source') or previous!=plan['replace_runtime_source']:
+                    raise RuntimeError('Different existing runtime revision; preserved')
+                # Explicit version-to-version promotion, with the old source DA
+                # and every inherited sequence retained as recovery points.
+                for field in ('skeletal_mesh','mesh_relative_transform','clips','props','bone_targets','required_clips','required_bone_targets','source_sha256','native_presentation_verified'):
+                    existing.set_editor_property(field,source.get_editor_property(field))
+                unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPreviousSourceDefinition',previous)
+                unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPolishSourceDefinition',source_path)
+                if not unreal.EditorAssetLibrary.save_loaded_asset(existing,False):raise RuntimeError('Runtime promotion save failed')
             return existing
         result=unreal.EditorAssetLibrary.duplicate_asset(source_path,destination)
         if not result:raise RuntimeError('Definition copy failed')
@@ -261,6 +277,9 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         source=unreal.load_asset(source_path)
         if not isinstance(source,unreal.VeyrVisualDefinition):
             raise RuntimeError('Complete the approved import before activation')
+        import import_customuse
+        importlib.reload(import_customuse)
+        import_customuse.verify_sourced_definition(plan,source)
         errors=list(source.validate_definition(True))
         if errors:raise RuntimeError('Definition is incomplete: '+'; '.join(errors))
         label='Knight' if character=='KnightB' else 'Dragon'

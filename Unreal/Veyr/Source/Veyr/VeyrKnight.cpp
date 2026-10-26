@@ -237,7 +237,7 @@ void AVeyrKnight::BeginPlay()
 
 bool AVeyrKnight::IsGrounded() const { return GetCharacterMovement() && GetCharacterMovement()->IsMovingOnGround(); }
 bool AVeyrKnight::IsBlinkAction() const { return Action==EVeyrKnightAction::BlinkLeft||Action==EVeyrKnightAction::BlinkRight; }
-bool AVeyrKnight::IsRollPrefix() const { return Action==EVeyrKnightAction::Roll||(Action==EVeyrKnightAction::RollAttack&&ActionElapsed<.78f); }
+bool AVeyrKnight::IsRollPrefix() const { return Action==EVeyrKnightAction::Roll||(Action==EVeyrKnightAction::RollAttack&&ActionElapsed<VisualClipDuration(TEXT("Roll"),.78f)); }
 bool AVeyrKnight::IsAttackAction() const { return Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack||Action==EVeyrKnightAction::Combo||Action==EVeyrKnightAction::RollAttack; }
 bool AVeyrKnight::IsRollingInvulnerable() const { return (IsRollPrefix()||IsBlinkAction())&&ActionElapsed>.08f&&ActionElapsed<.44f; }
 float AVeyrKnight::GetPlanarSpeed() const { return GetVelocity().Size2D(); }
@@ -680,14 +680,25 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     Movement->bOrientRotationToMovement=Action==EVeyrKnightAction::Ready&&!MoveIntent.IsNearlyZero();
     if(IsRollPrefix())
     {
-        const float RollSpeed=1180.f*.58f/.78f;
-        Movement->MaxWalkSpeed=RollSpeed;
-        Movement->Velocity.X=RollDirection.X*RollSpeed;Movement->Velocity.Y=RollDirection.Y*RollSpeed;
-        AddMovementInput(RollDirection,1.f);
+        const FVeyrVisualClip* Clip=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
+        const bool HasAuthoredTravel=Clip&&Clip->bRootMotionRemoved&&Clip->RootTranslationSamplesCm.Num()>1;
+        if(HasAuthoredTravel)
+        {
+            // ApplyAuthoredRootMotion already swept this frame's displacement.
+            // Do not add a second constant-speed roll on top of the source path.
+            ConsumeMovementInputVector();Movement->Velocity.X=0.f;Movement->Velocity.Y=0.f;
+        }
+        else
+        {
+            const float RollSpeed=1180.f*.58f/.78f;
+            Movement->MaxWalkSpeed=RollSpeed;
+            Movement->Velocity.X=RollDirection.X*RollSpeed;Movement->Velocity.Y=RollDirection.Y*RollSpeed;
+            AddMovementInput(RollDirection,1.f);
+        }
     }
     else if(Action==EVeyrKnightAction::Ready&&!bLateralDodgeBlocked)
     {
-        Movement->MaxWalkSpeed=bSprintHeld?580.f:380.f;
+        Movement->MaxWalkSpeed=bSprintHeld?580.f:240.f;
         AddMovementInput(MoveIntent,1.f);
     }
     else
@@ -1033,8 +1044,9 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 
 FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
 {
-    // Movement is a jog/run in either grip. The rejected zombie walk is never
-    // selected by normal WASD, and sprint changes speed rather than grip.
+    // Normal movement uses the sourced walk in the current grip. Shift selects
+    // the sourced run; Ctrl remains unbound. Cadence follows measured speed.
+    if(!bAllowRun||!bSprintHeld)return bTwoHanded?TEXT("WalkTwoHand"):TEXT("Walk");
     if(bTwoHanded)return TEXT("RunTwoHand");
     return RunAnimationVariant==1?TEXT("RunAlternate"):TEXT("Run");
 }
@@ -1235,16 +1247,19 @@ FVector AVeyrKnight::AuthoredRootDisplacementWorld(const FVector& Delta) const
     if(!CustomuseVisualDefinition)return FVector::ZeroVector;
     FVector World=GetActorQuat().RotateVector(CustomuseVisualDefinition->MeshRelativeTransform.TransformVector(Delta));World.Z=0.f;
     if(IsBlinkAction())World=World.RotateAngleAxis(BlinkDirectionYaw,FVector::UpVector);
+    else if(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack)
+        World=World.RotateAngleAxis(FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw),FVector::UpVector);
     return World;
 }
 
 void AVeyrKnight::ApplyAuthoredRootMotion(float PreviousSeconds,float NewSeconds)
 {
     if(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal||
-       Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::Dead||Action==EVeyrKnightAction::Stagger)return;
+       Action==EVeyrKnightAction::Dead||Action==EVeyrKnightAction::Stagger)return;
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
     if(!C||!C->bRootMotionRemoved||C->RootTranslationSamplesCm.Num()<2||C->RootSampleRate<=0.f)return;
-    if(Action==EVeyrKnightAction::RollAttack){PreviousSeconds=FMath::Max(.78f,PreviousSeconds);if(NewSeconds<=PreviousSeconds)return;}
+    // Sourced RollAttack contains the exact new-roll prefix. Its actor path
+    // remains constant after that prefix, so both actions share swept travel.
     FVector Delta=RootTranslationAt(NewSeconds)-RootTranslationAt(PreviousSeconds);Delta.Z=0.f;
     Delta=AuthoredRootDisplacementWorld(Delta);
     if(Delta.IsNearlyZero())return;

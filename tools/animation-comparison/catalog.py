@@ -10,3 +10,23 @@ ROWS=[
  dict(id='run',title='Running',before='RunTwoHand_Blender_polish_v2.glb',after='Fab_Run_v1.glb',provider='Fab · VanillaLoop',clip='A_RunFwd_Loop',source=FAB,beforeLabel='Current · two-hand run (Tripo base + Blender grip)',note='Source is unarmed running; the boat sword follows its right palm. Our version has a deliberate two-hand carry. Neither baseline nor result is labeled entirely custom mocap.'),
  dict(id='roll',title='Forward roll',before='Roll_Blender_polish_v2.glb',after='Fab_Roll_v1.glb',provider='Fab · VanillaLoop',clip='A_Roll_IdleFwd',source=FAB,beforeLabel='Current · Blender-refined roll',note='The source roll retains its full-body tuck and root travel. The long boat sword is attached faithfully; any floor/body intersections need a weapon-specific adaptation before gameplay use.'),
 ]
+
+# Preserve every first-pass retarget. Only the comparison's AFTER side advances.
+FITTED={'walk':'Mixamo_Walk_v17.glb','attack':'Mixamo_Attack_v17.glb','guard':'Mixamo_Block_v6.glb','run':'Fab_Run_v17.glb','roll':'Fab_Roll_v17.glb'}
+FIT_NOTES={
+ 'walk':'Mixamo gait and torso retained. One-hand boat-sword carry fitted in Blender; the empty-shield arm now hangs naturally. The original retarget remains available under Before.',
+ 'attack':'Source diagonal slash and body timing retained. Blender fits the palm, moves the sweep clear of the body/floor and stabilizes the broad boat against axial flips. Compared with our overhead attack, this remains a different attack style.',
+ 'guard':'Source stance and body response retained; the shield-arm pose is replaced by a quick, two-hand sword guard. Both palms have separate positions on the handle.',
+ 'run':'Fab gait and torso retained. Both hands now support the boat sword in front of the chest, with the pommel clear of the cuirass.',
+ 'roll':'Fab tuck, recovery and travel retained. The knight’s approved forward-held roll carry is adapted to that motion with Blender IK and an outward clearance arc. Weapon fitting changes the arms, not the source legs/torso.',
+}
+for row in ROWS:
+ row['raw']=row['after'];row['after']=FITTED[row['id']];row['afterLabel']=row['provider']+' + Blender weapon fit';row['note']=FIT_NOTES[row['id']]
+
+for row in ROWS:
+ row['beforeLabel']=row['beforeLabel'].replace('Current ·','Previous ·')
+ if row['id']=='guard':
+  row['retainOriginal']=True;row['after']=row['before'];row['afterLabel']='Original guard · retained in game';row['note']='The original two-hand guard is retained in the game, including its original weapon and timing. Before: Initial retarget still shows the sourced shield-block study.';row['swordURL']='/assets/guard-sword.glb'
+ else:
+  row['afterLabel']='Integrated · '+row['afterLabel']
+  row['note']+=' The native game uses speed-matched locomotion and explicit combat play rates; this viewer keeps source timing available.'

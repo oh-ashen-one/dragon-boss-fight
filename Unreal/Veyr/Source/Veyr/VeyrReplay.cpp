@@ -863,11 +863,11 @@ bool AVeyrReplay::DriveIntegrationInputs()
         bool Two,Lock;int32 RunVariant,HeavyVariant,TwoHeavyVariant;float MinimumStamina;
     };
     static const FExercise Trials[]={
-        {TEXT("one_hand_jog"),TEXT("Run"),EExercise::Jog,EVeyrKnightAction::Ready,false,false,0,0,0,25},
-        {TEXT("two_hand_jog"),TEXT("RunTwoHand"),EExercise::Jog,EVeyrKnightAction::Ready,true,false,0,0,0,25},
-        {TEXT("run_tripo_and_stop"),TEXT("Run"),EExercise::Sprint,EVeyrKnightAction::Ready,false,false,0,0,0,25},
+        {TEXT("one_hand_sourced_walk"),TEXT("Walk"),EExercise::Jog,EVeyrKnightAction::Ready,false,false,0,0,0,25},
+        {TEXT("two_hand_sourced_walk"),TEXT("WalkTwoHand"),EExercise::Jog,EVeyrKnightAction::Ready,true,false,0,0,0,25},
+        {TEXT("sourced_run_and_stop"),TEXT("Run"),EExercise::Sprint,EVeyrKnightAction::Ready,false,false,0,0,0,25},
         {TEXT("run_meshy_and_stop"),TEXT("RunAlternate"),EExercise::Sprint,EVeyrKnightAction::Ready,false,false,1,0,0,25},
-        {TEXT("locked_lateral_jog_without_blink"),TEXT("Run"),EExercise::Lateral,EVeyrKnightAction::Ready,false,true,0,0,0,25},
+        {TEXT("locked_walk_without_blink"),TEXT("Walk"),EExercise::Lateral,EVeyrKnightAction::Ready,false,true,0,0,0,25},
         {TEXT("one_hand_light"),TEXT("LightAttack"),EExercise::Light,EVeyrKnightAction::LightAttack,false,true,0,0,0,50},
         {TEXT("one_hand_heavy_B"),TEXT("HeavyAttack"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,false,true,0,0,0,60},
         {TEXT("one_hand_heavy_A"),TEXT("HeavyAttackAlternate"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,false,true,0,1,0,60},

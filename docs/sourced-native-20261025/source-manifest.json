@@ -1,0 +1,76 @@
+{
+  "selectedMotions": "Owner approved walk, slash, run and roll; original guard retained",
+  "nativeIntegrationPending": false,
+  "clips": [
+    {
+      "key": "Walk",
+      "sourceSHA256": "5486b8ff0871ba249fd21eb7d0f62e15585a8c8a797c632a5ebfc24bb2d87c30",
+      "sha256": "2f29f2bd6180f0cb56a677581a4783d525879cc2063decf33a35111bb2bd1fdb",
+      "duration": 1.100000023841858,
+      "sourceFPS": 30,
+      "bakeFPS": 120,
+      "canonicalReconstructionMaxMatrixError": 1.109985359182275e-07
+    },
+    {
+      "key": "WalkTwoHand",
+      "sourceSHA256": "7ec3bce2098ac860dcf81133a83ad65eba388a249f30cd1833f73d3a8617adfd",
+      "sha256": "9c34bc59ab218e65bb10f603e184c360d52dc80a63dadf86e1186825a01d4c74",
+      "duration": 1.100000023841858,
+      "sourceFPS": 30,
+      "bakeFPS": 120,
+      "canonicalReconstructionMaxMatrixError": 1.3647760771506867e-07
+    },
+    {
+      "key": "Run",
+      "sourceSHA256": "a60395b262f6452fc8f63f3d789edd1cc7ba17059beb883c91e2d2e7a3e86faf",
+      "sha256": "846c9bbb2d5f761c1a7bb9ee3d8897ef7a4edee33dd6dc627e3c7c993a146ef0",
+      "duration": 0.5600000023841858,
+      "sourceFPS": 25,
+      "bakeFPS": 100,
+      "canonicalReconstructionMaxMatrixError": 1.1097320196107319e-07
+    },
+    {
+      "key": "RunTwoHand",
+      "sourceSHA256": "bf2496e6440a74140c85d526466f3611955cd4b2c9c310d8d6c615d9acafc139",
+      "sha256": "ed0f551973d30c97f0c66a54af50f0db96d57bba221d185c5bbe626c5b46a0a4",
+      "duration": 0.5600000023841858,
+      "sourceFPS": 25,
+      "bakeFPS": 100,
+      "canonicalReconstructionMaxMatrixError": 8.380246319106277e-08
+    },
+    {
+      "key": "LightAttack",
+      "sourceSHA256": "48d202f1255f37e22cc170341f28d15b32a7c4ecece56b815adfc083974ed8cb",
+      "sha256": "f2fdf780bf7269fe6ba0a7e2d44ca1e999a3e4817008d45f98e20d3eade50b9c",
+      "duration": 1.5,
+      "sourceFPS": 30,
+      "bakeFPS": 120,
+      "canonicalReconstructionMaxMatrixError": 1.6859160678617258e-07
+    },
+    {
+      "key": "Roll",
+      "sourceSHA256": "d6f7724fbee9d5ba59b62ce2f33961034348032af3589961d3e2f14e232ebf5a",
+      "sha256": "e91e0b2138d92cc6e5c811a4fe3078874b6139ce6ec2f5a77b68b21bd95cbe3a",
+      "duration": 1.0,
+      "sourceFPS": 25,
+      "bakeFPS": 100,
+      "canonicalReconstructionMaxMatrixError": 1.3371566953690461e-07
+    },
+    {
+      "key": "RollAttack",
+      "sourceSHA256": "ebff310570994fc0addf702473886f2ac18b658ffaa3f1d699e731e21f07087c",
+      "sha256": "eb8e4246ca117d8763bb7c750355b00034ff873f5fe959848cd0d6e8395a5c83",
+      "duration": 2.200000047683716,
+      "sourceFPS": 300,
+      "bakeFPS": 300,
+      "canonicalReconstructionMaxMatrixError": 1.0316922460784639e-07
+    }
+  ],
+  "guard": {
+    "source_sha256": "6d926dab7b79e78e2d80cf924003424f1fad404e2c8d8ac9e1ca1174271b6d81",
+    "normalized_sha256": "2cf15cf583437347ba564b881b5292a6ad8357e8d3b4207f2136fcc2630bbf34",
+    "nativeSourceDefinition": "/Game/Characters/Customuse/KnightB/v026/DA_KnightB",
+    "strategy": "inherit exact existing clip/sequence/weapon references; no guard reimport"
+  },
+  "packagedValidationPending": true
+}

@@ -13,10 +13,10 @@ def inventory():
  routes={};rows=[]
  for r in ROWS:
   row=dict(r)
-  for side,folder in [('before',BASE),('after',NEW)]:
-   p=folder/r[side];url='/assets/'+side+'/'+p.name;routes[url]=p;row[side+'URL']=url;row[side+'SHA256']=sha(p);row[side+'Duration']=duration(p)
+  for side,folder in [('before',BASE),('after',NEW),('raw',NEW)]:
+   p=(BASE if side=='after' and r.get('retainOriginal') else folder)/r[side];url='/assets/'+side+'/'+p.name;routes[url]=p;row[side+'URL']=url;row[side+'SHA256']=sha(p);row[side+'Duration']=duration(p)
   rows.append(row)
- routes.update({'/':HERE/'index.html','/viewer.js':HERE/'viewer.js','/style.css':HERE/'style.css','/assets/sword.glb':CACHE/'BoatGreatsword_OneHand_v4.glb'})
+ routes.update({'/':HERE/'index.html','/viewer.js':HERE/'viewer.js','/style.css':HERE/'style.css','/assets/sword.glb':CACHE/'BoatGreatsword_OneHand_v4.glb','/assets/guard-sword.glb':ROOT/'Local/CustomuseAssets/Polish20261025/props/BoatGreatsword_Grip_v6.glb'})
  for name in ['build/three.module.js','build/three.core.js','examples/jsm/loaders/GLTFLoader.js','examples/jsm/controls/OrbitControls.js','examples/jsm/utils/BufferGeometryUtils.js','examples/jsm/utils/SkeletonUtils.js']:
   routes['/vendor/three/'+name]=CACHE/'vendor/three'/name
  for p in routes.values():assert p.is_file(),p
