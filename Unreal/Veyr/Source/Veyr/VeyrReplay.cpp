@@ -3,6 +3,7 @@
 #include "VeyrDragon.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrGameMode.h"
+#include "VeyrAudio.h"
 #include "VeyrArena.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
@@ -282,7 +283,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("headWindow"),Dragon->GetHeadWindowRemaining());
     O->SetNumberField(TEXT("targetLeg"),TargetLeg);
     const FVector ReviewLeg=Dragon->GetLegLocation(TargetLeg);
-    const FVector ReviewGoal=ReviewLeg+(ReviewLeg-Dragon->GetActorLocation()).GetSafeNormal2D()*185.f;
+    const FVector ReviewGoal=ReviewLeg+(ReviewLeg-Dragon->GetActorLocation()).GetSafeNormal2D()*(ReplayMode==TEXT("stance")?250.f:185.f);
     O->SetNumberField(TEXT("targetLegGoalDistanceCm"),FVector::Dist2D(Knight->GetFootLocation(),ReviewGoal));
     O->SetNumberField(TEXT("targetLegFacingDot"),FVector::DotProduct(Knight->GetActorForwardVector(),(ReviewLeg-Knight->GetFootLocation()).GetSafeNormal2D()));
     O->SetBoolField(TEXT("combatHealSeeking"),bCombatHealSeeking);
@@ -413,7 +414,7 @@ void AVeyrReplay::Observe()
             bLightLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),34.f);
             bHeavyLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),72.f);
         }
-        Event(Dragon->GetLastHitRegion()==4?TEXT("head_contact"):TEXT("leg_contact")); PreviousContacts=Dragon->GetSwordContactCount();
+        Event(Dragon->GetLastHitRegion()==4?TEXT("head_contact"):Dragon->GetLastHitRegion()==5?TEXT("body_contact"):TEXT("leg_contact")); PreviousContacts=Dragon->GetSwordContactCount();
     }
     if(Knight->DodgedHits!=PreviousDodges){Event(TEXT("dodge_contact"));PreviousDodges=Knight->DodgedHits;}
     if(Knight->HitsTaken!=PreviousDamage){Event(TEXT("damage_received"));PreviousDamage=Knight->HitsTaken;}
@@ -1167,6 +1168,23 @@ bool AVeyrReplay::DriveStanceInputs()
             }
         }
         const int32 ContactDelta=Dragon->GetSwordContactCount()-StanceContactsBefore;
+        const bool FlightInterrupted=!Roll&&Dragon->Move==EVeyrDragonMove::FlyAway&&
+            (Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||Dragon->State==EVeyrDragonState::Recovery);
+        if(FlightInterrupted)
+        {
+            // A valid body/tail hit during takeoff is not leg-comparison data.
+            // Preserve the event and retry this unchanged leg criterion later.
+            StanceCurrentTrial->SetBoolField(TEXT("interruptedByFlight"),true);
+            StanceCurrentTrial->SetNumberField(TEXT("observedContactDelta"),ContactDelta);
+            StanceCurrentTrial->SetNumberField(TEXT("observedRegion"),Dragon->GetLastHitRegion());
+            if(Available)
+            {
+                StanceCurrentTrial->SetBoolField(TEXT("verified"),false);StanceTrials.Add(MakeShared<FJsonValueObject>(StanceCurrentTrial));
+                StanceCurrentTrial.Reset();bStancePending=false;
+                if(++StanceAttempt>=10)Finish(false,TEXT("No stable grounded leg trial after ten flight interruptions"));
+            }
+            return true;
+        }
         if(!Roll&&ContactDelta&&!bStanceContactVerified)
         {
             const int32 Region=Dragon->GetLastHitRegion();
@@ -1240,7 +1258,7 @@ bool AVeyrReplay::DriveStanceInputs()
     const bool Threat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
     const bool Down=Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse||Dragon->IsHeadExposed()||Dragon->State==EVeyrDragonState::Rise;
     const FVector Leg=Dragon->GetLegLocation(TargetLeg);
-    const FVector Goal=Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*185.f;
+    const FVector Goal=Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*250.f;
     const float Distance=FVector::Dist2D(Feet,Goal);
     // Use the normal one-hand run to approach; ready two hands only at range.
     const bool DesiredGrip=Two&&(Roll||Distance<80.f);
@@ -1268,7 +1286,8 @@ bool AVeyrReplay::DriveStanceInputs()
         {
             const float SafeTime=SafeStationarySeconds(Feet);
             const bool CanTrial=Roll?(SafeRecovery||(Dragon->IsHeadExposed()&&Remaining>1.1f)):
-                !Down&&!Dragon->IsAirborne()&&Distance<35.f&&FacingStanceLeg&&SafeTime>Knight->GetAttackDuration(Heavy)+.1f;
+                !Down&&!Dragon->IsAirborne()&&Dragon->Move!=EVeyrDragonMove::FlyAway&&
+                Distance<45.f&&FacingStanceLeg&&SafeTime>Knight->GetAttackDuration(Heavy)*.55f+.15f;
             if(CanTrial&&Knight->Stamina>=(Roll?55.f:Heavy?70.f:55.f))
             {
                 bStancePending=true;bStanceActionObserved=bStanceContactVerified=bStanceSwitchBlocked=false;
@@ -2319,7 +2338,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Stance->SetNumberField(TEXT("oneHandLightDuration"),StanceDurations[0]);Stance->SetNumberField(TEXT("oneHandHeavyDuration"),StanceDurations[1]);
     Stance->SetNumberField(TEXT("twoHandLightDuration"),StanceDurations[2]);Stance->SetNumberField(TEXT("twoHandHeavyDuration"),StanceDurations[3]);
     Stance->SetNumberField(TEXT("oneHandRollDuration"),StanceRollDurations[0]);Stance->SetNumberField(TEXT("twoHandRollDuration"),StanceRollDurations[1]);
-    Stance->SetStringField(TEXT("coverage"),TEXT("8.5 seconds without replay/lock input, with sampled native knight/dragon head motion; actual accepted light/heavy duration and exactly one leg contact per grip corroborated by boss HP loss; active ToggleGrip rejection; valid switches to two-hand and back; roll duration .78 imported/.58 proxy, 25 stamina and .08-.44 immunity/recovery in both grips. Input handlers only; E hardware binding and visual pose acceptance require separate native review."));
+    Stance->SetStringField(TEXT("coverage"),TEXT("8.5 seconds without replay/lock input, with sampled native knight/dragon head motion; actual accepted light/heavy duration and exactly one leg contact per grip corroborated by boss HP loss; active ToggleGrip rejection; valid switches to two-hand and back; roll duration .78 imported/.58 proxy, 18 stamina and .08-.44 immunity/recovery in both grips. Input handlers only; E hardware binding and visual pose acceptance require separate native review."));
     Root->SetObjectField(TEXT("stance"),Stance);
     Root->SetStringField(TEXT("boundaryCoverageDefinition"),TEXT("healing: four actual completions, one charge each, min(100,before+55), then injured zero-charge request unchanged for one authored heal duration plus0.15s; guard: actual contacts with preceding-frame grounded guard/facing/stamina plus health and counter deltas; rear trial recharges with guard released to75 then arms (48reserve hysteresis, >=40contact qualifier); break requires precontact stamina below max(12,0.9*observed nonlethal full damage); natural attacks and normal controller yaw input only"));
     Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));

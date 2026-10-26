@@ -1,0 +1,177 @@
+{
+  "status": "Static PBR asset review completed; no game acceptance claimed",
+  "sourceGLBSHA256": "404569c6a1f1594af85fb4bba7c6d734c1a8f6927d5fa094b17dc19576d82e56",
+  "sourceGLBUnchanged": true,
+  "files": {
+    ".blend": {
+      "path": "Local/Overhaul20261026/generated-review/GeneratedRibSpan_Normalized.blend",
+      "sha256": "b397828e8152cd7992d51a0b448400ea010ae0d45fd0b442093602bd3ed3d35a",
+      "bytes": 10685270
+    },
+    ".json": {
+      "path": "Local/Overhaul20261026/generated-review/GeneratedRibSpan_Normalized.json",
+      "sha256": "d44f23edb6c2ed49643fd8758bb783c77b3ff4c4aeb66ebc26701fcdb5c413af",
+      "bytes": 3926
+    },
+    "-front.png": {
+      "path": "Local/Overhaul20261026/generated-review/GeneratedRibSpan_Normalized-front.png",
+      "sha256": "d1fe2f68e21f7670aa9d1ed98be836671324190f6fba4338e7157cb504c68adb",
+      "bytes": 649294
+    },
+    "-side.png": {
+      "path": "Local/Overhaul20261026/generated-review/GeneratedRibSpan_Normalized-side.png",
+      "sha256": "3cf33c6b5116e248b0821c94cdbfdfce56362c0fdf60d0e81f40334376cf9718",
+      "bytes": 685968
+    },
+    "-three_quarter.png": {
+      "path": "Local/Overhaul20261026/generated-review/GeneratedRibSpan_Normalized-three_quarter.png",
+      "sha256": "cedc5c886379d90b023f0df73aa748d6e2bc8801c951213b1abe365dea722e09",
+      "bytes": 700114
+    },
+    "-three-views.png": {
+      "path": "Local/Overhaul20261026/generated-review/GeneratedRibSpan_Normalized-three-views.png",
+      "sha256": "5e11b84e800059a4e86208ec4b319fc42f1619d3bf7b45eeb4fd268d346224e8",
+      "bytes": 1489117
+    },
+    "-clearance.json": {
+      "path": "Local/Overhaul20261026/generated-review/GeneratedRibSpan_Normalized-clearance.json",
+      "sha256": "e7f58b6fded4bc37ee8d5f81e4748f7c4a3e900a2536f0610cdb3f775182f153",
+      "bytes": 1543
+    }
+  },
+  "dimensionsMetersXYZ": [
+    12.0,
+    1.8362921476364136,
+    5.0
+  ],
+  "geometryAudit": [
+    {
+      "name": "GeneratedRibSpan_Normalized_nodes_0",
+      "vertices": 57301,
+      "edges": 99227,
+      "faces": 48344,
+      "triangles": 48344,
+      "boundaryEdges": 53422,
+      "nonManifoldEdges": 53422,
+      "degenerateFaces": 0,
+      "looseVertices": 0,
+      "invalidVertices": 0,
+      "connectedComponents": 6539,
+      "largestComponentVertexCounts": [
+        225,
+        211,
+        177,
+        162,
+        145,
+        144,
+        143,
+        142,
+        137,
+        123,
+        116,
+        112,
+        111,
+        109,
+        108,
+        105,
+        105,
+        104,
+        104,
+        97
+      ],
+      "uvLayers": [
+        "UVMap"
+      ],
+      "weldedDiagnostic": {
+        "distanceMeters": 1.3129050565299278e-06,
+        "vertices": 24222,
+        "boundaryEdges": 191,
+        "nonManifoldEdges": 269,
+        "degenerateFaces": 0,
+        "boundaryEdgeLengthMeters": 7.183733775978908
+      }
+    }
+  ],
+  "normalAudit": {
+    "finite": true,
+    "lengthMinimum": 0.99999994,
+    "lengthMaximum": 1.0,
+    "tangentAccessorPresent": false
+  },
+  "clearance": {
+    "method": "Front-to-back BVH ray grid through exact imported asset;0.02m horizontal and0.01m centerline vertical sample; excludes review ground",
+    "centerlineFirstMaterialAboveBaseMeters": 3.31,
+    "heightLevels": [
+      {
+        "heightAboveBaseMeters": 0.25,
+        "centerOpen": true,
+        "centralOpenIntervalX": [
+          -3.24,
+          3.24
+        ],
+        "centralOpenWidthMeters": 6.48
+      },
+      {
+        "heightAboveBaseMeters": 0.5,
+        "centerOpen": true,
+        "centralOpenIntervalX": [
+          -3.26,
+          3.26
+        ],
+        "centralOpenWidthMeters": 6.52
+      },
+      {
+        "heightAboveBaseMeters": 1,
+        "centerOpen": true,
+        "centralOpenIntervalX": [
+          -3.12,
+          3.119999999999999
+        ],
+        "centralOpenWidthMeters": 6.239999999999999
+      },
+      {
+        "heightAboveBaseMeters": 2,
+        "centerOpen": true,
+        "centralOpenIntervalX": [
+          -2.6,
+          2.5999999999999996
+        ],
+        "centralOpenWidthMeters": 5.199999999999999
+      },
+      {
+        "heightAboveBaseMeters": 3,
+        "centerOpen": true,
+        "centralOpenIntervalX": [
+          -0.9800000000000004,
+          0.9800000000000004
+        ],
+        "centralOpenWidthMeters": 1.9600000000000009
+      },
+      {
+        "heightAboveBaseMeters": 3.5,
+        "centerOpen": false,
+        "centralOpenIntervalX": null,
+        "centralOpenWidthMeters": 0
+      },
+      {
+        "heightAboveBaseMeters": 4,
+        "centerOpen": false,
+        "centralOpenIntervalX": null,
+        "centralOpenWidthMeters": 0
+      }
+    ],
+    "notCollisionAcceptance": true
+  },
+  "visualNotes": [
+    "Open void confirmed in front and three-quarter views. Broad pointed arch has intact layered mouldings and readable stone textures after width/rise adjustment.",
+    "Outer12m width includes large moulding/foot blocks. Clear opening is6.48m at0.25m abovebase,5.20m at2m high; innercrown starts3.31m abovebase.",
+    "No gross missing surface or severe shading inversion seen in the three views. Diagnostic seam-weld retains191boundary and269nonmanifold edges; asset is not watertight.",
+    "Previous generated chandelier/vault reviews preserved unchanged."
+  ],
+  "session": {
+    "owner": "codex-veyr-flight-join-r2",
+    "pid": 24596,
+    "port": 9892,
+    "shutdown": "SIGTERM; exit verified; slot released"
+  }
+}

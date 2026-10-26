@@ -82,7 +82,7 @@ AVeyrDragon::AVeyrDragon()
     ImportedPresentation=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("CustomuseDragonPresentation"));
     ImportedPresentation->ConfigureRenderPolicy(false,true);
     ImportedPresentation->SetupAttachment(SceneRoot);
-    ImportedPresentation->LightingChannels.bChannel1=true;
+    ImportedPresentation->LightingChannels.bChannel1=true;ImportedPresentation->LightingChannels.bChannel2=true;
     ImportedPresentation->SetVisibility(false);
     AttackPoseProbe=CreateDefaultSubobject<UVeyrSkeletalPresentation>(TEXT("HiddenAttackEnvelopeProbe"));
     AttackPoseProbe->ConfigureRenderPolicy(true,false);
@@ -298,7 +298,10 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 // New takeoff/hover/landing already contain the approved root
                 // altitude. Actor travel supplies only the horizontal route.
                 Position.Z+=FMath::Square(FMath::Sin(T*PI))*(HasAuthoredFlight()?850.f:1400.f);
-                Position+=GetActorRightVector()*FMath::Sin(T*PI)*280.f;
+                Position+=AttackForward.RotateAngleAxis(90.f,FVector::UpVector)*FMath::Sin(T*PI)*280.f;
+                const FVector Facing=(T>.30f&&T<.75f?AerialFireTarget:MoveEnd)-Position;
+                if(Facing.SizeSquared2D()>FMath::Square(250.f))
+                    SetActorRotation(FMath::RInterpTo(GetActorRotation(),FRotator(0,Facing.Rotation().Yaw,0),DeltaSeconds,1.8f));
                 // Analytic arc returns to the authored endpoints with zero vertical velocity.
                 SetActorLocation(Position);
             }
@@ -1479,9 +1482,15 @@ void AVeyrDragon::UpdateImportedPresentation()
             const FVector From=ImportedPresentation->GetComponentQuat().UnrotateVector((A.GetLocation()-M.GetLocation()).GetSafeNormal());
             const FVector Toward=ImportedPresentation->GetComponentQuat().UnrotateVector((AerialFireTarget+FVector(0,0,50)-M.GetLocation()).GetSafeNormal());
             FRotator Offset=FQuat::FindBetweenNormals(From,Toward).Rotator();
-            Offset.Pitch=FMath::Clamp(Offset.Pitch,-65.f,65.f);Offset.Yaw=FMath::Clamp(Offset.Yaw,-50.f,50.f);Offset.Roll=0.f;
-            TMap<FName,FRotator> Aim;Aim.Add(H->BoneName,Offset*AimWeight);
-            if(J)Aim.Add(J->BoneName,FRotator(-22.f*AimWeight,0,0));
+            Offset.Pitch=FMath::Clamp(Offset.Pitch,-54.f,54.f);Offset.Yaw=FMath::Clamp(Offset.Yaw,-36.f,36.f);Offset.Roll=0.f;
+            TMap<FName,FRotator> Aim;
+            if(!BiteNeckBase.IsNone()&&!BiteNeckMiddle.IsNone())
+            {
+                Aim.Add(BiteNeckBase,Offset*(AimWeight/3.f));
+                Aim.Add(BiteNeckMiddle,Offset*(AimWeight/3.f));
+                Aim.Add(H->BoneName,Offset*(AimWeight/3.f));
+            }
+            if(J)Aim.Add(J->BoneName,FRotator(-18.f*AimWeight,0,0));
             if(ImportedPresentation->SetComponentSpaceBoneRotations(Aim))ImportedPresentation->SampleClipTime(Clip,StateElapsed);
         }
     }
@@ -1592,7 +1601,8 @@ TArray<FVeyrDragonContact> AVeyrDragon::GetImportedContacts() const
 FVeyrDragonFlameBeam AVeyrDragon::GetActiveFlameBeam() const
 {
     FVeyrDragonFlameBeam Beam;
-    if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&!bEncounterStopped&&bImportedTargetsValid)
+    if(!bUsingCustomuseVisual||!bImportedTargetsValid||!bImportedAttackCacheReady||bEncounterStopped||!MissingVisualClip.IsNone())return Beam;
+    if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)
     {
         const float T=StateElapsed/FMath::Max(.01f,ActiveDuration);
         if(T<.48f||T>.72f)return Beam;

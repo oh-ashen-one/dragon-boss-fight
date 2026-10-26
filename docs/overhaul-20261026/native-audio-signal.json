@@ -1,0 +1,11 @@
+{
+  "file": "Local/owned-editor-20261026T201618Z/master-audio/VeyrMix-639286426877330000.wav",
+  "durationSeconds": 30.016,
+  "sampleRate": 48000,
+  "channels": 2,
+  "peakDBFS": -17.125893080381765,
+  "rmsDBFS": -37.88722952595064,
+  "nonzeroFraction": 0.9962568574538024,
+  "clippedSamples": 0,
+  "scope": "Recorded native PIE game master submix. Signal and clipping verification only; not an acoustic or physical-output verdict. Earlier all-zero capture was caused by owned editor background-audio policy; per-process QA setting enabled without saving preferences."
+}

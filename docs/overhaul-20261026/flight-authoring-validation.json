@@ -12,22 +12,22 @@
       "name": "Dragon_Takeoff_DangleJoin_v2",
       "files": {
         ".glb": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2.glb",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2.glb",
           "sha256": "0e7b277682be75be7a0da04284b90ecbb401dc515f573c857f7afec86abf7950",
           "bytes": 17965548
         },
         ".blend": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2.blend",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2.blend",
           "sha256": "9085460dd3710dc86c29e2230bef186d26f587c79871779f8ce2201a10cc09b6",
           "bytes": 97859240
         },
         "-contact.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2-contact.png",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2-contact.png",
           "sha256": "043f372be8e1095b6552db8d3c14d00cc0ca1a6e140b655c626a53cea95cde26",
           "bytes": 1930875
         },
         "-three-views.mp4": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2-three-views.mp4",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Takeoff_DangleJoin_v2-three-views.mp4",
           "sha256": "9b476be16b3e16c7d08f0e44c47f85bf27e7245f1be44bf60e3f4d587126d19b",
           "bytes": 415375
         }
@@ -63,22 +63,22 @@
       "name": "Dragon_Land_DangleJoin_v2",
       "files": {
         ".glb": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2.glb",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2.glb",
           "sha256": "e25902561ce0d3dade3e7552778d375288553ddffa2c9a4ccb89014816c2927e",
           "bytes": 17965560
         },
         ".blend": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2.blend",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2.blend",
           "sha256": "054c54dd1c219da675dfe03a9682576c7d5c39955feeaf680a17e7fbecdf97cb",
           "bytes": 109264415
         },
         "-contact.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2-contact.png",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2-contact.png",
           "sha256": "eaf0cb8bfe5fa8deb79ce897ff9ff7d984c9219ec288184e2fc068331ac1334e",
           "bytes": 1984566
         },
         "-three-views.mp4": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2-three-views.mp4",
+          "path": "Local/Overhaul20261026/flight-r2/Dragon_Land_DangleJoin_v2-three-views.mp4",
           "sha256": "9ad5378230c2d718eccd522be41bc10ec1726cbd8e3168120bc43ce8832edacc",
           "bytes": 450502
         }

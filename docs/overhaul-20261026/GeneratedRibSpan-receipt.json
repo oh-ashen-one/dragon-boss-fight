@@ -1,0 +1,51 @@
+{
+  "name": "GeneratedRibSpan",
+  "provider": "Meshy",
+  "prompt": "One isolated monumental Gothic stone vault rib spanning a wide open space. A single inverted-V pointed arch beam, two curved tapering arms meeting at a carved central keystone. Thick three-dimensional limestone masonry with three parallel raised mouldings and small Gothic leaf carvings. Only the overhead curved arch rib; NO walls, NO doors, NO columns, NO piers, NO floor, NO pedestal, no enclosed scene. The two lower ends are squared structural attachment faces. Broad horizontal span twelve meters, rise five meters, rib thickness one meter. Weathered dark grey limestone with chips, soot and fine stone grain. Entire open void under the rib must remain empty. Complete front, back and underside, coherent connected structure.",
+  "tasks": [
+    {
+      "id": "01a179a4-3bb5-74d5-9a9b-993c4829ea2c",
+      "stage": "preview",
+      "request": {
+        "mode": "preview",
+        "prompt": "One isolated monumental Gothic stone vault rib spanning a wide open space. A single inverted-V pointed arch beam, two curved tapering arms meeting at a carved central keystone. Thick three-dimensional limestone masonry with three parallel raised mouldings and small Gothic leaf carvings. Only the overhead curved arch rib; NO walls, NO doors, NO columns, NO piers, NO floor, NO pedestal, no enclosed scene. The two lower ends are squared structural attachment faces. Broad horizontal span twelve meters, rise five meters, rib thickness one meter. Weathered dark grey limestone with chips, soot and fine stone grain. Entire open void under the rib must remain empty. Complete front, back and underside, coherent connected structure.",
+        "ai_model": "meshy-7.1",
+        "should_remesh": true,
+        "topology": "triangle",
+        "target_polycount": 50000,
+        "target_formats": [
+          "glb"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "consumed_credits": 20,
+      "created_at": 1793042170577,
+      "finished_at": 1793042292282
+    },
+    {
+      "id": "01a179ab-7b37-74f0-94a1-d92685f25d49",
+      "stage": "refine",
+      "request": {
+        "mode": "refine",
+        "preview_task_id": "01a179a4-3bb5-74d5-9a9b-993c4829ea2c",
+        "enable_pbr": true,
+        "texture_resolution": "2k",
+        "texture_prompt": "One isolated monumental Gothic stone vault rib spanning a wide open space. A single inverted-V pointed arch beam, two curved tapering arms meeting at a carved central keystone. Thick three-dimensional limestone masonry with three parallel raised mouldings and small Gothic leaf carvings. Only the overhead curved arch rib; NO walls, NO doors, NO columns, NO piers, NO floor, NO pedestal, no enclosed scene. The two lower ends are squared structural attachment faces. Broad horizontal span twelve meters, rise five meters, rib thickness one meter. Weathered dark grey limestone with chips, soot and fine stone grain. Entire open void under the rib must remain empty. Complete front, back and underside, coherent connected structure.",
+        "target_formats": [
+          "glb"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "progress": 100,
+      "consumed_credits": 10,
+      "created_at": 1793042644118,
+      "finished_at": 1793042679628,
+      "download": {
+        "file": "Local/Overhaul20261026/Meshy/GeneratedRibSpan/GeneratedRibSpan_Source.glb",
+        "sha256": "929aec4db44c84adfbbe1a05af25162080704a54298de9927511c8d2ee208483",
+        "bytes": 10580204
+      }
+    }
+  ]
+}

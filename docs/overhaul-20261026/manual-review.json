@@ -1,0 +1,15 @@
+{
+  "app": "~/Downloads/Veyr-Cathedral-Overhaul-v029/Veyr.app",
+  "coldLaunchVerified": true,
+  "enterBegins": true,
+  "keyboardSprintRollGripObserved": true,
+  "escapePausesAndResumes": true,
+  "pauseSceneStayedFixedDuringSettingsReview": true,
+  "settingsAndControlsPagesRendered": true,
+  "musicLevelChanged55to45andRestored55": true,
+  "keyboardMenuNavigationVerified": true,
+  "mouseClickMenuActivationVerified": false,
+  "manualMaximumUpwardAngleVerified": false,
+  "limitations": "CUA keyboard input and rendered panels verified. CUA mouse clicks moved the cursor but did not activate Slate buttons; keyboard activation worked. No physical mouse-input or maximum manual pitch claim. Native input-path and automatic camera checks remain separate.",
+  "cleanQuit": true
+}

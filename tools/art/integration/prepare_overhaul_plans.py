@@ -19,7 +19,7 @@ for char in ('KnightB','DragonV3B'):
  for k in ('finalize_only','verify_pose_only','restore_editor_settings'):plan.pop(k,None)
  plan['clips']=[];plan['mesh_variants']={};rows=[]
  if char=='KnightB':
-  canonical=GLB(old['rig']['file']);jobs=[('BlinkLeft',ROOT/'Local/Overhaul20261026/blink/Exports/Sourced_BlinkLeft_v1.glb'),('BlinkRight',ROOT/'Local/Overhaul20261026/blink/Exports/Sourced_BlinkRight_v1.glb')]
+  canonical=GLB(old['rig']['file']);jobs=[('BlinkLeft',ROOT/'Local/Overhaul20261026/blink-v2/Sourced_BlinkLeft_Transit_v2.glb'),('BlinkRight',ROOT/'Local/Overhaul20261026/blink-v2/Sourced_BlinkRight_Transit_v2.glb')]
   for key,file in jobs:
    meta=json.loads(file.with_suffix('.json').read_text());row=normalize_file(file,canonical,OUT/'knight'/file.name,meta['fps'],meta['duration']);row.update(key=key);rows.append(row)
    variant=row['mesh_variant'];plan['mesh_variants'][variant]={'file':row['file'],'sha256':row['sha256']}

@@ -1,0 +1,12 @@
+{
+  "file": "Evidence/native-integration-20261026T220014Z/master-audio/VeyrMix-639286488169420000.wav",
+  "durationSeconds": 89.36533333333334,
+  "channels": 2,
+  "sampleRate": 48000,
+  "bits": 16,
+  "nonzeroFraction": 0.9965443814902125,
+  "peakDBFS": -14.282296785703428,
+  "rmsDBFS": -37.152649893709665,
+  "clippedSamples": 0,
+  "scope": "Actual Shipping game master submix; no microphone/system audio. Signal check, not acoustic audition."
+}

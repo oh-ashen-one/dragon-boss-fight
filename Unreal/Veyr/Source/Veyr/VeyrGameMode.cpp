@@ -7,7 +7,11 @@
 #include "VeyrAudio.h"
 #include "VeyrDragonEffects.h"
 #include "VeyrIdentity.h"
+#include "AudioMixerBlueprintLibrary.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
 #include "Engine/World.h"
+#include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/AudioComponent.h"
@@ -21,6 +25,7 @@
 AVeyrGameMode::AVeyrGameMode()
 {
     PrimaryActorTick.bCanEverTick=true;
+    PrimaryActorTick.bTickEvenWhenPaused=true;
     bPauseable=true;
     DefaultPawnClass=AVeyrKnight::StaticClass();
     HUDClass=AVeyrHUD::StaticClass();
@@ -28,6 +33,17 @@ AVeyrGameMode::AVeyrGameMode()
 void AVeyrGameMode::StartPlay()
 {
     Super::StartPlay();
+    // Shipping ignores startup console execution; enforce the delivered frame cap directly.
+    if(GEngine)GEngine->SetMaxFPS(60.f);
+    // Optional test-only capture records this game's master submix, never
+    // the microphone or system audio. Ordinary launches create no recordings.
+    if(FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioCapture="),MixCaptureDirectory))
+    {
+        if(FPaths::IsRelative(MixCaptureDirectory)||!IFileManager::Get().MakeDirectory(*MixCaptureDirectory,true))MixCaptureDirectory.Reset();
+        FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioCaptureSeconds="),MixCaptureDuration);
+        MixCaptureDuration=FMath::Clamp(MixCaptureDuration,10.f,120.f);
+        MixCaptureName=FString::Printf(TEXT("VeyrMix-%lld"),FDateTime::UtcNow().GetTicks());
+    }
     if(GConfig)
     {
         GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MasterVolume"),UserMasterVolume,GGameUserSettingsIni);
@@ -51,6 +67,9 @@ void AVeyrGameMode::StartPlay()
 void AVeyrGameMode::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    if(MixCaptureStarted>0&&!bMixCaptureFinished&&FPlatformTime::Seconds()-MixCaptureStarted>=MixCaptureDuration)FinishMixCapture();
+    // Only the optional bounded recording timer ticks while paused.
+    if(UGameplayStatics::IsGamePaused(this))return;
     if(!Knight)
     {
         if(APlayerController* PC=GetWorld()->GetFirstPlayerController())Knight=Cast<AVeyrKnight>(PC->GetPawn());
@@ -78,6 +97,12 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
     }
     if(Knight&&Dragon&&Knight->HasEnteredEncounter())
     {
+        if(!MixCaptureDirectory.IsEmpty()&&MixCaptureStarted==0&&!bMixCaptureFinished)
+        {
+            UAudioMixerBlueprintLibrary::StartRecordingOutput(this,MixCaptureDuration+1.f);
+            MixCaptureStarted=FPlatformTime::Seconds();
+            UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_CAPTURE_START wall=%.6f world=%.6f"),MixCaptureStarted,GetWorld()->GetTimeSeconds());
+        }
         EncounterSeconds+=DeltaSeconds;
         if(Dragon->IsDead()&&VictorySeconds<0)
         {
@@ -148,4 +173,16 @@ void AVeyrGameMode::SaveUserSettings()
     GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("EffectsVolume"),UserEffectsVolume,GGameUserSettingsIni);
     GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
     GConfig->Flush(false,GGameUserSettingsIni);
+}
+
+void AVeyrGameMode::FinishMixCapture()
+{
+    if(MixCaptureStarted<=0||bMixCaptureFinished)return;
+    bMixCaptureFinished=true;
+    UAudioMixerBlueprintLibrary::StopRecordingOutput(this,EAudioRecordingExportType::WavFile,MixCaptureName,MixCaptureDirectory);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_CAPTURE_STOP wall=%.6f name=%s"),FPlatformTime::Seconds(),*MixCaptureName);
+}
+void AVeyrGameMode::EndPlay(const EEndPlayReason::Type Reason)
+{
+    FinishMixCapture();Super::EndPlay(Reason);
 }

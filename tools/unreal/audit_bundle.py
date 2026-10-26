@@ -352,7 +352,7 @@ def repair_copy(source, staged, destination, receipt, engine, *, owned_stage_roo
         owner_receipt=Path(owner.get('receiptDirectory','/')).resolve()
         if owner.get('project')!=str(PROJECT.resolve()) or not owner_receipt.is_relative_to(ROOT/'Local'):
             raise ValueError('fresh stage ownership does not match this task')
-        if staged!=stage_root/'Mac/Veyr.app':
+        if source.name not in ('Veyr.app','Veyr-Mac-Shipping.app') or staged!=stage_root/'Mac'/source.name:
             raise ValueError('payload source is outside the exact owned fresh stage')
     if destination.exists() or destination.is_relative_to(source) or source.is_relative_to(destination):
         raise ValueError('repair requires a new nonoverlapping output app; source stays unchanged')

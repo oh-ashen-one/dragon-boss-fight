@@ -1,0 +1,22 @@
+{
+  "evidence": "Evidence/native-integration-20261026T220014Z/unreal-integration-20261026T220017Z-5779066E/evidence.json",
+  "nativeScenarioPassed": true,
+  "cameraSamples": 586,
+  "observedStates": [
+    "Active",
+    "Idle",
+    "Recovery",
+    "Reposition",
+    "Windup"
+  ],
+  "observedMoves": [
+    "ClawSwipe",
+    "Fire",
+    "FlyAway"
+  ],
+  "fixedRequestedCameraCm": 560,
+  "fixedFOVDegrees": 72,
+  "passed": true,
+  "issues": [],
+  "scope": "Recorded actual scenario states only. Manual input responsiveness, visual fit, audible quality and performance need separate checks."
+}

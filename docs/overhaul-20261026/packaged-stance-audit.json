@@ -1,0 +1,28 @@
+{
+  "evidence": "Evidence/native-stance-20261026T212739Z/unreal-stance-20261026T212747Z-9F8AA9F6/evidence.json",
+  "nativeScenarioPassed": true,
+  "cameraSamples": 1073,
+  "observedStates": [
+    "Active",
+    "Buckle",
+    "Collapse",
+    "Exposed",
+    "Idle",
+    "Recovery",
+    "Reposition",
+    "Rise",
+    "Windup"
+  ],
+  "observedMoves": [
+    "BackStomp",
+    "Bite",
+    "ClawSwipe",
+    "Fire",
+    "FlyAway"
+  ],
+  "fixedRequestedCameraCm": 560,
+  "fixedFOVDegrees": 72,
+  "passed": true,
+  "issues": [],
+  "scope": "Recorded actual scenario states only. Manual input responsiveness, visual fit, audible quality and performance need separate checks."
+}

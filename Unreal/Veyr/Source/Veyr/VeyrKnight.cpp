@@ -446,7 +446,14 @@ void AVeyrKnight::TryDirectionalBlink()
     const bool Left=FVector::DotProduct(Direction,GetActorRightVector())<0.f;
     if(TryBlink(Left))
     {
-        const FVector AuthoredSide=GetActorRightVector()*(Left?-1.f:1.f);
+        FVector AuthoredSide=GetActorRightVector()*(Left?-1.f:1.f);
+        const FVeyrVisualClip* Clip=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
+        if(Clip&&Clip->RootTranslationSamplesCm.Num()>1)
+        {
+            const FVector Local=Clip->RootTranslationSamplesCm.Last()-Clip->RootTranslationSamplesCm[0];
+            const FVector Actual=GetActorQuat().RotateVector(CustomuseVisualDefinition->MeshRelativeTransform.TransformVector(Local)).GetSafeNormal2D();
+            if(!Actual.IsNearlyZero())AuthoredSide=Actual;
+        }
         BlinkDirectionYaw=FMath::FindDeltaAngleDegrees(AuthoredSide.Rotation().Yaw,Direction.Rotation().Yaw);
         BlinkRequestedDirection=Direction;
     }
@@ -742,13 +749,19 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             const FVector Focus=Boss->GetHeadLocation();
             const FVector Delta=Focus-CameraBoom->GetComponentLocation();
             FRotator Desired=Delta.Rotation();
-            Desired.Pitch=FMath::Clamp(Desired.Pitch,-55.f,68.f);
+            Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,25.f);
             // Avoid spinning underneath a target whose head crosses overhead.
             if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;
             Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
         }
         Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,68.f);Look.Roll=0.f;
         Controller->SetControlRotation(Look);
+        // Preserve a shoulder-height lens during upward look rather than
+        // orbiting it into the floor and shortening the arm into the armor.
+        const float R=FMath::DegreesToRadians(Look.Pitch);
+        const float Pivot=FMath::Max(170.f,90.f+Arm*FMath::Sin(R)-12.f*FMath::Cos(R));
+        CameraBoom->SetRelativeLocation(FVector(0,0,Pivot-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
+        CameraBoom->SocketOffset.Y=FMath::GetMappedRangeValueClamped(FVector2D(15,68),FVector2D(42,180),Look.Pitch);
     }
     // The spring-arm sphere sweep resolves walls and floor at steep pitch.
     // Keeping the boots visible is deliberately not a pitch restriction.
@@ -777,6 +790,7 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
     if (Player != OcclusionController.Get()) RestoreCameraOcclusion();
     if (!Player || !Player->IsLocalController() || !IsValid(Boss)) { RestoreCameraOcclusion(); return; }
     OcclusionController = Player;
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->Arena)Mode->Arena->UpdatePropCameraOcclusion(Player,CombatCamera->GetComponentLocation(),GetFootLocation()+FVector(0,0,145),DeltaSeconds);
     if(Boss->bUsingCustomuseVisual)
     {
         for(const auto& Pair:CameraHiddenParts)Player->HiddenPrimitiveComponents.Remove(Pair.Key);

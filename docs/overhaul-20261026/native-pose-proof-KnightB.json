@@ -1,0 +1,12 @@
+{
+  "character": "KnightB",
+  "definition": "/Game/Characters/Customuse/KnightB/v028/DA_KnightB",
+  "passed": true,
+  "successfulPoseEvaluations": 309,
+  "failedRequests": 0,
+  "failures": [],
+  "sampleCount": 168,
+  "transitionCount": 84,
+  "fullPrivateReport": "Local/CustomuseImports/native-pose-proof-KnightB-v028.json",
+  "scope": "Native saved sequence sampling and joins; visual gameplay and performance are separate."
+}

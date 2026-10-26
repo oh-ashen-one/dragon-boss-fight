@@ -1,0 +1,12 @@
+{
+  "character": "DragonV3B",
+  "definition": "/Game/Characters/Customuse/DragonV3B/v028/DA_DragonV3B",
+  "passed": true,
+  "successfulPoseEvaluations": 474,
+  "failedRequests": 0,
+  "failures": [],
+  "sampleCount": 258,
+  "transitionCount": 129,
+  "fullPrivateReport": "Local/CustomuseImports/native-pose-proof-DragonV3B-v028.json",
+  "scope": "Native saved sequence sampling and joins; visual gameplay and performance are separate."
+}

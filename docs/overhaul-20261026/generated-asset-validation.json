@@ -13,32 +13,32 @@
       "sourceSHA256": "6f0897cbe8c4701b082c772a7dd34848c8e47c9176f7a0cb8494a76257ed27bc",
       "files": {
         ".blend": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized.blend",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized.blend",
           "sha256": "c807e9dd9dad4befe3b60991feaba8a2b249b6020d4d5a1e30e73270036fce26",
           "bytes": 25794759
         },
         "-front.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-front.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-front.png",
           "sha256": "f84b8323a953c5e46fff416cde50df223feffb6967b043a1a71e240780f9f6fd",
           "bytes": 738205
         },
         "-side.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-side.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-side.png",
           "sha256": "00f1504c6b731dc28b0fa2d35b3edd171a5c4e5e1e62647d5ca71deb900d4603",
           "bytes": 718148
         },
         "-three_quarter.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-three_quarter.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-three_quarter.png",
           "sha256": "f75549ea7f9e2d896eb9311019ac78c4548b19aa46eb30479b0306754d5aa115",
           "bytes": 716690
         },
         "-three-views.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-three-views.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized-three-views.png",
           "sha256": "ba3b5361c4c44f9a0c00b9688ee76bfab9166deb9f2b803d64e0d7424e7fb251",
           "bytes": 1536220
         },
         ".json": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized.json",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedChandelier_Normalized.json",
           "sha256": "36fc944c18d2c140b1c679b882818c7e3b4df595daa21113187b9a4ab57be4d8",
           "bytes": 4027
         }
@@ -176,32 +176,32 @@
       "sourceSHA256": "7894c9277b3035cf87087826d63ab38fa36d500f5c3731337a8ab91a1e1b4757",
       "files": {
         ".blend": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedVault_Normalized.blend",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedVault_Normalized.blend",
           "sha256": "205b761bea9e4104940b9a66fb77e9c71877b1dc24eaaf5c63d8d1f9ca522a55",
           "bytes": 31856920
         },
         "-front.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-front.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-front.png",
           "sha256": "d508230fd195f515d04a267f03b1e351e6e6214cebe1ca207694ef701fac83f8",
           "bytes": 815178
         },
         "-side.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-side.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-side.png",
           "sha256": "2c63bf277ac1cab165131233c9efb47765f2304f0e0ab14e9e58f3c523074c17",
           "bytes": 700915
         },
         "-three_quarter.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-three_quarter.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-three_quarter.png",
           "sha256": "501231e556a8541a9d882a4da6e8ff3925ad4af6a7b11e3dc7f1ffd81a301474",
           "bytes": 756484
         },
         "-three-views.png": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-three-views.png",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedVault_Normalized-three-views.png",
           "sha256": "8746193695c72dd5f674e760ef229a8053c39cb5408ce600142e384ae080b0d2",
           "bytes": 1688525
         },
         ".json": {
-          "path": "/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration/Local/Overhaul20261026/generated-review/GeneratedVault_Normalized.json",
+          "path": "Local/Overhaul20261026/generated-review/GeneratedVault_Normalized.json",
           "sha256": "eaf7cd07e36a952f4d334421fe1ec3b19844dad77b99f70b3a640c839d942040",
           "bytes": 3946
         }

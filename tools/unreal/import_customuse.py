@@ -164,6 +164,11 @@ def prepare_validation_settings():
     if not settings_path.exists():
         settings_path.write_text(json.dumps({'throttle_cpu_when_not_foreground':settings.get_editor_property('bThrottleCPUWhenNotForeground')},indent=2)+'\n')
     settings.set_editor_property('bThrottleCPUWhenNotForeground',False,unreal.PropertyAccessChangeNotifyMode.NEVER)
+    audio_settings=unreal.get_default_object(unreal.load_class(None,'/Script/UnrealEd.LevelEditorMiscSettings'))
+    audio_snapshot=ROOT/'Local/Overhaul20261026/editor-audio-setting.json'
+    if audio_snapshot.parent.exists() and not audio_snapshot.exists():
+        audio_snapshot.write_text(json.dumps({'allowBackgroundAudioBefore':audio_settings.get_editor_property('bAllowBackgroundAudio'),'scope':'owned editor process only; settings not saved'})+'\n')
+    audio_settings.set_editor_property('bAllowBackgroundAudio',True,unreal.PropertyAccessChangeNotifyMode.NEVER)
     world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
     for command in ('t.MaxFPS 60','t.IdleWhenNotForeground 0','r.ScreenPercentage 100','r.Editor.Viewport.OverridePIEScreenPercentage 0'):
         unreal.SystemLibrary.execute_console_command(world,command)
@@ -262,6 +267,21 @@ def finalize_existing(plan):
         else:
             result=visibility.run(source.get_path_name())
             material=unreal.load_asset(result['material'])
+        # Persist the renderer permutations required by the retained morphs.
+        # Editor auto-usage can otherwise hide this defect until the cooked app.
+        usage_changes=[]
+        for token in ('SKELETAL','MORPH'):
+            names=[n for n in dir(unreal.MaterialUsage) if token in n and n.startswith('MATUSAGE_')]
+            if len(names)!=1:raise RuntimeError('Ambiguous required material usage: '+token)
+            usage=getattr(unreal.MaterialUsage,names[0])
+            if not unreal.MaterialEditingLibrary.has_material_usage(material,usage):
+                unreal.MaterialEditingLibrary.set_base_material_usage(material,usage,True)
+                usage_changes.append(names[0])
+            if not unreal.MaterialEditingLibrary.has_material_usage(material,usage):raise RuntimeError('Dragon material usage did not persist: '+token)
+        errors=list(unreal.MaterialEditingLibrary.recompile_material(material))
+        if errors:raise RuntimeError('Dragon material compile failed: '+str(errors))
+        if not unreal.EditorAssetLibrary.save_loaded_asset(material,False):raise RuntimeError('Dragon material usage save failed')
+        record['dragonMaterialUsage']={'material':material.get_path_name(),'changed':usage_changes,'skeletalAndMorphVerified':True}
         meshes={mesh.get_path_name():mesh}
         for clip in definition.clips.values():
             variant=clip.get_editor_property('mesh_override')

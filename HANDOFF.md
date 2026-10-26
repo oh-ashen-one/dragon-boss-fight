@@ -1,13 +1,65 @@
-# Active overhaul — started 2026-10-26 at 13:30 Eastern
+# October 26 overhaul — delivered for owner review
 
-Branch `codex/veyr-cathedral-overhaul-20261026`, base `3310d64`.
-Owner approved the full playtest backlog. Implementation and generated/source-adapted
-asset preparation are in progress; no new build is delivered or runtime-approved.
-New3D assets now use Meshy/Tripo only for this pass, with direct headless downloads;
-animation remains sourced. Parent editor58320 is actively rebuilding the old DDC
-before native MCP18773 can accept imports. Preserve its progress and slot. See
-`docs/overhaul-20261026/README.md` for the acceptance checklist and compile evidence.
-Preserve the prior v027 Downloads app and existing authoring/viewer assets.
+Branch `codex/veyr-cathedral-overhaul-20261026`. Final Shipping source ID
+`ee8f348b3afb0e8c2790d09757553bb708edb119fc2906f01f9d4516cbeaeaab`.
+Playable app: `~/Downloads/Veyr-Cathedral-Overhaul-v029/Veyr.app`.
+The old v027 app is retained as a baseline. Do not claim owner acceptance.
+
+Implemented: fixed close560cm/FOV72 camera with raised upward-look pivot, broader
+anatomical sword hits/feedback, cheaper stamina,2800bossHP, faster/higher flight
+with warned overhead fire, corrected dangling hover/joins, sourced directional
+blink,13 recorded cues plus music/ambience and independent mix controls, layered
+Gothic architecture, three new Meshy assets,14breakables and two distant dragons.
+Approved sourced walk/run/slash/roll and the original guard remain intact.
+
+Native banks: KnightB v029, DragonV3B v028. Active plans are
+`Local/CustomuseAssets/Polish20261025/active-plans.json`. Do not overwrite versioned
+banks. Original guard SHA256:
+`1d7b990ae0e0e25fce5e97fa34d11d57de3cff86e748b47867d75a61d5efa069`.
+
+Validation is in `docs/overhaul-20261026/validation.json` and adjacent receipts:
+- Final Shipping integration18/18 passes,0 failed knight/dragon pose requests.
+- Guard front/rear/exhaustion,8 collision stages and6 packaged stance trials pass.
+- Final Shipping full victory at192.06s, resource reset, movement and attack after
+  restart pass. Exclusive1280x720 performance:59.91 mean intervalFPS,
+  p50/p95/p99=16.67/16.77/16.85ms;7/11987 intervals exceed33.3ms,
+  max72.17ms. Actor tick wall intervals, not GPU timestamps. No capture overhead
+  or shared-render contamination in that performance run.
+- Manual delivered-app cold launch, Enter, keyboard sprint/roll/grip, Escape
+  pause/resume, settings/controls pages and changing/restoring music volume pass.
+  CUA mouse clicks did not activate Slate buttons; keyboard navigation did.
+  Physical mouse interaction and maximum manual upward angle are not certified.
+- Final89.26s silent native capture and separate89.37s game master audio are in
+  Downloads beside the app. Capture achieved9.81FPS, no interpolation; it is not
+  the60FPS performance run. Master audio is nonzero, no clipping; no listening
+  quality claim. Owner gameplay/difficulty/listening remain next review.
+- Critics found no remaining confirmed release blocker. Camera compression is
+  resolved. Architecture is darker/more enclosed than concept; aerial danger
+  footprint conservatively marks a small safe fringe beyond actual damage gate.
+
+One Development package crashed before initialization in FLLMTracker::PopTag /
+FMallocAnsi. Private report preserved under `Local/Overhaul20261026/crashes`.
+Standard Shipping excludes the failing Development tracker path and passed cold
+launch/full gameplay. No engine source/security/global environment changes.
+Ad-hoc signature, all bundled dependencies, extracted content hashes and executable
+modes verified. Not notarized. Package receipt:
+`Local/package-20261026T214259Z/receipt.json`.
+
+Private backups in `oh-ashen-one/veyr-animation-sources`, remote hashes verified:
+- `overhaul-authoring-20261026`: editable final Blender/GLB/selected sources.
+- `overhaul-game-v029-20261026`: native delta and independently runnable signedZIP.
+Restore v027 and its documented baseline chain, then the new native delta. Code
+alone is insufficient. No restricted raw assets are in public Git.
+
+Owner's current routing: new3D through Tripo/Meshy for thispass, direct API downloads
+without Finder/Save dialogs; animations stay source-first.90Meshy credits used;
+earlier65Tripo chandelier remains unexported/unused. No new character models.
+
+Authoring engines are closed. Any final owner-review app/slot is recorded in
+`Local/Overhaul20261026/owner-review-gpu.json`; verify live identity before touching
+it. Preserve foreign jobs. Source/review artifacts and prior stable app remain;
+scoped cleanup receipt records removed redundant staging only. The next session
+should start with owner playtest feedback rather than rebuild/re-source the assets.
 
 ---
 

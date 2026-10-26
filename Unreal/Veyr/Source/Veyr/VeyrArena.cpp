@@ -6,6 +6,7 @@
 #include "VeyrVisualDefinition.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -654,6 +655,12 @@ void AVeyrArena::BuildLighting()
     Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(1.35f);
     Fill->SetLightColor(FLinearColor(.86f, .90f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.45f); Fill->RegisterComponent();
 
+    auto* DragonRim=NewObject<UDirectionalLightComponent>(this,TEXT("DragonSilverEdge"));
+    AddInstanceComponent(DragonRim);DragonRim->SetupAttachment(GetRootComponent());DragonRim->SetMobility(EComponentMobility::Movable);
+    DragonRim->LightingChannels.bChannel0=false;DragonRim->LightingChannels.bChannel1=false;DragonRim->LightingChannels.bChannel2=true;
+    DragonRim->SetRelativeRotation(FRotator(-25,145,0));DragonRim->SetIntensity(3.f);DragonRim->SetLightColor(FLinearColor(.48f,.67f,1.f));
+    DragonRim->SetCastShadows(false);DragonRim->SetSpecularScale(.7f);DragonRim->RegisterComponent();
+
     if (SkyMesh && (NightSkyParent||SkyParent))
     {
         auto* Sky = NewObject<UStaticMeshComponent>(this, TEXT("PROTO_EngineSkyOriginalPalette"));
@@ -697,9 +704,9 @@ void AVeyrArena::BuildLighting()
     auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("PrototypeDrownedCathedralMist"));
     AddInstanceComponent(Fog); Fog->SetupAttachment(GetRootComponent());
     Fog->SetRelativeLocation(FVector(0, 0, -150));
-    Fog->SetFogDensity(.018f); Fog->SetFogHeightFalloff(.35f);
-    Fog->SetFogInscatteringColor(FLinearColor(.038f, .050f, .065f));
-    Fog->SetStartDistance(3000); Fog->SetFogMaxOpacity(.82f);
+    Fog->SetFogDensity(.024f); Fog->SetFogHeightFalloff(.35f);
+    Fog->SetFogInscatteringColor(FLinearColor(.070f, .090f, .12f));
+    Fog->SetStartDistance(4500); Fog->SetFogMaxOpacity(.82f);
     // A restrained low layer on the existing fog component softens the distant
     // platform/ridge join. The inner fight stays ahead of the fog start plane.
     Fog->SetSecondFogDensity(.015f);
@@ -743,6 +750,19 @@ void AVeyrArena::BuildOverarchingArchitecture()
     // close gameplay camera while preserving a wide open flight corridor.
     UStaticMesh* Vault=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/GeneratedVault_v001/SM_GeneratedVault_v001.SM_GeneratedVault_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(Vault)++GeneratedArchitectureMeshCount;
+    UStaticMesh* Rib=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/GeneratedRibSpan_v001/SM_GeneratedRibSpan_v001.SM_GeneratedRibSpan_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(Rib)
+    {
+        ++GeneratedArchitectureMeshCount;
+        const FVector Size=Rib->GetBoundingBox().GetSize();
+        const float Height=8800.f*Size.Z/FMath::Max(1.f,static_cast<float>(Size.X));
+        int32 Index=0;
+        for(float X:{-2100.f,2200.f})
+        {
+            ImportedPiece(Rib,FName(*FString::Printf(TEXT("OpenNaveRib%d"),Index++)),FVector(X,0,3200.f),Height,90.f,false);
+            for(float Side:{-1.f,1.f})KitPiece(TEXT("CornerButtress"),FVector(X,Side*4550.f,0),3600,Side>0?180.f:0.f,true);
+        }
+    }
     for(float Side:{-1.f,1.f})for(int32 Tier=0;Tier<3;++Tier)
     {
         const float Y=Side*(5200.f+Tier*1050.f),Z=1100.f+Tier*1550.f;
@@ -752,8 +772,17 @@ void AVeyrArena::BuildOverarchingArchitecture()
         for(float X:{-Half,0.f,Half})
             KitPiece(TEXT("CornerButtress"),FVector(X,Y-Side*180.f,0),Z+1550.f,Side>0?180.f:0.f,false);
         KitPiece(TEXT("RuinedCityRoofBlock"),FVector(-Half*.5f,Y+Side*750.f,Z+800.f),1800.f+Tier*300.f,Side>0?180.f:0.f,false);
+        if(Tier==1)
+        {
+            const FVector P(0,Y-Side*300.f,Z+160.f);
+            ImportedPiece(CathedralBrazierMesh,FName(*FString::Printf(TEXT("UpperGalleryBrazier_%d"),Side>0)),P,150.f,0.f,false);
+            Box(Embers,P+FVector(0,0,135),FVector(30,30,8));
+            auto* Warm=NewObject<UPointLightComponent>(this);AddInstanceComponent(Warm);Warm->SetupAttachment(GetRootComponent());
+            Warm->SetMobility(EComponentMobility::Movable);Warm->SetWorldLocation(P+FVector(0,0,180));Warm->SetIntensityUnits(ELightUnits::Candelas);
+            Warm->SetIntensity(400.f);Warm->SetLightColor(FLinearColor(1.f,.38f,.12f));Warm->SetAttenuationRadius(1800.f);Warm->SetCastShadows(false);Warm->RegisterComponent();
+        }
     }
-    ImportedPiece(CathedralFacadeMesh,TEXT("HighApseCrown"),FVector(9200,400,0),7300,90,false);
+    ImportedPiece(CathedralFacadeMesh,TEXT("HighApseCrown"),FVector(14500,400,0),8200,90,false);
     for(float Side:{-1.f,1.f})
     {
         KitPiece(TEXT("RuinedGatehouse"),FVector(6200,Side*5600,0),5700,Side>0?155.f:25.f,false);
@@ -776,7 +805,7 @@ void AVeyrArena::SpawnBreakable(UStaticMesh* Mesh,const FVector& Position,float 
     Part->SetWorldScale3D(FVector(Scale));Part->SetWorldRotation(FRotator(0,Yaw,0));
     Part->SetWorldLocation(Position-FVector(0,0,B.Min.Z*Scale));
     Part->SetCollisionEnabled(ECollisionEnabled::QueryOnly);Part->SetCollisionResponseToAllChannels(ECR_Ignore);
-    Part->SetCollisionResponseToChannel(ECC_Camera,ECR_Block);Part->SetCollisionResponseToChannel(ECC_Pawn,ECR_Block);Part->RegisterComponent();
+    Part->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);Part->SetCollisionResponseToChannel(ECC_Pawn,ECR_Block);Part->RegisterComponent();
     BreakableProps.Add(Part);PropHealth.Add(1.f);PropFallSpeed.Add(0.f);
 }
 void AVeyrArena::BuildInteractiveDetails()
@@ -791,9 +820,9 @@ void AVeyrArena::BuildInteractiveDetails()
     if(Chandelier)++GeneratedArchitectureMeshCount;
     for(int32 I=0;I<4&&Chandelier;++I)
     {
-        const FVector P(I<2?-1600.f:1600.f,I%2?-1800.f:1800.f,1250.f);
+        const FVector P(I<2?-2100.f:2200.f,I%2?-1800.f:1800.f,1250.f);
         SpawnBreakable(Chandelier,P,600.f,I*37.f);
-        Beam(Bronze,P+FVector(0,0,600),P+FVector(0,0,2800),12.f);
+        Beam(Bronze,P+FVector(0,0,600),P+FVector(0,0,4400),12.f);
         auto* Glow=NewObject<UPointLightComponent>(this);AddInstanceComponent(Glow);Glow->SetupAttachment(BreakableProps.Last());
         Glow->SetMobility(EComponentMobility::Movable);Glow->SetRelativeLocation(FVector(0,0,120));
         Glow->SetLightColor(FLinearColor(1.f,.48f,.17f));Glow->SetIntensityUnits(ELightUnits::Candelas);Glow->SetIntensity(500.f);
@@ -812,7 +841,7 @@ void AVeyrArena::BuildInteractiveDetails()
         }
     }
     BreakablePropCount=BreakableProps.Num();BackgroundDragonCount=SkyDragons.Num();
-    bOverhaulAssetsReady=GeneratedArchitectureMeshCount==2&&BreakablePropCount==14&&BackgroundDragonCount==2;
+    bOverhaulAssetsReady=GeneratedArchitectureMeshCount==3&&BreakablePropCount==14&&BackgroundDragonCount==2;
     UE_LOG(LogTemp,Display,TEXT("VEYR_OVERHAUL_ASSETS ready=%d generated=%d breakables=%d skyDragons=%d"),bOverhaulAssetsReady,GeneratedArchitectureMeshCount,BreakablePropCount,BackgroundDragonCount);
 }
 void AVeyrArena::BreakProp(int32 Index)
@@ -889,9 +918,26 @@ void AVeyrArena::Tick(float DeltaSeconds)
     for(int32 I=0;I<SkyDragons.Num();++I)
     {
         auto* D=SkyDragons[I].Get();const float A=AtmosphereClock*.035f+I*2.8f;
-        const FVector Position(FMath::Cos(A)*12000.f,FMath::Sin(A)*13000.f,6500.f+I*1800.f);
+        const FVector Position(FMath::Cos(A)*12000.f,FMath::Sin(A)*13000.f,9500.f+I*1800.f);
         if(FMath::FloorToInt(AtmosphereClock*10.f)!=FMath::FloorToInt((AtmosphereClock-DeltaSeconds)*10.f))
             D->SampleClipTime(TEXT("FlightActive"),FMath::Fmod(AtmosphereClock+I*.6f,2.f));
         D->SetWorldTransform(SkyDragonBasis[I]*FTransform(FRotator(0,FMath::RadiansToDegrees(A)+90.f,0),Position));
     }
+}
+
+void AVeyrArena::UpdatePropCameraOcclusion(APlayerController* Player,const FVector& Camera,const FVector& Focus,float DeltaSeconds)
+{
+    if(!Player)return;
+    for(auto& Pair:HiddenPropTimers)Pair.Value-=DeltaSeconds;
+    for(UStaticMeshComponent* Part:BreakableProps)
+    {
+        if(!Part||!Part->IsVisible())continue;
+        const FBox Box=Part->Bounds.GetBox().ExpandBy(12.f);
+        if(!Box.IsInside(Camera)&&!FMath::LineBoxIntersection(Box,Camera,Focus,Focus-Camera))continue;
+        const TWeakObjectPtr<UStaticMeshComponent> Key(Part);
+        if(!HiddenPropTimers.Contains(Key)&&Player->HiddenPrimitiveComponents.Contains(Part))continue;
+        Player->HiddenPrimitiveComponents.AddUnique(Part);HiddenPropTimers.FindOrAdd(Key)=.15f;
+    }
+    for(auto It=HiddenPropTimers.CreateIterator();It;++It)
+        if(!It.Key().IsValid()||It.Value()<=0.f){Player->HiddenPrimitiveComponents.Remove(It.Key().Get());It.RemoveCurrent();}
 }

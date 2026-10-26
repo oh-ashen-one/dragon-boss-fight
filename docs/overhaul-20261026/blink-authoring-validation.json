@@ -1,0 +1,108 @@
+{
+  "status": "Blender trajectory candidate verified; native integration and gameplay judgement remain pending",
+  "modifiedChannel": "VeyrRoot.translation only",
+  "hiddenSourceInterval": [
+    0.207,
+    0.391
+  ],
+  "nativePlayRate": 1.15,
+  "nativeHiddenInterval": [
+    0.18,
+    0.34
+  ],
+  "visualObservation": "Front/side/front-three-quarter exact-export samples inspected with existing boat sword attached at rest-corrected WeaponSocket. Anticipation/recovery preserve the sourced bent-knee stepping and whole-body pose; no new gross distortion or grip separation observed. The visible source leg motion remains intentionally unchanged. Actual native hide/reveal timing and game feel are not assessed here.",
+  "clips": [
+    {
+      "name": "Sourced_BlinkLeft_Transit_v2",
+      "files": {
+        ".glb": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkLeft_Transit_v2.glb",
+          "sha256": "4b6795c73c34b2914efdea7c6cb92d71063d565f6541977f738b85901812422c",
+          "bytes": 36258888
+        },
+        ".blend": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkLeft_Transit_v2.blend",
+          "sha256": "58d653259b8ee84e9a5bc56e4d9512fe98da57e963ad092b8ba5203989fe8ed8",
+          "bytes": 37063797
+        },
+        ".json": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkLeft_Transit_v2.json",
+          "sha256": "b5821cee37f7cdbb34c317648dd79555dc3ffefd0f2dc6175ddb43c2a6b8b350",
+          "bytes": 2498
+        },
+        "-contact.png": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkLeft_Transit_v2-contact.png",
+          "sha256": "0ef908b81c8742b2395913bd63cc84200d31acee4984b97edcee77868390b0c7",
+          "bytes": 1743080
+        }
+      },
+      "fps": 120,
+      "duration": 0.7,
+      "sampleCount": 85,
+      "hiddenTravelFraction": 0.9399478636745255,
+      "beforeHiddenTravelFraction": 0.030001144113496574,
+      "afterHiddenTravelFraction": 0.03005099221197775,
+      "originalHiddenTravelFraction": 0.252233523090842,
+      "sourcePlanarDisplacementGLTFXYZ": [
+        -1.254396797623439,
+        0.0,
+        1.3879705302451194e-05
+      ],
+      "endpointError": 0.0,
+      "displacementError": 0.0,
+      "verticalMotionError": 0.0,
+      "relativePoseError": 9.992007221626409e-16,
+      "gripError": 7.771561172376096e-16,
+      "sourceGeometryAndOtherChannelsUnchanged": true
+    },
+    {
+      "name": "Sourced_BlinkRight_Transit_v2",
+      "files": {
+        ".glb": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkRight_Transit_v2.glb",
+          "sha256": "bba5fe1477c7adb641e0960587a391d7a725f10d11e457b745a3f22a8dd073a3",
+          "bytes": 36249932
+        },
+        ".blend": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkRight_Transit_v2.blend",
+          "sha256": "45948e36fdcbc6d831debd94814db51e914ce8850da2541c6cd73d6a0544581f",
+          "bytes": 71119885
+        },
+        ".json": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkRight_Transit_v2.json",
+          "sha256": "0e0e9c932e1fd988aa6a8a7db8d42eeb494cc640f6525ffca440698d3346ffc9",
+          "bytes": 2532
+        },
+        "-contact.png": {
+          "path": "Local/Overhaul20261026/blink-v2/Sourced_BlinkRight_Transit_v2-contact.png",
+          "sha256": "533ea23608dd919259b40c168b1cb1a2296ff182b4ad97f2b573a6a9445d0613",
+          "bytes": 1876183
+        }
+      },
+      "fps": 120,
+      "duration": 0.6666666666666666,
+      "sampleCount": 81,
+      "hiddenTravelFraction": 0.9399477658583666,
+      "beforeHiddenTravelFraction": 0.030001173888365894,
+      "afterHiddenTravelFraction": 0.030051060253267675,
+      "originalHiddenTravelFraction": 0.2746341808946607,
+      "sourcePlanarDisplacementGLTFXYZ": [
+        1.2232665991693477,
+        0.0,
+        2.6027239533823352e-05
+      ],
+      "endpointError": 0.0,
+      "displacementError": 0.0,
+      "verticalMotionError": 0.0,
+      "relativePoseError": 1.2212453270876722e-15,
+      "gripError": 8.881784197001252e-16,
+      "sourceGeometryAndOtherChannelsUnchanged": true
+    }
+  ],
+  "session": {
+    "owner": "codex-veyr-flight-join-r2",
+    "pid": 11064,
+    "port": 9892,
+    "shutdown": "SIGTERM; exit verified; slot released"
+  }
+}

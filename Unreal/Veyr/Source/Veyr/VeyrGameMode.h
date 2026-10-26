@@ -17,6 +17,7 @@ public:
     AVeyrGameMode();
     virtual void StartPlay() override;
     virtual void Tick(float DeltaSeconds) override;
+    virtual void EndPlay(const EEndPlayReason::Type Reason) override;
     /** Starts the same input-only replay used by packaged validation in a fresh PIE world. */
     UFUNCTION(BlueprintCallable, Category="Veyr|Validation")
     bool StartNativeValidation(const FString& Mode, const FString& EvidenceDirectory);
@@ -41,4 +42,9 @@ public:
     UPROPERTY(BlueprintReadOnly) float VictorySeconds=-1;
 private:
     bool bPawnPositioned=false;
+    FString MixCaptureDirectory,MixCaptureName;
+    double MixCaptureStarted=0;
+    float MixCaptureDuration=30.f;
+    bool bMixCaptureFinished=false;
+    void FinishMixCapture();
 };

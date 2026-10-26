@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--engine', type=Path, required=True)
 parser.add_argument('--gpu-slot', type=Path, required=True)
+parser.add_argument('--audio-capture-seconds',type=int,choices=range(10,121),help='Optional bounded recording of the game master mix only')
 parser.add_argument('--video-fps',type=int,choices=range(1,16))
 parser.add_argument('--replay-start-two-handed',action='store_true',help='Victory QA requests the ordinary authored grip transition before combat')
 parser.add_argument('--slot-wait-seconds', type=int, default=1800)
@@ -44,6 +45,9 @@ command = [str(a.gpu_slot),'capture','--label','veyr-customuse-editor','--timeou
            '-asyncstaticmeshcompilation=0','-asyncskinnedassetcompilation=0',
            '-DDC=(EnginePak=InstalledEnginePak,Local)','-LocalDataCachePath='+str(project.parent/'DerivedDataCache'),
            '-windowed','-ResX=1280','-ResY=720','-nosplash','-abslog='+str(run/'editor.log')]
+if a.audio_capture_seconds:
+    audio=run/'master-audio';audio.mkdir()
+    command.extend(['-VeyrAudioCapture='+str(audio),'-VeyrAudioCaptureSeconds='+str(a.audio_capture_seconds)])
 if a.video_fps:command.append('-VeyrVideoFPS='+str(a.video_fps))
 if a.replay_start_two_handed:command.append('-VeyrReplayStartTwoHanded')
 (run/'launch.json').write_text(json.dumps({'command':command,'autoRestart':False,'rendererLimit':2},indent=2)+'\n')

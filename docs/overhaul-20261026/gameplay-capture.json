@@ -1,0 +1,41 @@
+{
+  "sourceId": "ee8f348b3afb0e8c2790d09757553bb708edb119fc2906f01f9d4516cbeaeaab",
+  "manifestSHA256": "7ab6b5173e22f1e763a560ac65c30c910aee95f8f56cb1ebd39b757e717de4a5",
+  "videoSHA256": "eb01c8ef976c053bd3af03003d390833d1f6811ea4eee5ac934b07b663c5e1e4",
+  "nativeFrames": 876,
+  "requestedFPS": 12,
+  "achievedCaptureFPS": 9.807753291370165,
+  "skippedSlots": 49,
+  "failedFrames": 0,
+  "pngWriteSeconds": 39.06706626713276,
+  "firstCapturedWallSeconds": 0.027295708656311035,
+  "lastCapturedWallSeconds": 89.24242724850774,
+  "expectedDurationSeconds": 89.25897866487503,
+  "encodedDurationSeconds": 89.26,
+  "encodedFrameCount": 877,
+  "maximumFrameTimestampErrorSeconds": 0.0008959577679661379,
+  "lastFrameEndObserved": true,
+  "terminalHoldSeconds": 0.04384712502360344,
+  "silent": true,
+  "timingVerified": true,
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "level": 32,
+        "avg_frame_rate": "43850/4463",
+        "duration": "89.260000",
+        "nb_frames": "877"
+      }
+    ],
+    "format": {
+      "duration": "89.260000"
+    }
+  },
+  "timingPolicy": "Actual monotonic native pixel-callback timestamps; 1ms encoding precision; skipped captures and reload gaps hold the previous frame. No interpolation. Final endpoint is one repeated still.",
+  "ffmpegVersion": "ffmpeg version 8.1.2 Copyright (c) 2000-2026 the FFmpeg developers"
+}

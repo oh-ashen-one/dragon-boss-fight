@@ -1,0 +1,11 @@
+{
+  "archive": "Local/Overhaul20261026/Veyr-Overhaul-Authoring-20261026.zip",
+  "bytes": 947768917,
+  "sha256": "af8a23cb341a02006fcf23a5a4892158360caa635e61cccaec591227449c3a5c",
+  "files": 124,
+  "privateRepository": "oh-ashen-one/veyr-animation-sources",
+  "priorBaselineRequired": true,
+  "scope": "Final authoring delta and licensed selected sources; game code is in task branch; prior Veyr source/native releases remain baseline dependencies.",
+  "remoteRelease": "overhaul-authoring-20261026",
+  "remoteDigestVerified": true
+}

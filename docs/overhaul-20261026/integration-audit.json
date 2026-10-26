@@ -1,0 +1,23 @@
+{
+  "evidence": "Evidence/pie-integration-20261026T204137Z/unreal-integration-20261026T204137Z-EB0925A9/evidence.json",
+  "nativeScenarioPassed": true,
+  "cameraSamples": 467,
+  "observedStates": [
+    "Active",
+    "Idle",
+    "Recovery",
+    "Reposition",
+    "Windup"
+  ],
+  "observedMoves": [
+    "Bite",
+    "ClawSwipe",
+    "Fire",
+    "FlyAway"
+  ],
+  "fixedRequestedCameraCm": 560,
+  "fixedFOVDegrees": 72,
+  "passed": true,
+  "issues": [],
+  "scope": "Recorded actual scenario states only. Manual input responsiveness, visual fit, audible quality and performance need separate checks."
+}

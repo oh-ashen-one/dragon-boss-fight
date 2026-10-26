@@ -9,6 +9,7 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UStaticMesh;
 class UStaticMeshComponent;
+class APlayerController;
 class UVeyrSkeletalPresentation;
 
 /** Connected sunken court assembled from measured Tripo architecture.
@@ -20,6 +21,7 @@ class VEYR_API AVeyrArena : public AActor
 public:
     AVeyrArena();
     virtual void Tick(float DeltaSeconds) override;
+    void UpdatePropCameraOcclusion(APlayerController* Player,const FVector& Camera,const FVector& Focus,float DeltaSeconds);
     void DamagePropsAlongSweep(const FVector& PreviousBase,const FVector& PreviousTip,const FVector& Base,const FVector& Tip);
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 BrokenProps=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") bool bOverhaulAssetsReady=false;
@@ -91,6 +93,7 @@ private:
     TArray<float> DebrisAge;
     TArray<float> PropHealth;
     TArray<float> PropFallSpeed;
+    TMap<TWeakObjectPtr<UStaticMeshComponent>,float> HiddenPropTimers;
     TArray<FTransform> SkyDragonBasis;
     float AtmosphereClock=0.f;
     void BuildOverarchingArchitecture();

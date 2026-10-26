@@ -1,0 +1,17 @@
+{
+  "privateRepository": "oh-ashen-one/veyr-animation-sources",
+  "release": "overhaul-game-v029-20261026",
+  "remoteDigestsVerified": true,
+  "nativeDelta": {
+    "asset": "Veyr-Native-Overhaul-v029.zip",
+    "bytes": 643304111,
+    "sha256": "2c3f39c4dded9b8ea12087be7901caf5d6ac64b7f07c152f93c8d026b247515f",
+    "files": 170,
+    "base": "Restore sourced-animation-game-v027 and its documented baseline releases, then extract this delta at repository root. Final source branch codex/veyr-cathedral-overhaul-20261026. Original guard is preserved in KnightB/v026."
+  },
+  "gameArchive": {
+    "asset": "Veyr-Mac-Shipping.zip",
+    "bytes": 1111473254,
+    "sha256": "b503587240dbbb3d3bd9352a3efd5efa51f47b4eb6f838c80e778b2df4e693fe"
+  }
+}

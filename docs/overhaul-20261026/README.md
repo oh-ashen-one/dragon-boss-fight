@@ -1,47 +1,37 @@
-# Veyr gameplay and cathedral overhaul — work in progress
+# October 26 gameplay and cathedral overhaul
 
-Owner approved the complete October26 playtest backlog, scheduled start13:30 America/New_York. This pass began at the scheduled time on the verified Mac15,14 Studio. Branch `codex/veyr-cathedral-overhaul-20261026` starts from `3310d64`. Prior delivered v027 app and final editable sources are preserved.
+Branch: `codex/veyr-cathedral-overhaul-20261026`, based on `3310d64`. This pass preserves the approved knight, dragon, sourced walk/run/slash/roll and original guard. Owner gameplay and listening acceptance remain separate from the checks below.
 
-## Acceptance worklist
+## Implemented
 
-- [ ] Close fixed camera, upward free look and manual lock-on override; wall/floor collision only shortens distance.
-- [ ] Moving sword contact across reachable dragon anatomy, both grips and frame rates; impact feedback.
-- [ ] Stamina costs/recovery and shorter boss encounter balance.
-- [ ] Faster repositioning, more frequent/high flight and clearly warned overhead fire.
-- [ ] Corrected dangling-paw hover in native bank, continuous takeoff/landing.
-- [ ] Source-adapted directional blink, sword alignment and effects.
-- [ ] Recorded/licensed combat sounds, dragon/environment audio, ambience/music and separate controls.
-- [ ] Towering layered Gothic arena, coherent materials and open flight corridors.
-- [ ] Bounded destructibles/chandeliers and distant dragon flybys.
-- [ ] Native full encounter/pause/restart/collision checks, visual critique, isolated frame-time evidence.
-- [ ] Signed playable delivery, private asset backup, pushed handoff and cleanup.
+- Fixed close560cm camera /72-degree FOV, no flight pullback or wheel zoom. Manual look spans−55..68degrees; automatic aerial tracking stops at25degrees with raised pivot. Minor breakables hide when occluding the player instead of crushing the spring arm; solid architecture still blocks the camera.
+- Sword sweeps include torso, chest, neck and tail alongside four legs and head, use bounded actual blade thickness and retain one damage event per swing. Contact sparks mark the selected hit position.
+- Light attacks cost16/20 stamina, heavy24/29, roll18 and blink20. Ready recovery38/s and shorter delays allow longer chains. Boss health2800; two-hand attacks deal1.55x damage with slower timing.
+- Faster turns/travel, encounter-clock flight scheduling, higher flight, committed overhead-fire target/warning and separate fire/landing hit budgets. Airborne death descends and airborne stagger cannot strand the dragon.
+- Dragon v028 uses the dangling-paw hover and Blender-corrected takeoff/landing joins. Knight v029 adapts sourced lateral motion with most displacement inside blink disappearance; native-axis mapping is verified. Original guard remains unchanged.
+- Thirteen recorded effects plus orchestral music and dungeon ambience, spatial boss/destruction emitters, bounded voices and separate master/music/effects settings. Existing supplementary heal/exposed/terminal tones remain.
+- Layered Gothic terraces, high open ribs, generated grounded portals, warm suspended chandeliers, atmospheric separation and distant flying dragons. Four falling chandeliers and ten breakable props use a bounded debris pool.
 
-## Current evidence
+## Validation
 
-Camera, stamina and anatomy-contact source changes passed the first VeyrEditor compile (`31547e00ceed65bf6719a5e209ea0c6f98c3cb8a3e695c8874e67bcef9323f48`). Flight/audio source changes passed a second compile (`b2963cfd3e3a6b15a443067b83ce65362de6ad6a8721660ba2abb519843f4311`). These are compile checks, not runtime acceptance. No replacement delivery exists yet.
+`validation.json` records exact evidence paths and source IDs. Native R3 integration passes18/18 features; original guard passes front chip/rear damage/exhaustion; all eight collision stages pass, including sprint/roll/blink and landing push. Final native banks pass168 knight and258 dragon pose samples. The actual Shipping stance run verifies six grip/damage/roll cases and exact health loss for accepted contacts. Full Shipping victory, resource reset, movement and primary attack after restart pass.
 
-Built-in image generation produced the persistent environment target at `Local/Overhaul20261026/cathedral-concept.png`: close third-person framing, open combat floor, layered Gothic terraces/ribs, giant moon and suspended warm chandeliers. It is concept art, not a game capture.
+Independent visual critique confirms the earlier armor-filled aerial camera regression is resolved: reviewed R3/Shipping requested560cm, resolved about562–564cm, FOV72, automatic pitch≤25, zero severe compression. Manual controls and final performance are recorded separately in adjacent receipts. Final Shipping integration also passes18/18. Exclusive1280×720 performance averaged59.91FPS with the explicit60FPS cap; p50/p95/p99 intervals16.67/16.77/16.85ms,7of11987 intervals over33.3ms, maximum72.17ms. Still captures do not certify continuous motion or acoustic quality.
 
-Independent read-only critics confirmed the old camera's1600cm flight pullback/pitch restrictions, missing body damage regions, high chained stamina cost and flight-scheduling starvation. Current available model inherited for critics; unavailable historical Opus/Fable labels are not claimed.
+The final Shipping89.37s stereo master recording contains99.65% nonzero samples, peak−14.28dBFS, zero clipped samples. This proves sound output, not a listening-quality verdict.
 
-## Ownership and limits
+## Startup repair
 
-Bully's foreign game was active at startup (PID93138 with GPU slot holder93122). Preserve it. Its shared GPU load prevents valid isolated performance claims until naturally available. This task uses at most one owned renderer and the global two-slot cap. Task Blender MCP is localhost9891, owner `codex-veyr-overhaul-20261026`, logs in `Local/Overhaul20261026/blender`.
+One Development packaged candidate crashed before game initialization in `FLLMTracker::PopTag` through `FMallocAnsi` during AppKit startup. The private crash report and failed run are preserved. Standard Shipping excludes that Development debug-tracker path and has passed repeated cold launch and full gameplay. No engine source, security controls or global allocator environment were changed. The existing app-scoped ANSI setting is retained. Signed ZIP extraction, bundled Mach-O dependencies and ad-hoc signature are verified; the app is not notarized.
 
-Downloaded audio is $0 CC0 source material, staged privately. Selected PCM preparation is reproducible with `tools/art/prepare_overhaul_audio.py`. Provenance, listening and final in-engine mix checks remain required before delivery.
+## Assets and restoration
 
-3DAssets.dev offered CC0 chandelier/vault candidates; CDN acquisition returned403 and Chrome blocked the CDN. No bypass attempted. Fab alternative Mikhail Kadilnikov's Chandelier lists CC BY4.0 in signed-in UI; acquisition is not yet verified locally.
+New architecture is three Meshy7.1 models,90credits total, downloaded directly by API without Finder/Save dialogs. An earlier65-credit Tripo chandelier remains in the account but was not exported or used. The Fab experiment is unused. See `assets.md` for source rights and transformations.
 
-## Owner steering during implementation
+Final editable assets are backed up privately in `oh-ashen-one/veyr-animation-sources`, release `overhaul-authoring-20261026`, with matching remote SHA256. Native delta and game delivery use the adjacent backup/delivery receipts. Restricted raw models/motions are excluded from public Git. Restore the v027 baseline chain before applying the v029 delta; cloning code alone is insufficient.
 
-Owner explicitly requested generated 3D assets through Tripo or Meshy for this pass, with no further free-model search; animation stays sourced. Downloads must be direct/noninteractive without Finder or Save dialogs. The Fab chandelier is therefore retained only as an unused experiment. Two Meshy API jobs now produce the chandelier and a large vaulted-arch module. Their result files download directly to task-local storage.
+## Limits
 
-## Preparation checkpoint before native import
+The architecture is more coherent and vertically layered, but remains darker and more enclosed than the generated concept. Generated decorative meshes are not watertight and use appropriate simple collision. The input replay covers actual gameplay action paths, not every physical key or all possible frame-rate/hitch/contact combinations. Automated fight pacing is not a human difficulty verdict. Performance results apply only to the documented Studio, resolution and uncontaminated run. No laptop or different-resolution performance is inferred.
 
-Final generated meshes are directly downloaded Meshy7.1 outputs, not the unused Fab experiment. Chandelier51,854 triangles /4.8m width and portal46,888 triangles /18m height retain2K PBR maps; native import will produce three LODs. Six lit review renders and editable scenes passed source-integrity checks. The portal is decorative architecture with a low rear wall, so its base is grounded outside combat space rather than treated as a traversable vault. Receipts contain geometry caveats.
-
-Source-adapted blink candidates are fitted on the existing knight with the retained one-hand sword grip. Final flight joins are r2 in `Local/Overhaul20261026/flight-r2`; all51 exported skin joints match hover endpoints to1.26e-6 or better, original ground poses and motion outside the0.4s joins are preserved, and morph error is zero. The first correction missed three non-Limb-named helper joints and is rejected. Native banks are prepared as additive v028 and not yet activated.
-
-Independent source critiques led to corrections for airborne death/descent, airborne stagger gating, accelerated-turn sampling, pre-start flight cooldown, diagonal wall orientation, intact prop solidity, spatial audio, music lifecycle and sky-dragon update cost. Current source has a fixed560cm arm/FOV72 (collision may shorten it), camera manual-look override, broader anatomy hits, impact sparks, stamina/HP tuning, overhead fire, bounded falling chandeliers/debris, and two10Hz distant dragon poses. Source is still awaiting the final compile/native/playable acceptance pass.
-
-Editor58320, started through the owned slot at18:15UTC, is rebuilding the removed project DDC. Its measured stack is actively in Unreal's quadric mesh reduction; each large pre-existing Tripo mesh takes several minutes. It is not a crash or stalled permission prompt. Do not restart it and lose progress. Native MCP18773 will become available after startup. New generated meshes are50k-class and avoid this original multi-million-face preprocessing cost.
+The delivered app and separate silent native capture/master audio are in `~/Downloads/Veyr-Cathedral-Overhaul-v029`. Capture cadence9.81FPS is deliberately separate from the capture-free performance test. Manual menu keyboard operation and music change/restore passed; physical mouse activation and maximum manual upward angle remain unverified.
