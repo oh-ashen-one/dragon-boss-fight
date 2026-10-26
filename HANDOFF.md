@@ -1,3 +1,13 @@
+# Active overhaul — started 2026-10-26 at 13:30 Eastern
+
+Branch `codex/veyr-cathedral-overhaul-20261026`, base `3310d64`.
+Owner approved the full playtest backlog. Implementation and asset preparation are
+in progress; no new build is delivered or runtime-approved. See
+`docs/overhaul-20261026/README.md` for the acceptance checklist and compile evidence.
+Preserve the prior v027 Downloads app and existing authoring/viewer assets.
+
+---
+
 # Sourced knight animations — delivered for owner play
 
 Storage cleanup completed 2026-10-26 at owner request: removed obsolete local builds,

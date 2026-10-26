@@ -363,6 +363,12 @@ void AVeyrHUD::RebuildPauseMenu()
         };
         SettingRow(FString::Printf(TEXT("Volume  %d%%"),FMath::RoundToInt(Mode->UserMasterVolume*100.f)),
             [Self](){if(Self.IsValid())Self->ChangeVolume(-.1f);},[Self](){if(Self.IsValid())Self->ChangeVolume(.1f);});
+        SettingRow(FString::Printf(TEXT("Music  %d%%"),FMath::RoundToInt(Mode->UserMusicVolume*100.f)),
+            [Self,Mode](){if(Self.IsValid()){Mode->SetMusicVolume(Mode->UserMusicVolume-.1f);Self->SetPausePage(1);}},
+            [Self,Mode](){if(Self.IsValid()){Mode->SetMusicVolume(Mode->UserMusicVolume+.1f);Self->SetPausePage(1);}});
+        SettingRow(FString::Printf(TEXT("Effects  %d%%"),FMath::RoundToInt(Mode->UserEffectsVolume*100.f)),
+            [Self,Mode](){if(Self.IsValid()){Mode->SetEffectsVolume(Mode->UserEffectsVolume-.1f);Self->SetPausePage(1);}},
+            [Self,Mode](){if(Self.IsValid()){Mode->SetEffectsVolume(Mode->UserEffectsVolume+.1f);Self->SetPausePage(1);}});
         SettingRow(FString::Printf(TEXT("Mouse sensitivity  %.2f×"),Mode->UserMouseSensitivity),
             [Self](){if(Self.IsValid())Self->ChangeSensitivity(-.1f);},[Self](){if(Self.IsValid())Self->ChangeSensitivity(.1f);});
         if(UGameUserSettings* Settings=GEngine?GEngine->GetGameUserSettings():nullptr)

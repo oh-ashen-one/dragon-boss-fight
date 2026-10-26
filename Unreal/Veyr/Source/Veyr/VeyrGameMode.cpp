@@ -31,6 +31,8 @@ void AVeyrGameMode::StartPlay()
     if(GConfig)
     {
         GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MasterVolume"),UserMasterVolume,GGameUserSettingsIni);
+        GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MusicVolume"),UserMusicVolume,GGameUserSettingsIni);
+        GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("EffectsVolume"),UserEffectsVolume,GGameUserSettingsIni);
         GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
     }
     UserMasterVolume=FMath::Clamp(UserMasterVolume,0.f,1.f);
@@ -58,7 +60,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         Knight->Boss=Dragon;
         if(Dragon)Dragon->Target=Knight;
         Audio=GetWorld()->SpawnActor<AVeyrAudio>();
-        if(Audio){Audio->MasterVolume=UserMasterVolume;Audio->Initialize(Knight,Dragon);}
+        if(Audio){Audio->MasterVolume=UserMasterVolume;Audio->MusicVolume=UserMusicVolume;Audio->EffectsVolume=UserEffectsVolume;Audio->Initialize(Knight,Dragon);}
         Knight->MouseSensitivity=UserMouseSensitivity;
         bPawnPositioned=true;
         FString ReplayMode,EvidenceDirectory;
@@ -117,15 +119,18 @@ bool AVeyrGameMode::SetPauseMenuOpen(bool bOpen)
 }
 void AVeyrGameMode::SetMasterVolume(float Value)
 {
-    const float Previous=UserMasterVolume;UserMasterVolume=FMath::Clamp(Value,0.f,1.f);
-    if(Audio)
-    {
-        Audio->MasterVolume=UserMasterVolume;
-        TInlineComponentArray<UAudioComponent*> Voices;Audio->GetComponents(Voices);
-        for(UAudioComponent* Voice:Voices)if(Voice&&Voice->IsPlaying())
-            Voice->SetVolumeMultiplier(Previous>.001f?Voice->VolumeMultiplier*UserMasterVolume/Previous:.24f*UserMasterVolume);
-    }
-    SaveUserSettings();
+    UserMasterVolume=FMath::Clamp(Value,0.f,1.f);
+    if(Audio){Audio->MasterVolume=UserMasterVolume;Audio->RefreshMix();}SaveUserSettings();
+}
+void AVeyrGameMode::SetMusicVolume(float Value)
+{
+    UserMusicVolume=FMath::Clamp(Value,0.f,1.f);
+    if(Audio){Audio->MusicVolume=UserMusicVolume;Audio->RefreshMix();}SaveUserSettings();
+}
+void AVeyrGameMode::SetEffectsVolume(float Value)
+{
+    UserEffectsVolume=FMath::Clamp(Value,0.f,1.f);
+    if(Audio){Audio->EffectsVolume=UserEffectsVolume;Audio->RefreshMix();}SaveUserSettings();
 }
 void AVeyrGameMode::SetMouseSensitivity(float Value)
 {
@@ -137,6 +142,8 @@ void AVeyrGameMode::SaveUserSettings()
 {
     if(!GConfig)return;
     GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MasterVolume"),UserMasterVolume,GGameUserSettingsIni);
+    GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MusicVolume"),UserMusicVolume,GGameUserSettingsIni);
+    GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("EffectsVolume"),UserEffectsVolume,GGameUserSettingsIni);
     GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
     GConfig->Flush(false,GGameUserSettingsIni);
 }

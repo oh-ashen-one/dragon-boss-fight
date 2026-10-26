@@ -384,9 +384,9 @@ void AVeyrKnight::TryLightAttack()
            ActionDuration-ActionElapsed<=.18f) { BufferedAttackRemaining=.20f;bBufferedHeavy=false; }
         return;
     }
-    const float Cost=bTwoHanded?28.f:22.f;
+    const float Cost=bTwoHanded?20.f:16.f;
     if(Stamina<Cost)return;
-    Stamina-=Cost;RegenDelay=.75f;ActionSwingBase=++SwingId;++LightAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
+    Stamina-=Cost;RegenDelay=.5f;ActionSwingBase=++SwingId;++LightAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
     BeginAction(EVeyrKnightAction::LightAttack,GetAttackDuration(false));
 }
 
@@ -398,16 +398,16 @@ void AVeyrKnight::TryHeavyAttack()
            ActionDuration-ActionElapsed<=.18f) { BufferedAttackRemaining=.20f;bBufferedHeavy=true; }
         return;
     }
-    const float Cost=bTwoHanded?40.f:34.f;
+    const float Cost=bTwoHanded?29.f:24.f;
     if(Stamina<Cost)return;
-    Stamina-=Cost;RegenDelay=1.f;ActionSwingBase=++SwingId;++HeavyAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
+    Stamina-=Cost;RegenDelay=.65f;ActionSwingBase=++SwingId;++HeavyAttacks;bSwingTwoHanded=bTwoHanded;BufferedAttackRemaining=0.f;
     BeginAction(EVeyrKnightAction::HeavyAttack,GetAttackDuration(true));
 }
 
 void AVeyrKnight::TryRoll()
 {
-    if (!CanStartGroundedAction() || Stamina < 25.f) return;
-    Stamina -= 25.f; RegenDelay = .7f; ++Rolls;
+    if (!CanStartGroundedAction() || Stamina < 18.f) return;
+    Stamina -= 18.f; RegenDelay = .45f; ++Rolls;
     RollDirection = MoveIntent.GetSafeNormal2D();
     if (RollDirection.IsNearlyZero()) RollDirection = GetActorForwardVector().GetSafeNormal2D();
     BeginAction(EVeyrKnightAction::Roll,VisualClipDuration(TEXT("Roll"),bImportedPresentationActive?.78f:.58f));
@@ -422,10 +422,10 @@ void AVeyrKnight::TryHeal()
 
 bool AVeyrKnight::TryBlink(bool bLeft)
 {
-    if(!CanStartGroundedAction()||BlinkCooldownRemaining>0.f||Stamina<25.f)return false;
+    if(!CanStartGroundedAction()||BlinkCooldownRemaining>0.f||Stamina<20.f)return false;
     const FName Clip=bLeft?TEXT("BlinkLeft"):TEXT("BlinkRight");
     if(!HasVisualClip(Clip)){SetPresentationDiagnostic(TEXT("Approved blink clip missing: ")+Clip.ToString());return false;}
-    Stamina-=25.f;RegenDelay=.7f;++BlinkDodges;
+    Stamina-=20.f;RegenDelay=.45f;++BlinkDodges;
     BeginAction(bLeft?EVeyrKnightAction::BlinkLeft:EVeyrKnightAction::BlinkRight,VisualClipDuration(Clip,.7f));
     BlinkCooldownRemaining=ActionDuration+.10f;return true;
 }
@@ -459,12 +459,12 @@ bool AVeyrKnight::StartPrimaryStep(int32 Step)
 {
     if(!CanStartGroundedAction()||Step<0||Step>2)return false;
     const bool Heavy=Step==2;
-    const float Cost=bTwoHanded?(Heavy?40.f:28.f):(Heavy?34.f:22.f);
+    const float Cost=bTwoHanded?(Heavy?29.f:20.f):(Heavy?24.f:16.f);
     if(Stamina<Cost)return false;
     const bool Two=bTwoHanded;
     if(Two&&!HasVisualClip(TEXT("LightCombo")))return false;
     if(Step==0){PrimarySwingBase=SwingId+1;SwingId+=3;++ComboAttacks;}
-    Stamina-=Cost;RegenDelay=Heavy?1.f:.75f;bSwingTwoHanded=Two;
+    Stamina-=Cost;RegenDelay=Heavy?.65f:.5f;bSwingTwoHanded=Two;
     if(Heavy)++HeavyAttacks;else ++LightAttacks;
     ActionSwingBase=Two?PrimarySwingBase:PrimarySwingBase+Step;
     bStartingPrimaryStep=true;
@@ -652,9 +652,11 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
         if(ContinuePrimary)StartPrimaryStep(NextStep);
         else if(BufferedAttackRemaining>0.f) { if(bBufferedHeavy)TryHeavyAttack();else TryLightAttack(); }
     }
+    const bool PassiveRecovery=Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::GripToOneHand||Action==EVeyrKnightAction::GripToTwoHand;
+    if(PassiveRecovery&&RegenDelay<=0.f)Stamina=FMath::Min(100.f,Stamina+30.f*DeltaSeconds);
     if (Action == EVeyrKnightAction::Ready)
     {
-        if (RegenDelay <= 0.f) Stamina = FMath::Min(100.f, Stamina + 29.f * DeltaSeconds);
+        if (RegenDelay <= 0.f) Stamina = FMath::Min(100.f, Stamina + 38.f * DeltaSeconds);
         if (bGuardRequested && Stamina > 5.f && IsGrounded() && !bPressedJump) BeginAction(EVeyrKnightAction::Guard, 0.f);
         else if(bPrimaryAttackHeld&&!bReplayControlled&&HumanInputEnabled())StartPrimaryStep(0);
     }
@@ -720,195 +722,37 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
 
 void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 {
-    const FVector Feet=GetFootLocation();
-    const bool bHasBoss=IsValid(Boss)&&!Boss->IsDead();
-    const float BossRange=bHasBoss?FVector::Dist2D(GetActorLocation(),Boss->GetActorLocation()):1600.f;
-    const float FarBlend=FMath::Clamp((BossRange-1000.f)/600.f,0.f,1.f);
-    const bool FlightFraming=bHasBoss&&Boss->Move==EVeyrDragonMove::FlyAway&&
-        (Boss->State==EVeyrDragonState::Windup||Boss->State==EVeyrDragonState::Active||Boss->State==EVeyrDragonState::Recovery);
-    FlightCameraBlend=FMath::FInterpTo(FlightCameraBlend,FlightFraming?1.f:0.f,DeltaSeconds,3.f);
-    CombatCamera->SetFieldOfView(FMath::Lerp(72.f,86.f,FlightCameraBlend));
-    // A small distance allowance at range permits a level view of the entire
-    // giant while retaining floor clearance and space above the boss HUD.
-    const bool bOpeningView=!bReplayControlled&&!bHasEverCapturedMouse;
-    const float GroundArm=FMath::Clamp(CameraDistance,500.f,1100.f)+100.f*FarBlend+(bOpeningView?350.f:0.f);
-    const float DesiredArm=FMath::Lerp(GroundArm,FMath::Max(GroundArm,1600.f),FlightCameraBlend);
-    if(VisualClock<=DeltaSeconds*1.5f)CameraBoom->TargetArmLength=DesiredArm;
-    else CameraBoom->TargetArmLength=FMath::FInterpTo(CameraBoom->TargetArmLength,DesiredArm,DeltaSeconds,12.f);
-    float Arm=FMath::Max(1.f,CameraBoom->TargetArmLength);
-    // Position lag shortened the real player-to-camera distance during a roll,
-    // invalidating the requested-arm framing solve. Rotation retains its own
-    // smoothing below; position now follows the pawn without that hidden offset.
-    CameraBoom->bEnableCameraLag=false;
-    float FramingCandidate=Arm;
-    if(CameraBoom->IsCollisionFixApplied())
-        FramingCandidate=FMath::Min(FramingCandidate,static_cast<float>(FVector::Dist2D(
-            CameraBoom->GetComponentLocation(),CombatCamera->GetComponentLocation())));
-    if(Controller&&CameraBoom->bDoCollisionTest)
+    // A player camera, including during flight. Only world collision may
+    // shorten this arm; combat state never widens the lens or pulls it back.
+    constexpr float Arm=440.f;
+    CameraDistance=Arm;FlightCameraBlend=0.f;CameraPitchCeiling=68.f;
+    CameraBoom->TargetArmLength=Arm;
+    CameraBoom->SetRelativeLocation(FVector(0,0,170.f-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
+    CameraBoom->SocketOffset=FVector(0,42.f,12.f);
+    CameraBoom->bEnableCameraLag=false;CameraBoom->bEnableCameraRotationLag=false;
+    CombatCamera->SetFieldOfView(72.f);
+    ManualCameraRemaining=FMath::Max(0.f,ManualCameraRemaining-DeltaSeconds);
+    if(Controller)
     {
-        // Predict using the same sphere/channel as the owned spring arm. The
-        // horizontal obstruction distance remains stable as pitch tilts down
-        // against a wall; using the slanted distance would cause feedback.
-        const float ProbeHeight=FMath::Lerp(FMath::Min(187.f,Arm*.27f),FMath::Min(375.f,Arm*.24f),FlightCameraBlend);
-        const FVector ProbeOrigin=Feet+FVector(0,0,ProbeHeight);
-        const FRotator ProbeRotation=Controller->GetControlRotation();
-        const FVector ProbeEnd=ProbeOrigin-ProbeRotation.Vector()*Arm+ProbeRotation.RotateVector(CameraBoom->SocketOffset);
-        FHitResult CameraHit;
-        FCollisionQueryParams CameraQuery(SCENE_QUERY_STAT(VeyrCameraFraming),false,this);
-        if(GetWorld()->SweepSingleByChannel(CameraHit,ProbeOrigin,ProbeEnd,FQuat::Identity,
-            CameraBoom->ProbeChannel,FCollisionShape::MakeSphere(CameraBoom->ProbeSize),CameraQuery))
-            FramingCandidate=FMath::Min(FramingCandidate,static_cast<float>(FVector::Dist2D(ProbeOrigin,CameraHit.Location)));
-    }
-    FramingCandidate=FMath::Clamp(FramingCandidate,80.f,Arm);
-    if(VisualClock<=DeltaSeconds*1.5f)CameraFramingArm=FramingCandidate;
-    else if(FramingCandidate<CameraFramingArm)
-    {
-        CameraFramingArm=FramingCandidate;CameraObstructionHold=.20f;
-    }
-    else
-    {
-        CameraObstructionHold=FMath::Max(0.f,CameraObstructionHold-DeltaSeconds);
-        if(CameraObstructionHold<=0.f)
-            CameraFramingArm=FMath::FInterpConstantTo(CameraFramingArm,FramingCandidate,DeltaSeconds,220.f);
-    }
-    CameraFramingArm=FMath::Min(CameraFramingArm,Arm);
-    float PivotAboveFeet=FMath::Lerp(FMath::Min(187.f,CameraFramingArm*.27f),
-        FMath::Min(375.f,CameraFramingArm*.24f),FlightCameraBlend);
-    CameraBoom->SetRelativeLocation(FVector(0,0,PivotAboveFeet-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
-    if (!Controller) { RestoreCameraOcclusion(); return; }
-
-    // Read the actual static play surface, excluding both combatants. This is
-    // a view constraint only: never move the pawn or bypass spring-arm collision.
-    FHitResult FloorHit;
-    FCollisionQueryParams FloorQuery(SCENE_QUERY_STAT(VeyrCameraFloor),false,this);
-    if(IsValid(Boss))FloorQuery.AddIgnoredActor(Boss);
-    if(GetWorld()->LineTraceSingleByChannel(FloorHit,Feet+FVector(0,0,60),Feet-FVector(0,0,5000),ECC_Visibility,FloorQuery))
-        CameraFloorZ=FloorHit.ImpactPoint.Z;
-    else if(IsGrounded())CameraFloorZ=Feet.Z;
-    float PivotZ=CameraBoom->GetComponentLocation().Z;
-    int32 ViewWidth=0,ViewHeight=0;
-    if(APlayerController* Player=Cast<APlayerController>(Controller))Player->GetViewportSize(ViewWidth,ViewHeight);
-    const float Aspect=ViewHeight>0?float(ViewWidth)/ViewHeight:FMath::Max(.1f,CombatCamera->AspectRatio);
-    const float VerticalTangent=FMath::Tan(FMath::DegreesToRadians(CombatCamera->FieldOfView*.5f))/Aspect;
-    // Leave 30px above the boss-name band for camera-view-cache timing and toes.
-    const float BootRatio=(600.f/720.f*2.f-1.f)*VerticalTangent;
-    const float SocketZ=CameraBoom->SocketOffset.Z;
-    float FloorSocketZ=SocketZ*FMath::Clamp(CameraFramingArm/Arm,0.f,1.f);
-    auto SafePitch=[&](float Pitch)
-    {
-        const float Radians=FMath::DegreesToRadians(Pitch),S=FMath::Sin(Radians),C=FMath::Cos(Radians);
-        // A collision hit also shortens the socket offset. Count only its
-        // compressed fraction for floor clearance, but its full height for
-        // the conservative boot-framing bound below.
-        // During flight the resolved arm can extend before the conservative
-        // framing allowance catches up. An upward view gets lower as the arm
-        // grows: constrain floor clearance with the full requested arm then.
-        const float FloorArm=S>0.f?Arm:CameraFramingArm;
-        const float CameraZ=PivotZ-FloorArm*S+FloorSocketZ*C;
-        const float FootDepth=CameraFramingArm-PivotAboveFeet*S;
-        const float FootBelowView=PivotAboveFeet*C+SocketZ;
-        // Keep a small integration margin above the 225cm resolved-view guard.
-        return CameraZ>=CameraFloorZ+230.f&&FootDepth>1.f&&FootBelowView/FootDepth<=BootRatio;
-    };
-    auto SolvePitchCeiling=[&]()
-    {
-        float Low=-55.f,High=45.f;
-        for(int32 I=0;I<16;++I)
+        FRotator Look=Controller->GetControlRotation().GetNormalized();
+        if(bLockedOn&&IsValid(Boss)&&!Boss->IsDead()&&ManualCameraRemaining<=0.f)
         {
-            const float Middle=(Low+High)*.5f;
-            if(SafePitch(Middle))Low=Middle;else High=Middle;
+            const FVector Focus=Boss->GetHeadLocation();
+            const FVector Delta=Focus-CameraBoom->GetComponentLocation();
+            FRotator Desired=Delta.Rotation();
+            Desired.Pitch=FMath::Clamp(Desired.Pitch,-55.f,68.f);
+            // Avoid spinning underneath a target whose head crosses overhead.
+            if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;
+            Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
         }
-        return Low;
-    };
-    CameraPitchCeiling=SolvePitchCeiling();
-    const bool bLock=bLockedOn&&bHasBoss;
-    // Controller rotation already has an explicit bounded smoothing path.
-    // A second rotational lag can retain an unsafe upward view during collapse.
-    CameraBoom->bEnableCameraRotationLag=false;
-    if (bLock)
-    {
-        const bool bHeadApproach=Boss->State==EVeyrDragonState::Buckle||Boss->State==EVeyrDragonState::Collapse||Boss->IsHeadExposed();
-        const float HeadWeight=bHeadApproach?1.f:FMath::Lerp(FarBlend,1.f,FlightCameraBlend);
-        LockHeadBlend=FMath::FInterpTo(LockHeadBlend,HeadWeight,DeltaSeconds,4.f);
-        const FVector GroundFocus(Boss->GetActorLocation().X,Boss->GetActorLocation().Y,CameraFloorZ+FMath::Lerp(150.f,350.f,FlightCameraBlend));
-        FVector HeadRoute=Boss->GetHeadLocation();
-        // Follow the route toward the crown in XY, but never chase the standing
-        // skull's height while the buckle/collapse is only beginning.
-        HeadRoute.Z=FMath::Min(HeadRoute.Z,CameraFloorZ+(bHeadApproach?190.f:FMath::Lerp(400.f,1400.f,FlightCameraBlend)));
-        const FVector Focus=FMath::Lerp(GroundFocus,HeadRoute,LockHeadBlend);
-        const FVector ToFocus=Focus-CameraBoom->GetComponentLocation();
-        FRotator Current=Controller->GetControlRotation().GetNormalized(),Desired=Current;
-        if(ToFocus.Size2D()>(bHeadApproach?60.f:240.f))Desired.Yaw=ToFocus.Rotation().Yaw;
-        const float NearBlend=bHeadApproach?1.f:1.f-FarBlend;
-        const float LockCeiling=FMath::Min(CameraPitchCeiling,FMath::Lerp(FMath::Lerp(0.f,-16.f,NearBlend),45.f,FlightCameraBlend));
-        Desired.Pitch=FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(ToFocus.Z,
-            FMath::Max(300.f,static_cast<float>(ToFocus.Size2D())))))-4.f,-55.f,LockCeiling);
-        Desired.Roll=0.f;
-        FRotator Smoothed=FMath::RInterpConstantTo(Current,FMath::RInterpTo(Current,Desired,DeltaSeconds,5.f),DeltaSeconds,100.f);
-        Smoothed.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Smoothed.Pitch),-55.f,CameraPitchCeiling);
-        Controller->SetControlRotation(Smoothed);
-    }
-    else
-    {
-        FRotator Look=Controller->GetControlRotation();
-        if(bOpeningView)Look.Pitch=0.f;
-        Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,CameraPitchCeiling);Look.Roll=0.f;
+        Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,68.f);Look.Roll=0.f;
         Controller->SetControlRotation(Look);
     }
-    // The spring arm only sweeps from its pivot. A high flight pivot can clear
-    // low masonry while that masonry still hides the knight below the pivot.
-    // Resolve the final view against both the arm path and the visible body,
-    // shortening the real arm rather than only its framing estimate. Re-solve
-    // floor/feet constraints after each contraction because those change pitch.
-    if(CameraBoom->bDoCollisionTest)
-    {
-        FCollisionQueryParams WorldQuery(SCENE_QUERY_STAT(VeyrCameraBodyVisibility),false,this);
-        if(IsValid(Boss))WorldQuery.AddIgnoredActor(Boss); // Preserve dragon camera-ignore.
-        const FCollisionShape Probe=FCollisionShape::MakeSphere(CameraBoom->ProbeSize);
-        const FVector BodyPoints[]={Feet+FVector(0,0,65.f),GetActorLocation(),Feet+FVector(0,0,200.f)};
-        for(int32 Pass=0;Pass<4;++Pass)
-        {
-            const FRotator View=CameraBoom->GetTargetRotation();
-            const FVector Origin=CameraBoom->GetComponentLocation()+CameraBoom->TargetOffset;
-            const FVector DesiredCamera=Origin-View.Vector()*Arm+View.RotateVector(CameraBoom->SocketOffset);
-            float ClearFraction=1.f;
-            auto SweepFrom=[&](const FVector& Start)
-            {
-                FHitResult Hit;
-                if(GetWorld()->SweepSingleByChannel(Hit,Start,DesiredCamera,FQuat::Identity,
-                    CameraBoom->ProbeChannel,Probe,WorldQuery)&&Hit.bBlockingHit)
-                    ClearFraction=FMath::Min(ClearFraction,Hit.Time);
-            };
-            SweepFrom(Origin);
-            for(const FVector& BodyPoint:BodyPoints)
-            {
-                SweepFrom(BodyPoint);
-                // The reverse ray also catches one-sided imported surfaces from
-                // the actual viewing direction. The next pass checks the nearer
-                // candidate again; it never places the camera at this hit point.
-                FHitResult ViewHit;
-                if(GetWorld()->LineTraceSingleByChannel(ViewHit,DesiredCamera,BodyPoint,
-                    CameraBoom->ProbeChannel,WorldQuery)&&ViewHit.bBlockingHit)
-                    ClearFraction=FMath::Min(ClearFraction,1.f-ViewHit.Time);
-            }
-            if(ClearFraction>=1.f)break;
-            const float ShorterArm=FMath::Max(80.f,Arm*ClearFraction-CameraBoom->ProbeSize-5.f);
-            if(ShorterArm>=Arm-.1f)break;
-            Arm=ShorterArm;CameraBoom->TargetArmLength=Arm;
-            CameraFramingArm=FMath::Min(CameraFramingArm,Arm);CameraObstructionHold=.20f;
-            PivotAboveFeet=FMath::Lerp(FMath::Min(187.f,CameraFramingArm*.27f),
-                FMath::Min(375.f,CameraFramingArm*.24f),FlightCameraBlend);
-            CameraBoom->SetRelativeLocation(FVector(0,0,PivotAboveFeet-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
-            PivotZ=CameraBoom->GetComponentLocation().Z;
-            FloorSocketZ=SocketZ*FMath::Clamp(CameraFramingArm/Arm,0.f,1.f);
-            CameraPitchCeiling=SolvePitchCeiling();
-            FRotator SafeView=Controller->GetControlRotation();
-            SafeView.Pitch=FMath::Clamp(FRotator::NormalizeAxis(SafeView.Pitch),-55.f,CameraPitchCeiling);
-            Controller->SetControlRotation(SafeView);
-        }
-    }
-    // Record the resolved view as well as CameraFramingArm. Collision still
-    // owns the final camera position, including an unavoidable initial overlap.
+    // The spring-arm sphere sweep resolves walls and floor at steep pitch.
+    // Keeping the boots visible is deliberately not a pitch restriction.
+    CameraFloorZ=GetFootLocation().Z;
+    CameraFramingArm=FMath::Min(Arm,static_cast<float>(FVector::Distance(
+        CameraBoom->GetComponentLocation(),CombatCamera->GetComponentLocation())));
     CameraFloorClearance=CombatCamera->GetComponentLocation().Z-CameraFloorZ;
     UpdateCameraOcclusion(DeltaSeconds);
 }
@@ -1065,7 +909,10 @@ bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
         const float Near=FMath::Abs(Box.Min[Axis])<FMath::Abs(Box.Max[Axis])?Box.Min[Axis]:Box.Max[Axis];
         const float Far=Near==Box.Min[Axis]?Box.Max[Axis]:Box.Min[Axis];
         FVector A=Box.GetCenter(),B=A;A[Axis]=FMath::Lerp(Near,Far,.28f);B[Axis]=Far;
-        Base=Authored.TransformPosition(A);Tip=Authored.TransformPosition(B);return true;
+        Base=Authored.TransformPosition(A);Tip=Authored.TransformPosition(B);
+        const FVector WorldSize=Size*Authored.GetScale3D().GetAbs();
+        BladeContactRadius=FMath::Clamp(static_cast<float>(FMath::Max(WorldSize[(Axis+1)%3],WorldSize[(Axis+2)%3])*.38),8.f,42.f);
+        return true;
     }
     FTransform Grip;
     if(BoatWeapon&&BoatWeapon->GetStaticMesh()&&CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_grip"))&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_grip"),Grip))
@@ -1311,7 +1158,7 @@ void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)
         {
             if(!SampleBlade(FMath::Lerp(From,To,float(Step)/Steps),CurrA,CurrB))break;
             const bool Heavy=Action==EVeyrKnightAction::HeavyAttack||(Action==EVeyrKnightAction::Combo&&I>=2);
-            if(Boss->ReceiveSwordSweep(A,B,CurrA,CurrB,Heavy,ActionSwingBase+I,bSwingTwoHanded?1.55f:1.f))
+            if(Boss->ReceiveSwordSweep(A,B,CurrA,CurrB,Heavy,ActionSwingBase+I,bSwingTwoHanded?1.55f:1.f,BladeContactRadius))
             {
                 ContactedDamageWindows.Add(I);++SuccessfulStrikeWindows;bContactSent=true;
                 UE_LOG(LogTemp,Display,TEXT("VEYR_STRIKE_WINDOW clip=%s window=%d time=%.3f heavy=%d"),*ActionPresentationClip.ToString(),I,ActionElapsed,Heavy);break;
@@ -1586,10 +1433,10 @@ bool AVeyrKnight::MouseLookReady() const
 {
     return HumanInputEnabled()&&GFrameCounter>=MouseLookEnableAfterFrame&&FPlatformTime::Seconds()>=MouseLookEnableAfterTime;
 }
-void AVeyrKnight::LookYaw(float Value) { if (MouseLookReady() && !bLockedOn) AddControllerYawInput(Value * .7f * MouseSensitivity); }
-void AVeyrKnight::LookPitch(float Value) { if (MouseLookReady() && !bLockedOn) AddControllerPitchInput(-Value * .6f * MouseSensitivity); }
-void AVeyrKnight::ZoomIn() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance - 65.f, 500.f, 1100.f); }
-void AVeyrKnight::ZoomOut() { if (HumanInputEnabled()) CameraDistance = FMath::Clamp(CameraDistance + 65.f, 500.f, 1100.f); }
+void AVeyrKnight::LookYaw(float Value) { if (MouseLookReady() && FMath::Abs(Value)>.001f) { ManualCameraRemaining=1.8f; AddControllerYawInput(Value * .7f * MouseSensitivity); } }
+void AVeyrKnight::LookPitch(float Value) { if (MouseLookReady() && FMath::Abs(Value)>.001f) { ManualCameraRemaining=1.8f; AddControllerPitchInput(-Value * .6f * MouseSensitivity); } }
+void AVeyrKnight::ZoomIn() { /* Fixed close framing; wheel input cannot pull away from the player. */ }
+void AVeyrKnight::ZoomOut() { /* Fixed close framing; wheel input cannot pull away from the player. */ }
 void AVeyrKnight::GuardPressed() { if (HumanInputEnabled()) SetGuard(true); }
 void AVeyrKnight::GuardReleased() { if (!bReplayControlled) SetGuard(false); }
 void AVeyrKnight::ForwardPressed() { bForwardHeld = HumanInputEnabled(); } void AVeyrKnight::ForwardReleased() { bForwardHeld = false; }

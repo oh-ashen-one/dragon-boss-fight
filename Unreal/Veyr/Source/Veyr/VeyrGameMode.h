@@ -28,10 +28,13 @@ public:
     UPROPERTY(BlueprintReadOnly) TObjectPtr<AVeyrDragonEffects> DragonEffects;
     UFUNCTION(BlueprintCallable, Category="Veyr|Menu") bool SetPauseMenuOpen(bool bOpen);
     UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetMasterVolume(float Value);
+    void SetMusicVolume(float Value);
+    void SetEffectsVolume(float Value);
     UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetMouseSensitivity(float Value);
     void SaveUserSettings();
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Menu") bool bPauseMenuOpen=false;
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") float UserMasterVolume=.65f;
+    float UserMusicVolume=.55f,UserEffectsVolume=1.f;
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") float UserMouseSensitivity=1.f;
     UPROPERTY(BlueprintReadOnly) float EncounterSeconds=0;
     UPROPERTY(BlueprintReadOnly) float VictorySeconds=-1;

@@ -23,6 +23,9 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio", meta=(ClampMin="0", ClampMax="1"))
     float MasterVolume = .65f;
+    float EffectsVolume=1.f, MusicVolume=.55f;
+    void RefreshMix();
+    void PlayDestruction(const FVector& Position);
     /** Submission evidence only: these do not prove audible output or acoustic acceptance. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Audio|Evidence") int32 CuesStarted = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Audio|Evidence") int32 CuesDropped = 0;
@@ -32,8 +35,8 @@ protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Count };
-    static constexpr int32 VoiceCount = 6;
+    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Roll, Blink, Footstep, Wing, Roar, Break, Count };
+    static constexpr int32 VoiceCount = 12;
     static constexpr int32 CueCount = static_cast<int32>(ECue::Count);
     static constexpr int32 SampleRate = 24000;
 
@@ -42,6 +45,15 @@ private:
     UPROPERTY(Transient) TArray<TObjectPtr<UAudioComponent>> Voices;
     UPROPERTY(Transient) TArray<TObjectPtr<USoundWaveProcedural>> VoiceWaves;
     TArray<int16> Samples[CueCount];
+    UPROPERTY(Transient) TArray<TObjectPtr<UAudioComponent>> Beds;
+    UPROPERTY(Transient) TArray<TObjectPtr<USoundWaveProcedural>> BedWaves;
+    TArray<uint8> BedPCM[2];
+    int32 BedOffsets[2]={};
+    float VoiceLevels[VoiceCount]={};
+    int32 LastRolls=0,LastBlinks=0;
+    float FootstepClock=0.f,WingClock=0.f,RoarClock=8.f;
+    void UpdateBeds();
+    void LoadRecordedSamples();
     float Durations[CueCount] = {};
     double LastCueTimes[CueCount] = {};
     double VoiceEndTimes[VoiceCount] = {};

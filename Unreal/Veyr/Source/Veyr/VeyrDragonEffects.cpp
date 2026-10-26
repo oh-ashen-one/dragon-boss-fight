@@ -128,7 +128,7 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
     const bool FireMove=Dragon->Move==EVeyrDragonMove::Fire&&!Dragon->IsDead()&&!Dragon->IsEncounterStopped();
     const bool Windup=FireMove&&Dragon->State==EVeyrDragonState::Windup;
     const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
-    const bool Active=FireMove&&Dragon->State==EVeyrDragonState::Active&&Beam.bDamaging&&Beam.Length>1.f;
+    const bool Active=Dragon->State==EVeyrDragonState::Active&&Beam.bDamaging&&Beam.Length>1.f;
     if(Dragon->bUsingCustomuseVisual&&!Dragon->HasValidImportedCombatPose()){HideEffects();return;}
     const float TailAge=EffectsClock-LastActiveClock;
     if(!Windup&&!Active&&TailAge>=1.2f){HideEffects();return;}

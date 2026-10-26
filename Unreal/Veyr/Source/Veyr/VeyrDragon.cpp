@@ -267,7 +267,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             const float TravelT=bRepositionWalking?FMath::Clamp((StateElapsed-RepositionTurnDuration)/RepositionTravelDuration,0.f,1.f):0.f;
             if(!bRepositionAuthoredTurn||StateElapsed>=RepositionTurnDuration)
                 SetActorLocation(FMath::Lerp(MoveStart,MoveEnd,TravelT));
-            if(StateElapsed>=StateDuration){bJustRepositioned=true;EnterState(EVeyrDragonState::Idle,.75f);}
+            if(StateElapsed>=StateDuration){bJustRepositioned=true;EnterState(EVeyrDragonState::Idle,.35f);}
             break;
         }
         case EVeyrDragonState::Windup:
@@ -287,7 +287,9 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 FVector Position=FMath::Lerp(MoveStart,MoveEnd,Ease(T));
                 // New takeoff/hover/landing already contain the approved root
                 // altitude. Actor travel supplies only the horizontal route.
-                if(!HasAuthoredFlight())Position.Z+=FMath::Sin(T*PI)*1400.f;
+                Position.Z+=FMath::Square(FMath::Sin(T*PI))*(HasAuthoredFlight()?850.f:1400.f);
+                Position+=GetActorRightVector()*FMath::Sin(T*PI)*280.f;
+                // Analytic arc returns to the authored endpoints with zero vertical velocity.
                 SetActorLocation(Position);
             }
             UpdateImportedPresentation();
@@ -300,7 +302,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             break;
         case EVeyrDragonState::Recovery:
             if(IsLandingContactWindow()){UpdateImportedPresentation();TryDamageTarget();}
-            if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,.9f);}
+            if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,.40f);}
             break;
         case EVeyrDragonState::Buckle:
             if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Collapse,1.f);
@@ -329,9 +331,10 @@ void AVeyrDragon::ChooseAttack()
         if(!bImportedTargetsValid||!bImportedAttackCacheReady)
         {EnterState(EVeyrDragonState::Idle,1.f);return;}
         const int32 Positional=PredictPositionalMove(Target->GetFootLocation());
+        if(Clock>=NextFlightAt){BeginAttack(EVeyrDragonMove::FlyAway);return;}
         if(Positional<0){BeginReposition();return;}
         EVeyrDragonMove Next=static_cast<EVeyrDragonMove>(Positional);
-        if(TotalAttacks%6==5)Next=EVeyrDragonMove::FlyAway;
+        if(TotalAttacks%4==3&&Clock+6.f>=NextFlightAt)Next=EVeyrDragonMove::FlyAway;
         if(Next==LastMove&&RepeatedMoveCount>=2){BeginReposition();return;}
         if(Next==EVeyrDragonMove::ClawSwipe)
             ClawLeg=CachedWarningContains(ImportedMoveClip(Next,0,TEXT("Active")),Target->GetFootLocation())?0:1;
@@ -554,11 +557,11 @@ void AVeyrDragon::BeginReposition()
         }
         MoveEnd=FMath::Lerp(MoveStart,MoveEnd,Lo);
     }
-    RepositionTurnDuration=bRepositionAuthoredTurn?RepositionTurnSourceDuration:
-        FMath::Abs(RepositionYawDelta)>.5f?FMath::Max(.3f,FMath::Abs(RepositionYawDelta)/22.f):0.f;
+    RepositionTurnDuration=bRepositionAuthoredTurn?RepositionTurnSourceDuration/1.22f:
+        FMath::Abs(RepositionYawDelta)>.5f?FMath::Max(.3f,FMath::Abs(RepositionYawDelta)/40.f):0.f;
     const FVeyrVisualClip* Walk=VisualDefinition?VisualDefinition->Clips.Find(TEXT("Walk")):nullptr;
     const float WalkSpeed=Walk&&Walk->NominalSpeedCmPerSecond>0.f?Walk->NominalSpeedCmPerSecond:160.f;
-    RepositionTravelDuration=FVector::Dist2D(MoveStart,MoveEnd)/WalkSpeed;
+    RepositionTravelDuration=FVector::Dist2D(MoveStart,MoveEnd)/(WalkSpeed*1.25f);
     bRepositionWalking=RepositionTurnDuration<=.001f;
     RepeatedMoveCount=0;
     EnterState(EVeyrDragonState::Reposition,FMath::Max(.35f,RepositionTurnDuration+RepositionTravelDuration));
@@ -577,6 +580,8 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
             AttackOrigin=Ground(GetActorTransform().TransformPosition(FVector(470,0,0))); break;
         case EVeyrDragonMove::FlyAway:
         {
+            NextFlightAt=Clock+20.f;bAerialFireConsumed=false;
+            AerialFireTarget=Ground(Target->GetFootLocation());
             WindupDuration=1.6f; ActiveDuration=FlightSeconds+.35f; RecoveryDuration=2.3f; AttackDamage=38.f;
             const FVector Side=GetActorRightVector()*(TotalAttacks%2==0?1.f:-1.f);
             MoveEnd=ClampArena(Ground(Target->GetActorLocation())+Side*350.f,2500.f);
@@ -676,7 +681,17 @@ bool AVeyrDragon::IsPointInsideActiveDanger(const FVector& Point) const {return 
 
 void AVeyrDragon::TryDamageTarget()
 {
-    if(bContactConsumed||!IsValid(Target)||Target->IsDead()||IsDead())return;
+    if(!IsValid(Target)||Target->IsDead()||IsDead())return;
+    if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&!bEncounterStopped&&!bAerialFireConsumed)
+    {
+        const auto Beam=GetActiveFlameBeam();
+        if(Beam.bDamaging&&FVector::Dist2D(Target->GetFootLocation(),AerialFireTarget)<=430.f&&FlameHitsKnight(Beam))
+        {
+            // Separate one-hit budget from the later landing; guard/dodge rules remain authoritative.
+            Target->ApplyBossDamage(26.f,Beam.Origin);bAerialFireConsumed=true;++DamageContactCount;
+        }
+    }
+    if(bContactConsumed)return;
     if(bUsingCustomuseVisual)
     {
         if(!bImportedTargetsValid||!bImportedAttackCacheReady||!MissingVisualClip.IsNone())return;
@@ -769,9 +784,9 @@ void AVeyrDragon::ReceiveSword(const FVector& Origin,const FVector& Forward,bool
 }
 
 bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& PreviousTip,
-                                  const FVector& CurrentBase,const FVector& CurrentTip,bool bHeavy,int32 SwingId,float DamageMultiplier)
+                                  const FVector& CurrentBase,const FVector& CurrentTip,bool bHeavy,int32 SwingId,float DamageMultiplier,float BladeRadius)
 {
-    if(IsDead()||bEncounterStopped||IsAirborne()||AcceptedSwings.Contains(SwingId)||
+    if(IsDead()||bEncounterStopped||AcceptedSwings.Contains(SwingId)||
        (bUsingCustomuseVisual&&!bImportedTargetsValid))return false;
     if(PreviousBase.ContainsNaN()||PreviousTip.ContainsNaN()||CurrentBase.ContainsNaN()||CurrentTip.ContainsNaN())return false;
     if(FVector::DistSquared(CurrentBase,CurrentTip)<1.f)return false;
@@ -807,7 +822,23 @@ bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& P
         }
         // Keep the existing ankle sphere and head sphere, plus the measured
         // lower-leg axes. One deepest region wins; blade thickness stays 8 cm.
-        if(SurfaceDistance<=8.f&&SurfaceDistance<Best){Best=SurfaceDistance;Region=I;}
+        if(SurfaceDistance<=FMath::Clamp(BladeRadius,8.f,42.f)&&SurfaceDistance<Best){Best=SurfaceDistance;Region=I;}
+    }
+    // Damageable anatomy agrees with solid movement geometry. Reachable
+    // neck/body/tail contacts work during takeoff and landing as well.
+    // Legs and head retain their special stagger/bonus rules.
+    for(int32 I=0;I<SolidBodyCapsules.Num();++I)
+    {
+        if(I>=4&&I<15)continue;
+        UCapsuleComponent* Part=SolidBodyCapsules[I];
+        if(!Part||!bSolidBodyReady)continue;
+        const float Radius=Part->GetScaledCapsuleRadius();
+        const float HalfAxis=FMath::Max(0.f,Part->GetScaledCapsuleHalfHeight()-Radius);
+        const FVector Axis=Part->GetUpVector()*HalfAxis;
+        const FVector A=Part->GetComponentLocation()-Axis,B=Part->GetComponentLocation()+Axis;
+        const float D=FMath::Min(SegmentTriangleDistance(A,B,CurrentBase,CurrentTip,PreviousTip),
+            SegmentTriangleDistance(A,B,CurrentBase,PreviousTip,PreviousBase))-Radius;
+        if(D<=FMath::Clamp(BladeRadius,8.f,42.f)&&Region<0){Region=5;Best=D;}
     }
     if(Region<0)return false;
     ApplySwordRegion(Region,bHeavy,SwingId,DamageMultiplier);
@@ -819,7 +850,7 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
     AcceptedSwings.Add(SwingId); RecentSwings.Add(SwingId);
     if(RecentSwings.Num()>512){AcceptedSwings.Remove(RecentSwings[0]);RecentSwings.RemoveAt(0);}
     LastHitRegion=Region; ++SwordContactCount;
-    LastSwordDamage=Region<4?(bHeavy?62.f:28.f):IsHeadExposed()?(bHeavy?270.f:125.f):(bHeavy?75.f:38.f);
+    LastSwordDamage=Region<4?(bHeavy?72.f:34.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?270.f:125.f):(bHeavy?85.f:44.f);
     LastSwordDamage*=FMath::Clamp(DamageMultiplier,1.f,1.55f);
     if(Region==4&&IsHeadExposed())++HeadBonusHitCount;
     Health=FMath::Max(0.f,Health-LastSwordDamage);
@@ -1080,7 +1111,7 @@ void AVeyrDragon::UpdateTelegraphs()
     DangerLines->ClearInstances();
     if(bWarningDrawn&&HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&
        State==EVeyrDragonState::Recovery&&!IsAirborne()&&!IsLandingContactWindow())WarningLines->ClearInstances();
-    if(!bWarningDrawn)
+    if(!bWarningDrawn||Move==EVeyrDragonMove::FlyAway)
     {
         WarningLines->ClearInstances();const auto Warning=GetWarningFootprints();
         for(int32 I=0;I<Warning.Num();++I)DrawFootprint(WarningLines,Warning[I],false,&Warning,I);
@@ -1531,6 +1562,16 @@ TArray<FVeyrDragonContact> AVeyrDragon::GetImportedContacts() const
 FVeyrDragonFlameBeam AVeyrDragon::GetActiveFlameBeam() const
 {
     FVeyrDragonFlameBeam Beam;
+    if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&!bEncounterStopped&&bImportedTargetsValid)
+    {
+        const float T=StateElapsed/FMath::Max(.01f,ActiveDuration);
+        if(T<.48f||T>.72f)return Beam;
+        Beam.Origin=ImportedMouthWorld;
+        const FVector ToGround=AerialFireTarget+FVector(0,0,50)-Beam.Origin;
+        Beam.Direction=ToGround.GetSafeNormal();
+        Beam.Length=(ToGround.Size()+150.f)*FMath::Clamp((T-.48f)*ActiveDuration/.18f,0.f,1.f);
+        Beam.HalfAngleDegrees=FMath::RadiansToDegrees(FMath::Atan(300.f/FMath::Max(1.f,static_cast<float>(ToGround.Size()))));Beam.bDamaging=Beam.Length>20.f;return Beam;
+    }
     if(!bUsingCustomuseVisual||!bImportedTargetsValid||!bImportedAttackCacheReady||
        State!=EVeyrDragonState::Active||Move!=EVeyrDragonMove::Fire||bEncounterStopped||!MissingVisualClip.IsNone())return Beam;
     Beam.Origin=ImportedMouthWorld;Beam.Direction=(ImportedMouthAimWorld-ImportedMouthWorld).GetSafeNormal();
@@ -1716,8 +1757,14 @@ TArray<FVeyrDragonFootprint> AVeyrDragon::GetWarningFootprints() const
     {
         const bool Landing=HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery&&
             (IsAirborne()||IsLandingContactWindow());
-        return !bEncounterStopped&&(State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||Landing)?
+        auto Result=!bEncounterStopped&&(State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||Landing)?
             CommittedWarning:TArray<FVeyrDragonFootprint>();
+        if(!bEncounterStopped&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&StateElapsed/ActiveDuration<=.72f)
+        {
+            FVeyrDragonFootprint Fire;Fire.Shape=EVeyrDangerShape::Circle;Fire.Origin=AerialFireTarget;
+            Fire.OuterRadius=430.f;Result.Add(Fire);
+        }
+        return Result;
     }
     const auto F=GetWarningFootprint();return F.Shape==EVeyrDangerShape::None?TArray<FVeyrDragonFootprint>():TArray<FVeyrDragonFootprint>{F};
 }
@@ -1732,6 +1779,8 @@ TArray<FVeyrDragonFootprint> AVeyrDragon::GetActiveFootprints() const
     {auto F=ProjectFlameToGround(GetActiveFlameBeam());if(F.Shape!=EVeyrDangerShape::None)Result.Add(F);return Result;}
     if(Move==EVeyrDragonMove::FlyAway)
     {
+        const auto Beam=GetActiveFlameBeam();
+        if(Beam.bDamaging){auto Fire=ProjectFlameToGround(Beam);if(Fire.Shape!=EVeyrDangerShape::None)Result.Add(Fire);}
         if(HasAuthoredFlight()?IsLandingContactWindow():StateElapsed>=FlightSeconds)
         {Result=CommittedWarning;for(auto& F:Result)F.bDamaging=true;}
         return Result;

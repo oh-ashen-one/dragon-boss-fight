@@ -94,8 +94,8 @@ public:
 
     // Calibrated for the native characters' safe approach and head-punish
     // cadence. Damage, independent leg thresholds and enemy moves are unchanged.
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 5800.f;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 5800.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 2800.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 2800.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonState State = EVeyrDragonState::Idle;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonMove Move = EVeyrDragonMove::ClawSwipe;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<AVeyrKnight> Target;
@@ -121,7 +121,7 @@ public:
     /** Origin is already the world sword/contact center (no extra torso offset). */
     void ReceiveSword(const FVector& Origin, const FVector& Forward, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
     bool ReceiveSwordSweep(const FVector& PreviousBase, const FVector& PreviousTip,
-                           const FVector& CurrentBase, const FVector& CurrentTip, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
+                           const FVector& CurrentBase, const FVector& CurrentTip, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f, float BladeRadius=8.f);
 
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetStateElapsed() const { return StateElapsed; }
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetStateDuration() const { return StateDuration; }
@@ -232,6 +232,9 @@ private:
     FVector LastPresentationLocation=FVector::ZeroVector;
     float LastPresentationYaw=0.f,WalkPhase=0.f,TurnPhase=0.f;
     float GazeSmoothedYaw=0.f,GazeSmoothedPitch=0.f;
+    float NextFlightAt=10.f;
+    FVector AerialFireTarget=FVector::ZeroVector;
+    bool bAerialFireConsumed=false;
     bool bPresentationMotionInitialized=false,bRepositionWalking=false;
     float RepositionTurnDuration=0.f,RepositionTravelDuration=0.f;
     float RepositionYawDelta=0.f;
