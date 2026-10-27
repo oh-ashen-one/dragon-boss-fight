@@ -63,6 +63,23 @@ freeing35.54GiB before the small supplemental-archive removal;310 preserved file
 and the delivered signature were reverified. See docs/overhaul-20261026/cleanup.json. The next session
 should start with owner playtest feedback rather than rebuild/re-source the assets.
 
+
+## October 27 preservation and playable-build verification
+
+The164 formerly untracked October21–22 diagnostic scripts are preserved separately
+in private `oh-ashen-one/veyr-animation-sources`, branch
+`codex/archive-legacy-veyr-scripts-20261027`, commit
+`36816ef0725d45f8c4d4a250d894df748fb13250`, under
+`archives/veyr-legacy-scripts-20261021-22`. A fresh clone from GitHub verified all164
+SHA256 values against the unchanged originals. These are archived experiments,
+not production changes; do not execute or integrate them automatically.
+
+The current1122 source/content files produce the exact source identity of the
+already delivered v029 Shipping build. All31 delivered files match their recorded
+hashes and the app signature passes. No rebuild or game launch was necessary.
+The app remains ready at the Downloads path above. Verification receipt:
+`docs/overhaul-20261026/legacy-scripts-backup-20261027.json`.
+
 ---
 
 # Sourced knight animations — delivered for owner play

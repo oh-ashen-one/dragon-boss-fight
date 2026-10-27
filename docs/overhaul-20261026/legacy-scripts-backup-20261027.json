@@ -1,0 +1,25 @@
+{
+  "repository": "oh-ashen-one/veyr-animation-sources",
+  "branch": "codex/archive-legacy-veyr-scripts-20261027",
+  "commit": "36816ef0725d45f8c4d4a250d894df748fb13250",
+  "directory": "archives/veyr-legacy-scripts-20261021-22",
+  "scripts": 164,
+  "bytes": 459906,
+  "manifestSHA256": "ecfc61b23a628dcce3ce30e32587a9e60254ece33538cb1468c065ebf3467572",
+  "freshGitHubCloneVerified": true,
+  "all164OriginalAndRemoteHashesMatch": true,
+  "originalFilesPreserved": true,
+  "integratedIntoGame": false,
+  "playableVerification": {
+    "app": "~/Downloads/Veyr-Cathedral-Overhaul-v029/Veyr.app",
+    "sourceId": "ee8f348b3afb0e8c2790d09757553bb708edb119fc2906f01f9d4516cbeaeaab",
+    "currentSourceAndContentMatchDeliveredBuild": true,
+    "sourceFilesChecked": 1122,
+    "deliveredFilesChecked": 31,
+    "allDeliveredHashesMatch": true,
+    "signatureValid": true,
+    "gameLaunched": false,
+    "newBuildNeeded": false,
+    "reason": "Approved source and content are identical to the already delivered and runtime-tested v029 Shipping build."
+  }
+}
