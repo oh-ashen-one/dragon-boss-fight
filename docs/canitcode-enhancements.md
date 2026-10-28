@@ -185,3 +185,32 @@ Departures: tail Gaussian ran six passes (sway lost about 30%); feet lowered 0.5
 the loop blends the last 12 frames into the first frames instead of toward a frozen pose. Not achieved: a speed-up
 over frames 79 to 86 (bone speed 1.86x median; the raw clip already peaks at 1.83x). Owner copies of the
 side-by-sides: `~/Downloads/Veyr-Idle-AB-20261028/`.
+
+## Blind A/B, round 2 (2026-10-28): refined video2rig idle (T6) vs hand-keyed idle (G3)
+
+Fresh Opus critic, videos only. Summed 47 (T6) vs 41 (G3); T6 wins front, three-quarter and overall, G3 wins left.
+
+| Axis | refined video2rig (T6) | hand-keyed (G3) |
+| --- | --- | --- |
+| Weight and groundedness | 6 | 7 |
+| Breathing | 6 | 5 |
+| Head and neck intent | 3 | 6 |
+| Wings and tail | 6 | 3 |
+| Smoothness | 8 | 6 |
+| Three-quarter silhouette | 6 | 5 |
+| Loop readiness | 7 | 4 |
+| Overall AAA boss idle | 5 | 5 |
+
+Both FAIL the shipped bar. Measured: T6 seam 0.86 to 0.92x a normal step (clean); all four feet 0 px in both clips;
+T6 is one sine (every part keeps 90%+ of its motion in the 3.75 s cycle; head follows the chest at correlation 0.99);
+T6 wings overlap the chest by 26 frames but pump 54 px, chest heaves 21 px (reads as panting). G3 repeats its first
+frame last (seam step 0.14 to 0.35x normal, a visible freeze every 6 s), wings rigid (under 4 px vs hips), but its
+head turns 44 px independently of the breathing.
+
+Gap instructions: T6 needs a head-and-neck layer uncorrelated with the chest (correlation under 0.6, one look of 25+
+px held 12+ frames) and a loop of 144+ frames so no part keeps more than 85% of its motion in one cycle; G3 needs
+its duplicate end frame dropped. Full critique: `Local/ab-idle-20261028/critique-round2.md`.
+
+Reading: with the refinement pass the AI-video route already edges the hand-keyed clip on a dragon idle, with the
+wing life and silhouette the critic wanted; its remaining gap is a second motion layer, which the pipeline can
+supply as another short clip ("idle look": head turn and hold) layered in Blender, or as a longer 8 s clip.

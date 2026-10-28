@@ -18,9 +18,9 @@ Progress 2026-10-28 afternoon: reader-64 trained (held-out 4.2 / 4.1 px), reader
 better; reader.pt = 64). Idle clip generated (MiniMax H3 Max 768p, 12.5 credits), check OK (0.6% of height),
 fit clean, Action at `Local/video2rig/dragon/Dragon_Idle_v2r_v1.blend`. Blind A/B round 1
 (`Local/ab-idle-20261028/`, critique.md): raw fit FAILS vs hand-keyed APPROACHES (loop seam, foot slide, tail
-flick; wins on wing life). Round 2 in flight: scripted Blender refinement to `Dragon_Idle_v2r_v2.blend`
-(trim still tail, close loop, IK-plant feet, smooth tail) under `Local/video2rig/dragon/refine/`, then the same
-blind A/B. See `docs/canitcode-enhancements.md` for every number.
+flick; wins on wing life). Round 2 done: scripted Blender refinement to `Dragon_Idle_v2r_v2.blend` (90 frames, loop closed, feet planted)
+under `Local/video2rig/dragon/refine/`; blind A/B round 2: refined fit 47 vs hand-keyed 41, both still FAIL the
+shipped bar (critique-round2.md). Owner copies of the side-by-sides: `~/Downloads/Veyr-Idle-AB-20261028/`. See `docs/canitcode-enhancements.md` for every number.
 
 Next after round 2: owner verdict on the idle, then roar / claw swipe / bite / stagger / collapse / death /
 takeoff / land clips one at a time, the move-data script (windows, contacts, shocks, root track to JSON), hurt
