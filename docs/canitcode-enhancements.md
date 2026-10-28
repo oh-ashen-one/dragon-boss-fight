@@ -165,3 +165,23 @@ same blind A/B again. Full critique: `Local/ab-idle-20261028/critique.md`.
 
 The extra side points did not improve the idle fit; `reader/reader.pt` stays the 64-point reader, `reader-78.pt` is
 kept for a fast-motion clip where paw tracking matters more. Fits: `out/idle.npz` (64) and `out/idle-r78.npz`.
+
+## Round 2 refinement (2026-10-28, scripted Blender pass on the fit)
+
+`Local/video2rig/dragon/Dragon_Idle_v2r_v2.blend`, Action `idle_v2`, 90 frames (source frames 12 to 101; the still
+tail began at 102). Scripts and JSON measurements in `Local/video2rig/dragon/refine/`.
+
+| Measure | raw fit | refined | target |
+| --- | --- | --- | --- |
+| Seam jump vs normal step (bone rotation) | 17.0x | 0.95x | at most 1.5x |
+| Seam jump on renders, front / left / three-quarter | 9.3 / 3.3 / 7.1x | 0.77 / 0.77 / 0.76x | at most 1.5x |
+| Wing tips at the seam | not returning | 0.2 to 0.6 cm; silhouette top 2 to 3 px | within 3 px |
+| Motion in the last second vs median | 0.50 / 0.27 / 0.32x | 1.13 / 1.04 / 1.09x | at least 0.5x |
+| Foot excursion, four feet (cm; mesh 48 cm tall) | 0.32 / 0.58 / 0.02 / 0.02 | 0 / 0 / 0 / 0 | planted |
+| Forefoot drift on renders, left / front | 6.5 / 7.9 px | 0.83 / 0.25 px | |
+| Tail tip peak, 3D | 2.63 cm per frame (6.5x median) | 1.11 (2.9x) | no dead stops |
+
+Departures: tail Gaussian ran six passes (sway lost about 30%); feet lowered 0.5 to 1.0 cm to touch the floor;
+the loop blends the last 12 frames into the first frames instead of toward a frozen pose. Not achieved: a speed-up
+over frames 79 to 86 (bone speed 1.86x median; the raw clip already peaks at 1.83x). Owner copies of the
+side-by-sides: `~/Downloads/Veyr-Idle-AB-20261028/`.
