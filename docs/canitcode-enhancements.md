@@ -271,3 +271,19 @@ does not return to stance, so it will need a blend into idle in the engine). Fee
 still a visible spike from frame 37 (the clip's own tail whip); treat as a Blender hand-fix or accept as the
 move's accent. Wings untouched: +25.7 px of span at the peak over frame 0. Renders `clip_RS1_*`; owner copies in
 `~/Downloads/Veyr-Idle-AB-20261028/roar-*.mp4`.
+
+## Rig finding that closes the wing question (2026-10-28, last)
+
+Hand-keying the flare on the MiniMax roar (`Dragon_Roar_v2r_v3.blend`, renders `clip_RO2_*`) showed the real
+limit: this rig's wings are already spread in a fan at rest, so rotating the wing bones reaches at most about
+1.27x the rest span (54 cm vs 43 cm per wing) before the membrane tears or the wing hits the body. The fit's
+earlier "flare" came from membrane stretch (9x to 24x on edges), not from span. So the generators were not only
+exaggerating: they drew a flare the model cannot do. The Seedance half-open prompt matched the rig's reality,
+which is why it fitted cleanly.
+
+Rule: before writing a move prompt, measure the rig's reachable range for the parts the move uses (span, reach,
+jaw opening) and describe the gesture inside it. The wing chains on this rig are also mirrored in name (PosZ sits
+at -Y, NegZ at +Y); note that in creature.json comments.
+
+Open items on the roar: the v3 end pose differs from the start (blend into idle in the engine or match the start);
+the NegZ wing rises steeper than PosZ at the peak (body yaw and roll in the clip).
