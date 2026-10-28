@@ -318,3 +318,85 @@ Findings to carry into the runtime work:
   for the brain pass.
 - Wings as one capsule each cover air; legs are one capsule shoulder to foot. Split when the hit tests need it.
 - The roar does not return to stance (seam 7.6x a step): the engine blends it back into the idle.
+
+## Runtime: data-driven moves (compile-only, 2026-10-28)
+
+First runtime piece of the blueprint (boss-runtime.md sections 2 and 4). Compiled headless with UnrealBuildTool only;
+no editor, PIE or packaged game was launched, so nothing below is verified in play yet.
+
+What was added (additive; every hard-coded move, timing, warning, leg region, head exposure, health and the knight
+interfaces are unchanged):
+
+- `Unreal/Veyr/Source/Veyr/VeyrMoveData.h/.cpp`: plain structs `FBossMove`, `FBossAttack`, `FBossShock`,
+  `FBossContact`, `FBossPart` (plus `FBossTempoPhase`, `FBossSoundEvent`) and `FBossMoveData::Load`, reading
+  `moves.json` and `boxes.json` (required) and `tempo.json`, `sounds.json` (optional, a broken one is a warning).
+  Any missing or malformed required file logs `VEYR_MOVEDATA_FAILED ... dragon keeps its hard-coded behaviour` and
+  leaves the data empty. Log category `LogVeyrMoveData`.
+- Data path: CVar `veyr.MoveData.Dir` (empty by default), else `-VeyrMoveData=<dir>`, else
+  `<ProjectDir>/../../Data/dragon` (the repository's `Data/dragon`, the default for editor/PIE), else
+  `<ProjectDir>/Data/dragon`. The resolved folder is logged as `VEYR_MOVEDATA_DIR`. `veyr.MoveData.Enable 0` turns
+  the whole layer off. Packaged builds do not stage `Data/` yet.
+- `AVeyrDragon` (new file `VeyrDragonMoveData.cpp`, hooks in `VeyrDragon.cpp`): loads at BeginPlay; when the
+  imported Customuse skeleton is present, one `UCapsuleComponent` `VeyrHurt_<part>` per boxes.json part is attached
+  to its bone (`a`/`b` mapped into the bone's reference frame at load, radius in world cm, absolute scale).
+  Bone names are matched exactly, then by letters and digits only (`tripo::Spine_0` = `tripo__Spine_0`).
+  Import frame check: for yaw 0/90/180/270 the reference-pose bone heads are compared with the measured
+  `|a_bone|`, `|b_bone|` distances; the best yaw and its residual are logged as `VEYR_MOVEDATA_FRAME` (over 40 cm
+  is flagged SUSPECT).
+- Collision: same response set as the existing solid body (WorldDynamic, query only, Block Pawn, everything else
+  ignored, no step-up). `veyr.MoveData.HurtBlocksPawn` 1 (default) = every part but the two wing plates blocks
+  the knight (the wing capsules mostly cover air, see the move-data findings), 2 = all, 0 = none. Pawn-blocking
+  hurt capsules join the existing penetration resolver, so a moving part pushes the knight out like the solid body.
+- Sword: `ReceiveSwordSweep` first tests every hard-coded region exactly as before; only a sweep that misses all of
+  them is tested against the hurt capsules (`veyr.MoveData.SwordParts`, default 1). Part to region: the four leg
+  capsules use their `leg` index (0 FL, 1 FR, 2 HL, 3 HR) so the per-leg stagger and the four-leg collapse loop
+  work through them; `head` is region 4 (exposure bonus); neck, chest, belly, hips, wings, tail are region 5 (body
+  damage times the part's boxes.json share: wings 0.5, tail 0.7, others 1.0). Part-aware entry
+  `ReceiveSwordOnPart(part, contact, heavy, swing, multiplier)` and `ResolveHurtPart(component)`.
+- Attack windows: per tick, after the pose is sampled, the current data move's windows whose `[t0, t1]` overlaps
+  the tick's clip interval are hot. Attack part to capsule (`AttackPartCapsule`, UPROPERTY): jaw -> head,
+  paw_fl/fr/hl/hr -> leg_fl/fr/hl/hr, wing_l/r -> wing_l/r, tail -> tail. Hit = segment distance from the part
+  capsule to the knight capsule axis within the two radii, and a visibility line trace from the contact point to
+  the knight centre (ignoring both actors) is clear; a blocked window stays open. One hit per window; loops never
+  hurt. Damage per attack part (`AttackPartDamage`, UPROPERTY; knight health 100): jaw 34, front paws 29, hind
+  paws 32, tail 30, wings 20; `ApplyBossDamage` keeps its roll, guard and grace rules.
+- Move names: `fire/bellows/breath`, `flight/fly/flyaway`, `claw/claw_swipe`, `stomp/back_stomp`,
+  `tail/tail_smack`, `bite` (case, `_` and `-` ignored) map onto `EVeyrDragonMove`; a mapped data move follows
+  the hard-coded attack's clock from the wind-up. Today's data (`idle`, `roar`) maps onto nothing, so both are
+  data-only moves and no hard-coded attack changes. `veyr.MoveData.Hits`: 0 never hurt, 1 (default) data-only
+  moves hurt, 2 mapped moves hurt too and replace that move's hard-coded contact.
+- Lab and gate lines: `veyr.MoveData.Dump` (moves, windows, parts, enum mapping, runtime binding, capsule world
+  segments; with no dragon in the world it does a file check), `veyr.MoveData.Draw 1` (capsules green when they
+  block the knight, cyan when query-only, red while their window is hot, plus a label with the move and clip time),
+  `veyr.MoveData.Play <move>|none` (plays a data move from Idle; the brain does not choose attacks meanwhile; a
+  clip named after the move, `roar` or `Roar`, plays if the visual definition has one, otherwise the capsules ride
+  the idle pose), `veyr.MoveData.Reload`, and `-VeyrMoveDataDump` on the command line.
+- Loaded but not yet used: `track` (all zero on this rig), `shocks`, `contacts`, `sounds`; tempo is applied only to
+  data-only playback.
+
+Build (headless UnrealBuildTool, the flags `tools/unreal/build.py` uses, log kept outside `Local/`):
+
+    "/Users/Shared/Epic Games/UE_5.8/Engine/Build/BatchFiles/Mac/Build.sh" VeyrEditor Mac Development \
+        -Project=/Users/midir/dragon-boss-fight/Unreal/Veyr/Veyr.uproject -NoUBA -NoXGE -NoFASTBuild -NoSNDBS \
+        -MaxParallelActions=4 -NoHotReloadFromIDE -WaitMutex
+
+Result (2026-10-28): `VeyrEditor Mac Development` -> `Result: Succeeded` (first full module build 19 actions; the
+last incremental `[1/2] Compile VeyrDragon.cpp`, `[2/2] Link libUnrealEditor-Veyr.dylib`, 9.5 s). Also compiled
+`Veyr Mac Shipping` with `UE_BUILD_FROM_XCODE=1` (compile and link only, no Xcode finalization, no app run):
+`Result: Succeeded`. No errors or warnings from the new code; the only warnings are the existing "Referenced
+directory ... Intermediate/VeyrBuild does not exist" (this checkout never ran `tools/unreal/build.py`, so the
+source identity header is the fallback) and an engine MetalShaderConverter include notice on Shipping.
+
+Not verified (needs an owned editor/PIE session):
+- This checkout has no `Content/Characters/Customuse` (gitignored), so here the dragon runs on its primitive
+  stand-in and the capsules stay unbound (`VEYR_MOVEDATA_HURT unbound`); binding needs the owner's imported mesh.
+- Bone names of the imported skeleton against boxes.json (`bone_5`, `tripo::Spine_0`, `VeyrWingNegZElbow`, ...),
+  the frame check residual, and that the capsules sit on the mesh (`veyr.MoveData.Draw 1`).
+- Knight movement against the larger leg/body capsules (radius 80-125 cm vs the solid body's 60-75 cm shins): the
+  existing collision stages and the guard/stance trials must be rerun; `veyr.MoveData.HurtBlocksPawn 0` restores
+  the old movement envelope if they regress.
+- Sword hits on thighs, belly, hips and wings through the new fallback, and leg stagger through the leg capsules.
+- `veyr.MoveData.Play roar` window hits (no roar clip is imported yet, so the capsules ride the idle pose and the
+  roar's windows test idle-pose parts).
+- The Python integration tests in `Unreal/Veyr/Content/Python` import `unreal` and need the editor; not run.
+  `tools/movedata` tests (no engine) pass: 3/3.

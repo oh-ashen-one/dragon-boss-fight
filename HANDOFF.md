@@ -34,6 +34,12 @@ PR #30 and the day's lessons on PR #31, both draft, owner merge.
 Move data: `tools/movedata/` + `Data/dragon/*.json` committed (3aa61c3); see docs for the findings (no root
 motion on tripo::Root, rest pose floats 18 cm at game scale, windows uncurated).
 
+Runtime move data (2026-10-28, compile-only): `VeyrMoveData.h/.cpp` loads `Data/dragon/*.json`;
+`VeyrDragonMoveData.cpp` binds boxes.json hurt capsules to bones, evaluates moves.json windows, adds
+`veyr.MoveData.Dump/Draw/Play/Reload`. Hard-coded moves unchanged (idle/roar are data-only). Built headless with
+UBT (editor Development and Shipping compile). Not run in PIE: bone-name binding, frame residual, knight movement
+against the bigger capsules, sword fallback. See docs "Runtime: data-driven moves (compile-only)".
+
 Next after round 2: owner verdict on the idle, then roar / claw swipe / bite / stagger / collapse / death /
 takeoff / land clips one at a time, the move-data script (windows, contacts, shocks, root track to JSON), hurt
 capsules, brain by reach, fight-feel system, lab and gate flags, Niagara, Lumen/VSM defaults.

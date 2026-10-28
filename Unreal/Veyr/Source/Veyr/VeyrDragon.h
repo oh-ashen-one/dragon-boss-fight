@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "VeyrCombatTypes.h"
+#include "VeyrMoveData.h"
 #include "VeyrDragon.generated.h"
 
 class AVeyrKnight;
@@ -16,6 +17,7 @@ class UTextRenderComponent;
 class UCapsuleComponent;
 class UVeyrVisualDefinition;
 class UVeyrSkeletalPresentation;
+class UPrimitiveComponent;
 
 UENUM(BlueprintType)
 enum class EVeyrDangerShape : uint8 { None, Circle, Sector, Capsule };
@@ -51,6 +53,18 @@ struct FVeyrDragonContact
 {
     FVector Start=FVector::ZeroVector, End=FVector::ZeroVector;
     float Radius=0.f;
+};
+
+/** One bound hurt capsule: boxes.json part resolved onto a bone of the imported mesh. */
+struct FVeyrHurtPartRuntime
+{
+    int32 DataIndex=INDEX_NONE;
+    FName Part, Kind, Bone;
+    int32 BoneIndex=INDEX_NONE, Leg=INDEX_NONE;
+    /** Segment ends in the bone's reference frame, mesh units (the bone's world transform carries the component scale). */
+    FVector LocalA=FVector::ZeroVector, LocalB=FVector::ZeroVector;
+    float DataRadius=0.f, Damage=1.f;
+    bool bBlocksPawn=false;
 };
 
 /** Original native encounter rules. Primitive presentation is temporary, not Customuse art. */
@@ -156,6 +170,44 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 WarningSurfaceTraceCount=0;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointInsideWarning(const FVector& Point) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointInsideActiveDanger(const FVector& Point) const;
+
+    // ---- Data-driven move layer (Data/dragon/*.json, boss-fight-blueprint). Additive: with no
+    // data, or veyr.MoveData.Enable 0, every hard-coded move, region and timing is unchanged.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") bool bMoveDataLoaded=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") bool bHurtPartsReady=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") FString MoveDataDirectory;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") FString MoveDataDiagnostic;
+    /** Import frame chosen for boxes.json a/b (yaw about +Z, degrees) and its bone-distance residual in game cm. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") float HurtFrameYawDegrees=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") float HurtFrameResidualCm=-1.f;
+    /** Knight damage per attack part when a data window connects (knight health is 100). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|MoveData") TMap<FName,float> AttackPartDamage;
+    /** Attack part (moves.json) -> hurt capsule (boxes.json) whose world segment is tested. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|MoveData") TMap<FName,FName> AttackPartCapsule;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") FName CurrentDataMove=NAME_None;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") float DataMoveClipSeconds=0.f;
+    /** True when CurrentDataMove follows a hard-coded EVeyrDragonMove; false for a data-only move. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") bool bDataMoveFollowsEnum=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") int32 DataWindowHitCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") int32 DataWindowBlockedCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") int32 DataWindowAvoidedCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") FName LastSwordHurtPart=NAME_None;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|MoveData") FName LastDataHitPart=NAME_None;
+    /** Reads Data/dragon again and rebinds the capsules. False keeps the hard-coded behaviour. */
+    UFUNCTION(BlueprintCallable, Category="Combat|MoveData") bool ReloadMoveData();
+    /** Plays a data move by name from Idle (lab). An enum-mapped name starts the hard-coded attack. NAME_None stops. */
+    UFUNCTION(BlueprintCallable, Category="Combat|MoveData") bool PlayDataMove(FName MoveName);
+    /** Hurt part whose capsule this is, NAME_None otherwise. */
+    UFUNCTION(BlueprintPure, Category="Combat|MoveData") FName ResolveHurtPart(const UPrimitiveComponent* Component) const;
+    /** Part-aware sword entry: legs keep the per-leg stagger, head keeps the exposure bonus, others hit the body. */
+    bool ReceiveSwordOnPart(FName Part, const FVector& ContactWorld, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
+    /** World segment and radius of a bound hurt part (current pose). */
+    bool GetHurtPartWorld(FName Part, FVector& OutA, FVector& OutB, float& OutRadius) const;
+    const FBossMoveData& GetMoveData() const { return MoveData; }
+    /** The blueprint's first gate line: data, windows, parts and the runtime binding. */
+    void DescribeMoveData(TArray<FString>& OutLines) const;
+    /** Which hard-coded move a JSON move name stands for; false = data-only. */
+    static bool MapDataMoveToEnum(FName MoveName, EVeyrDragonMove& OutMove);
 
 protected:
     virtual void BeginPlay() override;
@@ -280,6 +332,32 @@ private:
     TArray<int32> RecentSwings;
     static constexpr float FlightSeconds = 2.4f;
 
+
+    // ---- Data-driven move layer state
+    FBossMoveData MoveData;
+    UPROPERTY(Transient) TArray<TObjectPtr<UCapsuleComponent>> HurtCapsules;
+    TArray<FVeyrHurtPartRuntime> HurtParts;
+    TMap<EVeyrDragonMove,FName> DataMoveForEnum;
+    TSet<int32> SpentDataWindows;
+    TSet<FName> ActiveDataParts;
+    FName DataOnlyClip=NAME_None;
+    bool LoadMoveDataFromDisk();
+    void DestroyHurtParts();
+    bool BuildHurtParts();
+    void UpdateHurtParts();
+    void BeginDataMove(FName MoveName, bool bFollowsEnum);
+    void StopDataMove();
+    bool IsDataOnlyMovePlaying() const { return !CurrentDataMove.IsNone()&&!bDataMoveFollowsEnum; }
+    void UpdateDataMove(float DeltaSeconds);
+    void EvaluateDataWindows(const FBossMove& DataMove, float FromSeconds, float ToSeconds, bool bMayHurt);
+    const FVeyrHurtPartRuntime* FindHurtPart(FName Part) const;
+    bool HurtPartWorldSegment(const FVeyrHurtPartRuntime& Part, FVector& OutA, FVector& OutB, float& OutRadius) const;
+    int32 HurtPartRegion(const FVeyrHurtPartRuntime& Part) const;
+    void DrawMoveDataDebug() const;
+    /** veyr.MoveData.Hits 2: a mapped data move with attacks replaces the hard-coded contact. */
+    bool DataWindowsReplaceContact() const;
+    /** -VeyrMoveDataDump on the command line logs the gate lines once the capsules are bound. */
+    void LogMoveDataDumpIfRequested() const;
     void EnterState(EVeyrDragonState Next, float Duration);
     void ChooseAttack();
     void BeginAttack(EVeyrDragonMove Next);
@@ -287,7 +365,7 @@ private:
     void AdvanceState(float DeltaSeconds);
     void TryDamageTarget();
     bool CanStagger() const;
-    void ApplySwordRegion(int32 Region, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f);
+    void ApplySwordRegion(int32 Region, bool bHeavy, int32 SwingId, float DamageMultiplier=1.f, float PartDamageScale=1.f);
     float GetDownAmount() const;
     void UpdateTemporaryPresentation(float DeltaSeconds);
     void UpdateTelegraphs();

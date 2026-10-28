@@ -131,6 +131,13 @@ AVeyrDragon::AVeyrDragon()
     TemporaryLabel->SetText(FText::FromString(TEXT("TEMPORARY RULE-TEST DRAGON\nNot Customuse art or authored animation")));
     TemporaryLabel->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
     TemporaryLabel->SetWorldSize(32); TemporaryLabel->SetTextRenderColor(FColor(235,184,91));
+    // Data windows (moves.json attack parts). Damage mirrors the hard-coded moves:
+    // bite 34, claw 29, tail 30; wings are broad plates, so they hit lighter.
+    AttackPartDamage={{TEXT("jaw"),34.f},{TEXT("paw_fl"),29.f},{TEXT("paw_fr"),29.f},{TEXT("paw_hl"),32.f},
+        {TEXT("paw_hr"),32.f},{TEXT("tail"),30.f},{TEXT("wing_l"),20.f},{TEXT("wing_r"),20.f}};
+    AttackPartCapsule={{TEXT("jaw"),TEXT("head")},{TEXT("paw_fl"),TEXT("leg_fl")},{TEXT("paw_fr"),TEXT("leg_fr")},
+        {TEXT("paw_hl"),TEXT("leg_hl")},{TEXT("paw_hr"),TEXT("leg_hr")},{TEXT("tail"),TEXT("tail")},
+        {TEXT("wing_l"),TEXT("wing_l")},{TEXT("wing_r"),TEXT("wing_r")}};
 }
 
 UStaticMeshComponent* AVeyrDragon::CreateTemporaryPart(FName Name,UStaticMesh* Mesh,const FVector& Scale)
@@ -164,6 +171,7 @@ void AVeyrDragon::BeginPlay()
         WarningLines->SetMaterial(0,WarningMaterial); DangerLines->SetMaterial(0,DangerMaterial);
     }
     UpdateTemporaryPresentation(0); EnterState(EVeyrDragonState::Idle,2.2f);
+    LoadMoveDataFromDisk();
     // CDO construction may precede the owned MCP import; resolve the new asset
     // again at BeginPlay even if an older definition was supplied previously.
     if(UVeyrVisualDefinition* Polish=LoadObject<UVeyrVisualDefinition>(nullptr,
@@ -183,6 +191,8 @@ void AVeyrDragon::BeginPlay()
         UE_LOG(LogTemp,Warning,TEXT("VEYR_DRAGON_APPROVED_DEFINITION_MISSING using legacy Runtime definition"));
     }
     if(VisualDefinition)ApplyCustomuseVisual(VisualDefinition);
+    if(bMoveDataLoaded&&!bHurtPartsReady)UE_LOG(LogVeyrMoveData,Display,TEXT("VEYR_MOVEDATA_READY windows=%d hurt_capsules=0 (%s)"),MoveData.CountAttacks(),*MoveDataDiagnostic);
+    LogMoveDataDumpIfRequested();
 }
 
 void AVeyrDragon::Tick(float DeltaSeconds)
@@ -199,7 +209,9 @@ void AVeyrDragon::Tick(float DeltaSeconds)
         Clock+=DeltaSeconds;
         UpdateGaze(DeltaSeconds);
         UpdateTemporaryPresentation(DeltaSeconds);UpdateImportedPresentation();
+        UpdateHurtParts();
         UpdateSolidBody();
+        DrawMoveDataDebug();
         return;
     }
     Clock+=DeltaSeconds; EncounterClock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
@@ -232,10 +244,14 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     UpdateGaze(DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
     UpdateImportedPresentation();
+    UpdateHurtParts();
+    // Data windows read the pose just evaluated (same clock as the hard-coded contact).
+    UpdateDataMove(DeltaSeconds);
     // Kinematic anatomy can advance into a stationary player. Publish physical
     // blockers after attack contact, then resolve genuine penetration through
     // the native movement component instead of letting the next move tunnel.
     UpdateSolidBody();
+    DrawMoveDataDebug();
     VisualAccumulator+=DeltaSeconds;
     // Active sweep geometry must use the same current clock as damaging contact.
     if(State==EVeyrDragonState::Active||IsLandingContactWindow()||VisualAccumulator>=.04f) { VisualAccumulator=0; UpdateTelegraphs(); }
@@ -262,7 +278,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
     switch(State)
     {
         case EVeyrDragonState::Idle:
-            if(StateElapsed>=StateDuration&&IsValid(Target)&&!Target->IsDead())ChooseAttack();
+            if(StateElapsed>=StateDuration&&IsValid(Target)&&!Target->IsDead()&&!IsDataOnlyMovePlaying())ChooseAttack();
             break;
         case EVeyrDragonState::Reposition:
         {
@@ -641,6 +657,8 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
     }
     EnterState(EVeyrDragonState::Windup,WindupDuration);
     if(bUsingCustomuseVisual)CommitImportedWarning();
+    if(const FName* DataMove=DataMoveForEnum.Find(Move))BeginDataMove(*DataMove,true);
+    else if(bDataMoveFollowsEnum)StopDataMove();
 }
 
 FVeyrDragonFootprint AVeyrDragon::GetWarningFootprint() const
@@ -706,6 +724,7 @@ void AVeyrDragon::TryDamageTarget()
         }
     }
     if(bContactConsumed)return;
+    if(DataWindowsReplaceContact())return;
     if(bUsingCustomuseVisual)
     {
         if(!bImportedTargetsValid||!bImportedAttackCacheReady||!MissingVisualClip.IsNone())return;
@@ -854,19 +873,39 @@ bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& P
             SegmentTriangleDistance(A,B,CurrentBase,PreviousTip,PreviousBase))-Radius;
         if(D<=FMath::Clamp(BladeRadius,8.f,42.f)&&Region<0){Region=5;Best=D;Anchor=FMath::ClosestPointOnSegment((CurrentBase+CurrentTip)*.5f,A,B);}
     }
+    // Data hurt capsules (boxes.json) answer only blows every hard-coded region missed:
+    // thighs, upper neck, belly, hips, wings. Legs keep their leg index for stagger.
+    float PartScale=1.f;
+    LastSwordHurtPart=NAME_None;
+    if(Region<0&&bHurtPartsReady&&VeyrMoveData::SwordPartsEnabled())
+        for(const FVeyrHurtPartRuntime& Part:HurtParts)
+        {
+            FVector A,B;float Radius=0.f;
+            if(!HurtPartWorldSegment(Part,A,B,Radius))continue;
+            const float D=FMath::Min(SegmentTriangleDistance(A,B,CurrentBase,CurrentTip,PreviousTip),
+                SegmentTriangleDistance(A,B,CurrentBase,PreviousTip,PreviousBase))-Radius;
+            if(D<=FMath::Clamp(BladeRadius,8.f,42.f)&&D<Best)
+            {
+                Best=D;Region=HurtPartRegion(Part);LastSwordHurtPart=Part.Part;
+                PartScale=Region==5?Part.Damage:1.f;
+                Anchor=FMath::ClosestPointOnSegment((CurrentBase+CurrentTip)*.5f,A,B);
+            }
+        }
     if(Region<0)return false;
     LastSwordContactWorld=FMath::ClosestPointOnSegment(Anchor,CurrentBase,CurrentTip);
-    ApplySwordRegion(Region,bHeavy,SwingId,DamageMultiplier);
+    ApplySwordRegion(Region,bHeavy,SwingId,DamageMultiplier,PartScale);
     return true;
 }
 
-void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float DamageMultiplier)
+void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float DamageMultiplier,float PartDamageScale)
 {
     AcceptedSwings.Add(SwingId); RecentSwings.Add(SwingId);
     if(RecentSwings.Num()>512){AcceptedSwings.Remove(RecentSwings[0]);RecentSwings.RemoveAt(0);}
     LastHitRegion=Region; ++SwordContactCount;
     LastSwordDamage=Region<4?(bHeavy?72.f:34.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?270.f:125.f):(bHeavy?85.f:44.f);
     LastSwordDamage*=FMath::Clamp(DamageMultiplier,1.f,1.55f);
+    // boxes.json body-part share (wings 0.5, tail 0.7); 1 for every hard-coded region.
+    LastSwordDamage*=FMath::Clamp(PartDamageScale,0.f,2.f);
     if(Region==4&&IsHeadExposed())++HeadBonusHitCount;
     Health=FMath::Max(0.f,Health-LastSwordDamage);
     if(Region<4)LegFlash[Region]=1;
@@ -1258,7 +1297,10 @@ void AVeyrDragon::ResolveKnightBodyPenetration()
     auto Penetration=[&](const FVector& Point,UCapsuleComponent*& Deepest,FMTDResult& Result)
     {
         float Depth=0.f;Deepest=nullptr;
-        for(UCapsuleComponent* Part:SolidBodyCapsules)
+        TArray<UCapsuleComponent*,TInlineAllocator<40>> Blockers;
+        for(UCapsuleComponent* Solid:SolidBodyCapsules)Blockers.Add(Solid);
+        for(int32 I=0;I<HurtCapsules.Num()&&I<HurtParts.Num();++I)if(HurtParts[I].bBlocksPawn)Blockers.Add(HurtCapsules[I]);
+        for(UCapsuleComponent* Part:Blockers)
         {
             FMTDResult MTD;
             if(Part&&Part->IsQueryCollisionEnabled()&&Part->ComputePenetration(MTD,Shape,Point,Rotation)&&
@@ -1300,6 +1342,7 @@ void AVeyrDragon::ResolveKnightBodyPenetration()
 bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
     if(!Definition||!ImportedPresentation)return false;
+    DestroyHurtParts(); // bone indices belong to the previous mesh; rebound below
     ResetCameraOcclusionMaterials();
     if(!ImportedPresentation->SetVisualDefinition(Definition,false))return false;
     // A valid measured head and four feet are mandatory before hiding proxies.
@@ -1327,6 +1370,8 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     bPresentationMotionInitialized=false;WalkPhase=TurnPhase=0.f;
     GazeSmoothedYaw=GazeSmoothedPitch=GazeYawDegrees=GazePitchDegrees=0.f;
     UpdateImportedPresentation();
+    BuildHurtParts();
+    UpdateHurtParts();
     UpdateSolidBody();
     InitializeCameraOcclusionMaterials();
     return true;
@@ -1397,7 +1442,7 @@ void AVeyrDragon::UpdateImportedPresentation()
     FString Name;
     switch(State)
     {
-        case EVeyrDragonState::Idle:Name=TEXT("Idle");break;
+        case EVeyrDragonState::Idle:Name=IsDataOnlyMovePlaying()&&!DataOnlyClip.IsNone()?DataOnlyClip.ToString():FString(TEXT("Idle"));break;
         case EVeyrDragonState::Reposition:
             Name=bRepositionWalking?TEXT("Walk"):(bRepositionAuthoredTurn||RepositionTurnClip==FName(TEXT("TurnLeftFine"))||
                 RepositionTurnClip==FName(TEXT("TurnRightFine")))?RepositionTurnClip.ToString():
@@ -1467,7 +1512,8 @@ void AVeyrDragon::UpdateImportedPresentation()
         const float TransitionSeconds=ImportedTransitionSeconds;
         const float Alpha=bImportedTransitionReady?FMath::Clamp((Clock-ImportedTransitionStarted)/TransitionSeconds,0.f,1.f):1.f;
         const bool Loop=VisualDefinition->Clips[Clip].bLoop;
-        Sampled=Loop||AuthoredTurn?ImportedPresentation->SampleClipTimeBlended(Clip,SampleSeconds,Alpha):
+        if(IsDataOnlyMovePlaying()&&Clip==DataOnlyClip){SampleSeconds=DataMoveClipSeconds;}
+        Sampled=Loop||AuthoredTurn||(IsDataOnlyMovePlaying()&&Clip==DataOnlyClip)?ImportedPresentation->SampleClipTimeBlended(Clip,SampleSeconds,Alpha):
             ImportedPresentation->SampleClipPhaseBlended(Clip,StateElapsed/FMath::Max(.001f,StateDuration),Alpha);
     }
     if(Sampled&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)
