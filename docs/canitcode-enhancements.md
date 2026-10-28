@@ -113,6 +113,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-10-28 | idle | Higgsfield, MiniMax H3 Max | 768p (1344x768), 16:9, 5 s, 24 fps, start-frame mode, literal prompt (preset declined) | 12.5 | pass: panels in step, static cameras, no effects, body in frame, wings lift and settle in both views, end pose = start pose | OK: body 0.58%, limbs 0.59% of height (fail line 1.5%); frame 0 match 0.93 / 0.97 |
 | 2026-10-28 | roar | Higgsfield, MiniMax H3 Max | 768p, 16:9, 5 s, 24 fps, start-frame, literal prompt | 12.5 | pass: head back, jaws wide, wings fully flared in both views, tail lifts, returns to stance, no effects | OK: body 0.89%, limbs 0.65%; frame 0 match 0.93 / 0.97. Fit: median miss 3.05 px, outline 0.62 / 0.75 (wings fully open), max twist 25.8 deg on a wing root, feet pinned in 7 stretches |
+| 2026-10-28 | roar2 (size-constrained prompt) | Higgsfield, MiniMax H3 Max | same as roar | 12.5 | wings still drawn about 2x the model's span and off the front panel edges; motion blur on the side panel in the fast frames despite the no-blur sentence | OK: body 1.16%, limbs 0.67%. Fit: miss 3.69 px, outline 0.61 / 0.72, twist 68.8 deg on a wing root; no better than roar |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -232,3 +233,16 @@ render the start picture with more margin (that means a new reader).
 
 Refined roar anyway: `Local/video2rig/dragon/Dragon_Roar_v2r_v2.blend` (110 frames; feet 14 cm excursion to
 0.003 cm; tail peak 6.6x to 3.0x median; head, jaw and wings untouched); renders `clip_RO1_*` in the A/B folder.
+
+## Provider finding (2026-10-28): MiniMax ignores size constraints on this creature
+
+Two roar clips, the second with an explicit "nothing grows, wings open only as far as their real span allows"
+sentence: both draw the flared wings at about twice the model's span and push them past the front panel edge,
+and the second adds motion blur on the side panel in the fast frames. The fits cannot follow (outline about 0.4 at
+peak flare). The idle, with little wing travel, was unaffected. Options, in order of cost:
+1. Try the same roar prompt on Seedance 2.5 (the generator the tool was tuned on) once, as a controlled test.
+   Needs the owner's say-so: the standing instruction is MiniMax H3 Max.
+2. Keep MiniMax and re-render the start picture with the wings folded tight and a wider margin, so the flare has
+   room and the generator has less wing to exaggerate. Costs a new reader (about 3 h, free).
+3. Keep the current roar fit (head, jaw, body and feet are good) and hand-flare the wings in Blender as a
+   permitted correction; cheapest, and the wing pose is a few keys.
