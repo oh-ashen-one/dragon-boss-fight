@@ -106,3 +106,12 @@ Fork `oh-ashen-one/video2rig` branch `mac-mps`: reader road runs on MPS bf16; 30
 Start frame rendered with `--facing +X --widths 840,1080 --margin-wide 1.25`. Blocker found: the Tripo rig's
 "Left"/"Right" limb names mean front/hind, so the tool pairs no twins; a `twins` setting in `creature.json` is
 being added to the fork instead of renaming bones (renaming would break the Unreal skeleton and the reader).
+
+## Clip ledger
+
+| Date | Clip | Provider / model | Settings | Credits | Eyeball check | Tool check |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-10-28 | idle | Higgsfield, MiniMax H3 Max | 768p (1344x768), 16:9, 5 s, 24 fps, start-frame mode, literal prompt (preset declined) | 12.5 | pass: panels in step, static cameras, no effects, body in frame, wings lift and settle in both views, end pose = start pose | pending the 9000-step reader |
+
+Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
+Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
