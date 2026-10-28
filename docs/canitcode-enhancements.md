@@ -127,3 +127,31 @@ Clips and prompts are not committed (Local/ is gitignored); the ledger here is t
   jump 3.0 deg. Two hind-leg bones sat at a joint limit for 51 and 25 frames; check in Blender.
 - Action imported: `Local/video2rig/dragon/Dragon_Idle_v2r_v1.blend` (123 frames). Review film
   `work/idle/review.mp4`. Blind A/B against `Dragon_Idle_Blender_v1r3` in progress.
+
+## Blind A/B, round 1 (2026-10-28): raw video2rig idle vs hand-keyed idle
+
+Package `Local/ab-idle-20261028/` (identical headless renders, three cameras, random labels; Opus critic saw only
+the videos). Mapping after the fact: G3 = `Dragon_Idle_Blender_v1r3` (hand-keyed), L2 = `Dragon_Idle_v2r_v1`
+(video2rig, untouched fit).
+
+| Axis | hand-keyed | video2rig raw |
+| --- | --- | --- |
+| Weight and groundedness | 7 | 4 |
+| Breathing | 5 | 3 |
+| Head and neck intent | 6 | 4 |
+| Wings and tail | 5 | 5 |
+| Smoothness | 8 | 4 |
+| Three-quarter silhouette | 5 | 6 |
+| Loop readiness | 7 | 1 |
+| Overall AAA boss idle | 5 | 3 |
+
+Verdicts: hand-keyed APPROACHES, video2rig raw FAILS. Measured reasons for the loss: the clip does not close
+(last-to-first jump 3 to 10 times a normal step, the last 25 frames nearly still), forefoot slides 4 to 6 px and
+hovers 2 to 4 px above its shadow in the left view, a tail flick that stops dead for two frames. What it won:
+the wings genuinely move (2.2x the body's motion) and the half-open pose has the menace the hand-keyed one lacks.
+
+Reading: this matches the tool's own warnings (feet slide a little, pin them; long holds get retimed, not
+regenerated; loops need the end pose asked for and then closed in Blender). His process refines in Blender after
+the fit; so does our project rule. Round 2 = refit with the 78-keypoint reader, then a scripted Blender pass:
+trim the still tail, close the loop, pin the four feet with IK, smooth the tail flick, keep the wing life. Then the
+same blind A/B again. Full critique: `Local/ab-idle-20261028/critique.md`.
