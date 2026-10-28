@@ -1,3 +1,24 @@
+# claude-code-enhancements — Can It Code north-star pass (Fable 5.1, 2026-10-28)
+
+Branch `claude-code-enhancements` off `main` (0755faf, Codex v030). Plan and gap analysis:
+`docs/canitcode-enhancements.md`. Shared-brain package `boss-fight-blueprint` (agents-md PR #27, draft) is
+the reusable design; this branch is its first application.
+
+State:
+- video2rig ported to Apple Silicon on fork `oh-ashen-one/video2rig` branch `mac-mps` (checkout `~/video2rig`).
+  Dragon creature project at `Local/video2rig/dragon/` (gitignored): rig export, start pictures, reader
+  training logs. Full 9000-step reader training was launched in the background; check
+  `Local/video2rig/dragon/reader/train-full.log` and `reader-train.json` (held-out px, target 2 to 4).
+- No video generated yet, no money spent. Owner approved MiniMax H3 Max on Higgsfield at 768p, one clip at a
+  time, idle first, compared in the asset reviewer before a second clip. Dragon only; knight clips stay
+  byte-identical.
+- No engine launched by this thread. Codex's v030 play session lease (below) was left untouched.
+
+Next: wait for the reader, generate the idle clip from `start/start.png`, `video2rig check`, `run`, `review`,
+import as Action, compare with `Dragon_Idle_Blender_v1r3`. Then the move-data script and runtime per the package.
+
+---
+
 # October28 Settings restart — latest playable build
 
 Branch `codex/veyr-settings-restart-20261028`; app:
