@@ -111,7 +111,19 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 
 | Date | Clip | Provider / model | Settings | Credits | Eyeball check | Tool check |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2026-10-28 | idle | Higgsfield, MiniMax H3 Max | 768p (1344x768), 16:9, 5 s, 24 fps, start-frame mode, literal prompt (preset declined) | 12.5 | pass: panels in step, static cameras, no effects, body in frame, wings lift and settle in both views, end pose = start pose | pending the 9000-step reader |
+| 2026-10-28 | idle | Higgsfield, MiniMax H3 Max | 768p (1344x768), 16:9, 5 s, 24 fps, start-frame mode, literal prompt (preset declined) | 12.5 | pass: panels in step, static cameras, no effects, body in frame, wings lift and settle in both views, end pose = start pose | OK: body 0.58%, limbs 0.59% of height (fail line 1.5%); frame 0 match 0.93 / 0.97 |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
+
+## Reader and first fit (2026-10-28)
+
+- Reader (64 keypoints, 9000 steps, MPS bf16, about 2 h 40 min while the GPU was shared): held-out median
+  4.23 px front, 4.05 px side (p90 17.7 / 19.1). The tool's good band is 2 to 4 px. Kept as
+  `reader/reader-64.pt`; a 78-keypoint reader (paw and wing-tip side points from the `limbs` setting) is training
+  as `reader/reader-78.pt`.
+- Idle fit: 124 frames at 24 fps, median keypoint miss 1.73 px, outline match 0.81 front / 0.90 side, no warnings,
+  feet pinned in two stretches with 0.1% drift, nothing under the floor, largest twist 2.9 deg, largest one-frame
+  jump 3.0 deg. Two hind-leg bones sat at a joint limit for 51 and 25 frames; check in Blender.
+- Action imported: `Local/video2rig/dragon/Dragon_Idle_v2r_v1.blend` (123 frames). Review film
+  `work/idle/review.mp4`. Blind A/B against `Dragon_Idle_Blender_v1r3` in progress.
