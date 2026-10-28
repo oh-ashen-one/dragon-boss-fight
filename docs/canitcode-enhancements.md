@@ -48,3 +48,45 @@ https://github.com/oh-ashen-one/video2rig, branch `mac-mps`, checkout `~/video2r
 5. Export to Unreal via the existing native import plan; keep approved knight clips byte-identical.
 6. Niagara breath/ember systems replacing the material-only FX. Suno track candidate.
 7. Write the comparison (before/after captures, timings, cost) in `docs/canitcode-enhancements/`.
+
+## What the Patreon source (BossFight-Unreal-Project, 2026-10-28) actually does
+
+Read from `~/Downloads/BossFight-Unreal-Project` (README, LICENSE, Config, Data, the Boss and FirstPerson headers,
+content listings). License: use code and assets in our own games, commercial included; never re-upload the files
+as they are. Do not copy his assets into a public repo.
+
+1. **The move data is measured from the animation, not hand-typed.** `Data/leshy/moves.json` holds, per move, the
+   root track per frame, the attack windows (which part, from, to, peak time, peak speed, where it is at the peak),
+   floor shocks, floor contacts with speed, foot stances and quality numbers (slides, IK misses, toes under floor).
+   A Python pass over the video2rig output produces it. The game reads it at start; no rebuild to retune.
+2. **Hit windows come from the motion.** A paw or jaw hurts when it moves fast enough in the clip. Hurt capsules
+   ride the bones (`boxes.json`, measured from the mesh). The brain picks a move whose reach, at its peak, holds
+   where the player will be. Never the same move three times running, cooldowns, phase 2 under half health.
+3. **Tempo per phase.** `tempo.json`: wind-up readable, blow fast, recovery quicker, per move, per time span.
+4. **Sounds and effects are timestamps on moves.** `sounds.json` (the Seedance clip audio cut up, voice from the
+   head, impacts from the body), `effects.json` (dust tier by contact speed, body-fall clouds, camera shake by
+   speed and distance, motion blur). Footfalls from contacts.
+5. **Fight feel is one system.** Hit-stop 50 to 120 ms, slow-motion back to speed after a heavy blow, camera shake
+   by blow weight, hammer trail, surface-aware debris (snow, stone, wood), hit flash overlay, flinch on the boss
+   (head and back snap, hips dip, spring home). Every effect on the game clock so the stop freezes it too.
+6. **Hero on motion matching**, own database, inertialized switches, capsule waits for the body so nothing slides.
+7. **Everything has a lab and a gate.** `-bosslab` plays moves on number keys with capsules drawn, `-bosstest`
+   measures every move (travel vs track, toe drift under 1.5 cm, capsules vs Blender), `-bossparrytest`,
+   `-flinchtest`, `-navfilm`, film capture with recorded audio. Numbers, then quit. This is how he kept quality
+   while an AI wrote every line.
+8. **Data-driven intro cutscene** (`intro.json`: shots, cameras, FOV, f-stop, follow, the boss's moves on cue).
+9. **Renderer**: Lumen GI and reflections, virtual shadow maps, no static lighting, DX12 SM6, auto-exposure
+   extended range. Modular church from Tripo parts, a module lab level to check each part alone. Snow with a trail
+   render target that keeps every footprint.
+10. **Module layout**: one C++ module, Boss/ and FirstPerson/ folders, non-unity build so missing includes show up,
+    Epic template variants left in but unused.
+
+## What Veyr adopts now (this branch) and every boss fight adopts from here on
+
+- Measured move data and bone-riding hurt capsules generated from the clips, read at runtime from JSON.
+- Attack windows and reach from motion speed; brain chooses by reach and cooldown; phase 2.
+- Per-move sound and effect timestamps; Niagara contact dust and body-fall clouds tiered by speed.
+- Fight feel system: hit-stop, camera shake by weight, flinch, hit flash, surface debris.
+- Lab and gate flags on the GameMode: a move lab, a measured move test, a parry test, a film capture. No feature
+  ships without its gate line in the log.
+- Lumen, VSM, no static lighting as the project default.
