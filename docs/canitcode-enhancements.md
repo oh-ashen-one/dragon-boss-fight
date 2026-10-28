@@ -287,3 +287,13 @@ at -Y, NegZ at +Y); note that in creature.json comments.
 
 Open items on the roar: the v3 end pose differs from the start (blend into idle in the engine or match the start);
 the NegZ wing rises steeper than PosZ at the peak (body yaw and roll in the clip).
+
+## Move data generator (2026-10-28)
+
+`tools/movedata/` (README there): `sample_action.py` samples an Action headlessly in Blender, `build_moves.py`
+writes `Data/dragon/{moves,boxes,tempo,sounds}.json` in the Leshy contract at game scale (x21.558172, about
+1050 cm tall). Run on `idle_v2` and `roar_sd_v2` with `tools/movedata/run_veyr.sh`; output is deterministic.
+Roar at 5 m/s: tail 1.34-2.14 s (peak 33 m/s at 1.66), jaw 1.47-1.78 s (peak 11.8 m/s at 1.55), wings
+1.54-1.90 s (31-34 m/s), then a settle at 3.75-4.99 s (wings 8-10, tail 11 m/s). No shocks or contacts (feet stay
+planted); track zero (Root static, body lurch 126 cm on Spine_0). Twelve hurt capsules, rest cover 0.77. C++ not
+changed yet.

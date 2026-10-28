@@ -1,0 +1,9 @@
+{
+ "_about": "Per move [{sound, t (clip s), volume, at: voice|body}]; steps = footfall sample names. Stub: no events yet; the Seedance clip audio is the voice candidate. The dir does not exist yet.",
+ "dir": "/Game/Veyr/Audio/Dragon",
+ "moves": {
+  "idle": [],
+  "roar": []
+ },
+ "steps": []
+}

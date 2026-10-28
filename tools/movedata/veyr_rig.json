@@ -1,0 +1,72 @@
+{
+  "_about": "Part map for the Veyr dragon rig (Tripo names plus VeyrJaw and two wing chains). Read by sample_action.py (inside Blender) and build_moves.py. Left/right are the dragon's own sides: Blender +Y = left (the rig faces +X), Unreal +Y = right. The wing chains are mirrored in name: NegZ sits on the left (+Y in Blender), PosZ on the right. The Tripo 'Head_*' bones and bone_36/37 are leftovers with no skin weights; the real head is bone_5.",
+  "rig": "Dragon_Rig_v008_weightfix (51 bones) as saved in Local/video2rig/dragon/*.blend",
+  "root_bone": "tripo::Root",
+  "track_bone": "tripo::Root",
+  "body_bone": "tripo::Spine_0",
+  "game_scale": 21.558172,
+  "game_scale_source": "Unreal/Veyr/Source/Veyr/VeyrDragon.cpp: the imported presentation's component scale (dragon about 1050 cm tall in game); the rig itself is about 48 cm tall in Blender",
+  "fps": 24,
+  "points": {
+    "jaw":        {"bone": "VeyrJaw", "at": "tail"},
+    "snout":      {"bone": "bone_5", "at": "tail"},
+    "head":       {"bone": "bone_5", "at": "head"},
+    "neck":       {"bone": "bone_3", "at": "head"},
+    "chest":      {"bone": "bone_2", "at": "mid"},
+    "hips":       {"bone": "tripo::Spine_0", "at": "head"},
+    "tail_tip":   {"bone": "tripo::Tail_2", "at": "tail"},
+    "wing_l_tip": {"bone": "VeyrWingNegZTip", "at": "tail"},
+    "wing_r_tip": {"bone": "VeyrWingPosZTip", "at": "tail"},
+    "wing_l_edge":{"bone": "VeyrWingNegZMembrane", "at": "tail"},
+    "wing_r_edge":{"bone": "VeyrWingPosZMembrane", "at": "tail"},
+    "ankle_fl":   {"bone": "bone_9", "at": "head"},
+    "ankle_fr":   {"bone": "bone_14", "at": "head"},
+    "ankle_hl":   {"bone": "tripo::1_Right_Limb_3", "at": "head"},
+    "ankle_hr":   {"bone": "tripo::0_Right_Limb_3", "at": "head"}
+  },
+  "feet": {
+    "fl": {"bones": ["bone_9", "tripo::1_Left_Limb_1"], "bone": "bone_9"},
+    "fr": {"bones": ["bone_14", "tripo::0_Left_Limb_2", "tripo::0_Left_Limb_3"], "bone": "bone_14"},
+    "hl": {"bones": ["tripo::1_Right_Limb_3", "tripo::1_Right_Limb_4"], "bone": "tripo::1_Right_Limb_4"},
+    "hr": {"bones": ["tripo::0_Right_Limb_3", "tripo::0_Right_Limb_4"], "bone": "tripo::0_Right_Limb_4"}
+  },
+  "foot_sole_vertices": 32,
+  "foot_toe_vertices": 16,
+  "body_low": {
+    "chest_low": ["bone_2"],
+    "belly_low": ["tripo::Spine_0"],
+    "hips_low":  ["tripo::Spine_1", "tripo::Spine_2", "tripo::Spine_3"],
+    "head_low":  ["bone_5", "VeyrJaw"],
+    "tail_low":  ["bone_18", "tripo::Tail_0", "tripo::Tail_1", "tripo::Tail_2"]
+  },
+  "body_low_vertices": 32,
+  "attack_parts": {
+    "jaw":    {"point": "jaw"},
+    "paw_fl": {"point": "toe_fl"},
+    "paw_fr": {"point": "toe_fr"},
+    "paw_hl": {"point": "toe_hl"},
+    "paw_hr": {"point": "toe_hr"},
+    "wing_l": {"point": "wing_l_edge"},
+    "wing_r": {"point": "wing_r_edge"},
+    "tail":   {"point": "tail_tip"}
+  },
+  "window_only_parts": {
+    "head":       {"point": "snout"},
+    "wing_l_tip": {"point": "wing_l_tip"},
+    "wing_r_tip": {"point": "wing_r_tip"}
+  },
+  "hurt": {
+    "head":   {"bone": "bone_5", "bones": ["bone_5", "VeyrJaw"], "kind": "head", "damage": 1.5},
+    "neck":   {"bone": "bone_4", "bones": ["bone_3", "bone_4"], "kind": "neck", "damage": 1.0},
+    "chest":  {"bone": "bone_2", "bones": ["bone_2"], "kind": "body", "damage": 1.0, "shape": "sphere"},
+    "belly":  {"bone": "tripo::Spine_0", "bones": ["tripo::Spine_0"], "kind": "body", "damage": 1.0},
+    "hips":   {"bone": "tripo::Spine_1", "bones": ["tripo::Spine_1", "tripo::Spine_2", "tripo::Spine_3"], "kind": "body", "damage": 1.0},
+    "leg_fl": {"bone": "tripo::1_Left_Limb_0", "bones": ["bone_6", "bone_7", "tripo::1_Left_Limb_0", "bone_9", "tripo::1_Left_Limb_1"], "kind": "leg", "damage": 0.8, "leg": 0},
+    "leg_fr": {"bone": "tripo::0_Left_Limb_1", "bones": ["bone_11", "tripo::0_Left_Limb_0", "tripo::0_Left_Limb_1", "bone_14", "tripo::0_Left_Limb_2", "tripo::0_Left_Limb_3"], "kind": "leg", "damage": 0.8, "leg": 1},
+    "leg_hl": {"bone": "tripo::1_Right_Limb_2", "bones": ["tripo::1_Right_Limb_0", "tripo::1_Right_Limb_1", "tripo::1_Right_Limb_2", "tripo::1_Right_Limb_3", "tripo::1_Right_Limb_4"], "kind": "leg", "damage": 0.8, "leg": 2},
+    "leg_hr": {"bone": "tripo::0_Right_Limb_2", "bones": ["tripo::0_Right_Limb_0", "tripo::0_Right_Limb_1", "tripo::0_Right_Limb_2", "tripo::0_Right_Limb_3", "tripo::0_Right_Limb_4"], "kind": "leg", "damage": 0.8, "leg": 3},
+    "wing_l": {"bone": "VeyrWingNegZElbow", "bones": ["VeyrWingNegZRoot", "VeyrWingNegZElbow", "VeyrWingNegZMembrane", "VeyrWingNegZWrist", "VeyrWingNegZTip"], "kind": "wing", "damage": 0.5},
+    "wing_r": {"bone": "VeyrWingPosZElbow", "bones": ["VeyrWingPosZRoot", "VeyrWingPosZElbow", "VeyrWingPosZMembrane", "VeyrWingPosZWrist", "VeyrWingPosZTip"], "kind": "wing", "damage": 0.5},
+    "tail":   {"bone": "tripo::Tail_1", "bones": ["bone_18", "tripo::Tail_0", "tripo::Tail_1", "tripo::Tail_2"], "kind": "tail", "damage": 0.7}
+  }
+}

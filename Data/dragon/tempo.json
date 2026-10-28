@@ -1,0 +1,9 @@
+{
+ "_about": "Per move [[from_clip_s, to_clip_s, rate], ...]; 99 = to the end; outside every phase plays at 1.0. Stub: everything plays at its own pace until tuned.",
+ "idle": [
+  [0.0, 99.0, 1.0]
+ ],
+ "roar": [
+  [0.0, 99.0, 1.0]
+ ]
+}
