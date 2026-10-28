@@ -262,3 +262,12 @@ span so the generator sees the limit, and train that reader.
 
 Credit costs measured on Higgsfield (2026-10-28): MiniMax H3 Max 768p 5 s = 12.5; Seedance 2.5 720p 5 s with audio
 = 35. Spend so far on this branch: 3 MiniMax + 2 Seedance = 107.5 credits.
+
+## Roar refinement (Seedance fit, 2026-10-28)
+
+`Dragon_Roar_sd_v2r_v2.blend` (Action `roar_sd_v2`, 121 frames, no trim: the move is still live at the end and
+does not return to stance, so it will need a blend into idle in the engine). Feet excursion 1.3 / 5.3 / 0.03 /
+0.04 cm to 0 on all four; forefoot drift on the front render 0.01 / 0.02 px. Tail peak 8.2 to 6.4 cm per frame,
+still a visible spike from frame 37 (the clip's own tail whip); treat as a Blender hand-fix or accept as the
+move's accent. Wings untouched: +25.7 px of span at the peak over frame 0. Renders `clip_RS1_*`; owner copies in
+`~/Downloads/Veyr-Idle-AB-20261028/roar-*.mp4`.
