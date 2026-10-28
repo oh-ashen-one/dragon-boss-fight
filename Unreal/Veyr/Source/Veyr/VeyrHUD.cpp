@@ -2,6 +2,7 @@
 #include "VeyrGameMode.h"
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
+#include "Kismet/GameplayStatics.h"
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
@@ -290,6 +291,17 @@ void AVeyrHUD::ClosePauseMenu()
     }
 }
 
+void AVeyrHUD::RestartEncounter()
+{
+    const FString Level=UGameplayStatics::GetCurrentLevelName(this,true);
+    if(Level.IsEmpty())return;
+    bRestoreCapture=false;
+    ClosePauseMenu();
+    if(IsPauseMenuOpen())return;
+    // Reload the whole arena so resources, boss, props and encounter time reset.
+    UGameplayStatics::OpenLevel(this,FName(*Level));
+}
+
 void AVeyrHUD::SetPausePage(int32 Page){PausePage=Page;RebuildPauseMenu();}
 void AVeyrHUD::ChangeVolume(float Delta)
 {
@@ -348,11 +360,11 @@ void AVeyrHUD::RebuildPauseMenu()
         AddButton(TEXT("Resume"),[Self](){if(Self.IsValid())Self->ClosePauseMenu();});
         AddButton(TEXT("Settings"),[Self](){if(Self.IsValid())Self->SetPausePage(1);});
         AddButton(TEXT("Controls"),[Self](){if(Self.IsValid())Self->SetPausePage(2);});
-        if(Mode->Knight&&Mode->Dragon&&(Mode->Knight->IsDead()||Mode->Dragon->IsDead()))
-            AddButton(TEXT("Restart encounter"),[Self](){if(Self.IsValid()){AVeyrGameMode* M=Self->GetWorld()->GetAuthGameMode<AVeyrGameMode>();Self->ClosePauseMenu();if(M&&M->Knight)M->Knight->RestartIfTerminal();}});
+        AddButton(TEXT("Restart encounter"),[Self](){if(Self.IsValid())Self->RestartEncounter();});
     }
     else if(PausePage==1)
     {
+        AddButton(TEXT("Restart encounter"),[Self](){if(Self.IsValid())Self->RestartEncounter();});
         auto SettingRow=[&](const FString& Label,TFunction<void()> Less,TFunction<void()> More)
         {
             Content->AddSlot().AutoHeight().Padding(0,7)

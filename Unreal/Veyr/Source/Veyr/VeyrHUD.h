@@ -24,6 +24,7 @@ private:
     bool bRestoreCapture=false;
     void RebuildPauseMenu();
     void ClosePauseMenu();
+    void RestartEncounter();
     void SetPausePage(int32 Page);
     void ChangeVolume(float Delta);
     void ChangeSensitivity(float Delta);
