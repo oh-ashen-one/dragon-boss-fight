@@ -22,10 +22,14 @@ flick; wins on wing life). Round 2 done: scripted Blender refinement to `Dragon_
 under `Local/video2rig/dragon/refine/`; blind A/B round 2: refined fit 47 vs hand-keyed 41, both still FAIL the
 shipped bar (critique-round2.md). Owner copies of the side-by-sides: `~/Downloads/Veyr-Idle-AB-20261028/`. See `docs/canitcode-enhancements.md` for every number.
 
-Roar: two MiniMax clips (25 credits) both oversize the wings about 2x; fits good on head, jaw, body, feet,
-weak on wings (outline about 0.4 at peak flare). Refined roar at `Local/video2rig/dragon/Dragon_Roar_v2r_v2.blend`
-(feet planted, tail smoothed). Decision needed from the owner: Seedance test, new start picture, or hand-flare the
-wings in Blender (see docs/canitcode-enhancements.md, provider finding). Total spend 37.5 credits.
+Roar: two MiniMax clips oversized the wings about 2x (fits good on head, jaw, body, feet; weak on wings). Owner
+approved Seedance: first Seedance clip (full flare) failed the two-view check; second with a half-open-wings prompt
+passed (1.13%) and fitted cleanly (outline 0.76 / 0.85, twist 5.5 deg, no warnings) ->
+`Local/video2rig/dragon/Dragon_Roar_sd_v2r_v1.blend`, refined copy `Dragon_Roar_sd_v2r_v2.blend` (feet, tail) and
+renders `clip_RS1_*` in `Local/ab-idle-20261028/video/` when the builder finishes. The MiniMax roar also got a
+hand-flared wing pass -> `Dragon_Roar_v2r_v3.blend`, renders `clip_RO2_*`. Spend: 107.5 credits (3 MiniMax at
+12.5, 2 Seedance at 35). Shared brain: `boss-fight-blueprint` merged (PR #27); fix for the keywords rebuild on
+PR #30 and the day's lessons on PR #31, both draft, owner merge.
 
 Next after round 2: owner verdict on the idle, then roar / claw swipe / bite / stagger / collapse / death /
 takeoff / land clips one at a time, the move-data script (windows, contacts, shocks, root track to JSON), hurt
