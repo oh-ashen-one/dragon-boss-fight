@@ -1,0 +1,19 @@
+{
+  "app": "~/Downloads/Veyr-Settings-Restart-v030/Veyr.app",
+  "sourceId": "8d51bcdcadb7aeb9945ae7c4d9de99cf6fbdacff367c3657aeb89aeb86bcb421",
+  "signedZipSHA256": "5e594c25c1a457afcc9f39a1afd3f57602a7232f3cd3dc74473ca108b896a305",
+  "copiedFiles": 31,
+  "fileHashesAndModesVerified": true,
+  "signatureVerified": true,
+  "notarized": false,
+  "privateBackupRelease": "settings-restart-v030-20261028",
+  "remoteDigestVerified": true,
+  "settingsButtonVisible": true,
+  "restartDuringLiveEncounterVerified": true,
+  "returnedToStartScreen": true,
+  "fullVitalsAndFourHealsObserved": true,
+  "oneHandGripRestored": true,
+  "bossResetObserved": true,
+  "validationMethod": "Actual packaged Shipping app; UI keyboard navigation into Settings and activation of Restart encounter; before/after rendered captures.",
+  "previousAppRetained": true
+}

@@ -1,3 +1,22 @@
+# October28 Settings restart — latest playable build
+
+Branch `codex/veyr-settings-restart-20261028`; app:
+`~/Downloads/Veyr-Settings-Restart-v030/Veyr.app`. Source ID
+`8d51bcdcadb7aeb9945ae7c4d9de99cf6fbdacff367c3657aeb89aeb86bcb421`.
+
+Restart encounter is always available in Settings (first button) and the pause
+menu. It unpauses safely and reloads the arena to its fresh start screen. Actual
+Shipping UI activation during an active encounter verified resource, grip, boss
+and start-screen reset. Settings values remain saved. Signature, all31 payload
+file hashes/modes and private game-backup digest verify. See
+`docs/settings-restart-20261028/delivery.json` and captures.
+
+The new game is left open under the task lease
+`Local/SettingsRestart20261028/play-gpu.json`. Preserve the owner play session.
+No new assets or motion changes. Prior v029 is retained; older handoff follows.
+
+---
+
 # October 26 overhaul — delivered for owner review
 
 Branch `codex/veyr-cathedral-overhaul-20261026`. Final Shipping source ID
