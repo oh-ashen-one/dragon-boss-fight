@@ -14,8 +14,17 @@ State:
   byte-identical.
 - No engine launched by this thread. Codex's v030 play session lease (below) was left untouched.
 
-Next: wait for the reader, generate the idle clip from `start/start.png`, `video2rig check`, `run`, `review`,
-import as Action, compare with `Dragon_Idle_Blender_v1r3`. Then the move-data script and runtime per the package.
+Progress 2026-10-28 afternoon: reader-64 trained (held-out 4.2 / 4.1 px), reader-78 trained (5.3 / 4.9 px, not
+better; reader.pt = 64). Idle clip generated (MiniMax H3 Max 768p, 12.5 credits), check OK (0.6% of height),
+fit clean, Action at `Local/video2rig/dragon/Dragon_Idle_v2r_v1.blend`. Blind A/B round 1
+(`Local/ab-idle-20261028/`, critique.md): raw fit FAILS vs hand-keyed APPROACHES (loop seam, foot slide, tail
+flick; wins on wing life). Round 2 in flight: scripted Blender refinement to `Dragon_Idle_v2r_v2.blend`
+(trim still tail, close loop, IK-plant feet, smooth tail) under `Local/video2rig/dragon/refine/`, then the same
+blind A/B. See `docs/canitcode-enhancements.md` for every number.
+
+Next after round 2: owner verdict on the idle, then roar / claw swipe / bite / stagger / collapse / death /
+takeoff / land clips one at a time, the move-data script (windows, contacts, shocks, root track to JSON), hurt
+capsules, brain by reach, fight-feel system, lab and gate flags, Niagara, Lumen/VSM defaults.
 
 ---
 

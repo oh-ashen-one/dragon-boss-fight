@@ -155,3 +155,13 @@ regenerated; loops need the end pose asked for and then closed in Blender). His 
 the fit; so does our project rule. Round 2 = refit with the 78-keypoint reader, then a scripted Blender pass:
 trim the still tail, close the loop, pin the four feet with IK, smooth the tail flick, keep the wing life. Then the
 same blind A/B again. Full critique: `Local/ab-idle-20261028/critique.md`.
+
+## Reader comparison (2026-10-28)
+
+| Reader | Keypoints | Held-out front / side (median px) | Idle fit: median miss | outline front / side | max twist |
+| --- | --- | --- | --- | --- | --- |
+| reader-64 | 64 | 4.23 / 4.05 | 1.73 px | 0.813 / 0.897 | 2.9 deg |
+| reader-78 | 78 (paw, claw, wing-tip side points) | 5.32 / 4.94 (the 18 off-bone points 5.6 / 6.5) | 2.05 px | 0.790 / 0.898 | 4.4 deg |
+
+The extra side points did not improve the idle fit; `reader/reader.pt` stays the 64-point reader, `reader-78.pt` is
+kept for a fast-motion clip where paw tracking matters more. Fits: `out/idle.npz` (64) and `out/idle-r78.npz`.
