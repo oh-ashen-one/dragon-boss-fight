@@ -90,3 +90,19 @@ as they are. Do not copy his assets into a public repo.
 - Lab and gate flags on the GameMode: a move lab, a measured move test, a parry test, a film capture. No feature
   ships without its gate line in the log.
 - Lumen, VSM, no static lighting as the project default.
+
+## Rule check: Blender authoring (project AGENTS.md, 2026-10-21)
+
+video2rig does not replace Blender authoring. Its output is an Action inside the rig's own `.blend`
+(`blender/import_motion.py`), which is then inspected at playback speed from front, side and three-quarter views,
+retimed, foot-pinned and refined in Blender before export, exactly as the project rule requires. The AI video is the
+motion source, Blender stays the authoring and refinement layer. Every candidate is saved separately; approved
+knight clips stay byte-identical.
+
+## Port status (2026-10-28)
+
+Fork `oh-ashen-one/video2rig` branch `mac-mps`: reader road runs on MPS bf16; 300-step smoke test passed
+(held-out 13.4 px, expected for a smoke test); 9000-step training running (about 3 h on this GPU while shared).
+Start frame rendered with `--facing +X --widths 840,1080 --margin-wide 1.25`. Blocker found: the Tripo rig's
+"Left"/"Right" limb names mean front/hind, so the tool pairs no twins; a `twins` setting in `creature.json` is
+being added to the fork instead of renaming bones (renaming would break the Unreal skeleton and the reader).
