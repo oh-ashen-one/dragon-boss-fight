@@ -10,7 +10,15 @@ reusable design; this branch is its first application. Decisions confirmed by Ha
 AI video of our own rig through video2rig (the explicit exception to source-first animation; the knight stays on
 sourced clips); MiniMax H3 Max at 768p was the first provider, Seedance 2.5 approved on 2026-10-28 evening after
 MiniMax oversized the wings; one clip at a time, review before the next; merge of PR #27 approved and done; after
-that "do whatever you want on your own". Hari was not yet asked for a verdict on the idle or roar clips.
+that "do whatever you want on your own". Hari approved the idle and roar on 2026-10-28 evening (laptop review); see Owner verdict below.
+
+## Owner verdict (2026-10-28 evening, laptop)
+
+Hari watched the before/after page served locally on the laptop (`Local/ab-idle-20261028/serve`, the Studio server
+pid 53126 and its tailnet publish were stopped). Idle and roar approved with no change requests. He asked that the
+shared brain and all future sessions use this method; promoted in agents-md PR #32 (video2rig = creature default).
+The laptop clone is `~/dev/dragon-boss-fight`; only the `serve/` folder and `rangeserver.py` were copied, the full
+Local/ bundle is not restored here yet.
 
 ## Repo / branch map
 
@@ -61,7 +69,7 @@ put it in a repo.
 
 - No PIE or packaged run of the data-driven dragon. This clone has no `Content/Characters/Customuse` (native
   character content is not in git; it is in Codex's checkout and the private backups), so capsules cannot bind here.
-- Hari has not judged the idle or roar; the owner verdict gates the next clips.
+- Owner verdict received 2026-10-28 evening: idle and roar APPROVED ("much better", roar "so, so good"). Next clips unblocked.
 - Idle gap: no head intent (one breathing sine); needs an 8 s clip or a second "look" clip layered in Blender.
 - Roar: does not return to stance (engine blend into idle needed); tail whip still a spike; v3 hand-flare end pose
   differs from start.
@@ -75,7 +83,7 @@ put it in a repo.
 ## Next steps
 
 1. On the laptop: restore the bundle (below), then `brain sync --force --strict` once PR #30 is merged.
-2. Owner verdict on idle and roar (page: `Local/ab-idle-20261028/serve/index.html`, or the Downloads copies).
+2. Done: owner approved idle and roar. Shared-brain PR #32 (plus #30, #31) makes video2rig the creature default; Hari merges.
 3. Engine session on the Studio with the native content: bind capsules (`veyr.MoveData.Draw 1`), import the two
    Actions, rerun the collision and stance trials, fix the 18 cm rest-pose float in the import offset.
 4. Next clip (claw swipe) on Seedance with the gesture described inside the rig's reach; same check/fit/refine/A/B.

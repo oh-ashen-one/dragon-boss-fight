@@ -400,3 +400,10 @@ Not verified (needs an owned editor/PIE session):
   roar's windows test idle-pose parts).
 - The Python integration tests in `Unreal/Veyr/Content/Python` import `unreal` and need the editor; not run.
   `tools/movedata` tests (no engine) pass: 3/3.
+
+## Owner verdict — 2026-10-28 evening
+
+Hari reviewed the before/after page on the laptop: refined video2rig idle vs hand-keyed (front, left, three-quarter)
+and the Seedance roar. Approved outright: "the dragon looks much better", the roar "so, so good". He asked that the
+shared brain and every future session always use this method; agents-md PR #32 promotes the creature exception to
+the default. Remaining clips proceed on Seedance 2.5, one at a time, owner sees each.
