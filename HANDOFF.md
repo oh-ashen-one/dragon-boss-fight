@@ -31,6 +31,9 @@ hand-flared wing pass -> `Dragon_Roar_v2r_v3.blend`, renders `clip_RO2_*`. Spend
 12.5, 2 Seedance at 35). Shared brain: `boss-fight-blueprint` merged (PR #27); fix for the keywords rebuild on
 PR #30 and the day's lessons on PR #31, both draft, owner merge.
 
+Move data: `tools/movedata/` + `Data/dragon/*.json` committed (3aa61c3); see docs for the findings (no root
+motion on tripo::Root, rest pose floats 18 cm at game scale, windows uncurated).
+
 Next after round 2: owner verdict on the idle, then roar / claw swipe / bite / stagger / collapse / death /
 takeoff / land clips one at a time, the move-data script (windows, contacts, shocks, root track to JSON), hurt
 capsules, brain by reach, fight-feel system, lab and gate flags, Niagara, Lumen/VSM defaults.

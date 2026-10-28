@@ -297,3 +297,24 @@ Roar at 5 m/s: tail 1.34-2.14 s (peak 33 m/s at 1.66), jaw 1.47-1.78 s (peak 11.
 1.54-1.90 s (31-34 m/s), then a settle at 3.75-4.99 s (wings 8-10, tail 11 m/s). No shocks or contacts (feet stay
 planted); track zero (Root static, body lurch 126 cm on Spine_0). Twelve hurt capsules, rest cover 0.77. C++ not
 changed yet.
+
+## Move data generated (2026-10-28, last commit of the day)
+
+`tools/movedata/` (sample bones in headless Blender, build the blueprint's JSON) produced `Data/dragon/moves.json`,
+`boxes.json`, `tempo.json`, `sounds.json` for `idle_v2` and `roar_sd_v2` at game scale (x21.56, the rig is 48.7 cm
+tall in Blender and 1050 cm in game). Deterministic output, 3 tests pass.
+
+Roar at the 5 m/s threshold: jaw hot 1.47 to 1.78 s (peak 11.8 m/s), wings 1.54 to 1.90 s (31 to 34 m/s), tail
+1.34 to 2.14 s (33 m/s, the whip) with second waves after 3.7 s. Feet planted the whole clip (drift 0.01 to 1.85
+cm; the right hind foot is over the 1.5 cm gate). Idle: one tail flick, loop seam 0.88x a step. Twelve hurt
+capsules cover 0.77 of the mesh at rest.
+
+Findings to carry into the runtime work:
+- `tripo::Root` never moves; the body travels on `tripo::Spine_0` (126 cm lurch in the roar). Travelling moves
+  need the track read from Spine_0 or a Root bake in Blender.
+- At game scale the rig's rest pose floats: lowest foot 18 cm above the floor. Fix once in the import offset or
+  the rest pose, not per clip.
+- Nothing is curated yet: every fast window is an attack. Whether the roar's jaw or wings hurt is a design call
+  for the brain pass.
+- Wings as one capsule each cover air; legs are one capsule shoulder to foot. Split when the hit tests need it.
+- The roar does not return to stance (seam 7.6x a step): the engine blends it back into the idle.
