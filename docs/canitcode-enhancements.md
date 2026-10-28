@@ -215,3 +215,20 @@ its duplicate end frame dropped. Full critique: `Local/ab-idle-20261028/critique
 Reading: with the refinement pass the AI-video route already edges the hand-keyed clip on a dragon idle, with the
 wing life and silhouette the critic wanted; its remaining gap is a second motion layer, which the pipeline can
 supply as another short clip ("idle look": head turn and hold) layered in Blender, or as a longer 8 s clip.
+
+## Roar: wing flare limit (2026-10-28)
+
+The MiniMax clip drew the flared wings about twice the model's wing size and past both panel edges from frame 40.
+The reader placed the elbow 104 to 154 px from the wing root while the root bone is 82 px long, with moderate
+confidence (0.6 to 0.9 on the side panel). The fit lays the bone at full length and cannot reach, so front outline
+stays about 0.40 at peak flare whatever the setting: low-pass off, self-pass off, wrist range 1.6 or 2.8, root or
+elbow prior 8 or 0.2, membrane prior 10, five fit settings. Kept: `joints.VeyrWing{PosZ,NegZ}Wrist.range = 1.6`
+(twist 25.8 to 17.0 deg, outline unchanged). Reader confidence is not the limit; retraining would not help.
+
+Rule from this: generated creature clips must keep body-part sizes. Add to every prompt "the wings, limbs, head and
+tail keep exactly the size and proportions they have in the first frame; nothing grows" and "nothing leaves the
+frame". Reject a clip whose parts outgrow the start picture before fitting it. Where a move needs the full span,
+render the start picture with more margin (that means a new reader).
+
+Refined roar anyway: `Local/video2rig/dragon/Dragon_Roar_v2r_v2.blend` (110 frames; feet 14 cm excursion to
+0.003 cm; tail peak 6.6x to 3.0x median; head, jaw and wings untouched); renders `clip_RO1_*` in the A/B folder.
