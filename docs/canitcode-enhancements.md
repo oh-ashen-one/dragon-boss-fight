@@ -114,7 +114,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | idle | Higgsfield, MiniMax H3 Max | 768p (1344x768), 16:9, 5 s, 24 fps, start-frame mode, literal prompt (preset declined) | 12.5 | pass: panels in step, static cameras, no effects, body in frame, wings lift and settle in both views, end pose = start pose | OK: body 0.58%, limbs 0.59% of height (fail line 1.5%); frame 0 match 0.93 / 0.97 |
 | 2026-10-28 | roar | Higgsfield, MiniMax H3 Max | 768p, 16:9, 5 s, 24 fps, start-frame, literal prompt | 12.5 | pass: head back, jaws wide, wings fully flared in both views, tail lifts, returns to stance, no effects | OK: body 0.89%, limbs 0.65%; frame 0 match 0.93 / 0.97. Fit: median miss 3.05 px, outline 0.62 / 0.75 (wings fully open), max twist 25.8 deg on a wing root, feet pinned in 7 stretches |
 | 2026-10-28 | roar2 (size-constrained prompt) | Higgsfield, MiniMax H3 Max | same as roar | 12.5 | wings still drawn about 2x the model's span and off the front panel edges; motion blur on the side panel in the fast frames despite the no-blur sentence | OK: body 1.16%, limbs 0.67%. Fit: miss 3.69 px, outline 0.61 / 0.72, twist 68.8 deg on a wing root; no better than roar |
-| 2026-10-28 | roar_sd (Seedance 2.5 control run, owner-approved) | Higgsfield, Seedance 2.5, omni_reference | 720p (1280x720), 16:9, 5 s, 24 fps, audio on, size-constraint prompt | see transactions | wings still drawn wider than the model's span in the front panel; side panel clean and sharp; panels drift apart (the side panel's body and tail do not match the front at the peak) | FAIL: panels disagree on the body by 2.2% of height (fail line 1.5%); frame 0 match 0.90 / 0.96. Fit anyway: miss 4.24 px, outline 0.64 / 0.82, max twist 8.0 deg (MiniMax: 25.8 and 68.8) |
+| 2026-10-28 | roar_sd (Seedance 2.5 control run, owner-approved) | Higgsfield, Seedance 2.5, omni_reference | 720p (1280x720), 16:9, 5 s, 24 fps, audio on, size-constraint prompt | 35 | wings still drawn wider than the model's span in the front panel; side panel clean and sharp; panels drift apart (the side panel's body and tail do not match the front at the peak) | FAIL: panels disagree on the body by 2.2% of height (fail line 1.5%); frame 0 match 0.90 / 0.96. Fit anyway: miss 4.24 px, outline 0.64 / 0.82, max twist 8.0 deg (MiniMax: 25.8 and 68.8) |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -258,3 +258,6 @@ to a span the rig does not have. Two responses run in parallel: one more Seedanc
 no wider than the body length, and a corrective Blender pass that hand-keys the wing flare on the otherwise good
 MiniMax roar fit (permitted correction). Longer term: render the start picture with the wings at their true full
 span so the generator sees the limit, and train that reader.
+
+Credit costs measured on Higgsfield (2026-10-28): MiniMax H3 Max 768p 5 s = 12.5; Seedance 2.5 720p 5 s with audio
+= 35. Spend so far on this branch: 3 MiniMax + 2 Seedance = 107.5 credits.
