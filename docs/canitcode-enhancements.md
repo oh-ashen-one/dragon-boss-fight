@@ -122,6 +122,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | claw_swipe | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; two earlier submissions failed before rendering) | pass (coordinator): right foreleg lifts to chest height, draws back, swipes, returns; some motion blur on the fastest side-panel frames around frame 70 | OK: body 0.81% (p90 1.18%), limbs 0.74% (p90 1.32%), frame 0 match 0.89 / 0.95. Fit (reader-78, kept): median miss 2.63 px, outline 0.77 / 0.88, max twist 41.8 deg (bone_11), body under floor 10 frames. Reader-64: miss 2.48 px, outline 0.80 / 0.85, twist 65.8 deg, under floor 41 frames, hind feet lifted 2.6 cm |
 | 2026-10-28 | stagger | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on | 35 | pass (coordinator): right shoulder drops, front lurches down and right, head low, recovers | OK: body 0.85%, limbs 1.17%, frame 0 match 0.94 / 0.93. Fit: median miss 4.49 px, outline 0.77 / 0.82, max twist 13.5 deg (bone_7), no warnings |
 | 2026-10-28 | land (hop and hard landing) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | pass (coordinator): crouch, hop to about half a body height, wing flare, hard four-foot landing | FAIL: panels disagree on the body by 1.76% of height (fail line 1.5%); limbs 1.16%; frame 0 match 0.91 / 0.96. Not fitted (rule: a FAIL is regenerated, not fitted) |
+| 2026-10-28 | takeoff | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | coordinator: crouch, spring, rises about one body height and hovers; wings open to full span, past the rig 1.27x limit | FAIL: panels disagree on the body by 2.14% of height (fail line 1.5%); limbs 1.54% (also over the line); frame 0 match 0.93 / 0.96. Not fitted |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -523,3 +524,10 @@ and head dip carry it. Not corrected.
 
 `check` body 0.0176 (1.76% of height, fail line 1.5%, clean clips up to about 1.2%), limbs 0.0116, frame 0 0.91 / 0.96. The tool: the
 panels draw the hop differently (the two views disagree on how high the body is). Not fitted, no Action; needs a new generation.
+
+### takeoff (5 s) - check FAIL, not fitted
+
+`check` body 0.0214 (2.14% of height, fail line 1.5%), limbs 0.0154 (also over), frame 0 0.93 / 0.96. The tool: the panels draw the move
+differently in each panel. Not fitted, no Action. Both airborne moves (land, takeoff) fail the same way: when the body leaves the floor
+the two panels disagree on its height, which the reader cannot reconcile; a regenerate with a smaller rise, or a flying-specific start
+picture (side-over-top stack, see the tool framing options), is the lead.
