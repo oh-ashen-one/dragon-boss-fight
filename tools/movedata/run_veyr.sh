@@ -10,23 +10,24 @@ BLENDER="${BLENDER:-blender}"
 SAMPLES="${SAMPLES:-Local/movedata/samples}"
 CAP="${BLENDER_CAP:-1}"
 D=Local/video2rig/dragon
+# Fix round 2 (2026-10-29): nine moves read the v4 Actions (tools/dragon_refine/v4); claw swipe, stagger, death, idle kept.
 MOVES=(
   "$D/Dragon_Idle_v2r_v2.blend|idle_v2|idle|1"
-  "$D/Dragon_Roar_sd_v2r_v3.blend|roar_sd_v3|roar|0"
-  "$D/Dragon_Collapse_sd_v2r_v3.blend|collapse_v3|collapse|0"
+  "$D/Dragon_Roar_sd_v2r_v4.blend|roar_v4|roar|0"
+  "$D/Dragon_Collapse_sd_v2r_v4.blend|collapse_v4|collapse|0"
   "$D/Dragon_Death_sd_v2r_v3.blend|death_v3|death|0"
-  "$D/Dragon_Bite_sd_v2r_v3.blend|bite_v3|bite|0"
+  "$D/Dragon_Bite_sd_v2r_v4.blend|bite_v4|bite|0"
   "$D/Dragon_ClawSwipe_sd_v2r_v3.blend|claw_swipe_v3|claw_swipe|0"
   "$D/Dragon_Stagger_sd_v2r_v3.blend|stagger_v3|stagger|0"
-  "$D/Dragon_Land2_sd_v2r_v3.blend|land2_v3|land|0"
+  "$D/Dragon_Land2_sd_v2r_v4.blend|land2_v4|land|0"
   "$D/Dragon_Takeoff2_sd_v2r_v2.blend|takeoff2_v2|takeoff|0"
-  "$D/Dragon_Rise_sd_v2r_v3.blend|rise_v3|rise|0"
+  "$D/Dragon_Rise_sd_v2r_v4.blend|rise_v4|rise|0"
   "$D/Dragon_IdleLook_sd_v2r_v2.blend|idle_look_v2|idle_look|1"
   "$D/Dragon_IdleLayered_sd_v2r_v2.blend|idle_layered_v2|idle_layered|1"
-  "$D/Dragon_AirHover_sd_v2r_v3.blend|air_hover_v3|air_hover|1"
-  "$D/Dragon_AirLand_sd_v2r_v3.blend|air_land_v3|air_land|0"
-  "$D/Dragon_AirTakeoff_sd_v2r_v3.blend|takeoff3_v3|air_takeoff|0"
-  "$D/Dragon_AirFireDown_sd_v2r_v3.blend|air_fire_down_v3|air_fire_down|0"
+  "$D/Dragon_AirHover_sd_v2r_v4.blend|air_hover_v4|air_hover|1"
+  "$D/Dragon_AirLand_sd_v2r_v4.blend|air_land_v4|air_land|0"
+  "$D/Dragon_AirTakeoff_sd_v2r_v4.blend|takeoff3_v4|air_takeoff|0"
+  "$D/Dragon_AirFireDown_sd_v2r_v4.blend|air_fire_down_v4|air_fire_down|0"
 )
 run() {  # blend action move
   if [ "$(pgrep -x Blender | wc -l)" -ge "$CAP" ]; then
