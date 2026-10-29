@@ -56,7 +56,13 @@ def make_ik(t,source):
 def smooth(x):x=max(0,min(1,x));return x*x*(3-2*x)
 def mixmat(a,b,w):
  x,q,sc=a.decompose();y,r,ss=b.decompose();return Matrix.LocRotScale(x.lerp(y,w),q.slerp(r,w),sc.lerp(ss,w))
-def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=None):
+def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=None,carry_mode=None,carry_raise=(0.,0.)):
+ # carry_mode='idle' (2026-10-28): refs come from the approved idles; keep their exact carry, grips and
+ # left-hand placement (no walk-tuned offsets). carry_raise=(pitch_up_deg, lift_m) raises the blade about the hilt.
+ idle=carry_mode in ('idle','idle-root')
+ # idle-root: blade orientation stays near the idle world carry (20% chest follow) so torso-twisting
+ # locomotion (Mixamo strafes) does not swing the 2 m blade; the hilt follows the chest position.
+ FOLLOW=.2
  names={'walk':'Mixamo_Walk','attack':'Mixamo_Attack','guard':'Mixamo_Block','run':'Fab_Run','roll':'Fab_Roll'};name=output_name or names[kind]+'_'+version;two_hand=(kind in ('run','guard')) if grip_override is None else grip_override=='two'
  src_name=source_name or names[kind]+'_v1';meta=json.loads((OUT/'Exports'/(src_name+'.json')).read_text());t=load(OUT/'Exports'/(src_name+'.glb'),int(meta['fps']));s=bpy.context.scene;N=round(meta['duration']*meta['fps']);s.frame_start=0;s.frame_end=N;p=t.pose.bones
  body=[o for o in s.objects if o.type=='MESH'];source={}
@@ -65,7 +71,7 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
  ref=refs['guard'] if kind=='guard' else refs['two'] if two_hand else refs['one'];grip={side:m.copy() for side,m in ref['g'].items()};hscale=ref['h'].to_scale()
  if kind=='attack':grip['Right'].translation.y=-.10
  if kind=='roll':grip['Right']=refs['roll'][0]['WeaponSocket'].inverted()@refs['roll'][0]['RightHand'];grip['Right'].translation.y-=.04
- if two_hand:grip['Right'].translation.y=-.04;grip['Left'].translation.y=-.39
+ if two_hand and not idle:grip['Right'].translation.y=-.04;grip['Left'].translation.y=-.39
  rig,targets=make_ik(t,source)
  if kind=='run' and not two_hand:
   for suffix in ('Arm','ForeArm','Hand'):
@@ -74,7 +80,7 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
  desired={};reach=[]
  for f in range(N+1):
   src=source[f];ch=src['Spine2'];u=f/max(N,1);wave=math.sin(2*math.pi*u)
-  if kind in ('walk','run'):H=ch@(refs['two']['carry'] if kind=='run' else ref['carry']);H.translation+=Vector((0,0,.006*wave))
+  if kind in ('walk','run'):H=ch@(refs['two']['carry'] if kind=='run' else ref['carry']);H.translation+=Vector((0,0,0 if idle else .006*wave))
   elif kind=='guard':H=mixmat(ch@refs['two']['carry'],ch@refs['guard']['carry'],smooth(u/.50))
   elif kind=='attack':
    # Source footwork, chest rotation and cadence drive a fitted heavy-blade arc.
@@ -85,10 +91,19 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
    aim=(right*aimlocal.x+front*aimlocal.y+up*aimlocal.z).normalized();q=refs['one']['h'].to_quaternion();q=(q@Vector((0,1,0))).rotation_difference(aim)@q;H=Matrix.LocRotScale(wrist,q,hscale);H.translation-=H.to_3x3()@grip['Right'].translation
   else:
    rr=refs['roll'][round(u*25)];offset=src['Hips'].translation-rr['Hips'].translation+Vector((-.10,0,0));H=rr['WeaponSocket'].copy();H.translation+=offset;H.translation+=H.to_3x3()@Vector((0,.04,0))
+  if kind=='walk' and carry_mode=='idle-root':
+   q=ref['h'].to_quaternion().slerp(H.to_quaternion(),FOLLOW);H=Matrix.LocRotScale(ref['h'].translation+(ch.translation-ref['ch'].translation),q,hscale)
+  if kind=='walk' and (carry_raise[0] or carry_raise[1]):
+   fr=(ch.to_quaternion()@ref['ch'].to_quaternion().inverted())@Vector((0,-1,0));fr.z=0;fr.normalize();rt=Vector((fr.y,-fr.x,0));pivot=(H@grip['Right']).translation
+   blade=H.to_quaternion()@Vector((0,1,0));best=None
+   for sgn in (1,-1):
+    R=Quaternion(rt,math.radians(sgn*carry_raise[0]));z=(R@blade).z
+    if best is None or z>best[0]:best=(z,R)
+   R=best[1];H=Matrix.Translation(pivot)@R.to_matrix().to_4x4()@Matrix.Translation(-pivot)@H;H.translation.z+=carry_raise[1]
   if kind=='roll':
    wrist=(H@grip['Right']).translation;q=Quaternion(Vector((0,0,1)),math.radians(-25*smooth((u-.30)/.12)*(1-smooth((u-.56)/.08))))@H.to_quaternion();H=Matrix.LocRotScale(wrist,q,hscale);H.translation-=H.to_3x3()@grip['Right'].translation
   # Move the rear shaft clear of the cuirass; supporting palm remains lower.
-  if two_hand or kind=='run':
+  if (two_hand or kind=='run') and not idle:
    front=(ch.to_quaternion()@ref['ch'].to_quaternion().inverted())@Vector((0,-1,0));front.z=0;front.normalize();H.translation+=front*.10
   if two_hand or kind=='run':
    blade=H.to_quaternion()@Vector((0,1,0))
@@ -121,7 +136,8 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
    elif kind=='roll':
     rr=refs['roll'][round(u*25)];hand=rr['LeftHand'].copy();hand.translation+=src['Hips'].translation-rr['Hips'].translation
    else:
-    hand=ch@refs['one']['left'];hand.translation+=Vector((.06,-.015*wave,-.045))
+    hand=ch@refs['one']['left']
+    if not idle:hand.translation+=Vector((.06,-.015*wave,-.045))
    shoulder=src[side+'Arm'].translation;a=t.data.bones[side+'Arm'].head_local;b=t.data.bones[side+'ForeArm'].head_local;c=t.data.bones[side+'Hand'].head_local;limit=((a-b).length+(b-c).length)*.97
    if side not in sides and (hand.translation-shoulder).length>limit:hand.translation=shoulder+(hand.translation-shoulder).normalized()*limit
    desired[f][side]=hand
@@ -223,7 +239,7 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
  for c in mutes:c.mute=False
  s.frame_set(0);s['session_owner']=OWNER;s['weapon_fit']='Native Blender two-bone IK; approved palm/finger grip references; source lowerbody preserved'
  bpy.ops.wm.save_as_mainfile(filepath=str(path.with_suffix('.blend')),compress=True)
- meta.update({'name':name,'sourceFPS':source_fps,'fps':s.render.fps,'bakeSampleRate':s.render.fps,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest(),'weaponAdapted':True,'gripMode':'two-handed' if two_hand else 'one-handed','maxPalmTargetError':{side:max(r[side] for r in reach) for side in ('Right','Left')}});path.with_suffix('.json').write_text(json.dumps(meta,indent=2));print(json.dumps(meta))
+ meta.update({'name':name,'sourceFPS':source_fps,'fps':s.render.fps,'bakeSampleRate':s.render.fps,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest(),'weaponAdapted':True,'gripMode':'two-handed' if two_hand else 'one-handed','carryMode':carry_mode or 'walk-ref','carryRaise':list(carry_raise),'maxPalmTargetError':{side:max(r[side] for r in reach) for side in ('Right','Left')}});path.with_suffix('.json').write_text(json.dumps(meta,indent=2));print(json.dumps(meta))
 
 def run(kinds=('walk','run','roll','attack'),version='v2',grip_override=None,output_name=None):
  refs={'one':reference('WalkOneHand_Blender_v2r2.glb'),'two':reference('RunTwoHand_Blender_polish_v2.glb'),'guard':reference('GuardReadyTwoHand_Blender_v4r4.glb',True)}

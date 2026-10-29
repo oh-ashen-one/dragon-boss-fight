@@ -80,12 +80,12 @@ def setup_scene():
     floor = bpy.context.active_object
     floor.name = "ReviewFloorGrid"
     for loop in floor.data.uv_layers.active.data:
-        loop.uv = (loop.uv[0] * 6, loop.uv[1] * 6)  # one generated grid image per metre
+        loop.uv = (loop.uv[0] * 14.4, loop.uv[1] * 14.4)  # 4 tiles per 1/2.4 m: 10.4 cm rig = 25 game cm tiles
     image = bpy.data.images.new("ReviewGrid", 64, 64)
     px = []
     for y in range(64):
         for x in range(64):
-            v = .23 if ((x // 16) + (y // 16)) % 2 else .17  # 4 x 4 checker per metre = 25 cm tiles
+            v = .23 if ((x // 16) + (y // 16)) % 2 else .17
             px += [v, v, v * 1.05, 1.0]
     image.pixels.foreach_set(px)
     mat = bpy.data.materials.new("ReviewFloor")
@@ -171,17 +171,9 @@ def render_job(job):
         final.append(p)
     attach_sword(display)
     hips = display.pose.bones["Hips"]
-    # Views are relative to the knight's facing in the first frame (hips -> toes), not world axes.
-    for b in display.pose.bones:
-        if b.name in final[0]:
-            b.matrix_basis = final[0][b.name]
-    bpy.context.view_layer.update()
-    mw = display.matrix_world
-    toes = (mw @ display.pose.bones["LeftToeBase"].head + mw @ display.pose.bones["RightToeBase"].head) / 2
-    heels = (mw @ display.pose.bones["LeftFoot"].head + mw @ display.pose.bones["RightFoot"].head) / 2
-    fwd = toes - heels
-    fwd.z = 0
-    fwd = fwd.normalized() if fwd.length > 1e-6 else Vector((0, -1, 0))
+    # Round 1: one fixed facing for every clip (the approved 1H idle's mesh forward), so front/side are
+    # true mesh-space views and lateral motion reads as lateral regardless of the clip's foot direction.
+    fwd = CANON_FWD.copy()
     right = Vector((fwd.y, -fwd.x, 0))  # knight's right when facing fwd with Z up
     views = {"front": fwd * 3 + Vector((0, 0, .4)), "side": right * 3 + Vector((0, 0, .4)),
              "threequarter": (fwd * 3 + right * 2) + Vector((0, 0, .5))}
@@ -203,6 +195,19 @@ def render_job(job):
     print("RENDERED", job["label"], len(final), flush=True)
 
 
+def canonical_forward():
+    clear()
+    arm, _ = import_glb(ROOT / "Local/CustomuseAssets/Polish20261025/knight/IdleOneHand_Blender_v2r4.glb")
+    bpy.context.scene.frame_set(0)
+    mw = arm.matrix_world; pb = arm.pose.bones
+    toes = (mw @ pb["LeftToeBase"].head + mw @ pb["RightToeBase"].head) / 2
+    heels = (mw @ pb["LeftFoot"].head + mw @ pb["RightFoot"].head) / 2
+    f = toes - heels; f.z = 0
+    return f.normalized()
+
+
+CANON_FWD = canonical_forward()
+print("CANONICAL_FORWARD", tuple(round(x, 3) for x in CANON_FWD), flush=True)
 for job in JOBS:
     if (OUT / "frames" / job["label"] / "threequarter_0000.png").exists() and not job.get("force"):
         print("SKIP", job["label"])

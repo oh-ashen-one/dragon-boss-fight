@@ -1,0 +1,414 @@
+{
+ "canonical": {
+  "one": {
+   "bladeAxis": [
+    0.241,
+    0.132,
+    0.961
+   ],
+   "ankleDistanceCm": 61.9
+  },
+  "two": {
+   "bladeAxis": [
+    -0.15,
+    0.928,
+    0.342
+   ],
+   "ankleDistanceCm": 61.9
+  }
+ },
+ "clips": {
+  "Knight_BackpedalGuardTwoHand_v3": {
+   "grip": "two",
+   "duration": 1.2,
+   "startCarryDeg": 6.3,
+   "endCarryDeg": 5.9,
+   "startAnkleCm": 68.9,
+   "endAnkleCm": 69.1,
+   "travelAxisOffLateralDeg": 90.0,
+   "travelSide": "right",
+   "stanceMedianCmS": 60.0
+  },
+  "Knight_BackpedalGuardTwoHand_v3c": {
+   "grip": "two",
+   "duration": 1.2,
+   "startCarryDeg": 4.9,
+   "endCarryDeg": 4.9,
+   "startAnkleCm": 61.8,
+   "endAnkleCm": 61.8,
+   "travelAxisOffLateralDeg": 90.0,
+   "travelSide": "right",
+   "stanceMedianCmS": 60.0
+  },
+  "Knight_BackpedalGuard_v3": {
+   "grip": "one",
+   "duration": 1.2,
+   "startCarryDeg": 6.8,
+   "endCarryDeg": 6.6,
+   "startAnkleCm": 68.9,
+   "endAnkleCm": 69.1,
+   "travelAxisOffLateralDeg": 90.0,
+   "travelSide": "right",
+   "stanceMedianCmS": 60.0
+  },
+  "Knight_BackpedalGuard_v3c": {
+   "grip": "one",
+   "duration": 1.2,
+   "startCarryDeg": 6.9,
+   "endCarryDeg": 6.9,
+   "startAnkleCm": 61.8,
+   "endAnkleCm": 61.8,
+   "travelAxisOffLateralDeg": 90.0,
+   "travelSide": "right",
+   "stanceMedianCmS": 60.0
+  },
+  "Knight_BlinkLeft_v3": {
+   "grip": "one",
+   "duration": 0.667,
+   "startCarryDeg": 10.9,
+   "endCarryDeg": 10.9,
+   "startAnkleCm": 33.5,
+   "endAnkleCm": 33.5,
+   "travelAxisOffLateralDeg": 6.4,
+   "travelSide": "right",
+   "stanceMedianCmS": 29.7
+  },
+  "Knight_BlinkRight_v3": {
+   "grip": "one",
+   "duration": 0.667,
+   "startCarryDeg": 10.9,
+   "endCarryDeg": 10.9,
+   "startAnkleCm": 32.5,
+   "endAnkleCm": 32.5,
+   "travelAxisOffLateralDeg": 7.7,
+   "travelSide": "left",
+   "stanceMedianCmS": 30.4
+  },
+  "Knight_StaggerBackTwoHand_v3": {
+   "grip": "two",
+   "duration": 0.967,
+   "startCarryDeg": 4.8,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StaggerBack_v3": {
+   "grip": "one",
+   "duration": 0.967,
+   "startCarryDeg": 1.5,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StaggerFrontTwoHand_v3": {
+   "grip": "two",
+   "duration": 0.7,
+   "startCarryDeg": 13.4,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StaggerFront_v3": {
+   "grip": "one",
+   "duration": 0.7,
+   "startCarryDeg": 1.9,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StaggerLeftTwoHand_v3": {
+   "grip": "two",
+   "duration": 0.7,
+   "startCarryDeg": 2.7,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StaggerLeft_v3": {
+   "grip": "one",
+   "duration": 0.7,
+   "startCarryDeg": 10.8,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StaggerRightTwoHand_v3": {
+   "grip": "two",
+   "duration": 0.7,
+   "startCarryDeg": 5.5,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StaggerRight_v3": {
+   "grip": "one",
+   "duration": 0.7,
+   "startCarryDeg": 10.1,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Knight_StrafeLeftTwoHand_v3": {
+   "grip": "two",
+   "duration": 1.3,
+   "startCarryDeg": 5.3,
+   "endCarryDeg": 5.3,
+   "startAnkleCm": 113.3,
+   "endAnkleCm": 113.3,
+   "travelAxisOffLateralDeg": 0.2,
+   "travelSide": "left",
+   "stanceMedianCmS": 138.4
+  },
+  "Knight_StrafeLeftTwoHand_v3c": {
+   "grip": "two",
+   "duration": 1.3,
+   "startCarryDeg": 6.5,
+   "endCarryDeg": 6.5,
+   "startAnkleCm": 50.1,
+   "endAnkleCm": 50.1,
+   "travelAxisOffLateralDeg": 0.2,
+   "travelSide": "left",
+   "stanceMedianCmS": 138.4
+  },
+  "Knight_StrafeLeft_v3": {
+   "grip": "one",
+   "duration": 1.3,
+   "startCarryDeg": 12.8,
+   "endCarryDeg": 12.8,
+   "startAnkleCm": 113.3,
+   "endAnkleCm": 113.3,
+   "travelAxisOffLateralDeg": 0.2,
+   "travelSide": "left",
+   "stanceMedianCmS": 138.4
+  },
+  "Knight_StrafeLeft_v3c": {
+   "grip": "one",
+   "duration": 1.3,
+   "startCarryDeg": 13.9,
+   "endCarryDeg": 13.9,
+   "startAnkleCm": 50.1,
+   "endAnkleCm": 50.1,
+   "travelAxisOffLateralDeg": 0.2,
+   "travelSide": "left",
+   "stanceMedianCmS": 138.4
+  },
+  "Knight_StrafeRightTwoHand_v3": {
+   "grip": "two",
+   "duration": 1.133,
+   "startCarryDeg": 5.3,
+   "endCarryDeg": 5.3,
+   "startAnkleCm": 113.3,
+   "endAnkleCm": 113.3,
+   "travelAxisOffLateralDeg": 0.3,
+   "travelSide": "right",
+   "stanceMedianCmS": 155.5
+  },
+  "Knight_StrafeRightTwoHand_v3c": {
+   "grip": "two",
+   "duration": 1.133,
+   "startCarryDeg": 6.8,
+   "endCarryDeg": 6.8,
+   "startAnkleCm": 47.5,
+   "endAnkleCm": 47.5,
+   "travelAxisOffLateralDeg": 0.3,
+   "travelSide": "right",
+   "stanceMedianCmS": 155.5
+  },
+  "Knight_StrafeRight_v3": {
+   "grip": "one",
+   "duration": 1.133,
+   "startCarryDeg": 12.8,
+   "endCarryDeg": 12.8,
+   "startAnkleCm": 113.3,
+   "endAnkleCm": 113.3,
+   "travelAxisOffLateralDeg": 0.3,
+   "travelSide": "right",
+   "stanceMedianCmS": 155.5
+  },
+  "Knight_StrafeRight_v3c": {
+   "grip": "one",
+   "duration": 1.133,
+   "startCarryDeg": 13.7,
+   "endCarryDeg": 13.7,
+   "startAnkleCm": 47.5,
+   "endAnkleCm": 47.5,
+   "travelAxisOffLateralDeg": 0.3,
+   "travelSide": "right",
+   "stanceMedianCmS": 155.5
+  },
+  "Knight_StrafeRunLeftTwoHand_v3": {
+   "grip": "two",
+   "duration": 0.667,
+   "startCarryDeg": 6.4,
+   "endCarryDeg": 6.4,
+   "startAnkleCm": 33.5,
+   "endAnkleCm": 33.5,
+   "travelAxisOffLateralDeg": 0.4,
+   "travelSide": "left",
+   "stanceMedianCmS": 411.3
+  },
+  "Knight_StrafeRunLeftTwoHand_v3c": {
+   "grip": "two",
+   "duration": 0.667,
+   "startCarryDeg": 6.4,
+   "endCarryDeg": 6.4,
+   "startAnkleCm": 33.1,
+   "endAnkleCm": 33.1,
+   "travelAxisOffLateralDeg": 0.4,
+   "travelSide": "left",
+   "stanceMedianCmS": 411.3
+  },
+  "Knight_StrafeRunLeft_v3": {
+   "grip": "one",
+   "duration": 0.667,
+   "startCarryDeg": 10.9,
+   "endCarryDeg": 10.9,
+   "startAnkleCm": 33.5,
+   "endAnkleCm": 33.5,
+   "travelAxisOffLateralDeg": 0.4,
+   "travelSide": "left",
+   "stanceMedianCmS": 411.3
+  },
+  "Knight_StrafeRunLeft_v3c": {
+   "grip": "one",
+   "duration": 0.667,
+   "startCarryDeg": 10.7,
+   "endCarryDeg": 10.7,
+   "startAnkleCm": 33.1,
+   "endAnkleCm": 33.1,
+   "travelAxisOffLateralDeg": 0.4,
+   "travelSide": "left",
+   "stanceMedianCmS": 411.3
+  },
+  "Knight_StrafeRunRightTwoHand_v3": {
+   "grip": "two",
+   "duration": 0.667,
+   "startCarryDeg": 8.6,
+   "endCarryDeg": 8.6,
+   "startAnkleCm": 32.5,
+   "endAnkleCm": 32.5,
+   "travelAxisOffLateralDeg": 1.4,
+   "travelSide": "right",
+   "stanceMedianCmS": 412.0
+  },
+  "Knight_StrafeRunRightTwoHand_v3c": {
+   "grip": "two",
+   "duration": 0.667,
+   "startCarryDeg": 8.6,
+   "endCarryDeg": 8.6,
+   "startAnkleCm": 32.0,
+   "endAnkleCm": 32.0,
+   "travelAxisOffLateralDeg": 1.4,
+   "travelSide": "right",
+   "stanceMedianCmS": 412.0
+  },
+  "Knight_StrafeRunRight_v3": {
+   "grip": "one",
+   "duration": 0.667,
+   "startCarryDeg": 10.9,
+   "endCarryDeg": 10.9,
+   "startAnkleCm": 32.5,
+   "endAnkleCm": 32.5,
+   "travelAxisOffLateralDeg": 1.4,
+   "travelSide": "right",
+   "stanceMedianCmS": 412.0
+  },
+  "Knight_StrafeRunRight_v3c": {
+   "grip": "one",
+   "duration": 0.667,
+   "startCarryDeg": 10.7,
+   "endCarryDeg": 10.7,
+   "startAnkleCm": 32.0,
+   "endAnkleCm": 32.0,
+   "travelAxisOffLateralDeg": 1.4,
+   "travelSide": "right",
+   "stanceMedianCmS": 412.0
+  },
+  "Sourced_RollAttack_v3": {
+   "grip": "one",
+   "duration": 2.2,
+   "startCarryDeg": 0.0,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 56.8,
+   "endAnkleCm": 61.9,
+   "maxTipStepCmPerFrame30": 115.8,
+   "maxTipStepAtFrame": 32,
+   "medianTipStepCm": 30.8,
+   "tipStepsAroundJoinCm": [
+    11.3,
+    11.7,
+    12.9,
+    13.0,
+    7.8,
+    17.7,
+    33.1,
+    45.3,
+    44.3,
+    21.0,
+    37.3,
+    96.6,
+    115.8,
+    90.6
+   ]
+  },
+  "Sourced_RollAttack_v2": {
+   "grip": "one",
+   "duration": 2.2,
+   "startCarryDeg": 0.0,
+   "endCarryDeg": 78.4,
+   "startAnkleCm": 56.8,
+   "endAnkleCm": 123.2,
+   "maxTipStepCmPerFrame30": 116.0,
+   "maxTipStepAtFrame": 32,
+   "medianTipStepCm": 30.8,
+   "tipStepsAroundJoinCm": [
+    11.3,
+    11.7,
+    12.9,
+    33.7,
+    102.7,
+    61.2,
+    16.3,
+    12.5,
+    3.6,
+    18.9,
+    55.9,
+    102.5,
+    116.0,
+    90.6
+   ]
+  },
+  "GripToTwoHand_Blender_polish_v2": {
+   "grip": "two",
+   "duration": 0.5,
+   "startCarryDeg": 65.5,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "GripToOneHand_Blender_polish_v2": {
+   "grip": "one",
+   "duration": 0.5,
+   "startCarryDeg": 65.5,
+   "endCarryDeg": 0.0,
+   "startAnkleCm": 61.9,
+   "endAnkleCm": 61.9
+  },
+  "Mixamo_WalkTwoHand_v17": {
+   "grip": "two",
+   "duration": 1.1,
+   "startCarryDeg": 22.3,
+   "endCarryDeg": 22.3,
+   "startAnkleCm": 33.3,
+   "endAnkleCm": 33.3
+  },
+  "Mixamo_Walk_v17": {
+   "grip": "one",
+   "duration": 1.1,
+   "startCarryDeg": 12.7,
+   "endCarryDeg": 12.7,
+   "startAnkleCm": 33.3,
+   "endAnkleCm": 33.3
+  }
+ }
+}

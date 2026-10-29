@@ -964,7 +964,7 @@ float AVeyrKnight::LockOnSpeedCap(FName Clip) const
     // Strafes and backpedal play near their measured stance-foot speed so feet do not skate
     // or blur: lateral walk <= 1.2x nominal (cap 240), strafe run <= 1.1x (cap 580),
     // backpedal 100 cm/s (approved loop nominal 59.9 cm/s plays at 1.67x).
-    if(Clip==FName(TEXT("Backpedal")))return 100.f;
+    if(Clip.ToString().StartsWith(TEXT("Backpedal")))return 100.f;
     const float Nominal=VisualClipSpeed(Clip);
     const FString Name=Clip.ToString();
     if(Name.StartsWith(TEXT("StrafeRun")))return Nominal>1.f?FMath::Min(580.f,Nominal*1.1f):450.f;
@@ -981,7 +981,9 @@ FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
         const TCHAR* Grip=bTwoHanded?TEXT("TwoHand"):TEXT("");
         const FName Walk=bTwoHanded?TEXT("WalkTwoHand"):TEXT("Walk");
         FName Pick=NAME_None;
-        if(LockOnMoveDirection==1)Pick=PickLockOnClip(TEXT("Backpedal"),Walk);
+        // Guarded backpedals (round 1): own clip per grip so the sword never changes grip; approved Backpedal is the fallback.
+        if(LockOnMoveDirection==1)Pick=PickLockOnClip(bTwoHanded?FName(TEXT("BackpedalGuardTwoHand")):FName(TEXT("BackpedalGuard")),TEXT("BackpedalGuard"));
+        if(LockOnMoveDirection==1&&Pick.IsNone())Pick=PickLockOnClip(TEXT("Backpedal"),Walk);
         else if(LockOnMoveDirection>=2)
         {
             const TCHAR* Side=LockOnMoveDirection==2?TEXT("Left"):TEXT("Right");

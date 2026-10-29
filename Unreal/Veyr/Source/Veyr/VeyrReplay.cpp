@@ -1875,11 +1875,11 @@ bool AVeyrReplay::DriveLockOnInputs()
     if(ReplayMode!=TEXT("lockon"))return false;
     struct FTrial{const TCHAR* Name;int32 Dir;bool Sprint,Two;const TCHAR* Clip;};
     static const FTrial Trials[]={
-        {TEXT("back_one_hand"),1,false,false,TEXT("Backpedal")},{TEXT("left_one_hand"),2,false,false,TEXT("StrafeLeft")},
+        {TEXT("back_one_hand"),1,false,false,TEXT("BackpedalGuard")},{TEXT("left_one_hand"),2,false,false,TEXT("StrafeLeft")},
         {TEXT("right_one_hand"),3,false,false,TEXT("StrafeRight")},{TEXT("sprint_left_one_hand"),2,true,false,TEXT("StrafeRunLeft")},
         {TEXT("sprint_right_one_hand"),3,true,false,TEXT("StrafeRunRight")},{TEXT("left_two_hand"),2,false,true,TEXT("StrafeLeftTwoHand")},
         {TEXT("right_two_hand"),3,false,true,TEXT("StrafeRightTwoHand")},{TEXT("sprint_right_two_hand"),3,true,true,TEXT("StrafeRunRightTwoHand")},
-        {TEXT("back_two_hand_falls_back_to_one_hand_backpedal"),1,false,true,TEXT("Backpedal")},{TEXT("forward_two_hand_walk"),0,false,true,TEXT("WalkTwoHand")}};
+        {TEXT("back_two_hand"),1,false,true,TEXT("BackpedalGuardTwoHand")},{TEXT("forward_two_hand_walk"),0,false,true,TEXT("WalkTwoHand")}};
     static const TCHAR* LabNames[5]={TEXT("StaggerFront"),TEXT("StaggerBack"),TEXT("StaggerLeft"),TEXT("StaggerRight"),TEXT("StaggerFrontTwoHand")};
     static const float LabYaw[5]={0.f,180.f,-90.f,90.f,0.f};
     const int32 NumTrials=UE_ARRAY_COUNT(Trials);
@@ -1924,31 +1924,66 @@ bool AVeyrReplay::DriveLockOnInputs()
             TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),T.Name);R->SetStringField(TEXT("expectedClip"),T.Clip);
             R->SetNumberField(TEXT("observedSeconds"),LockOnStageSeconds);R->SetNumberField(TEXT("stageSeconds"),Elapsed-LockOnStageStarted);R->SetBoolField(TEXT("passed"),true);
             LockOnTrials.Add(MakeShared<FJsonValueObject>(R));
-            ++LockOnStage;LockOnStageSeconds=0;LockOnStageStarted=Elapsed;bLockOnShot=false;
+            ++LockOnStage;LockOnStageSeconds=0;LockOnStageStarted=Elapsed;bLockOnShot=false;LockOnBlinksBefore=Knight->BlinkDodges;
         }
         else if(Elapsed-LockOnStageStarted>40.f)Finish(false,FString(TEXT("lock-on trial never sampled its expected clip for 1.2 s: "))+T.Name);
         return true;
     }
+    // Blink direction check: Space with the lateral key held, as a player would; lateral displacement measured.
+    if(LockOnBlink<2)
+    {
+        const bool Left=LockOnBlink==0;
+        if(Knight->IsTwoHanded()){Input(FVector::ZeroVector,false);if(Ready&&!Knight->IsChangingGrip())Knight->ToggleGrip();return true;}
+        if(LockOnBlinkPhase==0)
+        {
+            Input(FVector::ZeroVector,false);
+            if(!Ready||Threat||Knight->Stamina<40.f||Elapsed-LockOnStageStarted<.6f)return true;
+            LockOnBlinkStart=Feet;LockOnBlinkRight=Knight->GetActorRightVector().GetSafeNormal2D();
+            Input(Right*(Left?-1.f:1.f),false);LockOnBlinkPhase=1;return true;
+        }
+        if(LockOnBlinkPhase==1){Knight->TryDirectionalBlink();Input(FVector::ZeroVector,false);LockOnBlinkPhase=2;LockOnBlinkShots=0;return true;}
+        Input(FVector::ZeroVector,false);
+        const FName Want=Left?FName(TEXT("BlinkLeft")):FName(TEXT("BlinkRight"));
+        const bool InBlink=Knight->Action==(Left?EVeyrKnightAction::BlinkLeft:EVeyrKnightAction::BlinkRight);
+        if(InBlink&&Knight->RequestedPresentationClip==Want&&LockOnBlinkShots==0&&Knight->GetActionElapsed()>=.10f){LockOnBlinkShots=1;Event(FString(TEXT("lockon_blink_departure_"))+(Left?TEXT("left"):TEXT("right")));}
+        if(InBlink&&LockOnBlinkShots==1&&Knight->GetActionElapsed()>=.40f){LockOnBlinkShots=2;Event(FString(TEXT("lockon_blink_arrival_"))+(Left?TEXT("left"):TEXT("right")));}
+        if(Ready&&LockOnBlinkPhase==2&&Elapsed-LockOnStageStarted>.2f&&Knight->BlinkDodges>LockOnBlinksBefore+LockOnBlink)
+        {
+            const float Lateral=FVector::DotProduct(Feet-LockOnBlinkStart,LockOnBlinkRight);
+            const bool Ok=Left?Lateral<-100.f:Lateral>100.f;
+            TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),Left?TEXT("blink_left_direction"):TEXT("blink_right_direction"));
+            R->SetStringField(TEXT("expectedClip"),Want.ToString());R->SetNumberField(TEXT("lateralDisplacementCmPositiveRight"),Lateral);R->SetBoolField(TEXT("passed"),Ok);
+            LockOnTrials.Add(MakeShared<FJsonValueObject>(R));if(Ok)++LockOnBlinkPassed;
+            ++LockOnBlink;LockOnBlinkPhase=0;LockOnStageStarted=Elapsed;
+        }
+        else if(Elapsed-LockOnStageStarted>30.f){++LockOnBlink;LockOnBlinkPhase=0;LockOnStageStarted=Elapsed;}
+        if(LockOnBlinkPhase==2&&Knight->Action==EVeyrKnightAction::Ready&&Knight->BlinkDodges==LockOnBlinksBefore+LockOnBlink&&Elapsed-LockOnStageStarted>3.f){LockOnBlinkPhase=0;}
+        return true;
+    }
     // Lab: synthetic unblockable 1 hp hits from four sides (plus one two-handed), Ready state only.
+    // Camera: lock released and the view lifted so the captures show the whole body.
+    if(Knight->bLockedOn)Knight->ToggleLockOn();
+    if(APlayerController* PC=Cast<APlayerController>(Knight->GetController()))
+        PC->SetControlRotation(FRotator(-22.f,Knight->GetActorRotation().Yaw+35.f,0.f));
     if(LockOnLabHit>=5)
     {
         Input(FVector::ZeroVector,false);
         const bool LocoOk=LockOnMaxFacingErrorDeg<=25.f;
-        Finish(LocoOk&&LockOnLabPassed==5,FString::Printf(TEXT("lock-on: %d locomotion trials sampled their clips, max facing error %.1f deg; directional stagger lab %d/5"),NumTrials,LockOnMaxFacingErrorDeg,LockOnLabPassed));
+        Finish(LocoOk&&LockOnLabPassed==5&&LockOnBlinkPassed==2,FString::Printf(TEXT("lock-on: %d locomotion trials sampled their clips, max facing error %.1f deg; blink direction %d/2; directional stagger lab %d/5"),NumTrials,LockOnMaxFacingErrorDeg,LockOnBlinkPassed,LockOnLabPassed));
         return true;
     }
     const bool WantTwo=LockOnLabHit==4;
     Input(FVector::ZeroVector,false);
     if(bLockOnLabAwaiting)
     {
-        if(Knight->Action==EVeyrKnightAction::Stagger&&Knight->bRequestedPresentationClipSampled&&Knight->RequestedPresentationClip==LockOnLabExpected)
+        if(Knight->Action==EVeyrKnightAction::Stagger&&Knight->bRequestedPresentationClipSampled&&Knight->RequestedPresentationClip==LockOnLabExpected&&Knight->GetActionElapsed()>=.22f)
         {
             TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),TEXT("lab_hit"));R->SetStringField(TEXT("expectedClip"),LockOnLabExpected.ToString());
             R->SetNumberField(TEXT("sourceYawDeg"),Knight->LastStaggerSourceYaw);R->SetNumberField(TEXT("actionDuration"),Knight->GetActionDuration());R->SetBoolField(TEXT("passed"),true);
             LockOnTrials.Add(MakeShared<FJsonValueObject>(R));++LockOnLabPassed;Event(TEXT("lockon_lab_")+LockOnLabExpected.ToString());
             bLockOnLabAwaiting=false;++LockOnLabHit;
         }
-        else if(Elapsed-LockOnLastHitAt>.5f)
+        else if(Elapsed-LockOnLastHitAt>.8f)
         {
             TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),TEXT("lab_hit"));R->SetStringField(TEXT("expectedClip"),LockOnLabExpected.ToString());
             R->SetStringField(TEXT("observedClip"),Knight->RequestedPresentationClip.ToString());R->SetStringField(TEXT("lastStaggerClip"),Knight->LastStaggerClip.ToString());

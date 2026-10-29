@@ -183,6 +183,8 @@ private:
     bool DriveLockOnInputs();
     TSharedPtr<FJsonObject> LockOnEvidence() const;
     int32 LockOnStage=0,LockOnLabHit=0,LockOnLabPassed=0;
+    int32 LockOnBlink=0,LockOnBlinkPhase=0,LockOnBlinkShots=0,LockOnBlinkPassed=0,LockOnBlinksBefore=0;
+    FVector LockOnBlinkStart=FVector::ZeroVector,LockOnBlinkRight=FVector::RightVector;
     float LockOnStageStarted=0,LockOnStageSeconds=0,LockOnLastHitAt=-10,LockOnMaxFacingErrorDeg=0;
     bool bLockOnLabAwaiting=false,bLockOnShot=false;
     FName LockOnLabExpected=NAME_None;
