@@ -23,6 +23,10 @@ MOVES=(
   "$D/Dragon_Rise_sd_v2r_v3.blend|rise_v3|rise|0"
   "$D/Dragon_IdleLook_sd_v2r_v2.blend|idle_look_v2|idle_look|1"
   "$D/Dragon_IdleLayered_sd_v2r_v2.blend|idle_layered_v2|idle_layered|1"
+  "$D/Dragon_AirHover_sd_v2r_v3.blend|air_hover_v3|air_hover|1"
+  "$D/Dragon_AirLand_sd_v2r_v3.blend|air_land_v3|air_land|0"
+  "$D/Dragon_AirTakeoff_sd_v2r_v3.blend|takeoff3_v3|air_takeoff|0"
+  "$D/Dragon_AirFireDown_sd_v2r_v3.blend|air_fire_down_v3|air_fire_down|0"
 )
 run() {  # blend action move
   if [ "$(pgrep -x Blender | wc -l)" -ge "$CAP" ]; then
@@ -41,3 +45,4 @@ for m in "${MOVES[@]}"; do
   if [ "$loop" = "1" ]; then loops+=(--loop "$move"); fi
 done
 python3 tools/movedata/build_moves.py "${files[@]}" "${loops[@]}" --out Data/dragon "$@"
+python3 tools/movedata/annotate_air.py Data/dragon/moves.json

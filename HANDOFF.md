@@ -104,6 +104,11 @@ Actions (roar ends on the stance: seam 0.00x); `Data/dragon/*.json` rebuilt; 3 t
 cameras; Higgsfield media ids hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1), reader trained (9000 steps, 172 min total, held-out median front 7.31 px / side 6.68 px; `reader/reader.pt`) on the fork branch
 `air-reader` (`~/video2rig-air`, opt-in `air` key in creature.json). Prompts: `dragon-air/clips/air_fire_down|air_land|air_hover|takeoff3.prompt.txt`.
 
+**Airborne clips**: `air_hover`, `air_land`, `takeoff3`, `air_fire_down` fitted with the airborne reader and refined (`Dragon_AirHover|AirLand|AirTakeoff|AirFireDown_sd_v2r_v3.blend`,
+Actions `air_hover_v3`, `air_land_v3`, `takeoff3_v3`, `air_fire_down_v3`). Checks are WARN (no panel check with perspective cameras); fits: 2.57, 4.84, 5.53, 4.31 px median. The landing and take-off fits
+are weak (outline 0.61 to 0.71): air_land's touchdown is authored, takeoff3 overshoots the hover by 50 cm. Details: `docs/canitcode-enhancements.md` "Airborne clips". Move data has the four air moves
+(`floor_metrics_valid: false`; fire_down window 3.333 to 6.667 s).
+
 **Next steps**
 1. Flying start picture for takeoff and land: render the start picture with the body off the floor (and a reader trained on it, about 3 h of MPS), then
    regenerate takeoff and a real tall hop. Until then takeoff, fly-hover stay on the hand-keyed Blender versions in the review checkout.

@@ -688,3 +688,24 @@ Project `Local/video2rig/dragon-air/` (sibling of `dragon/`; rig exported from t
   a wider pose range, a taller frame (the dragon is smaller in it) and a perspective camera. Expect fits near 3 to 5 px median rather than 2 to 3.
 - Prompts (`dragon-air/clips/*.prompt.txt`, notes in `README-air-prompts.txt`): `air_fire_down`, `air_land`, `air_hover`, `takeoff3` (start = ground picture, end = hover picture).
   Higgsfield media ids: hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1.
+
+### Airborne clips (2026-10-29): air_hover, air_land, takeoff3, air_fire_down
+
+Four Seedance 2.5 clips from the hover and ground start pictures (media ids hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1; air_land has the
+ground picture as end image, takeoff3 starts on it and ends on the hover picture). Credits recorded 35 each (5 s rate; the 6 s air_land and 8 s air_fire_down to verify). Provenance json
+beside the clips in `Local/video2rig/dragon-air/clips/`; jobs 119fc989 (air_land), ca748e9a (air_hover), 32d41f49 (takeoff3), 0929c03a (air_fire_down).
+
+| Clip | Check | Fit (airborne reader) | Action |
+| --- | --- | --- | --- |
+| air_hover (5 s, 121 frames) | WARN: no panel check with perspective cameras; centroid proxy 0.14% of height median | median miss 2.57 px, outline 0.74 / 0.88, max twist 26.4 deg, no warnings | `air_hover_v3`, loop, ends blended onto `hover_pose_v1` (fit ends 7.2 rad away) |
+| air_land (6 s, 145 frames) | WARN: start pose covers frame 0 only 0.83; proxy 3.6% median | median miss 4.84 px, outline 0.66 / 0.71, twist 77 deg, a 297 deg bone flip at frame 106, outline down to 0.30 in the landing | `air_land_v3`: legs held from frame 84, feet IK-planted from frame 90 (authored touchdown), last 40 frames crossfaded onto the standing stance |
+| takeoff3 (5 s, 121 frames) | WARN: start pose covers frame 0 only 0.55 / 0.46 (the project start pose is the hover, the clip starts standing); proxy 2.9% | median miss 5.53 px, outline 0.61 / 0.70, twist 69 deg, 112 spikes smoothed | `takeoff3_v3`: stance start standing, end hover; wings clamped to the 1.27x limit (19 and 7 frames); the fit rises to 115 cm and settles at 63.8 cm (overshoots the hover by 50 cm) |
+| air_fire_down (8 s, 193 frames) | WARN: no panel check; proxy not a height test (the body pitches) | median miss 4.31 px, outline 0.81 / 0.83, twist 31 deg, no warnings | `air_fire_down_v3`: body pitch kept (hip-to-chest line +21 to -8 deg over frames 72 to 160), root height pinned to the hover height (the fit sank by 7.4 cm), jaw authored 40 deg open frames 80 to 160 (the fit does not move the jaw), ends on the hover pose |
+
+`video2rig check` only compares orthographic panels, so none of the four got the panel-disagreement test that failed land and takeoff; the verdict is WARN, not OK, and the fits are
+the evidence (the three lower-quality fits are the ones with landing and take-off motion). The panel proxy (`panel_agree.py`: vertical centroid of the dragon mask in each panel against
+frame 0) gives 0.14% for the hover and 2.8 to 3.6% for the three others (the failing ground clips were 1.8 to 2.4% on the real check); it is not equivalent.
+Refinement script: `refine_v3.py` with new options `stance_end`, `floor_feet_npz`, `masks_after_stance`, `end_mode=crossfade`, `touch`, `legs_hold_from`, `plant_ramp`, `pin_root_z`, `limit_abs_cm`, `plant=none`.
+Move data: `air_hover` (loop), `air_land`, `air_takeoff`, `air_fire_down` in `Data/dragon/moves.json` with `airborne` and `floor_metrics_valid: false` (the generator infers the floor from the lowest foot, so
+the shocks, contacts and stances of the air moves are artifacts); annotations: `fire_down_hold` 3.333 to 6.667 s (jaws open, head down: the Niagara window) on `air_fire_down`, `touchdown` at 3.75 s on `air_land`.
+Review page: section "Airborne" (renders `AH`, `AL`, `TK`, `FD`, 0 = raw fit, 1 = refined; takeoff3 on an extra-tall camera because the fit rises to 1.15 m).

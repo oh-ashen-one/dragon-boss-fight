@@ -12,7 +12,11 @@
   "land": [],
   "rise": [],
   "idle_look": [],
-  "idle_layered": []
+  "idle_layered": [],
+  "air_hover": [],
+  "air_land": [],
+  "air_takeoff": [],
+  "air_fire_down": []
  },
  "steps": []
 }
