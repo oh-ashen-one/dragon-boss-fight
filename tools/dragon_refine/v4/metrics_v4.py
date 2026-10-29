@@ -22,6 +22,9 @@ def beat(mf, wf, BH, window=None, P=24):
     lc = C.lag_corr(vw, ab)
     best = max(lc, key=lambda k: abs(lc[k]))
     best04 = max((k for k in lc if 0 <= k <= 4), key=lambda k: abs(lc[k]))
+    # lag_corr pairs vw[t+l] with ab[t]: l < 0 means the wing-tip velocity LEADS the body acceleration (the physical order,
+    # and the critic's "lag 0 to 4 frames" = wing leads body by 0 to 4). Report that window too; the pass uses it.
+    bestw = max((k for k in lc if -4 <= k <= 0), key=lambda k: abs(lc[k]))
     k = int(round(P))
     if len(sp) > k:
         avg = np.convolve(sp, np.ones(k) / k, mode="valid")          # per-beat mean span (in-cycle beat removed)
@@ -30,10 +33,11 @@ def beat(mf, wf, BH, window=None, P=24):
     r = {"window": [a, b], "wingtip_p2p_px": float(np.ptp(wt)), "wingtip_p2p_BH": float(np.ptp(wt) / BH), "period_frames": C.per(wt),
          "body_bob_p2p_px": float(np.ptp(cy)), "body_bob_p2p_BH": float(np.ptp(cy) / BH), "body_period_frames": C.per(cy),
          "corr_best_lag": int(best), "corr_best": lc[best], "corr_lag0to4_best_lag": int(best04), "corr_lag0to4": lc[best04],
+         "corr_wingleads0to4_lead_frames": int(-bestw), "corr_wingleads0to4": lc[bestw],
          "span_drift_beat_avg": drift, "span_raw_range_frac": float(np.ptp(sp) / sp.mean()),
          "span_first_last_frac": float((sp[-1] - sp[0]) / sp.mean())}
     r["pass"] = {"wingtip_p2p>=0.5BH": r["wingtip_p2p_BH"] >= 0.5, "period_18_30": 18 <= r["period_frames"] <= 30,
-                 "bob>=0.06BH": r["body_bob_p2p_BH"] >= 0.06, "corr>=0.6_lag0to4": abs(r["corr_lag0to4"]) >= 0.6, "span_drift<=5%": drift <= 0.05}
+                 "bob>=0.06BH": r["body_bob_p2p_BH"] >= 0.06, "corr>=0.6_lag0to4": abs(r["corr_wingleads0to4"]) >= 0.6, "span_drift<=5%": drift <= 0.05}
     return r
 
 def loop(g_f, m_f, g_l, m_l, mf, P=24):

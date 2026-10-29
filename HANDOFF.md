@@ -147,6 +147,21 @@ are weak (outline 0.61 to 0.71): air_land's touchdown is authored, takeoff3 over
 4. Death needs a second look (median miss 7.07 px, twist 51.7 deg on a foreleg, a leg dips 1.85 cm under the floor in transit); stagger's catch-step and the
    claw swipe's 7.8 cm of head overreach past the straight-neck figure are noted in the doc and uncorrected.
 
+### 2026-10-29 evening (orchestrator, Fable 5.1): coupling convention fixed, rise-from-lying prompt drafted, renders still waiting on the GPU
+
+- `tools/dragon_refine/v4/metrics_v4.py`: the wing/body coupling check scored the lag with the sign reversed. `lag_corr` pairs wing-tip velocity at t+l with body
+  acceleration at t, so l < 0 is "wing leads body" (the physical order and the critic's "lag 0 to 4 frames"); the old 0..4 window measured body-leads-wing. The pass now uses
+  `corr_wingleads0to4` (|r|, lead 0 to 4 frames); the old keys stay in `measure_v4.json` for comparison. Re-measured on CPU: takeoff3_v4 0.45 -> 0.59 (lead 3),
+  air_hover_v4 0.37 -> 0.45 (lead 4), air_fire_down_v4 0.29 -> 0.42 (lead 3), air_land_v4 0.33 (lead 0). All still under 0.6: no pass flips; the 27 of 31 count stands.
+  Sign is negative throughout, as expected (downstroke lifts the body), so the critic's criterion is magnitude.
+- Rise from lying: prompt drafted at `Local/video2rig/dragon/clips/rise_lying.prompt.txt` (first frame = collapse end pose: flat on the belly, chin on the floor, wings
+  half-folded; get-up forelegs first, shake, settle to the standing stance). Still needed, in order: a start picture rendered from `Dragon_Collapse_sd_v2r_v4.blend`'s last
+  frame (Blender counts as a GPU client, so it waits with the renders), one Seedance 2.5 clip (decline the preset recommendation), reader on the lying start (~3 h MPS), fit, refine.
+- `run_queue_v4.sh` renders, the roar membrane check and the blind re-critique are still waiting: another session's video2rig reader trainer has held the GPU at 97-100 % all afternoon.
+  Owner instruction: do not override the gpu_slot utilization gate; wait for a quiet GPU or an explicit go.
+- gpu_slot gotcha: any python whose command line contains "video2rig" (even a data path) is counted as an ML GPU client. Run CPU measurements with a command line that avoids
+  the word (cd into the work dir and pass `.`), or the machine-wide foreign-client cap is consumed by a CPU script.
+
 ## What happened this session
 
 - `docs/canitcode-enhancements.md`: plan, gap analysis, rule checks, clip ledger, every A/B and fit number, the
