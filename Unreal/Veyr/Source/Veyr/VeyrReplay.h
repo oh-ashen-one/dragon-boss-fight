@@ -90,7 +90,7 @@ private:
     // never to the Knight or encounter simulation.
     int32 IntegrationStage=0,IntegrationPhase=0,IntegrationAttempt=0;
     int32 IntegrationCompleted=0,IntegrationMaxKnightFailures=0,IntegrationMaxDragonFailures=0;
-    int32 IntegrationContactsBefore=0,IntegrationHitsBefore=0,IntegrationEchoesBefore=0;
+    int32 IntegrationContactsBefore=0,IntegrationHitsBefore=0,IntegrationEchoesBefore=0,IntegrationHiddenWindowsBefore=0;
     int32 IntegrationRollsBefore=0,IntegrationRollAttacksBefore=0;
     int32 IntegrationLightBefore=0,IntegrationHeavyBefore=0,IntegrationBlinksBefore=0;
     bool bIntegrationBlinkRequested=false;

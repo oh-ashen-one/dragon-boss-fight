@@ -975,7 +975,7 @@ bool AVeyrReplay::DriveIntegrationInputs()
         if(Changed){IntegrationConfiguredAt=Elapsed;return true;}
         if(Elapsed-IntegrationConfiguredAt<.40f)return true;
         IntegrationOrigin=Feet;IntegrationRequestedAt=Elapsed;IntegrationContactsBefore=Dragon->GetSwordContactCount();IntegrationHitsBefore=Knight->HitsTaken;
-        IntegrationEchoesBefore=Knight->BlinkEchoCaptures;IntegrationRollsBefore=Knight->Rolls;IntegrationRollAttacksBefore=Knight->RollAttacks;
+        IntegrationEchoesBefore=Knight->BlinkEchoCaptures;IntegrationHiddenWindowsBefore=Knight->BlinkHiddenWindows;IntegrationRollsBefore=Knight->Rolls;IntegrationRollAttacksBefore=Knight->RollAttacks;
         IntegrationLightBefore=Knight->LightAttacks;IntegrationHeavyBefore=Knight->HeavyAttacks;IntegrationBlinksBefore=Knight->BlinkDodges;
         IntegrationTrial->SetNumberField(TEXT("requestedSeconds"),Elapsed);IntegrationTrial->SetNumberField(TEXT("healthBefore"),Knight->Health);
         IntegrationTrial->SetNumberField(TEXT("staminaBefore"),Knight->Stamina);IntegrationTrial->SetArrayField(TEXT("origin"),VectorJson(Feet));
@@ -1050,10 +1050,20 @@ bool AVeyrReplay::DriveIntegrationInputs()
         const float Travel=FVector::Dist2D(Feet,IntegrationOrigin);
         if(Primary)Knight->ReleasePrimaryAttack();
         const bool PrimaryComplete=!Primary||(Knight->LightAttacks==IntegrationLightBefore+2&&Knight->HeavyAttacks==IntegrationHeavyBefore+1&&(!Trial.Two||IntegrationMaximumSourceTime>3.f));
+        // Blink hidden window: the knight's own action-clock record is the assertion. The frame probe (a rendered frame
+        // inside the 0.16 s window and a visible afterimage) is secondary: missing it only warns when the longest frame
+        // of the blink exceeded the window; with short frames a missing probe still fails.
+        const float HiddenWindow=.16f;
+        const bool RecordedHidden=Knight->BlinkHiddenWindows>IntegrationHiddenWindowsBefore&&Knight->LastBlinkHiddenEndWorld>Knight->LastBlinkHiddenStartWorld;
+        const bool ProbeSeen=bIntegrationHiddenSeen&&bIntegrationEchoVisible;
+        const bool LongFrames=Knight->LastBlinkLongestFrame>HiddenWindow;
+        const bool BlinkRecordOk=RecordedHidden&&(ProbeSeen||LongFrames);
+        if(Blink&&RecordedHidden&&!ProbeSeen&&LongFrames)
+            Event(FString::Printf(TEXT("integration_warn_frame_probe_missed_hidden_window_longest_frame_%.3f"),Knight->LastBlinkLongestFrame),false);
         const bool Complete=bIntegrationAccepted&&PrimaryComplete&&(!MoveTrial||IntegrationObservedSeconds>=RequiredMovementSeconds)&&
             (Trial.Kind!=EExercise::Sprint||IntegrationPeakSpeed>500.f)&&
             (Trial.Kind!=EExercise::Sprint||Trial.Two||bIntegrationRunStop)&&
-            (!Blink||(bIntegrationHiddenSeen&&bIntegrationEchoVisible&&Knight->BlinkEchoCaptures>=IntegrationEchoesBefore+2&&Travel>100.f))&&
+            (!Blink||(BlinkRecordOk&&Knight->BlinkEchoCaptures>=IntegrationEchoesBefore+2&&Travel>100.f))&&
             (Trial.Kind!=EExercise::RollAttack||(bIntegrationRollPrefix&&bIntegrationRollQueued&&Knight->Rolls==IntegrationRollsBefore+1&&Knight->RollAttacks==IntegrationRollAttacksBefore+1));
         IntegrationTrial->SetBoolField(TEXT("passed"),Complete);IntegrationTrial->SetBoolField(TEXT("completedRecovery"),true);
         IntegrationTrial->SetNumberField(TEXT("observedSeconds"),IntegrationObservedSeconds);IntegrationTrial->SetNumberField(TEXT("endedSeconds"),Elapsed);
@@ -1064,7 +1074,16 @@ bool AVeyrReplay::DriveIntegrationInputs()
         IntegrationTrial->SetNumberField(TEXT("maximumSourceSeconds"),IntegrationMaximumSourceTime);
         IntegrationTrial->SetNumberField(TEXT("maximumPlanarSpeedCmPerSecond"),IntegrationPeakSpeed);
         IntegrationTrial->SetBoolField(TEXT("runStopObserved"),bIntegrationRunStop);IntegrationTrial->SetBoolField(TEXT("blinkHiddenObserved"),bIntegrationHiddenSeen);
-        IntegrationTrial->SetBoolField(TEXT("blinkEchoVisible"),bIntegrationEchoVisible);IntegrationTrial->SetNumberField(TEXT("blinkEchoCaptures"),Knight->BlinkEchoCaptures-IntegrationEchoesBefore);
+        IntegrationTrial->SetBoolField(TEXT("blinkEchoVisible"),bIntegrationEchoVisible);
+        if(Blink)
+        {
+            IntegrationTrial->SetBoolField(TEXT("knightRecordedHiddenWindow"),RecordedHidden);
+            IntegrationTrial->SetNumberField(TEXT("knightHiddenStartWorld"),Knight->LastBlinkHiddenStartWorld);
+            IntegrationTrial->SetNumberField(TEXT("knightHiddenEndWorld"),Knight->LastBlinkHiddenEndWorld);
+            IntegrationTrial->SetNumberField(TEXT("longestFrameDuringBlink"),Knight->LastBlinkLongestFrame);
+            IntegrationTrial->SetBoolField(TEXT("hiddenFrameRendered"),Knight->bLastBlinkHiddenFrameRendered);
+            IntegrationTrial->SetBoolField(TEXT("frameProbeWarningOnly"),RecordedHidden&&!ProbeSeen&&LongFrames);
+        }IntegrationTrial->SetNumberField(TEXT("blinkEchoCaptures"),Knight->BlinkEchoCaptures-IntegrationEchoesBefore);
         IntegrationTrials.Add(MakeShared<FJsonValueObject>(IntegrationTrial));Event(TEXT("integration_recovered_")+IntegrationFeature);
         if(!Complete){Finish(false,TEXT("integration feature recovered without required acceptance/VFX/run-stop evidence: ")+IntegrationFeature);return true;}
         ++IntegrationCompleted;++IntegrationStage;IntegrationAttempt=0;IntegrationTrial.Reset();return true;

@@ -156,6 +156,13 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LockOnBlendSeconds=.30f;
     /** Round 2: sword placed from the right hand during pose blends (-VeyrNoWeaponGripLock restores the old path). */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bWeaponGripLockEnabled=true;
+    /** Test record (no gameplay effect): blink hidden windows [0.18, 0.34) s of action time traversed by the action
+     *  clock, with world-time start/end interpolated inside the frame that crossed each edge. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 BlinkHiddenWindows=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LastBlinkHiddenStartWorld=-1.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LastBlinkHiddenEndWorld=-1.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LastBlinkLongestFrame=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bLastBlinkHiddenFrameRendered=false;
     /** Front, back, left, right: hits that selected a directional stagger clip. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") TArray<int32> DirectionalStaggers;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName LastStaggerClip=NAME_None;
@@ -206,6 +213,7 @@ private:
     bool bTransitionInvolvesRunStop=false;
     bool bLockOnStrafingLastFrame=false;
     bool bTransitionLockOnEdge=false;
+    bool bBlinkHiddenStartRecorded=false,bBlinkHiddenEndRecorded=false;
     bool bWeaponGripBlendActive=false;
     float WeaponGripAlpha=1.f;
     FTransform WeaponGripSource=FTransform::Identity,WeaponGripTarget=FTransform::Identity;

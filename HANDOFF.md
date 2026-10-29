@@ -166,256 +166,162 @@ work out of ~/dragon-boss-fight on branch claude-code-enhancements, read HANDOFF
 ```
 
 
+
 ---
 
-## Knight completion 2026-10-28
+## Knight completion (rounds 0-2), state at handoff 2026-10-29
 
 Branch `fable/knight-complete-20261028` (off `origin/claude-code-enhancements` 5e619f6), worktree
-`/Users/midir/veyr-knight-20261028` on the Studio (a separate clone; the dragon checkout was not written).
-Runtime knight definition is now **KnightB v030m**, promoted into `RuntimePolish/DA_Knight` (44 clips: 28 inherited from
-v029 unchanged, 16 new). Nothing here is owner-approved. Built on Opus 5.5 (the first commit's trailer names Fable 5.1
-as requested by the launching agent; later commits name the model that did the work).
+`/Users/midir/veyr-knight-20261028` on the Studio (a separate clone; `/Users/midir/dragon-boss-fight` and the Codex
+checkouts were only read). The head commit is the one that adds this section (see `git log -1`). The Studio rebooted
+at about 10:17 on 2026-10-29 (crash); everything below was re-checked after the reboot.
+
+Nothing in this pass is owner-approved. Approved and owner-selected sources (walk, run, light attack, roll, idle,
+heal, death, guard, approved backpedal loop and step) were only read. After the reboot every pre-existing
+`Content/Characters/Customuse` .uasset still hashes as recorded, with the original guard
+`KnightB/v026/Animations/GuardTwoHand/GuardReadyTwoHand_Blender_v4r4.uasset` at `1d7b990a...efa069`.
+`RuntimePolish/DA_Knight` is the only changed pre-existing asset.
 
 ### Verified state
 
-- **Restore**: 1078 native files from four private releases (order: `native-integration-20261025`,
-  `combat-arena-polish-native-20261025`, `sourced-animation-game-v027`, `overhaul-game-v029-20261026`); SHA256SUMS OK
-  for the two releases that publish them, 403 in-zip manifest hashes OK, 0 dataless files after restore. Against the
-  live Codex tree: 864 identical, 225 dataless-there size-matched, 0 different, 1 missing
-  (`UI/MoonlitB/T_MoonlitSilverAtlas_v1.uasset`, in no release, copied from the live checkout, sha256 ba65d05a...).
-  Per-file provenance: `docs/knight-complete-20261028/restore-provenance.json`, `restore-receipt.json`.
-- **Lock-on locomotion** (`VeyrKnight.cpp`): while locked on and walking, the knight faces the boss; back = approved
-  `Backpedal` loop (100 cm/s, clip nominal 59.9, 1.67x), sides = `StrafeLeft/Right` (walk cap 1.2x nominal: 166/187 cm/s),
-  Shift + side = `StrafeRunLeft/Right` (1.1x nominal: 452/444 cm/s), forward = Walk. Shift + forward/back runs freely
-  (orient to movement). Hysteresis 0.15 on direction changes. `-VeyrNoLockOnStrafe` restores the old behaviour.
-  `BackpedalStep` stays on its existing path (`TryBackstep`, exec `VeyrBackstep`, integration trial); no new key binding.
-- **Strafes**: 4 Mixamo Sword and Shield strafes (walk L/R, run L/R) retargeted with `retarget.py`, weapon-fitted with
-  `fit_weapon.py` in one-hand and two-hand grips (the pipeline supports both; 8 clips). Nominal speeds from stance-foot
-  medians x 240 cm per glTF metre (calibrated on three plan clips, 239.8 to 246.6): walk L 138.4, R 155.5; run L 411.3,
-  R 404.0 cm/s.
-- **Directional staggers**: impact (3) = Front (head back 39 deg), impact (2) = Back (head forward 25 deg), impact = Left
-  (left shoulder driven back), Right = mirrored copy of Left (`retarget.py` mirror). One- and two-hand, 8 clips, each
-  played to 0.60 s (gameplay rate 1.167, Back 1.611). The old `Stagger` (0.42 s) stays the default when the source
-  direction is degenerate or a clip is missing. `-VeyrNoDirectionalStagger` restores it. Log: `VEYR_KNIGHT_STAGGER`.
-  **Gameplay change**: stagger lock grows from 0.42 to 0.60 s.
-- **RunStop join**: measured with `measure_runstop.py` (24 run phases, all joints plus sword tip, in-game frozen-source
-  local blend). Fab run -> RunStop: sword 50 to 60 cm apart at every phase (RunStop was authored from the Blender run);
-  0.10 s blend peak 2215 cm/s, over the clips' own peak (1343) in 22/24 phases; 0.20 s 5/24; 0.30 s 0/24 (peak 1188).
-  Run<->RunStop now blends 0.30 s (`-VeyrRunStopBlend=` overrides). No re-authoring.
-- **Approved assets byte-identical**: every pre-existing `Content/Characters/Customuse` .uasset hash unchanged except
-  `RuntimePolish/DA_Knight` (926 files compared); original guard `.uasset` sha256 `1d7b990a...efa069` unchanged;
-  guard signature verified by the importer. v030m adds 17 assets (16 AnimSequences + DA).
-- **v030k was rejected and superseded**: it imported its own rig and mesh variant in a `-nullrhi` commandlet and those
-  meshes rendered white in the packaged game. v030m references v029's rig and the identical mesh variant
-  (`knight_571e0abbfde2720e`). v030k assets are parked in `Local/failed-import-v030k-whitemesh/` (not in Content).
+- **Runtime knight: KnightB v030p** in `RuntimePolish/DA_Knight`, 48 clips (25 inherited unchanged, 23 authored in this
+  pass). It covers:
+  - Strafe and StrafeRun left/right in both grips
+  - Blink left/right in both grips
+  - StaggerFront/Back/Left/Right in both grips
+  - BackpedalGuard 1H and 2H
+  - RollAttack
+  - Superseded versions: v030k (white meshes, parked in `Local/failed-import-v030k-whitemesh/`), v030m and v030n.
+- **Code (`VeyrKnight.*`, `VeyrReplay.*`, all committed):**
+  - lock-on locomotion facing the boss with per-clip speed caps
+  - directional staggers with Stagger as the default
+  - RunStop blend 0.30 s
+  - lock-on enter/exit blend 0.30 s
+  - 2H blink selection
+  - hand-locked sword during pose blends
+  - late afterimage capture
+  - `lockon` replay mode with blink direction trials and a stagger lab
+  - the integration lateral trial now expects StrafeRight
+  - Every new behaviour keeps its "before" behind a flag: `-VeyrNoLockOnStrafe`, `-VeyrNoDirectionalStagger`,
+    `-VeyrRunStopBlend=`, `-VeyrLockOnBlend=`, `-VeyrNoWeaponGripLock`.
+- **Measurements:** round-2 metrics (critic definitions) are in `docs/knight-complete-20261028/data/round2-metrics.json`;
+  simulated hand slip in `round2-handslip.json`.
+  - Chest within 20 deg of the boss on every lateral clip.
+  - Sprint/blink knees within 10 deg of travel.
+  - Stagger tip <= 36.5 cm/frame and 1H pitch <= 25 deg.
+  - Roll-attack exit drift <= 1.9 cm.
+- **Builds:**
+  - Last good editor build: `Local/unreal-build-20261029T072612204802Z` (`Result: Succeeded`, includes the WIP hook).
+  - Last complete Shipping package: `Local/package-20261029T055623Z` (zip sha256 `11afb863...200662ae`). That app was
+    in `/private/tmp` and that zip in `Builds/`; I removed both before the next package, and the reboot cleared
+    `/private/tmp`. **No packaged app exists now.**
+  - The last package attempt, `Local/package-20261029T072638Z`, was interrupted in UnrealPak by the crash and left a
+    partial `Builds/Unreal-Mac-20261029T072638Z`. Delete it and repackage.
 
-### Gate lines
+### Gate results (all load-contaminated)
 
-- UBT VeyrEditor Mac Development: `Result: Succeeded`, 0 warnings (`Local/unreal-build-20261029T002011653662Z`).
-- UBT Veyr Mac Shipping: `Result: Succeeded`, 1 engine-side warning (MetalShaderConverter include dir)
-  (`Local/unreal-build-20261029T011120733748Z`).
-- Package Shipping: `BUILD SUCCESSFUL`, `AutomationTool exiting with ExitCode=0`, receipt
-  `Local/package-20261029T011117Z/receipt.json`, signed zip
-  `Builds/Unreal-Mac-20261029T011117Z/Repaired/Mac/Veyr-Mac-Shipping.zip` sha256 `2c7bd8e5...090c8f`,
-  app `/private/tmp/veyr-verified-bundle-uyyqawy6/Veyr-Mac-Shipping.app`.
-- Packaged runs (all through `gpu_slot` capture, one engine at a time), `Evidence/`:
-  - lockon `native-lockon-20261029T011329Z`: `True lock-on: 10 locomotion trials sampled their clips, max facing error 0.9 deg; directional stagger lab 5/5`
-  - core `native-core-20261029T011412Z`: `True jump-disabled light heavy collapse head bonus completed rise and dodge contact observed`
-  - controls `native-controls-20261029T011645Z`: `True movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed`
-  - guard `native-guard-20261029T011807Z`: `True front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified`
-  - death `native-death-20261029T011946Z`: `True death terminal pose, resource reset, movement and primary attack after restart verified`
-  - integration: 1 pass of 3 (`native-integration-20261029T010702Z` True, 18 features incl. `locked_strafe_without_blink`
-    now expecting `StrafeRight`); 2 fails at `locked_blink_left` (`...010302Z`, `...012024Z`): blink accepted and
-    travelled 299 cm but the hidden window (0.16 s) or second afterimage window (0.12 s) was skipped. These runs ran at
-    about 16 fps with 0.30 to 0.40 s frames because other sessions held the GPU at 97 to 100%; v029's passing run had
-    52 fps. Treat as contaminated; rerun when the GPU is quiet (see INTEGRATION_PERF below). The afterimage capture is
-    frame-window based (`UpdateBlinkEchoes`), so it is fragile under hitches; not changed here.
-- Run on the first package (v030k, white meshes) are superseded: `Evidence/native-*-20261029T0057*..0103*`.
+Another session's Unreal Editor and video2rig/Blender jobs held the GPU at 98-100% throughout; they are not ours, do not
+touch them. Frames were clamped at 0.40 s.
 
-### Evidence
+| Run (build) | core | death | lockon | integration | controls | guard |
+|---|---|---|---|---|---|---|
+| 01:44 (034134Z) | True 13.4 fps | True 12.2 | True 12.0 (blink 3/3, lab 5/5) | 0/3 (11.2/11.8/12.6) | True 12.7 | True 13.0 |
+| 02:09 (055623Z, echo fix) | True 13.7 | True 13.2 | True 13.3 | 1/3 (12.1/12.2/12.3) | False 13.5 (died) | False 13.3 (died) |
+| 03:04 (055623Z) | True 12.9 | True 12.4 | True 12.8 (facing 1.9 deg) | 0/1 12.0 | True 12.0 | True 13.4 |
 
-- Review page (do not need a server here; serve `serve/` with a byte-range server):
-  `Local/knight-review-20261028/serve/index.html`, 29 rows, 56 videos (front | side | three-quarter, 30 fps, in-game
-  rate), 15 packaged-game screenshots, RunStop numbers. Critic brief: `Local/knight-review-20261028/critic-brief.md`.
-- Data: `docs/knight-complete-20261028/data/` (Mixamo classification, stance calibration, RunStop joins, v030m plan,
-  activation receipt, manifest).
-- Tools: `tools/art/knight_complete/` (restore, analyze, build clips, measure, plan, native import, render, page).
+Integration failures are all locked-blink trials. The blink was accepted, travelled 298.6 cm and captured both
+afterimages, but no rendered frame fell inside the 0.16 s hidden window. That is frame sampling, not clip or code
+behaviour. Controls and guard deaths at 13 fps did not reproduce at 03:04.
+Evidence: `Evidence/native-*-20261029T0544..0554`, `...T0608..0620`, `...T0704..0710`.
 
-### Restore on another machine (exact)
+### Integration-gate logging hook (WIP, committed but unverified)
 
-```bash
-git clone -b fable/knight-complete-20261028 https://github.com/oh-ashen-one/dragon-boss-fight.git ~/veyr-knight-20261028
-cd ~/veyr-knight-20261028 && mkdir -p Local/restore-20261028/dl && cd Local/restore-20261028/dl
-R=oh-ashen-one/veyr-animation-sources
-gh release download overhaul-game-v029-20261026 -R $R -D overhaul-game-v029-20261026 -p Veyr-Native-Overhaul-v029.zip
-gh release download sourced-animation-game-v027 -R $R -D sourced-animation-game-v027 -p Veyr-Native-Sourced-v027.zip
-gh release download native-integration-20261025 -R $R -D native-integration-20261025 -p '*.zip' -p '*.json' -p '*.txt'
-gh release download combat-arena-polish-native-20261025 -R $R -D combat-arena-polish-native-20261025 -p '*.zip' -p '*.json' -p '*.txt'
-(cd native-integration-20261025 && shasum -a 256 -c SHA256SUMS.txt && shasum -a 256 -c prop-material-fix-SHA256SUMS.txt)
-(cd combat-arena-polish-native-20261025 && shasum -a 256 -c SHA256SUMS.txt)
-cd ~/veyr-knight-20261028 && python3 -I tools/art/knight_complete/restore_native_content.py Local/restore-20261028 "$PWD"
-# knight completion delta (v030m native + authoring + review page)
-mkdir -p Local/restore-20261028/kc && cd Local/restore-20261028/kc
-gh release download knight-complete-20261028 -R $R && shasum -a 256 -c SHA256SUMS
-cd ~/veyr-knight-20261028 && for z in Local/restore-20261028/kc/*.zip; do unzip -n "$z"; done
-# HUD atlas is in no release: copy Unreal/Veyr/Content/UI/MoonlitB/T_MoonlitSilverAtlas_v1.uasset (sha256 ba65d05a...)
-# from the Codex checkout /Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration on the Studio.
-```
+- **Done (code only, editor build succeeded, no content change):**
+  - `AVeyrKnight` records each blink's hidden window on the action clock: `BlinkHiddenWindows`,
+    `LastBlinkHiddenStartWorld/EndWorld` (interpolated inside the crossing frame), `LastBlinkLongestFrame`,
+    `bLastBlinkHiddenFrameRendered`.
+  - It logs `VEYR_KNIGHT_BLINK_HIDDEN clip= start= end= longestFrame= frameRendered=`.
+  - The integration gate now asserts the knight's record (window traversed with end > start), at least 2 afterimage
+    captures, and travel over 100 cm.
+  - The frame probe (a rendered hidden frame plus a visible afterimage) is secondary. If it misses while the longest
+    blink frame exceeded 0.16 s, it only logs `integration_warn_frame_probe_missed_hidden_window_longest_frame_*`. With
+    short frames a missing probe still fails.
+  - Trials record `knightRecordedHiddenWindow`, `knightHiddenStart/EndWorld`, `longestFrameDuringBlink`,
+    `hiddenFrameRendered` and `frameProbeWarningOnly`.
+- **Not done:** Shipping package (interrupted by the crash), the integration x3 and core smoke runs, and recording them
+  under a new key in round2-metrics.json.
+- **How to run** (Studio, after checking `~/.cache/gpu-slot/bin/gpu_slot.sh status`):
+  ```bash
+  cd /Users/midir/veyr-knight-20261028 && rm -rf Builds/Unreal-Mac-20261029T072638Z
+  python3 tools/unreal/package.py --engine "/Users/Shared/Epic Games/UE_5.8" --configuration Shipping
+  APP=$(python3 -c "import json,glob;print(json.load(open(sorted(glob.glob('Local/package-2*/receipt.json'))[-1]))['apps'][0])")
+  for m in integration integration integration core; do python3 tools/unreal/run_native.py --app "$APP" --gpu-slot ~/.cache/gpu-slot/bin/gpu_slot.sh --mode $m --slot-wait-seconds 1800; done
+  ```
+  Record fps as `frameCount/durationSeconds` from each `Evidence/native-*/unreal-*/evidence.json`.
 
-Then: `python3 tools/unreal/build.py --engine "/Users/Shared/Epic Games/UE_5.8"`,
-`python3 tools/unreal/package.py --engine "/Users/Shared/Epic Games/UE_5.8" --configuration Shipping`,
-`python3 tools/unreal/run_native.py --app <app> --gpu-slot ~/.cache/gpu-slot/bin/gpu_slot.sh --mode lockon`.
-Re-import is headless: `UnrealEditor <uproject> -run=pythonscript -script=tools/art/knight_complete/native_import_v030k.py
--nullrhi -unattended -NoZenAutoLaunch -notraceserver -DDC=(EnginePak=InstalledEnginePak,Local)` (reads the active plan;
-refuses an existing version folder). Do not import rigs/mesh variants in that commandlet (v030k lesson); reuse them.
+### Round-2 critic verdict and the round-3 plan
 
-### Unapproved / open (owner decisions)
+The critic's verdict (`docs/knight-complete-20261028/critique-round2.md`, also at
+`Local/knight-review-20261028/critique-round2.md`): **not shippable for a playable character.** The partial ship-ready
+subset it names is StrafeLeft, StrafeLeftTwoHand and the eight staggers.
 
-- Not recorded as accepted: Mixamo walk (both grips), Fab run (both grips), Mixamo slash, Fab roll, `Sourced_RollAttack_v2`.
-  Unapproved: Blink L/R (`Sourced_Blink*_Transit_v2`, v029 maps BlinkLeft to the file named ...Right), GripTo* polish v2,
-  all 16 new strafes/staggers, the 0.30 s RunStop blend, the 0.60 s stagger length, the 100 cm/s backpedal.
-- Two-hand backpedal falls back to the one-hand `Backpedal` clip (only one approved backpedal exists): expect a grip
-  change while backing up two-handed. Two-hand strafes exist.
-- Integration `locked_blink_left` needs a clean-GPU rerun (above). A perf-mode retry (`--performance`, exclusive lock,
-  waits for GPU < 15%) was cancelled by me after 5 min (SIGTERM, no engine had started) because its settle hold blocked
-  another session's capture while the GPU stayed at 98%; `Evidence/native-integration-20261029T012221Z` is that
-  incomplete attempt.
-- No blind critic has run; I wrote the brief only.
-- Spend: Higgsfield 0 credits; no browser downloads; no MCP used. Compute: 4 headless Blender jobs (retarget 25 s,
-  fit about 40 s, renders 333 s), 3 import commandlets (14 min failed, 7 min v030k, 34 s v030m), 3 UBT builds,
-  2 Shipping packages, 13 packaged scenario runs.
+Round-3 plan, in the critic's rank order:
+1. **Blinks (1H and 2H)** are the sprint-strafe cycle frame for frame. Author a real blink:
+   - a launch crouch of at least 3 frames from the idle stance
+   - a vanish window
+   - a landing that settles to the idle stance width
+   - first and last frames within noise of idle
+2. **Visual proof of the blend socket and blink skate.**
+   - Render real engine blends with the sword visible: idle to strafe, strafe to idle, idle 2H to blink 2H, blink to
+     idle, roll end to idle.
+   - Render blinks and strafes with root translation over the checker. `render_review.py` currently follows the hips
+     with no root, so skate cannot be seen.
+3. **StrafeRun* and Blink*:** the 80-90 deg pelvis-to-chest twist is implausible.
+   - Cap the twist at about 45 deg.
+   - Find a lateral or crossover sprint source for the legs.
+   - Animate the free arm.
+4. **RollAttack exit:**
+   - The lead foot moves 40 cm in one frame at f45-f46; make it a lifted step of at least 3 frames.
+   - The rear foot slides 25 cm with 7 cm of lift at f46-f50; lock it or give it a full step.
+   - Remove the blade's return to about 60 deg at f42-f46.
+5. **Loop seams on StrafeRight(2H), StrafeRunRight(2H), BlinkRight and both backpedals:** the last-to-first step exceeds
+   every in-cycle step. Re-key the cycle ends.
+6. **RollAttack roll:** confirm in engine that root motion carries the dive and roll, with no hovering or skating feet.
+7. **BackpedalGuard 1H:** the guard is a wrist roll with the hand at the hip, and the blade covers the helmet. Raise the
+   hand to chest height or angle the blade off the face line.
+8. **Walk strafes:** the crouch is deep (hips 15-26 cm low) and the head bob of 16 cm exceeds the sprint's. Lift the hips
+   and reduce the bob.
+9. **Staggers:** feet stay locked. That is fine for light hit-reacts; add a recovery step if they double as heavy
+   staggers.
 
-### Local-only (did not travel), cleanup state
+### Private backup releases (oh-ashen-one/veyr-animation-sources)
 
-- Worktree `/Users/midir/veyr-knight-20261028` holds the restored native content (gitignored), `Builds/` (2.7 GB),
-  `Local/` (CustomuseAssets 3 GB, FabRigTesting 2.8 GB, backup zips 3 GB in `Local/backup-20261028`), `Evidence/`.
-  Everything needed is in the branch plus the private releases above; the worktree can be removed once the owner has
-  reviewed the page and app. Staging `/private/tmp/veyr-stage-*` and `/private/tmp/veyr-verified-bundle-uyyqawy6` are this
-  thread's. No servers, LaunchAgents or engines left running.
+Apply them in order over the four native releases listed in `docs/knight-complete-20261028/restore-receipt.json`:
+- `knight-complete-20261028`: v030m native delta, round-0 authoring and review page
+- `knight-complete-round1-20261029`: v030n
+- `knight-complete-round2-20261029`: v030p, round-2 authoring (normalized GLBs, plan, Blender scenes) and the review page
 
+Every asset's remote digest matched its SHA256SUMS at upload. To restore:
+1. Clone the branch.
+2. Run `tools/art/knight_complete/restore_native_content.py` after downloading the four native releases.
+3. For each knight release run `gh release download <tag> -R oh-ashen-one/veyr-animation-sources`, then
+   `shasum -a 256 -c SHA256SUMS`, then `unzip -n` each zip at the worktree root.
+4. The HUD atlas `UI/MoonlitB/T_MoonlitSilverAtlas_v1.uasset` (sha256 `ba65d05a...`) is in no release; copy it from the
+   Codex checkout.
 
-### Fix round 1 (2026-10-29), after the blind critique `Local/knight-review-20261028/critique.md`
+### Other notes
 
-The runtime knight is now **KnightB v030n** (46 clips: 25 inherited unchanged, 19 rebuilt, 2 new), promoted from v030m.
-Owner-approved and owner-selected sources (walk, run, light attack, roll, idle, heal, death, guard, approved backpedal
-loop and step) were only read. Every pre-existing `Customuse` .uasset is byte-identical except
-`RuntimePolish/DA_Knight` (22 new assets). Nothing here is owner-approved.
-
-| Critic item | Result (numbers from `docs/knight-complete-20261028/data/round1-checks.json`) |
-|---|---|
-| Blink files crossed | The v029 *mapping* was right by motion: the file named `Sourced_BlinkRight_Transit_v2` moves left (hips +X glTF) and is Mixamo strafe (3); `..._BlinkLeft_...` moves right and is strafe (4), whose feet run fore-aft. Rebuilt: `Knight_BlinkLeft_v3` (strafe (3), travel, correct name) and `Knight_BlinkRight_v3` (its sagittal mirror, hips -1.223 m). v029 root trajectory reused, x mirrored for right. Packaged lockon: BlinkLeft lateral -298.6 cm, BlinkRight +298.6 cm; screenshots `frame-0025/0026/0028`. |
-| Roll attack splice | `Sourced_RollAttack_v3`: roll extrapolated at its end velocity and smootherstep-blended into the slash over 0.40 s source (0.31 s in game, about 9 frames at 30 fps), last 0.36 s blend into the 1H idle frame 0. Sword-tip step at 30 fps around the join: max 45 cm/frame (v2: 103 cm at the splice). End carry 0.0 deg, end ankles 61.9 cm (idle 61.9). Max tip step overall 116 cm/frame is inside the slash swing itself (same as v2). |
-| Sprint strafe right axis | `Knight_StrafeRunRight(TwoHand)_v3c` = true mirror of strafe (3) (`retarget.py` mirror). Stance travel 1.4 deg off lateral (left 0.4). The critic's fore-aft reading also came from the round-0 review camera, which aimed "front" along each clip's first-frame foot direction; round-1 renders use one fixed facing from the 1H idle. |
-| 2H backpedal missing | `Knight_BackpedalGuardTwoHand_v3c` (approved loop legs, 2H idle carry). Lock-on back now selects `BackpedalGuard`/`BackpedalGuardTwoHand` by grip (approved `Backpedal` remains the fallback). |
-| Sprint strafe left 24% slow | Nominal set to 440.2 cm/s from source hips travel (3.479 m/s x 0.5272 retarget x 240); planted-toe speed 446/458 cm/s confirms. The 24% was mostly the round-0 camera (lateral motion seen at an angle). In-game cap 484 cm/s (1.1x). |
-| Carry continuity | Canonical carry = approved IdleOneHand / IdleTwoHand frame 0. All rebuilt clips start/end within 13.9 deg (strafes 6.4-13.9, staggers 0-13.4 start / 0.0 end, backpedals 4.9/6.9, blinks 10.9, roll attack 0.0/0.0). Grip transitions already end exactly on the idles (0.0 deg). Loops start at their narrowest stance: ankles 32-62 cm (idle 61.9). |
-| Stagger front foot slide | Staggers rebuilt as additive deltas (hips, spine, neck, head, clavicles) on the approved idle with analytic two-bone leg IK: ankle drift <= 1.3 cm (3 game cm) in all 8. |
-| Stagger L/R amplitude | Lateral gain x2: head 23.5 / 22.7 cm rig = 56 / 54 game cm, about 35 / 34 px at the critic's 1.6 cm/px (round 0: 16 px). Left 2H now uses the 2H idle carry (no wrong shoulder). |
-| Backpedal guard | Forward lean +7.0 cm head-ahead-of-hips (rig) = 17 game cm, about 10.5 px; blade pitched up 27 deg relative to the leaned chest and lifted 6 cm (net 6.9 / 4.9 deg from the idle carry, kept under the 15 deg continuity bound). |
-| Review page | Loops render exactly one cycle, actions end on their last frame; one fixed camera facing; checker now 25 game-cm tiles. Whole-body stagger captures in game (lock released, view lifted). |
-| frame-0002 brightness | Lighting, not material: same Backpedal mesh/material is dark in frame-0023; a different mesh (StrafeLeft) is equally bright at the same position and camera yaw (sky/moon specular on the back plate). |
-
-Gate lines (round 1, app `/private/tmp/veyr-verified-bundle-95t1py9v/Veyr-Mac-Shipping.app`):
-- UBT VeyrEditor Development `Result: Succeeded` (`Local/unreal-build-20261029T020309422145Z`); UBT Veyr Shipping
-  `Result: Succeeded` (`Local/unreal-build-20261029T020604594210Z`); package `BUILD SUCCESSFUL`, `ExitCode=0`
-  (`Local/package-20261029T020601Z`), signed zip sha256 `a1399cdc...e1ae727`.
-- lockon: `True lock-on: 10 locomotion trials sampled their clips, max facing error 3.5 deg; blink direction 2/2; directional stagger lab 5/5`
-- core / controls / guard / death: True (same reason strings as round 0), `Evidence/native-*-20261029T0209..0214`.
-- integration x3: GPU never went below 30% for 60 s in a 45-minute wait (another session's video2rig reader training
-  and Blender render held it at 98-100%), so the runs are contaminated by load; all three passed anyway:
-  `True all18 updated integration features ...` at 15.5 / 14.7 / 14.1 fps (max frame 0.372 / 0.298 / 0.283 s),
-  `Evidence/native-integration-20261029T030046Z`, `...030319Z`, `...030459Z`. A clean-GPU fps number is still owed.
-
-Not fixed this round (and why):
-- Roll airborne dive / head landing, run landing speed, 1H "lance" carry tilt, walk/run seams, light-attack guard start:
-  owner-selected or approved sources (Fab roll, Fab run, Mixamo walk/slash, approved 1H idle), which this round must
-  not touch. The canonical 1H carry is the approved idle's, so the lance angle is inherited.
-- Grip transition hip dip/settle: grip clips end exactly on the idles already; the critic's settle suggestion was not in
-  the fix list.
-- Strafe planted-foot depth drift (5 px) was not in the fix list; strafe legs are the Mixamo source.
-- The 2H canonical carry (blade vertical in front of the visor) differs from the owner-selected 2H walk carry by 22 deg;
-  the coordinator defined the canonical carry from the idles, so walk-to-strafe still changes the 2H blade by ~22 deg.
-- RunStop brake length (critic: extend to 12 frames): RunStop is approved; only the blend was changed in round 0.
-- New mesh-variant imports are avoided: all new clips reference body variant `knight_571e0abbfde2720e` (Blender round
-  trips re-encode the body; v030k showed commandlet-imported bodies render white).
-
-Restore for round 1: after the round-0 restore above, `gh release download knight-complete-round1-20261029 -R
-oh-ashen-one/veyr-animation-sources`, `shasum -a 256 -c SHA256SUMS`, `unzip -n` each zip at the worktree root.
-Review page: `Local/knight-review-20261028/serve/index.html` (round 1, before = round 0 for changed rows);
-round-0 page kept at `serve-round0/`.
-
-
-### Fix round 2 (2026-10-29), after `Local/knight-review-20261028/critique-round1.md`
-
-The runtime knight is now **KnightB v030p** (48 clips: 25 inherited unchanged, 21 rebuilt, BlinkLeftTwoHand and
-BlinkRightTwoHand new), promoted from v030n. Every pre-existing `Customuse` .uasset is byte-identical except
-`RuntimePolish/DA_Knight` (24 new assets). The approved and owner-selected sources were only read. Nothing is approved.
-Metrics: `docs/knight-complete-20261028/data/round2-metrics.json` (critic definitions: yaw 0 = boss, + = knight left,
-game cm, in-game rates) and `round2-handslip.json`.
-
-Root causes:
-- **A (mirror).** `retarget.py`'s mirror was a correct sagittal reflection; the Mixamo Sword and Shield strafes are side-on
-  (chest -70..-86 deg), and reflecting a side-on body flips its facing. Only the right-moving clips are forward gaits
-  (strafe.fbx walk, strafe (4).fbx sprint: knees within 10 deg of travel for the sprint). Left = sagittal mirror of those;
-  then a spine counter-twist (Spine/Spine1/Spine2 30/35/35%) brings each clip's mean chest yaw to 0. Mirror pairs: mean
-  chest 0.0 vs 0.1 (walk), 0.4 vs -0.8 (sprint): within 5 deg.
-- **B (socket).** I did not reparent WeaponSocket in the skeleton: that would mean re-importing every approved clip.
-  Instead the game places the sword from the right hand while a pose blend runs, with the hand-space grip interpolated
-  between the source and target clips' own grips (`AVeyrKnight::GetWeaponSocketWorld`, `-VeyrNoWeaponGripLock` = old).
-  Approved assets are untouched (hash check above). Simulated engine transitions (`measure_handslip.py`): extra hand
-  slip before 1.8-9.9 cm (light attack <-> idle 8.9/9.9, strafe -> idle 9.6, strafe -> stagger 4.5), after 0.0 cm on
-  all 10. In authored clips the roll attack writes WeaponSocket = RightHand x grip every frame (slip 0.0).
-- **C (lock-on posture).** Lock-on enter/exit blends 0.30 s (`-VeyrLockOnBlend=`). Chest within 20 deg of the boss on
-  every strafe, sprint strafe and blink. Walk-strafe hips stay 15-26 cm below the idle (source crouch); sprint and blink
-  hips are -9..+3 cm.
-
-| Row | Chest yaw (deg) | Knee vs travel (deg) | Hand slip (cm) | Foot skate / drift | Other |
-|---|---|---|---|---|---|
-| Sprint strafe L / R (1H, 2H) | -13.7..13.8 / -13.7..13.6 | 9.8 / 9.7 | 0.0 | stance speed = nominal 453.4 / 456.9 cm/s (planted toe) | ends at ankles 61.5-63.5 / 60.7-62.3 cm |
-| Strafe L / R (1H, 2H) | -3.7..4.7 / -4.6..3.7 | 48.7 / 48.7 (source knees, 3.7 deg over) | 0.0 | nominal 163.6 / 159.7 cm/s | ends 62.2-64.1 / 59.4-62.0 cm; hips -15..-26 |
-| Blink L / R (1H, new 2H) | -13.7..13.9 / -13.7..13.6 | 9.9 / 9.8 | 0.0 | root = 90% of planted-toe speed while visible, about 52 cm/s residual in game; planted drift with root 4.9 / 7.2 cm | ends 61.5-67.6 / 57.3-62.3 cm; lateral 298.6 cm total kept |
-| Staggers F/B/L/R (1H, 2H) | front 0.0..0.8 | n/a | 0.0 | ankle drift <= 0.4 cm | tip <= 36.5 cm/frame; pitch 1H <= 25.0, 2H <= idle+10 (78.1); first/last carry 0.0/0.2 deg; front head 45.4 of 45.5 cm straight back; L/R 53.1 / 55.5 cm |
-| Backpedal guard 1H / 2H | -7.4..5.9 | backward gait by design | 0.0 | stance 59.95 cm/s | 1H blade +40 deg above the idle carry (pitch 45.8-47.7, tip 309 cm); 2H tilted 22 deg forward (46 deg) |
-| Roll attack | n/a | n/a | 0.0 | exit planted drift <= 1.9 cm; recovery steps lift 15.5 / 12.6 cm | join 0.60 s source (14 frames in game); ends in the 1H idle carry (0.0 deg) |
-
-Deviations from the round-2 instructions:
-- Backpedal guard is **held through the loop** (carry 39.8 / 23.4 deg off the idle at the loop seam) instead of easing to
-  within 15 deg at the first/last 3 frames. A 1.2 s loop that dips back to the carry every cycle would bob the blade
-  2.5 times a second; the 0.30 s lock-on enter/exit blend covers the transition.
-- 2H staggers cannot hold an absolute 25 deg pitch (the 2H idle carry itself is 68 deg); they are capped at idle+10.
-- Walk strafes keep the source knees (48.7 deg max, 3.7 over the 45 deg limit) and source hip height.
-- No 2H roll attack: RollAttack starts as the approved 1H Fab Roll (owner-selected), so a 2H roll attack would still
-  snap at the roll; it needs a 2H roll first.
-
-Gate lines (round 2). The GPU never went below 30% in a 120-minute wait (23:45-01:45; other sessions' video2rig reader
-training and renders for the dragon and Markhor Meadow held it at 98-100%), so every run below ran at 11-14 fps with
-0.40 s clamped frames and is load-contaminated:
-- UBT VeyrEditor `Result: Succeeded` (`Local/unreal-build-20261029T055627234434Z` pair); UBT Shipping `Result: Succeeded`;
-  package `BUILD SUCCESSFUL`, `ExitCode=0` (`Local/package-20261029T055623Z`), signed zip sha256 `11afb863...200662ae`,
-  app `/private/tmp/veyr-verified-bundle-ei9yiygb/Veyr-Mac-Shipping.app`.
-- Batch 1 (build `package-20261029T034134Z`): lockon True (blink direction 3/3, lab 5/5, facing 1.2 deg, 12.0 fps); core,
-  controls, guard, death True (13.4 / 12.7 / 13.0 / 12.2 fps); integration 0/3 (11.2 / 11.8 / 12.6 fps), each failing at a
-  locked blink: the 0.12 s second-afterimage window fell between two 0.4 s frames (1 of 2 echoes captured).
-- Fix: `UpdateBlinkEchoes` now captures a skipped afterimage late (same authored source time; no change at normal fps).
-- Batch 2 (echo-fix build): lockon True (3/3, 5/5, facing 4.9 deg, 13.3 fps); integration 1/3 (12.1 / 12.2 / 12.3 fps):
-  run 1 passed all 18 features; runs 2-3 failed `locked_blink_right` with both echoes captured and 298.6 cm travel but no
-  frame inside the 0.16 s hidden window; core True (13.7), death True (13.2); controls and guard False "player died before
-  objectives" (13.5 / 13.3 fps; both passed in batch 1 at the same rate on identical animation data).
-- Evidence: `Evidence/native-*-20261029T0544..0554` (batch 1), `Evidence/native-*-20261029T0608..0620` (batch 2).
-  A quiet-GPU integration and controls/guard rerun is still owed; the failures are frame-window sampling and bot survival
-  at 12 fps, and none reproduced as a clip-selection or direction error (lockon 3/3, direction trials measured).
-
-Notes: the round-1 bodies exported Blender's default scene range (frame 1..250); round 2 sets the range explicitly. While
-clearing my own package staging I ran `rm -rf /private/tmp/veyr-stage-*`; my receipts name three such directories, and I
-cannot prove no other session's staging directory matched that glob.
-
-Restore for round 2: after rounds 0 and 1, `gh release download knight-complete-round2-20261029 -R
-oh-ashen-one/veyr-animation-sources`, `shasum -a 256 -c SHA256SUMS`, `unzip -n` each zip at the worktree root.
-Review page: `Local/knight-review-20261028/serve/index.html` (round 2 vs round 1); `serve-round1/`, `serve-round0/` kept.
-
-- Rerun 2026-10-29 03:04-03:11 on the same build (`package-20261029T055623Z`, no rebuild): the coordinator reported the
-  dragon jobs finished, but the GPU still read 98-100% for the whole 20-minute wait (another UnrealEditor and other loads
-  were running), so these runs are load-contaminated too. core True 12.9 fps, death True 12.4, lockon True 12.8 (blink 3/3,
-  lab 5/5, facing 1.9 deg), integration False 12.0 (`locked_blink_left`: both echoes captured, 298.6 cm travel, no frame
-  inside the 0.16 s hidden window; frame sampling, not code), controls True 12.0, guard True 13.4. Evidence
-  `Evidence/native-*-20261029T0704..0710`; recorded in `round2-metrics.json` under `gates_20261029T0704`.
+- **Review pages, under `Local/knight-review-20261028/`:**
+  - `serve/` is round 2 vs round 1; `serve-round1/` and `serve-round0/` are kept.
+  - Serve them with a byte-range server.
+  - Round-2 renders have no root translation, which is the critic's point 2.
+- **Tooling:** `tools/art/knight_complete/` (the round drivers `build_round1.py` and `build_round2.py`, the
+  `measure_*.py` scripts, `prepare_round*_plan.py`, `native_import_v030k.py`, `render_review.py`, `review_jobs_r*.py`).
+  - Native import is headless: run `UnrealEditor <uproject> -run=pythonscript -script=tools/art/knight_complete/native_import_v030k.py -nullrhi -unattended -NoZenAutoLaunch -notraceserver`.
+  - Never import rigs or mesh variants in that commandlet; they render white.
+- **Possible deletion of another session's files:** while clearing my own staging I ran `rm -rf /private/tmp/veyr-stage-*`
+  once; I cannot prove no other session's staging directory matched.
+- **Commit trailers:** the first knight commit names Fable 5.1 (as the launching agent requested); later commits name
+  Opus 5.5, the model that did the work.
+- **Running state:** no engines, servers or LaunchAgents of this thread are running.
+- **Spend:** 0 Higgsfield credits, no browser downloads, no MCP in the shipped path.

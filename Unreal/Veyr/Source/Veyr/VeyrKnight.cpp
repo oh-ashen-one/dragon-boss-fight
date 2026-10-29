@@ -375,6 +375,8 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
     Action=NewAction;ActionElapsed=0.f;ActionDuration=Duration;ActionPresentationClip=ResolveActionClip(NewAction);
     bContactSent=false;bHealGranted=false;bPreviousBladePoseValid=false;bPreserveRollPrefix=false;
     bBlinkHidden=false;bLateralDodgeBlocked=false;ContactedDamageWindows.Reset();CurrentDamageWindow=INDEX_NONE;
+    if(NewAction==EVeyrKnightAction::BlinkLeft||NewAction==EVeyrKnightAction::BlinkRight)
+    {bBlinkHiddenStartRecorded=bBlinkHiddenEndRecorded=false;LastBlinkLongestFrame=0.f;bLastBlinkHiddenFrameRendered=false;}
     ActionRootTravelCm=0.f;bActionRootBlocked=false;
     if(NewAction!=EVeyrKnightAction::Ready)bWasRunning=false;
     if(IsAttackAction()||IsBlinkAction()||NewAction==EVeyrKnightAction::Guard||NewAction==EVeyrKnightAction::Heal||
@@ -678,6 +680,20 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
     BufferedAttackRemaining=FMath::Max(0.f,BufferedAttackRemaining-DeltaSeconds);
     const float PreviousSeconds=ActionElapsed;
     ActionElapsed+=DeltaSeconds;
+    if(IsBlinkAction())
+    {
+        // Evidence only: the hidden window is defined on the action clock (see UpdateImportedPresentation); record when
+        // the clock crosses its edges even if no rendered frame falls inside it (long frames under GPU contention).
+        LastBlinkLongestFrame=FMath::Max(LastBlinkLongestFrame,DeltaSeconds);
+        const float Now=GetWorld()->GetTimeSeconds();
+        if(!bBlinkHiddenStartRecorded&&ActionElapsed>=.18f){bBlinkHiddenStartRecorded=true;LastBlinkHiddenStartWorld=Now-(ActionElapsed-.18f);}
+        if(bBlinkHiddenStartRecorded&&!bBlinkHiddenEndRecorded&&ActionElapsed>=.34f)
+        {
+            bBlinkHiddenEndRecorded=true;LastBlinkHiddenEndWorld=Now-(ActionElapsed-.34f);++BlinkHiddenWindows;
+            UE_LOG(LogTemp,Display,TEXT("VEYR_KNIGHT_BLINK_HIDDEN clip=%s start=%.3f end=%.3f longestFrame=%.3f frameRendered=%d"),*ActionPresentationClip.ToString(),
+                LastBlinkHiddenStartWorld,LastBlinkHiddenEndWorld,LastBlinkLongestFrame,bLastBlinkHiddenFrameRendered?1:0);
+        }
+    }
     ApplyAuthoredRootMotion(PreviousSeconds,ActionElapsed);
     UpdateImportedPresentation(DeltaSeconds);
     if(IsAttackAction())ResolveAttackWindows(PreviousSeconds);
@@ -1168,6 +1184,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     bRequestedPresentationClipSampled=Sampled;bPresentationUsingFallback=!Sampled;
     PresentationPreviousActionElapsed=Action==EVeyrKnightAction::Ready?-1.f:ActionElapsed;
     bBlinkHidden=IsBlinkAction()&&!IsTerminal()&&ActionElapsed>=.18f&&ActionElapsed<.34f;
+    bLastBlinkHiddenFrameRendered|=bBlinkHidden;
     ImportedPresentation->SetVisibility(!bBlinkHidden,true);ImportedPresentation->SetHiddenInGame(bBlinkHidden,true);
     if(Sampled){SetPresentationDiagnostic(FString());return;}
     SetPresentationDiagnostic(TEXT("Native approved clip evaluation failed: ")+Clip.ToString()+TEXT("; ")+ImportedPresentation->LastError);
