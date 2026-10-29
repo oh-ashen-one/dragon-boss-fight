@@ -2,6 +2,8 @@
 
 Date: 2026-10-28 · Branch: `claude-code-enhancements` · Host: Studio (midirstudio) · Status: **WIP, pipeline proven, runtime compile-only; switching to laptop**
 
+**Running state (updated 2026-10-29 20:45 UTC, orchestrator Fable 5.1).** GPU sequencing is now owned by the Hulk session (midir-60) by owner order: Hulk, then this session, then Markhor (midir-5b); never two at once. This session launches no GPU work (Unreal, Blender, trainers) until midir-60 sends "GPU is yours", and messages midir-5b and midir-60 when its GPU work is done. Done without the GPU: round-3 Blender renders completed 20:28 UTC (`render_round3.sh` exit 0, 35 jobs, page `Local/knight-review-20261028/serve-round3`, served on port 8792; round-2 page still on 8791; `data/round3-metrics.json` written); blind round-3 critic (opus-critic, videos only) running on that page. Still waiting for the GPU: step-A gates on v030p (8 runs), blend-proof after/before + encode, 8 round-3 gates on v030q, dragon v4 renders (`run_queue_v4.sh`), dragon rise start picture. A step-A integration run started at 20:24 UTC and was stopped in its settle gate when the Hulk order arrived; its partial evidence folder was deleted; no gate result exists yet.
+
 ## What this is
 
 Replicating Can It Code's boss-fight process (YouTube `z1mgtUvTdqg`, Patreon source pack) on our Veyr dragon so we can
