@@ -377,5 +377,15 @@ Every asset's remote digest matched its SHA256SUMS at upload. To restore:
   once; I cannot prove no other session's staging directory matched.
 - **Commit trailers:** the first knight commit names Fable 5.1 (as the launching agent requested); later commits name
   Opus 5.5, the model that did the work.
-- **Running state:** no engines, servers or LaunchAgents of this thread are running.
+- **Running state (updated 2026-10-29 12:20 ET by the Fable 5.1 orchestrator):** review page server pid 37332 serves
+  `Local/knight-review-20261028/serve` (round 2, lazy-load patch applied, `rangeserver.py` copied in) on port 8791; the
+  dragon page server pid 37331 serves `~/dragon-boss-fight/Local/dragon-review-20261029/serve` on port 8790. Two
+  scratch chains run headless from `/private/tmp/claude-501/-Users-midir/1e99ac11-5966-4ca4-8ec7-273fc683df51/scratchpad/`:
+  `chain_master.sh` (step-A gates on the v030p package `Local/package-20261029T145507Z`, then blendproof after/before and
+  the eight round-3 gates on the v030q package `Local/package-20261029T160302Z`; log `Local/gates-master-*.log`) and
+  `chain_r3_render2.sh` (`tools/art/knight_complete/render_round3.sh`; log `Local/render-round3-*.log`). Both block on a
+  quiet GPU first: the 11:00-13:30 ET stream window flag held captures at 0 slots until 12:08, and another session's
+  video2rig reader trainer (not ours) has pinned the GPU at 98-100 % since 11:18, which makes every gpu_slot capture
+  exit 75 (`settle-timeout`, `skipped-busy`) after 180 s. Step-A gate results are therefore still pending; every
+  attempt so far (14:58Z, 15:28Z, 16:08Z) exited 75 without launching the game.
 - **Spend:** 0 Higgsfield credits, no browser downloads, no MCP in the shipped path.
