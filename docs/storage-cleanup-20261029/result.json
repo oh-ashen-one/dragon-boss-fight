@@ -1,0 +1,134 @@
+{
+  "date": "2026-10-29",
+  "removedTargets": 27,
+  "allocatedBytesBefore": 32056061952,
+  "actualDiskFreeIncreaseBytes": 30514954240,
+  "diskFreeAfterBytes": 67572645888,
+  "retainedPlayable": "~/Downloads/Veyr-Settings-Restart-v030/Veyr.app",
+  "retainedPlayableFileHashesVerified": 31,
+  "retainedSignatureVerified": true,
+  "backupsVerified": [
+    "settings-restart-v030-20261028",
+    "overhaul-game-v029-20261026",
+    "sourced-animation-game-v027"
+  ],
+  "preserved": [
+    "newer knight and dragon authoring checkouts and staging",
+    "all source code and editable model/animation assets",
+    "Screen Studio recordings and Veyr.mp4",
+    "private backup releases",
+    "164 archived legacy scripts",
+    "small historical Unity build008"
+  ],
+  "removed": [
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261019T000335Z",
+      "allocatedBytesBefore": 2858205184
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Veyr 4.app",
+      "allocatedBytesBefore": 117886976
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261018T094633Z",
+      "allocatedBytesBefore": 439451648
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Veyr 5.app",
+      "allocatedBytesBefore": 117878784
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Veyr 2.app",
+      "allocatedBytesBefore": 117854208
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261018T094633Z-static-repaired5",
+      "allocatedBytesBefore": 1442373632
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Veyr 3.app",
+      "allocatedBytesBefore": 117870592
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261019T210433Z",
+      "allocatedBytesBefore": 2880278528
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261019T204614Z",
+      "allocatedBytesBefore": 3267719168
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Veyr.app",
+      "allocatedBytesBefore": 117878784
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261019T011244Z",
+      "allocatedBytesBefore": 2499375104
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261019T012734Z",
+      "allocatedBytesBefore": 2490949632
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Builds/Unreal-Mac-20261019T004413Z",
+      "allocatedBytesBefore": 2968969216
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Unreal/Veyr/Saved/StagedBuilds",
+      "allocatedBytesBefore": 1724125184
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-17/task-3/Unreal/Veyr/Binaries/Mac/Veyr.app",
+      "allocatedBytesBefore": 1096429568
+    },
+    {
+      "path": "~/Downloads/Veyr-Cathedral-Overhaul-v029",
+      "allocatedBytesBefore": 1562890240
+    },
+    {
+      "path": "~/Downloads/Veyr-Sourced-Animations-v027",
+      "allocatedBytesBefore": 1586704384
+    },
+    {
+      "path": "Unreal/Veyr/Binaries/Mac/Veyr.app",
+      "allocatedBytesBefore": 440291328
+    },
+    {
+      "path": "Unreal/Veyr/Binaries/Mac/Veyr-Mac-Shipping.app",
+      "allocatedBytesBefore": 286314496
+    },
+    {
+      "path": "Unreal/Veyr/Saved/Cooked",
+      "allocatedBytesBefore": 1406189568
+    },
+    {
+      "path": "Unreal/Veyr/Intermediate",
+      "allocatedBytesBefore": 1526542336
+    },
+    {
+      "path": "Unreal/Veyr/DerivedDataCache",
+      "allocatedBytesBefore": 574763008
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-18/go/outputs/veyr-customuse-native-validation/Veyr-Mac-ee0313.zip",
+      "allocatedBytesBefore": 510005248
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-18/go/outputs/veyr-native-milestone/Veyr-prototype-pending-runtime.zip",
+      "allocatedBytesBefore": 470142976
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-18/go/outputs/veyr-unreal-handoff/Veyr-Mac-a450a43b.zip",
+      "allocatedBytesBefore": 510017536
+    },
+    {
+      "path": "~/Documents/Codex/2026-10-18/go/outputs/veyr-art-pass/Veyr-Mac-9b185634.zip",
+      "allocatedBytesBefore": 638640128
+    },
+    {
+      "path": "/private/tmp/veyr-build-sign-17q9lywa",
+      "allocatedBytesBefore": 286314496
+    }
+  ],
+  "note": "Allocated size is not guaranteed physical recovery because APFS can share blocks. Free-space change measured immediately around deletion; concurrent system activity may affect it."
+}

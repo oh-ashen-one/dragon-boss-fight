@@ -1,3 +1,14 @@
+# October29 storage cleanup
+
+Removed superseded local build copies and generated caches; recovered28.42GiB
+(62.93GiB free afterward). v030 Downloads app retained and31 file hashes plus
+signature verified. Local v027/v029 deliveries and old October18–19 build/ZIP
+paths below were removed; private release backups remain. Newer knight/dragon
+work on other branches/checkouts and recordings/source assets are preserved.
+See `docs/storage-cleanup-20261029/README.md` and `result.json`.
+
+---
+
 # October28 Settings restart — latest playable build
 
 Branch `codex/veyr-settings-restart-20261028`; app:
