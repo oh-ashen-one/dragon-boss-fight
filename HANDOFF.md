@@ -36,6 +36,22 @@ put it in a repo.
 
 ## Where things stand
 
+**Session end 2026-10-29 (laptop orchestrator, owner continuing on the Studio):**
+- Dragon: 12 clips through video2rig (8 ground + 4 airborne), all on this branch (head c7056e0 before this note).
+  Review page `Local/dragon-review-20261029/serve/index.html` (airborne section at `#airborne`). Open dragon items:
+  air_land touchdown is authored not fitted, takeoff3 overshoots the hover by ~50 cm, a lying-start "rise" clip is a
+  known gap, and a dragon fix round 2 (re-critique of round 1) has not been run.
+- Knight: branch `fable/knight-complete-20261028` (worktree `/Users/midir/veyr-knight-20261028` on the Studio), read its
+  own HANDOFF.md. Round 2 is built, packaged and pushed; the blind critic says round 2 is **not shippable** (blinks are
+  a sprint loop, sprint-strafe waist twist, roll-attack exit slide, loop seams; sword and skate fixes unproven because
+  no engine blends were rendered). Critique: `Local/knight-review-20261028/critique-round2.md` in that worktree.
+  Its ranked fix list is the round-3 plan. Gates: 5 of 6 pass; integration fails on `locked_blink_left` only because
+  the GPU is pinned by other sessions (12 fps, 0.4 s frames miss the 0.16 s hidden window). A frame-rate-independent
+  gate (reads the game's own blink record) was in progress when the session ended; see the knight HANDOFF.
+- Shared brain: agents-md PRs #30, #31, #32 (video2rig as the creature default) are open and need the owner's merge.
+- Higgsfield: this session spent 589.5 credits on 15 Seedance clips; balance about 575.
+
+
 - Pipeline works on this Mac end to end: start picture → clip → check → fit → review → Blender Action → scripted
   refinement → blind A/B. Clip to Action takes about four minutes once a reader exists.
 - Idle: refined video2rig idle beats the hand-keyed idle in a blind A/B (47 vs 41); both still fail the shipped bar.
@@ -198,9 +214,13 @@ cd ~/dragon-boss-fight && bash tools/movedata/run_veyr.sh && python3 -m unittest
 
 ## Running processes / infra
 
-- Studio: before/after page served by Python pid 53126 on port 8790 from `Local/ab-idle-20261028/serve`,
-  published to the tailnet with `tailscale serve --tcp 8790` (http://100.95.131.102:8790/). Stop with `kill 53126`
-  and `tailscale serve --tcp=8790 off`. Nothing else running for this thread; no LaunchAgents; no engines.
+- Nothing running on the Studio for this thread as of 2026-10-29 07:30: the old page server (pid 53126) and
+  `tailscale serve --tcp 8790` were turned off on 2026-10-28 evening at the owner's request. No engines, no LaunchAgents.
+- Other sessions' processes were on the Studio GPU all night (an Unreal Editor under `/Users/Shared/Epic` and Markhor
+  Meadow video2rig jobs); device utilisation read 100%. They are not ours; do not touch them.
+- The review pages are served on the **laptop** only: dragon `Local/dragon-review-20261029/serve` on port 8790,
+  knight `Local/knight-review-20261028/serve` on port 8791 (`python3 rangeserver.py serve <port>`), with the Chrome
+  lazy-load patch applied. Both folders are rsync copies of the Studio ones; the Studio copies are the source.
 
 ## Picking this up on the other machine
 
