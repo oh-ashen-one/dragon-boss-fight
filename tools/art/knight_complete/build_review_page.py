@@ -18,6 +18,8 @@ extra = json.loads((R / "extra.json").read_text()) if (R / "extra.json").exists(
 def encode(label):
     out = MEDIA / (label + ".mp4")
     frames = R / "frames" / label
+    if out.exists():
+        return "media/" + out.name
     if not (frames / "front_0000.png").exists():
         return None
     if not out.exists():
