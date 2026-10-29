@@ -709,3 +709,98 @@ Refinement script: `refine_v3.py` with new options `stance_end`, `floor_feet_npz
 Move data: `air_hover` (loop), `air_land`, `air_takeoff`, `air_fire_down` in `Data/dragon/moves.json` with `airborne` and `floor_metrics_valid: false` (the generator infers the floor from the lowest foot, so
 the shocks, contacts and stances of the air moves are artifacts); annotations: `fire_down_hold` 3.333 to 6.667 s (jaws open, head down: the Niagara window) on `air_fire_down`, `touchdown` at 3.75 s on `air_land`.
 Review page: section "Airborne" (renders `AH`, `AL`, `TK`, `FD`, 0 = raw fit, 1 = refined; takeoff3 on an extra-tall camera because the fit rises to 1.15 m).
+
+### Fix round 2 (2026-10-29): v4 Actions from the round-2 critique
+
+Spec: the ranked fix list in `Local/dragon-review-20261029/critique-round2.md`. Nine new Actions `<move>_v4` in
+`Local/video2rig/dragon/Dragon_<Move>_sd_v2r_v4.blend` (v2/v3 untouched; claw swipe, stagger, death, idle unchanged).
+Scripts: `tools/dragon_refine/v4/` (`refine_v4.py` recipes, `lib_v4.py`, `measure_v4.py`, `run_queue_v4.sh`).
+No Higgsfield clip was generated and no reader was trained.
+
+**How it was measured.** The GPU was held by another session (STREAMING window, then a foreign MPS trainer at 100 %,
+`gpu_slot capture` exit 75), so no EEVEE render was made. Every number below comes from a CPU raster of the evaluated
+mesh through the review cameras (`raster.py`, z-buffered, the critic's plates), scored with the critic's own
+definitions (`critic.py` is a port of its `met.py` / `air.py`). Calibration against the critic's cached v3 render masks
+(`refine/v4/calibration.json`): silhouette IoU 0.79 to 0.88, lowest row within 1 to 8 px, frame-step correlation 0.93
+to 0.996. Per-frame-change (hold) numbers are raster values times that clip's own critic/raster ratio. Airborne v4 clips
+use the extra-tall K camera (the T frame cuts off the wing tips on the upstroke), so their pixel limits scale by
+158/227 against T. Full numbers: `Local/dragon-review-20261029/measure_v4.json` (v3 and v4 side by side).
+
+**Sourced vs authored.** The source videos have **no wing beats** (hover top row moves 12 px on a 40-frame sway; the
+generator made a glide), so every wing beat is procedural: one beat function (26-frame period, not a multiple of 4,
+or the beat aliases into the critic's 4-frame saw) on the wing root, elbow and wrist over the hover pose, with the
+fit's own high-pass wing detail kept. Body bob is a table measured from the visible wing-tip height (`bob_table.py`).
+Everything else keeps the fitted motion and adds authored layers; each report JSON (`refine/v4/*.report.json`)
+lists `sourced` and `authored` per move.
+
+| # | Item, target | v3 (round 1) | v4 (round 2) | Result |
+| --- | --- | --- | --- | --- |
+| 1 | Takeoff: feet down until ≥ 36 | liftoff frame 2 | 53 | PASS |
+| 1 | crouch ≥ 0.08 BH | 0.00 | 0.101 | PASS |
+| 1 | span +30 % in 6 frames before liftoff | −1 % | +56 % (liftoff on the first downstroke) | PASS |
+| 1 | peak / end height ≤ 1.2 | 2.20 | 1.06 | PASS |
+| 1 | centroid change last 24 frames ≤ 0.1 BH | 0.84 | 0.14 (one beat of bob; mean-height change vs the previous 24 frames 0.14) | FAIL |
+| 5 | takeoff foot jump ≤ 8 px T | 21 px | 3 px K | PASS |
+| 2 | Wing-tip p2p ≥ 0.5 BH (hover / land / takeoff / fire) | 0.04 / 0.35 / 1.09 / 0.14 | 0.65 / 0.76 / 1.11 / 0.87 | PASS |
+| 2 | period 18 to 30 | 40 / 78 / 109 / 193 | 26.2 / 26.0 / 29.0 / 27.6 | PASS |
+| 2 | body bob ≥ 0.06 BH | 0.027 / 0.40 / 0.99 / 0.25 | 0.14 / 0.38 / 0.75 / 0.36 (land, takeoff, fire include the descent, rise or pitch) | PASS (hover is the clean case) |
+| 2 | corr(wing-tip velocity, body accel) ≥ 0.6 at lag 0 to 4 | 0.12 / 0.13 / 0.24 / 0.08 | −0.37 / −0.33 / −0.45 / −0.29 (best −0.47 to −0.59 at lag −1 to −5) | FAIL |
+| 2 | span drift ≤ 5 % (beat-averaged) | 0.16 / 0.03 / 0.24 / 0.11 | 0.009 / 0.011 / 0.007 / 0.073 | PASS 3 of 4 (fire: the sourced nose-down pitch narrows the front span) |
+| 3 | Hover seam ≤ 1.2 steps | 0.0 | 0.0 | PASS |
+| 3 | span change last 8 frames ≤ 3 % | 5.4 % | raw 44 % (mid-beat); against the same beat phase one beat earlier 1.1 % | FAIL raw / PASS phase-matched |
+| 3 | saw ≤ 0.07 both views | 0.26 / 0.30 | 0.020 / 0.026 | PASS |
+| 4 | Roar hold change ≥ 1.2 | 0.94 (critic 0.77) | 3.5 (est.) | PASS |
+| 4 | Fire-down hold ≥ 1.0 | 0.80 / 0.50 | 4.7 / 2.2 (est.) | PASS |
+| 4 | Collapse lying breathing ≥ 0.4 | 0.33 | 0.64 (est.) | PASS |
+| 4 | Roar snout / wing-tip tremor 1.5 to 3 px | 0.33 / 0.49, 0.30 | 1.72 / 1.52, 2.89 | PASS |
+| 5 | air_land foot jump at contact | 21 px T | 6 px K (8.6 px T-equivalent) | PASS in K px, marginal in T scale |
+| 5 | foot ≤ 1.2x body speed at contact (air_land / land2) | 1.07 / 0.62 | 1.14 / 0.55 | PASS |
+| 5 | land2 foot jump ≤ 8 px T (takeoff / touchdown) | 14 / 20 | 7 / 7 | PASS |
+| 6 | air_land descent speed −40 % over 12 frames | +398 % (speeds up) | −50 % | PASS |
+| 6 | span +30 % in that window | +3 % | +37 % | PASS |
+| 6 | compression ≥ 0.08 BH within 4 frames | 0.15 | 0.094 | PASS |
+| 6 | end stance IoU ≥ 0.97 | 0.951 / 0.945 | 0.993 / 0.995 | PASS |
+| 7 | land2 a_down / a_up 0.8 to 1.25 | 2.00 | 0.98 | PASS |
+| 7 | bite full-reach freeze ≤ 10 | 35 | 4 | PASS |
+| 7 | bite reach ≥ 12 cm | 9.3 | 12.7 | PASS |
+| 8 | roar both wings ≥ 1.22x idle half-span, within 5 % | 1.31 / 1.16 (12 %) | 1.29 / 1.29 (0.4 %) | PASS |
+| 8 | roar opens over ≥ 8, closes over ≥ 10 (10-90 %) | 3 / 13 | 10 / 10 | PASS |
+| 8 | rise frame 0 IoU vs collapse end ≥ 0.95 | 0.13 | 1.00 vs collapse_v4 (0.87 / 0.80 vs collapse_v3, which now breathes differently) | PASS |
+
+**What did not reach the target, and why.**
+- Wing-body coupling (item 2, all four airborne clips). The body now rides the wings (bob 0.14 to 0.75 BH on the beat
+  period) but |r| at lag 0 to 4 is 0.29 to 0.45. Two causes measured on the raster: (a) in the front view the beating
+  wing covers and uncovers the body, so the body-only centroid (the critic's `m & ~w`) jumps with the wing, not with the
+  body (rigid-bob grid in `bob_table.py`: up to |r| 0.80 with the whole-mesh centroid, 0.50 with the visible-body
+  centroid); (b) the strongest coupling sits at negative lags (body acceleration after the wing, as in real flight),
+  outside the critic's 0-to-4 window in its own lag convention (`air.py`: `vw[6+l:...]` vs `ab`). Needs the critic to
+  confirm the intended lag sign before more tuning.
+- Hover "span change in the last 8 frames ≤ 3 %" and takeoff "centroid change in the last 24 frames ≤ 0.1 BH" were
+  written for the beat-less v3 clips; a real 26-frame beat changes span 44 % inside 8 frames and moves the centroid
+  0.14 BH inside one beat. Phase-matched span (1.1 %) passes; the takeoff centroid fails raw.
+- Fire-down span drift 7.3 % comes from the sourced nose-down pitch (kept from round 1), not from the wings.
+
+**Per-move changes (authored layers on sourced motion).**
+- air_hover_v4: fit destuttered ([1,2,2,2,1] kernel, cyclic), resampled 121 → 131 frames (5 beats), wings = hover pose x
+  fit high-pass detail, beat + bob + tail follow; frame 130 = frame 0.
+- takeoff3_v4: idle_v2 breathing on the ground, 7 cm crouch (8 to 34), wind-up beat, three 24-frame beats from frame 48,
+  feet planted by IK until the body clears the stance (release at 46 + 5-frame ramp), min-jerk rise 43 → 100 to the
+  hover height (no overshoot); ends on hover frame 0 phase.
+- air_land_v4: beats to the last upstroke top at 78, braking flare to contact (92), descent peak 3.1 cm/frame braked
+  to 30 %, 4.5 cm leg compression, head dip and tail slap, 6-frame IK contact ease, idle_v2 settle; ends on the stance.
+- air_fire_down_v4: beats continue through the fire hold (7 beats of 27.4 frames), sourced pitch and jaw kept.
+- roar_v4: flare rebuilt per wing (scale searched to 1.25x lateral, capped at 1.15x of the round-1 open pose), opens over
+  26 and closes over 30 frames, breath heave 0.8 cm, head tremor 3.4 deg, wing tremor 3.9 deg, tail lash 7 deg, feet planted.
+- collapse_v4: breathing while lying from frame 108 (40-frame breaths: spine, chest, folded wings, tail, 0.35 cm body).
+- bite_v4: hold compressed by time warp (121 → 93 frames), 4 cm lean and 8 deg neck into the strike, 4 deg worry shake.
+- land2_v4: centroid moved onto one parabola (same acceleration up and down) in two raster passes (`land2_corr.py`),
+  apex lowered to 0.38 BH (the clip's prompt asked for a knee-high hop; 0.52 BH lands at 16 px/frame); foot vertical
+  speed capped at 1.4 cm/frame near the floor (front-foot IK misses up to 9 cm in the air, feet are not on the floor then).
+- rise_v4: 44-frame authored get-up from collapse_v4's last frame (head and chest first, feet step under the body one by
+  one with 3.5 cm lifts, wings half-open), then rise_v3 from its frame 14. 151 frames.
+
+**Not verified.** No EEVEE render yet (GPU busy); the critic's own numbers on renders may differ within the calibration
+spread above. One roar wing shows a few more open membrane holes than round 1 in raster close-ups (the mesh is
+tattered in both); check on the render. Review renders are queued in `Local/dragon-review-20261029/queue_v4.txt`;
+run `tools/dragon_refine/v4/run_queue_v4.sh` (gpu_slot capture, one clip at a time, then adds the "Round 2 fix" cards to
+the review page with `build_review_page_v4.py`). Move data rebuilt from the v4 Actions (`Data/dragon/`, tests 3 OK).

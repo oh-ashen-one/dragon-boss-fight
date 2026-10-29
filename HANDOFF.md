@@ -36,6 +36,18 @@ put it in a repo.
 
 ## Where things stand
 
+**Dragon fix round 2 (2026-10-29, Studio, branch `claude-code-enhancements`, not pushed):**
+- Nine v4 Actions built from the round-2 critique (`Local/video2rig/dragon/Dragon_<Move>_sd_v2r_v4.blend`, Actions
+  `roar_v4`, `collapse_v4`, `bite_v4`, `land2_v4`, `rise_v4`, `air_hover_v4`, `air_land_v4`, `takeoff3_v4`,
+  `air_fire_down_v4`); scripts in `tools/dragon_refine/v4/`. Move data (`Data/dragon/`) rebuilt from them; movedata tests OK.
+- Measured on a CPU raster with the critic's definitions (no GPU render possible: foreign trainer at 100 %):
+  `Local/dragon-review-20261029/measure_v4.json`. 29 of 33 targets pass; fails: wing-body correlation at lag 0-4
+  (all airborne, |r| 0.29-0.45; best at negative lag), takeoff last-24 centroid 0.14 BH, raw hover last-8 span, fire-down
+  span drift 7.3 %. Per-item table: `docs/canitcode-enhancements.md`, section "Fix round 2".
+- **Next:** run the render queue when the GPU is quiet: `tools/dragon_refine/v4/run_queue_v4.sh`
+  (reads `Local/dragon-review-20261029/queue_v4.txt`, gpu_slot capture, adds the "Round 2 fix" cards to the review page),
+  then a blind re-critique on the renders.
+
 **Session end 2026-10-29 (laptop orchestrator, owner continuing on the Studio):**
 - Dragon: 12 clips through video2rig (8 ground + 4 airborne), all on this branch (head c7056e0 before this note).
   Review page `Local/dragon-review-20261029/serve/index.html` (airborne section at `#airborne`). Open dragon items:
