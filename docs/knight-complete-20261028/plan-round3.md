@@ -197,8 +197,10 @@ Every job was dry-run (`--dry`: sampled and posed, nothing rendered). Serve the 
 `python3 Local/knight-review-20261028/serve-round3/rangeserver.py Local/knight-review-20261028/serve-round3 <port>`.
 `serve/` stays round 2.
 
-Import (after review; this does not activate on its own):
+Import: **done 2026-10-29** (orchestrator instruction). Only RuntimePolish/DA_Knight changed among the pre-existing
+Customuse assets; 14 new assets were added under KnightB/v030q; the 30 protected files are identical. The
+`-script` path must be absolute:
 ```
 python3 tools/art/knight_complete/prepare_round3_plan.py --activate
-"/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" /Users/midir/veyr-knight-20261028/Unreal/Veyr/Veyr.uproject -run=pythonscript -script=tools/art/knight_complete/native_import_v030k.py -nullrhi -unattended -NoZenAutoLaunch -notraceserver
+"/Users/Shared/Epic Games/UE_5.8/Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor" /Users/midir/veyr-knight-20261028/Unreal/Veyr/Veyr.uproject -run=pythonscript -script=/Users/midir/veyr-knight-20261028/tools/art/knight_complete/native_import_v030k.py -nullrhi -unattended -NoZenAutoLaunch -notraceserver
 ```

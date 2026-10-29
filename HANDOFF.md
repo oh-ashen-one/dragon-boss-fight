@@ -296,7 +296,24 @@ Round-3 plan, in the critic's rank order:
 
 ### Round 3 authoring (2026-10-29, verified state)
 
-- **Status:** KnightB **v030q** plan written, **not activated, not imported, not rendered, not critiqued**.
+- **Status:** KnightB **v030q** imported natively and promoted into `RuntimePolish/DA_Knight` (2026-10-29 ~16:00Z,
+  headless `-nullrhi` commandlet; record `docs/knight-complete-20261028/data/knight-v030q-activation.json`).
+  **Not rendered, not gated, not critiqued, not owner-approved.**
+- **Shipping package (v030q, 2026-10-29 16:03Z, built at 6042941):** succeeded (UAT exit 0).
+  - Receipt: `Local/package-20261029T160302Z/receipt.json`.
+  - App (verified bundle the gates launch): `/private/tmp/veyr-verified-bundle-nzhkqcyr/Veyr-Mac-Shipping.app`; repaired
+    archive app: `Builds/Unreal-Mac-20261029T160302Z/Repaired/Mac/Veyr-Mac-Shipping.app`.
+  - Zip: `Builds/Unreal-Mac-20261029T160302Z/Repaired/Mac/Veyr-Mac-Shipping.zip`, sha256
+    `c2d937e47b5566fea634ae38bc082b4f0e0a51b94bbe245e47b2b80a1f1cbc21`.
+  - No gates, blendproof or renders have been run on it. The orchestrator runs them after the STREAMING flag clears.
+- **Import hash check:**
+  - Of the 989 pre-existing `Content/Characters/Customuse` `.uasset`s, only `RuntimePolish/DA_Knight.uasset` changed.
+  - 14 are new, all under `KnightB/v030q`: 13 AnimSequences plus `DA_KnightB`.
+  - No rigs or mesh variants were imported.
+  - The 30 protected files are still identical.
+  - Lists: `data/round3-customuse-uasset-sha256-{before,after}-import.txt`.
+  - The commandlet needs an absolute `-script=` path (a relative one resolves against the engine binary folder).
+  - The editor hangs at shutdown ("Waiting for static meshes"); SIGTERM ends it in 2 s after the success line.
 - **Contents:** 13 re-authored clips:
   - StrafeRight(2H)
   - StrafeRunLeft/Right(2H)
@@ -354,7 +371,7 @@ Every asset's remote digest matched its SHA256SUMS at upload. To restore:
   - Round-2 renders have no root translation, which is the critic's point 2.
 - **Tooling:** `tools/art/knight_complete/` (the round drivers `build_round1.py` and `build_round2.py`, the
   `measure_*.py` scripts, `prepare_round*_plan.py`, `native_import_v030k.py`, `render_review.py`, `review_jobs_r*.py`).
-  - Native import is headless: run `UnrealEditor <uproject> -run=pythonscript -script=tools/art/knight_complete/native_import_v030k.py -nullrhi -unattended -NoZenAutoLaunch -notraceserver`.
+  - Native import is headless: run `UnrealEditor <uproject> -run=pythonscript -script=<absolute path to>/tools/art/knight_complete/native_import_v030k.py -nullrhi -unattended -NoZenAutoLaunch -notraceserver` (the script path must be absolute).
   - Never import rigs or mesh variants in that commandlet; they render white.
 - **Possible deletion of another session's files:** while clearing my own staging I ran `rm -rf /private/tmp/veyr-stage-*`
   once; I cannot prove no other session's staging directory matched.
