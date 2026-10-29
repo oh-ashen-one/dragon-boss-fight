@@ -444,7 +444,12 @@ def run(plan_file):
             if unreal.EditorAssetLibrary.get_metadata_tag(inherited,'VeyrPolishSourceDefinition')!=plan.get('replace_runtime_source'):raise RuntimeError('Unexpected inherited runtime version')
             receipt['preservedBaseline']=verify_sourced_definition(plan,inherited,False)
             inherited_skeleton=inherited.skeletal_mesh.get_editor_property('skeleton')
-            objects=import_one(canonical,destination+'/Rig',inherited_skeleton,mesh_variant=True)
+            if plan.get('reuse_inherited_rig'):
+                # Keep the inherited, already-validated canonical mesh (and its materials) by reference.
+                objects=[inherited.skeletal_mesh]
+                receipt['reusedInheritedRig']=inherited.skeletal_mesh.get_path_name()
+            else:
+                objects=import_one(canonical,destination+'/Rig',inherited_skeleton,mesh_variant=True)
             receipt['inheritedDefinition']=inherited.get_path_name()
         else:
             objects = import_one(canonical, destination + "/Rig")
@@ -526,7 +531,13 @@ def run(plan_file):
             variant_checked = inspect_glb(variant)
             if variant_checked["jointNames"] != canonical["jointNames"] or variant_checked["jointParents"] != canonical["jointParents"]:
                 raise RuntimeError("Mesh variant changed the canonical bone layout")
-            objects = import_one(variant, destination + "/MeshVariants/" + variant_name, skeleton, mesh_variant=True)
+            reuse = plan.get("existing_mesh_variants", {}).get(variant_name)
+            if reuse:
+                # Same decoded geometry/skin/material hash as an earlier version's variant: reference it.
+                objects = [unreal.load_asset(reuse)]
+                receipt.setdefault("reusedMeshVariants", {})[variant_name] = reuse
+            else:
+                objects = import_one(variant, destination + "/MeshVariants/" + variant_name, skeleton, mesh_variant=True)
             variants = [obj for obj in objects if isinstance(obj, unreal.SkeletalMesh)]
             if len(variants) != 1 or variants[0].get_editor_property("skeleton") != skeleton:
                 raise RuntimeError("Variant did not bind to the shared skeleton: " + variant_name)

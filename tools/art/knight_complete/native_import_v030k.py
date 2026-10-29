@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "tools/unreal"))
 import import_customuse  # noqa: E402
 
-OUT = ROOT / "Local/CustomuseImports/knight-v030k-activation.json"
+OUT = ROOT / "Local/CustomuseImports/knight-activation-latest.json"
 record = {"success": False, "steps": []}
 
 
@@ -85,6 +85,8 @@ def main():
             "meshOverride": c.mesh_override.get_path_name() if c.mesh_override else None,
             "approvedSourceFile": c.approved_source_file}
     record["guard"] = import_customuse.guard_signature(runtime)
+    record["runtimeSkeletalMesh"] = runtime.skeletal_mesh.get_path_name()
+    record["sourceSkeletalMesh"] = source.skeletal_mesh.get_path_name()
     record["success"] = True
 
 
