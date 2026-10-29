@@ -179,6 +179,15 @@ private:
     float DangerContactDelay() const;
     bool LandingDangerPending() const;
     void TrackFlightWithLookInput();
+    // Knight completion 2026-10-28: lock-on locomotion and directional stagger lab ("lockon" mode).
+    bool DriveLockOnInputs();
+    TSharedPtr<FJsonObject> LockOnEvidence() const;
+    int32 LockOnStage=0,LockOnLabHit=0,LockOnLabPassed=0;
+    float LockOnStageStarted=0,LockOnStageSeconds=0,LockOnLastHitAt=-10,LockOnMaxFacingErrorDeg=0;
+    bool bLockOnLabAwaiting=false,bLockOnShot=false;
+    FName LockOnLabExpected=NAME_None;
+    TMap<FName,float> LockOnClipSeconds,LockOnClipSpeedSum;
+    TArray<TSharedPtr<FJsonValue>> LockOnTrials;
     bool bCombatHealSeeking=false;
     int32 CombatHealCountAtRequest=0;
     float BoundaryHealDuration=0,BoundaryEmptyObservation=0;

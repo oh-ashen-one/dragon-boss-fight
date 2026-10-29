@@ -56,9 +56,9 @@ def make_ik(t,source):
 def smooth(x):x=max(0,min(1,x));return x*x*(3-2*x)
 def mixmat(a,b,w):
  x,q,sc=a.decompose();y,r,ss=b.decompose();return Matrix.LocRotScale(x.lerp(y,w),q.slerp(r,w),sc.lerp(ss,w))
-def fit(kind,refs,version='v2',grip_override=None,output_name=None):
+def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=None):
  names={'walk':'Mixamo_Walk','attack':'Mixamo_Attack','guard':'Mixamo_Block','run':'Fab_Run','roll':'Fab_Roll'};name=output_name or names[kind]+'_'+version;two_hand=(kind in ('run','guard')) if grip_override is None else grip_override=='two'
- meta=json.loads((OUT/'Exports'/(names[kind]+'_v1.json')).read_text());t=load(OUT/'Exports'/(names[kind]+'_v1.glb'),int(meta['fps']));s=bpy.context.scene;N=round(meta['duration']*meta['fps']);s.frame_start=0;s.frame_end=N;p=t.pose.bones
+ src_name=source_name or names[kind]+'_v1';meta=json.loads((OUT/'Exports'/(src_name+'.json')).read_text());t=load(OUT/'Exports'/(src_name+'.glb'),int(meta['fps']));s=bpy.context.scene;N=round(meta['duration']*meta['fps']);s.frame_start=0;s.frame_end=N;p=t.pose.bones
  body=[o for o in s.objects if o.type=='MESH'];source={}
  for f in range(N+1):s.frame_set(f);source[f]={b.name:b.matrix.copy() for b in p}
  original=t.animation_data.action;original.use_fake_user=True;t.animation_data.action=original.copy();t.animation_data.action.name=name+'_SourceMotionAndGrip'

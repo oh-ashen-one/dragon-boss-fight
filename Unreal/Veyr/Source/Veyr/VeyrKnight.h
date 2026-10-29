@@ -143,6 +143,21 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bHealFlaskVisible=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FString HealFlaskDiagnostic;
 
+    // Knight completion 2026-10-28. Lock-on locomotion faces the boss and selects Backpedal/strafe
+    // clips by local move direction; -VeyrNoLockOnStrafe restores the old orient-to-movement walk.
+    UFUNCTION(BlueprintPure, Category="Combat") bool IsLockOnStrafing() const;
+    /** 0 forward, 1 back, 2 left, 3 right (actor-local move direction while lock-on strafing). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 LockOnMoveDirection=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bLockOnStrafeEnabled=true;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bDirectionalStaggerEnabled=true;
+    /** Seconds of the Run<->RunStop pose blend (measured join, Local/knight-review-20261028/data). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float RunStopBlendSeconds=.30f;
+    /** Front, back, left, right: hits that selected a directional stagger clip. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") TArray<int32> DirectionalStaggers;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName LastStaggerClip=NAME_None;
+    /** Hit source direction relative to the knight's facing, degrees: 0 front, +90 right, -90 left. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LastStaggerSourceYaw=0.f;
+
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -183,6 +198,12 @@ private:
     FVector BlinkRequestedDirection=FVector::ZeroVector;
     bool bActionRootBlocked=false;
     FName LastLocomotionClip=NAME_None;
+    FName PendingStaggerClip=NAME_None;
+    bool bTransitionInvolvesRunStop=false;
+    bool bLockOnStrafingLastFrame=false;
+    FName ChooseStaggerClip(const FVector& Source);
+    FName PickLockOnClip(FName Preferred, FName Fallback) const;
+    float LockOnSpeedCap(FName Clip) const;
     FName ActionPresentationClip=NAME_None;
     TSet<int32> ContactedDamageWindows;
     int32 ActionSwingBase=0;

@@ -105,9 +105,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bPerformanceMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrPerformance"));
     bVictoryStartTwoHandedRequested=ReplayMode==TEXT("victory")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -178,7 +178,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
-    DurationLimit=ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
+    DurationLimit=ReplayMode==TEXT("lockon")?180.f:ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
     InitializeVideo();
     if(ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&!Knight->bLockedOn)Knight->ToggleLockOn();
     if(ReplayMode==TEXT("stance"))Event(TEXT("stance_idle_before_input"));
@@ -879,7 +879,7 @@ bool AVeyrReplay::DriveIntegrationInputs()
         {TEXT("two_hand_sourced_walk"),TEXT("WalkTwoHand"),EExercise::Jog,EVeyrKnightAction::Ready,true,false,0,0,0,25},
         {TEXT("sourced_run_and_stop"),TEXT("Run"),EExercise::Sprint,EVeyrKnightAction::Ready,false,false,0,0,0,25},
         {TEXT("run_meshy_and_stop"),TEXT("RunAlternate"),EExercise::Sprint,EVeyrKnightAction::Ready,false,false,1,0,0,25},
-        {TEXT("locked_walk_without_blink"),TEXT("Walk"),EExercise::Lateral,EVeyrKnightAction::Ready,false,true,0,0,0,25},
+        {TEXT("locked_strafe_without_blink"),TEXT("StrafeRight"),EExercise::Lateral,EVeyrKnightAction::Ready,false,true,0,0,0,25},
         {TEXT("one_hand_light"),TEXT("LightAttack"),EExercise::Light,EVeyrKnightAction::LightAttack,false,true,0,0,0,50},
         {TEXT("one_hand_heavy_B"),TEXT("HeavyAttack"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,false,true,0,0,0,60},
         {TEXT("one_hand_heavy_A"),TEXT("HeavyAttackAlternate"),EExercise::Heavy,EVeyrKnightAction::HeavyAttack,false,true,0,1,0,60},
@@ -1844,11 +1844,133 @@ FVector AVeyrReplay::EscapeDirection() const
     return Best;
 }
 
+TSharedPtr<FJsonObject> AVeyrReplay::LockOnEvidence() const
+{
+    TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
+    O->SetNumberField(TEXT("stage"),LockOnStage);O->SetNumberField(TEXT("labHitsPassed"),LockOnLabPassed);
+    O->SetNumberField(TEXT("maxFacingErrorDegWhileStrafing"),LockOnMaxFacingErrorDeg);
+    TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();
+    for(const auto& Pair:LockOnClipSeconds)
+    {
+        TSharedPtr<FJsonObject> C=MakeShared<FJsonObject>();C->SetNumberField(TEXT("seconds"),Pair.Value);
+        const float* Sum=LockOnClipSpeedSum.Find(Pair.Key);C->SetNumberField(TEXT("meanPlanarSpeedCmS"),Sum&&Pair.Value>0.f?*Sum/Pair.Value:0.f);
+        Clips->SetObjectField(Pair.Key.ToString(),C);
+    }
+    O->SetObjectField(TEXT("sampledClips"),Clips);O->SetArrayField(TEXT("trials"),LockOnTrials);
+    if(IsValid(Knight))
+    {
+        TArray<TSharedPtr<FJsonValue>> Counts;for(int32 C:Knight->DirectionalStaggers)Counts.Add(MakeShared<FJsonValueNumber>(C));
+        O->SetArrayField(TEXT("directionalStaggersFrontBackLeftRight"),Counts);
+        O->SetStringField(TEXT("lastStaggerClip"),Knight->LastStaggerClip.ToString());
+        O->SetBoolField(TEXT("lockOnStrafeEnabled"),Knight->bLockOnStrafeEnabled);O->SetBoolField(TEXT("directionalStaggerEnabled"),Knight->bDirectionalStaggerEnabled);
+        O->SetNumberField(TEXT("runStopBlendSeconds"),Knight->RunStopBlendSeconds);
+    }
+    return O;
+}
+
+bool AVeyrReplay::DriveLockOnInputs()
+{
+    // Input-level locomotion trials (movement keys, Shift, grip, lock) plus a labelled lab segment
+    // that calls ApplyBossDamage(1 hp, unblockable) from four sides to exercise directional staggers.
+    if(ReplayMode!=TEXT("lockon"))return false;
+    struct FTrial{const TCHAR* Name;int32 Dir;bool Sprint,Two;const TCHAR* Clip;};
+    static const FTrial Trials[]={
+        {TEXT("back_one_hand"),1,false,false,TEXT("Backpedal")},{TEXT("left_one_hand"),2,false,false,TEXT("StrafeLeft")},
+        {TEXT("right_one_hand"),3,false,false,TEXT("StrafeRight")},{TEXT("sprint_left_one_hand"),2,true,false,TEXT("StrafeRunLeft")},
+        {TEXT("sprint_right_one_hand"),3,true,false,TEXT("StrafeRunRight")},{TEXT("left_two_hand"),2,false,true,TEXT("StrafeLeftTwoHand")},
+        {TEXT("right_two_hand"),3,false,true,TEXT("StrafeRightTwoHand")},{TEXT("sprint_right_two_hand"),3,true,true,TEXT("StrafeRunRightTwoHand")},
+        {TEXT("back_two_hand_falls_back_to_one_hand_backpedal"),1,false,true,TEXT("Backpedal")},{TEXT("forward_two_hand_walk"),0,false,true,TEXT("WalkTwoHand")}};
+    static const TCHAR* LabNames[5]={TEXT("StaggerFront"),TEXT("StaggerBack"),TEXT("StaggerLeft"),TEXT("StaggerRight"),TEXT("StaggerFrontTwoHand")};
+    static const float LabYaw[5]={0.f,180.f,-90.f,90.f,0.f};
+    const int32 NumTrials=UE_ARRAY_COUNT(Trials);
+    const float Dt=GetWorld()->GetDeltaSeconds();
+    const FVector Feet=Knight->GetFootLocation();
+    const FVector ToBoss=(Dragon->GetActorLocation()-Feet).GetSafeNormal2D();
+    const FVector Right=FVector::CrossProduct(FVector::UpVector,ToBoss);
+    const bool Ready=Knight->Action==EVeyrKnightAction::Ready&&Knight->IsGrounded();
+    auto Input=[&](const FVector& D,bool Sprint){Knight->SetSprintRequested(Sprint);Knight->SetReplayInput(D,false,false,false,false,false,false);};
+    if(!Knight->bLockedOn&&!Dragon->IsDead())Knight->ToggleLockOn();
+    if(Ready&&Knight->Health<45.f&&Knight->HealingCharges>0){Input(FVector::ZeroVector,false);Knight->TryHeal();return true;}
+    const bool Threat=Dragon->IsPointInsideActiveDanger(Feet)||Contains(Dragon->GetWarningFootprints(),Feet,120.f);
+    if(LockOnStage<NumTrials)
+    {
+        const FTrial& T=Trials[LockOnStage];
+        if(Knight->IsTwoHanded()!=T.Two){Input(FVector::ZeroVector,false);if(Ready&&!Knight->IsChangingGrip())Knight->ToggleGrip();LockOnStageStarted=Elapsed;return true;}
+        if(Threat){Input(EscapeDirection(),true);LockOnStageStarted=Elapsed;return true;}
+        const FVector Dirs[4]={ToBoss,-ToBoss,-Right,Right};
+        FVector D=Dirs[T.Dir];
+        // Stay inside the arena and out of the body: recentre without counting.
+        const float BossDistance=FVector::Dist2D(Feet,Dragon->GetActorLocation());
+        if(Feet.Size2D()>2500.f&&FVector::DotProduct(D,Feet.GetSafeNormal2D())>0.f){Input((-Feet).GetSafeNormal2D(),false);return true;}
+        if(T.Dir==0&&BossDistance<900.f){Input(-ToBoss,false);return true;}
+        Input(D,T.Sprint);
+        const FName Expected(T.Clip);
+        if(Knight->bRequestedPresentationClipSampled&&!Knight->RequestedPresentationClip.IsNone()&&Ready&&Knight->GetPlanarSpeed()>20.f)
+        {
+            LockOnClipSeconds.FindOrAdd(Knight->RequestedPresentationClip)+=Dt;LockOnClipSpeedSum.FindOrAdd(Knight->RequestedPresentationClip)+=Dt*Knight->GetPlanarSpeed();
+            if(Knight->RequestedPresentationClip==Expected)
+            {
+                LockOnStageSeconds+=Dt;
+                if(T.Dir!=0&&!(T.Sprint&&T.Dir<2)&&Elapsed-LockOnStageStarted>.35f)
+                {
+                    const float Err=FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(float(FVector::DotProduct(Knight->GetActorForwardVector().GetSafeNormal2D(),ToBoss)),-1.f,1.f)));
+                    LockOnMaxFacingErrorDeg=FMath::Max(LockOnMaxFacingErrorDeg,Err);
+                }
+                if(!bLockOnShot&&LockOnStageSeconds>.5f){bLockOnShot=true;Event(FString(TEXT("lockon_"))+T.Name);}
+            }
+        }
+        if(LockOnStageSeconds>=1.2f)
+        {
+            TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),T.Name);R->SetStringField(TEXT("expectedClip"),T.Clip);
+            R->SetNumberField(TEXT("observedSeconds"),LockOnStageSeconds);R->SetNumberField(TEXT("stageSeconds"),Elapsed-LockOnStageStarted);R->SetBoolField(TEXT("passed"),true);
+            LockOnTrials.Add(MakeShared<FJsonValueObject>(R));
+            ++LockOnStage;LockOnStageSeconds=0;LockOnStageStarted=Elapsed;bLockOnShot=false;
+        }
+        else if(Elapsed-LockOnStageStarted>40.f)Finish(false,FString(TEXT("lock-on trial never sampled its expected clip for 1.2 s: "))+T.Name);
+        return true;
+    }
+    // Lab: synthetic unblockable 1 hp hits from four sides (plus one two-handed), Ready state only.
+    if(LockOnLabHit>=5)
+    {
+        Input(FVector::ZeroVector,false);
+        const bool LocoOk=LockOnMaxFacingErrorDeg<=25.f;
+        Finish(LocoOk&&LockOnLabPassed==5,FString::Printf(TEXT("lock-on: %d locomotion trials sampled their clips, max facing error %.1f deg; directional stagger lab %d/5"),NumTrials,LockOnMaxFacingErrorDeg,LockOnLabPassed));
+        return true;
+    }
+    const bool WantTwo=LockOnLabHit==4;
+    Input(FVector::ZeroVector,false);
+    if(bLockOnLabAwaiting)
+    {
+        if(Knight->Action==EVeyrKnightAction::Stagger&&Knight->bRequestedPresentationClipSampled&&Knight->RequestedPresentationClip==LockOnLabExpected)
+        {
+            TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),TEXT("lab_hit"));R->SetStringField(TEXT("expectedClip"),LockOnLabExpected.ToString());
+            R->SetNumberField(TEXT("sourceYawDeg"),Knight->LastStaggerSourceYaw);R->SetNumberField(TEXT("actionDuration"),Knight->GetActionDuration());R->SetBoolField(TEXT("passed"),true);
+            LockOnTrials.Add(MakeShared<FJsonValueObject>(R));++LockOnLabPassed;Event(TEXT("lockon_lab_")+LockOnLabExpected.ToString());
+            bLockOnLabAwaiting=false;++LockOnLabHit;
+        }
+        else if(Elapsed-LockOnLastHitAt>.5f)
+        {
+            TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),TEXT("lab_hit"));R->SetStringField(TEXT("expectedClip"),LockOnLabExpected.ToString());
+            R->SetStringField(TEXT("observedClip"),Knight->RequestedPresentationClip.ToString());R->SetStringField(TEXT("lastStaggerClip"),Knight->LastStaggerClip.ToString());
+            R->SetBoolField(TEXT("passed"),false);LockOnTrials.Add(MakeShared<FJsonValueObject>(R));bLockOnLabAwaiting=false;++LockOnLabHit;
+        }
+        return true;
+    }
+    if(Knight->IsTwoHanded()!=WantTwo){if(Ready&&!Knight->IsChangingGrip())Knight->ToggleGrip();LockOnLastHitAt=Elapsed;return true;}
+    if(!Ready||Threat||Elapsed-LockOnLastHitAt<1.2f)return true;
+    const FVector Facing=Knight->GetActorForwardVector().GetSafeNormal2D();
+    const FVector Source=Knight->GetActorLocation()+Facing.RotateAngleAxis(LabYaw[LockOnLabHit],FVector::UpVector)*300.f;
+    LockOnLabExpected=LabNames[LockOnLabHit];LockOnLastHitAt=Elapsed;bLockOnLabAwaiting=true;
+    Knight->ApplyBossDamage(1.f,Source,true);
+    return true;
+}
+
 void AVeyrReplay::DriveInputs()
 {
     if(DriveCollisionInputs())return;
     if(DriveIntegrationInputs())return;
     if(DriveStanceInputs())return;
+    if(DriveLockOnInputs())return;
     if(DriveScenarioInputs())return;
     if(bVictoryStartTwoHandedRequested&&!bVictoryGripTransitionCompleted)
     {
@@ -2289,6 +2411,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetStringField(TEXT("policy"),TEXT("input-only provisional navigation; runtime tuning required"));
     if(ReplayMode==TEXT("integration"))Root->SetObjectField(TEXT("integration"),IntegrationEvidence(true));
     if(ReplayMode==TEXT("collision"))Root->SetObjectField(TEXT("collision"),CollisionEvidence(true));
+    if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);
     Root->SetNumberField(TEXT("scenarioLimitGameSeconds"),DurationLimit);

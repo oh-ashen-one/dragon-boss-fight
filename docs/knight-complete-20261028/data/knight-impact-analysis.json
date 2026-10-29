@@ -1,0 +1,114 @@
+[
+ {
+  "file": "sword and shield impact.fbx",
+  "seconds": 0.7,
+  "yawDeg": [
+   21.66,
+   0.233
+  ],
+  "rollDeg": [
+   22.88,
+   0.3
+  ],
+  "pitchBackDeg": [
+   16.13,
+   0.267
+  ],
+  "sideLeftDeg": [
+   3.48,
+   0.233
+  ],
+  "leftShoulderBackM": [
+   0.18,
+   0.267
+  ],
+  "rightShoulderBackM": [
+   0.11,
+   0.333
+  ]
+ },
+ {
+  "file": "sword and shield impact (2).fbx",
+  "seconds": 0.9666666666666667,
+  "yawDeg": [
+   8.85,
+   0.167
+  ],
+  "rollDeg": [
+   -11.54,
+   0.167
+  ],
+  "pitchBackDeg": [
+   -25.21,
+   0.5
+  ],
+  "sideLeftDeg": [
+   -21.48,
+   0.4
+  ],
+  "leftShoulderBackM": [
+   -0.09,
+   0.4
+  ],
+  "rightShoulderBackM": [
+   -0.1,
+   0.167
+  ]
+ },
+ {
+  "file": "sword and shield impact (3).fbx",
+  "seconds": 0.7,
+  "yawDeg": [
+   -6.93,
+   0.333
+  ],
+  "rollDeg": [
+   27.27,
+   0.267
+  ],
+  "pitchBackDeg": [
+   39.44,
+   0.233
+  ],
+  "sideLeftDeg": [
+   9.75,
+   0.267
+  ],
+  "leftShoulderBackM": [
+   0.28,
+   0.267
+  ],
+  "rightShoulderBackM": [
+   0.26,
+   0.3
+  ]
+ },
+ {
+  "file": "sword and shield idle.fbx",
+  "seconds": 3.6,
+  "yawDeg": [
+   43.49,
+   0.9
+  ],
+  "rollDeg": [
+   -4.03,
+   2.433
+  ],
+  "pitchBackDeg": [
+   6.36,
+   2.1
+  ],
+  "sideLeftDeg": [
+   5.27,
+   0.9
+  ],
+  "leftShoulderBackM": [
+   0.11,
+   1.033
+  ],
+  "rightShoulderBackM": [
+   -0.07,
+   0.767
+  ]
+ }
+]

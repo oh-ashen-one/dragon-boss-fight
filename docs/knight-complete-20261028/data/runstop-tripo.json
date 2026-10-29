@@ -1,0 +1,255 @@
+{
+ "summary": {
+  "run": "RunOneHand_Blender_tripo_r2.glb",
+  "runGameplayRate": 1.26,
+  "runStop": "RunStop_Blender_v1r2.glb",
+  "runStopStartOffsetSeconds": 0.0,
+  "runPeakPointSpeedCmS": 1323.7,
+  "runStopPeakPointSpeedCmS": 1343.5,
+  "clipPeakReferenceCmS": 1343.5,
+  "maxPointGapCm": {
+   "max": 103.77,
+   "median": 87.465
+  },
+  "maxLocalRotationGapDeg": {
+   "max": 105.4,
+   "median": 73.0
+  },
+  "blend0.10PeakSpeedCmS": {
+   "max": 1926.1,
+   "median": 1374.15,
+   "phasesOverClipPeak": 12,
+   "phases": 24
+  },
+  "blend0.20PeakSpeedCmS": {
+   "max": 1424.1,
+   "median": 1212.6,
+   "phasesOverClipPeak": 6,
+   "phases": 24
+  },
+  "blend0.30PeakSpeedCmS": {
+   "max": 1183.6,
+   "median": 992.05,
+   "phasesOverClipPeak": 0,
+   "phases": 24
+  }
+ },
+ "phases": [
+  {
+   "runPhaseSeconds": 0.0,
+   "maxPointGapCm": 92.72,
+   "swordTipGapCm": 19.72,
+   "maxLocalRotationGapDeg": 73.0,
+   "blend0.10PeakSpeedCmS": 1682.8,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 974.6
+  },
+  {
+   "runPhaseSeconds": 0.0261,
+   "maxPointGapCm": 96.97,
+   "swordTipGapCm": 20.02,
+   "maxLocalRotationGapDeg": 80.3,
+   "blend0.10PeakSpeedCmS": 1837.5,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 986.3
+  },
+  {
+   "runPhaseSeconds": 0.0522,
+   "maxPointGapCm": 99.42,
+   "swordTipGapCm": 21.49,
+   "maxLocalRotationGapDeg": 89.2,
+   "blend0.10PeakSpeedCmS": 1926.1,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 995.2
+  },
+  {
+   "runPhaseSeconds": 0.0783,
+   "maxPointGapCm": 98.67,
+   "swordTipGapCm": 21.84,
+   "maxLocalRotationGapDeg": 105.4,
+   "blend0.10PeakSpeedCmS": 1895.8,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 995.5
+  },
+  {
+   "runPhaseSeconds": 0.1044,
+   "maxPointGapCm": 95.77,
+   "swordTipGapCm": 22.7,
+   "maxLocalRotationGapDeg": 96.1,
+   "blend0.10PeakSpeedCmS": 1925.6,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 988.9
+  },
+  {
+   "runPhaseSeconds": 0.1306,
+   "maxPointGapCm": 89.95,
+   "swordTipGapCm": 23.68,
+   "maxLocalRotationGapDeg": 71.0,
+   "blend0.10PeakSpeedCmS": 1907.4,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 980.1
+  },
+  {
+   "runPhaseSeconds": 0.1567,
+   "maxPointGapCm": 79.63,
+   "swordTipGapCm": 25.18,
+   "maxLocalRotationGapDeg": 63.5,
+   "blend0.10PeakSpeedCmS": 1888.5,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 968.4
+  },
+  {
+   "runPhaseSeconds": 0.1828,
+   "maxPointGapCm": 68.53,
+   "swordTipGapCm": 28.31,
+   "maxLocalRotationGapDeg": 55.7,
+   "blend0.10PeakSpeedCmS": 1848.5,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 950.7
+  },
+  {
+   "runPhaseSeconds": 0.2089,
+   "maxPointGapCm": 62.17,
+   "swordTipGapCm": 31.03,
+   "maxLocalRotationGapDeg": 49.9,
+   "blend0.10PeakSpeedCmS": 1775.2,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 936.7
+  },
+  {
+   "runPhaseSeconds": 0.235,
+   "maxPointGapCm": 56.01,
+   "swordTipGapCm": 31.99,
+   "maxLocalRotationGapDeg": 53.5,
+   "blend0.10PeakSpeedCmS": 1647.3,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 931.3
+  },
+  {
+   "runPhaseSeconds": 0.2611,
+   "maxPointGapCm": 47.27,
+   "swordTipGapCm": 31.8,
+   "maxLocalRotationGapDeg": 57.4,
+   "blend0.10PeakSpeedCmS": 1472.9,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 930.2
+  },
+  {
+   "runPhaseSeconds": 0.2872,
+   "maxPointGapCm": 41.09,
+   "swordTipGapCm": 29.63,
+   "maxLocalRotationGapDeg": 60.8,
+   "blend0.10PeakSpeedCmS": 1309.4,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 935.8
+  },
+  {
+   "runPhaseSeconds": 0.3133,
+   "maxPointGapCm": 56.83,
+   "swordTipGapCm": 26.54,
+   "maxLocalRotationGapDeg": 63.8,
+   "blend0.10PeakSpeedCmS": 1152.9,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 972.6
+  },
+  {
+   "runPhaseSeconds": 0.3394,
+   "maxPointGapCm": 76.89,
+   "swordTipGapCm": 23.6,
+   "maxLocalRotationGapDeg": 65.7,
+   "blend0.10PeakSpeedCmS": 1045.1,
+   "blend0.20PeakSpeedCmS": 1279.8,
+   "blend0.30PeakSpeedCmS": 1057.1
+  },
+  {
+   "runPhaseSeconds": 0.3656,
+   "maxPointGapCm": 97.97,
+   "swordTipGapCm": 21.22,
+   "maxLocalRotationGapDeg": 77.8,
+   "blend0.10PeakSpeedCmS": 960.8,
+   "blend0.20PeakSpeedCmS": 1399.3,
+   "blend0.30PeakSpeedCmS": 1159.6
+  },
+  {
+   "runPhaseSeconds": 0.3917,
+   "maxPointGapCm": 103.77,
+   "swordTipGapCm": 19.91,
+   "maxLocalRotationGapDeg": 85.0,
+   "blend0.10PeakSpeedCmS": 1054.2,
+   "blend0.20PeakSpeedCmS": 1424.1,
+   "blend0.30PeakSpeedCmS": 1183.6
+  },
+  {
+   "runPhaseSeconds": 0.4178,
+   "maxPointGapCm": 101.22,
+   "swordTipGapCm": 19.65,
+   "maxLocalRotationGapDeg": 81.8,
+   "blend0.10PeakSpeedCmS": 1067.7,
+   "blend0.20PeakSpeedCmS": 1400.7,
+   "blend0.30PeakSpeedCmS": 1161.4
+  },
+  {
+   "runPhaseSeconds": 0.4439,
+   "maxPointGapCm": 99.24,
+   "swordTipGapCm": 19.36,
+   "maxLocalRotationGapDeg": 79.3,
+   "blend0.10PeakSpeedCmS": 1070.7,
+   "blend0.20PeakSpeedCmS": 1391.9,
+   "blend0.30PeakSpeedCmS": 1150.1
+  },
+  {
+   "runPhaseSeconds": 0.47,
+   "maxPointGapCm": 96.01,
+   "swordTipGapCm": 19.07,
+   "maxLocalRotationGapDeg": 76.2,
+   "blend0.10PeakSpeedCmS": 1048.9,
+   "blend0.20PeakSpeedCmS": 1380.8,
+   "blend0.30PeakSpeedCmS": 1135.6
+  },
+  {
+   "runPhaseSeconds": 0.4961,
+   "maxPointGapCm": 91.28,
+   "swordTipGapCm": 19.22,
+   "maxLocalRotationGapDeg": 74.6,
+   "blend0.10PeakSpeedCmS": 1008.1,
+   "blend0.20PeakSpeedCmS": 1364.5,
+   "blend0.30PeakSpeedCmS": 1113.4
+  },
+  {
+   "runPhaseSeconds": 0.5222,
+   "maxPointGapCm": 84.98,
+   "swordTipGapCm": 19.94,
+   "maxLocalRotationGapDeg": 74.1,
+   "blend0.10PeakSpeedCmS": 941.4,
+   "blend0.20PeakSpeedCmS": 1339.7,
+   "blend0.30PeakSpeedCmS": 1090.2
+  },
+  {
+   "runPhaseSeconds": 0.5483,
+   "maxPointGapCm": 77.07,
+   "swordTipGapCm": 21.26,
+   "maxLocalRotationGapDeg": 73.0,
+   "blend0.10PeakSpeedCmS": 1013.2,
+   "blend0.20PeakSpeedCmS": 1299.5,
+   "blend0.30PeakSpeedCmS": 1056.8
+  },
+  {
+   "runPhaseSeconds": 0.5744,
+   "maxPointGapCm": 66.96,
+   "swordTipGapCm": 21.17,
+   "maxLocalRotationGapDeg": 69.1,
+   "blend0.10PeakSpeedCmS": 1184.3,
+   "blend0.20PeakSpeedCmS": 1217.1,
+   "blend0.30PeakSpeedCmS": 998.0
+  },
+  {
+   "runPhaseSeconds": 0.6006,
+   "maxPointGapCm": 81.5,
+   "swordTipGapCm": 19.77,
+   "maxLocalRotationGapDeg": 67.4,
+   "blend0.10PeakSpeedCmS": 1438.9,
+   "blend0.20PeakSpeedCmS": 1212.6,
+   "blend0.30PeakSpeedCmS": 966.2
+  }
+ ]
+}

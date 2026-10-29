@@ -47,7 +47,7 @@ def render(label,frames):
    hip=bpy.data.objects['Knight_Comparison'].pose.bones['Hips'].head;focus=Vector((hip.x,hip.y,.5));cam.location=focus+Vector(off);cam.rotation_euler=(focus-cam.location).to_track_quat('-Z','Y').to_euler()
    s.render.filepath=str(folder/f'{v}_{f:04d}.png');bpy.ops.render.render(write_still=True)
 
-def run(file,kind,name,travel=False):
+def run(file,kind,name,travel=False,mirror=False):
  s=reset();bpy.ops.import_scene.gltf(filepath=str(TARGET));t=next(o for o in s.objects if o.type=='ARMATURE');t.name='Knight_Comparison'
  body=[o for o in s.objects if o.type=='MESH'];s.frame_set(0)
  grip=t.pose.bones['RightHand'].matrix.inverted()@t.pose.bones['WeaponSocket'].matrix
@@ -77,6 +77,19 @@ def run(file,kind,name,travel=False):
  samples={}
  for f in range(start,end+1):
   s.frame_set(f);samples[f-start]={n:(src.matrix_world@src.pose.bones[v].matrix).copy() for n,v in mapping.items()}
+ if mirror:
+  # Left/right mirror across the source sagittal plane (x=0, the Mixamo walk travels -Y).
+  # Mirror each bone's world rotation delta from rest (S*D*S is a proper rotation),
+  # take it from the opposite-side bone, and reflect positions; the retarget formula is unchanged.
+  S=Matrix.Diagonal((-1,1,1));other=lambda n:n.replace('Left','#').replace('Right','Left').replace('#','Right')
+  for f in samples:
+   row={}
+   for n in mapping:
+    m=other(n) if other(n) in mapping else n
+    D=samples[f][m].to_3x3()@sr[m].to_3x3().inverted();D=S@D@S
+    tt=samples[f][m].translation.copy();tt.x=-tt.x
+    row[n]=Matrix.LocRotScale(tt,(D@sr[n].to_3x3()).to_quaternion(),Vector((1,1,1)))
+   samples[f]=row
  first=samples[0]['Hips'].translation;last=samples[N]['Hips'].translation
  act=bpy.data.actions.new(name);t.animation_data_create();t.animation_data.action=act;previous={}
  for f in range(N+1):
@@ -113,4 +126,4 @@ def run(file,kind,name,travel=False):
  s['session_owner']=OWNER;s['retarget_source']=str(file);s['retarget_scale']=scale
  bpy.ops.wm.save_as_mainfile(filepath=str(path.with_suffix('.blend')),compress=True)
  render(name,[0,N//4,N//2,3*N//4,N])
- report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'scale':scale,'rootTravel':travel,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
+ report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'scale':scale,'rootTravel':travel,'mirrored':mirror,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))

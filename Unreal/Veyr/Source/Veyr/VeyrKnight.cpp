@@ -27,6 +27,8 @@
 #include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "UObject/ConstructorHelpers.h"
 
 AVeyrKnight::AVeyrKnight()
@@ -108,6 +110,7 @@ AVeyrKnight::AVeyrKnight()
     PresentationNominalSpeeds.Add(TEXT("StrafeLeft"),170.28f);
     PresentationNominalSpeeds.Add(TEXT("StrafeRight"),163.19f);
     PresentationNominalSpeeds.Add(TEXT("Backpedal"),105.38f);
+    DirectionalStaggers.Init(0,4);
 
     // Original engine primitives are a visible verification proxy, not Customuse art.
     TemporaryVisual = CreateDefaultSubobject<USceneComponent>(TEXT("TEMP original primitive knight pending Customuse"));
@@ -229,6 +232,15 @@ void AVeyrKnight::BeginPlay()
         CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
         if(CustomuseVisualDefinition)UE_LOG(LogTemp,Warning,TEXT("VEYR_LEGACY_DEFINITION approved native definition missing; old art is not integration acceptance"));
     }
+    // Each completion feature keeps its "before" behind a flag (boss-fight-blueprint principle 8).
+    bLockOnStrafeEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoLockOnStrafe"));
+    bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
+    float RequestedRunStopBlend=0.f;
+    if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
+        RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
+    if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_KNIGHT_COMPLETION lockOnStrafe=%d directionalStagger=%d runStopBlend=%.2f"),
+        bLockOnStrafeEnabled?1:0,bDirectionalStaggerEnabled?1:0,RunStopBlendSeconds);
     if (CustomuseVisualDefinition) ApplyCustomuseVisual(CustomuseVisualDefinition);
     else SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported visual definition unavailable"));
     UE_LOG(LogTemp, Display, TEXT("VEYR_KNIGHT_READY collisionHeight=244cm art=%s light=%.3f/%.3f heavy=%.3f/%.3f roll=.08-.44/%.2f"),
@@ -277,6 +289,25 @@ FName AVeyrKnight::ChooseAttackClip(bool bHeavy) const
     }
     return bTwoHanded?TEXT("LightAttackTwoHand"):TEXT("LightAttack");
 }
+FName AVeyrKnight::ChooseStaggerClip(const FVector& Source)
+{
+    const FVector ToSource=(Source-GetActorLocation()).GetSafeNormal2D();
+    if(ToSource.IsNearlyZero())return NAME_None;
+    const FVector Local=GetActorQuat().UnrotateVector(ToSource);
+    LastStaggerSourceYaw=FMath::RadiansToDegrees(FMath::Atan2(Local.Y,Local.X));
+    if(!bDirectionalStaggerEnabled)return NAME_None;
+    const float Yaw=LastStaggerSourceYaw;
+    const int32 Direction=FMath::Abs(Yaw)<=45.f?0:FMath::Abs(Yaw)>=135.f?1:Yaw<0.f?2:3;
+    static const TCHAR* Names[4]={TEXT("Front"),TEXT("Back"),TEXT("Left"),TEXT("Right")};
+    const FString Base=FString(TEXT("Stagger"))+Names[Direction];
+    FName Clip=NAME_None;
+    if(bTwoHanded&&HasVisualClip(FName(*(Base+TEXT("TwoHand")))))Clip=FName(*(Base+TEXT("TwoHand")));
+    else if(HasVisualClip(FName(*Base)))Clip=FName(*Base);
+    if(!Clip.IsNone()){if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);++DirectionalStaggers[Direction];}
+    LastStaggerClip=Clip.IsNone()?FName(TEXT("Stagger")):Clip;
+    UE_LOG(LogTemp,Display,TEXT("VEYR_KNIGHT_STAGGER sourceYaw=%.1f direction=%s clip=%s twoHanded=%d"),Yaw,Names[Direction],*LastStaggerClip.ToString(),bTwoHanded?1:0);
+    return Clip;
+}
 float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return VisualClipDuration(ChooseAttackClip(bHeavy),bTwoHanded?(bHeavy?1.20f:.90f):(bHeavy?.90f:.66f)); }
 float AVeyrKnight::GetAttackContactTime(bool bHeavy) const
 {
@@ -321,7 +352,7 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::GripToOneHand:return TEXT("GripToOneHand");
         case EVeyrKnightAction::Guard:return TEXT("GuardTwoHand");
         case EVeyrKnightAction::Heal:return TEXT("Heal");
-        case EVeyrKnightAction::Stagger:return TEXT("Stagger");
+        case EVeyrKnightAction::Stagger:return PendingStaggerClip.IsNone()?FName(TEXT("Stagger")):PendingStaggerClip;
         case EVeyrKnightAction::Dead:return TEXT("Death");
         default:return bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
     }
@@ -581,7 +612,10 @@ void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnb
     if (!bCanBlock || bBroken)
     {
         bGuardBroken = bBroken;
-        BeginAction(bBroken?EVeyrKnightAction::GuardBreak:EVeyrKnightAction::Stagger,VisualClipDuration(bBroken?TEXT("GuardBreak"):TEXT("Stagger"),bBroken?1.2f:.42f));
+        // Directional reaction by hit side; the original non-directional Stagger stays the default.
+        PendingStaggerClip=bBroken?NAME_None:ChooseStaggerClip(Source);
+        const FName ReactionClip=bBroken?FName(TEXT("GuardBreak")):PendingStaggerClip.IsNone()?FName(TEXT("Stagger")):PendingStaggerClip;
+        BeginAction(bBroken?EVeyrKnightAction::GuardBreak:EVeyrKnightAction::Stagger,VisualClipDuration(ReactionClip,bBroken?1.2f:.42f));
         const FVector Away = (GetActorLocation() - Source).GetSafeNormal2D();
         if(!bBroken)GetCharacterMovement()->AddImpulse(Away*120.f,true); // Guard-break travel comes from its approved root track.
     }
@@ -688,7 +722,19 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     }
     bLateralDodgeBlocked=false;
     const bool bAttack=IsAttackAction();
-    Movement->bOrientRotationToMovement=Action==EVeyrKnightAction::Ready&&!MoveIntent.IsNearlyZero();
+    const bool bStrafing=IsLockOnStrafing();
+    if(bStrafing)
+    {
+        // Actor-local intent with hysteresis so diagonals do not flicker between clips.
+        const FVector Local=GetActorQuat().UnrotateVector(MoveIntent.GetSafeNormal2D());
+        const float Scores[4]={float(Local.X),float(-Local.X),float(-Local.Y),float(Local.Y)};
+        int32 Best=0;for(int32 I=1;I<4;++I)if(Scores[I]>Scores[Best])Best=I;
+        if(!Local.IsNearlyZero()&&(!bLockOnStrafingLastFrame||Scores[Best]>Scores[LockOnMoveDirection]+.15f))LockOnMoveDirection=Best;
+    }
+    bLockOnStrafingLastFrame=bStrafing;
+    // Sprinting forward or backward while locked runs freely (Souls convention); lateral keeps facing.
+    const bool bFaceBoss=bStrafing&&!(bSprintHeld&&LockOnMoveDirection<2);
+    Movement->bOrientRotationToMovement=Action==EVeyrKnightAction::Ready&&!MoveIntent.IsNearlyZero()&&!bFaceBoss;
     if(IsRollPrefix())
     {
         const FVeyrVisualClip* Clip=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
@@ -709,14 +755,14 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     }
     else if(Action==EVeyrKnightAction::Ready&&!bLateralDodgeBlocked)
     {
-        Movement->MaxWalkSpeed=bSprintHeld?580.f:240.f;
+        Movement->MaxWalkSpeed=bFaceBoss?LockOnSpeedCap(SelectDirectionalLocomotion(true)):bSprintHeld?580.f:240.f;
         AddMovementInput(MoveIntent,1.f);
     }
     else
     {
         ConsumeMovementInputVector();Movement->StopMovementImmediately();Movement->MaxWalkSpeed=0.f;
     }
-    if (bLockedOn && IsValid(Boss) && ((Action==EVeyrKnightAction::Ready&&MoveIntent.IsNearlyZero())||(bAttack&&ActionElapsed<.16f)))
+    if (bLockedOn && IsValid(Boss) && ((Action==EVeyrKnightAction::Ready&&(MoveIntent.IsNearlyZero()||bFaceBoss))||(bAttack&&ActionElapsed<.16f)))
     {
         const FVector Toward = (Boss->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
         if (!Toward.IsNearlyZero()) SetActorRotation(FMath::RInterpTo(GetActorRotation(), Toward.Rotation(), DeltaSeconds, 10.f));
@@ -902,8 +948,50 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     return true;
 }
 
+bool AVeyrKnight::IsLockOnStrafing() const
+{
+    return bLockOnStrafeEnabled&&bLockedOn&&IsValid(Boss)&&!Boss->IsDead()&&!IsTerminal()&&
+        Action==EVeyrKnightAction::Ready&&(!MoveIntent.IsNearlyZero()||GetPlanarSpeed()>8.f);
+}
+FName AVeyrKnight::PickLockOnClip(FName Preferred,FName Fallback) const
+{
+    if(HasVisualClip(Preferred))return Preferred;
+    if(HasVisualClip(Fallback))return Fallback;
+    return NAME_None;
+}
+float AVeyrKnight::LockOnSpeedCap(FName Clip) const
+{
+    // Strafes and backpedal play near their measured stance-foot speed so feet do not skate
+    // or blur: lateral walk <= 1.2x nominal (cap 240), strafe run <= 1.1x (cap 580),
+    // backpedal 100 cm/s (approved loop nominal 59.9 cm/s plays at 1.67x).
+    if(Clip==FName(TEXT("Backpedal")))return 100.f;
+    const float Nominal=VisualClipSpeed(Clip);
+    const FString Name=Clip.ToString();
+    if(Name.StartsWith(TEXT("StrafeRun")))return Nominal>1.f?FMath::Min(580.f,Nominal*1.1f):450.f;
+    if(Name.StartsWith(TEXT("Strafe")))return Nominal>1.f?FMath::Min(240.f,Nominal*1.2f):175.f;
+    return bSprintHeld?580.f:240.f;
+}
 FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
 {
+    if(IsLockOnStrafing()&&!(bSprintHeld&&LockOnMoveDirection<2))
+    {
+        // Lock-on: face the boss; back = approved Backpedal loop, sides = Mixamo strafes
+        // (run variants while Shift is held). Missing two-hand clips fall back to one-hand,
+        // missing strafes fall back to the forward walk (the previous behaviour).
+        const TCHAR* Grip=bTwoHanded?TEXT("TwoHand"):TEXT("");
+        const FName Walk=bTwoHanded?TEXT("WalkTwoHand"):TEXT("Walk");
+        FName Pick=NAME_None;
+        if(LockOnMoveDirection==1)Pick=PickLockOnClip(TEXT("Backpedal"),Walk);
+        else if(LockOnMoveDirection>=2)
+        {
+            const TCHAR* Side=LockOnMoveDirection==2?TEXT("Left"):TEXT("Right");
+            const FString Kind=bAllowRun&&bSprintHeld?TEXT("StrafeRun"):TEXT("Strafe");
+            Pick=PickLockOnClip(FName(*(Kind+Side+Grip)),FName(*(Kind+Side)));
+            if(Pick.IsNone())Pick=PickLockOnClip(FName(*(FString(TEXT("Strafe"))+Side+Grip)),FName(*(FString(TEXT("Strafe"))+Side)));
+        }
+        if(!Pick.IsNone())return Pick;
+        return Walk;
+    }
     // Normal movement uses the sourced walk in the current grip. Shift selects
     // the sourced run; Ctrl remains unbound. Cadence follows measured speed.
     if(!bAllowRun||!bSprintHeld)return bTwoHanded?TEXT("WalkTwoHand"):TEXT("Walk");
@@ -1026,9 +1114,12 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     {
         const bool PreservePrefix=bPreserveRollPrefix&&PresentationTransitionClip==FName(TEXT("Roll"))&&Clip==FName(TEXT("RollAttack"));
         bPresentationTransitionActive=!PreservePrefix&&!PresentationTransitionClip.IsNone()&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
+        // The sourced Fab run carries the sword ~50-60 cm from where RunStop starts (RunStop was
+        // authored from the earlier Blender run); a 0.10 s blend outran both clips' peak speeds.
+        bTransitionInvolvesRunStop=Clip==FName(TEXT("RunStop"))||PresentationTransitionClip==FName(TEXT("RunStop"));
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=GripTransitionRemaining>0.f?.28f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float BlendSeconds=GripTransitionRemaining>0.f?.28f:bTransitionInvolvesRunStop?RunStopBlendSeconds:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset),Alpha);
     if(Alpha>=1.f)bPresentationTransitionActive=false;

@@ -1,0 +1,134 @@
+[
+ {
+  "file": "WalkOneHand_Blender_v2r2.glb",
+  "duration": 1.2000000476837158,
+  "stanceSamples": 144,
+  "rawStanceSpeedMedian": 0.6570530285247338,
+  "rawStanceSpeedMean": 0.6115501678865628,
+  "bodyDirectionMeshXZ": [
+   0.001,
+   1.0
+  ]
+ },
+ {
+  "file": "WalkTwoHand_Blender_v6r2.glb",
+  "duration": 2.4000000953674316,
+  "stanceSamples": 288,
+  "rawStanceSpeedMedian": 0.3833472577293656,
+  "rawStanceSpeedMean": 0.37181658134988055,
+  "bodyDirectionMeshXZ": [
+   0.002,
+   1.0
+  ]
+ },
+ {
+  "file": "Backpedal_Blender_loop_v1r3.glb",
+  "duration": 1.2000000476837158,
+  "stanceSamples": 144,
+  "rawStanceSpeedMedian": 0.24997259723436432,
+  "rawStanceSpeedMean": 0.22683284231287212,
+  "bodyDirectionMeshXZ": [
+   -0.0,
+   -1.0
+  ]
+ },
+ {
+  "file": "RunOneHand_Blender_tripo_r2.glb",
+  "duration": 0.6266666650772095,
+  "stanceSamples": 29,
+  "rawStanceSpeedMedian": 2.2834812324932496,
+  "rawStanceSpeedMean": 2.3551880560866403,
+  "bodyDirectionMeshXZ": [
+   -0.005,
+   1.0
+  ]
+ },
+ {
+  "file": "RunOneHand_Blender_meshy_r3.glb",
+  "duration": 0.6000000238418579,
+  "stanceSamples": 13,
+  "rawStanceSpeedMedian": 1.6839369960584423,
+  "rawStanceSpeedMean": 1.9421338727388269,
+  "bodyDirectionMeshXZ": [
+   -0.016,
+   0.999
+  ]
+ },
+ {
+  "file": "Mixamo_Walk_v17.glb",
+  "duration": 1.100000023841858,
+  "stanceSamples": 118,
+  "rawStanceSpeedMedian": 0.7984195749691992,
+  "rawStanceSpeedMean": 0.7623163886881165,
+  "bodyDirectionMeshXZ": [
+   -0.01,
+   1.0
+  ]
+ },
+ {
+  "file": "Fab_RunOneHand_v18.glb",
+  "duration": 0.5600000023841858,
+  "stanceSamples": 30,
+  "rawStanceSpeedMedian": 3.3973157414887982,
+  "rawStanceSpeedMean": 3.3521892193099996,
+  "bodyDirectionMeshXZ": [
+   0.003,
+   0.999
+  ]
+ },
+ {
+  "file": "Mixamo_StrafeLeft_v2.glb",
+  "duration": 1.2999999523162842,
+  "stanceSamples": 156,
+  "rawStanceSpeedMedian": 0.5767169688888618,
+  "rawStanceSpeedMean": 0.5622358625673891,
+  "bodyDirectionMeshXZ": [
+   0.999,
+   -0.003
+  ]
+ },
+ {
+  "file": "Mixamo_StrafeRight_v2.glb",
+  "duration": 1.1333333253860474,
+  "stanceSamples": 136,
+  "rawStanceSpeedMedian": 0.6479597483911975,
+  "rawStanceSpeedMean": 0.6220045460302543,
+  "bodyDirectionMeshXZ": [
+   -0.999,
+   -0.006
+  ]
+ },
+ {
+  "file": "Mixamo_StrafeRunLeft_v2.glb",
+  "duration": 0.6666666865348816,
+  "stanceSamples": 46,
+  "rawStanceSpeedMedian": 1.713730439051513,
+  "rawStanceSpeedMean": 1.6796216119605616,
+  "bodyDirectionMeshXZ": [
+   0.999,
+   0.007
+  ]
+ },
+ {
+  "file": "Mixamo_StrafeRunRight_v2.glb",
+  "duration": 0.699999988079071,
+  "stanceSamples": 42,
+  "rawStanceSpeedMedian": 1.6832998336580354,
+  "rawStanceSpeedMean": 1.6599238595627241,
+  "bodyDirectionMeshXZ": [
+   -0.999,
+   0.008
+  ]
+ },
+ {
+  "file": "Mixamo_StrafeLeftTwoHand_v2.glb",
+  "duration": 1.2999999523162842,
+  "stanceSamples": 156,
+  "rawStanceSpeedMedian": 0.5767169688888618,
+  "rawStanceSpeedMean": 0.5622358625673891,
+  "bodyDirectionMeshXZ": [
+   0.999,
+   -0.003
+  ]
+ }
+]
