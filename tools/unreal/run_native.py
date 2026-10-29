@@ -15,13 +15,15 @@ runtime = p.add_mutually_exclusive_group(required=True)
 runtime.add_argument('--engine', type=Path)
 runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
-p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon'], required=True)
+p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof'], required=True)
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--video-fps', type=int, choices=range(1,16), help='Optional native capture cadence; adds measurable overhead')
 p.add_argument('--launch-services',action='store_true',help='Use the normal macOS app launch path; success still requires native final evidence')
 p.add_argument('--performance',action='store_true',help='Exclusive GPU lease; no screenshots/video, sparse diagnostics; audio remains enabled')
 p.add_argument('--audio-capture-seconds',type=int,choices=range(1,121),help='Record only the game master submix; enables sound and is incompatible with performance mode')
 p.add_argument('--start-two-handed', action='store_true', help='Victory QA uses the ordinary authored grip input before combat')
+p.add_argument('--extra-arg', action='append', default=[], help='Extra game command-line flag (repeatable), e.g. -VeyrNoWeaponGripLock for the blendproof before-run')
+p.add_argument('--no-proof-floor', action='store_true', help='blendproof only: do not apply the 25 cm checker (-VeyrProofFloor)')
 p.add_argument('--width', type=int, default=1280)
 p.add_argument('--height', type=int, default=720)
 a = p.parse_args()
@@ -66,6 +68,11 @@ if a.audio_capture_seconds:
     cmd.extend(['-ini:Engine:[Audio]:UnfocusedVolumeMultiplier=1.0','-VeyrAudioCapture='+str(audio_dir),'-VeyrAudioCaptureSeconds='+str(a.audio_capture_seconds)])
 if a.video_fps:
     cmd.append('-VeyrVideoFPS='+str(a.video_fps))
+if a.mode=='blendproof' and not a.no_proof_floor:
+    cmd.append('-VeyrProofFloor')
+for extra in a.extra_arg:
+    if not extra.startswith('-Veyr') or ' ' in extra:p.error('--extra-arg accepts only a single -Veyr* flag')
+    cmd.append(extra)
 if a.start_two_handed:
     if a.mode!='victory':p.error('--start-two-handed applies only to victory validation')
     cmd.append('-VeyrReplayStartTwoHanded')

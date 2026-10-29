@@ -1165,11 +1165,13 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         // Entering or leaving lock-on locomotion changes posture (hips up to 26 cm lower in the strafes): blend longer.
         auto IsLockOnLoco=[](FName N){const FString S=N.ToString();return S.StartsWith(TEXT("Strafe"))||S.StartsWith(TEXT("Backpedal"));};
         bTransitionLockOnEdge=!PresentationTransitionClip.IsNone()&&IsLockOnLoco(Clip)!=IsLockOnLoco(PresentationTransitionClip);
+        ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
     const float BlendSeconds=GripTransitionRemaining>0.f?.28f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionLockOnEdge?LockOnBlendSeconds:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float SampleTime=Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset);
+    ProofBlendAlpha=Alpha;bProofBlendActive=bPresentationTransitionActive&&Alpha<1.f;
     bWeaponGripBlendActive=false;
     if(bWeaponGripLockEnabled&&Alpha<1.f)
     {
@@ -1189,6 +1191,22 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     if(Sampled){SetPresentationDiagnostic(FString());return;}
     SetPresentationDiagnostic(TEXT("Native approved clip evaluation failed: ")+Clip.ToString()+TEXT("; ")+ImportedPresentation->LastError);
     // Keep failures explicit and harmless: never substitute an attack or deal fallback damage.
+}
+
+bool AVeyrKnight::GetProofWeaponWorld(FTransform& Out) const
+{
+    if(!BoatWeapon||!BoatWeapon->GetStaticMesh()||!BoatWeapon->IsVisible())return false;
+    Out=BoatWeapon->GetComponentTransform();return true;
+}
+
+bool AVeyrKnight::GetProofRollAttackTimes(float& OutRollPrefixEnd,float& OutStrikeEnd) const
+{
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(TEXT("RollAttack")):nullptr;
+    if(!C||!C->Sequence)return false;
+    const float Rate=FMath::Max(.01f,VisualClipPlayRate(TEXT("RollAttack")));
+    OutRollPrefixEnd=VisualClipDuration(TEXT("Roll"),.78f);
+    OutStrikeEnd=C->DamageWindows.IsEmpty()?OutRollPrefixEnd:C->DamageWindows.Last().Y/Rate;
+    return true;
 }
 
 FVector AVeyrKnight::RootTranslationAt(float Seconds) const

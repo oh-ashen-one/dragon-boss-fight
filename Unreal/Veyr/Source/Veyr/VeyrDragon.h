@@ -79,6 +79,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrSkeletalPresentation> ImportedPresentation;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Presentation") TObjectPtr<UVeyrVisualDefinition> VisualDefinition;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bUsingPolishDefinition=false;
+    /** Test tooling only (blendproof replay): the boss behaves as before first engagement, breathing but never attacking. */
+    bool bProofPassive=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bUsingCustomuseVisual=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FName MissingVisualClip=NAME_None;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") FString LocomotionDiagnostic;

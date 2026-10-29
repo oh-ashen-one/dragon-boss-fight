@@ -202,7 +202,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     if(!IsValid(Target))Target=Cast<AVeyrKnight>(UGameplayStatics::GetPlayerCharacter(this,0));
     // A freshly opened window cannot attack a player who has not clicked to
     // begin. Once engaged, releasing the mouse does not pause the encounter.
-    if(IsValid(Target)&&!Target->HasEnteredEncounter())
+    if(IsValid(Target)&&(bProofPassive||!Target->HasEnteredEncounter()))
     {
         // Combat waits for deliberate input; the creature still breathes and
         // shifts its weight while the player studies the opening view.

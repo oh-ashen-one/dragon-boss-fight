@@ -6,6 +6,7 @@
 
 class AVeyrKnight;
 class AVeyrDragon;
+class FVeyrBlendProof;
 class FJsonObject;
 class FJsonValue;
 class UPrimitiveComponent;
@@ -190,6 +191,9 @@ private:
     FName LockOnLabExpected=NAME_None;
     TMap<FName,float> LockOnClipSeconds,LockOnClipSpeedSum;
     TArray<TSharedPtr<FJsonValue>> LockOnTrials;
+    // Blend proof 2026-10-29 ("blendproof" mode): sword socket, blink foot lock and roll-attack root carry proof.
+    TSharedPtr<FVeyrBlendProof> BlendProof;
+    bool DriveBlendProofInputs();
     bool bCombatHealSeeking=false;
     int32 CombatHealCountAtRequest=0;
     float BoundaryHealDuration=0,BoundaryEmptyObservation=0;

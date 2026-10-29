@@ -163,6 +163,15 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LastBlinkHiddenEndWorld=-1.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LastBlinkLongestFrame=0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bLastBlinkHiddenFrameRendered=false;
+    /** Blend-proof tooling (read-only; no gameplay effect). Pose-blend state of the last presentation update. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 ProofTransitionSerial=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float ProofBlendAlpha=1.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bProofBlendActive=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName ProofBlendFromClip=NAME_None;
+    /** The equipped sword mesh's actual world transform (what the camera sees); false when it is hidden or absent. */
+    bool GetProofWeaponWorld(FTransform& Out) const;
+    /** Action-time seconds at which the RollAttack roll prefix ends and its strike window ends (false without the clip). */
+    bool GetProofRollAttackTimes(float& OutRollPrefixEnd,float& OutStrikeEnd) const;
     /** Front, back, left, right: hits that selected a directional stagger clip. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") TArray<int32> DirectionalStaggers;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName LastStaggerClip=NAME_None;
