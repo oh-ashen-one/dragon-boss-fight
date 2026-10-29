@@ -123,6 +123,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | stagger | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on | 35 | pass (coordinator): right shoulder drops, front lurches down and right, head low, recovers | OK: body 0.85%, limbs 1.17%, frame 0 match 0.94 / 0.93. Fit: median miss 4.49 px, outline 0.77 / 0.82, max twist 13.5 deg (bone_7), no warnings |
 | 2026-10-28 | land (hop and hard landing) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | pass (coordinator): crouch, hop to about half a body height, wing flare, hard four-foot landing | FAIL: panels disagree on the body by 1.76% of height (fail line 1.5%); limbs 1.16%; frame 0 match 0.91 / 0.96. Not fitted (rule: a FAIL is regenerated, not fitted) |
 | 2026-10-28 | takeoff | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | coordinator: crouch, spring, rises about one body height and hovers; wings open to full span, past the rig 1.27x limit | FAIL: panels disagree on the body by 2.14% of height (fail line 1.5%); limbs 1.54% (also over the line); frame 0 match 0.93 / 0.96. Not fitted |
+| 2026-10-28 | rise (recovery) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; one earlier attempt failed provider-side) | coordinator: crouches low, rears up onto the hind legs with both forelegs off the floor and wings raised (about frame 90), drops back; went further than the prompt | OK: body 1.17%, limbs 0.99%, frame 0 match 0.92 / 0.89. Fit: median miss 3.07 px, outline 0.81 / 0.84, max twist 62.2 deg (bone_7), warning: body under the floor in 15 frames |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -531,3 +532,27 @@ panels draw the hop differently (the two views disagree on how high the body is)
 differently in each panel. Not fitted, no Action. Both airborne moves (land, takeoff) fail the same way: when the body leaves the floor
 the two panels disagree on its height, which the reader cannot reconcile; a regenerate with a smaller rise, or a flying-specific start
 picture (side-over-top stack, see the tool framing options), is the lead.
+
+### rise (recovery, 5 s, 121 frames) - fit and refinement
+
+`Dragon_Rise_sd_v2r_v2.blend`, Action `rise_v2`, 121 frames, same script (`ground=auto floor_lift=1 W=36`, report `refine/rise/refine_report.json`),
+renders `clip_RI1_*` refined, `clip_RI0_*` raw. A 24-frame close put the clip drop and the blend together (peak step 5.8x median); 36 frames gave 3.4x
+(whole-clip 4.5x), so 36 was kept.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| End vs frame 0 (summed bone angle) | 7.17 rad | 0 (36-frame blend) |
+| Hind feet (planted the whole clip) | 0.77 / 0.26 cm drift | 0.00 / 0.00 cm |
+| Forefeet: lifted frames 66 to 105 (+Y) and 66 to 110 (-Y), max lift 23.5 / 22.2 cm, 6.0 / 4.6 cm sideways | free | planted 0 to 65 and 106 to 120: 0.003 / 0.006 cm drift |
+| Spine_0 height | 20.9 start, 16.2 at the crouch (frame 53), peak 24.3 at frame 87 (rise +3.3 cm over frame 0), 20.9 end | same (rear is a tilt: chest rises, hips stay) |
+| Wing lateral extent over frame 0, -Y / +Y | 1.07x / 1.16x | same, under the 1.27x cap |
+| Body lift | | max 0.36 cm over 18 frames |
+| Tail tip peak speed (cm per frame) | 2.54 | 1.44 |
+| Foreleg reach, shoulder to claw tip | 26.4 / 26.4 cm | unchanged, 88% of the 30.1 cm limit |
+
+Distance from the collapse end to the rise start (for the blend in game): collapse `collapse_v2` last frame vs `rise_v2` frame 0:
+vertex shift mean 21.0 cm, p95 38.9, max 46.1 (rig scale; x21.56 in game); summed bone angle 26.7 rad; mean height difference 17.2 cm
+(lying vs standing); largest bone differences are the wing chain (VeyrWingPosZElbow 112 deg, Wrist 107 deg, VeyrWingNegZRoot 99 deg) and the
+forelegs (tripo::1_Left_Limb_0 101 deg, tripo::0_Left_Limb_0 80 deg). The rise starts standing, so the engine blend from the collapse end has to
+do the get-up itself: it is a 17 cm lift plus folding the wings and legs, not a small pose blend. The rise clip is the stand-up from frame 53
+(crouch) onward, but the clip begins already standing; a better source for a post-collapse recovery is a clip whose first frame is the lying pose.
