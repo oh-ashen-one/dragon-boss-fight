@@ -119,61 +119,21 @@
   "clips": [
     {
       "name": "StrafeRunLeft",
-      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunLeft_v5c.glb",
-      "sha256": "1f44af65050d119b169a0074c1faf4fafe88210a3cc030d9939981a926b7c10e",
+      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunLeft_v5r.glb",
+      "sha256": "10884892942436b375d51bc98cb77f903e55149bcc0dcd2aed1b13135ac7a477",
       "mesh_variant": "knight_571e0abbfde2720e",
       "start_seconds": 0,
       "end_seconds": -1,
       "loop": true,
       "gameplay_play_rate": 1.0,
-      "nominal_speed_cm_per_second": 410.67,
+      "nominal_speed_cm_per_second": 453.4,
       "damage_windows": [],
       "impact_seconds": -1,
       "weapon_file": "BoatGreatsword_OneHand_v4.glb",
       "root_motion_policy": "preserve",
       "root_motion_removed": false,
-      "root_sample_rate": 120.00000204358786,
+      "root_sample_rate": 120.00000150580158,
       "root_translation_samples_cm": [
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
         [
           0.0,
           0.0,
@@ -561,9 +521,9 @@
         ]
       ],
       "root_yaw_samples_degrees": [],
-      "source_duration": 0.699999988079071,
-      "approved_source_file": "Knight_StrafeRunLeft_v5c.glb",
-      "approved_source_sha256": "dc385b742abb687fcb7fb45490bfd90ff65fb4d9be3127c12ca5a928bbadaf4a"
+      "source_duration": 0.6333333253860474,
+      "approved_source_file": "Knight_StrafeRunLeft_v5r.glb",
+      "approved_source_sha256": "6f8c25a31368f93cd9ff3672a7e903fd2b1311735900ed7c389a54a90e8e629b"
     },
     {
       "name": "BlinkLeft",
@@ -1015,61 +975,21 @@
     },
     {
       "name": "StrafeRunLeftTwoHand",
-      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunLeftTwoHand_v5c.glb",
-      "sha256": "501260fab0aaef9c8569ec17e861decbda6166e57e63423b7b2ee7ee3e9691fb",
+      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunLeftTwoHand_v5r.glb",
+      "sha256": "f09d0a3eb30a4d8a7631349ca861efba7e85500cd350150824a86c96ac2c1c42",
       "mesh_variant": "knight_571e0abbfde2720e",
       "start_seconds": 0,
       "end_seconds": -1,
       "loop": true,
       "gameplay_play_rate": 1.0,
-      "nominal_speed_cm_per_second": 410.67,
+      "nominal_speed_cm_per_second": 453.4,
       "damage_windows": [],
       "impact_seconds": -1,
       "weapon_file": "BoatGreatsword_OneHand_v4.glb",
       "root_motion_policy": "preserve",
       "root_motion_removed": false,
-      "root_sample_rate": 120.00000204358786,
+      "root_sample_rate": 120.00000150580158,
       "root_translation_samples_cm": [
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
         [
           0.0,
           0.0,
@@ -1457,9 +1377,9 @@
         ]
       ],
       "root_yaw_samples_degrees": [],
-      "source_duration": 0.699999988079071,
-      "approved_source_file": "Knight_StrafeRunLeftTwoHand_v5c.glb",
-      "approved_source_sha256": "20f7371d736c25612d05317fc94e3352a45cb123f6ba5853750cc5d95904795f"
+      "source_duration": 0.6333333253860474,
+      "approved_source_file": "Knight_StrafeRunLeftTwoHand_v5r.glb",
+      "approved_source_sha256": "2ddcf38499d03dbc6a0f0a15ba35ad97e2a4d052bd8ef3e1bf60042c3888b393"
     },
     {
       "name": "BlinkLeftTwoHand",
@@ -2619,71 +2539,21 @@
     },
     {
       "name": "StrafeRunRight",
-      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunRight_v5c.glb",
-      "sha256": "ba985d4a8a30ebc21dec742b7670d6eff619bbc473bb77ad0bf041f9e5d46043",
+      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunRight_v5r.glb",
+      "sha256": "1519d49cab16d6a3a18651513e36fb61a3023ae7cf53ead657886fe24738012f",
       "mesh_variant": "knight_571e0abbfde2720e",
       "start_seconds": 0,
       "end_seconds": -1,
       "loop": true,
       "gameplay_play_rate": 1.0,
-      "nominal_speed_cm_per_second": 404.39,
+      "nominal_speed_cm_per_second": 456.9,
       "damage_windows": [],
       "impact_seconds": -1,
       "weapon_file": "BoatGreatsword_OneHand_v4.glb",
       "root_motion_policy": "preserve",
       "root_motion_removed": false,
-      "root_sample_rate": 120.00000204358786,
+      "root_sample_rate": 119.99999845350114,
       "root_translation_samples_cm": [
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
         [
           0.0,
           0.0,
@@ -3061,9 +2931,9 @@
         ]
       ],
       "root_yaw_samples_degrees": [],
-      "source_duration": 0.699999988079071,
-      "approved_source_file": "Knight_StrafeRunRight_v5c.glb",
-      "approved_source_sha256": "2577bc3a169397b2bbd220074d9ffda2a5a09cd0aa57d875627b21aee853cb82"
+      "source_duration": 0.6166666746139526,
+      "approved_source_file": "Knight_StrafeRunRight_v5r.glb",
+      "approved_source_sha256": "cfe957268f4cf5dbe2d114ab52e0e09c79dc2fe19de5f039c5a55818dad0f58d"
     },
     {
       "name": "BlinkRight",
@@ -4223,71 +4093,21 @@
     },
     {
       "name": "StrafeRunRightTwoHand",
-      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunRightTwoHand_v5c.glb",
-      "sha256": "ca912e8cfcdaf065cb6ab06b161fda1a629cae3919604e99ad082a4240593791",
+      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261029r3/knight/Knight_StrafeRunRightTwoHand_v5r.glb",
+      "sha256": "6c07b589b1b278d35cbed16ef9a35e407d46cad19212e9a5370e8200fdc68a09",
       "mesh_variant": "knight_571e0abbfde2720e",
       "start_seconds": 0,
       "end_seconds": -1,
       "loop": true,
       "gameplay_play_rate": 1.0,
-      "nominal_speed_cm_per_second": 404.39,
+      "nominal_speed_cm_per_second": 456.9,
       "damage_windows": [],
       "impact_seconds": -1,
       "weapon_file": "BoatGreatsword_OneHand_v4.glb",
       "root_motion_policy": "preserve",
       "root_motion_removed": false,
-      "root_sample_rate": 120.00000204358786,
+      "root_sample_rate": 119.99999845350114,
       "root_translation_samples_cm": [
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
-        [
-          0.0,
-          0.0,
-          0.0
-        ],
         [
           0.0,
           0.0,
@@ -4665,9 +4485,9 @@
         ]
       ],
       "root_yaw_samples_degrees": [],
-      "source_duration": 0.699999988079071,
-      "approved_source_file": "Knight_StrafeRunRightTwoHand_v5c.glb",
-      "approved_source_sha256": "40313202b922f05f3491af9eb093ab2a3ceae0f6b6702fc074283859accf8bbb"
+      "source_duration": 0.6166666746139526,
+      "approved_source_file": "Knight_StrafeRunRightTwoHand_v5r.glb",
+      "approved_source_sha256": "a520dd731a59b1fee645639b3c7a44bf3fe60a428fcab54aeddfdfd3e1497d3c"
     },
     {
       "name": "BlinkRightTwoHand",
@@ -9997,12 +9817,12 @@
         "StaggerRightTwoHand"
       ],
       "blinkRoot": "zero while visible (feet planted), smoothstep over the hidden window 0.207-0.391 clip s, 122.3 mesh cm",
-      "nominalSpeeds": "sprint strafes: stance-toe median x 240 of the new motion (v030p values were stale, about 11% above the clip's foot speed); StrafeRight(2H) and backpedals keep their v030p values (same stance motion)",
+      "nominalSpeeds": "every loop keeps its v030p nominal (capsule speeds unchanged; owner rule: never slow the character to fix sliding); the sprint cycles are retimed (84 -> 76 / 74 frames at 120 Hz) so their stance-toe speed matches 453.4 / 456.9",
       "bodyGeometryCheckAgainstV": {
-        "knight_932a1d46098b6e9c": {
-          "file": "Knight_StrafeRunLeft_v5c.glb",
+        "knight_aa652c6d82241c55": {
+          "file": "Knight_StrafeRunLeft_v5r.glb",
           "cornerMaxAbsDiff": {
-            "POSITION": 4.172325134277344e-07,
+            "POSITION": 5.364418029785156e-07,
             "TEXCOORD_0": 0.0
           },
           "jointsIdentical": true
@@ -10011,6 +9831,14 @@
           "file": "Knight_BlinkLeft_v5c.glb",
           "cornerMaxAbsDiff": {
             "POSITION": 2.980232238769531e-07,
+            "TEXCOORD_0": 0.0
+          },
+          "jointsIdentical": true
+        },
+        "knight_932a1d46098b6e9c": {
+          "file": "Knight_StrafeRight_v5c.glb",
+          "cornerMaxAbsDiff": {
+            "POSITION": 4.172325134277344e-07,
             "TEXCOORD_0": 0.0
           },
           "jointsIdentical": true

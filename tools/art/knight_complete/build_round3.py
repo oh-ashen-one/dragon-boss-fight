@@ -14,6 +14,8 @@ Stages
              backpedals with the hand at chest height and the blade off the face line (hilt_fn)
   cycles     loop closure (end-to-start residual spread over the cycle) and a cycle start at a slow phase (seam step below
              the in-cycle mean in all three bands, pose space); blinks: first/last frames pinned to the exact idle
+  retime     sprint cycles resampled to fewer frames so their stance-foot speed matches the v030p capsule nominal
+             (owner rule: never slow the character to fix sliding)
   rollattack round-2 roll + 0.60 s join unchanged; right arm recovers from the slash straight to the carry; recovery steps on
              linear time (lifted, >= 4 frames each), the planted foot locked
 """
@@ -536,6 +538,29 @@ elif stage == "cycles":
             m2.pop("sha256", None)
             export(arm, body, out, m2, n)
     print("CYCLES", json.dumps(rep), flush=True)
+
+elif stage == "retime":
+    # Owner rule "never slow the character to fix sliding": the lock-on sprint capsule speed stays at v030p
+    # (nominal 453.4 L / 456.9 R). The sprint cycles are resampled (same poses, same phase order, fewer 120 Hz frames)
+    # so the clip's own stance-foot speed matches that nominal. args: OUT=TARGET@SOURCE_SPEED (cm/s; source speed =
+    # measure_locomotion rawStanceSpeedMedian x 240 of the _v5c file).
+    HZ = 120
+    for spec in sorted(only):
+        out, rest = spec.split("="); tgt, have = map(float, rest.split("@")); src = out.replace("_v5r", "_v5c")
+        if (EXP / (out + ".glb")).exists():
+            print("SKIP", out); continue
+        s = clear(); s.render.fps = HZ
+        arm, body, objs = load(EXP / (src + ".glb"))
+        meta = json.loads((EXP / (src + ".json")).read_text()); n = int(round(meta["duration"] * HZ))
+        m = max(8, int(round(n * have / tgt)))
+        rows = basis_rows(arm, [i * n / m for i in range(m + 1)])
+        key_rows(arm, rows, out)
+        m2 = dict(meta, fps=HZ, duration=m / HZ, derivedFrom=src, retime={"sourceFrames": n, "frames": m, "sourceStanceSpeedCmS": have,
+                  "targetNominalCmS": tgt, "predictedStanceSpeedCmS": round(have * n / m, 2),
+                  "why": "owner rule: never slow the character to fix sliding; v030p sprint capsule speed kept, clip retimed to match it"})
+        m2.pop("sha256", None)
+        export(arm, body, out, m2, m)
+        print("RETIMED", out, n, "->", m, "frames", round(have * n / m, 2), "cm/s vs", tgt, flush=True)
 
 elif stage == "rollattack":
     name = "Sourced_RollAttack_v5"

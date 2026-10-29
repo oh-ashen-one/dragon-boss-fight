@@ -315,15 +315,17 @@ Round-3 plan, in the critic's rank order:
 - **Key pose numbers (r3 vs r2):**
   - blinks: launch crouch -15 cm over 3 frames; root moves only while hidden; first/last = idle exactly; twist ≤19.5°
     (was 88-93°)
-  - sprints: twist 37.7° (was 88-93°); chest ≤17.9°; pelvis 41-42° off travel; 1H free arm 28-37 cm (was 9-10 cm)
+  - sprints: twist 37.7° (was 88-93°); chest ≤17.9°; pelvis 41-42° off travel; 1H free arm 28-37 cm (was 9-10 cm);
+    seams ≤0.80; foot speed matches the capsule to within 0.3%
   - roll exit: lifted steps (lead f42-46, rear f47-50); blade monotonic -1.3 to 7.6° (was 50°)
   - seams ≤0.98 of the mean (was up to 1.61)
   - backpedal helmet coverage 0 (was 0.75)
 - **Protected clips:** StrafeLeft(2H) and the eight staggers are byte-identical across 30 files.
 - **Owner flags:**
   - (a) Item 8 (walk crouch) is deferred because of the byte-identical rule.
-  - (b) The sprint nominal is now the clip's measured foot speed (404-411 vs a stale 453-457), so lock-on sprint speed
-    drops to about 445-452 game cm/s, but the 11% skate is gone.
+  - (b) Rule-driven ("never slow the character to fix sliding"): the sprint capsule speeds stay at v030p (nominal
+    453.4/456.9). The sprint cycles are retimed (84 -> 76/74 frames at 120 Hz) so their stance-foot speed is
+    453.66/458.3, a residual skate of +0.06%/+0.31%.
   - (c) The protected StrafeLeft seams are 1.18 under even sampling.
 - **Renders were blocked** by the stream window (0 capture slots until 13:30 ET). Run
   `tools/art/knight_complete/render_round3.sh`, which goes through `gpu_slot capture --timeout 3600`.

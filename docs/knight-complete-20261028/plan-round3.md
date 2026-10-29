@@ -6,7 +6,8 @@ including the protected StrafeLeft(2H) and the eight staggers, is inherited **by
 definition (`inherit_definition`), so the importer never touches their GLBs or `.uasset`s.
 
 - Plan: `Local/CustomuseAssets/Polish20261025/knight-v030q/import-plan-KnightB.json` (copy in `data/import-plan-KnightB-v030q.json`;
-  the sha256 is in `Local/CustomuseAssets/Knight20261029r3/knight-manifest.json`).
+  the sha256 is in `Local/CustomuseAssets/Knight20261029r3/knight-manifest.json`). The sprint strafes use the retimed
+  `Knight_StrafeRun*_v5r` clips.
 - Authoring driver: `tools/art/knight_complete/build_round3.py`. It runs headless Blender 5.2 with `--factory-startup`,
   and each stage saves an editable `.blend` next to each GLB in `Local/FabRigTesting/Exports`.
 - Metrics: `data/round3-metrics.json` (`tools/art/knight_complete/measure_round3.py`). All numbers below are pose
@@ -79,15 +80,21 @@ rebuilt.
 | pelvis-to-chest twist max | 37.7° / 37.7° | 87.6° / 92.9° |
 | chest to boss max | 17.9° / 17.9° | 13.8° / 13.7° |
 | pelvis off travel (mean) | 41.8° / 41.2° | 12.4° / 7.1° |
-| knee vs travel (max) | 45.2° / 47.6°; frame-to-frame knee yaw change ≤4° | 9.7° / 9.8° |
+| knee vs travel (max) | 45.1° / 47.5°; frame-to-frame knee yaw change ≤4° | 9.7° / 9.8° |
 | feet min separation (ankles/toes) | 25.2/28.3, 25.7/29.2 cm | 25.4/28.9, 25.8/28.8 cm |
 | 1H free-arm swing | 27.7 / 36.7 cm | 8.7 / 9.5 cm |
-| seam / mean (head-chest, hips-sword, legs) | .68 .47 .78 / .70 .54 .79 | .63 .63 .88 / 1.27 1.25 1.15 |
+| seam / mean (head-chest, hips-sword, legs) | .68 .48 .80 / .70 .53 .80 | .63 .63 .88 / 1.27 1.25 1.15 |
 
-**Nominal speed (flag for the owner):** the sprint nominal is the measured stance-foot speed of the clip, 410.7 (L)
-and 404.4 (R) cm/s. v030p carried 453.4 / 456.9, which is about 11% above the r2 clips' own foot speed and matches the
-critic's "stance foot slides ~11 px per frame". **Consequence:** the lock-on sprint capsule speed (min(580, 1.1 x
-nominal)) drops from about 499/503 to 452/445 game cm/s. Restoring the old speed would bring the skate back.
+**Speed (rule-driven, owner rule "never slow the character to fix sliding"):**
+- The lock-on sprint capsule speeds stay at v030p: nominal 453.4 (L) and 456.9 (R), cap min(580, 1.1 x nominal) =
+  498.7 / 502.6 game cm/s.
+- The authored cycles (`_v5c`, 0.70 s) had a stance-foot speed of only 410.7 / 404.4 cm/s. That would have skated
+  about 10%, which is the critic's "stance foot slides ~11 px per frame" in r2.
+- The `retime` stage therefore resamples each cycle with the same poses and phase order into fewer 120 Hz frames:
+  84 -> 76 frames (0.633 s) for L and 84 -> 74 (0.617 s) for R.
+- Measured stance-foot speed after the retime is 453.66 / 458.3 cm/s: **residual skate +0.06% / +0.31%**.
+- The seam, twist, chest, knee and free-arm numbers above are re-measured on the retimed `_v5r` clips.
+- Blinks do not share the sprint legs (they are built on the idle), so their travel and timing are unchanged.
 
 ### 4. RollAttack exit (rebuilt, `Sourced_RollAttack_v5`)
 
@@ -126,7 +133,8 @@ The renders now sample loops at evenly spaced phases, so the wrap is an ordinary
 | BackpedalGuardTwoHand | .96 .98 .94 | 1.61 1.59 .73 |
 
 The BlinkRight seam is moot: its first and last frames are now the exact idle (item 1). The StrafeRight(2H) stance
-motion is the r2 motion, so it keeps the v030p nominal (159.7) and there is no speed change.
+motion is the r2 motion, so it keeps the v030p nominal (159.7) and there is no speed change. Its measured stance speed
+is 155.5, so the residual is -2.6%, the same as r2.
 
 ### 7. BackpedalGuard 1H, and 2H kept consistent (re-fit)
 

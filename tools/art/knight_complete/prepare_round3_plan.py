@@ -48,7 +48,8 @@ for side in ("Left", "Right"):
         if side == "Right":
             # same stance motion as v030p (only re-phased and loop-closed): keep the v030p nominal, no in-game speed change
             JOBS.append(("Strafe%s%s" % (side, grip), "Knight_Strafe%s%s_v5c" % (side, grip), True, 1.0, "v030p", "none"))
-        JOBS.append(("StrafeRun%s%s" % (side, grip), "Knight_StrafeRun%s%s_v5c" % (side, grip), True, 1.0, "stance", "none"))
+        # retimed so the clip's stance-foot speed matches the v030p capsule nominal (owner rule: never slow the character)
+        JOBS.append(("StrafeRun%s%s" % (side, grip), "Knight_StrafeRun%s%s_v5r" % (side, grip), True, 1.0, "v030p", "none"))
         JOBS.append(("Blink%s%s" % (side, grip), "Knight_Blink%s%s_v5c" % (side, grip), False, 1.15, 0.0, "blink:%s" % ("+1" if side == "Left" else "-1")))
 JOBS.append(("BackpedalGuard", "Knight_BackpedalGuard_v5c", True, 1.0, 59.95, "none"))
 JOBS.append(("BackpedalGuardTwoHand", "Knight_BackpedalGuardTwoHand_v5c", True, 1.0, 59.95, "none"))
@@ -69,6 +70,8 @@ for key, name, loop, rate, nominal, root in JOBS:
     samples, removed, srate = row["rootTranslationSamplesCm"], row["bRootMotionRemoved"], row["rootSampleRate"]
     if nominal == "v030p":
         nominal = P2[key]["nominal_speed_cm_per_second"]
+        stance = round(stance_measure(row["file"])["rawStanceSpeedMedian"] * 240.0, 2)
+        print("STANCE_VS_NOMINAL", key, stance, nominal, "residual %+.2f%%" % (100 * (stance / nominal - 1)), flush=True)
     if nominal == "stance":
         nominal = round(stance_measure(row["file"])["rawStanceSpeedMedian"] * 240.0, 2)
     if root.startswith("blink"):
@@ -126,7 +129,7 @@ assert existing == old["existing_mesh_variants"], (existing, old["existing_mesh_
 plan["integration_notes"] = dict(plan.get("integration_notes", {}), knightFixRound3={
     "note": "see tools/art/knight_complete/build_round3.py and docs/knight-complete-20261028/plan-round3.md",
     "inheritedByReference": PROTECTED, "blinkRoot": "zero while visible (feet planted), smoothstep over the hidden window 0.207-0.391 clip s, 122.3 mesh cm",
-    "nominalSpeeds": "sprint strafes: stance-toe median x 240 of the new motion (v030p values were stale, about 11% above the clip's foot speed); StrafeRight(2H) and backpedals keep their v030p values (same stance motion)", "bodyGeometryCheckAgainstV": geometry, "rollAttackDamageWindows": "unchanged from v030p"})
+    "nominalSpeeds": "every loop keeps its v030p nominal (capsule speeds unchanged; owner rule: never slow the character to fix sliding); the sprint cycles are retimed (84 -> 76 / 74 frames at 120 Hz) so their stance-toe speed matches 453.4 / 456.9", "bodyGeometryCheckAgainstV": geometry, "rollAttackDamageWindows": "unchanged from v030p"})
 PLAN.parent.mkdir(parents=True, exist_ok=True); PLAN.write_text(json.dumps(plan, indent=2) + "\n")
 sys.path.insert(0, str(ROOT / "tools/unreal")); import import_customuse  # noqa: E402
 canon = import_customuse.inspect_glb(plan["rig"])
