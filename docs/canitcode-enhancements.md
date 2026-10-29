@@ -126,6 +126,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | rise (recovery) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; one earlier attempt failed provider-side) | coordinator: crouches low, rears up onto the hind legs with both forelegs off the floor and wings raised (about frame 90), drops back; went further than the prompt | OK: body 1.17%, limbs 0.99%, frame 0 match 0.92 / 0.89. Fit: median miss 3.07 px, outline 0.81 / 0.84, max twist 62.2 deg (bone_7), warning: body under the floor in 15 frames |
 | 2026-10-28 | idle_look (8 s head-intent idle) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 8 s (193 frames at 24 fps), audio on | 35 recorded (8 s rate; derived from the session total, see the cost note) | coordinator: slow breathing, head turns, wings at span, feet planted, returns to stance | OK: body 1.02%, limbs 0.91%, frame 0 match 0.92 / 0.95. Fit: median miss 2.00 px (best of the set), outline 0.84 / 0.92, max twist 8.5 deg (bone_3), no warnings |
 | 2026-10-29 | land2 (small hop, regenerated; replaces land) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on, prompt pins the hop low | 35 | coordinator: lower hop, panels level | OK: body 0.86% (land: 1.76%), limbs 0.88%, frame 0 match 0.90 / 0.95. Fit: median miss 2.83 px, outline 0.79 / 0.87, max twist 40.3 deg (bone_7), warning: body under the floor in 29 frames |
+| 2026-10-29 | takeoff2 (low rise, regenerated) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on, prompt pins the rise low | 35 | coordinator: still rises about a body height; side panel sits higher than the front | FAIL: panels disagree on the body by 2.41% of height (fail line 1.5%; first takeoff 2.14%), limbs 2.27% (WARN), frame 0 match 0.89 / 0.95. Not fitted |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -613,3 +614,13 @@ heights, peak 49.8 cm at frame 61) and the feet leave the floor by up to 28 cm (
 
 The spine stops falling at frame 78, six frames before the feet register as grounded (84 to 86): the legs reach down and the body is already
 decelerated when they touch; the shock for gameplay is better read from the foot contacts (frames 84 to 86) than from the spine.
+
+### takeoff2 (5 s) - check FAIL, not fitted; airborne moves
+
+`check` body 0.0241 (2.41%), limbs 0.0227, frame 0 0.89 / 0.95, same message as takeoff: the two panels draw the body at different heights. A lower
+rise in the prompt did not help (2.14% then 2.41%). Not fitted, no Action. Land2 passed once the hop was pinned low in the prompt (1.76% then 0.86%), but
+takeoff, where the body stays up, did not.
+
+Finding: airborne moves need a flying start picture and a reader trained on it. The start picture and the reader both assume a floor under the feet
+(front | side panels, the side panel sets the height from the floor); a hovering body has no floor reference in either panel, so the panels cannot
+agree on its height. Out of scope tonight; the takeoff and fly-hover stay on the hand-keyed Blender versions until then.
