@@ -56,7 +56,9 @@ def make_ik(t,source):
 def smooth(x):x=max(0,min(1,x));return x*x*(3-2*x)
 def mixmat(a,b,w):
  x,q,sc=a.decompose();y,r,ss=b.decompose();return Matrix.LocRotScale(x.lerp(y,w),q.slerp(r,w),sc.lerp(ss,w))
-def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=None,carry_mode=None,carry_raise=(0.,0.),follow=.2,raise_ramp=0,pitch_cap=None,tip_cap=None):
+def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=None,carry_mode=None,carry_raise=(0.,0.),follow=.2,raise_ramp=0,pitch_cap=None,tip_cap=None,hilt_fn=None,left_fn=None):
+ # Round 3 (2026-10-29): hilt_fn(f,N,src,H,ref,grip,hscale)->H replaces the walk carry after idle-root/raise (raised guards);
+ # left_fn(f,N,source,ch,hand)->hand moves the free left palm target of one-handed walk fits (arm counter-swing). Both default off.
  # Round 2 (2026-10-29): follow = idle-root chest follow; raise_ramp = source frames over which carry_raise eases in/out
  # (the raise holds in between); carry_raise[0]<0 tilts the blade forward/down; pitch_cap (deg, never below idle+10) and
  # tip_cap (rig metres per source frame at the socket tip 0,2.35,0) limit the blade after the carry is solved.
@@ -103,6 +105,7 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
     R=Quaternion(rt,math.radians(sgn*abs(carry_raise[0])*wr));z=(R@blade).z
     if best is None or (z>best[0] if up else z<best[0]):best=(z,R)
    R=best[1];H=Matrix.Translation(pivot)@R.to_matrix().to_4x4()@Matrix.Translation(-pivot)@H;H.translation.z+=carry_raise[1]*wr
+  if kind=='walk' and hilt_fn is not None:H=hilt_fn(f,N,src,H,ref,grip,hscale)
   if kind=='roll':
    wrist=(H@grip['Right']).translation;q=Quaternion(Vector((0,0,1)),math.radians(-25*smooth((u-.30)/.12)*(1-smooth((u-.56)/.08))))@H.to_quaternion();H=Matrix.LocRotScale(wrist,q,hscale);H.translation-=H.to_3x3()@grip['Right'].translation
   # Move the rear shaft clear of the cuirass; supporting palm remains lower.
@@ -141,6 +144,7 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
    else:
     hand=ch@refs['one']['left']
     if not idle:hand.translation+=Vector((.06,-.015*wave,-.045))
+    if left_fn is not None:hand=left_fn(f,N,source,ch,hand)
    shoulder=src[side+'Arm'].translation;a=t.data.bones[side+'Arm'].head_local;b=t.data.bones[side+'ForeArm'].head_local;c=t.data.bones[side+'Hand'].head_local;limit=((a-b).length+(b-c).length)*.97
    if side not in sides and (hand.translation-shoulder).length>limit:hand.translation=shoulder+(hand.translation-shoulder).normalized()*limit
    desired[f][side]=hand
