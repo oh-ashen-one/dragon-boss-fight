@@ -8807,22 +8807,7 @@
     }
   ],
   "purpose": "Knight completion 2026-10-28: Mixamo strafes (walk/run, one/two-hand) for lock-on movement and directional staggers; every v029 clip inherited unchanged.",
-  "props": {
-    "BoatGreatsword_OneHand_v4.glb": {
-      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Polish20261025/idle-joins/props/BoatGreatsword_OneHand_v4.glb",
-      "sha256": "27e6b3d5eb866ae52957a982d0ed3a5647ae10e3a8320e57e3682426c41e5ead",
-      "sourceSHA256": "bfb0bd2d6580882236e499833d28564712e08ff9323d76d3c55715d0ee558ab4",
-      "baselineFile": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Integration20261025b/props/BoatGreatsword_OneHand_v4.glb",
-      "baselineSHA256": "27e6b3d5eb866ae52957a982d0ed3a5647ae10e3a8320e57e3682426c41e5ead"
-    },
-    "DrinkingCup.glb": {
-      "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Polish20261025/idle-joins/props/DrinkingCup.glb",
-      "sha256": "e2ba3fa33131b704df5ba726f39220432aa8836dcb11be05b56d998275a7f0d7",
-      "sourceSHA256": "54a3a0b5ad615a363509fbeb790ca613da3058bdb9079f999414f68e9560413f",
-      "baselineFile": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Integration20261025b/props/DrinkingCup.glb",
-      "baselineSHA256": "e2ba3fa33131b704df5ba726f39220432aa8836dcb11be05b56d998275a7f0d7"
-    }
-  },
+  "props": {},
   "mesh_variants": {
     "knight_571e0abbfde2720e": {
       "file": "/Users/midir/veyr-knight-20261028/Local/CustomuseAssets/Knight20261028/knight/Mixamo_StrafeLeft_v2.glb",
@@ -8856,5 +8841,9 @@
     "normalized_sha256": "2cf15cf583437347ba564b881b5292a6ad8357e8d3b4207f2136fcc2630bbf34",
     "nativeSourceDefinition": "/Game/Characters/Customuse/KnightB/v026/DA_KnightB",
     "strategy": "inherit exact existing clip/sequence/weapon references; no guard reimport"
+  },
+  "existing_props": {
+    "BoatGreatsword_OneHand_v4.glb": "/Game/Characters/Customuse/KnightB/v029/Props/BoatGreatsword_OneHand_v4/BoatGreatsword_OneHand_v4",
+    "DrinkingCup.glb": "/Game/Characters/Customuse/KnightB/v029/Props/DrinkingCup/DrinkingCup"
   }
 }

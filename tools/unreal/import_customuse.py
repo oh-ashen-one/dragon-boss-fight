@@ -144,6 +144,15 @@ def prepare_rigid_prop(mesh):
     """Preserve full rigid geometry on the ordinary material path, including translucent echoes."""
     import unreal
     subsystem=unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    if subsystem is None:
+        # Headless -run=pythonscript commandlet: no editor subsystems; edit the mesh property directly.
+        settings=mesh.get_editor_property('nanite_settings');before=bool(settings.get_editor_property('enabled'))
+        if before:
+            settings.set_editor_property('enabled',False);mesh.set_editor_property('nanite_settings',settings)
+        after=bool(mesh.get_editor_property('nanite_settings').get_editor_property('enabled'))
+        if after:raise RuntimeError('Rigid prop still uses Nanite: '+mesh.get_path_name())
+        if not unreal.EditorAssetLibrary.save_loaded_asset(mesh,False):raise RuntimeError('Could not save rigid prop material-path settings')
+        return {'mesh':mesh.get_path_name(),'naniteBefore':before,'naniteAfter':after,'reason':'commandlet path; small rigid props use original LOD0 materials'}
     settings=subsystem.get_nanite_settings(mesh)
     before=bool(settings.get_editor_property('enabled'))
     if before:
@@ -533,6 +542,13 @@ def run(plan_file):
                 raise RuntimeError("Expected one rigid approved prop: " + filename)
             prepare_rigid_prop(static_meshes[0])
             props_by_file[filename] = static_meshes[0]
+        # Optional: reuse rigid props already imported by an earlier version instead of re-importing
+        # (re-import rebuilds LOD reductions for ~14 minutes and duplicates identical assets).
+        for filename, asset_path in plan.get("existing_props", {}).items():
+            existing_prop = unreal.load_asset(asset_path)
+            if not isinstance(existing_prop, unreal.StaticMesh):
+                raise ValueError("Existing rigid prop missing: " + asset_path)
+            props_by_file.setdefault(filename, existing_prop)
         if props_by_file:
             definition.set_editor_property("props", {"Cup": props_by_file["DrinkingCup.glb"]} if "DrinkingCup.glb" in props_by_file else {})
         clips = _clip_map(inherited) if inherited else {}
