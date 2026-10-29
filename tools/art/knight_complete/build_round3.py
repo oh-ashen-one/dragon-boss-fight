@@ -626,6 +626,24 @@ elif stage == "rollattack":
         for bn in HAND_KIDS:  # fingers keep their locals on the moved hand
             p[bn] = p[PALL[bn]] @ (old[PALL[bn]].inverted() @ old[bn])
         frames[f] = p; grips[f] = mixm(G0, gI, w)
+    # blade pitch goes monotonically from the follow-through to the carry: a wrist correction about the horizontal axis
+    # (blade x up) removes the dip the local-space arm slerp produces mid-recovery; zero at both ends by construction
+    def pitch_of(f):
+        gl, gq, gs = grips[f].decompose(); so = frames[f]["RightHand"] @ Matrix.LocRotScale(T_GRIP, gq, gs)
+        b = (so.to_3x3() @ Vector((0, 1, 0))).normalized(); return math.degrees(math.asin(max(-1.0, min(1.0, b.z)))), b
+    p0, pE = pitch_of(REC0)[0], pitch_of(NF - 1)[0]
+    WRIST = []
+    for f in range(REC0, NF):
+        cur, b = pitch_of(f); tgt = p0 + (pE - p0) * smoother((f - REC0) / (NF - 1 - REC0)); dl = tgt - cur
+        ax = b.cross(Z)
+        if ax.length > 1e-6 and abs(dl) > 1e-4:
+            hm = frames[f]["RightHand"]; h = hm.translation.copy(); old = dict(frames[f]); p = dict(frames[f])
+            p["RightHand"] = Matrix.Translation(h) @ Matrix.Rotation(math.radians(dl), 4, ax.normalized()) @ Matrix.Translation(-h) @ hm
+            for bn in HAND_KIDS:
+                p[bn] = p[PALL[bn]] @ (old[PALL[bn]].inverted() @ old[bn])
+            frames[f] = p
+        WRIST.append(round(dl, 2))
+    print("WRIST_PITCH_CORRECTION_DEG", min(WRIST), max(WRIST), "pitch", round(p0, 1), "->", round(pE, 1), flush=True)
     # ---- round 3: recovery steps on linear time; the other foot is locked in place while one steps
     o0 = next(i for i, u in enumerate(outro_u) if u > 0) - 1
     moves = {sd: (frames[-1][sd + "Foot"].translation - frames[o0][sd + "Foot"].translation).length for sd in ("Left", "Right")}
@@ -671,8 +689,8 @@ elif stage == "rollattack":
     export(arm, roll_body, name, {"fps": HZ, "duration": (NF - 1) / HZ, "rollPrefixSeconds": 1.0, "attackComposedDuration": 1.2,
                                   "joinSeconds": JOIN / HZ, "outroSeconds": OUTRO / HZ, "stepFoot": step_foot,
                                   "steps": [{"foot": sd, "clipSeconds": [round(a / HZ, 3), round(b_ / HZ, 3)], "liftRigM": h} for sd, a, b_, h in STEPS],
-                                  "armRecoveryClipSeconds": [REC0 / HZ, REC1 / HZ],
+                                  "armRecoveryClipSeconds": [REC0 / HZ, REC1 / HZ], "wristPitchCorrectionDeg": [min(WRIST), max(WRIST)],
                                   "sources": ["Fab_Roll_v17", "Mixamo_Attack_v17", "IdleOneHand_Blender_v2r4 (end pose)"], "gripMode": "one-handed",
                                   "method": "round-2 composition unchanged up to 1.60 s (roll, 0.60 s join, slash and damage window); right arm chain and "
-                                            "grip slerp from their 1.60 s locals to the idle carry over 1.60-2.10 s (no second wind-up); two sequential "
+                                            "grip slerp from their 1.60 s locals to the idle carry over 1.60-2.10 s (no second wind-up), wrist corrected so the blade pitch rises monotonically to the carry; two sequential "
                                             "lifted recovery steps on linear time, the other foot locked while one steps; WeaponSocket = RightHand x grip"}, NF - 1)
