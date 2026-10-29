@@ -292,3 +292,54 @@ refuses an existing version folder). Do not import rigs/mesh variants in that co
   Everything needed is in the branch plus the private releases above; the worktree can be removed once the owner has
   reviewed the page and app. Staging `/private/tmp/veyr-stage-*` and `/private/tmp/veyr-verified-bundle-uyyqawy6` are this
   thread's. No servers, LaunchAgents or engines left running.
+
+
+### Fix round 1 (2026-10-29), after the blind critique `Local/knight-review-20261028/critique.md`
+
+The runtime knight is now **KnightB v030n** (46 clips: 25 inherited unchanged, 19 rebuilt, 2 new), promoted from v030m.
+Owner-approved and owner-selected sources (walk, run, light attack, roll, idle, heal, death, guard, approved backpedal
+loop and step) were only read. Every pre-existing `Customuse` .uasset is byte-identical except
+`RuntimePolish/DA_Knight` (22 new assets). Nothing here is owner-approved.
+
+| Critic item | Result (numbers from `docs/knight-complete-20261028/data/round1-checks.json`) |
+|---|---|
+| Blink files crossed | The v029 *mapping* was right by motion: the file named `Sourced_BlinkRight_Transit_v2` moves left (hips +X glTF) and is Mixamo strafe (3); `..._BlinkLeft_...` moves right and is strafe (4), whose feet run fore-aft. Rebuilt: `Knight_BlinkLeft_v3` (strafe (3), travel, correct name) and `Knight_BlinkRight_v3` (its sagittal mirror, hips -1.223 m). v029 root trajectory reused, x mirrored for right. Packaged lockon: BlinkLeft lateral -298.6 cm, BlinkRight +298.6 cm; screenshots `frame-0025/0026/0028`. |
+| Roll attack splice | `Sourced_RollAttack_v3`: roll extrapolated at its end velocity and smootherstep-blended into the slash over 0.40 s source (0.31 s in game, about 9 frames at 30 fps), last 0.36 s blend into the 1H idle frame 0. Sword-tip step at 30 fps around the join: max 45 cm/frame (v2: 103 cm at the splice). End carry 0.0 deg, end ankles 61.9 cm (idle 61.9). Max tip step overall 116 cm/frame is inside the slash swing itself (same as v2). |
+| Sprint strafe right axis | `Knight_StrafeRunRight(TwoHand)_v3c` = true mirror of strafe (3) (`retarget.py` mirror). Stance travel 1.4 deg off lateral (left 0.4). The critic's fore-aft reading also came from the round-0 review camera, which aimed "front" along each clip's first-frame foot direction; round-1 renders use one fixed facing from the 1H idle. |
+| 2H backpedal missing | `Knight_BackpedalGuardTwoHand_v3c` (approved loop legs, 2H idle carry). Lock-on back now selects `BackpedalGuard`/`BackpedalGuardTwoHand` by grip (approved `Backpedal` remains the fallback). |
+| Sprint strafe left 24% slow | Nominal set to 440.2 cm/s from source hips travel (3.479 m/s x 0.5272 retarget x 240); planted-toe speed 446/458 cm/s confirms. The 24% was mostly the round-0 camera (lateral motion seen at an angle). In-game cap 484 cm/s (1.1x). |
+| Carry continuity | Canonical carry = approved IdleOneHand / IdleTwoHand frame 0. All rebuilt clips start/end within 13.9 deg (strafes 6.4-13.9, staggers 0-13.4 start / 0.0 end, backpedals 4.9/6.9, blinks 10.9, roll attack 0.0/0.0). Grip transitions already end exactly on the idles (0.0 deg). Loops start at their narrowest stance: ankles 32-62 cm (idle 61.9). |
+| Stagger front foot slide | Staggers rebuilt as additive deltas (hips, spine, neck, head, clavicles) on the approved idle with analytic two-bone leg IK: ankle drift <= 1.3 cm (3 game cm) in all 8. |
+| Stagger L/R amplitude | Lateral gain x2: head 23.5 / 22.7 cm rig = 56 / 54 game cm, about 35 / 34 px at the critic's 1.6 cm/px (round 0: 16 px). Left 2H now uses the 2H idle carry (no wrong shoulder). |
+| Backpedal guard | Forward lean +7.0 cm head-ahead-of-hips (rig) = 17 game cm, about 10.5 px; blade pitched up 27 deg relative to the leaned chest and lifted 6 cm (net 6.9 / 4.9 deg from the idle carry, kept under the 15 deg continuity bound). |
+| Review page | Loops render exactly one cycle, actions end on their last frame; one fixed camera facing; checker now 25 game-cm tiles. Whole-body stagger captures in game (lock released, view lifted). |
+| frame-0002 brightness | Lighting, not material: same Backpedal mesh/material is dark in frame-0023; a different mesh (StrafeLeft) is equally bright at the same position and camera yaw (sky/moon specular on the back plate). |
+
+Gate lines (round 1, app `/private/tmp/veyr-verified-bundle-95t1py9v/Veyr-Mac-Shipping.app`):
+- UBT VeyrEditor Development `Result: Succeeded` (`Local/unreal-build-20261029T020309422145Z`); UBT Veyr Shipping
+  `Result: Succeeded` (`Local/unreal-build-20261029T020604594210Z`); package `BUILD SUCCESSFUL`, `ExitCode=0`
+  (`Local/package-20261029T020601Z`), signed zip sha256 `a1399cdc...e1ae727`.
+- lockon: `True lock-on: 10 locomotion trials sampled their clips, max facing error 3.5 deg; blink direction 2/2; directional stagger lab 5/5`
+- core / controls / guard / death: True (same reason strings as round 0), `Evidence/native-*-20261029T0209..0214`.
+- integration x3: GPU never went below 30% for 60 s in a 45-minute wait (another session's video2rig reader training
+  and Blender render held it at 98-100%), so the runs are contaminated by load; all three passed anyway:
+  `True all18 updated integration features ...` at 15.5 / 14.7 / 14.1 fps (max frame 0.372 / 0.298 / 0.283 s),
+  `Evidence/native-integration-20261029T030046Z`, `...030319Z`, `...030459Z`. A clean-GPU fps number is still owed.
+
+Not fixed this round (and why):
+- Roll airborne dive / head landing, run landing speed, 1H "lance" carry tilt, walk/run seams, light-attack guard start:
+  owner-selected or approved sources (Fab roll, Fab run, Mixamo walk/slash, approved 1H idle), which this round must
+  not touch. The canonical 1H carry is the approved idle's, so the lance angle is inherited.
+- Grip transition hip dip/settle: grip clips end exactly on the idles already; the critic's settle suggestion was not in
+  the fix list.
+- Strafe planted-foot depth drift (5 px) was not in the fix list; strafe legs are the Mixamo source.
+- The 2H canonical carry (blade vertical in front of the visor) differs from the owner-selected 2H walk carry by 22 deg;
+  the coordinator defined the canonical carry from the idles, so walk-to-strafe still changes the 2H blade by ~22 deg.
+- RunStop brake length (critic: extend to 12 frames): RunStop is approved; only the blend was changed in round 0.
+- New mesh-variant imports are avoided: all new clips reference body variant `knight_571e0abbfde2720e` (Blender round
+  trips re-encode the body; v030k showed commandlet-imported bodies render white).
+
+Restore for round 1: after the round-0 restore above, `gh release download knight-complete-round1-20261029 -R
+oh-ashen-one/veyr-animation-sources`, `shasum -a 256 -c SHA256SUMS`, `unzip -n` each zip at the worktree root.
+Review page: `Local/knight-review-20261028/serve/index.html` (round 1, before = round 0 for changed rows);
+round-0 page kept at `serve-round0/`.
