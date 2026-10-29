@@ -649,3 +649,25 @@ Seedance at 35): 557.0. The failed first land and takeoff stay in the ledger as 
 Review page: `Local/dragon-review-20261029/serve/index.html` (`rangeserver.py` beside it, no server started). Per move: Seedance source clip, hand-keyed
 before where one exists (idle, bite, claw swipe, land, takeoff, from the review checkout, opened read-only), raw fit and refined renders from three angles; the
 idle row compares idle_v2, idle_look_v2 and idle_layered_v2. Move data rebuilt for every Action by `tools/movedata/run_veyr.sh` (Data/dragon/*.json).
+
+### Fix round 1 (2026-10-29): v3 Actions from the blind critique
+
+Source of the list: `Local/dragon-review-20261029/critique.md` (blind critic, 0 of 11 rows meet the bar). Refinements on the existing Actions, saved as new
+`Dragon_<Move>_sd_v2r_v3.blend` / `<move>_v3` (v2 untouched). Script `Local/video2rig/dragon/refine/v3/refine_v3.py` (and `refine_fall_v3.py` for collapse and death),
+starting from the raw import, never from v2. Review page `Local/dragon-review-20261029/serve/index.html` has a "round 1" cell beside the round 0 "after" on every
+touched row (lazy-loaded videos); renders `clip_<RS|CO|DE|BI|CS|ST|LA|RI>3_*`.
+
+| Fix | Before | After |
+| --- | --- | --- |
+| 1 Shared stance (stance = idle_v2 frame 0, velocity-matched offset blend over 12 frames at the start and 12 at the end, 24 for roar and bite) | frame 0 / last front overlap with the stance: roar 0.82 / 0.80, bite 0.82, claw 0.82, stagger 0.81, land2 0.82, rise 0.82; feet 15 to 18 mm (9 to 11 px) off the stance | 1.000 / 1.000 (front and side) on all six; feet 0.0 mm. Over the first and last 6 frames the minimum is 0.76 to 0.97 (roar 0.95 / 0.97, bite 0.86 / 0.91, claw 0.89 / 0.84, stagger 0.76 / 0.83, land2 0.91 / 0.83, rise 0.88 / 0.85): the moves start and finish moving inside those frames, so 95% holds on frames 0 and last only. The layered idle was already 1.000. Roar ends on the stance (seam 7.62x to 0.00x of a step) |
+| 2 4-frame stutter (cause: the importer keys at content time, the tool read the clips as 30 fps with every 5th frame dropped; the fits step uniformly per container frame, ratios 0.97 to 1.04) | critic-style mod-4 phase ratios, range: claw 0.24, rise 0.25 (bite 0.24 on this measure) | keys at container time i/24: claw 0.08, rise 0.07 (bite 0.08); stagger and land2 are native 24 fps, stagger 0.04 to 0.06 |
+| 3 land2 | touchdown frames 84 to 86 (hover 75 to 81), body lift 5.6 cm, hop leaves the frame | take-off 39, touchdown 73, all four feet planted by IK on the floor at 74 to 75; parabola on Spine_0 through the take-off and touchdown heights (apex 23.2 cm above the line, peak 49.4 cm); body lift 0.8 cm (feet and wings excluded); tall review camera (3.1 m back, aimed 0.40 m up) keeps the whole hop in shot |
+| 4 stagger | 12 dead frames, catch-step drag, 40 px | first 12 frames trimmed (clip 109 frames), recoil starts at frame 2; the catch-step foot lifts 3.0 cm over frames 15 to 27 (and again 92 to 104 on the return). Head minimum height above the floor 5.68 cm in v2 and v3: the chin does not clip |
+| 5 roar | front span 502 px at the peak (idle 505), tremor 0 | flare on the stance wings (OPEN pose, scale 0.85, Root offset per side for the body roll) over frames 44 to 84: front span 604 px, 1.20x idle (one wing 1.255x, the other 1.157x). The 1.25x target (640 px) is not reached: the rig peaks near 1.24x per wing at this pose family and tears the membrane beyond (a 1.47x pose tears about 1000 edges per wing; this one 249 and 225); head/chest tremor 0.35 cm (2 px) over frames 46 to 85 |
+| 6 bite | jaw shut through the strike, 32-frame frozen hold | VeyrJaw opens to 38 deg by frame 36, held to 43, shut by 46; hold frames 58 to 90 compressed to 58 to 70, recovery 90 to 120 stretched to 70 to 110 (111 frames, 4.6 s) |
+| 7a death | frames 120 to 168 keep moving (mean frame change 1.87), drift 100 to 168 of 18.9 | all channels damped to a hold from frame 110: change 0.0 after frame 120, drift 100 to 168 of 6.7 (all inside the 100 to 110 damping), upper wing frozen |
+| 7b collapse | -Y wing a stiff strip out to x 154 at frame 144 (9 deg root lift) | root lift capped at 3 deg, the wing swept back 24 deg about the vertical axis over frames 85 to 110 and folded at the elbow (up to 24.6 deg) so it clears the floor by 1.2 cm: leftmost front silhouette x 264 (target 250), width 554 to 444 px |
+| 8 rise | listed as a recovery | marked "recovery-from-stance": it starts and ends standing; the lying-start get-up comes with a new clip |
+
+Findings from the work: the critic's 4-frame stutter was in the importer's timing assumption, not in the fit; the jaw is not moved by the fit at all (it is authored
+now); the roar's two wings cannot both reach 1.25x because of the body roll in the clip.

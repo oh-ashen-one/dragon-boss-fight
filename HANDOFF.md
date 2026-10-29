@@ -93,6 +93,17 @@ H* = hand-keyed before from the review checkout, read-only).
 5 s). 5 s clips cost 35; the 6, 7 and 8 s clips (collapse, death, idle_look) cost about 8.07 credits per second, derived (48.4 / 56.5 / 64.6; verify
 against the transaction list). The failed first land and takeoff cost 35 each and produced no Action. Branch total with the earlier 107.5: 557.0.
 
+**Fix round 1 (v3 Actions)**: from the blind critique (`Local/dragon-review-20261029/critique.md`). Eight new Actions, v2 untouched: `roar_sd_v3`, `collapse_v3`,
+`death_v3`, `bite_v3`, `claw_swipe_v3`, `stagger_v3`, `land2_v3`, `rise_v3` (`Dragon_<Move>_sd_v2r_v3.blend`). Shared stance = idle_v2 frame 0 (frame 0 and last frame overlap
+1.000, feet 0 mm off); claw and rise keyed at container time (no 4-frame stutter); land2 on a ballistic arc with touchdown at frames 74 to 75; stagger recoil at frame 2 with a
+3 cm catch-step lift; roar flared to 1.20x idle (not the 1.25x target) with a tremor; bite jaw 38 deg; death holds from 110; collapse wing swept and folded. Numbers per fix:
+`docs/canitcode-enhancements.md`, section "Fix round 1". Scripts in `Local/video2rig/dragon/refine/v3/` (gitignored). `tools/movedata/run_veyr.sh` now builds from the v3
+Actions (roar ends on the stance: seam 0.00x); `Data/dragon/*.json` rebuilt; 3 tests pass.
+
+**Airborne reader (in progress)**: sibling project `Local/video2rig/dragon-air/` (hover start picture `start/start.png`, ground picture `start-ground/start.png`, perspective lens 50, same
+cameras; Higgsfield media ids hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1), reader training 9000 steps on MPS started 22:26 on the fork branch
+`air-reader` (`~/video2rig-air`, opt-in `air` key in creature.json). Prompts: `dragon-air/clips/air_fire_down|air_land|air_hover|takeoff3.prompt.txt`.
+
 **Next steps**
 1. Flying start picture for takeoff and land: render the start picture with the body off the floor (and a reader trained on it, about 3 h of MPS), then
    regenerate takeoff and a real tall hop. Until then takeoff, fly-hover stay on the hand-keyed Blender versions in the review checkout.
