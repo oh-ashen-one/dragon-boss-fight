@@ -119,6 +119,8 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | collapse | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 6 s (145 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 6 s cost to verify) | pass (coordinator): wings at span, drops flat, chin on floor, panels agree; side panel crops the tail at the right edge once it lies flat | OK: body 1.17% (p90 1.35%), limbs 0.77% (p90 3.96%); frame 0 match 0.94 / 0.90. Fit: median miss 4.72 px, outline 0.75 / 0.83, max twist 21.4 deg (VeyrWingNegZRoot), warnings: body under the floor in 74 frames, hind knees at joint limit 60 frames |
 | 2026-10-28 | death | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 7 s (169 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 7 s cost to verify) | pass (coordinator): falls, rolls partly onto its right flank, head stretched out, wings at span, panels agree | OK: body 0.93%, limbs 1.36% (close to the 1.5% line), frame 0 match 0.89 / 0.96. Fit: median miss 7.07 px, outline 0.71 / 0.82, max twist 51.7 deg (front upper leg; neck 48.9, shoulder 42.2), warning: body under the floor in 24 frames. Weakest fit of the set |
 | 2026-10-28 | bite | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on, size-constraint prompt | 35 | pass (coordinator) with caveats: wind-up front panel wings maybe 1.3x, side panel a touch larger than start.png, tail tip near the edge | OK: body 0.92% (p90 1.71%), limbs 1.22% (p90 1.54%), frame 0 match 0.93 / 0.94. Fit: median miss 3.76 px, outline 0.78 / 0.80, max twist 24.9 deg (bone_7), no warnings |
+| 2026-10-28 | claw_swipe | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; two earlier submissions failed before rendering) | pass (coordinator): right foreleg lifts to chest height, draws back, swipes, returns; some motion blur on the fastest side-panel frames around frame 70 | OK: body 0.81% (p90 1.18%), limbs 0.74% (p90 1.32%), frame 0 match 0.89 / 0.95. Fit (reader-78, kept): median miss 2.63 px, outline 0.77 / 0.88, max twist 41.8 deg (bone_11), body under floor 10 frames. Reader-64: miss 2.48 px, outline 0.80 / 0.85, twist 65.8 deg, under floor 41 frames, hind feet lifted 2.6 cm |
+| 2026-10-28 | stagger | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on | 35 | pass (coordinator): right shoulder drops, front lurches down and right, head low, recovers | OK: body 0.85%, limbs 1.17%, frame 0 match 0.94 / 0.93. Fit: median miss 4.49 px, outline 0.77 / 0.82, max twist 13.5 deg (bone_7), no warnings |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -480,3 +482,38 @@ clamp to 1.27x of the frame-0 lateral extent, tail spike smoothing, four feet pl
 
 The wing worry did not appear in the fit: the raw peak is 1.236x of the frame-0 extent, at the last frame where the fit has not
 returned, and closing the pose brings it to 1.18x.
+
+### claw_swipe (5 s, 121 frames) - fit and refinement
+
+`Dragon_ClawSwipe_sd_v2r_v2.blend`, Action `claw_swipe_v2`, 121 frames at 24 fps, not trimmed. Script `refine/move/refine_move.py`
+(`ground=auto floor_lift=1`, report `refine/claw/refine_report.json`), renders `clip_CS1_*` refined and `clip_CS0_*` raw fit.
+Reader comparison on this fast move (the idle comparison had favoured reader-64): reader-78 kept. Both readers give the same
+mean outline (0.826 / 0.824); reader-78 has lower twist (41.8 vs 65.8 deg) and keeps the hind feet and body down (reader-64 shows
+both hind feet lifting 2.6 cm for frames 77 to 101 and needs a 2.6 cm body lift; reader-78 needs none).
+
+| Measure | raw fit (reader-78) | refined |
+| --- | --- | --- |
+| Foreleg peak reach, shoulder to claw tip (right foreleg) | 25.1 cm at frame 69 (rest 24.5) | unchanged; 83% of the 30.1 cm extended-leg limit, never past its own length |
+| Swinging foot (front -Y): lift / travel from its frame-0 spot | 32.3 cm / 35.0 cm | free for frames 31 to 105, planted 0 to 30 and 106 to 120 |
+| Feet excursion while planted (three planted feet, whole clip; swinging foot on its grounded frames) | 0.58 / 0.29 / 1.58 cm (front +Y, hind -Y, hind +Y) | 0.00 / 0.01 / 0.00 / 0.00 cm |
+| End vs frame 0 (summed bone angle) | 6.13 rad | 0 (last 24 frames blended; blend peak step 2.46x median, whole-clip peak 4.1x) |
+| Wing lateral extent over frame 0, -Y / +Y | 1.00x / 1.08x | same, no clamp needed (cap 1.27x) |
+| Spine_0 height | min 19.6 (frame 17), end 21.0 | same, no lift needed |
+| Tail tip peak speed (cm per frame) | 4.15 | 4.10 (nothing above 3x the median) |
+
+Caveat: the nose reaches 32.2 cm ahead of the chest front at frame 71, 7.8 cm past the 24.4 cm straight-neck figure; the lean
+and head dip carry it. Not corrected.
+
+### stagger (5 s, 121 frames) - fit and refinement
+
+`Dragon_Stagger_sd_v2r_v2.blend`, Action `stagger_v2`, 121 frames, same script (`ground=auto floor_lift=1`, report
+`refine/stagger/refine_report.json`), renders `clip_ST1_*` refined, `clip_ST0_*` raw.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| End vs frame 0 (summed bone angle) | 7.85 rad | 0 (24-frame blend, peak step 2.23x median; whole-clip 3.8x) |
+| Left forefoot (front +Y) catch-step | 7.75 cm travel, 2.6 cm lift | free for frames 24 to 101, planted before (0 to 23) and after (102 to 120) |
+| Other three feet | 3.30 / 1.02 / 0.82 cm | 0 / 0 / 0 |
+| Wing lateral extent over frame 0, -Y / +Y | 1.14x / 1.11x | same, under the 1.27x cap |
+| Body lift (Spine_0) | | max 0.82 cm over 102 frames |
+| Tail tip peak speed (cm per frame) | 2.51 | 1.07 (8 passes, 37 frames) |
