@@ -412,3 +412,10 @@ cannot prove no other session's staging directory matched that glob.
 Restore for round 2: after rounds 0 and 1, `gh release download knight-complete-round2-20261029 -R
 oh-ashen-one/veyr-animation-sources`, `shasum -a 256 -c SHA256SUMS`, `unzip -n` each zip at the worktree root.
 Review page: `Local/knight-review-20261028/serve/index.html` (round 2 vs round 1); `serve-round1/`, `serve-round0/` kept.
+
+- Rerun 2026-10-29 03:04-03:11 on the same build (`package-20261029T055623Z`, no rebuild): the coordinator reported the
+  dragon jobs finished, but the GPU still read 98-100% for the whole 20-minute wait (another UnrealEditor and other loads
+  were running), so these runs are load-contaminated too. core True 12.9 fps, death True 12.4, lockon True 12.8 (blink 3/3,
+  lab 5/5, facing 1.9 deg), integration False 12.0 (`locked_blink_left`: both echoes captured, 298.6 cm travel, no frame
+  inside the 0.16 s hidden window; frame sampling, not code), controls True 12.0, guard True 13.4. Evidence
+  `Evidence/native-*-20261029T0704..0710`; recorded in `round2-metrics.json` under `gates_20261029T0704`.
