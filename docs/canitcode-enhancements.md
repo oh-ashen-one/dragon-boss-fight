@@ -118,6 +118,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | roar_sd2 (Seedance, half-open wings no wider than body length) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s, 24 fps, audio on | 35 | wings stay at the model's span, both panels in step, sharp, no effects | OK: body 1.13%, limbs 0.65%. Fit: miss 3.30 px, outline 0.76 / 0.85, max twist 5.5 deg, no warnings. Best roar fit so far |
 | 2026-10-28 | collapse | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 6 s (145 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 6 s cost to verify) | pass (coordinator): wings at span, drops flat, chin on floor, panels agree; side panel crops the tail at the right edge once it lies flat | OK: body 1.17% (p90 1.35%), limbs 0.77% (p90 3.96%); frame 0 match 0.94 / 0.90. Fit: median miss 4.72 px, outline 0.75 / 0.83, max twist 21.4 deg (VeyrWingNegZRoot), warnings: body under the floor in 74 frames, hind knees at joint limit 60 frames |
 | 2026-10-28 | death | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 7 s (169 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 7 s cost to verify) | pass (coordinator): falls, rolls partly onto its right flank, head stretched out, wings at span, panels agree | OK: body 0.93%, limbs 1.36% (close to the 1.5% line), frame 0 match 0.89 / 0.96. Fit: median miss 7.07 px, outline 0.71 / 0.82, max twist 51.7 deg (front upper leg; neck 48.9, shoulder 42.2), warning: body under the floor in 24 frames. Weakest fit of the set |
+| 2026-10-28 | bite | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on, size-constraint prompt | 35 | pass (coordinator) with caveats: wind-up front panel wings maybe 1.3x, side panel a touch larger than start.png, tail tip near the edge | OK: body 0.92% (p90 1.71%), limbs 1.22% (p90 1.54%), frame 0 match 0.93 / 0.94. Fit: median miss 3.76 px, outline 0.78 / 0.80, max twist 24.9 deg (bone_7), no warnings |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -460,3 +461,22 @@ Remaining defects: while the planted feet fade out during the fall, a leg segmen
 transit (lying frames are clean); the hind +Y foot reaches its lying plant target within 0.64 cm, not exactly. Max leg-chain
 rotation change from planting 22 deg. The fit itself is the weakest of the set (median miss 7.07 px), so the stagger and the
 roll are the reader best read, not exact; treat the death as a candidate for a re-generate or a hand pass if it ships.
+
+### bite (5 s, 121 frames) - fit and refinement
+
+`Dragon_Bite_sd_v2r_v2.blend`, Action `bite_v2`, 121 frames, not trimmed (the fit is still moving at frame 120). Script `refine/bite/refine_bite.py`
+(report `refine/bite/refine_report.json`), renders `clip_BI1_*`. Steps: end pose blended onto frame 0 over the last 24 frames, wing
+clamp to 1.27x of the frame-0 lateral extent, tail spike smoothing, four feet planted at the frame-0 pose for the whole clip.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| End pose vs frame 0 (summed bone angle) | 8.02 rad (the fit does not return to stance) | 0 (identical frame) |
+| Blend region peak step vs median step | | 2.27x (12-frame blend gave 3.0x, so 24 was kept); whole-clip peak 5.4x is the strike itself |
+| Wing lateral extent, -Y / +Y, max over frame 0 | 1.236x (at frame 120) / 1.04x | 1.18x / 1.04x: under the 1.27x cap, no clamp needed |
+| Head: nose ahead of chest front, max / min (cm) | 24.2 / 11.5 | same; the strike reaches 24.2 against 24.4 cm of straight neck |
+| Feet excursion, four feet (cm) | 1.11 / 5.74 / 0.04 / 0.14 (the -Y front foot) | 0 on all four |
+| Tail tip peak speed (cm per frame) | 6.04 (15.0x median) | 3.02 (7.5x), 8 passes touching 72 frames |
+| Bones outside tail, wings, legs changed | | 0.000003 deg |
+
+The wing worry did not appear in the fit: the raw peak is 1.236x of the frame-0 extent, at the last frame where the fit has not
+returned, and closing the pose brings it to 1.18x.
