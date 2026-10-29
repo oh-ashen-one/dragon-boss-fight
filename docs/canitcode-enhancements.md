@@ -117,6 +117,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | roar_sd (Seedance 2.5 control run, owner-approved) | Higgsfield, Seedance 2.5, omni_reference | 720p (1280x720), 16:9, 5 s, 24 fps, audio on, size-constraint prompt | 35 | wings still drawn wider than the model's span in the front panel; side panel clean and sharp; panels drift apart (the side panel's body and tail do not match the front at the peak) | FAIL: panels disagree on the body by 2.2% of height (fail line 1.5%); frame 0 match 0.90 / 0.96. Fit anyway: miss 4.24 px, outline 0.64 / 0.82, max twist 8.0 deg (MiniMax: 25.8 and 68.8) |
 | 2026-10-28 | roar_sd2 (Seedance, half-open wings no wider than body length) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s, 24 fps, audio on | 35 | wings stay at the model's span, both panels in step, sharp, no effects | OK: body 1.13%, limbs 0.65%. Fit: miss 3.30 px, outline 0.76 / 0.85, max twist 5.5 deg, no warnings. Best roar fit so far |
 | 2026-10-28 | collapse | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 6 s (145 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 6 s cost to verify) | pass (coordinator): wings at span, drops flat, chin on floor, panels agree; side panel crops the tail at the right edge once it lies flat | OK: body 1.17% (p90 1.35%), limbs 0.77% (p90 3.96%); frame 0 match 0.94 / 0.90. Fit: median miss 4.72 px, outline 0.75 / 0.83, max twist 21.4 deg (VeyrWingNegZRoot), warnings: body under the floor in 74 frames, hind knees at joint limit 60 frames |
+| 2026-10-28 | death | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 7 s (169 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 7 s cost to verify) | pass (coordinator): falls, rolls partly onto its right flank, head stretched out, wings at span, panels agree | OK: body 0.93%, limbs 1.36% (close to the 1.5% line), frame 0 match 0.89 / 0.96. Fit: median miss 7.07 px, outline 0.71 / 0.82, max twist 51.7 deg (front upper leg; neck 48.9, shoulder 42.2), warning: body under the floor in 24 frames. Weakest fit of the set |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -437,3 +438,25 @@ curled it; replaced by the rest pose blended in over the fall and pitched 22 deg
 -Y wing 5 cm under the floor; fixed by rotating the wing root about the long axis, not by moving the body. Feet are
 planted by temporary IK at the frame-0 pose until the drop starts (released over 10 frames) and at the settled pose
 from frame 100 (ramped over 8 frames before).
+
+### death (7 s, 169 frames) - fit and refinement
+
+`Dragon_Death_sd_v2r_v2.blend`, Action `death_v2`, 169 frames, no trim, no loop (ends on the floor, rolled onto the right flank, Spine_0 at y -8.6 cm).
+Script `refine/death/refine_fall.py` (same as collapse, `tail_flat=0`: the fit tail already hangs limp, tip z 6.3 cm lying), report
+`refine/death/refine_report.json`, renders `clip_DE1_*`. Phases: stagger to frame 36, fall 36 to 87, lying from 87.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| Feet excursion standing (frames 0 to 38), four feet, cm | 2.5 / 3.2 / 0.8 / 6.2 | 0 on all four |
+| Feet excursion lying (frames 87 to 168), cm | 1.12 / 0.58 / 0.57 / 1.46 | 0 on all four |
+| Lowest non-wing point lying (cm, floor = 0) | -2.42 (82 frames under) | +0.02 |
+| Wing lowest point lying, -Y / +Y | -2.39 / -3.50 | +2.23 / +2.34 |
+| Wing root lift to clear the floor | | 22.0 deg (PosZ), 12.0 deg (NegZ) |
+| Body lift (Spine_0 world Z) | | max 2.57 cm over 133 frames |
+| Tail tip peak speed (cm per frame) | 3.48 | 2.58 |
+| Bones outside tail, wing roots, legs changed | | 0.000003 deg |
+
+Remaining defects: while the planted feet fade out during the fall, a leg segment goes up to 1.85 cm under the floor in
+transit (lying frames are clean); the hind +Y foot reaches its lying plant target within 0.64 cm, not exactly. Max leg-chain
+rotation change from planting 22 deg. The fit itself is the weakest of the set (median miss 7.07 px), so the stagger and the
+roll are the reader best read, not exact; treat the death as a candidate for a re-generate or a hand pass if it ships.
