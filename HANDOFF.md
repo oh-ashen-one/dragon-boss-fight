@@ -164,3 +164,131 @@ cd ~/dragon-boss-fight && bash tools/movedata/run_veyr.sh && python3 -m unittest
 ```
 work out of ~/dragon-boss-fight on branch claude-code-enhancements, read HANDOFF.md, restore the v2r-dragon-20261028 bundle into Local/, pick up at next steps
 ```
+
+
+---
+
+## Knight completion 2026-10-28
+
+Branch `fable/knight-complete-20261028` (off `origin/claude-code-enhancements` 5e619f6), worktree
+`/Users/midir/veyr-knight-20261028` on the Studio (a separate clone; the dragon checkout was not written).
+Runtime knight definition is now **KnightB v030m**, promoted into `RuntimePolish/DA_Knight` (44 clips: 28 inherited from
+v029 unchanged, 16 new). Nothing here is owner-approved. Built on Opus 5.5 (the first commit's trailer names Fable 5.1
+as requested by the launching agent; later commits name the model that did the work).
+
+### Verified state
+
+- **Restore**: 1078 native files from four private releases (order: `native-integration-20261025`,
+  `combat-arena-polish-native-20261025`, `sourced-animation-game-v027`, `overhaul-game-v029-20261026`); SHA256SUMS OK
+  for the two releases that publish them, 403 in-zip manifest hashes OK, 0 dataless files after restore. Against the
+  live Codex tree: 864 identical, 225 dataless-there size-matched, 0 different, 1 missing
+  (`UI/MoonlitB/T_MoonlitSilverAtlas_v1.uasset`, in no release, copied from the live checkout, sha256 ba65d05a...).
+  Per-file provenance: `docs/knight-complete-20261028/restore-provenance.json`, `restore-receipt.json`.
+- **Lock-on locomotion** (`VeyrKnight.cpp`): while locked on and walking, the knight faces the boss; back = approved
+  `Backpedal` loop (100 cm/s, clip nominal 59.9, 1.67x), sides = `StrafeLeft/Right` (walk cap 1.2x nominal: 166/187 cm/s),
+  Shift + side = `StrafeRunLeft/Right` (1.1x nominal: 452/444 cm/s), forward = Walk. Shift + forward/back runs freely
+  (orient to movement). Hysteresis 0.15 on direction changes. `-VeyrNoLockOnStrafe` restores the old behaviour.
+  `BackpedalStep` stays on its existing path (`TryBackstep`, exec `VeyrBackstep`, integration trial); no new key binding.
+- **Strafes**: 4 Mixamo Sword and Shield strafes (walk L/R, run L/R) retargeted with `retarget.py`, weapon-fitted with
+  `fit_weapon.py` in one-hand and two-hand grips (the pipeline supports both; 8 clips). Nominal speeds from stance-foot
+  medians x 240 cm per glTF metre (calibrated on three plan clips, 239.8 to 246.6): walk L 138.4, R 155.5; run L 411.3,
+  R 404.0 cm/s.
+- **Directional staggers**: impact (3) = Front (head back 39 deg), impact (2) = Back (head forward 25 deg), impact = Left
+  (left shoulder driven back), Right = mirrored copy of Left (`retarget.py` mirror). One- and two-hand, 8 clips, each
+  played to 0.60 s (gameplay rate 1.167, Back 1.611). The old `Stagger` (0.42 s) stays the default when the source
+  direction is degenerate or a clip is missing. `-VeyrNoDirectionalStagger` restores it. Log: `VEYR_KNIGHT_STAGGER`.
+  **Gameplay change**: stagger lock grows from 0.42 to 0.60 s.
+- **RunStop join**: measured with `measure_runstop.py` (24 run phases, all joints plus sword tip, in-game frozen-source
+  local blend). Fab run -> RunStop: sword 50 to 60 cm apart at every phase (RunStop was authored from the Blender run);
+  0.10 s blend peak 2215 cm/s, over the clips' own peak (1343) in 22/24 phases; 0.20 s 5/24; 0.30 s 0/24 (peak 1188).
+  Run<->RunStop now blends 0.30 s (`-VeyrRunStopBlend=` overrides). No re-authoring.
+- **Approved assets byte-identical**: every pre-existing `Content/Characters/Customuse` .uasset hash unchanged except
+  `RuntimePolish/DA_Knight` (926 files compared); original guard `.uasset` sha256 `1d7b990a...efa069` unchanged;
+  guard signature verified by the importer. v030m adds 17 assets (16 AnimSequences + DA).
+- **v030k was rejected and superseded**: it imported its own rig and mesh variant in a `-nullrhi` commandlet and those
+  meshes rendered white in the packaged game. v030m references v029's rig and the identical mesh variant
+  (`knight_571e0abbfde2720e`). v030k assets are parked in `Local/failed-import-v030k-whitemesh/` (not in Content).
+
+### Gate lines
+
+- UBT VeyrEditor Mac Development: `Result: Succeeded`, 0 warnings (`Local/unreal-build-20261029T002011653662Z`).
+- UBT Veyr Mac Shipping: `Result: Succeeded`, 1 engine-side warning (MetalShaderConverter include dir)
+  (`Local/unreal-build-20261029T011120733748Z`).
+- Package Shipping: `BUILD SUCCESSFUL`, `AutomationTool exiting with ExitCode=0`, receipt
+  `Local/package-20261029T011117Z/receipt.json`, signed zip
+  `Builds/Unreal-Mac-20261029T011117Z/Repaired/Mac/Veyr-Mac-Shipping.zip` sha256 `2c7bd8e5...090c8f`,
+  app `/private/tmp/veyr-verified-bundle-uyyqawy6/Veyr-Mac-Shipping.app`.
+- Packaged runs (all through `gpu_slot` capture, one engine at a time), `Evidence/`:
+  - lockon `native-lockon-20261029T011329Z`: `True lock-on: 10 locomotion trials sampled their clips, max facing error 0.9 deg; directional stagger lab 5/5`
+  - core `native-core-20261029T011412Z`: `True jump-disabled light heavy collapse head bonus completed rise and dodge contact observed`
+  - controls `native-controls-20261029T011645Z`: `True movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed`
+  - guard `native-guard-20261029T011807Z`: `True front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified`
+  - death `native-death-20261029T011946Z`: `True death terminal pose, resource reset, movement and primary attack after restart verified`
+  - integration: 1 pass of 3 (`native-integration-20261029T010702Z` True, 18 features incl. `locked_strafe_without_blink`
+    now expecting `StrafeRight`); 2 fails at `locked_blink_left` (`...010302Z`, `...012024Z`): blink accepted and
+    travelled 299 cm but the hidden window (0.16 s) or second afterimage window (0.12 s) was skipped. These runs ran at
+    about 16 fps with 0.30 to 0.40 s frames because other sessions held the GPU at 97 to 100%; v029's passing run had
+    52 fps. Treat as contaminated; rerun when the GPU is quiet (see INTEGRATION_PERF below). The afterimage capture is
+    frame-window based (`UpdateBlinkEchoes`), so it is fragile under hitches; not changed here.
+- Run on the first package (v030k, white meshes) are superseded: `Evidence/native-*-20261029T0057*..0103*`.
+
+### Evidence
+
+- Review page (do not need a server here; serve `serve/` with a byte-range server):
+  `Local/knight-review-20261028/serve/index.html`, 29 rows, 56 videos (front | side | three-quarter, 30 fps, in-game
+  rate), 15 packaged-game screenshots, RunStop numbers. Critic brief: `Local/knight-review-20261028/critic-brief.md`.
+- Data: `docs/knight-complete-20261028/data/` (Mixamo classification, stance calibration, RunStop joins, v030m plan,
+  activation receipt, manifest).
+- Tools: `tools/art/knight_complete/` (restore, analyze, build clips, measure, plan, native import, render, page).
+
+### Restore on another machine (exact)
+
+```bash
+git clone -b fable/knight-complete-20261028 https://github.com/oh-ashen-one/dragon-boss-fight.git ~/veyr-knight-20261028
+cd ~/veyr-knight-20261028 && mkdir -p Local/restore-20261028/dl && cd Local/restore-20261028/dl
+R=oh-ashen-one/veyr-animation-sources
+gh release download overhaul-game-v029-20261026 -R $R -D overhaul-game-v029-20261026 -p Veyr-Native-Overhaul-v029.zip
+gh release download sourced-animation-game-v027 -R $R -D sourced-animation-game-v027 -p Veyr-Native-Sourced-v027.zip
+gh release download native-integration-20261025 -R $R -D native-integration-20261025 -p '*.zip' -p '*.json' -p '*.txt'
+gh release download combat-arena-polish-native-20261025 -R $R -D combat-arena-polish-native-20261025 -p '*.zip' -p '*.json' -p '*.txt'
+(cd native-integration-20261025 && shasum -a 256 -c SHA256SUMS.txt && shasum -a 256 -c prop-material-fix-SHA256SUMS.txt)
+(cd combat-arena-polish-native-20261025 && shasum -a 256 -c SHA256SUMS.txt)
+cd ~/veyr-knight-20261028 && python3 -I tools/art/knight_complete/restore_native_content.py Local/restore-20261028 "$PWD"
+# knight completion delta (v030m native + authoring + review page)
+mkdir -p Local/restore-20261028/kc && cd Local/restore-20261028/kc
+gh release download knight-complete-20261028 -R $R && shasum -a 256 -c SHA256SUMS
+cd ~/veyr-knight-20261028 && for z in Local/restore-20261028/kc/*.zip; do unzip -n "$z"; done
+# HUD atlas is in no release: copy Unreal/Veyr/Content/UI/MoonlitB/T_MoonlitSilverAtlas_v1.uasset (sha256 ba65d05a...)
+# from the Codex checkout /Users/midir/Documents/Codex/2026-10-18/go/work/veyr-native-integration on the Studio.
+```
+
+Then: `python3 tools/unreal/build.py --engine "/Users/Shared/Epic Games/UE_5.8"`,
+`python3 tools/unreal/package.py --engine "/Users/Shared/Epic Games/UE_5.8" --configuration Shipping`,
+`python3 tools/unreal/run_native.py --app <app> --gpu-slot ~/.cache/gpu-slot/bin/gpu_slot.sh --mode lockon`.
+Re-import is headless: `UnrealEditor <uproject> -run=pythonscript -script=tools/art/knight_complete/native_import_v030k.py
+-nullrhi -unattended -NoZenAutoLaunch -notraceserver -DDC=(EnginePak=InstalledEnginePak,Local)` (reads the active plan;
+refuses an existing version folder). Do not import rigs/mesh variants in that commandlet (v030k lesson); reuse them.
+
+### Unapproved / open (owner decisions)
+
+- Not recorded as accepted: Mixamo walk (both grips), Fab run (both grips), Mixamo slash, Fab roll, `Sourced_RollAttack_v2`.
+  Unapproved: Blink L/R (`Sourced_Blink*_Transit_v2`, v029 maps BlinkLeft to the file named ...Right), GripTo* polish v2,
+  all 16 new strafes/staggers, the 0.30 s RunStop blend, the 0.60 s stagger length, the 100 cm/s backpedal.
+- Two-hand backpedal falls back to the one-hand `Backpedal` clip (only one approved backpedal exists): expect a grip
+  change while backing up two-handed. Two-hand strafes exist.
+- Integration `locked_blink_left` needs a clean-GPU rerun (above). A perf-mode retry (`--performance`, exclusive lock,
+  waits for GPU < 15%) was cancelled by me after 5 min (SIGTERM, no engine had started) because its settle hold blocked
+  another session's capture while the GPU stayed at 98%; `Evidence/native-integration-20261029T012221Z` is that
+  incomplete attempt.
+- No blind critic has run; I wrote the brief only.
+- Spend: Higgsfield 0 credits; no browser downloads; no MCP used. Compute: 4 headless Blender jobs (retarget 25 s,
+  fit about 40 s, renders 333 s), 3 import commandlets (14 min failed, 7 min v030k, 34 s v030m), 3 UBT builds,
+  2 Shipping packages, 13 packaged scenario runs.
+
+### Local-only (did not travel), cleanup state
+
+- Worktree `/Users/midir/veyr-knight-20261028` holds the restored native content (gitignored), `Builds/` (2.7 GB),
+  `Local/` (CustomuseAssets 3 GB, FabRigTesting 2.8 GB, backup zips 3 GB in `Local/backup-20261028`), `Evidence/`.
+  Everything needed is in the branch plus the private releases above; the worktree can be removed once the owner has
+  reviewed the page and app. Staging `/private/tmp/veyr-stage-*` and `/private/tmp/veyr-verified-bundle-uyyqawy6` are this
+  thread's. No servers, LaunchAgents or engines left running.
