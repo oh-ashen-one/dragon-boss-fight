@@ -2,7 +2,12 @@
 """Encode rendered review frames (front | side | three-quarter, 30 fps real time) and write
 serve/index.html in the style of the dragon before/after page. Usage: build_review_page.py REVIEW_DIR [--serve DIR]
 --serve (round 3): write the page and media into DIR (e.g. ../serve-round3) instead of REVIEW_DIR/serve, copy
-rangeserver.py next to it, and lazy-load every video (data-src + IntersectionObserver, preload="none")."""
+rangeserver.py next to it, and lazy-load every video (data-src + IntersectionObserver, preload="none").
+Round 4 options: --intra encodes every frame as a keyframe (-g 1 -bf 0, crf 12): with the default GOP the loop wrap
+compares a P-frame with the I-frame and inflated the round-3 seam numbers by ~0.4x on slow loops (lossless frames: the
+backpedal wrap is 1.00x of the mean, the MP4 1.42x). --frames-also DIR (repeatable) looks for a label's frames in DIR
+when REVIEW_DIR/frames has none (re-encode round-3 renders without re-rendering). Jobs rendered with a subset of views
+(e.g. top only) are stacked from whichever of front/side/threequarter/top exist."""
 import html
 import json
 import shutil
@@ -15,23 +20,31 @@ LAZY = "--serve" in sys.argv
 SERVE = (R / sys.argv[sys.argv.index("--serve") + 1]).resolve() if LAZY else R / "serve"
 MEDIA = SERVE / "media"
 MEDIA.mkdir(parents=True, exist_ok=True)
+INTRA = "--intra" in sys.argv
+ALSO = [Path(sys.argv[i + 1]).resolve() for i, a in enumerate(sys.argv) if a == "--frames-also"]
 rows = json.loads((R / "rows.json").read_text())
 extra = json.loads((R / "extra.json").read_text()) if (R / "extra.json").exists() else {}
 
 
 def encode(label):
     out = MEDIA / (label + ".mp4")
-    frames = R / "frames" / label
     if out.exists():
         return "media/" + out.name
-    if not (frames / "front_0000.png").exists():
+    views = []
+    for base in [R / "frames"] + ALSO:
+        frames = base / label
+        views = [v for v in ("front", "side", "threequarter", "top") if (frames / (v + "_0000.png")).exists()]
+        if views:
+            break
+    if not views:
         return None
-    if not out.exists():
-        cmd = ["ffmpeg", "-loglevel", "error", "-y", "-framerate", "30", "-i", str(frames / "front_%04d.png"),
-               "-framerate", "30", "-i", str(frames / "side_%04d.png"), "-framerate", "30", "-i", str(frames / "threequarter_%04d.png"),
-               "-filter_complex", "[0][1][2]hstack=inputs=3", "-c:v", "libx264", "-crf", "22", "-pix_fmt", "yuv420p",
-               "-movflags", "+faststart", "-r", "30", str(out)]
-        subprocess.run(cmd, check=True)
+    cmd = ["ffmpeg", "-loglevel", "error", "-y"]
+    for v in views:
+        cmd += ["-framerate", "30", "-i", str(frames / (v + "_%04d.png"))]
+    if len(views) > 1:
+        cmd += ["-filter_complex", "".join("[%d]" % i for i in range(len(views))) + "hstack=inputs=%d" % len(views)]
+    cmd += ["-c:v", "libx264"] + (["-crf", "12", "-g", "1", "-bf", "0"] if INTRA else ["-crf", "22"]) + ["-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", "30", str(out)]
+    subprocess.run(cmd, check=True)
     return "media/" + out.name
 
 

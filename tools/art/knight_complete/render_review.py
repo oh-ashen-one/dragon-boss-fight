@@ -17,7 +17,12 @@ Round 3 options (all optional; jobs without them render exactly as before):
   job "camera":             "hips" (default, follows the hips), "root" (follows the root offset, so the floor grid
                             scrolls under planted feet) or "fixed" (centred on the whole root path)
   job "display": glb        draw this file's mesh (e.g. the mesh variant the engine uses) with the sampled poses
-  job "ortho": metres       orthographic width (default 2.1, widened to fit a fixed camera's root path)"""
+  job "ortho": metres       orthographic width (default 2.1, widened to fit a fixed camera's root path)
+
+Round 4 option (optional; jobs without it render exactly as before):
+  job "views": [names]      subset/order of "front", "side", "threequarter", "top" (default the first three). "top" looks
+                            straight down with the boss at the top of the image and the knight's right on the right, so
+                            pelvis / leg-plane yaw is readable directly (frames saved as top_NNNN.png)"""
 import json
 import math
 import sys
@@ -233,7 +238,10 @@ def render_job(job):
     fwd = CANON_FWD.copy()
     right = Vector((fwd.y, -fwd.x, 0))  # knight's right when facing fwd with Z up
     views = {"front": fwd * 3 + Vector((0, 0, .4)), "side": right * 3 + Vector((0, 0, .4)),
-             "threequarter": (fwd * 3 + right * 2) + Vector((0, 0, .5))}
+             "threequarter": (fwd * 3 + right * 2) + Vector((0, 0, .5)), "top": Vector((0, 0, 3.0))}
+    views = {v: views[v] for v in job.get("views", ["front", "side", "threequarter"])}
+    # top: camera X (image right) = knight's right, camera Y (image up) = boss forward, looking down -Z
+    top_rot = Matrix((right, fwd, Vector((0, 0, 1)))).transposed().to_euler()
     folder = OUT / "frames" / job["label"]
     folder.mkdir(parents=True, exist_ok=True)
     s = bpy.context.scene
@@ -254,7 +262,10 @@ def render_job(job):
             focus = Vector((h.x, h.y, .5))
         for view, off in views.items():
             cam.location = focus + Vector(off)
-            cam.rotation_euler = (focus - cam.location).to_track_quat("-Z", "Y").to_euler()
+            if view == "top":
+                cam.rotation_euler = top_rot
+            else:
+                cam.rotation_euler = (focus - cam.location).to_track_quat("-Z", "Y").to_euler()
             s.render.filepath = str(folder / f"{view}_{i:04d}.png")
             if DRY:
                 continue
@@ -276,7 +287,7 @@ def canonical_forward():
 CANON_FWD = canonical_forward()
 print("CANONICAL_FORWARD", tuple(round(x, 3) for x in CANON_FWD), flush=True)
 for job in JOBS:
-    if (OUT / "frames" / job["label"] / "threequarter_0000.png").exists() and not job.get("force") and not DRY:
+    if (OUT / "frames" / job["label"] / (job.get("views", ["threequarter"])[-1] + "_0000.png")).exists() and not job.get("force") and not DRY:
         print("SKIP", job["label"])
         continue
     render_job(job)
