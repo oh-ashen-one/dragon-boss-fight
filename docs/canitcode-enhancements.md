@@ -671,3 +671,20 @@ touched row (lazy-loaded videos); renders `clip_<RS|CO|DE|BI|CS|ST|LA|RI>3_*`.
 
 Findings from the work: the critic's 4-frame stutter was in the importer's timing assumption, not in the fit; the jaw is not moved by the fit at all (it is authored
 now); the roar's two wings cannot both reach 1.25x because of the body roll in the clip.
+
+## Airborne pipeline (2026-10-29): hover start picture and reader
+
+Why: land and takeoff failed the check three times (1.76, 2.14 and 2.41% of height) because a body off the floor has no floor reference in the ground start picture.
+Project `Local/video2rig/dragon-air/` (sibling of `dragon/`; rig exported from the hover pose so the tool treats it as the start pose; reader trained fresh).
+- Hover pose: new Action `hover_pose_v1` (script `dragon-air/hover/author_hover.py`, parameters `hover_params.json`, report `hover_report.json`): Spine_0 raised so the lowest foot is
+  48.7 cm above the floor (one body height; the trailing tail tip is at 34.6 cm), body levelled (the rest pose stands 18 deg nose-up), wings 1.22x the rest span (96.9 cm tip to tip), legs tucked,
+  tail trailing down and back, head level, jaws closed. No existing Action touched.
+- Pictures: `start/start.png` (hover) and `start-ground/start.png` (standing), the same two cameras and floor. Flags: `render_start.py --facing +X --widths 840,1080 --margin-wide 1.25
+  --hover 0.58935 --lens 50 --engine CYCLES --samples 64` (frame height widened to 1.557 m by the hover; the ground picture reuses the cameras through `render_start_air.py --cameras-from`).
+  A perspective camera replaced the orthographic one: a level orthographic camera sees the floor edge-on, so the first hover picture showed no floor and no height cue at all.
+- Reader: 64 keypoints, 9000 steps, MPS bf16, normal priority; fork branch `air-reader` (`poses.py` opt-in `air` key: 55% of the poses lifted up to 1.3 body heights, 35% starting from the
+  standing stance, lifts lowered until the body is inside both panels; `--copies 1` because a perspective camera cannot share a frame with copies). Poses 297 s, pictures 852 s, training 10,295 s (172 min total).
+  Held-out median error: front 7.31 px, side 6.68 px (p90 44.7 / 35.7); the 18 off-bone points 8.48 / 8.97 px. The ground reader got 4.23 / 4.05. The airborne reader is less exact:
+  a wider pose range, a taller frame (the dragon is smaller in it) and a perspective camera. Expect fits near 3 to 5 px median rather than 2 to 3.
+- Prompts (`dragon-air/clips/*.prompt.txt`, notes in `README-air-prompts.txt`): `air_fire_down`, `air_land`, `air_hover`, `takeoff3` (start = ground picture, end = hover picture).
+  Higgsfield media ids: hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1.

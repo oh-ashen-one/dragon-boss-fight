@@ -100,8 +100,8 @@ against the transaction list). The failed first land and takeoff cost 35 each an
 `docs/canitcode-enhancements.md`, section "Fix round 1". Scripts in `Local/video2rig/dragon/refine/v3/` (gitignored). `tools/movedata/run_veyr.sh` now builds from the v3
 Actions (roar ends on the stance: seam 0.00x); `Data/dragon/*.json` rebuilt; 3 tests pass.
 
-**Airborne reader (in progress)**: sibling project `Local/video2rig/dragon-air/` (hover start picture `start/start.png`, ground picture `start-ground/start.png`, perspective lens 50, same
-cameras; Higgsfield media ids hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1), reader training 9000 steps on MPS started 22:26 on the fork branch
+**Airborne reader (trained)**: sibling project `Local/video2rig/dragon-air/` (hover start picture `start/start.png`, ground picture `start-ground/start.png`, perspective lens 50, same
+cameras; Higgsfield media ids hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1), reader trained (9000 steps, 172 min total, held-out median front 7.31 px / side 6.68 px; `reader/reader.pt`) on the fork branch
 `air-reader` (`~/video2rig-air`, opt-in `air` key in creature.json). Prompts: `dragon-air/clips/air_fire_down|air_land|air_hover|takeoff3.prompt.txt`.
 
 **Next steps**
