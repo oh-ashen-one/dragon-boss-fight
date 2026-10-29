@@ -124,6 +124,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | land (hop and hard landing) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | pass (coordinator): crouch, hop to about half a body height, wing flare, hard four-foot landing | FAIL: panels disagree on the body by 1.76% of height (fail line 1.5%); limbs 1.16%; frame 0 match 0.91 / 0.96. Not fitted (rule: a FAIL is regenerated, not fitted) |
 | 2026-10-28 | takeoff | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | coordinator: crouch, spring, rises about one body height and hovers; wings open to full span, past the rig 1.27x limit | FAIL: panels disagree on the body by 2.14% of height (fail line 1.5%); limbs 1.54% (also over the line); frame 0 match 0.93 / 0.96. Not fitted |
 | 2026-10-28 | rise (recovery) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; one earlier attempt failed provider-side) | coordinator: crouches low, rears up onto the hind legs with both forelegs off the floor and wings raised (about frame 90), drops back; went further than the prompt | OK: body 1.17%, limbs 0.99%, frame 0 match 0.92 / 0.89. Fit: median miss 3.07 px, outline 0.81 / 0.84, max twist 62.2 deg (bone_7), warning: body under the floor in 15 frames |
+| 2026-10-28 | idle_look (8 s head-intent idle) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 8 s (193 frames at 24 fps), audio on | 35 recorded (8 s rate; derived from the session total, see the cost note) | coordinator: slow breathing, head turns, wings at span, feet planted, returns to stance | OK: body 1.02%, limbs 0.91%, frame 0 match 0.92 / 0.95. Fit: median miss 2.00 px (best of the set), outline 0.84 / 0.92, max twist 8.5 deg (bone_3), no warnings |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -556,3 +557,33 @@ vertex shift mean 21.0 cm, p95 38.9, max 46.1 (rig scale; x21.56 in game); summe
 forelegs (tripo::1_Left_Limb_0 101 deg, tripo::0_Left_Limb_0 80 deg). The rise starts standing, so the engine blend from the collapse end has to
 do the get-up itself: it is a 17 cm lift plus folding the wings and legs, not a small pose blend. The rise clip is the stand-up from frame 53
 (crouch) onward, but the clip begins already standing; a better source for a post-collapse recovery is a clip whose first frame is the lying pose.
+
+### idle_look (8 s, 193 frames) and the idle comparison
+
+`Dragon_IdleLook_sd_v2r_v2.blend`, Action `idle_look_v2` (refine_move `ground=all W=24`, report `refine/idle_look/refine_report.json`): end blended onto
+frame 0 over the last 24 frames (the fit ended 5.67 rad of summed bone angle from the start; blend peak step 4.0x median), feet planted the whole clip
+(0.75 / 2.55 / 0.02 / 0.05 cm to 0), wings 1.03x / 1.01x of frame 0, tail tip peak 1.68 to 1.05 cm per frame. Renders `clip_IL1_*` (refined), `clip_IL0_*` (raw).
+`Dragon_IdleLayered_sd_v2r_v2.blend`, Action `idle_layered_v2` (script `refine/idle_look/layer_idle.py`): idle_v2 for the whole body, played 6.7% slower so two
+cycles fill the 192 steps and the loop closes exactly, plus the look clips neck and jaw motion added on top in bone-local space (bone_3, bone_4, bone_5,
+VeyrJaw, relative to the look clips frame 0). Replacing the head chain outright gave a 6.4 cm nose bob (the idle_v2 head compensates its own chest
+tilt); the additive version has 2.1 cm. Renders `clip_IL2_*`. All three Actions are kept.
+
+Measured (`refine/move/idle_metrics.py`, JSON in `refine/idle_look/metrics_*.json`; yaw = nose direction from bone_3 in plan view minus the body direction,
+relative to frame 0; positive = toward +Y, the dragons left; breathing = height of the mean torso vertex):
+
+| Measure | idle_v2 (3.75 s) | idle_look_v2 (8 s) | idle_layered_v2 (8 s) |
+| --- | --- | --- | --- |
+| Head yaw range, min / max (deg) | -4.3 / 6.5, range 10.8 | -37.8 / 0.4, range 38.2 | -38.9 / 6.9, range 45.8 |
+| Head pitch range (deg) | 2.7 | 2.5 | 5.5 |
+| Nose travel y / z (cm) | 3.3 / 0.9 | 15.5 / 0.4 | 15.1 / 2.1 |
+| Breathing, torso height peak to peak (cm), period | 1.53, 3.75 s | 0.30, 8 s (does not breathe at the clips own rate in the fit) | 1.53, 4.0 s |
+| Tail tip y / z range (cm) | 4.9 / 11.9 | 6.0 / 1.2 | 4.9 / 11.9 |
+| Wing lateral range, +Y / -Y (cm) | 1.19 / 1.76 | 0.82 / 1.41 | 1.19 / 1.75 |
+| Loop seam (step across the join over the median step) | 0.95 | 0.98 (last frame is a copy of frame 0, step from frame 191) | 0.93 |
+| Feet excursion | 0 | 0 | 0 (idle_v2 legs) |
+
+Findings: (1) the clip turns the head toward the dragons right (-38 deg; the source frames show the head swinging to screen-left in the front panel), not
+to the left as the prompt asked, and returns without the slight turn the other way (max +0.4 deg); the fit is right, the generator mirrored the instruction.
+(2) idle_look has the head intent but almost no breathing (0.3 cm) and little tail sway (z 1.2 cm); idle_v2 has breathing and tail but only 10.8 deg of head
+motion. The layered Action has both: 45.8 deg of head yaw and idle_v2 breathing, tail and wing motion, a clean seam, same planted feet. Candidate for the
+final idle; the owner decides on the renders (the 1.5 cm breathing figure is the idle_v2 fits and may be larger than a dragon this size would breathe).
