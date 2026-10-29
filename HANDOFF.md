@@ -294,6 +294,41 @@ Round-3 plan, in the critic's rank order:
 9. **Staggers:** feet stay locked. That is fine for light hit-reacts; add a recovery step if they double as heavy
    staggers.
 
+### Round 3 authoring (2026-10-29, verified state)
+
+- **Status:** KnightB **v030q** plan written, **not activated, not imported, not rendered, not critiqued**.
+- **Contents:** 13 re-authored clips:
+  - StrafeRight(2H)
+  - StrafeRunLeft/Right(2H)
+  - BlinkLeft/Right(2H)
+  - BackpedalGuard(2H)
+  - RollAttack
+- **Inherited:** everything else is inherited by reference from v030p.
+- **Details:** `docs/knight-complete-20261028/plan-round3.md` (sourced vs authored per fix, numbers, commands).
+- **Metrics:** `docs/knight-complete-20261028/data/round3-metrics.json`, pose space. The pixel fields are filled by the
+  render script.
+- **Drivers:** `tools/art/knight_complete/build_round3.py` (headless Blender; `.blend` beside each GLB in
+  `Local/FabRigTesting/Exports`), `prepare_round3_plan.py` and `measure_round3.py`.
+- **Review tooling:** `review_jobs_r3.py` and `render_round3.sh`. `render_review.py` gained even phase sampling, root
+  travel, the hidden window, camera modes, a display mesh and `--dry`. `build_review_page.py` gained `--serve` with
+  lazy loading.
+- **Key pose numbers (r3 vs r2):**
+  - blinks: launch crouch -15 cm over 3 frames; root moves only while hidden; first/last = idle exactly; twist ≤19.5°
+    (was 88-93°)
+  - sprints: twist 37.7° (was 88-93°); chest ≤17.9°; pelvis 41-42° off travel; 1H free arm 28-37 cm (was 9-10 cm)
+  - roll exit: lifted steps (lead f42-46, rear f47-50); blade monotonic -1.3 to 7.6° (was 50°)
+  - seams ≤0.98 of the mean (was up to 1.61)
+  - backpedal helmet coverage 0 (was 0.75)
+- **Protected clips:** StrafeLeft(2H) and the eight staggers are byte-identical across 30 files.
+- **Owner flags:**
+  - (a) Item 8 (walk crouch) is deferred because of the byte-identical rule.
+  - (b) The sprint nominal is now the clip's measured foot speed (404-411 vs a stale 453-457), so lock-on sprint speed
+    drops to about 445-452 game cm/s, but the 11% skate is gone.
+  - (c) The protected StrafeLeft seams are 1.18 under even sampling.
+- **Renders were blocked** by the stream window (0 capture slots until 13:30 ET). Run
+  `tools/art/knight_complete/render_round3.sh`, which goes through `gpu_slot capture --timeout 3600`.
+- **Round-3 page:** `Local/knight-review-20261028/serve-round3/`, with the round-2 MP4s reused as BEFORE.
+
 ### Private backup releases (oh-ashen-one/veyr-animation-sources)
 
 Apply them in order over the four native releases listed in `docs/knight-complete-20261028/restore-receipt.json`:
@@ -312,7 +347,7 @@ Every asset's remote digest matched its SHA256SUMS at upload. To restore:
 ### Other notes
 
 - **Review pages, under `Local/knight-review-20261028/`:**
-  - `serve/` is round 2 vs round 1; `serve-round1/` and `serve-round0/` are kept.
+  - `serve/` is round 2 vs round 1; `serve-round1/` and `serve-round0/` are kept; `serve-round3/` is round 3 vs round 2.
   - Serve them with a byte-range server.
   - Round-2 renders have no root translation, which is the critic's point 2.
 - **Tooling:** `tools/art/knight_complete/` (the round drivers `build_round1.py` and `build_round2.py`, the
