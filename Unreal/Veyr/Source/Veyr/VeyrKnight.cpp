@@ -1226,8 +1226,10 @@ bool AVeyrKnight::CaptureBlinkEcho(int32 Index,float SourceSeconds)
 void AVeyrKnight::UpdateBlinkEchoes()
 {
     if(!IsBlinkAction()||IsTerminal()){ClearBlinkEchoes();return;}
-    if(!bBlinkEchoCaptured[0]&&ActionElapsed>=.16f&&ActionElapsed<.36f)CaptureBlinkEcho(0,.16f);
-    if(!bBlinkEchoCaptured[1]&&ActionElapsed>=.34f&&ActionElapsed<.46f)CaptureBlinkEcho(1,.34f);
+    // Round 2: capture late if a long frame skipped the window (at ~12 fps the 0.12 s arrival window was missed);
+    // the echo still samples its authored source time, so normal-rate behaviour is unchanged.
+    if(!bBlinkEchoCaptured[0]&&ActionElapsed>=.16f)CaptureBlinkEcho(0,.16f);
+    if(!bBlinkEchoCaptured[1]&&ActionElapsed>=.34f)CaptureBlinkEcho(1,.34f);
     for(int32 I=0;I<2;++I)
     {
         if(!bBlinkEchoCaptured[I])continue;

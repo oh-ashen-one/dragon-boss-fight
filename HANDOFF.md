@@ -343,3 +343,72 @@ Restore for round 1: after the round-0 restore above, `gh release download knigh
 oh-ashen-one/veyr-animation-sources`, `shasum -a 256 -c SHA256SUMS`, `unzip -n` each zip at the worktree root.
 Review page: `Local/knight-review-20261028/serve/index.html` (round 1, before = round 0 for changed rows);
 round-0 page kept at `serve-round0/`.
+
+
+### Fix round 2 (2026-10-29), after `Local/knight-review-20261028/critique-round1.md`
+
+The runtime knight is now **KnightB v030p** (48 clips: 25 inherited unchanged, 21 rebuilt, BlinkLeftTwoHand and
+BlinkRightTwoHand new), promoted from v030n. Every pre-existing `Customuse` .uasset is byte-identical except
+`RuntimePolish/DA_Knight` (24 new assets). The approved and owner-selected sources were only read. Nothing is approved.
+Metrics: `docs/knight-complete-20261028/data/round2-metrics.json` (critic definitions: yaw 0 = boss, + = knight left,
+game cm, in-game rates) and `round2-handslip.json`.
+
+Root causes:
+- **A (mirror).** `retarget.py`'s mirror was a correct sagittal reflection; the Mixamo Sword and Shield strafes are side-on
+  (chest -70..-86 deg), and reflecting a side-on body flips its facing. Only the right-moving clips are forward gaits
+  (strafe.fbx walk, strafe (4).fbx sprint: knees within 10 deg of travel for the sprint). Left = sagittal mirror of those;
+  then a spine counter-twist (Spine/Spine1/Spine2 30/35/35%) brings each clip's mean chest yaw to 0. Mirror pairs: mean
+  chest 0.0 vs 0.1 (walk), 0.4 vs -0.8 (sprint): within 5 deg.
+- **B (socket).** I did not reparent WeaponSocket in the skeleton: that would mean re-importing every approved clip.
+  Instead the game places the sword from the right hand while a pose blend runs, with the hand-space grip interpolated
+  between the source and target clips' own grips (`AVeyrKnight::GetWeaponSocketWorld`, `-VeyrNoWeaponGripLock` = old).
+  Approved assets are untouched (hash check above). Simulated engine transitions (`measure_handslip.py`): extra hand
+  slip before 1.8-9.9 cm (light attack <-> idle 8.9/9.9, strafe -> idle 9.6, strafe -> stagger 4.5), after 0.0 cm on
+  all 10. In authored clips the roll attack writes WeaponSocket = RightHand x grip every frame (slip 0.0).
+- **C (lock-on posture).** Lock-on enter/exit blends 0.30 s (`-VeyrLockOnBlend=`). Chest within 20 deg of the boss on
+  every strafe, sprint strafe and blink. Walk-strafe hips stay 15-26 cm below the idle (source crouch); sprint and blink
+  hips are -9..+3 cm.
+
+| Row | Chest yaw (deg) | Knee vs travel (deg) | Hand slip (cm) | Foot skate / drift | Other |
+|---|---|---|---|---|---|
+| Sprint strafe L / R (1H, 2H) | -13.7..13.8 / -13.7..13.6 | 9.8 / 9.7 | 0.0 | stance speed = nominal 453.4 / 456.9 cm/s (planted toe) | ends at ankles 61.5-63.5 / 60.7-62.3 cm |
+| Strafe L / R (1H, 2H) | -3.7..4.7 / -4.6..3.7 | 48.7 / 48.7 (source knees, 3.7 deg over) | 0.0 | nominal 163.6 / 159.7 cm/s | ends 62.2-64.1 / 59.4-62.0 cm; hips -15..-26 |
+| Blink L / R (1H, new 2H) | -13.7..13.9 / -13.7..13.6 | 9.9 / 9.8 | 0.0 | root = 90% of planted-toe speed while visible, about 52 cm/s residual in game; planted drift with root 4.9 / 7.2 cm | ends 61.5-67.6 / 57.3-62.3 cm; lateral 298.6 cm total kept |
+| Staggers F/B/L/R (1H, 2H) | front 0.0..0.8 | n/a | 0.0 | ankle drift <= 0.4 cm | tip <= 36.5 cm/frame; pitch 1H <= 25.0, 2H <= idle+10 (78.1); first/last carry 0.0/0.2 deg; front head 45.4 of 45.5 cm straight back; L/R 53.1 / 55.5 cm |
+| Backpedal guard 1H / 2H | -7.4..5.9 | backward gait by design | 0.0 | stance 59.95 cm/s | 1H blade +40 deg above the idle carry (pitch 45.8-47.7, tip 309 cm); 2H tilted 22 deg forward (46 deg) |
+| Roll attack | n/a | n/a | 0.0 | exit planted drift <= 1.9 cm; recovery steps lift 15.5 / 12.6 cm | join 0.60 s source (14 frames in game); ends in the 1H idle carry (0.0 deg) |
+
+Deviations from the round-2 instructions:
+- Backpedal guard is **held through the loop** (carry 39.8 / 23.4 deg off the idle at the loop seam) instead of easing to
+  within 15 deg at the first/last 3 frames. A 1.2 s loop that dips back to the carry every cycle would bob the blade
+  2.5 times a second; the 0.30 s lock-on enter/exit blend covers the transition.
+- 2H staggers cannot hold an absolute 25 deg pitch (the 2H idle carry itself is 68 deg); they are capped at idle+10.
+- Walk strafes keep the source knees (48.7 deg max, 3.7 over the 45 deg limit) and source hip height.
+- No 2H roll attack: RollAttack starts as the approved 1H Fab Roll (owner-selected), so a 2H roll attack would still
+  snap at the roll; it needs a 2H roll first.
+
+Gate lines (round 2). The GPU never went below 30% in a 120-minute wait (23:45-01:45; other sessions' video2rig reader
+training and renders for the dragon and Markhor Meadow held it at 98-100%), so every run below ran at 11-14 fps with
+0.40 s clamped frames and is load-contaminated:
+- UBT VeyrEditor `Result: Succeeded` (`Local/unreal-build-20261029T055627234434Z` pair); UBT Shipping `Result: Succeeded`;
+  package `BUILD SUCCESSFUL`, `ExitCode=0` (`Local/package-20261029T055623Z`), signed zip sha256 `11afb863...200662ae`,
+  app `/private/tmp/veyr-verified-bundle-ei9yiygb/Veyr-Mac-Shipping.app`.
+- Batch 1 (build `package-20261029T034134Z`): lockon True (blink direction 3/3, lab 5/5, facing 1.2 deg, 12.0 fps); core,
+  controls, guard, death True (13.4 / 12.7 / 13.0 / 12.2 fps); integration 0/3 (11.2 / 11.8 / 12.6 fps), each failing at a
+  locked blink: the 0.12 s second-afterimage window fell between two 0.4 s frames (1 of 2 echoes captured).
+- Fix: `UpdateBlinkEchoes` now captures a skipped afterimage late (same authored source time; no change at normal fps).
+- Batch 2 (echo-fix build): lockon True (3/3, 5/5, facing 4.9 deg, 13.3 fps); integration 1/3 (12.1 / 12.2 / 12.3 fps):
+  run 1 passed all 18 features; runs 2-3 failed `locked_blink_right` with both echoes captured and 298.6 cm travel but no
+  frame inside the 0.16 s hidden window; core True (13.7), death True (13.2); controls and guard False "player died before
+  objectives" (13.5 / 13.3 fps; both passed in batch 1 at the same rate on identical animation data).
+- Evidence: `Evidence/native-*-20261029T0544..0554` (batch 1), `Evidence/native-*-20261029T0608..0620` (batch 2).
+  A quiet-GPU integration and controls/guard rerun is still owed; the failures are frame-window sampling and bot survival
+  at 12 fps, and none reproduced as a clip-selection or direction error (lockon 3/3, direction trials measured).
+
+Notes: the round-1 bodies exported Blender's default scene range (frame 1..250); round 2 sets the range explicitly. While
+clearing my own package staging I ran `rm -rf /private/tmp/veyr-stage-*`; my receipts name three such directories, and I
+cannot prove no other session's staging directory matched that glob.
+
+Restore for round 2: after rounds 0 and 1, `gh release download knight-complete-round2-20261029 -R
+oh-ashen-one/veyr-animation-sources`, `shasum -a 256 -c SHA256SUMS`, `unzip -n` each zip at the worktree root.
+Review page: `Local/knight-review-20261028/serve/index.html` (round 2 vs round 1); `serve-round1/`, `serve-round0/` kept.
