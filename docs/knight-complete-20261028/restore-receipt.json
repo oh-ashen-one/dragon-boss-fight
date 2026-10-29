@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-28",
+  "worktree": "/Users/midir/veyr-knight-20261028",
+  "branch": "fable/knight-complete-20261028",
+  "releases": {
+    "native-integration-20261025": [
+      "Veyr-NativeContent-20261025-part1.zip",
+      "part2",
+      "part3",
+      "prop-material-fix"
+    ],
+    "combat-arena-polish-native-20261025": [
+      "part1",
+      "part2",
+      "part3",
+      "material-skeleton-save"
+    ],
+    "sourced-animation-game-v027": [
+      "Veyr-Native-Sourced-v027.zip"
+    ],
+    "overhaul-game-v029-20261026": [
+      "Veyr-Native-Overhaul-v029.zip"
+    ]
+  },
+  "sha256sums": "native-integration and combat-arena-polish SHA256SUMS.txt: all OK (shasum -c); v027/v029 releases publish no SHA256SUMS, their in-zip manifests were checked",
+  "inZipManifestHashesChecked": 403,
+  "inZipManifestFailures": 0,
+  "releaseManifestFinalHashMismatches": 0,
+  "restoredFiles": 1078,
+  "skippedGitTracked": 6,
+  "datalessAfterRestore": 0,
+  "versusLiveCodexTree": {
+    "identical": 864,
+    "datalessSizeMatched": 225,
+    "different": 0,
+    "missing": [
+      "Unreal/Veyr/Content/UI/MoonlitB/T_MoonlitSilverAtlas_v1.uasset (in no release; copied from the live Codex checkout, sha256 ba65d05ae1568ec9988b0cc28a7bb3945ee812ce66e371521755c1da36c10654)"
+    ]
+  },
+  "localAssets": "Local/CustomuseAssets plans/GLBs: 104 copied from the live checkout (non-dataless only), 3 Sourced20261025b GLBs from sourced-animation-authoring-20261025 (hashes match sourced-manifest), normalized BoatGreatsword_OneHand_v4.glb (27e6b3d5...) from live Integration20261025b/props. Absolute plan paths rewritten from the Codex checkout to this worktree, so plan file hashes differ from active-plans.json until a new plan is activated."
+}

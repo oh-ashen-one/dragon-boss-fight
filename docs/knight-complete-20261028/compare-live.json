@@ -1,0 +1,14 @@
+{
+ "identicalToLive": 864,
+ "liveDatalessSizeCompared": 225,
+ "liveDatalessSizeMismatch": [],
+ "differentFromLive": [],
+ "missingVersusLive": [
+  {
+   "file": "Unreal/Veyr/Content/UI/MoonlitB/T_MoonlitSilverAtlas_v1.uasset",
+   "bytes": 463983,
+   "liveDataless": false,
+   "tracked": false
+  }
+ ]
+}

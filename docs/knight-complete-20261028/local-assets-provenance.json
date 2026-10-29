@@ -1,0 +1,740 @@
+[
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/active-plans.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "4c856a8dee9f19ab669917484036ec776436c0a7a78c7b96e43acfb0e763dccd"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v029/import-plan-KnightB.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "504e962e475c3a32093d792025cb2d95bc6d56c829fc0d6957374cd2d5d28cc5"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/import-plan-DragonV3B.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "f6ebecd44e2c6e6186738c94d49a00ad6bd4ac7270bd2d597e47aad1b1bd698f"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/import-plan-KnightB.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "2dd7ad8e46c59f1ed682418c8684f166b9c6046a2d16ea00f6c9cf0370fa2d29"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/previous-active-plans.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "db1f2d8a5ca26975107126dc5c51e8c2d564d343c87ee152387a388d334cb63b"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/normalized-report.json",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 40527
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/proposed-active-plans.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "1ffa4a1051d5e8a1f134e74a2347c4a454c424ff1616df74d5c444da834d1784"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/knight/Sourced_BlinkRight_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36722316
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/knight/Sourced_BlinkLeft_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "fd08c306991a8445d7194846d183ba7d92ce43db114b96521a2646a7a0137088"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/knight/Sourced_BlinkLeft_Transit_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "18ff87fc8872ba2e6a93b9dd93b3ce0d65392ee44a8e5d49743cc6d52663c738"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/knight/Sourced_BlinkRight_Transit_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "0a502bbec9b71f39324681bec6401fb535dc30f49af364a141a7b490f0d7b1b2"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/dragon/Dragon_FlyHover_Blender_dangle_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "031b76f24a52c0611a34aea1ee90870d2e5548c984fb4cdb91b89f0095da0100"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/dragon/Dragon_Takeoff_DangleJoin_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "3d16e58e191fbcb9de606677bb0364a212ee754d7c08d26f7056000630ed8818"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/dragon/Dragon_Takeoff_DangleJoin_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "9c2ff2443f99da07aed2db90aaf3da6bddb8a2d6073aa6ef9d0ce4c4bbbfde41"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/dragon/Dragon_Land_DangleJoin_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "9c8978c027a5b5ff8ec53ef675e8fd22c225f3d8927d7a95d0a6b30219f03451"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/overhaul-v028/dragon/Dragon_Land_DangleJoin_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ef38212f740e3aaa4fa42fbcfee556aaef9461f047f7750b4293e4d0ada789e9"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/StrongAttackTwoHand_Thrust_Blender_v2r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "c58950ffbb551102e615718aa9feb042df3afcbecf23e6cb4ed94d92bd0bc020"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/RollAttack_Blender_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "808fbd415281030a1497457822d072952916e4e625353f6d37d1c1a42c529b74"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/Heal_Blender_v4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "bcc45f930ba286db26e0028632970b98f9cd17c14616a42f95c8911c3db7fa44"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/GuardBreakStagger_Blender_v1r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6472b345f70a95a592fa2516a2313d7cb94fd090c877835d1e3f6ec629f5766f"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/Roll_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "b30f26d56403d94cc438c673b4b2730c2ee1107807c63afdb2b89c37f606e986"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/GripToOneHand_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6980ca6bd6971b1c33af516b6dd603cc317f7de05da130131726370c9ba0dadc"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/RunOneHand_Blender_meshy_r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "3de1a1ffcc7d4f477ccdcde6c698c6e24137d5bf741fe5cc4e130ed29b2f437e"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/LightAttack_BlackKnightReference_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 38450176
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/RunStop_Blender_v1r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "4f73e8c9ab8a293db7b0f78928ba74de3e7a42b1ad1aeecf0d2f04429b256c93"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/Backpedal_Blender_loop_v1r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "49ad65d83b6a1eb31718d6fdfddaaf57625f1333728a39cccb031f99db9f2ac1"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/HeavyAttackOneHand_Blender_v4r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "eda87e5d49a22ac2ab3fd258e26a2a6a850a6cbb7c214607ddd5005acb870f6a"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/Stagger_Blender_v2r5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "373a14c03df628d014daac52970653a6218fc9eb8814b16be6bf425ebd4870a5"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/Death_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ede4a3d848aa52db40e30b8f5a9d2f38807e2f7e7495f48d9e0c44dc440f6bdf"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/WalkTwoHand_Blender_v6r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "e042815c634e49170dd5d2c7c5371f46aeecd06c4122fe0e9ee3a06211b4bbb3"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/LightCombo_Blender_v5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ccea5025ebdfccd015cb2f94ea31069d96c5203b9eefdd83dc357c0fa54f59f5"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/IdleTwoHand_Blender_v2r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "5b1c7ef3026453c40604430a9f6ced78c6611687f02f3b0695ae044dfd6ea891"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/RollAttack_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "bb9249c4cd9dd15ce38de1220dda0ef84a8f9492f7a0169c2b3ecf5fc5316733"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/HeavyAttackOneHand_Blender_v4r5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "22ca9e29e259501adcfe295f5fdc85d7f37a489949e5cdf022d8840c55539fda"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/RunTwoHand_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36854200
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/GripToTwoHand_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "27f2d017edbc1f83ac7984eedee717b98ef1ec2c85285e3738707f01d9a7c296"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/GuardReadyTwoHand_Blender_v4r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "2cf15cf583437347ba564b881b5292a6ad8357e8d3b4207f2136fcc2630bbf34"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/StrafeLeft_Blender_v4r2.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36906232
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/WalkOneHand_Blender_v2r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "66f92e7617e6bdbe0e88d37f582390e2dda0f218e01a0612cb5ea4ceba209271"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/IdleOneHand_Blender_v2r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "b833da3b73640bfd3384767b828d238d4d101451157995c694c589e3c5774690"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/Legacy_Roll.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "f7acda350942a2c41974621fa5122dbce07c0dcf27dfb97b2db82f2a6debd3c6"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/Backpedal_Blender_v4r5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6f295329985e9f99ed7950fd425ba3e9feb8b04f789ace902512ad1db5430de8"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/RunOneHand_Blender_tripo_r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "d780b2ba84dd9b05be14809eb2a4a0ba467d4a15de520481b3e157e2437a1579"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/StrongAttackTwoHand_Sweep_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 37577848
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/StrafeRight_Blender_v4r2.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36906216
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/LightAttackTwoHand_Compact_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "f7192952525c9c4f94c880dc61536d7c3ccd49bd40a946c58d542b0ad8843a70"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/props/BoatGreatsword_Grip_v6.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "9b87039cb769d086911c667120f1416c069fc640f10f9fff23cb86901192b8ce"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/props/BoatGreatsword_OneHand_v4.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 9433252
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/props/BoatGreatsword_StrongGrip_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 9433256
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/props/DrinkingCup.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "e2ba3fa33131b704df5ba726f39220432aa8836dcb11be05b56d998275a7f0d7"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/idle-joins/import-plan-KnightB.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "1bf8556b0b81d001c23295f71eec793ece399f95a5456124a7054a0b31b80fe2"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/StrongAttackTwoHand_Thrust_Blender_v2r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "c58950ffbb551102e615718aa9feb042df3afcbecf23e6cb4ed94d92bd0bc020"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/RollAttack_Blender_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "808fbd415281030a1497457822d072952916e4e625353f6d37d1c1a42c529b74"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/Heal_Blender_v4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "bcc45f930ba286db26e0028632970b98f9cd17c14616a42f95c8911c3db7fa44"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/GuardBreakStagger_Blender_v1r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6472b345f70a95a592fa2516a2313d7cb94fd090c877835d1e3f6ec629f5766f"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/Roll_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36967376
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/GripToOneHand_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6980ca6bd6971b1c33af516b6dd603cc317f7de05da130131726370c9ba0dadc"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/RunOneHand_Blender_meshy_r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "3de1a1ffcc7d4f477ccdcde6c698c6e24137d5bf741fe5cc4e130ed29b2f437e"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/LightAttack_BlackKnightReference_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6feea4aadb3f53d15543f9e5462db15aca4b5a393bb24919e3e2ed5eaa3ad8c5"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/RunStop_Blender_v1r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "4f73e8c9ab8a293db7b0f78928ba74de3e7a42b1ad1aeecf0d2f04429b256c93"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/Backpedal_Blender_loop_v1r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "49ad65d83b6a1eb31718d6fdfddaaf57625f1333728a39cccb031f99db9f2ac1"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/HeavyAttackOneHand_Blender_v4r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "eda87e5d49a22ac2ab3fd258e26a2a6a850a6cbb7c214607ddd5005acb870f6a"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/Stagger_Blender_v2r5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "373a14c03df628d014daac52970653a6218fc9eb8814b16be6bf425ebd4870a5"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/Death_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ede4a3d848aa52db40e30b8f5a9d2f38807e2f7e7495f48d9e0c44dc440f6bdf"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/WalkTwoHand_Blender_v6r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "e042815c634e49170dd5d2c7c5371f46aeecd06c4122fe0e9ee3a06211b4bbb3"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/LightCombo_Blender_v5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ccea5025ebdfccd015cb2f94ea31069d96c5203b9eefdd83dc357c0fa54f59f5"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/IdleTwoHand_Blender_v2r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "5b1c7ef3026453c40604430a9f6ced78c6611687f02f3b0695ae044dfd6ea891"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/RollAttack_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "bb9249c4cd9dd15ce38de1220dda0ef84a8f9492f7a0169c2b3ecf5fc5316733"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/HeavyAttackOneHand_Blender_v4r5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "22ca9e29e259501adcfe295f5fdc85d7f37a489949e5cdf022d8840c55539fda"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/RunTwoHand_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "767fdf460ae55d5d9b513d9a84bf53d35c7e286f4b5f0360fdcba10fd1e4beb3"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/GripToTwoHand_Blender_polish_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "27f2d017edbc1f83ac7984eedee717b98ef1ec2c85285e3738707f01d9a7c296"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/GuardReadyTwoHand_Blender_v4r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "2cf15cf583437347ba564b881b5292a6ad8357e8d3b4207f2136fcc2630bbf34"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/StrafeLeft_Blender_v4r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ed0dea319fe3fb3dc160e1b7e0374dad3dd35601f5bd91f476694e3cc052ac1f"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/WalkOneHand_Blender_v2r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "66f92e7617e6bdbe0e88d37f582390e2dda0f218e01a0612cb5ea4ceba209271"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/IdleOneHand_Blender_v2r4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "b833da3b73640bfd3384767b828d238d4d101451157995c694c589e3c5774690"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/Legacy_Roll.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "f7acda350942a2c41974621fa5122dbce07c0dcf27dfb97b2db82f2a6debd3c6"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/Backpedal_Blender_v4r5.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6f295329985e9f99ed7950fd425ba3e9feb8b04f789ace902512ad1db5430de8"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/RunOneHand_Blender_tripo_r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "d780b2ba84dd9b05be14809eb2a4a0ba467d4a15de520481b3e157e2437a1579"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/StrongAttackTwoHand_Sweep_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "823bae1b454e88adf7a3ec33a2e6a05e53937ebcd54516606e19acc87280bc64"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/StrafeRight_Blender_v4r2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "a33e9bf73a86243a376f69f53622731f6e8954a0d8ca1627e2fbcea31b0cca84"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/knight/LightAttackTwoHand_Compact_Blender_v2r3.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "f7192952525c9c4f94c880dc61536d7c3ccd49bd40a946c58d542b0ad8843a70"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/props/BoatGreatsword_Grip_v6.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "9b87039cb769d086911c667120f1416c069fc640f10f9fff23cb86901192b8ce"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/props/BoatGreatsword_OneHand_v4.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 9433252
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/props/BoatGreatsword_StrongGrip_v1.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "d9c2cfd58e3e3147788105a65edfe6d37786245e2bc0d1a5edaa0ed088a1fa69"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/props/DrinkingCup.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "e2ba3fa33131b704df5ba726f39220432aa8836dcb11be05b56d998275a7f0d7"
+ },
+ {
+  "file": "Local/CustomuseAssets/Polish20261025/sourced-v027b/import-plan-KnightB.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "366d32ac166d412b56a4d51fd05cc69e7ebb6135567f088ce5a90e6469bc2cdb"
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/sourced-manifest.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "570d3c42525243717d062b06eab40dc09bdc50535afccc1e70fcb52a830a58d6"
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/previous-active-plans.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "6f5ae1e7943079d09d7de51b8e8ad546db274ab914141281c186ea9aa42644b4"
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/knight/Fab_RunOneHand_v18.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36616396
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/knight/Sourced_RollAttack_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "eb8e4246ca117d8763bb7c750355b00034ff873f5fe959848cd0d6e8395a5c83"
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/knight/Mixamo_Attack_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "f2fdf780bf7269fe6ba0a7e2d44ca1e999a3e4817008d45f98e20d3eade50b9c"
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/knight/Fab_Roll_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36810984
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/knight/Mixamo_WalkTwoHand_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 36952068
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/knight/Fab_Run_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ed0f551973d30c97f0c66a54af50f0db96d57bba221d185c5bbe626c5b46a0a4"
+ },
+ {
+  "file": "Local/CustomuseAssets/Sourced20261025b/knight/Mixamo_Walk_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "2f29f2bd6180f0cb56a677581a4783d525879cc2063decf33a35111bb2bd1fdb"
+ },
+ {
+  "file": "Local/polish-review-20261025/BoatGreatsword_OneHand_v4.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "bfb0bd2d6580882236e499833d28564712e08ff9323d76d3c55715d0ee558ab4"
+ },
+ {
+  "file": "Local/polish-review-20261025/http-verification-final.json",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 1732
+ },
+ {
+  "file": "Local/polish-review-20261025/server.pid",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "931ce62ad1645f370b457df68f1ea678a0610773df0f6a379e19a32469e78828"
+ },
+ {
+  "file": "Local/polish-review-20261025/http-verification.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "183bf6ba272711f5ac48575c6157b2da9e0f96ef1478fb07dbaefd06e5d28a16"
+ },
+ {
+  "file": "Local/polish-review-20261025/server.log",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "af9e3a5cd14c327288940289241c96481f46207c3de5c5af0e2272312219ee21"
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/manifest.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "2673967ece1f507f4ee66d46b1e62d02901c67ada890a5715fd9890a8df5b6f5"
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/three/LICENSE",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 1081
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/three/examples/jsm/utils/SkeletonUtils.js",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f"
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/three/examples/jsm/utils/BufferGeometryUtils.js",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 37712
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/three/examples/jsm/controls/OrbitControls.js",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 40755
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/three/examples/jsm/loaders/GLTFLoader.js",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "131c0f78c01d19368ae495caa65b3adaa10487810a36a05bb5901b769a35ac16"
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/three/build/three.module.js",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "9052042d676cb0fdc1ddfefe193053f34b7ac0513a616fdac4535d49987812ea"
+ },
+ {
+  "file": "Local/polish-review-20261025/vendor/three/build/three.core.js",
+  "source": "live-codex-checkout",
+  "status": "dataless-skipped",
+  "bytes": 1458113
+ },
+ {
+  "file": "Local/FabRigTesting/Source/Sword and Shield Pack.zip",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "8563d8069530c5ad9912e90b3184b7ddee8806d74abfa48cfb3de1240e7235a1"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Mixamo_Walk_v17.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "01f483560e25cd576a42aa3aa4d215f76a67a6c6f2e12ef2a80811e6f7f74306"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Mixamo_Walk_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "5486b8ff0871ba249fd21eb7d0f62e15585a8c8a797c632a5ebfc24bb2d87c30"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Mixamo_WalkTwoHand_v17.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "5b57ab5a9b66c86c1037b418d8ae0497ced91b0c2626ea1736bca693c13e44a6"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Mixamo_WalkTwoHand_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "7ec3bce2098ac860dcf81133a83ad65eba388a249f30cd1833f73d3a8617adfd"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Fab_RunOneHand_v18.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "5ecd00d7132243a82e8921eb69efd6b497350c192bd83265e0b9f3a0a2f9c6f3"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Fab_RunOneHand_v18.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "a60395b262f6452fc8f63f3d789edd1cc7ba17059beb883c91e2d2e7a3e86faf"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Fab_Run_v17.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "add0190da6b5533e7efec5d0d3c36d74838412df6488e538f9bb376e911bd647"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Fab_Run_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "bf2496e6440a74140c85d526466f3611955cd4b2c9c310d8d6c615d9acafc139"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Mixamo_Attack_v17.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "f5455a80d0d0e5d618aa9fa1e0da9a03c38b4bd0231ee3898855faa3974f37d0"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Mixamo_Attack_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "48d202f1255f37e22cc170341f28d15b32a7c4ecece56b815adfc083974ed8cb"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Fab_Roll_v17.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "a79814c51834aba9fc4ae7f02a5fb3537838ee1d08d7f15da45592f63394e792"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Fab_Roll_v17.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "d6f7724fbee9d5ba59b62ce2f33961034348032af3589961d3e2f14e232ebf5a"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Sourced_RollAttack_v2.json",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "5fd7848975c65a85723a93d6ddc3aea574255a2acadc31374243635557af2a1a"
+ },
+ {
+  "file": "Local/FabRigTesting/Exports/Sourced_RollAttack_v2.glb",
+  "source": "live-codex-checkout",
+  "status": "copied",
+  "sha256": "ebff310570994fc0addf702473886f2ac18b658ffaa3f1d699e731e21f07087c"
+ }
+]
