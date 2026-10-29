@@ -125,6 +125,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | takeoff | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | coordinator: crouch, spring, rises about one body height and hovers; wings open to full span, past the rig 1.27x limit | FAIL: panels disagree on the body by 2.14% of height (fail line 1.5%); limbs 1.54% (also over the line); frame 0 match 0.93 / 0.96. Not fitted |
 | 2026-10-28 | rise (recovery) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; one earlier attempt failed provider-side) | coordinator: crouches low, rears up onto the hind legs with both forelegs off the floor and wings raised (about frame 90), drops back; went further than the prompt | OK: body 1.17%, limbs 0.99%, frame 0 match 0.92 / 0.89. Fit: median miss 3.07 px, outline 0.81 / 0.84, max twist 62.2 deg (bone_7), warning: body under the floor in 15 frames |
 | 2026-10-28 | idle_look (8 s head-intent idle) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 8 s (193 frames at 24 fps), audio on | 35 recorded (8 s rate; derived from the session total, see the cost note) | coordinator: slow breathing, head turns, wings at span, feet planted, returns to stance | OK: body 1.02%, limbs 0.91%, frame 0 match 0.92 / 0.95. Fit: median miss 2.00 px (best of the set), outline 0.84 / 0.92, max twist 8.5 deg (bone_3), no warnings |
+| 2026-10-29 | land2 (small hop, regenerated; replaces land) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on, prompt pins the hop low | 35 | coordinator: lower hop, panels level | OK: body 0.86% (land: 1.76%), limbs 0.88%, frame 0 match 0.90 / 0.95. Fit: median miss 2.83 px, outline 0.79 / 0.87, max twist 40.3 deg (bone_7), warning: body under the floor in 29 frames |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -587,3 +588,28 @@ to the left as the prompt asked, and returns without the slight turn the other w
 (2) idle_look has the head intent but almost no breathing (0.3 cm) and little tail sway (z 1.2 cm); idle_v2 has breathing and tail but only 10.8 deg of head
 motion. The layered Action has both: 45.8 deg of head yaw and idle_v2 breathing, tail and wing motion, a clean seam, same planted feet. Candidate for the
 final idle; the owner decides on the renders (the 1.5 cm breathing figure is the idle_v2 fits and may be larger than a dragon this size would breathe).
+
+### land2 (small hop and hard landing, 5 s) - fit and refinement
+
+`Dragon_Land2_sd_v2r_v2.blend`, Action `land2_v2`, 118 frames (3 still frames trimmed from the end), `ground=auto floor_lift=1 W=24 dz=2 dxy=8` (report `refine/land2/refine_report.json`),
+renders `clip_LA1_*` refined, `clip_LA0_*` raw. The panels now agree (the first land failed at 1.76%), but the hop is still not low: Spine_0 rises 28.9 cm (0.59 body
+heights, peak 49.8 cm at frame 61) and the feet leave the floor by up to 28 cm (hind) and 41 cm (fore), against the prompts knee height of about 10 cm.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| Takeoff frame (all four feet off the floor) | | 39 (hind feet leave at 38 to 39, fore at 37 to 38) |
+| Touchdown frame, per foot | | front +Y 84, hind 85, front -Y 86: all four down from frame 86 |
+| Airtime | | 46 frames, 1.9 s |
+| Crouch before the hop (Spine_0) | 17.8 cm at frame 33 (standing 20.9) | same |
+| Peak descent speed of Spine_0 | 0.71 m/s at frames 71-72 (x21.56 = 15.2 m/s in game) | same |
+| Landing deceleration of Spine_0 | peak 5.6 m/s2 at frame 78 (122 m/s2 in game) | same; the movedata run records the shock windows |
+| Landing crouch (Spine_0 minimum after touchdown) | 18.9 cm at frame 90 (2.0 cm below standing) | same; the prompt asked for the chest almost on the floor |
+| Planted feet, planted frames (0 to 37 and from touchdown) | the feet spread up to 15.7 cm on the landing (front -Y) | 0.006 / 0.019 / 0.005 / 0.003 cm |
+| Free feet (airborne) | | not planted |
+| End vs frame 0 (summed bone angle) | 8.31 rad | 0 (24-frame blend, peak step 1.4x median; whole-clip 5.9x is the hop) |
+| Wing lateral extent over frame 0, -Y / +Y | 1.07x / 1.02x | same (cap 1.27x, no clamp needed) |
+| Body lift (Spine_0) | | max 5.6 cm over 50 frames (the crouch and landing sank the fit under the floor) |
+| Tail tip peak speed (cm per frame) | 12.7 | 8.7 (the landing whip) |
+
+The spine stops falling at frame 78, six frames before the feet register as grounded (84 to 86): the legs reach down and the body is already
+decelerated when they touch; the shock for gameplay is better read from the foot contacts (frames 84 to 86) than from the spine.
