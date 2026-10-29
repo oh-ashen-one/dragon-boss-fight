@@ -45,6 +45,64 @@ put it in a repo.
   (UBT, editor and Shipping) but nothing is verified in PIE.
 - Spend: 107.5 Higgsfield credits (3 MiniMax at 12.5, 2 Seedance at 35).
 
+## Dragon clips 2026-10-29 (Seedance 2.5 move set, Studio)
+
+Nine first-take clips plus two regenerations went through the pipeline overnight. Full numbers per clip are in
+`docs/canitcode-enhancements.md` (Clip ledger rows and the section "Remaining clips (2026-10-28/29)").
+
+**Fitted, refined, rendered** (Actions in `Local/video2rig/dragon/*.blend`, all 24 fps; scripts in `refine/`, gitignored):
+
+| Move | Blend / Action | Frames | End | Check body / limbs | Fit miss, outline front / side |
+| --- | --- | --- | --- | --- | --- |
+| idle (earlier) | `Dragon_Idle_v2r_v2` / `idle_v2` | 90 | loop | 0.58% / 0.59% | 1.73 px, 0.81 / 0.90 |
+| roar (earlier) | `Dragon_Roar_sd_v2r_v2` / `roar_sd_v2` | 121 | live, no return | 1.13% / 0.65% | 3.30 px, 0.76 / 0.85 |
+| collapse | `Dragon_Collapse_sd_v2r_v2` / `collapse_v2` | 145 | lying flat | 1.17% / 0.77% | 4.72 px, 0.75 / 0.83 |
+| death | `Dragon_Death_sd_v2r_v2` / `death_v2` | 169 | on the right flank | 0.93% / 1.36% | 7.07 px, 0.71 / 0.82 (weakest) |
+| bite | `Dragon_Bite_sd_v2r_v2` / `bite_v2` | 121 | stance (closed onto frame 0) | 0.92% / 1.22% | 3.76 px, 0.78 / 0.80 |
+| claw_swipe | `Dragon_ClawSwipe_sd_v2r_v2` / `claw_swipe_v2` | 121 | stance | 0.81% / 0.74% | 2.63 px, 0.77 / 0.88 (reader-78) |
+| stagger | `Dragon_Stagger_sd_v2r_v2` / `stagger_v2` | 121 | stance | 0.85% / 1.17% | 4.49 px, 0.77 / 0.82 |
+| land (land2 clip) | `Dragon_Land2_sd_v2r_v2` / `land2_v2` | 118 | stance | 0.86% / 0.88% | 2.83 px, 0.79 / 0.87 |
+| rise | `Dragon_Rise_sd_v2r_v2` / `rise_v2` | 121 | stance | 1.17% / 0.99% | 3.07 px, 0.81 / 0.84 |
+| idle_look | `Dragon_IdleLook_sd_v2r_v2` / `idle_look_v2` | 193 | loop | 1.02% / 0.91% | 2.00 px, 0.84 / 0.92 (best) |
+| idle layered | `Dragon_IdleLayered_sd_v2r_v2` / `idle_layered_v2` | 193 | loop | (idle_v2 body + look head) | |
+
+Keep all three idles (`idle_v2`, `idle_look_v2`, `idle_layered_v2`); the layered one has the look clip's 46 deg of head yaw on idle_v2's breathing, tail
+and wings (measured table in the doc). Hari's call on which is the shipped idle.
+
+**Failed the check, not fitted** (check FAIL is regenerated, never fitted): `land` 1.76% (body disagreement between the panels; fail line 1.5%),
+`takeoff` 2.14%, `takeoff2` 2.41% (a lower rise in the prompt made it worse). Land passed once the hop was pinned low in the prompt (land2, 0.86%), but
+the generator still hops 0.59 body heights. Finding: airborne moves need a flying start picture and a reader trained on it; likely cause (untested) is that
+the start picture and reader assume feet on a floor.
+
+**What the refinement does** (`refine/move/refine_move.py`, `refine/collapse/refine_fall.py` for collapse and death): trims a still tail, blends the end
+onto frame 0 for moves that return to stance (24 to 36 frames), clamps wings to 1.27x of the frame-0 lateral extent (never needed tonight: raw peaks were
+1.00 to 1.24x), lifts a wing root or the body when the fit goes under the floor, smooths tail spikes, plants feet by temporary IK bake only while grounded
+(`ground=auto`) or the whole clip (`ground=all`). Collapse and death also relay the tail and clear the floor. Footage frame rate: claw_swipe and rise came
+as 30 fps content with every 5th frame dropped (the tool detects and resamples to 24).
+
+**Move data**: `Data/dragon/*.json` rebuilt for every Action with `tools/movedata/run_veyr.sh` (the runner now lists all Actions; `BLENDER_CAP=2` when a
+render is running); 3 unit tests pass. Landing shock (land2): feet down frames 84 to 86, shock recorded at 3.583 s (7.24 m/s foot). Collapse: chest hits
+at 3.167 s (10.9 m/s). Still nothing verified in PIE.
+
+**Review page**: `Local/dragon-review-20261029/serve/index.html` (per move: Seedance source, hand-keyed before where one exists, raw fit, refined, three
+angles; idle_v2 vs idle_look_v2 vs idle_layered in one row). `rangeserver.py` beside it (Safari needs byte ranges); no server is running. Renders live
+in `Local/ab-idle-20261028/video/clip_<label>_{front,left,threequarter}.mp4` (labels CO, DE, BI, CS, ST, RI, LA, IL; 0 = raw fit, 1 = refined; IL2 = layered;
+H* = hand-keyed before from the review checkout, read-only).
+
+**Credits** (Higgsfield balance 1241.64 to 792.14): 449.5 spent this session on 11 renders = 9 first takes (379.5) + land2 + takeoff2 (35 each, both
+5 s). 5 s clips cost 35; the 6, 7 and 8 s clips (collapse, death, idle_look) cost about 8.07 credits per second, derived (48.4 / 56.5 / 64.6; verify
+against the transaction list). The failed first land and takeoff cost 35 each and produced no Action. Branch total with the earlier 107.5: 557.0.
+
+**Next steps**
+1. Flying start picture for takeoff and land: render the start picture with the body off the floor (and a reader trained on it, about 3 h of MPS), then
+   regenerate takeoff and a real tall hop. Until then takeoff, fly-hover stay on the hand-keyed Blender versions in the review checkout.
+2. A lying-start clip for rise: the rise clip starts standing, 21 cm (mean vertex shift, rig scale) from the collapse's last frame; the engine would have to
+   do the get-up. Generate a clip whose first frame is the collapse's end pose (needs its own start picture).
+3. Owner review of the page, then pick the idle; then the engine session (bind capsules with the Customuse content, import Actions, blend collapse to rise, fix the
+   18 cm rest-pose float in the import offset).
+4. Death needs a second look (median miss 7.07 px, twist 51.7 deg on a foreleg, a leg dips 1.85 cm under the floor in transit); stagger's catch-step and the
+   claw swipe's 7.8 cm of head overreach past the straight-neck figure are noted in the doc and uncorrected.
+
 ## What happened this session
 
 - `docs/canitcode-enhancements.md`: plan, gap analysis, rule checks, clip ledger, every A/B and fit number, the

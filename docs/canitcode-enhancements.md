@@ -116,15 +116,15 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | roar2 (size-constrained prompt) | Higgsfield, MiniMax H3 Max | same as roar | 12.5 | wings still drawn about 2x the model's span and off the front panel edges; motion blur on the side panel in the fast frames despite the no-blur sentence | OK: body 1.16%, limbs 0.67%. Fit: miss 3.69 px, outline 0.61 / 0.72, twist 68.8 deg on a wing root; no better than roar |
 | 2026-10-28 | roar_sd (Seedance 2.5 control run, owner-approved) | Higgsfield, Seedance 2.5, omni_reference | 720p (1280x720), 16:9, 5 s, 24 fps, audio on, size-constraint prompt | 35 | wings still drawn wider than the model's span in the front panel; side panel clean and sharp; panels drift apart (the side panel's body and tail do not match the front at the peak) | FAIL: panels disagree on the body by 2.2% of height (fail line 1.5%); frame 0 match 0.90 / 0.96. Fit anyway: miss 4.24 px, outline 0.64 / 0.82, max twist 8.0 deg (MiniMax: 25.8 and 68.8) |
 | 2026-10-28 | roar_sd2 (Seedance, half-open wings no wider than body length) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s, 24 fps, audio on | 35 | wings stay at the model's span, both panels in step, sharp, no effects | OK: body 1.13%, limbs 0.65%. Fit: miss 3.30 px, outline 0.76 / 0.85, max twist 5.5 deg, no warnings. Best roar fit so far |
-| 2026-10-28 | collapse | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 6 s (145 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 6 s cost to verify) | pass (coordinator): wings at span, drops flat, chin on floor, panels agree; side panel crops the tail at the right edge once it lies flat | OK: body 1.17% (p90 1.35%), limbs 0.77% (p90 3.96%); frame 0 match 0.94 / 0.90. Fit: median miss 4.72 px, outline 0.75 / 0.83, max twist 21.4 deg (VeyrWingNegZRoot), warnings: body under the floor in 74 frames, hind knees at joint limit 60 frames |
-| 2026-10-28 | death | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 7 s (169 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 7 s cost to verify) | pass (coordinator): falls, rolls partly onto its right flank, head stretched out, wings at span, panels agree | OK: body 0.93%, limbs 1.36% (close to the 1.5% line), frame 0 match 0.89 / 0.96. Fit: median miss 7.07 px, outline 0.71 / 0.82, max twist 51.7 deg (front upper leg; neck 48.9, shoulder 42.2), warning: body under the floor in 24 frames. Weakest fit of the set |
+| 2026-10-28 | collapse | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 6 s (145 frames at 24 fps), audio on, size-constraint prompt | 48.4 derived (see the cost note) | pass (coordinator): wings at span, drops flat, chin on floor, panels agree; side panel crops the tail at the right edge once it lies flat | OK: body 1.17% (p90 1.35%), limbs 0.77% (p90 3.96%); frame 0 match 0.94 / 0.90. Fit: median miss 4.72 px, outline 0.75 / 0.83, max twist 21.4 deg (VeyrWingNegZRoot), warnings: body under the floor in 74 frames, hind knees at joint limit 60 frames |
+| 2026-10-28 | death | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 7 s (169 frames at 24 fps), audio on, size-constraint prompt | 56.5 derived (see the cost note) | pass (coordinator): falls, rolls partly onto its right flank, head stretched out, wings at span, panels agree | OK: body 0.93%, limbs 1.36% (close to the 1.5% line), frame 0 match 0.89 / 0.96. Fit: median miss 7.07 px, outline 0.71 / 0.82, max twist 51.7 deg (front upper leg; neck 48.9, shoulder 42.2), warning: body under the floor in 24 frames. Weakest fit of the set |
 | 2026-10-28 | bite | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on, size-constraint prompt | 35 | pass (coordinator) with caveats: wind-up front panel wings maybe 1.3x, side panel a touch larger than start.png, tail tip near the edge | OK: body 0.92% (p90 1.71%), limbs 1.22% (p90 1.54%), frame 0 match 0.93 / 0.94. Fit: median miss 3.76 px, outline 0.78 / 0.80, max twist 24.9 deg (bone_7), no warnings |
 | 2026-10-28 | claw_swipe | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; two earlier submissions failed before rendering) | pass (coordinator): right foreleg lifts to chest height, draws back, swipes, returns; some motion blur on the fastest side-panel frames around frame 70 | OK: body 0.81% (p90 1.18%), limbs 0.74% (p90 1.32%), frame 0 match 0.89 / 0.95. Fit (reader-78, kept): median miss 2.63 px, outline 0.77 / 0.88, max twist 41.8 deg (bone_11), body under floor 10 frames. Reader-64: miss 2.48 px, outline 0.80 / 0.85, twist 65.8 deg, under floor 41 frames, hind feet lifted 2.6 cm |
 | 2026-10-28 | stagger | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on | 35 | pass (coordinator): right shoulder drops, front lurches down and right, head low, recovers | OK: body 0.85%, limbs 1.17%, frame 0 match 0.94 / 0.93. Fit: median miss 4.49 px, outline 0.77 / 0.82, max twist 13.5 deg (bone_7), no warnings |
 | 2026-10-28 | land (hop and hard landing) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | pass (coordinator): crouch, hop to about half a body height, wing flare, hard four-foot landing | FAIL: panels disagree on the body by 1.76% of height (fail line 1.5%); limbs 1.16%; frame 0 match 0.91 / 0.96. Not fitted (rule: a FAIL is regenerated, not fitted) |
 | 2026-10-28 | takeoff | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | coordinator: crouch, spring, rises about one body height and hovers; wings open to full span, past the rig 1.27x limit | FAIL: panels disagree on the body by 2.14% of height (fail line 1.5%); limbs 1.54% (also over the line); frame 0 match 0.93 / 0.96. Not fitted |
 | 2026-10-28 | rise (recovery) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; one earlier attempt failed provider-side) | coordinator: crouches low, rears up onto the hind legs with both forelegs off the floor and wings raised (about frame 90), drops back; went further than the prompt | OK: body 1.17%, limbs 0.99%, frame 0 match 0.92 / 0.89. Fit: median miss 3.07 px, outline 0.81 / 0.84, max twist 62.2 deg (bone_7), warning: body under the floor in 15 frames |
-| 2026-10-28 | idle_look (8 s head-intent idle) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 8 s (193 frames at 24 fps), audio on | 35 recorded (8 s rate; derived from the session total, see the cost note) | coordinator: slow breathing, head turns, wings at span, feet planted, returns to stance | OK: body 1.02%, limbs 0.91%, frame 0 match 0.92 / 0.95. Fit: median miss 2.00 px (best of the set), outline 0.84 / 0.92, max twist 8.5 deg (bone_3), no warnings |
+| 2026-10-28 | idle_look (8 s head-intent idle) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 8 s (193 frames at 24 fps), audio on | 64.6 derived (see the cost note) | coordinator: slow breathing, head turns, wings at span, feet planted, returns to stance | OK: body 1.02%, limbs 0.91%, frame 0 match 0.92 / 0.95. Fit: median miss 2.00 px (best of the set), outline 0.84 / 0.92, max twist 8.5 deg (bone_3), no warnings |
 | 2026-10-29 | land2 (small hop, regenerated; replaces land) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on, prompt pins the hop low | 35 | coordinator: lower hop, panels level | OK: body 0.86% (land: 1.76%), limbs 0.88%, frame 0 match 0.90 / 0.95. Fit: median miss 2.83 px, outline 0.79 / 0.87, max twist 40.3 deg (bone_7), warning: body under the floor in 29 frames |
 | 2026-10-29 | takeoff2 (low rise, regenerated) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on, prompt pins the rise low | 35 | coordinator: still rises about a body height; side panel sits higher than the front | FAIL: panels disagree on the body by 2.41% of height (fail line 1.5%; first takeoff 2.14%), limbs 2.27% (WARN), frame 0 match 0.89 / 0.95. Not fitted |
 
@@ -547,7 +547,7 @@ renders `clip_RI1_*` refined, `clip_RI0_*` raw. A 24-frame close put the clip dr
 | End vs frame 0 (summed bone angle) | 7.17 rad | 0 (36-frame blend) |
 | Hind feet (planted the whole clip) | 0.77 / 0.26 cm drift | 0.00 / 0.00 cm |
 | Forefeet: lifted frames 66 to 105 (+Y) and 66 to 110 (-Y), max lift 23.5 / 22.2 cm, 6.0 / 4.6 cm sideways | free | planted 0 to 65 and 106 to 120: 0.003 / 0.006 cm drift |
-| Spine_0 height | 20.9 start, 16.2 at the crouch (frame 53), peak 24.3 at frame 87 (rise +3.3 cm over frame 0), 20.9 end | same (rear is a tilt: chest rises, hips stay) |
+| Spine_0 height | 20.9 start, 16.2 at the crouch (frame 53), peak 24.3 at frame 87 (rise +3.3 cm over frame 0), 20.9 end | same  |
 | Wing lateral extent over frame 0, -Y / +Y | 1.07x / 1.16x | same, under the 1.27x cap |
 | Body lift | | max 0.36 cm over 18 frames |
 | Tail tip peak speed (cm per frame) | 2.54 | 1.44 |
@@ -621,6 +621,31 @@ decelerated when they touch; the shock for gameplay is better read from the foot
 rise in the prompt did not help (2.14% then 2.41%). Not fitted, no Action. Land2 passed once the hop was pinned low in the prompt (1.76% then 0.86%), but
 takeoff, where the body stays up, did not.
 
-Finding: airborne moves need a flying start picture and a reader trained on it. The start picture and the reader both assume a floor under the feet
-(front | side panels, the side panel sets the height from the floor); a hovering body has no floor reference in either panel, so the panels cannot
-agree on its height. Out of scope tonight; the takeoff and fly-hover stay on the hand-keyed Blender versions until then.
+Finding: airborne moves need a flying start picture and a reader trained on it. Likely cause (not tested tonight): the start picture and the reader both
+assume feet on a floor, and a hovering body has no floor reference to keep the two panels at the same height. Out of scope tonight; the takeoff and
+fly-hover stay on the hand-keyed Blender versions until then.
+
+### Summary, cost and review page (2026-10-29)
+
+| Clip | Result | Action | Credits |
+| --- | --- | --- | --- |
+| collapse (6 s) | fitted, refined | `collapse_v2` | 48.4 derived |
+| death (7 s) | fitted, refined (weakest fit) | `death_v2` | 56.5 derived |
+| bite | fitted, refined | `bite_v2` | 35 |
+| claw_swipe | fitted (reader-78), refined | `claw_swipe_v2` | 35 |
+| stagger | fitted, refined | `stagger_v2` | 35 |
+| land (first take) | check FAIL 1.76%, not fitted | none | 35 |
+| land2 | fitted, refined | `land2_v2` | 35 |
+| takeoff (first take) | check FAIL 2.14%, not fitted | none | 35 |
+| takeoff2 | check FAIL 2.41%, not fitted | none | 35 |
+| rise | fitted, refined | `rise_v2` | 35 |
+| idle_look (8 s) | fitted, refined; layered with idle_v2 | `idle_look_v2`, `idle_layered_v2` | 64.6 derived |
+
+Cost note: Higgsfield balance 1241.64 at the start of the session, 792.14 at the end: 449.5 credits on 11 renders (9 first takes = 379.5, plus land2
+and takeoff2 at 35 each). The 5 s clips cost 35; the 6, 7 and 8 s clips (collapse, death, idle_look) share 169.5 credits over 21 s, about 8.07 per second, so
+the per-clip figures above are derived and should be checked against the transaction list. Branch total with the earlier 107.5 credits (3 MiniMax at 12.5, 2
+Seedance at 35): 557.0. The failed first land and takeoff stay in the ledger as failed takes.
+
+Review page: `Local/dragon-review-20261029/serve/index.html` (`rangeserver.py` beside it, no server started). Per move: Seedance source clip, hand-keyed
+before where one exists (idle, bite, claw swipe, land, takeoff, from the review checkout, opened read-only), raw fit and refined renders from three angles; the
+idle row compares idle_v2, idle_look_v2 and idle_layered_v2. Move data rebuilt for every Action by `tools/movedata/run_veyr.sh` (Data/dragon/*.json).
