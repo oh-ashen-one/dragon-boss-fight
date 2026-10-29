@@ -41,7 +41,7 @@ put it in a repo.
   `roar_v4`, `collapse_v4`, `bite_v4`, `land2_v4`, `rise_v4`, `air_hover_v4`, `air_land_v4`, `takeoff3_v4`,
   `air_fire_down_v4`); scripts in `tools/dragon_refine/v4/`. Move data (`Data/dragon/`) rebuilt from them; movedata tests OK.
 - Measured on a CPU raster with the critic's definitions (no GPU render possible: foreign trainer at 100 %):
-  `Local/dragon-review-20261029/measure_v4.json`. 29 of 33 targets pass; fails: wing-body correlation at lag 0-4
+  `Local/dragon-review-20261029/measure_v4.json`. 27 of 31 table rows pass; fails: wing-body correlation at lag 0-4
   (all airborne, |r| 0.29-0.45; best at negative lag), takeoff last-24 centroid 0.14 BH, raw hover last-8 span, fire-down
   span drift 7.3 %. Per-item table: `docs/canitcode-enhancements.md`, section "Fix round 2".
 - **Next:** run the render queue when the GPU is quiet: `tools/dragon_refine/v4/run_queue_v4.sh`
