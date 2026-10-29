@@ -116,6 +116,7 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | roar2 (size-constrained prompt) | Higgsfield, MiniMax H3 Max | same as roar | 12.5 | wings still drawn about 2x the model's span and off the front panel edges; motion blur on the side panel in the fast frames despite the no-blur sentence | OK: body 1.16%, limbs 0.67%. Fit: miss 3.69 px, outline 0.61 / 0.72, twist 68.8 deg on a wing root; no better than roar |
 | 2026-10-28 | roar_sd (Seedance 2.5 control run, owner-approved) | Higgsfield, Seedance 2.5, omni_reference | 720p (1280x720), 16:9, 5 s, 24 fps, audio on, size-constraint prompt | 35 | wings still drawn wider than the model's span in the front panel; side panel clean and sharp; panels drift apart (the side panel's body and tail do not match the front at the peak) | FAIL: panels disagree on the body by 2.2% of height (fail line 1.5%); frame 0 match 0.90 / 0.96. Fit anyway: miss 4.24 px, outline 0.64 / 0.82, max twist 8.0 deg (MiniMax: 25.8 and 68.8) |
 | 2026-10-28 | roar_sd2 (Seedance, half-open wings no wider than body length) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s, 24 fps, audio on | 35 | wings stay at the model's span, both panels in step, sharp, no effects | OK: body 1.13%, limbs 0.65%. Fit: miss 3.30 px, outline 0.76 / 0.85, max twist 5.5 deg, no warnings. Best roar fit so far |
+| 2026-10-28 | collapse | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 6 s (145 frames at 24 fps), audio on, size-constraint prompt | 35 recorded (5 s rate; 6 s cost to verify) | pass (coordinator): wings at span, drops flat, chin on floor, panels agree; side panel crops the tail at the right edge once it lies flat | OK: body 1.17% (p90 1.35%), limbs 0.77% (p90 3.96%); frame 0 match 0.94 / 0.90. Fit: median miss 4.72 px, outline 0.75 / 0.83, max twist 21.4 deg (VeyrWingNegZRoot), warnings: body under the floor in 74 frames, hind knees at joint limit 60 frames |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -407,3 +408,32 @@ Hari reviewed the before/after page on the laptop: refined video2rig idle vs han
 and the Seedance roar. Approved outright: "the dragon looks much better", the roar "so, so good". He asked that the
 shared brain and every future session always use this method; agents-md PR #32 promotes the creature exception to
 the default. Remaining clips proceed on Seedance 2.5, one at a time, owner sees each.
+
+## Remaining clips (2026-10-28/29)
+
+Studio worker notes per clip: check numbers, fit numbers, scripted refinement (before/after), render paths. Scripts in
+`Local/video2rig/dragon/refine/{collapse,death,bite}/` (gitignored); clips and Actions are not committed.
+
+### collapse (6 s, 145 frames) - fit and refinement
+
+`Dragon_Collapse_sd_v2r_v2.blend`, Action `collapse_v2`, 145 frames at 24 fps, no trim, no loop (ends lying). Script `refine/collapse/refine_fall.py`
+(report `refine/collapse/refine_report.json`); renders `clip_CO1_{front,left,threequarter}.mp4` in the A/B video folder.
+Phases: standing sway to frame 60, drop 60 to 84, lying from 100 (Spine_0 height 20.7 to 12.7 cm).
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| Feet excursion standing (frames 0 to 62), four feet, cm | 2.4 / 3.1 / 3.9 / 2.1 | 0 / 0 / 0 / 0 |
+| Feet excursion lying (frames 100 to 144), cm | 0.27 / 1.10 / 0.02 / 0.74 | 0 / 0 / 0 / 0 |
+| Lowest mesh point lying (cm, floor = 0), body+head / feet | -0.89 / -0.71 | +0.14 / +0.20 |
+| -Y wing (PosZ) lowest point lying | -4.97 (45 frames under) | +1.27 |
+| Wing root lift to clear the floor | | 9.0 deg (PosZ), 2.0 deg (NegZ) |
+| Body lift (Spine_0 world Z, fall frames) | | max 1.79 cm over 84 frames |
+| Tail tip lying (x, y, z cm) | (-8.9, 27.2, 13.9): curled sideways and up | (-53.4, 3.6, 1.3): flat behind, on the floor |
+| Tail tip peak speed (cm per frame) | 19.2 at frame 72 | 4.9 (the fall keeps its whip; the ratio to the median, 108x to 54x, is meaningless in a mostly still clip) |
+| Bones outside tail, wing roots, legs changed | | 0.000004 deg |
+
+Findings: the side panel crops the tail once the dragon lies flat (the clip draws it past the panel edge), so the fit
+curled it; replaced by the rest pose blended in over the fall and pitched 22 deg to lie on the floor. The fit put the
+-Y wing 5 cm under the floor; fixed by rotating the wing root about the long axis, not by moving the body. Feet are
+planted by temporary IK at the frame-0 pose until the drop starts (released over 10 frames) and at the settled pose
+from frame 100 (ramped over 8 frames before).
