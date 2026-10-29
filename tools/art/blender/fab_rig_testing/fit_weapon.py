@@ -56,13 +56,16 @@ def make_ik(t,source):
 def smooth(x):x=max(0,min(1,x));return x*x*(3-2*x)
 def mixmat(a,b,w):
  x,q,sc=a.decompose();y,r,ss=b.decompose();return Matrix.LocRotScale(x.lerp(y,w),q.slerp(r,w),sc.lerp(ss,w))
-def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=None,carry_mode=None,carry_raise=(0.,0.)):
+def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=None,carry_mode=None,carry_raise=(0.,0.),follow=.2,raise_ramp=0,pitch_cap=None,tip_cap=None):
+ # Round 2 (2026-10-29): follow = idle-root chest follow; raise_ramp = source frames over which carry_raise eases in/out
+ # (the raise holds in between); carry_raise[0]<0 tilts the blade forward/down; pitch_cap (deg, never below idle+10) and
+ # tip_cap (rig metres per source frame at the socket tip 0,2.35,0) limit the blade after the carry is solved.
  # carry_mode='idle' (2026-10-28): refs come from the approved idles; keep their exact carry, grips and
  # left-hand placement (no walk-tuned offsets). carry_raise=(pitch_up_deg, lift_m) raises the blade about the hilt.
  idle=carry_mode in ('idle','idle-root')
  # idle-root: blade orientation stays near the idle world carry (20% chest follow) so torso-twisting
  # locomotion (Mixamo strafes) does not swing the 2 m blade; the hilt follows the chest position.
- FOLLOW=.2
+ FOLLOW=follow
  names={'walk':'Mixamo_Walk','attack':'Mixamo_Attack','guard':'Mixamo_Block','run':'Fab_Run','roll':'Fab_Roll'};name=output_name or names[kind]+'_'+version;two_hand=(kind in ('run','guard')) if grip_override is None else grip_override=='two'
  src_name=source_name or names[kind]+'_v1';meta=json.loads((OUT/'Exports'/(src_name+'.json')).read_text());t=load(OUT/'Exports'/(src_name+'.glb'),int(meta['fps']));s=bpy.context.scene;N=round(meta['duration']*meta['fps']);s.frame_start=0;s.frame_end=N;p=t.pose.bones
  body=[o for o in s.objects if o.type=='MESH'];source={}
@@ -95,11 +98,11 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
    q=ref['h'].to_quaternion().slerp(H.to_quaternion(),FOLLOW);H=Matrix.LocRotScale(ref['h'].translation+(ch.translation-ref['ch'].translation),q,hscale)
   if kind=='walk' and (carry_raise[0] or carry_raise[1]):
    fr=(ch.to_quaternion()@ref['ch'].to_quaternion().inverted())@Vector((0,-1,0));fr.z=0;fr.normalize();rt=Vector((fr.y,-fr.x,0));pivot=(H@grip['Right']).translation
-   blade=H.to_quaternion()@Vector((0,1,0));best=None
+   blade=H.to_quaternion()@Vector((0,1,0));best=None;wr=1. if not raise_ramp else smooth(min(f,N-f)/raise_ramp);up=carry_raise[0]>=0
    for sgn in (1,-1):
-    R=Quaternion(rt,math.radians(sgn*carry_raise[0]));z=(R@blade).z
-    if best is None or z>best[0]:best=(z,R)
-   R=best[1];H=Matrix.Translation(pivot)@R.to_matrix().to_4x4()@Matrix.Translation(-pivot)@H;H.translation.z+=carry_raise[1]
+    R=Quaternion(rt,math.radians(sgn*abs(carry_raise[0])*wr));z=(R@blade).z
+    if best is None or (z>best[0] if up else z<best[0]):best=(z,R)
+   R=best[1];H=Matrix.Translation(pivot)@R.to_matrix().to_4x4()@Matrix.Translation(-pivot)@H;H.translation.z+=carry_raise[1]*wr
   if kind=='roll':
    wrist=(H@grip['Right']).translation;q=Quaternion(Vector((0,0,1)),math.radians(-25*smooth((u-.30)/.12)*(1-smooth((u-.56)/.08))))@H.to_quaternion();H=Matrix.LocRotScale(wrist,q,hscale);H.translation-=H.to_3x3()@grip['Right'].translation
   # Move the rear shaft clear of the cuirass; supporting palm remains lower.
@@ -141,6 +144,22 @@ def fit(kind,refs,version='v2',grip_override=None,output_name=None,source_name=N
    shoulder=src[side+'Arm'].translation;a=t.data.bones[side+'Arm'].head_local;b=t.data.bones[side+'ForeArm'].head_local;c=t.data.bones[side+'Hand'].head_local;limit=((a-b).length+(b-c).length)*.97
    if side not in sides and (hand.translation-shoulder).length>limit:hand.translation=shoulder+(hand.translation-shoulder).normalized()*limit
    desired[f][side]=hand
+ if pitch_cap is not None or tip_cap is not None:
+  ib=ref['h'].to_quaternion()@Vector((0,1,0));lim=max(pitch_cap if pitch_cap is not None else 90.,math.degrees(math.asin(max(-1,min(1,ib.z))))+10.);prevH=None;clamped=0
+  for f in range(N+1):
+   H=desired[f]['H'];bl=H.to_quaternion()@Vector((0,1,0));pitch=math.degrees(math.asin(max(-1,min(1,bl.z))))
+   if pitch_cap is not None and pitch>lim:
+    ax=bl.cross(Vector((0,0,1)));pv=(H@grip['Right']).translation
+    if ax.length>1e-6:
+     R=Quaternion(ax.normalized(),math.radians(-(pitch-lim)))
+     if (R@bl).z>bl.z:R=Quaternion(ax.normalized(),math.radians(pitch-lim))
+     H=Matrix.Translation(pv)@R.to_matrix().to_4x4()@Matrix.Translation(-pv)@H
+   if tip_cap is not None and prevH is not None:
+    step=((H@Vector((0,2.35,0)))-(prevH@Vector((0,2.35,0)))).length
+    if step>tip_cap:H=mixmat(prevH,H,tip_cap/step);clamped+=1
+   desired[f]['H']=H;prevH=H
+   for side in (('Right','Left') if two_hand else ('Right',)):desired[f][side]=H@grip[side]
+  print('BLADE_LIMITS',name,'pitchLimitDeg',round(lim,1),'tipClampedFrames',clamped,flush=True)
  # Parallel transport the wide boat's frame through the source slash. The
  # source wrist roll is not allowed to flip the hull around its long axis.
  if kind=='attack':

@@ -38,7 +38,7 @@ css = ("body{background:#111;color:#eee;font:16px -apple-system,Helvetica,sans-s
        "border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:middle}code{color:#cfc}")
 parts = ['<!doctype html><html><head><meta charset="utf-8"><title>Veyr knight: before / after</title>',
          '<style>' + css + '</style></head><body>',
-         '<h1>Veyr knight, 2026-10-28: completion pass, before / after</h1>',
+         '<h1>%s</h1>' % html.escape(extra.get("title", "Veyr knight, 2026-10-28: completion pass, before / after")),
          '<p>Headless Blender 5.2 workbench renders of the exact GLBs the game imports (normalized clips), same rig, sword, '
          'lights and cameras for both sides. Each video is front | side | three-quarter at 30 fps real time, played at the '
          'in-game rate. Round 1: every view uses one fixed facing taken from the approved 1H idle (front = mesh forward), '
@@ -52,12 +52,12 @@ for r in rows:
     parts.append('<h2>%s<span class="tag">%s</span></h2>' % (html.escape(r["slot"]), html.escape(r["status"])))
     parts.append('<div class="row"><div class="card">')
     parts.append('<video src="%s" controls loop muted autoplay playsinline></video>' % after if after else '<div class="none">render missing</div>')
-    tag = "AFTER (round 1)" if r.get("changed") else "CURRENT"
+    tag = extra.get("afterTag", "AFTER (round 1)") if r.get("changed") else "CURRENT"
     parts.append('<div class="cap">%s: <code>%s</code> at %.2fx. %s</div></div>' % (tag, html.escape(r["afterSource"]), r["afterRate"], html.escape(r["note"])))
     parts.append('<div class="card">')
     if before:
         parts.append('<video src="%s" controls loop muted autoplay playsinline></video>' % before)
-        btag = "BEFORE (round 0)" if r.get("changed") else "BEFORE (previous slot clip)"
+        btag = extra.get("beforeTag", "BEFORE (round 0)") if r.get("changed") else "BEFORE (previous slot clip)"
         parts.append('<div class="cap">%s: <code>%s</code> at %.2fx</div></div></div>' % (btag, html.escape(r["beforeSource"]), r["beforeRate"]))
     else:
         parts.append('<div class="none">none</div><div class="cap">BEFORE: none</div></div></div>')

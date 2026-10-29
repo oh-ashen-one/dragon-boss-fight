@@ -1930,10 +1930,14 @@ bool AVeyrReplay::DriveLockOnInputs()
         return true;
     }
     // Blink direction check: Space with the lateral key held, as a player would; lateral displacement measured.
-    if(LockOnBlink<2)
+    if(LockOnBlink<3)
     {
-        const bool Left=LockOnBlink==0;
-        if(Knight->IsTwoHanded()){Input(FVector::ZeroVector,false);if(Ready&&!Knight->IsChangingGrip())Knight->ToggleGrip();return true;}
+        // Trials: left 1H, right 1H, right 2H. Lock released and view lifted so the captures show the whole body.
+        const bool Left=LockOnBlink==0;const bool WantTwo=LockOnBlink==2;
+        if(Knight->bLockedOn)Knight->ToggleLockOn();
+        if(APlayerController* BlinkPC=Cast<APlayerController>(Knight->GetController()))
+            BlinkPC->SetControlRotation(FRotator(-24.f,Knight->GetActorRotation().Yaw+(Left?-50.f:50.f),0.f));
+        if(Knight->IsTwoHanded()!=WantTwo){Input(FVector::ZeroVector,false);if(Ready&&!Knight->IsChangingGrip())Knight->ToggleGrip();LockOnStageStarted=Elapsed;return true;}
         if(LockOnBlinkPhase==0)
         {
             Input(FVector::ZeroVector,false);
@@ -1943,15 +1947,16 @@ bool AVeyrReplay::DriveLockOnInputs()
         }
         if(LockOnBlinkPhase==1){Knight->TryDirectionalBlink();Input(FVector::ZeroVector,false);LockOnBlinkPhase=2;LockOnBlinkShots=0;return true;}
         Input(FVector::ZeroVector,false);
-        const FName Want=Left?FName(TEXT("BlinkLeft")):FName(TEXT("BlinkRight"));
+        const FName Want=FName(*(FString(Left?TEXT("BlinkLeft"):TEXT("BlinkRight"))+(WantTwo?TEXT("TwoHand"):TEXT(""))));
         const bool InBlink=Knight->Action==(Left?EVeyrKnightAction::BlinkLeft:EVeyrKnightAction::BlinkRight);
-        if(InBlink&&Knight->RequestedPresentationClip==Want&&LockOnBlinkShots==0&&Knight->GetActionElapsed()>=.10f){LockOnBlinkShots=1;Event(FString(TEXT("lockon_blink_departure_"))+(Left?TEXT("left"):TEXT("right")));}
-        if(InBlink&&LockOnBlinkShots==1&&Knight->GetActionElapsed()>=.40f){LockOnBlinkShots=2;Event(FString(TEXT("lockon_blink_arrival_"))+(Left?TEXT("left"):TEXT("right")));}
+        const FString Tag=FString(Left?TEXT("left"):TEXT("right"))+(WantTwo?TEXT("_two_hand"):TEXT(""));
+        if(InBlink&&Knight->RequestedPresentationClip==Want&&LockOnBlinkShots==0&&Knight->GetActionElapsed()>=.08f){LockOnBlinkShots=1;Event(TEXT("lockon_blink_departure_")+Tag);}
+        if(InBlink&&LockOnBlinkShots==1&&Knight->GetActionElapsed()>=.36f){LockOnBlinkShots=2;Event(TEXT("lockon_blink_arrival_")+Tag);}
         if(Ready&&LockOnBlinkPhase==2&&Elapsed-LockOnStageStarted>.2f&&Knight->BlinkDodges>LockOnBlinksBefore+LockOnBlink)
         {
             const float Lateral=FVector::DotProduct(Feet-LockOnBlinkStart,LockOnBlinkRight);
             const bool Ok=Left?Lateral<-100.f:Lateral>100.f;
-            TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),Left?TEXT("blink_left_direction"):TEXT("blink_right_direction"));
+            TSharedPtr<FJsonObject> R=MakeShared<FJsonObject>();R->SetStringField(TEXT("trial"),TEXT("blink_direction_")+Tag);
             R->SetStringField(TEXT("expectedClip"),Want.ToString());R->SetNumberField(TEXT("lateralDisplacementCmPositiveRight"),Lateral);R->SetBoolField(TEXT("passed"),Ok);
             LockOnTrials.Add(MakeShared<FJsonValueObject>(R));if(Ok)++LockOnBlinkPassed;
             ++LockOnBlink;LockOnBlinkPhase=0;LockOnStageStarted=Elapsed;
@@ -1969,7 +1974,7 @@ bool AVeyrReplay::DriveLockOnInputs()
     {
         Input(FVector::ZeroVector,false);
         const bool LocoOk=LockOnMaxFacingErrorDeg<=25.f;
-        Finish(LocoOk&&LockOnLabPassed==5&&LockOnBlinkPassed==2,FString::Printf(TEXT("lock-on: %d locomotion trials sampled their clips, max facing error %.1f deg; blink direction %d/2; directional stagger lab %d/5"),NumTrials,LockOnMaxFacingErrorDeg,LockOnBlinkPassed,LockOnLabPassed));
+        Finish(LocoOk&&LockOnLabPassed==5&&LockOnBlinkPassed==3,FString::Printf(TEXT("lock-on: %d locomotion trials sampled their clips, max facing error %.1f deg; blink direction %d/3; directional stagger lab %d/5"),NumTrials,LockOnMaxFacingErrorDeg,LockOnBlinkPassed,LockOnLabPassed));
         return true;
     }
     const bool WantTwo=LockOnLabHit==4;

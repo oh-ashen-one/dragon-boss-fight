@@ -239,6 +239,10 @@ void AVeyrKnight::BeginPlay()
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
+    bWeaponGripLockEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoWeaponGripLock"));
+    float RequestedLockBlend=0.f;
+    if(FParse::Value(FCommandLine::Get(),TEXT("VeyrLockOnBlend="),RequestedLockBlend)&&FMath::IsFinite(RequestedLockBlend))LockOnBlendSeconds=FMath::Clamp(RequestedLockBlend,.02f,.60f);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_KNIGHT_ROUND2 weaponGripLock=%d lockOnBlend=%.2f"),bWeaponGripLockEnabled?1:0,LockOnBlendSeconds);
     UE_LOG(LogTemp,Display,TEXT("VEYR_KNIGHT_COMPLETION lockOnStrafe=%d directionalStagger=%d runStopBlend=%.2f"),
         bLockOnStrafeEnabled?1:0,bDirectionalStaggerEnabled?1:0,RunStopBlendSeconds);
     if (CustomuseVisualDefinition) ApplyCustomuseVisual(CustomuseVisualDefinition);
@@ -344,8 +348,8 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
         case EVeyrKnightAction::Roll:return TEXT("Roll");
         case EVeyrKnightAction::RunStop:return TEXT("RunStop");
-        case EVeyrKnightAction::BlinkLeft:return TEXT("BlinkLeft");
-        case EVeyrKnightAction::BlinkRight:return TEXT("BlinkRight");
+        case EVeyrKnightAction::BlinkLeft:return bTwoHanded&&HasVisualClip(TEXT("BlinkLeftTwoHand"))?FName(TEXT("BlinkLeftTwoHand")):FName(TEXT("BlinkLeft"));
+        case EVeyrKnightAction::BlinkRight:return bTwoHanded&&HasVisualClip(TEXT("BlinkRightTwoHand"))?FName(TEXT("BlinkRightTwoHand")):FName(TEXT("BlinkRight"));
         case EVeyrKnightAction::Backstep:return TEXT("BackpedalStep");
         case EVeyrKnightAction::GuardBreak:return TEXT("GuardBreak");
         case EVeyrKnightAction::GripToTwoHand:return TEXT("GripToTwoHand");
@@ -1001,12 +1005,29 @@ FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
     return RunAnimationVariant==1?TEXT("RunAlternate"):TEXT("Run");
 }
 
+bool AVeyrKnight::GetWeaponSocketWorld(FTransform& Out)
+{
+    // Round 2 (2026-10-29): WeaponSocket is a root child in the shared skeleton, so engine pose blends move the
+    // hand and the sword independently. While a transition blends, place the sword from the right hand with a
+    // hand-space grip interpolated between the source and target clips' own grips (hand slip = grip difference only).
+    if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Out))return false;
+    if(!bWeaponGripLockEnabled||!bWeaponGripBlendActive)return true;
+    FTransform Hand;
+    if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_hand"),Hand))return true;
+    const float A=FMath::Clamp(WeaponGripAlpha,0.f,1.f);
+    FTransform Grip;
+    Grip.SetTranslation(FMath::Lerp(WeaponGripSource.GetTranslation(),WeaponGripTarget.GetTranslation(),A));
+    Grip.SetRotation(FQuat::Slerp(WeaponGripSource.GetRotation(),WeaponGripTarget.GetRotation(),A).GetNormalized());
+    Grip.SetScale3D(FMath::Lerp(WeaponGripSource.GetScale3D(),WeaponGripTarget.GetScale3D(),A));
+    Out=Grip*Hand;
+    return true;
+}
 bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
 {
     FTransform Authored;
     if(CustomuseVisualDefinition&&CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_socket")))
     {
-        if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Authored))return false;
+        if(!GetWeaponSocketWorld(Authored))return false;
         const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(RequestedPresentationClip);
         UStaticMesh* Mesh=C?C->WeaponMesh.Get():nullptr;
         if(!Mesh)return false;
@@ -1042,7 +1063,7 @@ void AVeyrKnight::UpdateEquippedWeapon()
     {
         FTransform Authored;const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(RequestedPresentationClip);
         const bool Valid=bImportedPresentationActive&&bRequestedPresentationClipSampled&&C&&C->WeaponMesh&&
-            ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Authored);
+            GetWeaponSocketWorld(Authored);
         if(Valid){BoatWeapon->SetStaticMesh(C->WeaponMesh);BoatWeapon->SetWorldTransform(Authored);}
         BoatWeapon->SetVisibility(Valid&&!bBlinkHidden);bBoatReleased=false;return;
     }
@@ -1115,15 +1136,34 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     if(Clip!=PresentationTransitionClip||Restarted)
     {
         const bool PreservePrefix=bPreserveRollPrefix&&PresentationTransitionClip==FName(TEXT("Roll"))&&Clip==FName(TEXT("RollAttack"));
+        // Hand-space grip of the pose being left (last evaluated, possibly mid-blend) for the hand-locked sword.
+        {
+            FTransform H,W;
+            if(ImportedPresentation->bPoseEvaluated&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_hand"),H)&&GetWeaponSocketWorld(W))
+                WeaponGripSource=W.GetRelativeTransform(H);
+        }
         bPresentationTransitionActive=!PreservePrefix&&!PresentationTransitionClip.IsNone()&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
         // The sourced Fab run carries the sword ~50-60 cm from where RunStop starts (RunStop was
         // authored from the earlier Blender run); a 0.10 s blend outran both clips' peak speeds.
         bTransitionInvolvesRunStop=Clip==FName(TEXT("RunStop"))||PresentationTransitionClip==FName(TEXT("RunStop"));
+        // Entering or leaving lock-on locomotion changes posture (hips up to 26 cm lower in the strafes): blend longer.
+        auto IsLockOnLoco=[](FName N){const FString S=N.ToString();return S.StartsWith(TEXT("Strafe"))||S.StartsWith(TEXT("Backpedal"));};
+        bTransitionLockOnEdge=!PresentationTransitionClip.IsNone()&&IsLockOnLoco(Clip)!=IsLockOnLoco(PresentationTransitionClip);
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=GripTransitionRemaining>0.f?.28f:bTransitionInvolvesRunStop?RunStopBlendSeconds:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float BlendSeconds=GripTransitionRemaining>0.f?.28f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionLockOnEdge?LockOnBlendSeconds:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
-    const bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset),Alpha);
+    const float SampleTime=Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset);
+    bWeaponGripBlendActive=false;
+    if(bWeaponGripLockEnabled&&Alpha<1.f)
+    {
+        // Target clip's own hand-space grip at this time (extra unblended sample; the blended sample below replaces it).
+        FTransform H,W;
+        if(ImportedPresentation->SampleClipTimeBlended(Clip,SampleTime,1.f)&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_hand"),H)&&
+           ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),W))
+        {WeaponGripTarget=W.GetRelativeTransform(H);bWeaponGripBlendActive=true;WeaponGripAlpha=Alpha;}
+    }
+    const bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,SampleTime,Alpha);
     if(Alpha>=1.f)bPresentationTransitionActive=false;
     bRequestedPresentationClipSampled=Sampled;bPresentationUsingFallback=!Sampled;
     PresentationPreviousActionElapsed=Action==EVeyrKnightAction::Ready?-1.f:ActionElapsed;

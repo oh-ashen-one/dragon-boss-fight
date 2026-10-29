@@ -1,0 +1,172 @@
+{
+ "idle -> strafe left (lock-on enter)": {
+  "blendSeconds": 0.3,
+  "endpointHandToGripCm": [
+   14.9,
+   14.9
+  ],
+  "oldExtraSlipCm": 1.8,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   13.1,
+   14.9
+  ],
+  "newRangeCm": [
+   14.9,
+   14.9
+  ]
+ },
+ "strafe right -> idle (lock-on exit)": {
+  "blendSeconds": 0.3,
+  "endpointHandToGripCm": [
+   14.9,
+   14.9
+  ],
+  "oldExtraSlipCm": 9.6,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   14.9,
+   24.4
+  ],
+  "newRangeCm": [
+   14.9,
+   14.9
+  ]
+ },
+ "walk -> sprint strafe right": {
+  "blendSeconds": 0.3,
+  "endpointHandToGripCm": [
+   14.9,
+   14.9
+  ],
+  "oldExtraSlipCm": 3.1,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   14.9,
+   18.0
+  ],
+  "newRangeCm": [
+   14.9,
+   14.9
+  ]
+ },
+ "strafe left -> stagger left": {
+  "blendSeconds": 0.1,
+  "endpointHandToGripCm": [
+   14.9,
+   14.9
+  ],
+  "oldExtraSlipCm": 4.5,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   10.4,
+   14.9
+  ],
+  "newRangeCm": [
+   14.9,
+   14.9
+  ]
+ },
+ "idle 2H -> blink right 2H": {
+  "blendSeconds": 0.1,
+  "endpointHandToGripCm": [
+   16.2,
+   16.2
+  ],
+  "oldExtraSlipCm": 2.1,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   14.2,
+   16.2
+  ],
+  "newRangeCm": [
+   16.2,
+   16.2
+  ]
+ },
+ "blink left end -> idle": {
+  "blendSeconds": 0.1,
+  "endpointHandToGripCm": [
+   14.9,
+   14.9
+  ],
+  "oldExtraSlipCm": 4.0,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   10.9,
+   14.9
+  ],
+  "newRangeCm": [
+   14.9,
+   14.9
+  ]
+ },
+ "roll attack end -> idle": {
+  "blendSeconds": 0.1,
+  "endpointHandToGripCm": [
+   14.9,
+   14.9
+  ],
+  "oldExtraSlipCm": 0.0,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   14.9,
+   14.9
+  ],
+  "newRangeCm": [
+   14.9,
+   14.9
+  ]
+ },
+ "fab run -> RunStop": {
+  "blendSeconds": 0.3,
+  "endpointHandToGripCm": [
+   14.9,
+   14.9
+  ],
+  "oldExtraSlipCm": 3.4,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   13.7,
+   18.3
+  ],
+  "newRangeCm": [
+   14.9,
+   14.9
+  ]
+ },
+ "idle -> light attack (approved pair)": {
+  "blendSeconds": 0.1,
+  "endpointHandToGripCm": [
+   14.9,
+   17.8
+  ],
+  "oldExtraSlipCm": 8.9,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   6.0,
+   17.8
+  ],
+  "newRangeCm": [
+   14.8,
+   17.8
+  ]
+ },
+ "light attack end -> idle (approved pair)": {
+  "blendSeconds": 0.1,
+  "endpointHandToGripCm": [
+   17.8,
+   14.9
+  ],
+  "oldExtraSlipCm": 9.9,
+  "newExtraSlipCm": 0.0,
+  "oldRangeCm": [
+   4.9,
+   17.8
+  ],
+  "newRangeCm": [
+   14.8,
+   17.8
+  ]
+ }
+}

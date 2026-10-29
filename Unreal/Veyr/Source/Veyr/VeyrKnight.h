@@ -152,6 +152,10 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bDirectionalStaggerEnabled=true;
     /** Seconds of the Run<->RunStop pose blend (measured join, Local/knight-review-20261028/data). */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float RunStopBlendSeconds=.30f;
+    /** Round 2: blend seconds when entering/leaving lock-on locomotion (-VeyrLockOnBlend=). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LockOnBlendSeconds=.30f;
+    /** Round 2: sword placed from the right hand during pose blends (-VeyrNoWeaponGripLock restores the old path). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") bool bWeaponGripLockEnabled=true;
     /** Front, back, left, right: hits that selected a directional stagger clip. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") TArray<int32> DirectionalStaggers;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") FName LastStaggerClip=NAME_None;
@@ -201,6 +205,11 @@ private:
     FName PendingStaggerClip=NAME_None;
     bool bTransitionInvolvesRunStop=false;
     bool bLockOnStrafingLastFrame=false;
+    bool bTransitionLockOnEdge=false;
+    bool bWeaponGripBlendActive=false;
+    float WeaponGripAlpha=1.f;
+    FTransform WeaponGripSource=FTransform::Identity,WeaponGripTarget=FTransform::Identity;
+    bool GetWeaponSocketWorld(FTransform& Out);
     FName ChooseStaggerClip(const FVector& Source);
     FName PickLockOnClip(FName Preferred, FName Fallback) const;
     float LockOnSpeedCap(FName Clip) const;
