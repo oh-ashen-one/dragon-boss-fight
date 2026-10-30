@@ -94912,7 +94912,13 @@
    },
    "airborne": true,
    "air_note": "hover loop at the hover pose height",
-   "floor_metrics_valid": false
+   "floor_metrics_valid": false,
+   "loop_frames": [
+    0,
+    129
+   ],
+   "loop_duration_s": 5.4167,
+   "loop_note": "play frames 0-129 cyclically; the sampled Action runs 0-130 and frame 130 equals frame 0, so it must not be played twice"
   },
   "air_land": {
    "duration": 6.0,
@@ -103810,7 +103816,7 @@
     ]
    },
    "airborne": true,
-   "air_note": "descent from hover to the ground stance (touchdown frame 90)",
+   "air_note": "descent from hover to the ground stance (touchdown frame in the touchdown annotation)",
    "floor_metrics_valid": false,
    "annotations": [
     {
@@ -103821,7 +103827,7 @@
       90,
       90
      ],
-     "note": "feet planted by IK from frame 90 (authored; the fit's landing frames are unreliable)"
+     "note": "feet planted by IK from this frame (authored; the slam and wing slap start 3 frames earlier, as the braked feet reach the floor)"
     }
    ]
   },

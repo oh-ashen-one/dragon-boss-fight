@@ -804,3 +804,55 @@ spread above. One roar wing shows a few more open membrane holes than round 1 in
 tattered in both); check on the render. Review renders are queued in `Local/dragon-review-20261029/queue_v4.txt`;
 run `tools/dragon_refine/v4/run_queue_v4.sh` (gpu_slot capture, one clip at a time, then adds the "Round 2 fix" cards to
 the review page with `build_review_page_v4.py`). Move data rebuilt from the v4 Actions (`Data/dragon/`, tests 3 OK).
+
+## Fix round 3 (2026-10-30): v5 Actions against the round-3 critique
+
+Built by `tools/dragon_refine/v4/refine_v5.py` (helpers `lib_v5.py`, runner `run_v5.sh` through `gpu_slot capture`) on the
+v4 Actions; blends `Local/video2rig/dragon/Dragon_<Move>_sd_v2r_v5.blend`, Actions `<move>_v5`. Measured BEFORE rendering
+with `measure_v5.py` (CPU raster of the evaluated mesh through the review cameras, scored with the critic's own definitions;
+per-frame-change numbers scaled by each clip's critic/raster factor from its v4 render). Full numbers and the per-move ship
+decision: `Local/dragon-review-20261029/measure_v5.json`. Options used: `refine/v5/work/final_opts.txt`.
+
+| Clip | Target (critique) | v4 | v5 |
+| --- | --- | --- | --- |
+| AL | no pop (63→64 root step) / IoU dip ≤2.2x neighbours | 10.5 cm step, dip fails | no pop, dip ≤1.9 |
+| AL | braking flare: span +30 %, descent speed −40 % in the 12 f before contact | pass | span +33 %, descent −52 % |
+| AL | top drop ≥0.3 BH within 6 f of contact, held ≥8 f, tail whip | −0.11 BH, not held | 0.361 BH, held 20 f |
+| AL | breathing 118–144 d≥0.4; end = stance | pass | d 2.3/1.26/1.47, end IoU 0.993/0.995 |
+| RI | no pop at 43/44 (relative IoU dip ≤2.2) | 4.5–8.5 | max 1.35 |
+| RI | ≥2 feet on the floor every frame, no float | 0 feet | 2 feet, lowest vertex 0.02 cm |
+| RI | breathing frames 0–7 d≥0.3 | 0–0.22 | front 0.56–0.81, left 0.81–0.96 |
+| CO | end front height ≤0.50 | 0.723 raster (0.689 render) | 0.531 raster (critic est 0.506): **still fails** |
+| CO | 3/4 leftmost x ≥200 | 68 | 201 (+17 render offset): pass |
+| CO | both wings folded on the flanks | over the back | on the flanks (NegZ root 1.8 cm above the back line) |
+| CO | breathing kept; fall ≥24 f (optional) | breathing pass; 10 f | breathing 0.51–0.57; fall 10 f (not met) |
+| RS | peak span 1.10–1.15x idle | 1.29 | 1.136 |
+| RS | height ≥1.25x | 1.20 | 1.255 |
+| RS | left/right halves within 5 % | 9.3 % | 3.2 % |
+| RS | hold saw <0.15, wing-tip high-pass 1.5–3 px | 0.182; 1.68/2.49 | 0.045; 2.07/2.20 |
+| BI | no twitch (max step ratio) / 3/4 near-wing area ≥0.7 over 44–62 | 1.9 / 0.589 | 1.39 / 0.887 |
+
+Kept on v4:
+- land2: a v5 parabola hit the hop (0.454 BH est), but the left foot jump grew from 7 to 10 px (limit 8), so it was rejected
+  (`refine/v5/work/rejected_land2.json`).
+- air_hover and air_fire_down: the v5 refine could not start because `gpu_slot` returned settle-timeout (exit 75) twice in a
+  row while other sessions' trainers held the GPU at 98–100 %. In raster, v4 already passes hover downstroke
+  (0.508/0.454 BH below the shoulder line) and fire-down wing-top p2p over 33–66 (0.323/0.335 BH). Hover tail lag still
+  fails (0.058 BH p2p). These raster numbers disagree with the critic's render reading, so check them on the render.
+  The hover loop is exported as frames 0–129 (`annotate_air.py`: `loop_frames`).
+- takeoff3: unchanged.
+
+Collapse front height is the one blocker target still open. Tilting the lying body (bone_2 or Spine_0 roll) to lower the
+NegZ shoulder made it worse (0.56, 0.541). The remaining height is the NegZ wing root, which sits 5 cm higher than the
+PosZ root because the lying body is tilted.
+
+Move data: `tools/movedata/run_veyr.sh` now reads the v5 Actions for roar, collapse, bite, rise and air_land. Every Blender
+run goes through `gpu_slot capture --label dragon-r3-movedata`, and a sample whose action and blend md5 already match is
+reused. `annotate_air.py` now takes the touchdown frame from the sampled action (v5 = 100, v4 = 90).
+
+**Not rendered yet (2026-10-30 01:20).** The render queue ran once (`run_queue_v5.sh`), and the AL5 prep step got
+`gpu_slot` settle-timeout twice (GPU at 97–100 %), so the queue stopped by design. All five clips are still queued in
+`Local/dragon-review-20261029/queue_v5.txt` (AL5, RI5, CO5, RS5, BI5); re-running the script resumes it. The move-data
+rebuild hit the same wall on the roar sample (exit 75), so `Data/dragon/` still holds the v4 move data. Only the hover
+`loop_frames` annotation was applied (tests 3 OK). Re-run `BLENDER=... BLENDER_CAP=2 tools/movedata/run_veyr.sh` once
+the GPU is free.
