@@ -1,0 +1,4545 @@
+{
+ "definitions": "Round-4 metrics on the normalized GLBs the game imports (glTF mesh space: +Z boss, +X knight's left, Y up; game cm =\nrig m x 240; frames = 30 fps of game time at the in-game rate). Pure CPython + numpy (+ ffmpeg only to decode review MP4s\nthat already exist); no Blender, no GPU.\n\nEvery round-3 metric (measure_round3.measure) plus:\n  pelvisVsBoss (bone transforms, not pixels), per frame of one cycle at 120 Hz:\n    hipLineYaw      facing of the LeftUpLeg-RightUpLeg line (what round 3 called \"pelvis\"; 41-47 deg on the r3 sprints)\n    hipsBoneYaw     the Hips bone's rotation relative to the idle Hips, applied to the idle forward\n    legPlaneYaw     folded yaw of each leg's hip-knee-ankle plane (0 = the leg swings toward/away from the boss, 90 =\n                    frontal plane); mean over the swing frames (swing weight > 0.5) and at the full kick (max knee bend)\n    shinSideOverFront  the full-kick shin's horizontal span seen from the side (|boss axis|) over from the front (|x|)\n    visualTwist     chest yaw minus the leg plane (what a viewer reads as \"legs vs shoulders\")\n  Round 3 reported 45 deg because it measured the hip-joint LINE; the critic saw the LEGS: the r3 swing paths stayed\n  travel-aligned, so the leg plane sat 48-68 deg off the boss and the shin spanned 0.35-0.47x side/front (round 2: ~90).\n  Targets (critic): leg plane within ~45-52 deg of the boss, side/front >= 0.6.\n  seamLossless    the critic's seam method (shift-compensated MAD on the knight crop, 3 bands + all, per panel) on the\n                  lossless render PNGs (Local/knight-review-20261028/{r4,r3}/frames)\n  seamPixelsIntra measure_round3.pixels on the all-intra review MP4s (serve-round4/media)\n  blinkTail       bone pose steps of the last rendered frames (frozen = < 0.03 cm mean joint step; the idle itself moves\n                  0.07-0.15 cm per frame), last-vs-idle-frame-0,\n                  and the same from the lossless front PNGs (changed pixels > 8 levels)\n  rollWorld       hips (pose + plan root track) world speed per rendered frame (game cm/frame), the join (clip 1.0 s)\n                  profile, the last 3 frames, contact runs after the get-up (local floor) with the max world slide inside\n                  each run, minimum toe-joint height vs the idle's 3.3 cm\n  byteIdentical   protected 30 files vs round3-protected-sha256-before.txt; kept round-3 clips' sha in v030r == v030q\n\nUsage: measure_round4.py OUT.json        measure v030r (round 4) and v030q (round 3) side by side\n       measure_round4.py retime-args     stance speed of the authored _v6c sprint cycles (Exports) -> retime stage args\n       measure_round4.py predict         CPU predictions of the sprint swing-plane fix and the roll join/settle on the r3 data",
+ "clips": {
+  "StrafeRunLeft": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_StrafeRunLeft_v6r.glb",
+    "sha256": "ea9ab6cdd9a2a4ae09332f5cff0927d341bc107395bcfd7e90ec85fb94c05e31",
+    "duration": 0.6417,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     4.1,
+     17.8,
+     11.1
+    ],
+    "chestToBossMaxDeg": 17.8,
+    "pelvisYaw": [
+     40.9,
+     47.1,
+     45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.6,
+    "pelvisToChestTwistMeanDeg": 33.9,
+    "freeArmSwingCm": {
+     "lateral": 28.8,
+     "up": 8.6,
+     "forward": 8.7,
+     "max": 28.8
+    },
+    "anklesFirstLastCm": [
+     61.2,
+     79.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 50.45,
+     "mean": 18.77
+    },
+    "lastVsIdleCm": {
+     "max": 50.45,
+     "mean": 18.77
+    },
+    "travelYaw": 71.9,
+    "kneeVsTravelDeg": 34.9,
+    "pelvisOffTravelDeg": 26.9,
+    "feetMinSeparationCm": {
+     "ankles": 33.4,
+     "toes": 38.9
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.7,
+      "mean": 2.42,
+      "max": 4.86,
+      "seamOverMean": 0.7
+     },
+     "hipsSword": {
+      "seam": 1.86,
+      "mean": 2.7,
+      "max": 4.95,
+      "seamOverMean": 0.69
+     },
+     "legsFeet": {
+      "seam": 11.18,
+      "mean": 14.6,
+      "max": 18.66,
+      "seamOverMean": 0.77
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 77,
+     "hipLineYaw": [
+      40.9,
+      47.2,
+      45.0
+     ],
+     "hipsBoneYaw": [
+      43.4,
+      49.7,
+      47.5
+     ],
+     "chestYawMean": 11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 45.0,
+       "swingPlaneYawRange": [
+        42.0,
+        47.4
+       ],
+       "swingFrames": 52,
+       "fullKick": {
+        "frame": 46,
+        "planeYaw": 46.0,
+        "kneeBend": 97.8,
+        "shinFrontCm": 37.7,
+        "shinSideCm": 36.9,
+        "sideOverFront": 0.98
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 44.9,
+       "swingPlaneYawRange": [
+        41.6,
+        47.1
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 2,
+        "planeYaw": 46.5,
+        "kneeBend": 101.2,
+        "shinFrontCm": 38.0,
+        "shinSideCm": 32.5,
+        "sideOverFront": 0.85
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 44.9,
+     "visualTwistDeg": 33.8,
+     "targets": {
+      "legPlaneWithin52": true,
+      "sideOverFrontAtLeast0.6": true,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.8,
+      "legsSeamOverMean": 0.94,
+      "legs": [
+       1.75,
+       1.86,
+       2.33
+      ],
+      "headChestSeamOverMean": 0.82,
+      "hipsSwordSeamOverMean": 0.67
+     },
+     "side": {
+      "allSeamOverMean": 0.62,
+      "legsSeamOverMean": 0.66,
+      "legs": [
+       1.03,
+       1.57,
+       2.42
+      ],
+      "headChestSeamOverMean": 0.61,
+      "hipsSwordSeamOverMean": 0.61
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.72,
+      "legsSeamOverMean": 0.97,
+      "legs": [
+       2.07,
+       2.13,
+       2.83
+      ],
+      "headChestSeamOverMean": 0.63,
+      "hipsSwordSeamOverMean": 0.62
+     },
+     "worstAllSeamOverMean": 0.8
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 1.38,
+      "mean": 1.61,
+      "max": 2.11
+     },
+     "hipsSword": {
+      "seam": 4.08,
+      "mean": 6.21,
+      "max": 8.28
+     },
+     "legsFeet": {
+      "seam": 3.58,
+      "mean": 3.98,
+      "max": 4.94
+     },
+     "all": {
+      "seam": 2.69,
+      "mean": 3.41,
+      "max": 4.15
+     }
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_StrafeRunLeft_v5r.glb",
+    "sha256": "10884892942436b375d51bc98cb77f903e55149bcc0dcd2aed1b13135ac7a477",
+    "duration": 0.6333,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     4.2,
+     17.9,
+     11.1
+    ],
+    "chestToBossMaxDeg": 17.9,
+    "pelvisYaw": [
+     41.1,
+     47.1,
+     45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.7,
+    "pelvisToChestTwistMeanDeg": 33.9,
+    "freeArmSwingCm": {
+     "lateral": 27.8,
+     "up": 8.1,
+     "forward": 7.7,
+     "max": 27.8
+    },
+    "anklesFirstLastCm": [
+     92.5,
+     76.1
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 35.06,
+     "mean": 16.97
+    },
+    "lastVsIdleCm": {
+     "max": 35.06,
+     "mean": 16.97
+    },
+    "travelYaw": 86.8,
+    "kneeVsTravelDeg": 45.1,
+    "pelvisOffTravelDeg": 41.8,
+    "feetMinSeparationCm": {
+     "ankles": 29.4,
+     "toes": 28.0
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.63,
+      "mean": 2.39,
+      "max": 3.87,
+      "seamOverMean": 0.68
+     },
+     "hipsSword": {
+      "seam": 1.29,
+      "mean": 2.7,
+      "max": 4.07,
+      "seamOverMean": 0.48
+     },
+     "legsFeet": {
+      "seam": 10.57,
+      "mean": 13.28,
+      "max": 18.57,
+      "seamOverMean": 0.8
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 76,
+     "hipLineYaw": [
+      40.9,
+      47.2,
+      45.0
+     ],
+     "hipsBoneYaw": [
+      43.4,
+      49.7,
+      47.5
+     ],
+     "chestYawMean": 11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 60.9,
+       "swingPlaneYawRange": [
+        52.1,
+        68.6
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 57,
+        "planeYaw": 63.4,
+        "kneeBend": 98.0,
+        "shinFrontCm": 47.6,
+        "shinSideCm": 22.5,
+        "sideOverFront": 0.47
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 55.5,
+       "swingPlaneYawRange": [
+        47.9,
+        66.5
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 14,
+        "planeYaw": 62.0,
+        "kneeBend": 100.9,
+        "shinFrontCm": 45.1,
+        "shinSideCm": 16.0,
+        "sideOverFront": 0.35
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 58.2,
+     "visualTwistDeg": 47.1,
+     "targets": {
+      "legPlaneWithin52": false,
+      "sideOverFrontAtLeast0.6": false,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.68,
+      "legsSeamOverMean": 0.98,
+      "legs": [
+       2.19,
+       2.23,
+       2.77
+      ],
+      "headChestSeamOverMean": 0.61,
+      "hipsSwordSeamOverMean": 0.49
+     },
+     "side": {
+      "allSeamOverMean": 0.61,
+      "legsSeamOverMean": 0.96,
+      "legs": [
+       1.1,
+       1.14,
+       1.31
+      ],
+      "headChestSeamOverMean": 0.47,
+      "hipsSwordSeamOverMean": 0.58
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.6,
+      "legsSeamOverMean": 0.91,
+      "legs": [
+       1.74,
+       1.91,
+       2.27
+      ],
+      "headChestSeamOverMean": 0.5,
+      "hipsSwordSeamOverMean": 0.47
+     },
+     "worstAllSeamOverMean": 0.68
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 1.11,
+      "mean": 1.6,
+      "max": 2.15
+     },
+     "hipsSword": {
+      "seam": 3.32,
+      "mean": 6.11,
+      "max": 8.03
+     },
+     "legsFeet": {
+      "seam": 3.51,
+      "mean": 3.77,
+      "max": 4.2
+     },
+     "all": {
+      "seam": 2.36,
+      "mean": 3.31,
+      "max": 3.9
+     }
+    }
+   }
+  },
+  "BlinkLeft": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_BlinkLeft_v6c.glb",
+    "sha256": "44f55f47ee2f4d3e38da48b07b0f3d4d684e3c8bc554415660b4761bb2358378",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.0,
+     7.8,
+     3.8
+    ],
+    "chestToBossMaxDeg": 7.8,
+    "pelvisYaw": [
+     -2.7,
+     16.6,
+     5.3
+    ],
+    "pelvisToChestTwistMaxDeg": 10.8,
+    "pelvisToChestTwistMeanDeg": 3.8,
+    "freeArmSwingCm": {
+     "lateral": 15.2,
+     "up": 20.5,
+     "forward": 12.0,
+     "max": 20.5
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -18.8,
+     "launchCrouchFrames": 2,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -19.3,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      -0.4,
+      -10.8,
+      -18.8,
+      -12.2,
+      -2.9,
+      -1.1,
+      -1.3,
+      -1.6,
+      -1.8,
+      -2.3,
+      -10.3,
+      -19.3,
+      -17.3,
+      -8.8,
+      -1.0,
+      0.3,
+      0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -4.5,
+      "chestYaw": 5.4,
+      "pelvisYaw": 14.6
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -2.5,
+      "chestYaw": 4.2,
+      "pelvisYaw": 7.3
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      11.233,
+      4.271,
+      1.142,
+      0.104,
+      0.025
+     ],
+     "frozenTrailingSteps": 1,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      6419,
+      8351,
+      6758,
+      7645,
+      8569,
+      4472,
+      5941,
+      6346,
+      5814,
+      4645,
+      8037,
+      7282,
+      5731,
+      7441,
+      7699,
+      5161,
+      1710,
+      493
+     ],
+     "frozenTrailingSteps": 0,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      167,
+      260,
+      306,
+      299,
+      363,
+      380
+     ]
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_BlinkLeft_v5c.glb",
+    "sha256": "33a2e1ec6dc3573493d48965cbb9b1ff0c876a32d44ecf92235dbb4f5df8d529",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.0,
+     6.5,
+     3.3
+    ],
+    "chestToBossMaxDeg": 6.5,
+    "pelvisYaw": [
+     -2.6,
+     15.6,
+     4.8
+    ],
+    "pelvisToChestTwistMaxDeg": 10.4,
+    "pelvisToChestTwistMeanDeg": 3.7,
+    "freeArmSwingCm": {
+     "lateral": 12.5,
+     "up": 15.8,
+     "forward": 8.1,
+     "max": 15.8
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -15.0,
+     "launchCrouchFrames": 3,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -13.5,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      0.3,
+      -3.7,
+      -12.2,
+      -15.0,
+      -9.4,
+      -7.7,
+      -9.3,
+      -11.7,
+      -13.7,
+      -14.8,
+      -13.5,
+      -9.2,
+      -3.2,
+      0.2,
+      0.5,
+      0.0,
+      -0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -11.0,
+      "chestYaw": 5.7,
+      "pelvisYaw": 12.8
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -14.8,
+      "chestYaw": 6.5,
+      "pelvisYaw": 9.8
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      3.196,
+      2.252,
+      0.077,
+      0.0,
+      0.0
+     ],
+     "frozenTrailingSteps": 2,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      4518,
+      6842,
+      7450,
+      5239,
+      7609,
+      4046,
+      5728,
+      6076,
+      5665,
+      4847,
+      3812,
+      6313,
+      6719,
+      6058,
+      4440,
+      3241,
+      23,
+      0
+     ],
+     "frozenTrailingSteps": 2,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      167,
+      260,
+      306,
+      299,
+      363,
+      380
+     ]
+    }
+   }
+  },
+  "StrafeRunLeftTwoHand": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_StrafeRunLeftTwoHand_v6r.glb",
+    "sha256": "ee4993f447ebb317ed0e96a26cb53d389f04e9e8f7dda7be4cd9d42217256e67",
+    "duration": 0.6417,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     4.1,
+     17.8,
+     11.1
+    ],
+    "chestToBossMaxDeg": 17.8,
+    "pelvisYaw": [
+     40.9,
+     47.1,
+     45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.6,
+    "pelvisToChestTwistMeanDeg": 33.9,
+    "freeArmSwingCm": {
+     "lateral": 5.0,
+     "up": 0.6,
+     "forward": 0.4,
+     "max": 5.0
+    },
+    "anklesFirstLastCm": [
+     61.2,
+     79.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 50.45,
+     "mean": 17.34
+    },
+    "lastVsIdleCm": {
+     "max": 50.45,
+     "mean": 17.34
+    },
+    "travelYaw": 71.9,
+    "kneeVsTravelDeg": 34.9,
+    "pelvisOffTravelDeg": 26.9,
+    "feetMinSeparationCm": {
+     "ankles": 33.4,
+     "toes": 38.9
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.7,
+      "mean": 2.42,
+      "max": 4.86,
+      "seamOverMean": 0.7
+     },
+     "hipsSword": {
+      "seam": 1.63,
+      "mean": 2.4,
+      "max": 4.87,
+      "seamOverMean": 0.68
+     },
+     "legsFeet": {
+      "seam": 11.18,
+      "mean": 14.6,
+      "max": 18.66,
+      "seamOverMean": 0.77
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 77,
+     "hipLineYaw": [
+      40.9,
+      47.2,
+      45.0
+     ],
+     "hipsBoneYaw": [
+      43.4,
+      49.7,
+      47.5
+     ],
+     "chestYawMean": 11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 45.0,
+       "swingPlaneYawRange": [
+        42.0,
+        47.4
+       ],
+       "swingFrames": 52,
+       "fullKick": {
+        "frame": 46,
+        "planeYaw": 46.0,
+        "kneeBend": 97.8,
+        "shinFrontCm": 37.7,
+        "shinSideCm": 36.9,
+        "sideOverFront": 0.98
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 44.9,
+       "swingPlaneYawRange": [
+        41.6,
+        47.1
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 2,
+        "planeYaw": 46.5,
+        "kneeBend": 101.2,
+        "shinFrontCm": 38.0,
+        "shinSideCm": 32.5,
+        "sideOverFront": 0.85
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 44.9,
+     "visualTwistDeg": 33.8,
+     "targets": {
+      "legPlaneWithin52": true,
+      "sideOverFrontAtLeast0.6": true,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.91,
+      "legsSeamOverMean": 1.0,
+      "legs": [
+       2.19,
+       2.19,
+       2.66
+      ],
+      "headChestSeamOverMean": 0.92,
+      "hipsSwordSeamOverMean": 0.81
+     },
+     "side": {
+      "allSeamOverMean": 0.73,
+      "legsSeamOverMean": 0.74,
+      "legs": [
+       1.23,
+       1.66,
+       2.4
+      ],
+      "headChestSeamOverMean": 0.7,
+      "hipsSwordSeamOverMean": 0.78
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.86,
+      "legsSeamOverMean": 1.02,
+      "legs": [
+       2.19,
+       2.14,
+       2.66
+      ],
+      "headChestSeamOverMean": 0.78,
+      "hipsSwordSeamOverMean": 0.7
+     },
+     "worstAllSeamOverMean": 0.91
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 2.48,
+      "mean": 3.04,
+      "max": 4.24
+     },
+     "hipsSword": {
+      "seam": 3.01,
+      "mean": 3.08,
+      "max": 3.77
+     },
+     "legsFeet": {
+      "seam": 3.67,
+      "mean": 3.96,
+      "max": 4.92
+     },
+     "all": {
+      "seam": 2.97,
+      "mean": 3.33,
+      "max": 4.0
+     }
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_StrafeRunLeftTwoHand_v5r.glb",
+    "sha256": "f09d0a3eb30a4d8a7631349ca861efba7e85500cd350150824a86c96ac2c1c42",
+    "duration": 0.6333,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     4.2,
+     17.9,
+     11.1
+    ],
+    "chestToBossMaxDeg": 17.9,
+    "pelvisYaw": [
+     41.1,
+     47.1,
+     45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.7,
+    "pelvisToChestTwistMeanDeg": 33.9,
+    "freeArmSwingCm": {
+     "lateral": 5.0,
+     "up": 0.5,
+     "forward": 0.4,
+     "max": 5.0
+    },
+    "anklesFirstLastCm": [
+     92.5,
+     76.1
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 35.06,
+     "mean": 14.33
+    },
+    "lastVsIdleCm": {
+     "max": 35.06,
+     "mean": 14.33
+    },
+    "travelYaw": 86.8,
+    "kneeVsTravelDeg": 45.1,
+    "pelvisOffTravelDeg": 41.8,
+    "feetMinSeparationCm": {
+     "ankles": 29.4,
+     "toes": 28.0
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.63,
+      "mean": 2.39,
+      "max": 3.87,
+      "seamOverMean": 0.68
+     },
+     "hipsSword": {
+      "seam": 1.2,
+      "mean": 2.38,
+      "max": 3.84,
+      "seamOverMean": 0.5
+     },
+     "legsFeet": {
+      "seam": 10.57,
+      "mean": 13.28,
+      "max": 18.57,
+      "seamOverMean": 0.8
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 76,
+     "hipLineYaw": [
+      40.9,
+      47.2,
+      45.0
+     ],
+     "hipsBoneYaw": [
+      43.4,
+      49.7,
+      47.5
+     ],
+     "chestYawMean": 11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 60.9,
+       "swingPlaneYawRange": [
+        52.1,
+        68.6
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 57,
+        "planeYaw": 63.4,
+        "kneeBend": 98.0,
+        "shinFrontCm": 47.6,
+        "shinSideCm": 22.5,
+        "sideOverFront": 0.47
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 55.5,
+       "swingPlaneYawRange": [
+        47.9,
+        66.5
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 14,
+        "planeYaw": 62.0,
+        "kneeBend": 100.9,
+        "shinFrontCm": 45.1,
+        "shinSideCm": 16.0,
+        "sideOverFront": 0.35
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 58.2,
+     "visualTwistDeg": 47.1,
+     "targets": {
+      "legPlaneWithin52": false,
+      "sideOverFrontAtLeast0.6": false,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.67,
+      "legsSeamOverMean": 0.79,
+      "legs": [
+       2.04,
+       2.57,
+       3.46
+      ],
+      "headChestSeamOverMean": 0.65,
+      "hipsSwordSeamOverMean": 0.52
+     },
+     "side": {
+      "allSeamOverMean": 0.63,
+      "legsSeamOverMean": 1.02,
+      "legs": [
+       1.27,
+       1.25,
+       1.49
+      ],
+      "headChestSeamOverMean": 0.41,
+      "hipsSwordSeamOverMean": 0.54
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.6,
+      "legsSeamOverMean": 0.86,
+      "legs": [
+       1.66,
+       1.93,
+       2.25
+      ],
+      "headChestSeamOverMean": 0.42,
+      "hipsSwordSeamOverMean": 0.43
+     },
+     "worstAllSeamOverMean": 0.67
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 1.7,
+      "mean": 3.03,
+      "max": 3.93
+     },
+     "hipsSword": {
+      "seam": 2.06,
+      "mean": 3.03,
+      "max": 3.77
+     },
+     "legsFeet": {
+      "seam": 3.52,
+      "mean": 3.77,
+      "max": 4.21
+     },
+     "all": {
+      "seam": 2.35,
+      "mean": 3.26,
+      "max": 3.79
+     }
+    }
+   }
+  },
+  "BlinkLeftTwoHand": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_BlinkLeftTwoHand_v6c.glb",
+    "sha256": "7e17f935c05f9f1824daacb3ed532380ab955fb1c480870f6728c5688c0df0b2",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.1,
+     7.8,
+     3.8
+    ],
+    "chestToBossMaxDeg": 7.8,
+    "pelvisYaw": [
+     -2.7,
+     16.6,
+     5.3
+    ],
+    "pelvisToChestTwistMaxDeg": 10.8,
+    "pelvisToChestTwistMeanDeg": 3.8,
+    "freeArmSwingCm": {
+     "lateral": 8.0,
+     "up": 5.2,
+     "forward": 6.3,
+     "max": 8.0
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -18.8,
+     "launchCrouchFrames": 2,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -19.3,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      -0.4,
+      -10.8,
+      -18.8,
+      -12.2,
+      -2.9,
+      -1.1,
+      -1.3,
+      -1.6,
+      -1.8,
+      -2.3,
+      -10.3,
+      -19.3,
+      -17.3,
+      -8.8,
+      -1.0,
+      0.3,
+      0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -4.5,
+      "chestYaw": 5.4,
+      "pelvisYaw": 14.6
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -2.5,
+      "chestYaw": 4.2,
+      "pelvisYaw": 7.3
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      11.606,
+      4.215,
+      2.65,
+      1.566,
+      0.054
+     ],
+     "frozenTrailingSteps": 0,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      7037,
+      9428,
+      7778,
+      9250,
+      10333,
+      5274,
+      7105,
+      7731,
+      7189,
+      5409,
+      9450,
+      8391,
+      6393,
+      8526,
+      8946,
+      5640,
+      2402,
+      889
+     ],
+     "frozenTrailingSteps": 0,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      350,
+      387,
+      438,
+      436,
+      470,
+      474
+     ]
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_BlinkLeftTwoHand_v5c.glb",
+    "sha256": "8923948e03fa3ee461864af8e13a42f78d23e4fe3761810fbab3959bd4a42725",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.0,
+     6.5,
+     3.3
+    ],
+    "chestToBossMaxDeg": 6.5,
+    "pelvisYaw": [
+     -2.6,
+     15.6,
+     4.8
+    ],
+    "pelvisToChestTwistMaxDeg": 10.4,
+    "pelvisToChestTwistMeanDeg": 3.7,
+    "freeArmSwingCm": {
+     "lateral": 5.6,
+     "up": 2.9,
+     "forward": 4.5,
+     "max": 5.6
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -15.0,
+     "launchCrouchFrames": 3,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -13.5,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      0.3,
+      -3.7,
+      -12.2,
+      -15.0,
+      -9.4,
+      -7.7,
+      -9.3,
+      -11.7,
+      -13.7,
+      -14.8,
+      -13.5,
+      -9.2,
+      -3.2,
+      0.2,
+      0.5,
+      0.0,
+      -0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -11.0,
+      "chestYaw": 5.7,
+      "pelvisYaw": 12.8
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -14.8,
+      "chestYaw": 6.5,
+      "pelvisYaw": 9.8
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      2.741,
+      3.093,
+      1.515,
+      0.0,
+      0.0
+     ],
+     "frozenTrailingSteps": 2,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      4440,
+      8181,
+      9000,
+      6431,
+      9110,
+      4493,
+      6655,
+      7224,
+      6722,
+      5010,
+      4711,
+      7568,
+      7998,
+      7415,
+      5467,
+      3783,
+      55,
+      0
+     ],
+     "frozenTrailingSteps": 1,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      350,
+      387,
+      438,
+      436,
+      470,
+      474
+     ]
+    }
+   }
+  },
+  "StrafeRunRight": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_StrafeRunRight_v6r.glb",
+    "sha256": "534722bf3b107bca3e6df9c23cb7652d8bc0ed08020fa22bb2184d4f14c08516",
+    "duration": 0.6333,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     -17.9,
+     -4.2,
+     -11.1
+    ],
+    "chestToBossMaxDeg": 17.9,
+    "pelvisYaw": [
+     -47.1,
+     -41.1,
+     -45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.7,
+    "pelvisToChestTwistMeanDeg": 33.8,
+    "freeArmSwingCm": {
+     "lateral": 35.6,
+     "up": 6.4,
+     "forward": 7.8,
+     "max": 35.6
+    },
+    "anklesFirstLastCm": [
+     76.6,
+     62.7
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 50.19,
+     "mean": 20.24
+    },
+    "lastVsIdleCm": {
+     "max": 50.19,
+     "mean": 20.24
+    },
+    "travelYaw": -78.3,
+    "kneeVsTravelDeg": 41.9,
+    "pelvisOffTravelDeg": 33.4,
+    "feetMinSeparationCm": {
+     "ankles": 34.8,
+     "toes": 39.3
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.66,
+      "mean": 2.36,
+      "max": 3.81,
+      "seamOverMean": 0.7
+     },
+     "hipsSword": {
+      "seam": 1.5,
+      "mean": 2.86,
+      "max": 4.32,
+      "seamOverMean": 0.52
+     },
+     "legsFeet": {
+      "seam": 11.63,
+      "mean": 14.55,
+      "max": 18.47,
+      "seamOverMean": 0.8
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 76,
+     "hipLineYaw": [
+      -47.2,
+      -40.8,
+      -45.0
+     ],
+     "hipsBoneYaw": [
+      -44.6,
+      -38.2,
+      -42.3
+     ],
+     "chestYawMean": -11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 44.8,
+       "swingPlaneYawRange": [
+        -47.1,
+        -41.5
+       ],
+       "swingFrames": 50,
+       "fullKick": {
+        "frame": 14,
+        "planeYaw": -46.4,
+        "kneeBend": 102.2,
+        "shinFrontCm": 39.2,
+        "shinSideCm": 33.1,
+        "sideOverFront": 0.85
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 44.9,
+       "swingPlaneYawRange": [
+        -47.1,
+        -41.8
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 57,
+        "planeYaw": -46.0,
+        "kneeBend": 98.0,
+        "shinFrontCm": 36.8,
+        "shinSideCm": 35.9,
+        "sideOverFront": 0.98
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 44.9,
+     "visualTwistDeg": 33.8,
+     "targets": {
+      "legPlaneWithin52": true,
+      "sideOverFrontAtLeast0.6": true,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.66,
+      "legsSeamOverMean": 0.79,
+      "legs": [
+       1.3,
+       1.64,
+       2.21
+      ],
+      "headChestSeamOverMean": 0.7,
+      "hipsSwordSeamOverMean": 0.53
+     },
+     "side": {
+      "allSeamOverMean": 0.62,
+      "legsSeamOverMean": 0.9,
+      "legs": [
+       1.38,
+       1.53,
+       1.95
+      ],
+      "headChestSeamOverMean": 0.69,
+      "hipsSwordSeamOverMean": 0.44
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.67,
+      "legsSeamOverMean": 0.73,
+      "legs": [
+       0.98,
+       1.35,
+       1.66
+      ],
+      "headChestSeamOverMean": 0.82,
+      "hipsSwordSeamOverMean": 0.56
+     },
+     "worstAllSeamOverMean": 0.67
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 1.37,
+      "mean": 1.64,
+      "max": 2.37
+     },
+     "hipsSword": {
+      "seam": 3.73,
+      "mean": 6.34,
+      "max": 8.48
+     },
+     "legsFeet": {
+      "seam": 2.68,
+      "mean": 3.33,
+      "max": 3.69
+     },
+     "all": {
+      "seam": 2.32,
+      "mean": 3.25,
+      "max": 3.92
+     }
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_StrafeRunRight_v5r.glb",
+    "sha256": "1519d49cab16d6a3a18651513e36fb61a3023ae7cf53ead657886fe24738012f",
+    "duration": 0.6167,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     -17.9,
+     -4.2,
+     -11.1
+    ],
+    "chestToBossMaxDeg": 17.9,
+    "pelvisYaw": [
+     -47.1,
+     -41.1,
+     -45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.7,
+    "pelvisToChestTwistMeanDeg": 33.9,
+    "freeArmSwingCm": {
+     "lateral": 36.6,
+     "up": 6.6,
+     "forward": 8.1,
+     "max": 36.6
+    },
+    "anklesFirstLastCm": [
+     90.9,
+     74.7
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 38.24,
+     "mean": 20.78
+    },
+    "lastVsIdleCm": {
+     "max": 38.24,
+     "mean": 20.78
+    },
+    "travelYaw": -86.2,
+    "kneeVsTravelDeg": 47.5,
+    "pelvisOffTravelDeg": 41.2,
+    "feetMinSeparationCm": {
+     "ankles": 30.1,
+     "toes": 30.0
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.66,
+      "mean": 2.36,
+      "max": 3.81,
+      "seamOverMean": 0.7
+     },
+     "hipsSword": {
+      "seam": 1.53,
+      "mean": 2.86,
+      "max": 4.39,
+      "seamOverMean": 0.53
+     },
+     "legsFeet": {
+      "seam": 10.64,
+      "mean": 13.27,
+      "max": 18.19,
+      "seamOverMean": 0.8
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 74,
+     "hipLineYaw": [
+      -47.2,
+      -40.9,
+      -45.0
+     ],
+     "hipsBoneYaw": [
+      -44.6,
+      -38.2,
+      -42.3
+     ],
+     "chestYawMean": -11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 52.6,
+       "swingPlaneYawRange": [
+        -63.9,
+        -45.1
+       ],
+       "swingFrames": 49,
+       "fullKick": {
+        "frame": 13,
+        "planeYaw": -59.6,
+        "kneeBend": 102.6,
+        "shinFrontCm": 46.1,
+        "shinSideCm": 18.1,
+        "sideOverFront": 0.39
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 58.0,
+       "swingPlaneYawRange": [
+        -66.3,
+        -49.9
+       ],
+       "swingFrames": 50,
+       "fullKick": {
+        "frame": 55,
+        "planeYaw": -60.4,
+        "kneeBend": 97.4,
+        "shinFrontCm": 45.1,
+        "shinSideCm": 24.4,
+        "sideOverFront": 0.54
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 55.4,
+     "visualTwistDeg": 44.3,
+     "targets": {
+      "legPlaneWithin52": false,
+      "sideOverFrontAtLeast0.6": false,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.69,
+      "legsSeamOverMean": 0.89,
+      "legs": [
+       1.71,
+       1.93,
+       2.39
+      ],
+      "headChestSeamOverMean": 0.7,
+      "hipsSwordSeamOverMean": 0.53
+     },
+     "side": {
+      "allSeamOverMean": 0.6,
+      "legsSeamOverMean": 0.69,
+      "legs": [
+       0.78,
+       1.13,
+       1.43
+      ],
+      "headChestSeamOverMean": 0.69,
+      "hipsSwordSeamOverMean": 0.5
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.71,
+      "legsSeamOverMean": 0.86,
+      "legs": [
+       1.26,
+       1.46,
+       1.75
+      ],
+      "headChestSeamOverMean": 0.83,
+      "hipsSwordSeamOverMean": 0.59
+     },
+     "worstAllSeamOverMean": 0.71
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 1.38,
+      "mean": 1.65,
+      "max": 2.37
+     },
+     "hipsSword": {
+      "seam": 3.91,
+      "mean": 6.35,
+      "max": 8.59
+     },
+     "legsFeet": {
+      "seam": 2.74,
+      "mean": 3.32,
+      "max": 3.58
+     },
+     "all": {
+      "seam": 2.38,
+      "mean": 3.25,
+      "max": 4.04
+     }
+    }
+   }
+  },
+  "BlinkRight": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_BlinkRight_v6c.glb",
+    "sha256": "67178716ea858f5d78dbc5b19ee44e3dd0c3455b65c9d8c40785ec1160bd17a0",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.0,
+     5.3,
+     1.6
+    ],
+    "chestToBossMaxDeg": 5.3,
+    "pelvisYaw": [
+     -22.4,
+     -2.6,
+     -9.3
+    ],
+    "pelvisToChestTwistMaxDeg": 22.5,
+    "pelvisToChestTwistMeanDeg": 11.0,
+    "freeArmSwingCm": {
+     "lateral": 14.8,
+     "up": 28.8,
+     "forward": 13.5,
+     "max": 28.8
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -18.8,
+     "launchCrouchFrames": 2,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -19.3,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      -0.4,
+      -10.8,
+      -18.8,
+      -12.2,
+      -2.9,
+      -1.1,
+      -1.3,
+      -1.6,
+      -1.8,
+      -2.3,
+      -10.3,
+      -19.3,
+      -17.3,
+      -8.8,
+      -1.0,
+      0.3,
+      0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -4.5,
+      "chestYaw": 0.4,
+      "pelvisYaw": -19.7
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -2.5,
+      "chestYaw": 1.1,
+      "pelvisYaw": -12.9
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      10.959,
+      4.552,
+      1.175,
+      0.109,
+      0.025
+     ],
+     "frozenTrailingSteps": 1,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      5876,
+      8257,
+      6743,
+      7507,
+      8670,
+      4256,
+      5608,
+      6214,
+      6396,
+      4894,
+      7800,
+      6684,
+      5962,
+      7530,
+      7691,
+      4866,
+      1858,
+      495
+     ],
+     "frozenTrailingSteps": 0,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      167,
+      260,
+      306,
+      299,
+      363,
+      380
+     ]
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_BlinkRight_v5c.glb",
+    "sha256": "66851b9ff4d910fae946cd276a3491e0346ff4cc33f7dc79c11125435c30ef69",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.0,
+     3.6,
+     1.4
+    ],
+    "chestToBossMaxDeg": 3.6,
+    "pelvisYaw": [
+     -19.5,
+     -2.6,
+     -8.4
+    ],
+    "pelvisToChestTwistMaxDeg": 19.5,
+    "pelvisToChestTwistMeanDeg": 9.8,
+    "freeArmSwingCm": {
+     "lateral": 12.5,
+     "up": 21.7,
+     "forward": 7.4,
+     "max": 21.7
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -15.0,
+     "launchCrouchFrames": 3,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -13.5,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      0.3,
+      -3.7,
+      -12.2,
+      -15.0,
+      -9.4,
+      -7.7,
+      -9.3,
+      -11.7,
+      -13.7,
+      -14.8,
+      -13.5,
+      -9.2,
+      -3.2,
+      0.2,
+      0.5,
+      0.0,
+      -0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -11.0,
+      "chestYaw": 1.6,
+      "pelvisYaw": -15.1
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -14.8,
+      "chestYaw": 3.4,
+      "pelvisYaw": -10.3
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      2.837,
+      1.9,
+      0.068,
+      0.0,
+      0.0
+     ],
+     "frozenTrailingSteps": 2,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      4448,
+      6862,
+      7403,
+      4546,
+      7310,
+      3736,
+      5363,
+      5750,
+      5514,
+      4397,
+      4179,
+      6084,
+      6731,
+      5808,
+      4182,
+      3506,
+      23,
+      0
+     ],
+     "frozenTrailingSteps": 2,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      167,
+      260,
+      306,
+      299,
+      363,
+      380
+     ]
+    }
+   }
+  },
+  "StrafeRunRightTwoHand": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_StrafeRunRightTwoHand_v6r.glb",
+    "sha256": "de4be3e9a7949dd4e7e1ee7ab639b5a34f88a1f984eabb862b6728e232fa5f90",
+    "duration": 0.6333,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     -17.8,
+     -4.2,
+     -11.1
+    ],
+    "chestToBossMaxDeg": 17.8,
+    "pelvisYaw": [
+     -47.1,
+     -40.8,
+     -45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.6,
+    "pelvisToChestTwistMeanDeg": 33.9,
+    "freeArmSwingCm": {
+     "lateral": 4.7,
+     "up": 0.7,
+     "forward": 1.9,
+     "max": 4.7
+    },
+    "anklesFirstLastCm": [
+     60.4,
+     78.4
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 54.58,
+     "mean": 17.75
+    },
+    "lastVsIdleCm": {
+     "max": 54.58,
+     "mean": 17.75
+    },
+    "travelYaw": -71.0,
+    "kneeVsTravelDeg": 34.3,
+    "pelvisOffTravelDeg": 26.0,
+    "feetMinSeparationCm": {
+     "ankles": 34.2,
+     "toes": 39.5
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.61,
+      "mean": 2.41,
+      "max": 4.84,
+      "seamOverMean": 0.67
+     },
+     "hipsSword": {
+      "seam": 1.56,
+      "mean": 2.4,
+      "max": 4.9,
+      "seamOverMean": 0.65
+     },
+     "legsFeet": {
+      "seam": 11.03,
+      "mean": 14.67,
+      "max": 18.95,
+      "seamOverMean": 0.75
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 76,
+     "hipLineYaw": [
+      -47.2,
+      -40.8,
+      -45.0
+     ],
+     "hipsBoneYaw": [
+      -44.5,
+      -38.2,
+      -42.3
+     ],
+     "chestYawMean": -11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 44.8,
+       "swingPlaneYawRange": [
+        -47.1,
+        -41.5
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 2,
+        "planeYaw": -46.4,
+        "kneeBend": 102.5,
+        "shinFrontCm": 39.2,
+        "shinSideCm": 33.4,
+        "sideOverFront": 0.85
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 44.9,
+       "swingPlaneYawRange": [
+        -47.1,
+        -41.8
+       ],
+       "swingFrames": 51,
+       "fullKick": {
+        "frame": 45,
+        "planeYaw": -46.0,
+        "kneeBend": 97.7,
+        "shinFrontCm": 36.8,
+        "shinSideCm": 35.9,
+        "sideOverFront": 0.97
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 44.8,
+     "visualTwistDeg": 33.7,
+     "targets": {
+      "legPlaneWithin52": true,
+      "sideOverFrontAtLeast0.6": true,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.97,
+      "legsSeamOverMean": 1.1,
+      "legs": [
+       2.16,
+       1.96,
+       2.47
+      ],
+      "headChestSeamOverMean": 0.96,
+      "hipsSwordSeamOverMean": 0.86
+     },
+     "side": {
+      "allSeamOverMean": 0.89,
+      "legsSeamOverMean": 0.84,
+      "legs": [
+       1.54,
+       1.83,
+       2.26
+      ],
+      "headChestSeamOverMean": 0.88,
+      "hipsSwordSeamOverMean": 0.98
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.97,
+      "legsSeamOverMean": 1.01,
+      "legs": [
+       1.56,
+       1.54,
+       1.88
+      ],
+      "headChestSeamOverMean": 0.96,
+      "hipsSwordSeamOverMean": 0.93
+     },
+     "worstAllSeamOverMean": 0.97
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 3.04,
+      "mean": 3.09,
+      "max": 4.51
+     },
+     "hipsSword": {
+      "seam": 3.16,
+      "mean": 3.23,
+      "max": 4.39
+     },
+     "legsFeet": {
+      "seam": 3.22,
+      "mean": 3.32,
+      "max": 3.81
+     },
+     "all": {
+      "seam": 3.12,
+      "mean": 3.19,
+      "max": 4.11
+     }
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_StrafeRunRightTwoHand_v5r.glb",
+    "sha256": "6c07b589b1b278d35cbed16ef9a35e407d46cad19212e9a5370e8200fdc68a09",
+    "duration": 0.6167,
+    "rate": 1.1,
+    "frames30": 17,
+    "chestYaw": [
+     -17.9,
+     -4.2,
+     -11.1
+    ],
+    "chestToBossMaxDeg": 17.9,
+    "pelvisYaw": [
+     -47.1,
+     -41.1,
+     -45.0
+    ],
+    "pelvisToChestTwistMaxDeg": 37.7,
+    "pelvisToChestTwistMeanDeg": 33.9,
+    "freeArmSwingCm": {
+     "lateral": 4.7,
+     "up": 0.7,
+     "forward": 1.9,
+     "max": 4.7
+    },
+    "anklesFirstLastCm": [
+     90.9,
+     74.7
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 35.94,
+     "mean": 14.32
+    },
+    "lastVsIdleCm": {
+     "max": 35.94,
+     "mean": 14.32
+    },
+    "travelYaw": -86.2,
+    "kneeVsTravelDeg": 47.5,
+    "pelvisOffTravelDeg": 41.2,
+    "feetMinSeparationCm": {
+     "ankles": 30.1,
+     "toes": 30.0
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.66,
+      "mean": 2.36,
+      "max": 3.81,
+      "seamOverMean": 0.7
+     },
+     "hipsSword": {
+      "seam": 1.22,
+      "mean": 2.36,
+      "max": 3.82,
+      "seamOverMean": 0.52
+     },
+     "legsFeet": {
+      "seam": 10.64,
+      "mean": 13.27,
+      "max": 18.19,
+      "seamOverMean": 0.8
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 74,
+     "hipLineYaw": [
+      -47.2,
+      -40.9,
+      -45.0
+     ],
+     "hipsBoneYaw": [
+      -44.6,
+      -38.2,
+      -42.3
+     ],
+     "chestYawMean": -11.1,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 52.6,
+       "swingPlaneYawRange": [
+        -63.9,
+        -45.1
+       ],
+       "swingFrames": 49,
+       "fullKick": {
+        "frame": 13,
+        "planeYaw": -59.6,
+        "kneeBend": 102.6,
+        "shinFrontCm": 46.1,
+        "shinSideCm": 18.1,
+        "sideOverFront": 0.39
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 58.0,
+       "swingPlaneYawRange": [
+        -66.3,
+        -49.9
+       ],
+       "swingFrames": 50,
+       "fullKick": {
+        "frame": 55,
+        "planeYaw": -60.4,
+        "kneeBend": 97.4,
+        "shinFrontCm": 45.1,
+        "shinSideCm": 24.4,
+        "sideOverFront": 0.54
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 55.4,
+     "visualTwistDeg": 44.3,
+     "targets": {
+      "legPlaneWithin52": false,
+      "sideOverFrontAtLeast0.6": false,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.69,
+      "legsSeamOverMean": 0.79,
+      "legs": [
+       1.81,
+       2.31,
+       2.71
+      ],
+      "headChestSeamOverMean": 0.74,
+      "hipsSwordSeamOverMean": 0.56
+     },
+     "side": {
+      "allSeamOverMean": 0.49,
+      "legsSeamOverMean": 0.65,
+      "legs": [
+       0.92,
+       1.42,
+       1.68
+      ],
+      "headChestSeamOverMean": 0.32,
+      "hipsSwordSeamOverMean": 0.55
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.71,
+      "legsSeamOverMean": 0.79,
+      "legs": [
+       1.32,
+       1.68,
+       2.03
+      ],
+      "headChestSeamOverMean": 0.66,
+      "hipsSwordSeamOverMean": 0.66
+     },
+     "worstAllSeamOverMean": 0.71
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 2.03,
+      "mean": 3.06,
+      "max": 4.2
+     },
+     "hipsSword": {
+      "seam": 2.07,
+      "mean": 3.29,
+      "max": 4.2
+     },
+     "legsFeet": {
+      "seam": 2.75,
+      "mean": 3.33,
+      "max": 3.64
+     },
+     "all": {
+      "seam": 2.26,
+      "mean": 3.19,
+      "max": 3.93
+     }
+    }
+   }
+  },
+  "BlinkRightTwoHand": {
+   "r4": {
+    "round": "r4",
+    "file": "Knight_BlinkRightTwoHand_v6c.glb",
+    "sha256": "b9b3c2c7c6f264b9a06da3efa8eb09742e50947a57e072a5c3889632ed0bde9d",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.1,
+     5.3,
+     1.6
+    ],
+    "chestToBossMaxDeg": 5.3,
+    "pelvisYaw": [
+     -22.4,
+     -2.6,
+     -9.3
+    ],
+    "pelvisToChestTwistMaxDeg": 22.5,
+    "pelvisToChestTwistMeanDeg": 11.0,
+    "freeArmSwingCm": {
+     "lateral": 7.0,
+     "up": 6.4,
+     "forward": 6.4,
+     "max": 7.0
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -18.8,
+     "launchCrouchFrames": 2,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -19.3,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      -0.4,
+      -10.8,
+      -18.8,
+      -12.2,
+      -2.9,
+      -1.1,
+      -1.3,
+      -1.6,
+      -1.8,
+      -2.3,
+      -10.3,
+      -19.3,
+      -17.3,
+      -8.8,
+      -1.0,
+      0.3,
+      0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -4.5,
+      "chestYaw": 0.4,
+      "pelvisYaw": -19.7
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -2.5,
+      "chestYaw": 1.1,
+      "pelvisYaw": -12.9
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      11.583,
+      4.21,
+      2.636,
+      1.566,
+      0.054
+     ],
+     "frozenTrailingSteps": 0,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      6084,
+      9664,
+      7990,
+      9384,
+      10145,
+      4535,
+      6752,
+      7684,
+      7932,
+      5766,
+      8956,
+      7583,
+      6918,
+      8943,
+      9224,
+      4882,
+      1731,
+      857
+     ],
+     "frozenTrailingSteps": 0,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      350,
+      387,
+      438,
+      436,
+      470,
+      474
+     ]
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Knight_BlinkRightTwoHand_v5c.glb",
+    "sha256": "8d54742ecf62463991ffc82908cbcb1e9ba793f35001797c329a83842e71da5b",
+    "duration": 0.7,
+    "rate": 1.15,
+    "frames30": 20,
+    "chestYaw": [
+     -0.0,
+     3.6,
+     1.4
+    ],
+    "chestToBossMaxDeg": 3.6,
+    "pelvisYaw": [
+     -19.5,
+     -2.6,
+     -8.4
+    ],
+    "pelvisToChestTwistMaxDeg": 19.5,
+    "pelvisToChestTwistMeanDeg": 9.8,
+    "freeArmSwingCm": {
+     "lateral": 5.5,
+     "up": 3.7,
+     "forward": 4.3,
+     "max": 5.5
+    },
+    "anklesFirstLastCm": [
+     61.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "blinkCrouch": {
+     "launchDepthCm": -15.0,
+     "launchCrouchFrames": 3,
+     "framesBelowIdleMinus2CmBeforeHidden": 4,
+     "landingDepthCm": -13.5,
+     "hipsVsIdleCmPerGameFrame": [
+      -0.0,
+      0.3,
+      -3.7,
+      -12.2,
+      -15.0,
+      -9.4,
+      -7.7,
+      -9.3,
+      -11.7,
+      -13.7,
+      -14.8,
+      -13.5,
+      -9.2,
+      -3.2,
+      0.2,
+      0.5,
+      0.0,
+      -0.0,
+      -0.0,
+      -0.0
+     ],
+     "gameFrameTimes": [
+      0.0,
+      0.033,
+      0.067,
+      0.1,
+      0.133,
+      0.167,
+      0.2,
+      0.233,
+      0.267,
+      0.3,
+      0.333,
+      0.367,
+      0.4,
+      0.433,
+      0.467,
+      0.5,
+      0.533,
+      0.567,
+      0.6,
+      0.609
+     ]
+    },
+    "afterimagePoses": {
+     "departure": {
+      "clipSeconds": 0.184,
+      "hipsVsIdleCm": -11.0,
+      "chestYaw": 1.6,
+      "pelvisYaw": -15.1
+     },
+     "arrival": {
+      "clipSeconds": 0.391,
+      "hipsVsIdleCm": -14.8,
+      "chestYaw": 3.4,
+      "pelvisYaw": -10.3
+     }
+    },
+    "rootTravelMeshCm": {
+     "total": 122.3,
+     "maxVisibleStep": 0.0,
+     "gameCmApprox": 298.4
+    },
+    "blinkTail": {
+     "meanJointStepCmLast5": [
+      2.747,
+      3.124,
+      1.515,
+      0.0,
+      0.0
+     ],
+     "frozenTrailingSteps": 2,
+     "lastVsIdleFrame0Cm": {
+      "max": 0.0,
+      "mean": 0.0
+     }
+    },
+    "blinkTailPng": {
+     "changedPxPerStep": [
+      4821,
+      8279,
+      8677,
+      6155,
+      8834,
+      4378,
+      6378,
+      7106,
+      6765,
+      5186,
+      5015,
+      7478,
+      8646,
+      6827,
+      4321,
+      3548,
+      55,
+      0
+     ],
+     "frozenTrailingSteps": 1,
+     "lastToIdleFrame0ChangedPx": 0,
+     "idleOwnStepsChangedPx": [
+      350,
+      387,
+      438,
+      436,
+      470,
+      474
+     ]
+    }
+   }
+  },
+  "RollAttack": {
+   "r4": {
+    "round": "r4",
+    "file": "Sourced_RollAttack_v6.glb",
+    "sha256": "b852e2fb6cde3865d4d1712fb0bdf2adb7f4dc2912db375c0204866199248329",
+    "duration": 2.2,
+    "rate": 1.2821,
+    "frames30": 53,
+    "chestYaw": [
+     -40.9,
+     80.5,
+     8.1
+    ],
+    "chestToBossMaxDeg": 80.5,
+    "pelvisYaw": [
+     -62.1,
+     52.9,
+     -2.4
+    ],
+    "pelvisToChestTwistMaxDeg": 62.0,
+    "pelvisToChestTwistMeanDeg": 18.1,
+    "freeArmSwingCm": {
+     "lateral": 67.6,
+     "up": 105.9,
+     "forward": 114.5,
+     "max": 114.5
+    },
+    "anklesFirstLastCm": [
+     56.8,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 43.95,
+     "mean": 29.2
+    },
+    "lastVsIdleCm": {
+     "max": 0.02,
+     "mean": 0.0
+    },
+    "rollExitFeet": {
+     "Left": [
+      {
+       "f": 34,
+       "dxzCm": 5.7,
+       "liftCm": 0.0
+      },
+      {
+       "f": 35,
+       "dxzCm": 1.4,
+       "liftCm": 0.0
+      },
+      {
+       "f": 36,
+       "dxzCm": 0.0,
+       "liftCm": 0.1
+      },
+      {
+       "f": 37,
+       "dxzCm": 0.0,
+       "liftCm": 0.2
+      },
+      {
+       "f": 38,
+       "dxzCm": 0.1,
+       "liftCm": 1.0
+      },
+      {
+       "f": 39,
+       "dxzCm": 14.5,
+       "liftCm": 10.2
+      },
+      {
+       "f": 40,
+       "dxzCm": 29.4,
+       "liftCm": 14.7
+      },
+      {
+       "f": 41,
+       "dxzCm": 31.1,
+       "liftCm": 12.3
+      },
+      {
+       "f": 42,
+       "dxzCm": 19.7,
+       "liftCm": 4.2
+      },
+      {
+       "f": 43,
+       "dxzCm": 1.8,
+       "liftCm": 0.7
+      },
+      {
+       "f": 44,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      },
+      {
+       "f": 45,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      },
+      {
+       "f": 46,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      },
+      {
+       "f": 47,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      },
+      {
+       "f": 48,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      },
+      {
+       "f": 49,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      },
+      {
+       "f": 50,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      },
+      {
+       "f": 51,
+       "dxzCm": 0.0,
+       "liftCm": 0.7
+      }
+     ],
+     "Right": [
+      {
+       "f": 34,
+       "dxzCm": 4.5,
+       "liftCm": 2.7
+      },
+      {
+       "f": 35,
+       "dxzCm": 2.0,
+       "liftCm": 2.3
+      },
+      {
+       "f": 36,
+       "dxzCm": 0.0,
+       "liftCm": 2.6
+      },
+      {
+       "f": 37,
+       "dxzCm": 1.6,
+       "liftCm": 3.8
+      },
+      {
+       "f": 38,
+       "dxzCm": 1.3,
+       "liftCm": 4.8
+      },
+      {
+       "f": 39,
+       "dxzCm": 0.2,
+       "liftCm": 4.8
+      },
+      {
+       "f": 40,
+       "dxzCm": 1.9,
+       "liftCm": 3.5
+      },
+      {
+       "f": 41,
+       "dxzCm": 0.9,
+       "liftCm": 2.8
+      },
+      {
+       "f": 42,
+       "dxzCm": 0.0,
+       "liftCm": 2.8
+      },
+      {
+       "f": 43,
+       "dxzCm": 0.4,
+       "liftCm": 6.1
+      },
+      {
+       "f": 44,
+       "dxzCm": 3.5,
+       "liftCm": 12.2
+      },
+      {
+       "f": 45,
+       "dxzCm": 5.3,
+       "liftCm": 13.1
+      },
+      {
+       "f": 46,
+       "dxzCm": 4.9,
+       "liftCm": 8.4
+      },
+      {
+       "f": 47,
+       "dxzCm": 2.2,
+       "liftCm": 0.3
+      },
+      {
+       "f": 48,
+       "dxzCm": 0.0,
+       "liftCm": 0.0
+      },
+      {
+       "f": 49,
+       "dxzCm": 0.0,
+       "liftCm": 0.0
+      },
+      {
+       "f": 50,
+       "dxzCm": 0.0,
+       "liftCm": 0.0
+      },
+      {
+       "f": 51,
+       "dxzCm": 0.0,
+       "liftCm": 0.0
+      }
+     ]
+    },
+    "bladePitchF33to51": {
+     "33": 19.9,
+     "34": 3.8,
+     "35": -4.4,
+     "36": -5.4,
+     "37": -2.9,
+     "38": -1.3,
+     "39": -1.2,
+     "40": -0.9,
+     "41": -0.4,
+     "42": 0.4,
+     "43": 1.4,
+     "44": 2.6,
+     "45": 3.8,
+     "46": 4.9,
+     "47": 5.9,
+     "48": 6.7,
+     "49": 7.2,
+     "50": 7.5,
+     "51": 7.6
+    },
+    "bladePitchF40to50": {
+     "min": -0.9,
+     "max": 7.5,
+     "maxRiseBetweenFrames": 1.2
+    },
+    "rollWorld": {
+     "rate": 1.2821,
+     "renderedFrames": 53,
+     "hipsWorldSpeedCmPerFrame": [
+      29.65,
+      33.58,
+      36.67,
+      39.97,
+      41.03,
+      41.86,
+      42.27,
+      41.19,
+      39.43,
+      35.63,
+      30.92,
+      27.11,
+      22.73,
+      19.11,
+      15.3,
+      12.51,
+      11.61,
+      11.33,
+      11.65,
+      12.18,
+      13.24,
+      15.04,
+      14.83,
+      13.54,
+      10.79,
+      5.76,
+      1.16,
+      0.55,
+      0.76,
+      2.89,
+      5.68,
+      9.17,
+      10.43,
+      8.64,
+      7.32,
+      5.33,
+      2.93,
+      1.73,
+      1.43,
+      5.12,
+      8.07,
+      10.14,
+      11.32,
+      11.61,
+      11.01,
+      9.51,
+      7.13,
+      3.85,
+      0.43,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "join": {
+      "frame": 23,
+      "speeds": [
+       15.04,
+       14.83,
+       13.54,
+       10.79,
+       5.76,
+       1.16,
+       0.55
+      ],
+      "maxSpeedDropPerFrame": 5.03
+     },
+     "last3": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "contacts": {
+      "Left": {
+       "runs": [
+        {
+         "clipS": [
+          0.642,
+          0.825
+         ],
+         "maxSlideCmPerRenderedFrame": 3.6,
+         "drift": 2.89
+        },
+        {
+         "clipS": [
+          1.467,
+          1.625
+         ],
+         "maxSlideCmPerRenderedFrame": 1.12,
+         "drift": 0.22
+        },
+        {
+         "clipS": [
+          1.808,
+          2.2
+         ],
+         "maxSlideCmPerRenderedFrame": 0.21,
+         "drift": 0.04
+        }
+       ],
+       "minToeHeightCm": 3.3
+      },
+      "Right": {
+       "runs": [
+        {
+         "clipS": [
+          0.767,
+          1.008
+         ],
+         "maxSlideCmPerRenderedFrame": 0.02,
+         "drift": 0.0
+        },
+        {
+         "clipS": [
+          1.467,
+          1.825
+         ],
+         "maxSlideCmPerRenderedFrame": 3.39,
+         "drift": 0.7
+        },
+        {
+         "clipS": [
+          2.008,
+          2.2
+         ],
+         "maxSlideCmPerRenderedFrame": 0.04,
+         "drift": 0.01
+        }
+       ],
+       "minToeHeightCm": 3.39
+      }
+     },
+     "targets": {
+      "last3Below1cm": true,
+      "joinRampDropBelow6cm": true,
+      "contactSlideBelow1cm": false,
+      "toesAtLeastIdle": true
+     }
+    }
+   },
+   "r3": {
+    "round": "r3",
+    "file": "Sourced_RollAttack_v5.glb",
+    "sha256": "4cc85391c0a28df04ecbc28917bc69bc0755e0b71fc8397f1bb724d3be0e930d",
+    "duration": 2.2,
+    "rate": 1.2821,
+    "frames30": 53,
+    "chestYaw": [
+     -40.9,
+     80.8,
+     7.8
+    ],
+    "chestToBossMaxDeg": 80.8,
+    "pelvisYaw": [
+     -62.1,
+     52.9,
+     -3.2
+    ],
+    "pelvisToChestTwistMaxDeg": 62.2,
+    "pelvisToChestTwistMeanDeg": 18.6,
+    "freeArmSwingCm": {
+     "lateral": 67.6,
+     "up": 105.9,
+     "forward": 114.5,
+     "max": 114.5
+    },
+    "anklesFirstLastCm": [
+     56.8,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 43.95,
+     "mean": 29.2
+    },
+    "lastVsIdleCm": {
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "rollExitFeet": {
+     "Left": [
+      {
+       "f": 34,
+       "dxzCm": 5.7,
+       "liftCm": 0.4
+      },
+      {
+       "f": 35,
+       "dxzCm": 3.9,
+       "liftCm": 0.6
+      },
+      {
+       "f": 36,
+       "dxzCm": 2.1,
+       "liftCm": 0.7
+      },
+      {
+       "f": 37,
+       "dxzCm": 0.7,
+       "liftCm": 0.7
+      },
+      {
+       "f": 38,
+       "dxzCm": 0.2,
+       "liftCm": 0.6
+      },
+      {
+       "f": 39,
+       "dxzCm": 0.1,
+       "liftCm": 0.6
+      },
+      {
+       "f": 40,
+       "dxzCm": 0.3,
+       "liftCm": 0.4
+      },
+      {
+       "f": 41,
+       "dxzCm": 0.3,
+       "liftCm": 0.2
+      },
+      {
+       "f": 42,
+       "dxzCm": 1.3,
+       "liftCm": 3.5
+      },
+      {
+       "f": 43,
+       "dxzCm": 17.8,
+       "liftCm": 12.0
+      },
+      {
+       "f": 44,
+       "dxzCm": 28.2,
+       "liftCm": 15.0
+      },
+      {
+       "f": 45,
+       "dxzCm": 26.8,
+       "liftCm": 11.1
+      },
+      {
+       "f": 46,
+       "dxzCm": 13.3,
+       "liftCm": 2.2
+      },
+      {
+       "f": 47,
+       "dxzCm": 0.1,
+       "liftCm": 1.2
+      },
+      {
+       "f": 48,
+       "dxzCm": 0.0,
+       "liftCm": 1.2
+      },
+      {
+       "f": 49,
+       "dxzCm": 0.0,
+       "liftCm": 1.2
+      },
+      {
+       "f": 50,
+       "dxzCm": 0.0,
+       "liftCm": 1.2
+      },
+      {
+       "f": 51,
+       "dxzCm": 0.0,
+       "liftCm": 1.2
+      }
+     ],
+     "Right": [
+      {
+       "f": 34,
+       "dxzCm": 4.8,
+       "liftCm": 2.3
+      },
+      {
+       "f": 35,
+       "dxzCm": 4.2,
+       "liftCm": 2.4
+      },
+      {
+       "f": 36,
+       "dxzCm": 3.7,
+       "liftCm": 2.6
+      },
+      {
+       "f": 37,
+       "dxzCm": 2.5,
+       "liftCm": 2.7
+      },
+      {
+       "f": 38,
+       "dxzCm": 2.3,
+       "liftCm": 2.8
+      },
+      {
+       "f": 39,
+       "dxzCm": 2.3,
+       "liftCm": 2.9
+      },
+      {
+       "f": 40,
+       "dxzCm": 0.7,
+       "liftCm": 3.4
+      },
+      {
+       "f": 41,
+       "dxzCm": 0.9,
+       "liftCm": 3.9
+      },
+      {
+       "f": 42,
+       "dxzCm": 1.0,
+       "liftCm": 4.2
+      },
+      {
+       "f": 43,
+       "dxzCm": 0.0,
+       "liftCm": 4.2
+      },
+      {
+       "f": 44,
+       "dxzCm": 0.0,
+       "liftCm": 4.2
+      },
+      {
+       "f": 45,
+       "dxzCm": 0.0,
+       "liftCm": 4.2
+      },
+      {
+       "f": 46,
+       "dxzCm": 0.0,
+       "liftCm": 4.2
+      },
+      {
+       "f": 47,
+       "dxzCm": 1.2,
+       "liftCm": 9.4
+      },
+      {
+       "f": 48,
+       "dxzCm": 5.2,
+       "liftCm": 14.0
+      },
+      {
+       "f": 49,
+       "dxzCm": 6.8,
+       "liftCm": 12.9
+      },
+      {
+       "f": 50,
+       "dxzCm": 5.5,
+       "liftCm": 6.6
+      },
+      {
+       "f": 51,
+       "dxzCm": 1.7,
+       "liftCm": 0.0
+      }
+     ]
+    },
+    "bladePitchF33to51": {
+     "33": 19.9,
+     "34": 3.8,
+     "35": -4.4,
+     "36": -5.4,
+     "37": -2.9,
+     "38": -1.3,
+     "39": -1.2,
+     "40": -0.9,
+     "41": -0.4,
+     "42": 0.4,
+     "43": 1.4,
+     "44": 2.6,
+     "45": 3.8,
+     "46": 4.9,
+     "47": 5.9,
+     "48": 6.7,
+     "49": 7.2,
+     "50": 7.5,
+     "51": 7.6
+    },
+    "bladePitchF40to50": {
+     "min": -0.9,
+     "max": 7.5,
+     "maxRiseBetweenFrames": 1.2
+    },
+    "rollWorld": {
+     "rate": 1.2821,
+     "renderedFrames": 53,
+     "hipsWorldSpeedCmPerFrame": [
+      29.65,
+      33.58,
+      36.67,
+      39.97,
+      41.03,
+      41.86,
+      42.27,
+      41.19,
+      39.43,
+      35.63,
+      30.92,
+      27.11,
+      22.73,
+      19.11,
+      15.3,
+      12.51,
+      11.61,
+      11.33,
+      11.65,
+      12.18,
+      13.24,
+      15.04,
+      14.83,
+      13.74,
+      4.31,
+      0.83,
+      1.12,
+      0.64,
+      0.76,
+      2.89,
+      5.68,
+      9.17,
+      10.43,
+      8.64,
+      7.32,
+      5.33,
+      2.93,
+      1.75,
+      1.68,
+      0.84,
+      1.44,
+      2.71,
+      4.25,
+      5.93,
+      6.7,
+      8.56,
+      9.54,
+      8.91,
+      6.4,
+      4.45,
+      4.18,
+      2.14
+     ],
+     "join": {
+      "frame": 23,
+      "speeds": [
+       15.04,
+       14.83,
+       13.74,
+       4.31,
+       0.83,
+       1.12,
+       0.64
+      ],
+      "maxSpeedDropPerFrame": 9.43
+     },
+     "last3": [
+      4.45,
+      4.18,
+      2.14
+     ],
+     "contacts": {
+      "Left": {
+       "runs": [
+        {
+         "clipS": [
+          0.642,
+          0.775
+         ],
+         "maxSlideCmPerRenderedFrame": 2.02,
+         "drift": 1.81
+        },
+        {
+         "clipS": [
+          1.467,
+          1.783
+         ],
+         "maxSlideCmPerRenderedFrame": 4.06,
+         "drift": 6.15
+        },
+        {
+         "clipS": [
+          2.092,
+          2.2
+         ],
+         "maxSlideCmPerRenderedFrame": 0.0,
+         "drift": 0.0
+        }
+       ],
+       "minToeHeightCm": -0.15
+      },
+      "Right": {
+       "runs": [
+        {
+         "clipS": [
+          0.767,
+          1.008
+         ],
+         "maxSlideCmPerRenderedFrame": 4.8,
+         "drift": 7.68
+        },
+        {
+         "clipS": [
+          1.475,
+          1.917
+         ],
+         "maxSlideCmPerRenderedFrame": 4.21,
+         "drift": 10.72
+        }
+       ],
+       "minToeHeightCm": 0.49
+      }
+     },
+     "targets": {
+      "last3Below1cm": false,
+      "joinRampDropBelow6cm": false,
+      "contactSlideBelow1cm": false,
+      "toesAtLeastIdle": false
+     }
+    }
+   }
+  }
+ },
+ "keptRound3": {
+  "StrafeRight": {
+   "v030r": null,
+   "v030q": "630bdfae3eb836f063d171469d765c9bf627266b29a594b2f1f3960a6029e735",
+   "fileNow": "630bdfae3eb836f063d171469d765c9bf627266b29a594b2f1f3960a6029e735",
+   "identical": false,
+   "metrics": {
+    "round": "r3 (kept)",
+    "file": "Knight_StrafeRight_v5c.glb",
+    "sha256": "630bdfae3eb836f063d171469d765c9bf627266b29a594b2f1f3960a6029e735",
+    "duration": 1.1333,
+    "rate": 1.2,
+    "frames30": 28,
+    "chestYaw": [
+     -4.6,
+     3.7,
+     -0.0
+    ],
+    "chestToBossMaxDeg": 4.6,
+    "pelvisYaw": [
+     -79.2,
+     -63.9,
+     -71.4
+    ],
+    "pelvisToChestTwistMaxDeg": 80.9,
+    "pelvisToChestTwistMeanDeg": 71.3,
+    "freeArmSwingCm": {
+     "lateral": 2.5,
+     "up": 3.3,
+     "forward": 5.7,
+     "max": 5.7
+    },
+    "anklesFirstLastCm": [
+     55.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 78.58,
+     "mean": 25.41
+    },
+    "lastVsIdleCm": {
+     "max": 78.58,
+     "mean": 25.41
+    },
+    "travelYaw": -89.7,
+    "kneeVsTravelDeg": 48.7,
+    "pelvisOffTravelDeg": 18.3,
+    "feetMinSeparationCm": {
+     "ankles": 47.5,
+     "toes": 55.2
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.74,
+      "mean": 1.99,
+      "max": 3.99,
+      "seamOverMean": 0.88
+     },
+     "hipsSword": {
+      "seam": 1.61,
+      "mean": 2.02,
+      "max": 3.88,
+      "seamOverMean": 0.8
+     },
+     "legsFeet": {
+      "seam": 5.7,
+      "mean": 6.26,
+      "max": 9.14,
+      "seamOverMean": 0.91
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 136,
+     "hipLineYaw": [
+      -79.2,
+      -63.7,
+      -71.3
+     ],
+     "hipsBoneYaw": [
+      -76.8,
+      -61.3,
+      -68.9
+     ],
+     "chestYawMean": -0.0,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 54.1,
+       "swingPlaneYawRange": [
+        -56.9,
+        -50.1
+       ],
+       "swingFrames": 36,
+       "fullKick": {
+        "frame": 80,
+        "planeYaw": -54.2,
+        "kneeBend": 85.8,
+        "shinFrontCm": 37.8,
+        "shinSideCm": 14.9,
+        "sideOverFront": 0.39
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 73.7,
+       "swingPlaneYawRange": [
+        -85.4,
+        -60.8
+       ],
+       "swingFrames": 48,
+       "fullKick": {
+        "frame": 0,
+        "planeYaw": -81.6,
+        "kneeBend": 93.1,
+        "shinFrontCm": 43.2,
+        "shinSideCm": 11.6,
+        "sideOverFront": 0.27
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 65.3,
+     "visualTwistDeg": 65.3,
+     "targets": {
+      "legPlaneWithin52": false,
+      "sideOverFrontAtLeast0.6": false,
+      "hipLineWithin45": false
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.75,
+      "legsSeamOverMean": 0.75,
+      "legs": [
+       1.29,
+       1.71,
+       3.46
+      ],
+      "headChestSeamOverMean": 0.71,
+      "hipsSwordSeamOverMean": 0.78
+     },
+     "side": {
+      "allSeamOverMean": 0.9,
+      "legsSeamOverMean": 0.98,
+      "legs": [
+       0.96,
+       0.98,
+       1.48
+      ],
+      "headChestSeamOverMean": 0.75,
+      "hipsSwordSeamOverMean": 0.94
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.79,
+      "legsSeamOverMean": 0.66,
+      "legs": [
+       1.1,
+       1.67,
+       3.23
+      ],
+      "headChestSeamOverMean": 0.82,
+      "hipsSwordSeamOverMean": 0.86
+     },
+     "worstAllSeamOverMean": 0.9
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 0.9,
+      "mean": 0.92,
+      "max": 1.27
+     },
+     "hipsSword": {
+      "seam": 3.7,
+      "mean": 4.31,
+      "max": 6.09
+     },
+     "legsFeet": {
+      "seam": 2.65,
+      "mean": 3.09,
+      "max": 3.83
+     },
+     "all": {
+      "seam": 2.09,
+      "mean": 2.37,
+      "max": 3.04
+     }
+    }
+   }
+  },
+  "StrafeRightTwoHand": {
+   "v030r": null,
+   "v030q": "2f7e6adaf5c7a952da4810b2eae59546a3cfba18848303d6b0c036a7d34e9edb",
+   "fileNow": "2f7e6adaf5c7a952da4810b2eae59546a3cfba18848303d6b0c036a7d34e9edb",
+   "identical": false,
+   "metrics": {
+    "round": "r3 (kept)",
+    "file": "Knight_StrafeRightTwoHand_v5c.glb",
+    "sha256": "2f7e6adaf5c7a952da4810b2eae59546a3cfba18848303d6b0c036a7d34e9edb",
+    "duration": 1.1333,
+    "rate": 1.2,
+    "frames30": 28,
+    "chestYaw": [
+     -4.6,
+     3.7,
+     -0.0
+    ],
+    "chestToBossMaxDeg": 4.6,
+    "pelvisYaw": [
+     -79.2,
+     -63.9,
+     -71.4
+    ],
+    "pelvisToChestTwistMaxDeg": 80.9,
+    "pelvisToChestTwistMeanDeg": 71.3,
+    "freeArmSwingCm": {
+     "lateral": 3.4,
+     "up": 0.4,
+     "forward": 0.9,
+     "max": 3.4
+    },
+    "anklesFirstLastCm": [
+     55.9,
+     61.9
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 78.58,
+     "mean": 29.4
+    },
+    "lastVsIdleCm": {
+     "max": 78.58,
+     "mean": 29.4
+    },
+    "travelYaw": -89.7,
+    "kneeVsTravelDeg": 48.7,
+    "pelvisOffTravelDeg": 18.3,
+    "feetMinSeparationCm": {
+     "ankles": 47.5,
+     "toes": 55.2
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 1.74,
+      "mean": 1.99,
+      "max": 3.99,
+      "seamOverMean": 0.88
+     },
+     "hipsSword": {
+      "seam": 1.45,
+      "mean": 1.97,
+      "max": 3.86,
+      "seamOverMean": 0.74
+     },
+     "legsFeet": {
+      "seam": 5.7,
+      "mean": 6.26,
+      "max": 9.14,
+      "seamOverMean": 0.91
+     }
+    },
+    "pelvisVsBoss": {
+     "frames120": 136,
+     "hipLineYaw": [
+      -79.2,
+      -63.7,
+      -71.3
+     ],
+     "hipsBoneYaw": [
+      -76.8,
+      -61.3,
+      -68.9
+     ],
+     "chestYawMean": -0.0,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 54.1,
+       "swingPlaneYawRange": [
+        -56.9,
+        -50.1
+       ],
+       "swingFrames": 36,
+       "fullKick": {
+        "frame": 80,
+        "planeYaw": -54.2,
+        "kneeBend": 85.8,
+        "shinFrontCm": 37.8,
+        "shinSideCm": 14.9,
+        "sideOverFront": 0.39
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 73.7,
+       "swingPlaneYawRange": [
+        -85.4,
+        -60.8
+       ],
+       "swingFrames": 48,
+       "fullKick": {
+        "frame": 0,
+        "planeYaw": -81.6,
+        "kneeBend": 93.1,
+        "shinFrontCm": 43.2,
+        "shinSideCm": 11.6,
+        "sideOverFront": 0.27
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 65.3,
+     "visualTwistDeg": 65.3,
+     "targets": {
+      "legPlaneWithin52": false,
+      "sideOverFrontAtLeast0.6": false,
+      "hipLineWithin45": false
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.68,
+      "legsSeamOverMean": 0.73,
+      "legs": [
+       1.33,
+       1.83,
+       3.53
+      ],
+      "headChestSeamOverMean": 0.57,
+      "hipsSwordSeamOverMean": 0.68
+     },
+     "side": {
+      "allSeamOverMean": 0.77,
+      "legsSeamOverMean": 0.94,
+      "legs": [
+       1.11,
+       1.17,
+       1.58
+      ],
+      "headChestSeamOverMean": 0.59,
+      "hipsSwordSeamOverMean": 0.76
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.75,
+      "legsSeamOverMean": 0.75,
+      "legs": [
+       1.25,
+       1.68,
+       2.24
+      ],
+      "headChestSeamOverMean": 0.69,
+      "hipsSwordSeamOverMean": 0.79
+     },
+     "worstAllSeamOverMean": 0.77
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 1.63,
+      "mean": 2.03,
+      "max": 2.85
+     },
+     "hipsSword": {
+      "seam": 2.02,
+      "mean": 2.45,
+      "max": 3.24
+     },
+     "legsFeet": {
+      "seam": 2.56,
+      "mean": 3.01,
+      "max": 3.75
+     },
+     "all": {
+      "seam": 2.01,
+      "mean": 2.43,
+      "max": 3.09
+     }
+    }
+   }
+  },
+  "BackpedalGuard": {
+   "v030r": null,
+   "v030q": "856c6d4b3f53deda565f01f506f67198492fc94fb7246eac4779bad0cfb9c7de",
+   "fileNow": "856c6d4b3f53deda565f01f506f67198492fc94fb7246eac4779bad0cfb9c7de",
+   "identical": false,
+   "metrics": {
+    "round": "r3 (kept)",
+    "file": "Knight_BackpedalGuard_v5c.glb",
+    "sha256": "856c6d4b3f53deda565f01f506f67198492fc94fb7246eac4779bad0cfb9c7de",
+    "duration": 1.2,
+    "rate": 1.6681,
+    "frames30": 22,
+    "chestYaw": [
+     -7.4,
+     5.9,
+     -0.7
+    ],
+    "chestToBossMaxDeg": 7.4,
+    "pelvisYaw": [
+     -7.1,
+     1.9,
+     -2.6
+    ],
+    "pelvisToChestTwistMaxDeg": 13.0,
+    "pelvisToChestTwistMeanDeg": 7.2,
+    "freeArmSwingCm": {
+     "lateral": 1.3,
+     "up": 1.9,
+     "forward": 4.9,
+     "max": 4.9
+    },
+    "anklesFirstLastCm": [
+     68.0,
+     65.6
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 252.8,
+     "mean": 34.47
+    },
+    "lastVsIdleCm": {
+     "max": 252.8,
+     "mean": 34.47
+    },
+    "travelYaw": 180.0,
+    "kneeVsTravelDeg": 174.0,
+    "pelvisOffTravelDeg": 176.6,
+    "feetMinSeparationCm": {
+     "ankles": 61.9,
+     "toes": 75.1
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 0.75,
+      "mean": 0.79,
+      "max": 1.36,
+      "seamOverMean": 0.96
+     },
+     "hipsSword": {
+      "seam": 0.98,
+      "mean": 1.05,
+      "max": 1.76,
+      "seamOverMean": 0.93
+     },
+     "legsFeet": {
+      "seam": 2.95,
+      "mean": 3.15,
+      "max": 4.63,
+      "seamOverMean": 0.94
+     }
+    },
+    "guard": {
+     "handMinusChestYCm": [
+      -7.2,
+      -7.2
+     ],
+     "handMinusHipsYCm": [
+      37.1,
+      37.2
+     ],
+     "helmetCoveredFractionMax": 0.0,
+     "bladeFrontalAngleFromVerticalDeg": [
+      28.0,
+      30.6
+     ],
+     "helmetToBladeAxisCm": 48.6,
+     "bladePitch": [
+      53.0,
+      53.0
+     ]
+    },
+    "pelvisVsBoss": {
+     "frames120": 144,
+     "hipLineYaw": [
+      -7.1,
+      1.9,
+      -2.6
+     ],
+     "hipsBoneYaw": [
+      -4.5,
+      4.5,
+      -0.0
+     ],
+     "chestYawMean": -0.7,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 7.6,
+       "swingPlaneYawRange": [
+        7.5,
+        7.7
+       ],
+       "swingFrames": 33,
+       "fullKick": {
+        "frame": 125,
+        "planeYaw": 7.5,
+        "kneeBend": 59.1,
+        "shinFrontCm": 4.8,
+        "shinSideCm": 26.3,
+        "sideOverFront": 5.52
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 12.7,
+       "swingPlaneYawRange": [
+        -12.9,
+        -12.7
+       ],
+       "swingFrames": 33,
+       "fullKick": {
+        "frame": 53,
+        "planeYaw": -12.7,
+        "kneeBend": 52.9,
+        "shinFrontCm": 4.4,
+        "shinSideCm": 22.3,
+        "sideOverFront": 5.03
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 10.2,
+     "visualTwistDeg": 9.5,
+     "targets": {
+      "legPlaneWithin52": true,
+      "sideOverFrontAtLeast0.6": true,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 1.0,
+      "legsSeamOverMean": 0.85,
+      "legs": [
+       0.68,
+       0.8,
+       0.99
+      ],
+      "headChestSeamOverMean": 1.09,
+      "hipsSwordSeamOverMean": 0.99
+     },
+     "side": {
+      "allSeamOverMean": 0.99,
+      "legsSeamOverMean": 0.98,
+      "legs": [
+       1.0,
+       1.02,
+       1.37
+      ],
+      "headChestSeamOverMean": 1.05,
+      "hipsSwordSeamOverMean": 0.86
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.97,
+      "legsSeamOverMean": 0.87,
+      "legs": [
+       0.75,
+       0.86,
+       1.06
+      ],
+      "headChestSeamOverMean": 1.07,
+      "hipsSwordSeamOverMean": 0.93
+     },
+     "worstAllSeamOverMean": 1.0
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 2.11,
+      "mean": 1.88,
+      "max": 2.65
+     },
+     "hipsSword": {
+      "seam": 1.77,
+      "mean": 1.84,
+      "max": 2.31
+     },
+     "legsFeet": {
+      "seam": 1.9,
+      "mean": 1.98,
+      "max": 2.24
+     },
+     "all": {
+      "seam": 1.97,
+      "mean": 1.9,
+      "max": 2.39
+     }
+    }
+   }
+  },
+  "BackpedalGuardTwoHand": {
+   "v030r": null,
+   "v030q": "8bc0c876d4a30fc81d08dce254f7f7800f9ddf9366ab4534bc0ad3134a6e6794",
+   "fileNow": "8bc0c876d4a30fc81d08dce254f7f7800f9ddf9366ab4534bc0ad3134a6e6794",
+   "identical": false,
+   "metrics": {
+    "round": "r3 (kept)",
+    "file": "Knight_BackpedalGuardTwoHand_v5c.glb",
+    "sha256": "8bc0c876d4a30fc81d08dce254f7f7800f9ddf9366ab4534bc0ad3134a6e6794",
+    "duration": 1.2,
+    "rate": 1.6681,
+    "frames30": 22,
+    "chestYaw": [
+     -7.4,
+     5.9,
+     -0.7
+    ],
+    "chestToBossMaxDeg": 7.4,
+    "pelvisYaw": [
+     -7.1,
+     1.9,
+     -2.6
+    ],
+    "pelvisToChestTwistMaxDeg": 13.0,
+    "pelvisToChestTwistMeanDeg": 7.2,
+    "freeArmSwingCm": {
+     "lateral": 5.5,
+     "up": 1.5,
+     "forward": 4.5,
+     "max": 5.5
+    },
+    "anklesFirstLastCm": [
+     68.0,
+     65.6
+    ],
+    "idleAnklesCm": 61.9,
+    "firstVsIdleCm": {
+     "max": 107.94,
+     "mean": 26.2
+    },
+    "lastVsIdleCm": {
+     "max": 107.94,
+     "mean": 26.2
+    },
+    "travelYaw": 180.0,
+    "kneeVsTravelDeg": 174.0,
+    "pelvisOffTravelDeg": 176.6,
+    "feetMinSeparationCm": {
+     "ankles": 61.9,
+     "toes": 75.1
+    },
+    "seamPoseCmPerFrame": {
+     "headChest": {
+      "seam": 0.75,
+      "mean": 0.79,
+      "max": 1.36,
+      "seamOverMean": 0.96
+     },
+     "hipsSword": {
+      "seam": 1.07,
+      "mean": 1.09,
+      "max": 1.86,
+      "seamOverMean": 0.98
+     },
+     "legsFeet": {
+      "seam": 2.95,
+      "mean": 3.15,
+      "max": 4.63,
+      "seamOverMean": 0.94
+     }
+    },
+    "guard": {
+     "handMinusChestYCm": [
+      -12.0,
+      -12.0
+     ],
+     "handMinusHipsYCm": [
+      32.3,
+      32.4
+     ],
+     "helmetCoveredFractionMax": 0.0,
+     "bladeFrontalAngleFromVerticalDeg": [
+      31.7,
+      34.2
+     ],
+     "helmetToBladeAxisCm": 34.0,
+     "bladePitch": [
+      50.3,
+      50.3
+     ]
+    },
+    "pelvisVsBoss": {
+     "frames120": 144,
+     "hipLineYaw": [
+      -7.1,
+      1.9,
+      -2.6
+     ],
+     "hipsBoneYaw": [
+      -4.5,
+      4.5,
+      -0.0
+     ],
+     "chestYawMean": -0.7,
+     "legs": {
+      "Left": {
+       "swingPlaneYawMeanAbs": 7.6,
+       "swingPlaneYawRange": [
+        7.5,
+        7.7
+       ],
+       "swingFrames": 33,
+       "fullKick": {
+        "frame": 125,
+        "planeYaw": 7.5,
+        "kneeBend": 59.1,
+        "shinFrontCm": 4.8,
+        "shinSideCm": 26.3,
+        "sideOverFront": 5.52
+       }
+      },
+      "Right": {
+       "swingPlaneYawMeanAbs": 12.7,
+       "swingPlaneYawRange": [
+        -12.9,
+        -12.7
+       ],
+       "swingFrames": 33,
+       "fullKick": {
+        "frame": 53,
+        "planeYaw": -12.7,
+        "kneeBend": 52.9,
+        "shinFrontCm": 4.4,
+        "shinSideCm": 22.3,
+        "sideOverFront": 5.03
+       }
+      }
+     },
+     "legPlaneOffBossDeg": 10.2,
+     "visualTwistDeg": 9.5,
+     "targets": {
+      "legPlaneWithin52": true,
+      "sideOverFrontAtLeast0.6": true,
+      "hipLineWithin45": true
+     }
+    },
+    "seamLossless": {
+     "front": {
+      "allSeamOverMean": 0.95,
+      "legsSeamOverMean": 0.85,
+      "legs": [
+       0.7,
+       0.82,
+       1.02
+      ],
+      "headChestSeamOverMean": 1.05,
+      "hipsSwordSeamOverMean": 0.91
+     },
+     "side": {
+      "allSeamOverMean": 0.98,
+      "legsSeamOverMean": 0.95,
+      "legs": [
+       0.97,
+       1.02,
+       1.38
+      ],
+      "headChestSeamOverMean": 1.0,
+      "hipsSwordSeamOverMean": 0.98
+     },
+     "threequarter": {
+      "allSeamOverMean": 0.94,
+      "legsSeamOverMean": 0.85,
+      "legs": [
+       0.73,
+       0.86,
+       1.08
+      ],
+      "headChestSeamOverMean": 1.04,
+      "hipsSwordSeamOverMean": 0.89
+     },
+     "worstAllSeamOverMean": 0.98
+    },
+    "seamPixelsIntra": {
+     "headChest": {
+      "seam": 1.99,
+      "mean": 1.91,
+      "max": 2.7
+     },
+     "hipsSword": {
+      "seam": 1.58,
+      "mean": 1.68,
+      "max": 2.12
+     },
+     "legsFeet": {
+      "seam": 1.91,
+      "mean": 1.98,
+      "max": 2.24
+     },
+     "all": {
+      "seam": 1.87,
+      "mean": 1.88,
+      "max": 2.38
+     }
+    }
+   }
+  }
+ },
+ "protectedReference": {
+  "StrafeLeft": {
+   "seamLossless": {
+    "front": {
+     "allSeamOverMean": 0.63,
+     "legsSeamOverMean": 0.82,
+     "legs": [
+      1.51,
+      1.84,
+      2.51
+     ],
+     "headChestSeamOverMean": 0.53,
+     "hipsSwordSeamOverMean": 0.5
+    },
+    "side": {
+     "allSeamOverMean": 0.7,
+     "legsSeamOverMean": 0.99,
+     "legs": [
+      1.01,
+      1.03,
+      1.68
+     ],
+     "headChestSeamOverMean": 0.58,
+     "hipsSwordSeamOverMean": 0.63
+    },
+    "threequarter": {
+     "allSeamOverMean": 0.58,
+     "legsSeamOverMean": 0.8,
+     "legs": [
+      1.29,
+      1.61,
+      2.14
+     ],
+     "headChestSeamOverMean": 0.52,
+     "hipsSwordSeamOverMean": 0.47
+    },
+    "worstAllSeamOverMean": 0.7
+   },
+   "seamPixelsIntra": {
+    "headChest": {
+     "seam": 0.74,
+     "mean": 0.94,
+     "max": 1.33
+    },
+    "hipsSword": {
+     "seam": 2.33,
+     "mean": 4.11,
+     "max": 6.82
+    },
+    "legsFeet": {
+     "seam": 2.48,
+     "mean": 3.12,
+     "max": 4.15
+    },
+    "all": {
+     "seam": 1.64,
+     "mean": 2.34,
+     "max": 3.4
+    }
+   }
+  },
+  "StrafeLeftTwoHand": {
+   "seamLossless": {
+    "front": {
+     "allSeamOverMean": 0.67,
+     "legsSeamOverMean": 0.8,
+     "legs": [
+      1.53,
+      1.91,
+      2.6
+     ],
+     "headChestSeamOverMean": 0.6,
+     "hipsSwordSeamOverMean": 0.52
+    },
+    "side": {
+     "allSeamOverMean": 0.77,
+     "legsSeamOverMean": 0.98,
+     "legs": [
+      1.06,
+      1.08,
+      1.63
+     ],
+     "headChestSeamOverMean": 0.64,
+     "hipsSwordSeamOverMean": 0.66
+    },
+    "threequarter": {
+     "allSeamOverMean": 0.5,
+     "legsSeamOverMean": 0.8,
+     "legs": [
+      1.17,
+      1.46,
+      1.87
+     ],
+     "headChestSeamOverMean": 0.07,
+     "hipsSwordSeamOverMean": 0.47
+    },
+    "worstAllSeamOverMean": 0.77
+   },
+   "seamPixelsIntra": {
+    "headChest": {
+     "seam": 1.33,
+     "mean": 2.04,
+     "max": 2.88
+    },
+    "hipsSword": {
+     "seam": 1.66,
+     "mean": 2.32,
+     "max": 3.2
+    },
+    "legsFeet": {
+     "seam": 2.48,
+     "mean": 2.99,
+     "max": 4.01
+    },
+    "all": {
+     "seam": 1.76,
+     "mean": 2.4,
+     "max": 3.2
+    }
+   }
+  }
+ },
+ "byteIdentical": {
+  "Local/FabRigTesting/Exports/Knight_StrafeLeft_v4c.glb": {
+   "before": "d3056114cd4dfa19cc3a2d432d095a1e7a4fed56bf0978319661a87560b3c2ae",
+   "after": "d3056114cd4dfa19cc3a2d432d095a1e7a4fed56bf0978319661a87560b3c2ae",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StrafeLeft_v4c.glb": {
+   "before": "769f7e3d0d93f00c06f7f20087f55059f091e70811187e9bb85c36c0f5a569d3",
+   "after": "769f7e3d0d93f00c06f7f20087f55059f091e70811187e9bb85c36c0f5a569d3",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StrafeLeft/Knight_StrafeLeft_v4c.uasset": {
+   "before": "8a1617e94c9f20b85ff13100d9f16e8634448afe0140e8d48ee8a47b868d2967",
+   "after": "8a1617e94c9f20b85ff13100d9f16e8634448afe0140e8d48ee8a47b868d2967",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StrafeLeftTwoHand_v4c.glb": {
+   "before": "62e0f53eae2e8165616c17eb969022c7e03b8b5f6c9bba821f4209afcf90baaf",
+   "after": "62e0f53eae2e8165616c17eb969022c7e03b8b5f6c9bba821f4209afcf90baaf",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StrafeLeftTwoHand_v4c.glb": {
+   "before": "b0ac8f5db8b66371762d3d953c406069f74548ae8cf41ef78792094b21f0f385",
+   "after": "b0ac8f5db8b66371762d3d953c406069f74548ae8cf41ef78792094b21f0f385",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StrafeLeftTwoHand/Knight_StrafeLeftTwoHand_v4c.uasset": {
+   "before": "ae281b553226edbfc399c9f1b10c95f9c8ece55af5c17c8606ecb5f49bb1afc8",
+   "after": "ae281b553226edbfc399c9f1b10c95f9c8ece55af5c17c8606ecb5f49bb1afc8",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerFront_v4.glb": {
+   "before": "37f8cb3fd97862b58b04ed6d957a49fc29f1bdbc4198d884930512f5fb8b65f6",
+   "after": "37f8cb3fd97862b58b04ed6d957a49fc29f1bdbc4198d884930512f5fb8b65f6",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerFront_v4.glb": {
+   "before": "88c21c7f556dc8299f8dd6261bdb52dc72f6a942542ba1659d23284cafb9f23d",
+   "after": "88c21c7f556dc8299f8dd6261bdb52dc72f6a942542ba1659d23284cafb9f23d",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerFront/Knight_StaggerFront_v4.uasset": {
+   "before": "3bace9eb5d4ba2f24a390a1c82df6b85baf0274462d4a375e3eb94fccbf09d13",
+   "after": "3bace9eb5d4ba2f24a390a1c82df6b85baf0274462d4a375e3eb94fccbf09d13",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerFrontTwoHand_v4.glb": {
+   "before": "9a4c9988921311396a7e3829c1f04cb5f1871b437058682d1c70265ddd0f4f71",
+   "after": "9a4c9988921311396a7e3829c1f04cb5f1871b437058682d1c70265ddd0f4f71",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerFrontTwoHand_v4.glb": {
+   "before": "6adbec1fd079bf88df9bb298aa82e104cebe53d115c78371a963f3c0ff8c33d7",
+   "after": "6adbec1fd079bf88df9bb298aa82e104cebe53d115c78371a963f3c0ff8c33d7",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerFrontTwoHand/Knight_StaggerFrontTwoHand_v4.uasset": {
+   "before": "f87a47b6318c505217efbebcf88e637af769565518ae89044ea62aeef0dc89d0",
+   "after": "f87a47b6318c505217efbebcf88e637af769565518ae89044ea62aeef0dc89d0",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerBack_v4.glb": {
+   "before": "5866f4e56000a8608ad12bece3d32113401665dbad7d3ec712517c170082e405",
+   "after": "5866f4e56000a8608ad12bece3d32113401665dbad7d3ec712517c170082e405",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerBack_v4.glb": {
+   "before": "e3bca007d797fcd35cdfa07ba2cd27d7ce82a209f2fd1eac028b67e0aa2a1c66",
+   "after": "e3bca007d797fcd35cdfa07ba2cd27d7ce82a209f2fd1eac028b67e0aa2a1c66",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerBack/Knight_StaggerBack_v4.uasset": {
+   "before": "0285375993a0e64a6cf436dbe7c9eed5ae93de993c400c8554e0650194691160",
+   "after": "0285375993a0e64a6cf436dbe7c9eed5ae93de993c400c8554e0650194691160",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerBackTwoHand_v4.glb": {
+   "before": "996605d1ea0a555060d907c5c7a300ffb3e6eb13f5437c2e334618f60ccc80fc",
+   "after": "996605d1ea0a555060d907c5c7a300ffb3e6eb13f5437c2e334618f60ccc80fc",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerBackTwoHand_v4.glb": {
+   "before": "012df6ad496ec91f128816556cc08239f7da684796639043ec6cc19e28648b00",
+   "after": "012df6ad496ec91f128816556cc08239f7da684796639043ec6cc19e28648b00",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerBackTwoHand/Knight_StaggerBackTwoHand_v4.uasset": {
+   "before": "237affd1a6ffc03f601f62b470ae38ca64f8d59994ab4dcca0893a8e5d2a9c36",
+   "after": "237affd1a6ffc03f601f62b470ae38ca64f8d59994ab4dcca0893a8e5d2a9c36",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerLeft_v4.glb": {
+   "before": "af4fb938a3da07eaaf51394dac1468e1c37c7193c6bb9ae1d4e03501a30a9e34",
+   "after": "af4fb938a3da07eaaf51394dac1468e1c37c7193c6bb9ae1d4e03501a30a9e34",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerLeft_v4.glb": {
+   "before": "3cedbcfca673485f228a33d970b309ff56744ad6c62285ad7be5adda503fb397",
+   "after": "3cedbcfca673485f228a33d970b309ff56744ad6c62285ad7be5adda503fb397",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerLeft/Knight_StaggerLeft_v4.uasset": {
+   "before": "b7c64ec91c69887c87be18c6a0f870f247e5f200614f66c9dbcad7bfa1c30bbb",
+   "after": "b7c64ec91c69887c87be18c6a0f870f247e5f200614f66c9dbcad7bfa1c30bbb",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerLeftTwoHand_v4.glb": {
+   "before": "f82ca79d46b57631e94fe69f66efe25ff02f3c3b858e56f0ca19f1f84993b116",
+   "after": "f82ca79d46b57631e94fe69f66efe25ff02f3c3b858e56f0ca19f1f84993b116",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerLeftTwoHand_v4.glb": {
+   "before": "bd596e31d39e6fe367ec98129537c455008ee6aa56c86730f9de32c817b5710b",
+   "after": "bd596e31d39e6fe367ec98129537c455008ee6aa56c86730f9de32c817b5710b",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerLeftTwoHand/Knight_StaggerLeftTwoHand_v4.uasset": {
+   "before": "baa8e971099abb177e84d8426472bcdf52a4555cc37a242d8b9c4117cbe95eea",
+   "after": "baa8e971099abb177e84d8426472bcdf52a4555cc37a242d8b9c4117cbe95eea",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerRight_v4.glb": {
+   "before": "1976030698320c9c569a7c71e6d6ee6eb046d60a1b41a6d20c225f80d5163b69",
+   "after": "1976030698320c9c569a7c71e6d6ee6eb046d60a1b41a6d20c225f80d5163b69",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerRight_v4.glb": {
+   "before": "3617a5eb105ca9db77945e0ed903128fff8740d9ed81efe53969f35418b2f943",
+   "after": "3617a5eb105ca9db77945e0ed903128fff8740d9ed81efe53969f35418b2f943",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerRight/Knight_StaggerRight_v4.uasset": {
+   "before": "957e3bf12bdd9f50ac06768f25c1fb9ef1a9d7b595a500c1cc351cf65b4f7ae5",
+   "after": "957e3bf12bdd9f50ac06768f25c1fb9ef1a9d7b595a500c1cc351cf65b4f7ae5",
+   "identical": true
+  },
+  "Local/FabRigTesting/Exports/Knight_StaggerRightTwoHand_v4.glb": {
+   "before": "afe5a0aa985815bdeed86a4035539ff87dc17dc7bd503ef3d34208ff60b83685",
+   "after": "afe5a0aa985815bdeed86a4035539ff87dc17dc7bd503ef3d34208ff60b83685",
+   "identical": true
+  },
+  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerRightTwoHand_v4.glb": {
+   "before": "9a4c5929deb5641a843a83f4829602b735a5633ab8925be1cf85b5b09f6d12e3",
+   "after": "9a4c5929deb5641a843a83f4829602b735a5633ab8925be1cf85b5b09f6d12e3",
+   "identical": true
+  },
+  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerRightTwoHand/Knight_StaggerRightTwoHand_v4.uasset": {
+   "before": "98c1dc48a9ae5b96d50d178f7c6867d15fb1dda3158e5ab7ffb588f0c679a6bd",
+   "after": "98c1dc48a9ae5b96d50d178f7c6867d15fb1dda3158e5ab7ffb588f0c679a6bd",
+   "identical": true
+  }
+ },
+ "byteIdenticalAll": true,
+ "keptRound3IdenticalAll": false
+}
