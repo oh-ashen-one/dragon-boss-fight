@@ -40,15 +40,19 @@ def frame_text(row):
     if row is None:
         return "setup / transit"
     slide = 0.0
-    for key in ("toeTravelCm", "ankleTravelCm"):
-        for index, planted in enumerate(row["toePlanted" if key == "toeTravelCm" else "anklePlanted"]):
-            if planted:
-                slide = max(slide, row[key][index])
+    if "footSlideCmPerSecond" in row:  # foot gate since 2026-10-30: windowed planted-foot slide in cm/s
+        slide_text = f"planted foot slide {max(row['footSlideCmPerSecond']):.0f} cm/s"
+    else:
+        for key in ("toeTravelCm", "ankleTravelCm"):
+            for index, planted in enumerate(row["toePlanted" if key == "toeTravelCm" else "anklePlanted"]):
+                if planted:
+                    slide = max(slide, row[key][index])
+        slide_text = f"planted foot travel {slide:.2f} cm/frame"
     blend = f"blend {row['blendFrom']}->{row['clip']} a={row['blendAlpha']:.2f}" if row["blending"] else f"clip {row['clip']}"
     hidden = "  [blink hidden]" if row["blinkHidden"] else ""
     return (f"{row['sequence']}  {row['phase']}  t={row['t']:.2f}s\\N{blend}{hidden}\\N"
             f"sword-hand excess {row['swordExcessCm']:.2f} cm  hand-space err {row['swordHandSpaceErrorCm']:.2f} cm  "
-            f"planted foot travel {slide:.2f} cm/frame")
+            f"{slide_text}")
 
 
 def encode(manifest_rows, frames, evidence_rows, out_dir, name, ffmpeg, skip_overlay):

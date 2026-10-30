@@ -25,8 +25,13 @@ namespace
 {
     // Gate thresholds (documented in docs/knight-complete-20261028/blendproof.md).
     constexpr float GSwordLimitCm=2.f;       // sword-to-hand excess / hand-space error
-    constexpr float GSlideLimitCm=2.f;       // planted foot world travel per frame
-    constexpr float GPlantedMarginCm=2.5f;   // planted = within this height of the idle-stance foot height
+    constexpr float GSlideLimitCm=2.f;       // legacy: planted bone world travel per frame (reported only, not gated)
+    // Foot gate (2026-10-30, docs/knight-complete-20261028/blendproof-footgate-diagnosis.md): slide is a speed, so
+    // the verdict no longer depends on the frame rate. 60 cm/s = 2 cm per 1/30 s frame of the source clips.
+    constexpr float GSlideLimitCmPerSecond=60.f;
+    constexpr float GSlideWindowSeconds=1.f/30.f; // contact must persist this long; shorter touches are not plants
+    constexpr float GTeleportCmPerSecond=2500.f;  // capsule faster than any authored carry: teleport/reset, not slide
+    constexpr float GPlantedMarginCm=2.5f;   // planted = toe AND ankle within this height of the contact reference
     constexpr float GBlinkMinTravelCm=100.f; // blink root carry
     constexpr float GStrafeMinTravelCm=60.f;
     constexpr float GRollMinTravelCm=1.f;    // "roll travel > 0" with a little measurement margin
@@ -345,41 +350,92 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         for(const FFrame& F:Frames)if(F.Phase==0&&F.bFeetValid&&F.T-R.GameStart>=.3){T.Add(F.ToeHeight[S]);A.Add(F.AnkleHeight[S]);}
         IdleToe[S]=Median(T);IdleAnk[S]=Median(A);
     }
-    // 2. Planted flags, per-bone slide, blink exemption (frames touching the hidden window).
-    float SlideMax=0.f,SlideMaxPerSecond=0.f,SlideToeMax=0.f,SlideAnkleMax=0.f;
-    float SlidePhase[3]={0,0,0};
-    int32 SlideFrames=0,PlantedPairs=0;
-    FString SlideWorst;
+    // 2. Planted feet (2026-10-30 rework; docs/knight-complete-20261028/blendproof-footgate-diagnosis.md).
+    //    Contact reference per clip, foot and bone: the 10th percentile of that clip's unblended heights in this sequence,
+    //    never above the idle stance. The strafes stand ~4 cm lower than idle, so the old idle-only reference let a swing
+    //    toe skimming at 1-2 cm (heel up at 19-31 cm) count as planted at 13-14 cm/frame. A foot is planted when toe AND
+    //    ankle are within the margin of the shown clip's reference (the looser of source and target while blending).
+    //    Slide = world planar travel of the foot (max of toe and ankle) over elapsed game time, accumulated over a
+    //    contiguous planted window of at least 1/30 s, so 8 fps capture hitches and 60 fps frames give the same cm/s.
+    //    Pairs touching the blink hidden window, invalid samples, zero dt and teleports break the window.
+    TMap<FName,float> ContactRef[4]; // toe L, toe R, ankle L, ankle R
+    {
+        TMap<FName,TArray<float>> By[4];
+        for(const FFrame& F:Frames)if(!F.bBlend&&F.bFeetValid)
+            for(int32 S=0;S<2;++S){By[S].FindOrAdd(F.Clip).Add(F.ToeHeight[S]);By[2+S].FindOrAdd(F.Clip).Add(F.AnkleHeight[S]);}
+        for(int32 K=0;K<4;++K)for(auto& Pair:By[K])
+        {
+            if(Pair.Value.Num()<5)continue;
+            Pair.Value.Sort();
+            ContactRef[K].Add(Pair.Key,FMath::Min(K<2?IdleToe[K]:IdleAnk[K-2],Pair.Value[Pair.Value.Num()/10]));
+        }
+    }
+    auto PlantLimit=[&](const FFrame& F,int32 K)
+    {
+        const float Idle=K<2?IdleToe[K]:IdleAnk[K-2];
+        const float* A=ContactRef[K].Find(F.Clip);float Ref=A?*A:Idle;
+        if(F.bBlend){const float* B=ContactRef[K].Find(F.From);Ref=FMath::Max(Ref,B?*B:Idle);}
+        return Ref+GPlantedMarginCm;
+    };
+    float SlideMax=0.f,SlideMaxPerSecond=0.f,SlideToeMax=0.f,SlideAnkleMax=0.f; // legacy per-frame rule, reported only
+    float SlidePhase[3]={0,0,0}; // cm/s
+    int32 SlideFrames=0,PlantedPairs=0,FootWindows=0,TeleportPairs=0;
+    float FootSlideMax=0.f,FootSlideSteadyMax=0.f,FootSlideTransitionMax=0.f;bool bWorstTransition=false;
+    FString SlideWorst,LegacyWorst;
     float RollEnd=.78f,StrikeEnd=1.23f;
     if(D.Kind==EKind::RollAttack&&Knight.IsValid())Knight->GetProofRollAttackTimes(RollEnd,StrikeEnd);
-    float RollPhaseSlide[4]={0,0,0,0}; // dive, roll, slash, exit
+    float RollPhaseSlide[4]={0,0,0,0}; // dive, roll, slash, exit; cm/s
     auto RollPhase=[&](const FFrame& F){return F.ActionElapsed<GDiveEndSeconds?0:F.ActionElapsed<RollEnd?1:F.ActionElapsed<StrikeEnd?2:3;};
     for(int32 I=0;I<N;++I)
     {
         FFrame& F=Frames[I];
         for(int32 S=0;S<2;++S)
         {
-            F.bToePlanted[S]=F.bFeetValid&&F.ToeHeight[S]<=IdleToe[S]+GPlantedMarginCm;
-            F.bAnklePlanted[S]=F.bFeetValid&&F.AnkleHeight[S]<=IdleAnk[S]+GPlantedMarginCm;
+            F.bToePlanted[S]=F.bFeetValid&&F.ToeHeight[S]<=PlantLimit(F,S);
+            F.bAnklePlanted[S]=F.bFeetValid&&F.AnkleHeight[S]<=PlantLimit(F,2+S);
+            F.bFootPlanted[S]=F.bToePlanted[S]&&F.bAnklePlanted[S];
         }
         if(I==0)continue;
         const FFrame& P=Frames[I-1];
-        if(F.bHidden||P.bHidden)continue;
-        for(int32 S=0;S<2;++S)
+        if(F.bHidden||P.bHidden||!F.bFeetValid||!P.bFeetValid)continue;
+        for(int32 S=0;S<2;++S)for(int32 B=0;B<2;++B) // legacy: idle-only reference, per bone, cm per frame
         {
-            for(int32 B=0;B<2;++B)
+            const bool Old=B==0?(F.ToeHeight[S]<=IdleToe[S]+GPlantedMarginCm&&P.ToeHeight[S]<=IdleToe[S]+GPlantedMarginCm):
+                (F.AnkleHeight[S]<=IdleAnk[S]+GPlantedMarginCm&&P.AnkleHeight[S]<=IdleAnk[S]+GPlantedMarginCm);
+            if(!Old)continue;
+            const float Tr=B==0?F.ToeTravel[S]:F.AnkleTravel[S];
+            if(Tr>SlideMax){SlideMax=Tr;LegacyWorst=FString::Printf(TEXT("t=%.2f %s %s %s clip=%s"),F.T,S==0?TEXT("L"):TEXT("R"),B==0?TEXT("toe"):TEXT("ankle"),*F.Action,*F.Clip.ToString());}
+            if(B==0)SlideToeMax=FMath::Max(SlideToeMax,Tr);else SlideAnkleMax=FMath::Max(SlideAnkleMax,Tr);
+            SlideMaxPerSecond=FMath::Max(SlideMaxPerSecond,F.Dt>.001f?Tr/F.Dt:0.f);
+        }
+    }
+    for(int32 S=0;S<2;++S)
+    {
+        TArray<int32> Win;float WinCm=0.f,WinSeconds=0.f; // pair I = frames I-1..I
+        auto PairCm=[&](int32 I){return FMath::Max(Frames[I].ToeTravel[S],Frames[I].AnkleTravel[S]);};
+        for(int32 I=1;I<N;++I)
+        {
+            FFrame& F=Frames[I];const FFrame& P=Frames[I-1];
+            const bool bTeleport=F.Dt>.001f&&F.CapsuleTravel/F.Dt>GTeleportCmPerSecond;
+            if(bTeleport&&S==0)++TeleportPairs;
+            if(F.bHidden||P.bHidden||F.Dt<=.001f||bTeleport||!F.bFootPlanted[S]||!P.bFootPlanted[S]){Win.Reset();WinCm=WinSeconds=0.f;continue;}
+            ++PlantedPairs;
+            Win.Add(I);WinCm+=PairCm(I);WinSeconds+=F.Dt;
+            while(Win.Num()>1&&WinSeconds-Frames[Win[0]].Dt>=GSlideWindowSeconds){WinCm-=PairCm(Win[0]);WinSeconds-=Frames[Win[0]].Dt;Win.RemoveAt(0);}
+            if(WinSeconds<GSlideWindowSeconds-1e-4f)continue;
+            const float V=FMath::Max(0.f,WinCm)/WinSeconds;
+            F.FootSlide[S]=V;++FootWindows;
+            bool bTransition=false;for(int32 J:Win)bTransition|=Frames[J].bBlend||Frames[J-1].bBlend;
+            float& Bucket=bTransition?FootSlideTransitionMax:FootSlideSteadyMax;Bucket=FMath::Max(Bucket,V);
+            if(V>GSlideLimitCmPerSecond)++SlideFrames;
+            if(V>FootSlideMax)
             {
-                const bool Planted=B==0?(F.bToePlanted[S]&&P.bToePlanted[S]):(F.bAnklePlanted[S]&&P.bAnklePlanted[S]);
-                if(!Planted)continue;
-                const float Tr=B==0?F.ToeTravel[S]:F.AnkleTravel[S];
-                ++PlantedPairs;
-                if(Tr>SlideMax){SlideMax=Tr;SlideWorst=FString::Printf(TEXT("t=%.2f %s %s %s clip=%s"),F.T,S==0?TEXT("L"):TEXT("R"),B==0?TEXT("toe"):TEXT("ankle"),*F.Action,*F.Clip.ToString());}
-                if(B==0)SlideToeMax=FMath::Max(SlideToeMax,Tr);else SlideAnkleMax=FMath::Max(SlideAnkleMax,Tr);
-                SlideMaxPerSecond=FMath::Max(SlideMaxPerSecond,F.Dt>.001f?Tr/F.Dt:0.f);
-                SlidePhase[F.Phase]=FMath::Max(SlidePhase[F.Phase],Tr);
-                if(Tr>GSlideLimitCm)++SlideFrames;
-                if(F.Action.StartsWith(TEXT("Roll")))RollPhaseSlide[RollPhase(F)]=FMath::Max(RollPhaseSlide[RollPhase(F)],Tr);
+                FootSlideMax=V;bWorstTransition=bTransition;
+                SlideWorst=FString::Printf(TEXT("t=%.2f %s foot %.1fcm in %.3fs %s %s clip=%s%s%s a=%.2f"),F.T,S==0?TEXT("L"):TEXT("R"),WinCm,WinSeconds,
+                    bTransition?TEXT("transition"):TEXT("steady"),*F.Action,*F.Clip.ToString(),F.bBlend?TEXT(" from="):TEXT(""),F.bBlend?*F.From.ToString():TEXT(""),F.Alpha);
             }
+            SlidePhase[F.Phase]=FMath::Max(SlidePhase[F.Phase],V);
+            if(F.Action.StartsWith(TEXT("Roll")))RollPhaseSlide[RollPhase(F)]=FMath::Max(RollPhaseSlide[RollPhase(F)],V);
         }
     }
     // 3. Sword to hand. Hand-to-grip is about 15 cm in every steady pose, so the gate measures what the blend adds:
@@ -462,7 +518,8 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     if(ClipFrames<2)Fail.Add(FString::Printf(TEXT("expected_clip_%s_seen_%d_frames"),D.ExpectedClip,ClipFrames));
     if(SwordExcessMax>GSwordLimitCm)Fail.Add(FString::Printf(TEXT("sword_excess_%.2fcm"),SwordExcessMax));
     if(SwordLocalErrMax>GSwordLimitCm)Fail.Add(FString::Printf(TEXT("sword_hand_space_error_%.2fcm"),SwordLocalErrMax));
-    if(SlideMax>GSlideLimitCm)Fail.Add(FString::Printf(TEXT("planted_foot_slide_%.2fcm_per_frame"),SlideMax));
+    if(FootSlideMax>GSlideLimitCmPerSecond)
+        Fail.Add(FString::Printf(TEXT("planted_foot_slide_%.0fcm_per_s_%s"),FootSlideMax,bWorstTransition?TEXT("transition"):TEXT("steady")));
     if(D.Kind==EKind::Blink&&CapsuleNet<GBlinkMinTravelCm)Fail.Add(FString::Printf(TEXT("blink_root_carry_%.0fcm"),CapsuleNet));
     if(D.Kind==EKind::Strafe&&CapsuleNet<GStrafeMinTravelCm)Fail.Add(FString::Printf(TEXT("locomotion_travel_%.0fcm"),CapsuleNet));
     if(D.Kind==EKind::RollAttack)
@@ -486,13 +543,20 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     Sw->SetNumberField(TEXT("blendSegments"),BlendSegments);Sw->SetNumberField(TEXT("blendFrames"),BlendFrames);Sw->SetNumberField(TEXT("limitCm"),GSwordLimitCm);
     M->SetObjectField(TEXT("sword"),Sw);
     TSharedPtr<FJsonObject> Ft=MakeShared<FJsonObject>();
-    Ft->SetNumberField(TEXT("maxPlantedSlideCmPerFrame"),SlideMax);Ft->SetNumberField(TEXT("maxPlantedSlideCmPerSecond"),SlideMaxPerSecond);
-    Ft->SetNumberField(TEXT("maxToeSlideCmPerFrame"),SlideToeMax);Ft->SetNumberField(TEXT("maxAnkleSlideCmPerFrame"),SlideAnkleMax);
-    Ft->SetNumberField(TEXT("maxSlidePreIdle"),SlidePhase[0]);Ft->SetNumberField(TEXT("maxSlideAction"),SlidePhase[1]);Ft->SetNumberField(TEXT("maxSlidePostIdle"),SlidePhase[2]);
-    Ft->SetNumberField(TEXT("framesOverLimit"),SlideFrames);Ft->SetNumberField(TEXT("plantedBoneFramePairs"),PlantedPairs);Ft->SetStringField(TEXT("worst"),SlideWorst);
+    Ft->SetNumberField(TEXT("maxPlantedFootSlideCmPerSecond"),FootSlideMax);
+    Ft->SetNumberField(TEXT("maxSteadySlideCmPerSecond"),FootSlideSteadyMax);Ft->SetNumberField(TEXT("maxTransitionSlideCmPerSecond"),FootSlideTransitionMax);
+    Ft->SetNumberField(TEXT("maxSlidePreIdleCmPerSecond"),SlidePhase[0]);Ft->SetNumberField(TEXT("maxSlideActionCmPerSecond"),SlidePhase[1]);Ft->SetNumberField(TEXT("maxSlidePostIdleCmPerSecond"),SlidePhase[2]);
+    Ft->SetNumberField(TEXT("windowsOverLimit"),SlideFrames);Ft->SetNumberField(TEXT("windows"),FootWindows);Ft->SetNumberField(TEXT("plantedFootFramePairs"),PlantedPairs);
+    Ft->SetNumberField(TEXT("teleportPairsExcluded"),TeleportPairs);Ft->SetStringField(TEXT("worst"),SlideWorst);
+    Ft->SetNumberField(TEXT("limitCmPerSecond"),GSlideLimitCmPerSecond);Ft->SetNumberField(TEXT("windowSeconds"),GSlideWindowSeconds);
     Ft->SetNumberField(TEXT("idleToeHeightCm"),(IdleToe[0]+IdleToe[1])*.5f);Ft->SetNumberField(TEXT("idleAnkleHeightCm"),(IdleAnk[0]+IdleAnk[1])*.5f);
-    Ft->SetNumberField(TEXT("plantedMarginCm"),GPlantedMarginCm);Ft->SetNumberField(TEXT("limitCmPerFrame"),GSlideLimitCm);
-    Ft->SetStringField(TEXT("exemption"),TEXT("frame pairs touching the blink hidden window [0.18,0.34) s of action time"));
+    Ft->SetNumberField(TEXT("plantedMarginCm"),GPlantedMarginCm);
+    Ft->SetStringField(TEXT("plantedRule"),TEXT("toe and ankle both within margin of the per-clip contact reference (10th percentile of unblended heights, never above idle); looser of source/target while blending"));
+    Ft->SetStringField(TEXT("exemption"),TEXT("frame pairs touching the blink hidden window [0.18,0.34) s of action time, zero-dt pairs and capsule teleports faster than 2500 cm/s"));
+    // Legacy rule (idle-only reference, per bone, cm per frame) for comparison with earlier runs; not gated.
+    Ft->SetNumberField(TEXT("legacyMaxPlantedSlideCmPerFrame"),SlideMax);Ft->SetNumberField(TEXT("legacyMaxPlantedSlideCmPerSecond"),SlideMaxPerSecond);
+    Ft->SetNumberField(TEXT("legacyMaxToeSlideCmPerFrame"),SlideToeMax);Ft->SetNumberField(TEXT("legacyMaxAnkleSlideCmPerFrame"),SlideAnkleMax);
+    Ft->SetStringField(TEXT("legacyWorst"),LegacyWorst);Ft->SetNumberField(TEXT("legacyLimitCmPerFrame"),GSlideLimitCm);
     M->SetObjectField(TEXT("feet"),Ft);
     TSharedPtr<FJsonObject> Cp=MakeShared<FJsonObject>();
     Cp->SetNumberField(TEXT("netTravelCm"),CapsuleNet);Cp->SetNumberField(TEXT("pathTravelCm"),CapsulePath);
@@ -507,7 +571,7 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         for(int32 Ph=0;Ph<4;++Ph)
         {
             TSharedPtr<FJsonObject> P=MakeShared<FJsonObject>();
-            P->SetNumberField(TEXT("netTravelCm"),RollNet[Ph]);P->SetNumberField(TEXT("pathTravelCm"),RollPath[Ph]);P->SetNumberField(TEXT("maxPlantedFootSlideCmPerFrame"),RollPhaseSlide[Ph]);
+            P->SetNumberField(TEXT("netTravelCm"),RollNet[Ph]);P->SetNumberField(TEXT("pathTravelCm"),RollPath[Ph]);P->SetNumberField(TEXT("maxPlantedFootSlideCmPerSecond"),RollPhaseSlide[Ph]);
             Ro->SetObjectField(Names[Ph],P);
         }
         M->SetObjectField(TEXT("roll"),Ro);
@@ -532,6 +596,8 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         O->SetArrayField(TEXT("ankleHeightCm"),{MakeShared<FJsonValueNumber>(F.AnkleHeight[0]),MakeShared<FJsonValueNumber>(F.AnkleHeight[1])});
         O->SetArrayField(TEXT("toePlanted"),{MakeShared<FJsonValueBoolean>(F.bToePlanted[0]),MakeShared<FJsonValueBoolean>(F.bToePlanted[1])});
         O->SetArrayField(TEXT("anklePlanted"),{MakeShared<FJsonValueBoolean>(F.bAnklePlanted[0]),MakeShared<FJsonValueBoolean>(F.bAnklePlanted[1])});
+        O->SetArrayField(TEXT("footPlanted"),{MakeShared<FJsonValueBoolean>(F.bFootPlanted[0]),MakeShared<FJsonValueBoolean>(F.bFootPlanted[1])});
+        O->SetArrayField(TEXT("footSlideCmPerSecond"),{MakeShared<FJsonValueNumber>(F.FootSlide[0]),MakeShared<FJsonValueNumber>(F.FootSlide[1])});
         O->SetArrayField(TEXT("toeTravelCm"),{MakeShared<FJsonValueNumber>(F.ToeTravel[0]),MakeShared<FJsonValueNumber>(F.ToeTravel[1])});
         O->SetArrayField(TEXT("ankleTravelCm"),{MakeShared<FJsonValueNumber>(F.AnkleTravel[0]),MakeShared<FJsonValueNumber>(F.AnkleTravel[1])});
         O->SetArrayField(TEXT("sword"),Vec(F.Sword));O->SetArrayField(TEXT("hand"),Vec(F.Hand));O->SetArrayField(TEXT("swordInHandSpace"),Vec(F.SwordLocal));
@@ -547,8 +613,8 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     else if(D.Kind==EKind::RollAttack)Extra=FString::Printf(TEXT(" rollTravelCm=%s diveCm=%s rollCm=%s slashCm=%s exitCm=%s rollSlide=%s exitSlide=%s"),
         *Num(RollTravelNet),*Num(RollNet[0]),*Num(RollNet[1]),*Num(RollNet[2]),*Num(RollNet[3]),*Num(FMath::Max(RollPhaseSlide[0],RollPhaseSlide[1])),*Num(RollPhaseSlide[3]));
     else Extra=FString::Printf(TEXT(" travelCm=%s"),*Num(CapsuleNet));
-    UE_LOG(LogTemp,Display,TEXT("VEYR_GATE blendproof seq=%d name=%s %s swordExcessMaxCm=%s swordHandSpaceErrMaxCm=%s swordRawHandToGripCm=%s..%s footSlideMaxCmPerFrame=%s footSlideMaxCmPerSecond=%s%s frames=%d maxFrameSeconds=%s reason=%s"),
-        R.Index,*R.Name,R.bPassed?TEXT("PASS"):TEXT("FAIL"),*Num(SwordExcessMax),*Num(SwordLocalErrMax),*Num(SwordRawMin),*Num(SwordRawMax),*Num(SlideMax),*Num(SlideMaxPerSecond),*Extra,N,*Num(MaxFrameDt),*R.Reason);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_GATE blendproof seq=%d name=%s %s swordExcessMaxCm=%s swordHandSpaceErrMaxCm=%s swordRawHandToGripCm=%s..%s footSlideMaxCmPerSecond=%s footSlideSteadyCmPerSecond=%s footSlideTransitionCmPerSecond=%s legacyFootSlideMaxCmPerFrame=%s%s frames=%d maxFrameSeconds=%s reason=%s"),
+        R.Index,*R.Name,R.bPassed?TEXT("PASS"):TEXT("FAIL"),*Num(SwordExcessMax),*Num(SwordLocalErrMax),*Num(SwordRawMin),*Num(SwordRawMax),*Num(FootSlideMax),*Num(FootSlideSteadyMax),*Num(FootSlideTransitionMax),*Num(SlideMax),*Extra,N,*Num(MaxFrameDt),*R.Reason);
     Results.Add(R);
     Hooks.Shot(FString::Printf(TEXT("bp_%02d_%s_end_%s"),R.Index,D.Name,R.bPassed?TEXT("pass"):TEXT("fail")));
     Frames.Reset();
@@ -589,7 +655,8 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     Setup->SetBoolField(TEXT("weaponGripLockEnabled"),Knight.IsValid()&&Knight->bWeaponGripLockEnabled);
     O->SetObjectField(TEXT("setup"),Setup);
     TSharedPtr<FJsonObject> G=MakeShared<FJsonObject>();
-    G->SetNumberField(TEXT("swordExcessAndHandSpaceErrorLimitCm"),GSwordLimitCm);G->SetNumberField(TEXT("plantedFootSlideLimitCmPerFrame"),GSlideLimitCm);
+    G->SetNumberField(TEXT("swordExcessAndHandSpaceErrorLimitCm"),GSwordLimitCm);G->SetNumberField(TEXT("plantedFootSlideLimitCmPerSecond"),GSlideLimitCmPerSecond);
+    G->SetNumberField(TEXT("plantedFootSlideWindowSeconds"),GSlideWindowSeconds);G->SetNumberField(TEXT("teleportCapsuleCmPerSecond"),GTeleportCmPerSecond);
     G->SetNumberField(TEXT("plantedHeightMarginCm"),GPlantedMarginCm);G->SetNumberField(TEXT("blinkMinRootCarryCm"),GBlinkMinTravelCm);
     G->SetNumberField(TEXT("locomotionMinTravelCm"),GStrafeMinTravelCm);G->SetNumberField(TEXT("rollMinTravelCm"),GRollMinTravelCm);
     O->SetObjectField(TEXT("gateThresholds"),G);

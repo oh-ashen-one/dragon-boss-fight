@@ -36,6 +36,7 @@ public:
         float CapsuleTravel=0.f, ToeTravel[2]={0.f,0.f}, AnkleTravel[2]={0.f,0.f};
         float ToeHeight[2]={0.f,0.f}, AnkleHeight[2]={0.f,0.f};
         bool bToePlanted[2]={false,false}, bAnklePlanted[2]={false,false};
+        bool bFootPlanted[2]={false,false}; float FootSlide[2]={0.f,0.f}; // foot gate: toe AND ankle planted; windowed cm/s
     };
 
     bool Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* InDragon,const FString& InRunDirectory,bool bProofFloor,FHooks InHooks);

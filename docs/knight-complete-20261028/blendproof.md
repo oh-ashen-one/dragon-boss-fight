@@ -85,11 +85,12 @@ travel of the nearest recorded game frame.
 
 ```
 VEYR_GATE blendproof seq=N name=<sequence> PASS|FAIL swordExcessMaxCm=.. swordHandSpaceErrMaxCm=.. swordRawHandToGripCm=min..max
-  footSlideMaxCmPerFrame=.. footSlideMaxCmPerSecond=.. [travel fields] frames=.. maxFrameSeconds=.. reason=..
+  footSlideMaxCmPerSecond=.. footSlideSteadyCmPerSecond=.. footSlideTransitionCmPerSecond=.. legacyFootSlideMaxCmPerFrame=..
+  [travel fields] frames=.. maxFrameSeconds=.. reason=..
 ```
 
-A sequence passes only when every item below holds. Frame timing under GPU load is long (frames up to 0.4 s), so every
-per-frame number is also given per second; the gate itself is per frame, as specified.
+A sequence passes only when every item below holds. Frame timing under GPU load is long (frames up to 0.4 s), so the
+foot gate is a speed (cm/s) since 2026-10-30; the sword gate stays in cm.
 
 * **Sword (`swordExcessMaxCm`, `swordHandSpaceErrMaxCm`, limit 2 cm).** The distance from the sword's actual world
   position (the visible mesh) to the right-hand bone is about 14.9 cm in every steady pose, because the grip
@@ -101,16 +102,21 @@ per-frame number is also given per second; the gate itself is per frame, as spec
     and the expected interpolation between those two endpoints at the current alpha.
   * Outside blends: the deviation of the hand-to-grip distance from that clip's own median.
   The blink's vanish window (sword hidden) is skipped; the endpoints are the nearest frames with a visible sword.
-* **Planted foot (`footSlideMaxCmPerFrame`, limit 2 cm).** For each foot, the toe-base and ankle bones. A bone is planted
-  in a frame when its height above the floor is within 2.5 cm of that sequence's own idle-stance height; its travel is the
-  horizontal world distance it moved since the previous frame while planted in both frames. Frame pairs that touch the
-  blink's hidden window [0.18, 0.34) s of action time are exempt. This includes the idle-to-move and move-to-idle blends:
-  a foot dragged by the capsule while the pose is still the idle pose is exactly the skate this tool is meant to expose.
+* **Planted foot (`footSlideMaxCmPerSecond`, limit 60 cm/s = 2 cm per 1/30 s; rework 2026-10-30, see
+  `blendproof-footgate-diagnosis.md`).** A foot is planted in a frame when its toe-base AND ankle are both within 2.5 cm
+  of a contact reference: per clip, foot and bone, the 10th percentile of that clip's unblended heights in the sequence,
+  never above the idle stance (while blending, the looser of source and target). Slide is the horizontal world travel
+  of the foot (max of toe and ankle) divided by elapsed game time, accumulated over a contiguous planted window of at
+  least 1/30 s, so capture hitches do not change the number. Pairs touching the blink's hidden window [0.18, 0.34) s,
+  zero-dt pairs and capsule teleports (> 2500 cm/s) break the window. The worst window is labelled `steady` or
+  `transition` (a pose blend inside the window); idle-to-move and move-to-idle blends are gated, since a foot dragged
+  by the capsule or swept by a crossfade is exactly the skate this tool exposes. The old idle-only, per-bone, cm-per-frame
+  figure is still reported as `legacy*` for comparison.
 * **Travel.** Strafe/backpedal: capsule net travel >= 60 cm. Blink: >= 100 cm root carry (`blinkCarryCm`,
   `hiddenWindowCarryCm` is the part inside the hidden window). RollAttack: the roll must upgrade to RollAttack, and the
   dive-plus-roll net travel (`rollTravelCm`) must be above 1 cm; `diveCm`, `rollCm`, `slashCm`, `exitCm` are the net capsule
   travel per phase (dive to 0.17 s, roll to the end of the Roll prefix, slash to the end of the strike window, exit after)
-  and `rollSlide` / `exitSlide` are the worst planted-foot travel in those phases.
+  and `rollSlide` / `exitSlide` are the worst planted-foot slide (cm/s) in those phases.
 * **Completion.** No setup or action timeout and the expected clip seen in at least two frames.
 
 The last line, `VEYR_GATE blendproof summary passed=N/9`, decides the mode's pass flag.
