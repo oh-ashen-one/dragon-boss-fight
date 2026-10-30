@@ -1,3327 +1,3489 @@
 {
- "definitions": "Round-5 metrics (2026-10-30): the round-4 critic's RollAttack acceptance spec in bone space, plus the round-4 checks.\n\nPure CPython + numpy, no Blender, no GPU. Works on the normalized GLB the game imports (glTF mesh space + the plan's root\ntrack = world) or on a raw Blender export (armature space == world for the roll, see build_round4.py). Rendered frames are\nthe review's: clip t_k = k * rate / 30 (k = 0 .. end), rate 1.282, so critic frame k is exactly rendered frame k.\n\nCritic spec (critique-round4.md, \"Biggest gap\"), rt-RollAttack:\n  feet41_50   side view frames 41-50: no foot moves more than 2 px (~2.9 game cm) horizontally while its sole is within\n              8 px (~11.7 cm) of the ground. Measured per foot on the heel (ankle) and toe points: a point is \"near the\n              ground\" when its height above its idle standing height is < 11.7 cm; per rendered frame its horizontal world\n              step (full horizontal, not only the side-view axis), and the cumulative drift over each near-ground run.\n              FAIL if any per-frame step or run drift > 2.9 cm.\n  recovery    per rendered frame the mean world joint distance (all skin joints) to the final pose, from its maximum after\n              the strike end (damage window end 1.576 clip s): start = 5 % of the way to the final pose, end = 95 %.\n              PASS if end - start >= 8 frames AND no 4 consecutive frames cover more than half of the distance (\"snap\";\n              r4: 0.67). restFrame2cm = first frame within 2 cm (reported).\n  sword       blade centroid (BoatGreatsword blade points on WeaponSocket) projected in the review's 3/4 view (ortho,\n              360 px over 2.1 rig m, the critic's scale): max px per frame after frame 41. PASS if <= 25 px.\n              The side-view value is reported too.\n  frontHeel   the lunge front-foot heel drift over frames 31-37 (critic: ~14 cm in r4, ~34 cm in r3) - reported.\n\nBlinks (round-5 foot pass): minimum heel/toe clearance vs the idle heights on visible frames (>= -1 cm), stance slip\nfrom the idle foot spots, push-frame heel/toe heights (toe-off), and every non-leg joint + the blade unchanged vs the\nround-4 v6c file (< 0.05 cm).\n\nUsage: measure_round5.py blink GLB [REF_GLB]\n       measure_round5.py roll GLB [--plan PLAN.json]   one roll candidate (raw export, or normalized + plan root track)\n       measure_round5.py OUT.json                       v030s vs v030r side by side + byte-identical checks (writes OUT)",
- "clips": {
-  "BlinkLeft": {
-   "r5": {
-    "round": "r5",
-    "file": "Knight_BlinkLeft_v7c.glb",
-    "sha256": "22eb70cdc0c22d2b98dc480b1ff475aad78b82d7d3b185d4d6b12372e7616038",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.0,
-     7.8,
-     3.8
-    ],
-    "chestToBossMaxDeg": 7.8,
-    "pelvisYaw": [
-     -2.7,
-     16.6,
-     5.3
-    ],
-    "pelvisToChestTwistMaxDeg": 10.8,
-    "pelvisToChestTwistMeanDeg": 3.8,
-    "freeArmSwingCm": {
-     "lateral": 15.2,
-     "up": 20.5,
-     "forward": 12.0,
-     "max": 20.5
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 5.4,
-      "pelvisYaw": 14.6
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 4.2,
-      "pelvisYaw": 7.3
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      11.205,
-      4.253,
-      1.127,
-      0.104,
-      0.025
-     ],
-     "frozenTrailingSteps": 1,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": -0.0,
-      "Left.toe": 0.0,
-      "Right.heel": -0.0,
-      "Right.toe": 0.0
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 0.37,
-      "Left.toe": 0.0,
-      "Right.heel": 0.23,
-      "Right.toe": 0.0
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       1.1,
-       4.9
-      ],
-      "Left.toe": [
-       0.0,
-       0.0
-      ],
-      "Right.heel": [
-       2.0,
-       7.6
-      ],
-      "Right.toe": [
-       0.0,
-       0.0
-      ]
-     },
-     "nonLegJointsAndBladeMaxDiffVsRefCm": 0.0,
-     "pass": true
-    }
-   },
-   "r4": {
-    "round": "r4",
-    "file": "Knight_BlinkLeft_v6c.glb",
-    "sha256": "44f55f47ee2f4d3e38da48b07b0f3d4d684e3c8bc554415660b4761bb2358378",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.0,
-     7.8,
-     3.8
-    ],
-    "chestToBossMaxDeg": 7.8,
-    "pelvisYaw": [
-     -2.7,
-     16.6,
-     5.3
-    ],
-    "pelvisToChestTwistMaxDeg": 10.8,
-    "pelvisToChestTwistMeanDeg": 3.8,
-    "freeArmSwingCm": {
-     "lateral": 15.2,
-     "up": 20.5,
-     "forward": 12.0,
-     "max": 20.5
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 5.4,
-      "pelvisYaw": 14.6
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 4.2,
-      "pelvisYaw": 7.3
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      11.233,
-      4.271,
-      1.142,
-      0.104,
-      0.025
-     ],
-     "frozenTrailingSteps": 1,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": -6.05,
-      "Left.toe": -6.05,
-      "Right.heel": -11.54,
-      "Right.toe": -11.56
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 1.89,
-      "Left.toe": 2.04,
-      "Right.heel": 4.52,
-      "Right.toe": 4.54
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       -5.4,
-       0.0
-      ],
-      "Left.toe": [
-       -5.4,
-       0.0
-      ],
-      "Right.heel": [
-       -11.5,
-       0.3
-      ],
-      "Right.toe": [
-       -11.6,
-       0.3
-      ]
-     },
-     "pass": false
-    }
-   }
-  },
-  "BlinkLeftTwoHand": {
-   "r5": {
-    "round": "r5",
-    "file": "Knight_BlinkLeftTwoHand_v7c.glb",
-    "sha256": "fc1d80df39ab5ef4b4e16cdcd0fd20f02da3570a290d1318d2b52e1b998b98e3",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.1,
-     7.8,
-     3.8
-    ],
-    "chestToBossMaxDeg": 7.8,
-    "pelvisYaw": [
-     -2.7,
-     16.6,
-     5.3
-    ],
-    "pelvisToChestTwistMaxDeg": 10.8,
-    "pelvisToChestTwistMeanDeg": 3.8,
-    "freeArmSwingCm": {
-     "lateral": 8.0,
-     "up": 5.2,
-     "forward": 6.3,
-     "max": 8.0
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 5.4,
-      "pelvisYaw": 14.6
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 4.2,
-      "pelvisYaw": 7.3
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      11.576,
-      4.197,
-      2.636,
-      1.565,
-      0.054
-     ],
-     "frozenTrailingSteps": 0,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": -0.0,
-      "Left.toe": 0.0,
-      "Right.heel": -0.0,
-      "Right.toe": 0.0
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 0.37,
-      "Left.toe": 0.0,
-      "Right.heel": 0.23,
-      "Right.toe": 0.0
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       1.1,
-       4.9
-      ],
-      "Left.toe": [
-       0.0,
-       0.0
-      ],
-      "Right.heel": [
-       2.0,
-       7.6
-      ],
-      "Right.toe": [
-       0.0,
-       0.0
-      ]
-     },
-     "nonLegJointsAndBladeMaxDiffVsRefCm": 0.001,
-     "pass": true
-    }
-   },
-   "r4": {
-    "round": "r4",
-    "file": "Knight_BlinkLeftTwoHand_v6c.glb",
-    "sha256": "7e17f935c05f9f1824daacb3ed532380ab955fb1c480870f6728c5688c0df0b2",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.1,
-     7.8,
-     3.8
-    ],
-    "chestToBossMaxDeg": 7.8,
-    "pelvisYaw": [
-     -2.7,
-     16.6,
-     5.3
-    ],
-    "pelvisToChestTwistMaxDeg": 10.8,
-    "pelvisToChestTwistMeanDeg": 3.8,
-    "freeArmSwingCm": {
-     "lateral": 8.0,
-     "up": 5.2,
-     "forward": 6.3,
-     "max": 8.0
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 5.4,
-      "pelvisYaw": 14.6
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 4.2,
-      "pelvisYaw": 7.3
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      11.606,
-      4.215,
-      2.65,
-      1.566,
-      0.054
-     ],
-     "frozenTrailingSteps": 0,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": -6.05,
-      "Left.toe": -6.05,
-      "Right.heel": -11.54,
-      "Right.toe": -11.56
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 1.89,
-      "Left.toe": 2.04,
-      "Right.heel": 4.52,
-      "Right.toe": 4.54
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       -5.4,
-       0.0
-      ],
-      "Left.toe": [
-       -5.4,
-       0.0
-      ],
-      "Right.heel": [
-       -11.5,
-       0.3
-      ],
-      "Right.toe": [
-       -11.6,
-       0.3
-      ]
-     },
-     "pass": false
-    }
-   }
-  },
-  "BlinkRight": {
-   "r5": {
-    "round": "r5",
-    "file": "Knight_BlinkRight_v7c.glb",
-    "sha256": "6d54062130767713791ed472ecbfb407f0018667b9ea964a9824a51114854304",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.0,
-     5.3,
-     1.6
-    ],
-    "chestToBossMaxDeg": 5.3,
-    "pelvisYaw": [
-     -22.4,
-     -2.6,
-     -9.3
-    ],
-    "pelvisToChestTwistMaxDeg": 22.5,
-    "pelvisToChestTwistMeanDeg": 11.0,
-    "freeArmSwingCm": {
-     "lateral": 14.8,
-     "up": 28.8,
-     "forward": 13.5,
-     "max": 28.8
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 0.4,
-      "pelvisYaw": -19.7
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 1.1,
-      "pelvisYaw": -12.9
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      10.927,
-      4.532,
-      1.161,
-      0.109,
-      0.025
-     ],
-     "frozenTrailingSteps": 1,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": 0.0,
-      "Left.toe": 0.0,
-      "Right.heel": -0.0,
-      "Right.toe": 0.0
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 0.23,
-      "Left.toe": 0.0,
-      "Right.heel": 0.74,
-      "Right.toe": 0.0
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       2.1,
-       8.5
-      ],
-      "Left.toe": [
-       0.0,
-       0.0
-      ],
-      "Right.heel": [
-       1.0,
-       4.4
-      ],
-      "Right.toe": [
-       0.0,
-       0.0
-      ]
-     },
-     "nonLegJointsAndBladeMaxDiffVsRefCm": 0.0,
-     "pass": true
-    }
-   },
-   "r4": {
-    "round": "r4",
-    "file": "Knight_BlinkRight_v6c.glb",
-    "sha256": "67178716ea858f5d78dbc5b19ee44e3dd0c3455b65c9d8c40785ec1160bd17a0",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.0,
-     5.3,
-     1.6
-    ],
-    "chestToBossMaxDeg": 5.3,
-    "pelvisYaw": [
-     -22.4,
-     -2.6,
-     -9.3
-    ],
-    "pelvisToChestTwistMaxDeg": 22.5,
-    "pelvisToChestTwistMeanDeg": 11.0,
-    "freeArmSwingCm": {
-     "lateral": 14.8,
-     "up": 28.8,
-     "forward": 13.5,
-     "max": 28.8
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 0.4,
-      "pelvisYaw": -19.7
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 1.1,
-      "pelvisYaw": -12.9
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      10.959,
-      4.552,
-      1.175,
-      0.109,
-      0.025
-     ],
-     "frozenTrailingSteps": 1,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": -11.73,
-      "Left.toe": -11.81,
-      "Right.heel": -5.67,
-      "Right.toe": -5.68
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 3.42,
-      "Left.toe": 3.73,
-      "Right.heel": 1.96,
-      "Right.toe": 2.04
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       -11.2,
-       0.8
-      ],
-      "Left.toe": [
-       -11.5,
-       0.8
-      ],
-      "Right.heel": [
-       -0.4,
-       -0.0
-      ],
-      "Right.toe": [
-       -0.4,
-       -0.0
-      ]
-     },
-     "pass": false
-    }
-   }
-  },
-  "BlinkRightTwoHand": {
-   "r5": {
-    "round": "r5",
-    "file": "Knight_BlinkRightTwoHand_v7c.glb",
-    "sha256": "0e73466b18601f11582f4b16e7f9c4aa3992a5234332c9a5d96beb9630771ce9",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.1,
-     5.3,
-     1.6
-    ],
-    "chestToBossMaxDeg": 5.3,
-    "pelvisYaw": [
-     -22.4,
-     -2.6,
-     -9.3
-    ],
-    "pelvisToChestTwistMaxDeg": 22.5,
-    "pelvisToChestTwistMeanDeg": 11.0,
-    "freeArmSwingCm": {
-     "lateral": 7.0,
-     "up": 6.4,
-     "forward": 6.4,
-     "max": 7.0
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 0.4,
-      "pelvisYaw": -19.7
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 1.1,
-      "pelvisYaw": -12.9
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      11.551,
-      4.19,
-      2.623,
-      1.566,
-      0.054
-     ],
-     "frozenTrailingSteps": 0,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": 0.0,
-      "Left.toe": 0.0,
-      "Right.heel": -0.0,
-      "Right.toe": 0.0
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 0.23,
-      "Left.toe": 0.0,
-      "Right.heel": 0.74,
-      "Right.toe": 0.0
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       2.1,
-       8.5
-      ],
-      "Left.toe": [
-       0.0,
-       0.0
-      ],
-      "Right.heel": [
-       1.0,
-       4.4
-      ],
-      "Right.toe": [
-       0.0,
-       0.0
-      ]
-     },
-     "nonLegJointsAndBladeMaxDiffVsRefCm": 0.001,
-     "pass": true
-    }
-   },
-   "r4": {
-    "round": "r4",
-    "file": "Knight_BlinkRightTwoHand_v6c.glb",
-    "sha256": "b9b3c2c7c6f264b9a06da3efa8eb09742e50947a57e072a5c3889632ed0bde9d",
-    "duration": 0.7,
-    "rate": 1.15,
-    "frames30": 20,
-    "chestYaw": [
-     -0.1,
-     5.3,
-     1.6
-    ],
-    "chestToBossMaxDeg": 5.3,
-    "pelvisYaw": [
-     -22.4,
-     -2.6,
-     -9.3
-    ],
-    "pelvisToChestTwistMaxDeg": 22.5,
-    "pelvisToChestTwistMeanDeg": 11.0,
-    "freeArmSwingCm": {
-     "lateral": 7.0,
-     "up": 6.4,
-     "forward": 6.4,
-     "max": 7.0
-    },
-    "anklesFirstLastCm": [
-     61.9,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "lastVsIdleCm": {
-     "max": 0.0,
-     "mean": 0.0
-    },
-    "blinkCrouch": {
-     "launchDepthCm": -18.8,
-     "launchCrouchFrames": 2,
-     "framesBelowIdleMinus2CmBeforeHidden": 4,
-     "landingDepthCm": -19.3,
-     "hipsVsIdleCmPerGameFrame": [
-      -0.0,
-      -0.4,
-      -10.8,
-      -18.8,
-      -12.2,
-      -2.9,
-      -1.1,
-      -1.3,
-      -1.6,
-      -1.8,
-      -2.3,
-      -10.3,
-      -19.3,
-      -17.3,
-      -8.8,
-      -1.0,
-      0.3,
-      0.0,
-      -0.0,
-      -0.0
-     ],
-     "gameFrameTimes": [
-      0.0,
-      0.033,
-      0.067,
-      0.1,
-      0.133,
-      0.167,
-      0.2,
-      0.233,
-      0.267,
-      0.3,
-      0.333,
-      0.367,
-      0.4,
-      0.433,
-      0.467,
-      0.5,
-      0.533,
-      0.567,
-      0.6,
-      0.609
-     ]
-    },
-    "afterimagePoses": {
-     "departure": {
-      "clipSeconds": 0.184,
-      "hipsVsIdleCm": -4.5,
-      "chestYaw": 0.4,
-      "pelvisYaw": -19.7
-     },
-     "arrival": {
-      "clipSeconds": 0.391,
-      "hipsVsIdleCm": -2.5,
-      "chestYaw": 1.1,
-      "pelvisYaw": -12.9
-     }
-    },
-    "rootTravelMeshCm": {
-     "total": 122.3,
-     "maxVisibleStep": 0.0,
-     "gameCmApprox": 298.4
-    },
-    "blinkTail": {
-     "meanJointStepCmLast5": [
-      11.583,
-      4.21,
-      2.636,
-      1.566,
-      0.054
-     ],
-     "frozenTrailingSteps": 0,
-     "lastVsIdleFrame0Cm": {
-      "max": 0.0,
-      "mean": 0.0
-     }
-    },
-    "blinkFeetR5": {
-     "minClearanceCm": {
-      "Left.heel": -11.73,
-      "Left.toe": -11.81,
-      "Right.heel": -5.68,
-      "Right.toe": -5.69
-     },
-     "maxStanceSlipCm": {
-      "Left.heel": 3.42,
-      "Left.toe": 3.73,
-      "Right.heel": 1.96,
-      "Right.toe": 2.04
-     },
-     "frames": 85,
-     "pushHeightsCm_0.14_0.207": {
-      "Left.heel": [
-       -11.2,
-       0.8
-      ],
-      "Left.toe": [
-       -11.5,
-       0.8
-      ],
-      "Right.heel": [
-       -0.4,
-       -0.0
-      ],
-      "Right.toe": [
-       -0.4,
-       -0.0
-      ]
-     },
-     "pass": false
-    }
-   }
-  },
-  "RollAttack": {
-   "r5": {
-    "round": "r5",
-    "file": "Sourced_RollAttack_v7.glb",
-    "sha256": "d75fa42bd916000b69f8e6bf6cc1116e6951b6f389a45365c17fdfa30fe5bb59",
-    "duration": 2.2,
-    "rate": 1.2821,
-    "frames30": 53,
-    "chestYaw": [
-     -40.9,
-     73.8,
-     8.3
-    ],
-    "chestToBossMaxDeg": 73.8,
-    "pelvisYaw": [
-     -62.1,
-     52.9,
-     -2.1
-    ],
-    "pelvisToChestTwistMaxDeg": 57.1,
-    "pelvisToChestTwistMeanDeg": 18.0,
-    "freeArmSwingCm": {
-     "lateral": 67.6,
-     "up": 105.9,
-     "forward": 114.5,
-     "max": 114.5
-    },
-    "anklesFirstLastCm": [
-     56.8,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 43.95,
-     "mean": 29.2
-    },
-    "lastVsIdleCm": {
-     "max": 0.02,
-     "mean": 0.0
-    },
-    "rollExitFeet": {
-     "Left": [
-      {
-       "f": 34,
-       "dxzCm": 0.0,
-       "liftCm": 2.1
-      },
-      {
-       "f": 35,
-       "dxzCm": 0.0,
-       "liftCm": 2.1
-      },
-      {
-       "f": 36,
-       "dxzCm": 0.0,
-       "liftCm": 2.1
-      },
-      {
-       "f": 37,
-       "dxzCm": 0.0,
-       "liftCm": 2.1
-      },
-      {
-       "f": 38,
-       "dxzCm": 0.0,
-       "liftCm": 2.1
-      },
-      {
-       "f": 39,
-       "dxzCm": 0.0,
-       "liftCm": 4.7
-      },
-      {
-       "f": 40,
-       "dxzCm": 0.0,
-       "liftCm": 13.0
-      },
-      {
-       "f": 41,
-       "dxzCm": 1.1,
-       "liftCm": 18.3
-      },
-      {
-       "f": 42,
-       "dxzCm": 8.6,
-       "liftCm": 18.8
-      },
-      {
-       "f": 43,
-       "dxzCm": 14.9,
-       "liftCm": 18.9
-      },
-      {
-       "f": 44,
-       "dxzCm": 18.5,
-       "liftCm": 18.7
-      },
-      {
-       "f": 45,
-       "dxzCm": 19.4,
-       "liftCm": 18.2
-      },
-      {
-       "f": 46,
-       "dxzCm": 17.6,
-       "liftCm": 17.6
-      },
-      {
-       "f": 47,
-       "dxzCm": 13.2,
-       "liftCm": 16.8
-      },
-      {
-       "f": 48,
-       "dxzCm": 6.1,
-       "liftCm": 15.4
-      },
-      {
-       "f": 49,
-       "dxzCm": 0.1,
-       "liftCm": 8.2
-      },
-      {
-       "f": 50,
-       "dxzCm": 0.0,
-       "liftCm": 0.8
-      },
-      {
-       "f": 51,
-       "dxzCm": 0.0,
-       "liftCm": 0.0
-      }
-     ],
-     "Right": [
-      {
-       "f": 34,
-       "dxzCm": 1.5,
-       "liftCm": 2.7
-      },
-      {
-       "f": 35,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 36,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 37,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 38,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 39,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 40,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 41,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 42,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 43,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 44,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 45,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 46,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 47,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 48,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 49,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 50,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      },
-      {
-       "f": 51,
-       "dxzCm": 0.0,
-       "liftCm": 2.7
-      }
-     ]
-    },
-    "bladePitchF33to51": {
-     "33": 19.9,
-     "34": 3.8,
-     "35": -4.4,
-     "36": -5.4,
-     "37": -5.3,
-     "38": -5.3,
-     "39": -4.4,
-     "40": -3.2,
-     "41": -2.2,
-     "42": -1.2,
-     "43": -0.3,
-     "44": 0.6,
-     "45": 1.6,
-     "46": 2.7,
-     "47": 4.1,
-     "48": 5.9,
-     "49": 7.1,
-     "50": 7.6,
-     "51": 7.6
-    },
-    "bladePitchF40to50": {
-     "min": -3.2,
-     "max": 7.6,
-     "maxRiseBetweenFrames": 1.7
-    },
-    "rollWorld": {
-     "rate": 1.2821,
-     "renderedFrames": 53,
-     "hipsWorldSpeedCmPerFrame": [
-      29.65,
-      33.58,
-      36.67,
-      39.97,
-      41.03,
-      41.86,
-      42.27,
-      41.19,
-      39.43,
-      35.63,
-      30.92,
-      27.11,
-      22.73,
-      19.11,
-      15.3,
-      12.51,
-      11.61,
-      11.33,
-      11.65,
-      12.18,
-      13.24,
-      15.04,
-      14.83,
-      13.54,
-      10.79,
-      5.76,
-      1.16,
-      0.55,
-      0.76,
-      2.89,
-      5.68,
-      9.17,
-      10.43,
-      8.64,
-      7.32,
-      5.32,
-      0.44,
-      1.92,
-      1.71,
-      5.57,
-      5.79,
-      5.42,
-      5.61,
-      5.42,
-      6.02,
-      7.27,
-      9.72,
-      12.02,
-      9.06,
-      3.94,
-      0.26,
-      0.0
-     ],
-     "join": {
-      "frame": 23,
-      "speeds": [
-       15.04,
-       14.83,
-       13.54,
-       10.79,
-       5.76,
-       1.16,
-       0.55
-      ],
-      "maxSpeedDropPerFrame": 5.03
-     },
-     "last3": [
-      3.94,
-      0.26,
-      0.0
-     ],
-     "contacts": {
-      "Left": {
-       "runs": [
-        {
-         "clipS": [
-          0.633,
-          1.025
-         ],
-         "maxSlideCmPerRenderedFrame": 19.87,
-         "drift": 3.41
+  "definitions": "Round-5 metrics (2026-10-30): the round-4 critic's RollAttack acceptance spec in bone space, plus the round-4 checks.\n\nPure CPython + numpy, no Blender, no GPU. Works on the normalized GLB the game imports (glTF mesh space + the plan's root\ntrack = world) or on a raw Blender export (armature space == world for the roll, see build_round4.py). Rendered frames are\nthe review's: clip t_k = k * rate / 30 (k = 0 .. end), rate 1.282, so critic frame k is exactly rendered frame k.\n\nCritic spec (critique-round4.md, \"Biggest gap\"), rt-RollAttack:\n  feet41_50   side view frames 41-50: no foot moves more than 2 px (~2.9 game cm) horizontally while its sole is within\n              8 px (~11.7 cm) of the ground. Measured per foot on the heel (ankle) and toe points: a point is \"near the\n              ground\" when its height above its idle standing height is < 11.7 cm; per rendered frame its horizontal world\n              step (full horizontal, not only the side-view axis), and the cumulative drift over each near-ground run.\n              FAIL if any per-frame step or run drift > 2.9 cm.\n  recovery    per rendered frame the mean world joint distance (all skin joints) to the final pose, from its maximum after\n              the strike end (damage window end 1.576 clip s): start = 5 % of the way to the final pose, end = 95 %.\n              PASS if end - start >= 8 frames AND no 4 consecutive frames cover more than half of the distance (\"snap\";\n              r4: 0.67). restFrame2cm = first frame within 2 cm (reported).\n  sword       blade centroid (BoatGreatsword blade points on WeaponSocket) projected in the review's 3/4 view (ortho,\n              360 px over 2.1 rig m, the critic's scale): max px per frame after frame 41. PASS if <= 25 px.\n              The side-view value is reported too.\n  frontHeel   the lunge front-foot heel drift over frames 31-37 (critic: ~14 cm in r4, ~34 cm in r3) - reported.\n\nBlinks (round-5 foot pass): minimum heel/toe clearance vs the idle heights on visible frames (>= -1 cm), stance slip\nfrom the idle foot spots, push-frame heel/toe heights (toe-off), and every non-leg joint + the blade unchanged vs the\nround-4 v6c file (< 0.05 cm).\n\nUsage: measure_round5.py blink GLB [REF_GLB]\n       measure_round5.py roll GLB [--plan PLAN.json]   one roll candidate (raw export, or normalized + plan root track)\n       measure_round5.py OUT.json                       v030s vs v030r side by side + byte-identical checks (writes OUT)",
+  "clips": {
+    "BlinkLeft": {
+      "r5": {
+        "round": "r5",
+        "file": "Knight_BlinkLeft_v7c.glb",
+        "sha256": "22eb70cdc0c22d2b98dc480b1ff475aad78b82d7d3b185d4d6b12372e7616038",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.0,
+          7.8,
+          3.8
+        ],
+        "chestToBossMaxDeg": 7.8,
+        "pelvisYaw": [
+          -2.7,
+          16.6,
+          5.3
+        ],
+        "pelvisToChestTwistMaxDeg": 10.8,
+        "pelvisToChestTwistMeanDeg": 3.8,
+        "freeArmSwingCm": {
+          "lateral": 15.2,
+          "up": 20.5,
+          "forward": 12.0,
+          "max": 20.5
         },
-        {
-         "clipS": [
-          1.35,
-          1.658
-         ],
-         "maxSlideCmPerRenderedFrame": 0.02,
-         "drift": 0.0
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
         },
-        {
-         "clipS": [
-          2.125,
-          2.2
-         ],
-         "maxSlideCmPerRenderedFrame": 0.01,
-         "drift": 0.0
-        }
-       ],
-       "minToeHeightCm": 2.74
-      },
-      "Right": {
-       "runs": [
-        {
-         "clipS": [
-          0.717,
-          2.2
-         ],
-         "maxSlideCmPerRenderedFrame": 3.69,
-         "drift": 2.72
-        }
-       ],
-       "minToeHeightCm": 5.23
-      }
-     },
-     "targets": {
-      "last3Below1cm": false,
-      "joinRampDropBelow6cm": true,
-      "contactSlideBelow1cm": false,
-      "toesAtLeastIdle": false
-     }
-    },
-    "rollGatesR5": {
-     "frames": 53,
-     "feetGetupToEnd": {
-      "nearGroundStepsOver2.9cm": {
-       "Left.heel": [
-        [
-         24,
-         3.3,
-         2.8
-        ],
-        [
-         25,
-         8.5,
-         14.4
-        ]
-       ],
-       "Left.toe": [
-        [
-         24,
-         3.7,
-         0.7
-        ],
-        [
-         25,
-         9.0,
-         12.9
-        ]
-       ],
-       "Right.heel": [
-        [
-         17,
-         3.2,
-         1.6
-        ]
-       ],
-       "Right.toe": [
-        [
-         16,
-         5.2,
-         4.9
-        ]
-       ]
-      },
-      "count": 6
-     },
-     "feet41_50": {
-      "perFoot": {
-       "Left": [
-        {
-         "point": "heel",
-         "maxNearGroundStepCm41_50": 0.0,
-         "badSteps": [],
-         "nearRuns": [
-          {
-           "frames": [
-            49,
-            52
-           ],
-           "maxDriftInWindowCm": 0.0
-          }
-         ],
-         "clearanceCm41_50": [
-          18.3,
-          18.8,
-          18.9,
-          18.7,
-          18.2,
-          17.6,
-          16.8,
-          15.4,
-          8.2,
-          0.8
-         ],
-         "stepCm41_50": [
-          1.1,
-          8.6,
-          14.9,
-          18.5,
-          19.4,
-          17.6,
-          13.2,
-          6.1,
-          0.1,
-          0.0
-         ]
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
         },
-        {
-         "point": "toe",
-         "maxNearGroundStepCm41_50": 0.0,
-         "badSteps": [],
-         "nearRuns": [
-          {
-           "frames": [
-            49,
-            52
-           ],
-           "maxDriftInWindowCm": 0.0
-          }
-         ],
-         "clearanceCm41_50": [
-          16.2,
-          16.8,
-          17.2,
-          17.4,
-          17.4,
-          17.1,
-          16.7,
-          15.4,
-          8.2,
-          0.8
-         ],
-         "stepCm41_50": [
-          1.1,
-          8.4,
-          14.5,
-          18.1,
-          19.1,
-          17.5,
-          13.1,
-          6.1,
-          0.1,
-          0.0
-         ]
-        }
-       ],
-       "Right": [
-        {
-         "point": "heel",
-         "maxNearGroundStepCm41_50": 0.01,
-         "badSteps": [],
-         "nearRuns": [
-          {
-           "frames": [
-            15,
-            52
-           ],
-           "maxDriftInWindowCm": 0.0
-          }
-         ],
-         "clearanceCm41_50": [
-          -0.0,
-          0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          0.0,
-          0.0
-         ],
-         "stepCm41_50": [
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0
-         ]
-        },
-        {
-         "point": "toe",
-         "maxNearGroundStepCm41_50": 0.01,
-         "badSteps": [],
-         "nearRuns": [
-          {
-           "frames": [
-            16,
-            52
-           ],
-           "maxDriftInWindowCm": 0.0
-          }
-         ],
-         "clearanceCm41_50": [
-          -0.0,
-          0.0,
-          -0.0,
-          -0.0,
-          0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          0.0,
-          0.0
-         ],
-         "stepCm41_50": [
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0
-         ]
-        }
-       ]
-      },
-      "maxNearGroundStepCm": 0.01,
-      "maxNearGroundRunDriftCm": 0.0,
-      "limitCm": 2.8,
-      "pass": true
-     },
-     "frontHeel31_37": {
-      "foot": "Left",
-      "driftCm": 0.0,
-      "clearanceCm": [
-       8.7,
-       2.1,
-       2.1,
-       2.1,
-       2.1,
-       2.1,
-       2.1
-      ]
-     },
-     "recovery": {
-      "strikeEndFrame": 37,
-      "peakFrame": 39,
-      "startFrame": 40,
-      "endFrame": 49,
-      "frames": 9,
-      "restFrame2cm": 50,
-      "snap4FrameShare": 0.48,
-      "meanJointErrCm": [
-       105.7,
-       106.3,
-       108.9,
-       109.3,
-       103.7,
-       96.4,
-       88.1,
-       78.5,
-       68.0,
-       56.5,
-       43.9,
-       29.9,
-       15.6,
-       5.1,
-       0.4,
-       0.1,
-       0.0
-      ],
-      "rule": "frames from 5 % to 95 % of the post-strike mean joint distance to the final pose >= 8 and no 4 frames cover more than half of it",
-      "pass": true
-     },
-     "sword": {
-      "threequarter": {
-       "pxPerFrame": [
-        29.9,
-        27.8,
-        21.1,
-        22.1,
-        19.5,
-        12.0,
-        7.0,
-        11.5,
-        9.8,
-        5.4,
-        15.1,
-        17.8,
-        19.4,
-        34.1,
-        25.0,
-        9.3,
-        10.5,
-        10.1,
-        9.2,
-        5.6,
-        4.1,
-        6.2,
-        6.8,
-        6.6,
-        4.8,
-        5.2,
-        11.0,
-        18.3,
-        23.5,
-        21.6,
-        7.5,
-        35.8,
-        71.2,
-        59.1,
-        31.7,
-        9.8,
-        0.5,
-        3.7,
-        8.0,
-        4.2,
-        10.2,
-        14.5,
-        17.3,
-        19.2,
-        19.4,
-        18.2,
-        15.9,
-        11.0,
-        5.6,
-        2.0,
-        0.1,
-        0.0
-       ],
-       "maxAfter41": 19.4,
-       "maxStrike": 71.2
-      },
-      "side": {
-       "pxPerFrame": [
-        35.1,
-        35.0,
-        29.2,
-        32.3,
-        28.5,
-        20.5,
-        16.6,
-        17.7,
-        15.8,
-        15.7,
-        22.9,
-        28.1,
-        30.0,
-        28.2,
-        14.4,
-        14.8,
-        12.6,
-        12.2,
-        12.3,
-        9.6,
-        7.6,
-        8.0,
-        8.8,
-        8.9,
-        7.5,
-        6.5,
-        10.4,
-        17.0,
-        21.4,
-        17.9,
-        5.0,
-        39.4,
-        47.1,
-        31.7,
-        29.0,
-        29.6,
-        1.2,
-        3.3,
-        10.9,
-        15.1,
-        12.2,
-        8.2,
-        6.0,
-        6.5,
-        8.9,
-        10.5,
-        10.8,
-        8.6,
-        5.3,
-        2.2,
-        0.0,
-        0.1
-       ],
-       "maxAfter41": 10.8,
-       "maxStrike": 47.1
-      },
-      "limitPx": 25.0,
-      "pass": true
-     },
-     "pass": true
-    }
-   },
-   "r4": {
-    "round": "r4",
-    "file": "Sourced_RollAttack_v6.glb",
-    "sha256": "b852e2fb6cde3865d4d1712fb0bdf2adb7f4dc2912db375c0204866199248329",
-    "duration": 2.2,
-    "rate": 1.2821,
-    "frames30": 53,
-    "chestYaw": [
-     -40.9,
-     80.5,
-     8.1
-    ],
-    "chestToBossMaxDeg": 80.5,
-    "pelvisYaw": [
-     -62.1,
-     52.9,
-     -2.4
-    ],
-    "pelvisToChestTwistMaxDeg": 62.0,
-    "pelvisToChestTwistMeanDeg": 18.1,
-    "freeArmSwingCm": {
-     "lateral": 67.6,
-     "up": 105.9,
-     "forward": 114.5,
-     "max": 114.5
-    },
-    "anklesFirstLastCm": [
-     56.8,
-     61.9
-    ],
-    "idleAnklesCm": 61.9,
-    "firstVsIdleCm": {
-     "max": 43.95,
-     "mean": 29.2
-    },
-    "lastVsIdleCm": {
-     "max": 0.02,
-     "mean": 0.0
-    },
-    "rollExitFeet": {
-     "Left": [
-      {
-       "f": 34,
-       "dxzCm": 5.7,
-       "liftCm": 0.0
-      },
-      {
-       "f": 35,
-       "dxzCm": 1.4,
-       "liftCm": 0.0
-      },
-      {
-       "f": 36,
-       "dxzCm": 0.0,
-       "liftCm": 0.1
-      },
-      {
-       "f": 37,
-       "dxzCm": 0.0,
-       "liftCm": 0.2
-      },
-      {
-       "f": 38,
-       "dxzCm": 0.1,
-       "liftCm": 1.0
-      },
-      {
-       "f": 39,
-       "dxzCm": 14.5,
-       "liftCm": 10.2
-      },
-      {
-       "f": 40,
-       "dxzCm": 29.4,
-       "liftCm": 14.7
-      },
-      {
-       "f": 41,
-       "dxzCm": 31.1,
-       "liftCm": 12.3
-      },
-      {
-       "f": 42,
-       "dxzCm": 19.7,
-       "liftCm": 4.2
-      },
-      {
-       "f": 43,
-       "dxzCm": 1.8,
-       "liftCm": 0.7
-      },
-      {
-       "f": 44,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      },
-      {
-       "f": 45,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      },
-      {
-       "f": 46,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      },
-      {
-       "f": 47,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      },
-      {
-       "f": 48,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      },
-      {
-       "f": 49,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      },
-      {
-       "f": 50,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      },
-      {
-       "f": 51,
-       "dxzCm": 0.0,
-       "liftCm": 0.7
-      }
-     ],
-     "Right": [
-      {
-       "f": 34,
-       "dxzCm": 4.5,
-       "liftCm": 2.7
-      },
-      {
-       "f": 35,
-       "dxzCm": 2.0,
-       "liftCm": 2.3
-      },
-      {
-       "f": 36,
-       "dxzCm": 0.0,
-       "liftCm": 2.6
-      },
-      {
-       "f": 37,
-       "dxzCm": 1.6,
-       "liftCm": 3.8
-      },
-      {
-       "f": 38,
-       "dxzCm": 1.3,
-       "liftCm": 4.8
-      },
-      {
-       "f": 39,
-       "dxzCm": 0.2,
-       "liftCm": 4.8
-      },
-      {
-       "f": 40,
-       "dxzCm": 1.9,
-       "liftCm": 3.5
-      },
-      {
-       "f": 41,
-       "dxzCm": 0.9,
-       "liftCm": 2.8
-      },
-      {
-       "f": 42,
-       "dxzCm": 0.0,
-       "liftCm": 2.8
-      },
-      {
-       "f": 43,
-       "dxzCm": 0.4,
-       "liftCm": 6.1
-      },
-      {
-       "f": 44,
-       "dxzCm": 3.5,
-       "liftCm": 12.2
-      },
-      {
-       "f": 45,
-       "dxzCm": 5.3,
-       "liftCm": 13.1
-      },
-      {
-       "f": 46,
-       "dxzCm": 4.9,
-       "liftCm": 8.4
-      },
-      {
-       "f": 47,
-       "dxzCm": 2.2,
-       "liftCm": 0.3
-      },
-      {
-       "f": 48,
-       "dxzCm": 0.0,
-       "liftCm": 0.0
-      },
-      {
-       "f": 49,
-       "dxzCm": 0.0,
-       "liftCm": 0.0
-      },
-      {
-       "f": 50,
-       "dxzCm": 0.0,
-       "liftCm": 0.0
-      },
-      {
-       "f": 51,
-       "dxzCm": 0.0,
-       "liftCm": 0.0
-      }
-     ]
-    },
-    "bladePitchF33to51": {
-     "33": 19.9,
-     "34": 3.8,
-     "35": -4.4,
-     "36": -5.4,
-     "37": -2.9,
-     "38": -1.3,
-     "39": -1.2,
-     "40": -0.9,
-     "41": -0.4,
-     "42": 0.4,
-     "43": 1.4,
-     "44": 2.6,
-     "45": 3.8,
-     "46": 4.9,
-     "47": 5.9,
-     "48": 6.7,
-     "49": 7.2,
-     "50": 7.5,
-     "51": 7.6
-    },
-    "bladePitchF40to50": {
-     "min": -0.9,
-     "max": 7.5,
-     "maxRiseBetweenFrames": 1.2
-    },
-    "rollWorld": {
-     "rate": 1.2821,
-     "renderedFrames": 53,
-     "hipsWorldSpeedCmPerFrame": [
-      29.65,
-      33.58,
-      36.67,
-      39.97,
-      41.03,
-      41.86,
-      42.27,
-      41.19,
-      39.43,
-      35.63,
-      30.92,
-      27.11,
-      22.73,
-      19.11,
-      15.3,
-      12.51,
-      11.61,
-      11.33,
-      11.65,
-      12.18,
-      13.24,
-      15.04,
-      14.83,
-      13.54,
-      10.79,
-      5.76,
-      1.16,
-      0.55,
-      0.76,
-      2.89,
-      5.68,
-      9.17,
-      10.43,
-      8.64,
-      7.32,
-      5.33,
-      2.93,
-      1.73,
-      1.43,
-      5.12,
-      8.07,
-      10.14,
-      11.32,
-      11.61,
-      11.01,
-      9.51,
-      7.13,
-      3.85,
-      0.43,
-      0.0,
-      0.0,
-      0.0
-     ],
-     "join": {
-      "frame": 23,
-      "speeds": [
-       15.04,
-       14.83,
-       13.54,
-       10.79,
-       5.76,
-       1.16,
-       0.55
-      ],
-      "maxSpeedDropPerFrame": 5.03
-     },
-     "last3": [
-      0.0,
-      0.0,
-      0.0
-     ],
-     "contacts": {
-      "Left": {
-       "runs": [
-        {
-         "clipS": [
-          0.642,
-          0.825
-         ],
-         "maxSlideCmPerRenderedFrame": 3.6,
-         "drift": 2.89
-        },
-        {
-         "clipS": [
-          1.467,
-          1.625
-         ],
-         "maxSlideCmPerRenderedFrame": 1.12,
-         "drift": 0.22
-        },
-        {
-         "clipS": [
-          1.808,
-          2.2
-         ],
-         "maxSlideCmPerRenderedFrame": 0.21,
-         "drift": 0.04
-        }
-       ],
-       "minToeHeightCm": 3.3
-      },
-      "Right": {
-       "runs": [
-        {
-         "clipS": [
-          0.767,
-          1.008
-         ],
-         "maxSlideCmPerRenderedFrame": 0.02,
-         "drift": 0.0
-        },
-        {
-         "clipS": [
-          1.467,
-          1.825
-         ],
-         "maxSlideCmPerRenderedFrame": 3.39,
-         "drift": 0.7
-        },
-        {
-         "clipS": [
-          2.008,
-          2.2
-         ],
-         "maxSlideCmPerRenderedFrame": 0.04,
-         "drift": 0.01
-        }
-       ],
-       "minToeHeightCm": 3.39
-      }
-     },
-     "targets": {
-      "last3Below1cm": true,
-      "joinRampDropBelow6cm": true,
-      "contactSlideBelow1cm": false,
-      "toesAtLeastIdle": true
-     }
-    },
-    "rollGatesR5": {
-     "frames": 53,
-     "feetGetupToEnd": {
-      "nearGroundStepsOver2.9cm": {
-       "Left.heel": [
-        [
-         20,
-         3.2,
-         7.4
-        ],
-        [
-         21,
-         5.2,
-         6.8
-        ],
-        [
-         22,
-         8.7,
-         5.0
-        ],
-        [
-         23,
-         12.2,
-         1.9
-        ],
-        [
-         24,
-         12.2,
-         2.3
-        ],
-        [
-         25,
-         10.7,
-         2.9
-        ],
-        [
-         26,
-         7.6,
-         3.0
-        ],
-        [
-         27,
-         4.8,
-         3.5
-        ],
-        [
-         28,
-         5.0,
-         4.1
-        ],
-        [
-         29,
-         8.2,
-         3.9
-        ],
-        [
-         30,
-         10.6,
-         1.6
-        ],
-        [
-         31,
-         9.6,
-         0.7
-        ],
-        [
-         32,
-         8.9,
-         -0.1
-        ],
-        [
-         33,
-         7.5,
-         -0.5
-        ],
-        [
-         34,
-         5.7,
-         -0.7
-        ],
-        [
-         39,
-         14.5,
-         9.6
-        ],
-        [
-         40,
-         29.4,
-         14.0
-        ],
-        [
-         42,
-         19.7,
-         3.6
-        ]
-       ],
-       "Left.toe": [
-        [
-         20,
-         2.8,
-         3.5
-        ],
-        [
-         21,
-         5.2,
-         3.2
-        ],
-        [
-         22,
-         9.5,
-         2.7
-        ],
-        [
-         23,
-         13.0,
-         2.2
-        ],
-        [
-         24,
-         12.7,
-         5.5
-        ],
-        [
-         25,
-         11.0,
-         6.9
-        ],
-        [
-         26,
-         7.3,
-         6.6
-        ],
-        [
-         27,
-         4.1,
-         6.2
-        ],
-        [
-         28,
-         4.3,
-         5.8
-        ],
-        [
-         29,
-         8.7,
-         5.2
-        ],
-        [
-         30,
-         10.5,
-         2.3
-        ],
-        [
-         31,
-         9.2,
-         0.5
-        ],
-        [
-         32,
-         9.2,
-         0.1
-        ],
-        [
-         33,
-         7.8,
-         0.1
-        ],
-        [
-         34,
-         5.8,
-         0.0
-        ],
-        [
-         39,
-         15.4,
-         7.6
-        ],
-        [
-         40,
-         28.8,
-         12.8
-        ],
-        [
-         41,
-         30.8,
-         11.1
-        ],
-        [
-         42,
-         19.7,
-         3.5
-        ]
-       ],
-       "Right.heel": [
-        [
-         16,
-         3.4,
-         4.1
-        ],
-        [
-         18,
-         2.9,
-         -0.1
-        ],
-        [
-         25,
-         5.8,
-         2.4
-        ],
-        [
-         26,
-         4.9,
-         2.7
-        ],
-        [
-         28,
-         3.9,
-         2.1
-        ],
-        [
-         29,
-         4.8,
-         1.6
-        ],
-        [
-         30,
-         4.3,
-         1.4
-        ],
-        [
-         33,
-         4.0,
-         2.9
-        ],
-        [
-         34,
-         4.5,
-         2.7
-        ],
-        [
-         44,
-         3.5,
-         12.2
-        ],
-        [
-         46,
-         4.9,
-         8.4
-        ]
-       ],
-       "Right.toe": [
-        [
-         16,
-         4.6,
-         5.2
-        ],
-        [
-         19,
-         5.2,
-         -0.1
-        ],
-        [
-         20,
-         5.0,
-         -0.9
-        ],
-        [
-         21,
-         3.7,
-         -1.1
-        ],
-        [
-         25,
-         5.6,
-         4.1
-        ],
-        [
-         26,
-         4.4,
-         4.3
-        ],
-        [
-         28,
-         5.2,
-         3.3
-        ],
-        [
-         29,
-         6.7,
-         2.4
-        ],
-        [
-         30,
-         7.5,
-         1.5
-        ],
-        [
-         31,
-         7.2,
-         0.7
-        ],
-        [
-         32,
-         5.9,
-         0.8
-        ],
-        [
-         34,
-         5.5,
-         -1.3
-        ],
-        [
-         35,
-         4.5,
-         -2.1
-        ],
-        [
-         43,
-         3.8,
-         1.0
-        ],
-        [
-         44,
-         8.8,
-         6.1
-        ],
-        [
-         45,
-         12.9,
-         8.2
-        ],
-        [
-         46,
-         10.8,
-         6.5
-        ],
-        [
-         47,
-         5.0,
-         0.3
-        ]
-       ]
-      },
-      "count": 66
-     },
-     "feet41_50": {
-      "perFoot": {
-       "Left": [
-        {
-         "point": "heel",
-         "maxNearGroundStepCm41_50": 1.76,
-         "badSteps": [],
-         "nearRuns": [
-          {
-           "frames": [
-            42,
-            52
-           ],
-           "maxDriftInWindowCm": 1.76
-          }
-         ],
-         "clearanceCm41_50": [
-          11.6,
-          3.6,
-          -0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          -0.0,
-          0.0,
-          0.0
-         ],
-         "stepCm41_50": [
-          31.1,
-          19.7,
-          1.8,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0
-         ]
-        },
-        {
-         "point": "toe",
-         "maxNearGroundStepCm41_50": 19.68,
-         "badSteps": [
-          [
-           42,
-           19.68
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
           ]
-         ],
-         "nearRuns": [
-          {
-           "frames": [
-            41,
-            52
-           ],
-           "maxDriftInWindowCm": 21.58
-          }
-         ],
-         "clearanceCm41_50": [
-          11.1,
-          3.5,
-          0.0,
-          0.1,
-          0.1,
-          0.1,
-          0.0,
-          0.1,
-          0.1,
-          0.0
-         ],
-         "stepCm41_50": [
-          30.8,
-          19.7,
-          1.8,
-          0.1,
-          0.0,
-          0.0,
-          0.1,
-          0.0,
-          0.0,
-          0.1
-         ]
-        }
-       ],
-       "Right": [
-        {
-         "point": "heel",
-         "maxNearGroundStepCm41_50": 2.24,
-         "badSteps": [],
-         "nearRuns": [
-          {
-           "frames": [
-            15,
-            43
-           ],
-           "maxDriftInWindowCm": 0.87
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 5.4,
+            "pelvisYaw": 14.6
           },
-          {
-           "frames": [
-            46,
-            52
-           ],
-           "maxDriftInWindowCm": 2.25
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 4.2,
+            "pelvisYaw": 7.3
           }
-         ],
-         "clearanceCm41_50": [
-          2.8,
-          2.8,
-          6.1,
-          12.2,
-          13.1,
-          8.4,
-          0.3,
-          0.0,
-          0.0,
-          0.0
-         ],
-         "stepCm41_50": [
-          0.9,
-          0.0,
-          0.4,
-          3.5,
-          5.3,
-          4.9,
-          2.2,
-          0.0,
-          0.0,
-          0.0
-         ]
         },
-        {
-         "point": "toe",
-         "maxNearGroundStepCm41_50": 12.91,
-         "badSteps": [
-          [
-           43,
-           3.76
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            11.205,
+            4.253,
+            1.127,
+            0.104,
+            0.025
           ],
-          [
-           44,
-           8.84
-          ],
-          [
-           45,
-           12.91
-          ],
-          [
-           46,
-           10.8
-          ],
-          [
-           47,
-           5.03
-          ]
-         ],
-         "nearRuns": [
-          {
-           "frames": [
-            16,
-            52
-           ],
-           "maxDriftInWindowCm": 42.23
+          "frozenTrailingSteps": 1,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
           }
-         ],
-         "clearanceCm41_50": [
-          -1.3,
-          -0.6,
-          1.0,
-          6.1,
-          8.2,
-          6.5,
-          0.3,
-          -0.2,
-          -0.1,
-          -0.0
-         ],
-         "stepCm41_50": [
-          0.8,
-          0.5,
-          3.8,
-          8.8,
-          12.9,
-          10.8,
-          5.0,
-          1.5,
-          0.8,
-          0.4
-         ]
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": -0.0,
+            "Left.toe": 0.0,
+            "Right.heel": -0.0,
+            "Right.toe": 0.0
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 0.37,
+            "Left.toe": 0.0,
+            "Right.heel": 0.23,
+            "Right.toe": 0.0
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              1.1,
+              4.9
+            ],
+            "Left.toe": [
+              0.0,
+              0.0
+            ],
+            "Right.heel": [
+              2.0,
+              7.6
+            ],
+            "Right.toe": [
+              0.0,
+              0.0
+            ]
+          },
+          "nonLegJointsAndBladeMaxDiffVsRefCm": 0.0,
+          "pass": true
         }
-       ]
       },
-      "maxNearGroundStepCm": 19.68,
-      "maxNearGroundRunDriftCm": 42.23,
-      "limitCm": 2.8,
-      "pass": false
-     },
-     "frontHeel31_37": {
-      "foot": "Left",
-      "driftCm": 23.57,
-      "clearanceCm": [
-       0.7,
-       -0.1,
-       -0.5,
-       -0.7,
-       -0.6,
-       -0.5,
-       -0.5
-      ]
-     },
-     "recovery": {
-      "strikeEndFrame": 37,
-      "peakFrame": 38,
-      "startFrame": 41,
-      "endFrame": 48,
-      "frames": 7,
-      "restFrame2cm": 50,
-      "snap4FrameShare": 0.64,
-      "meanJointErrCm": [
-       106.2,
-       110.8,
-       113.0,
-       112.4,
-       108.7,
-       101.1,
-       87.9,
-       68.7,
-       47.4,
-       29.2,
-       16.7,
-       9.0,
-       5.2,
-       2.4,
-       0.7,
-       0.1,
-       0.0
-      ],
-      "rule": "frames from 5 % to 95 % of the post-strike mean joint distance to the final pose >= 8 and no 4 frames cover more than half of it",
-      "pass": false
-     },
-     "sword": {
-      "threequarter": {
-       "pxPerFrame": [
-        29.9,
-        27.8,
-        21.1,
-        22.1,
-        19.5,
-        12.0,
-        7.0,
-        11.5,
-        9.8,
-        5.4,
-        15.1,
-        17.8,
-        19.4,
-        34.1,
-        25.0,
-        9.3,
-        10.5,
-        10.1,
-        9.3,
-        5.8,
-        4.5,
-        6.5,
-        7.1,
-        6.8,
-        5.0,
-        4.9,
-        10.7,
-        17.9,
-        23.1,
-        21.2,
-        7.4,
-        36.0,
-        71.3,
-        59.1,
-        31.7,
-        9.8,
-        7.7,
-        5.6,
-        6.9,
-        9.1,
-        5.0,
-        15.4,
-        47.1,
-        52.1,
-        31.8,
-        4.2,
-        6.5,
-        8.1,
-        6.3,
-        3.4,
-        1.1,
-        0.1
-       ],
-       "maxAfter41": 52.1,
-       "maxStrike": 71.3
+      "r4": {
+        "round": "r4",
+        "file": "Knight_BlinkLeft_v6c.glb",
+        "sha256": "44f55f47ee2f4d3e38da48b07b0f3d4d684e3c8bc554415660b4761bb2358378",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.0,
+          7.8,
+          3.8
+        ],
+        "chestToBossMaxDeg": 7.8,
+        "pelvisYaw": [
+          -2.7,
+          16.6,
+          5.3
+        ],
+        "pelvisToChestTwistMaxDeg": 10.8,
+        "pelvisToChestTwistMeanDeg": 3.8,
+        "freeArmSwingCm": {
+          "lateral": 15.2,
+          "up": 20.5,
+          "forward": 12.0,
+          "max": 20.5
+        },
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
+          ]
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 5.4,
+            "pelvisYaw": 14.6
+          },
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 4.2,
+            "pelvisYaw": 7.3
+          }
+        },
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            11.233,
+            4.271,
+            1.142,
+            0.104,
+            0.025
+          ],
+          "frozenTrailingSteps": 1,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": -6.05,
+            "Left.toe": -6.05,
+            "Right.heel": -11.54,
+            "Right.toe": -11.56
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 1.89,
+            "Left.toe": 2.04,
+            "Right.heel": 4.52,
+            "Right.toe": 4.54
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              -5.4,
+              0.0
+            ],
+            "Left.toe": [
+              -5.4,
+              0.0
+            ],
+            "Right.heel": [
+              -11.5,
+              0.3
+            ],
+            "Right.toe": [
+              -11.6,
+              0.3
+            ]
+          },
+          "pass": false
+        }
+      }
+    },
+    "BlinkLeftTwoHand": {
+      "r5": {
+        "round": "r5",
+        "file": "Knight_BlinkLeftTwoHand_v7c.glb",
+        "sha256": "fc1d80df39ab5ef4b4e16cdcd0fd20f02da3570a290d1318d2b52e1b998b98e3",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.1,
+          7.8,
+          3.8
+        ],
+        "chestToBossMaxDeg": 7.8,
+        "pelvisYaw": [
+          -2.7,
+          16.6,
+          5.3
+        ],
+        "pelvisToChestTwistMaxDeg": 10.8,
+        "pelvisToChestTwistMeanDeg": 3.8,
+        "freeArmSwingCm": {
+          "lateral": 8.0,
+          "up": 5.2,
+          "forward": 6.3,
+          "max": 8.0
+        },
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
+          ]
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 5.4,
+            "pelvisYaw": 14.6
+          },
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 4.2,
+            "pelvisYaw": 7.3
+          }
+        },
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            11.576,
+            4.197,
+            2.636,
+            1.565,
+            0.054
+          ],
+          "frozenTrailingSteps": 0,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": -0.0,
+            "Left.toe": 0.0,
+            "Right.heel": -0.0,
+            "Right.toe": 0.0
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 0.37,
+            "Left.toe": 0.0,
+            "Right.heel": 0.23,
+            "Right.toe": 0.0
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              1.1,
+              4.9
+            ],
+            "Left.toe": [
+              0.0,
+              0.0
+            ],
+            "Right.heel": [
+              2.0,
+              7.6
+            ],
+            "Right.toe": [
+              0.0,
+              0.0
+            ]
+          },
+          "nonLegJointsAndBladeMaxDiffVsRefCm": 0.001,
+          "pass": true
+        }
       },
-      "side": {
-       "pxPerFrame": [
-        35.1,
-        35.0,
-        29.2,
-        32.3,
-        28.5,
-        20.5,
-        16.6,
-        17.7,
-        15.8,
-        15.7,
-        22.9,
-        28.1,
-        30.0,
-        28.2,
-        14.4,
-        14.8,
-        12.6,
-        12.2,
-        12.4,
-        9.8,
-        7.8,
-        8.3,
-        9.1,
-        9.1,
-        7.7,
-        6.3,
-        10.1,
-        16.5,
-        21.0,
-        17.5,
-        4.9,
-        39.5,
-        47.2,
-        31.7,
-        29.0,
-        29.6,
-        24.3,
-        15.4,
-        11.5,
-        21.5,
-        33.5,
-        36.7,
-        14.6,
-        17.4,
-        23.8,
-        14.3,
-        7.7,
-        4.1,
-        2.3,
-        1.5,
-        0.5,
-        0.1
-       ],
-       "maxAfter41": 36.7,
-       "maxStrike": 47.2
+      "r4": {
+        "round": "r4",
+        "file": "Knight_BlinkLeftTwoHand_v6c.glb",
+        "sha256": "7e17f935c05f9f1824daacb3ed532380ab955fb1c480870f6728c5688c0df0b2",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.1,
+          7.8,
+          3.8
+        ],
+        "chestToBossMaxDeg": 7.8,
+        "pelvisYaw": [
+          -2.7,
+          16.6,
+          5.3
+        ],
+        "pelvisToChestTwistMaxDeg": 10.8,
+        "pelvisToChestTwistMeanDeg": 3.8,
+        "freeArmSwingCm": {
+          "lateral": 8.0,
+          "up": 5.2,
+          "forward": 6.3,
+          "max": 8.0
+        },
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
+          ]
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 5.4,
+            "pelvisYaw": 14.6
+          },
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 4.2,
+            "pelvisYaw": 7.3
+          }
+        },
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            11.606,
+            4.215,
+            2.65,
+            1.566,
+            0.054
+          ],
+          "frozenTrailingSteps": 0,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": -6.05,
+            "Left.toe": -6.05,
+            "Right.heel": -11.54,
+            "Right.toe": -11.56
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 1.89,
+            "Left.toe": 2.04,
+            "Right.heel": 4.52,
+            "Right.toe": 4.54
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              -5.4,
+              0.0
+            ],
+            "Left.toe": [
+              -5.4,
+              0.0
+            ],
+            "Right.heel": [
+              -11.5,
+              0.3
+            ],
+            "Right.toe": [
+              -11.6,
+              0.3
+            ]
+          },
+          "pass": false
+        }
+      }
+    },
+    "BlinkRight": {
+      "r5": {
+        "round": "r5",
+        "file": "Knight_BlinkRight_v7c.glb",
+        "sha256": "6d54062130767713791ed472ecbfb407f0018667b9ea964a9824a51114854304",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.0,
+          5.3,
+          1.6
+        ],
+        "chestToBossMaxDeg": 5.3,
+        "pelvisYaw": [
+          -22.4,
+          -2.6,
+          -9.3
+        ],
+        "pelvisToChestTwistMaxDeg": 22.5,
+        "pelvisToChestTwistMeanDeg": 11.0,
+        "freeArmSwingCm": {
+          "lateral": 14.8,
+          "up": 28.8,
+          "forward": 13.5,
+          "max": 28.8
+        },
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
+          ]
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 0.4,
+            "pelvisYaw": -19.7
+          },
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 1.1,
+            "pelvisYaw": -12.9
+          }
+        },
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            10.927,
+            4.532,
+            1.161,
+            0.109,
+            0.025
+          ],
+          "frozenTrailingSteps": 1,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": 0.0,
+            "Left.toe": 0.0,
+            "Right.heel": -0.0,
+            "Right.toe": 0.0
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 0.23,
+            "Left.toe": 0.0,
+            "Right.heel": 0.74,
+            "Right.toe": 0.0
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              2.1,
+              8.5
+            ],
+            "Left.toe": [
+              0.0,
+              0.0
+            ],
+            "Right.heel": [
+              1.0,
+              4.4
+            ],
+            "Right.toe": [
+              0.0,
+              0.0
+            ]
+          },
+          "nonLegJointsAndBladeMaxDiffVsRefCm": 0.0,
+          "pass": true
+        }
       },
-      "limitPx": 25.0,
-      "pass": false
-     },
-     "pass": false
+      "r4": {
+        "round": "r4",
+        "file": "Knight_BlinkRight_v6c.glb",
+        "sha256": "67178716ea858f5d78dbc5b19ee44e3dd0c3455b65c9d8c40785ec1160bd17a0",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.0,
+          5.3,
+          1.6
+        ],
+        "chestToBossMaxDeg": 5.3,
+        "pelvisYaw": [
+          -22.4,
+          -2.6,
+          -9.3
+        ],
+        "pelvisToChestTwistMaxDeg": 22.5,
+        "pelvisToChestTwistMeanDeg": 11.0,
+        "freeArmSwingCm": {
+          "lateral": 14.8,
+          "up": 28.8,
+          "forward": 13.5,
+          "max": 28.8
+        },
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
+          ]
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 0.4,
+            "pelvisYaw": -19.7
+          },
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 1.1,
+            "pelvisYaw": -12.9
+          }
+        },
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            10.959,
+            4.552,
+            1.175,
+            0.109,
+            0.025
+          ],
+          "frozenTrailingSteps": 1,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": -11.73,
+            "Left.toe": -11.81,
+            "Right.heel": -5.67,
+            "Right.toe": -5.68
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 3.42,
+            "Left.toe": 3.73,
+            "Right.heel": 1.96,
+            "Right.toe": 2.04
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              -11.2,
+              0.8
+            ],
+            "Left.toe": [
+              -11.5,
+              0.8
+            ],
+            "Right.heel": [
+              -0.4,
+              -0.0
+            ],
+            "Right.toe": [
+              -0.4,
+              -0.0
+            ]
+          },
+          "pass": false
+        }
+      }
+    },
+    "BlinkRightTwoHand": {
+      "r5": {
+        "round": "r5",
+        "file": "Knight_BlinkRightTwoHand_v7c.glb",
+        "sha256": "0e73466b18601f11582f4b16e7f9c4aa3992a5234332c9a5d96beb9630771ce9",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.1,
+          5.3,
+          1.6
+        ],
+        "chestToBossMaxDeg": 5.3,
+        "pelvisYaw": [
+          -22.4,
+          -2.6,
+          -9.3
+        ],
+        "pelvisToChestTwistMaxDeg": 22.5,
+        "pelvisToChestTwistMeanDeg": 11.0,
+        "freeArmSwingCm": {
+          "lateral": 7.0,
+          "up": 6.4,
+          "forward": 6.4,
+          "max": 7.0
+        },
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
+          ]
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 0.4,
+            "pelvisYaw": -19.7
+          },
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 1.1,
+            "pelvisYaw": -12.9
+          }
+        },
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            11.551,
+            4.19,
+            2.623,
+            1.566,
+            0.054
+          ],
+          "frozenTrailingSteps": 0,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": 0.0,
+            "Left.toe": 0.0,
+            "Right.heel": -0.0,
+            "Right.toe": 0.0
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 0.23,
+            "Left.toe": 0.0,
+            "Right.heel": 0.74,
+            "Right.toe": 0.0
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              2.1,
+              8.5
+            ],
+            "Left.toe": [
+              0.0,
+              0.0
+            ],
+            "Right.heel": [
+              1.0,
+              4.4
+            ],
+            "Right.toe": [
+              0.0,
+              0.0
+            ]
+          },
+          "nonLegJointsAndBladeMaxDiffVsRefCm": 0.001,
+          "pass": true
+        }
+      },
+      "r4": {
+        "round": "r4",
+        "file": "Knight_BlinkRightTwoHand_v6c.glb",
+        "sha256": "b9b3c2c7c6f264b9a06da3efa8eb09742e50947a57e072a5c3889632ed0bde9d",
+        "duration": 0.7,
+        "rate": 1.15,
+        "frames30": 20,
+        "chestYaw": [
+          -0.1,
+          5.3,
+          1.6
+        ],
+        "chestToBossMaxDeg": 5.3,
+        "pelvisYaw": [
+          -22.4,
+          -2.6,
+          -9.3
+        ],
+        "pelvisToChestTwistMaxDeg": 22.5,
+        "pelvisToChestTwistMeanDeg": 11.0,
+        "freeArmSwingCm": {
+          "lateral": 7.0,
+          "up": 6.4,
+          "forward": 6.4,
+          "max": 7.0
+        },
+        "anklesFirstLastCm": [
+          61.9,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "lastVsIdleCm": {
+          "max": 0.0,
+          "mean": 0.0
+        },
+        "blinkCrouch": {
+          "launchDepthCm": -18.8,
+          "launchCrouchFrames": 2,
+          "framesBelowIdleMinus2CmBeforeHidden": 4,
+          "landingDepthCm": -19.3,
+          "hipsVsIdleCmPerGameFrame": [
+            -0.0,
+            -0.4,
+            -10.8,
+            -18.8,
+            -12.2,
+            -2.9,
+            -1.1,
+            -1.3,
+            -1.6,
+            -1.8,
+            -2.3,
+            -10.3,
+            -19.3,
+            -17.3,
+            -8.8,
+            -1.0,
+            0.3,
+            0.0,
+            -0.0,
+            -0.0
+          ],
+          "gameFrameTimes": [
+            0.0,
+            0.033,
+            0.067,
+            0.1,
+            0.133,
+            0.167,
+            0.2,
+            0.233,
+            0.267,
+            0.3,
+            0.333,
+            0.367,
+            0.4,
+            0.433,
+            0.467,
+            0.5,
+            0.533,
+            0.567,
+            0.6,
+            0.609
+          ]
+        },
+        "afterimagePoses": {
+          "departure": {
+            "clipSeconds": 0.184,
+            "hipsVsIdleCm": -4.5,
+            "chestYaw": 0.4,
+            "pelvisYaw": -19.7
+          },
+          "arrival": {
+            "clipSeconds": 0.391,
+            "hipsVsIdleCm": -2.5,
+            "chestYaw": 1.1,
+            "pelvisYaw": -12.9
+          }
+        },
+        "rootTravelMeshCm": {
+          "total": 122.3,
+          "maxVisibleStep": 0.0,
+          "gameCmApprox": 298.4
+        },
+        "blinkTail": {
+          "meanJointStepCmLast5": [
+            11.583,
+            4.21,
+            2.636,
+            1.566,
+            0.054
+          ],
+          "frozenTrailingSteps": 0,
+          "lastVsIdleFrame0Cm": {
+            "max": 0.0,
+            "mean": 0.0
+          }
+        },
+        "blinkFeetR5": {
+          "minClearanceCm": {
+            "Left.heel": -11.73,
+            "Left.toe": -11.81,
+            "Right.heel": -5.68,
+            "Right.toe": -5.69
+          },
+          "maxStanceSlipCm": {
+            "Left.heel": 3.42,
+            "Left.toe": 3.73,
+            "Right.heel": 1.96,
+            "Right.toe": 2.04
+          },
+          "frames": 85,
+          "pushHeightsCm_0.14_0.207": {
+            "Left.heel": [
+              -11.2,
+              0.8
+            ],
+            "Left.toe": [
+              -11.5,
+              0.8
+            ],
+            "Right.heel": [
+              -0.4,
+              -0.0
+            ],
+            "Right.toe": [
+              -0.4,
+              -0.0
+            ]
+          },
+          "pass": false
+        }
+      }
+    },
+    "RollAttack": {
+      "r5": {
+        "round": "r5",
+        "file": "Sourced_RollAttack_v7.glb",
+        "sha256": "d75fa42bd916000b69f8e6bf6cc1116e6951b6f389a45365c17fdfa30fe5bb59",
+        "duration": 2.2,
+        "rate": 1.2821,
+        "frames30": 53,
+        "chestYaw": [
+          -40.9,
+          73.8,
+          8.3
+        ],
+        "chestToBossMaxDeg": 73.8,
+        "pelvisYaw": [
+          -62.1,
+          52.9,
+          -2.1
+        ],
+        "pelvisToChestTwistMaxDeg": 57.1,
+        "pelvisToChestTwistMeanDeg": 18.0,
+        "freeArmSwingCm": {
+          "lateral": 67.6,
+          "up": 105.9,
+          "forward": 114.5,
+          "max": 114.5
+        },
+        "anklesFirstLastCm": [
+          56.8,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 43.95,
+          "mean": 29.2
+        },
+        "lastVsIdleCm": {
+          "max": 0.02,
+          "mean": 0.0
+        },
+        "rollExitFeet": {
+          "Left": [
+            {
+              "f": 34,
+              "dxzCm": 0.0,
+              "liftCm": 2.1
+            },
+            {
+              "f": 35,
+              "dxzCm": 0.0,
+              "liftCm": 2.1
+            },
+            {
+              "f": 36,
+              "dxzCm": 0.0,
+              "liftCm": 2.1
+            },
+            {
+              "f": 37,
+              "dxzCm": 0.0,
+              "liftCm": 2.1
+            },
+            {
+              "f": 38,
+              "dxzCm": 0.0,
+              "liftCm": 2.1
+            },
+            {
+              "f": 39,
+              "dxzCm": 0.0,
+              "liftCm": 4.7
+            },
+            {
+              "f": 40,
+              "dxzCm": 0.0,
+              "liftCm": 13.0
+            },
+            {
+              "f": 41,
+              "dxzCm": 1.1,
+              "liftCm": 18.3
+            },
+            {
+              "f": 42,
+              "dxzCm": 8.6,
+              "liftCm": 18.8
+            },
+            {
+              "f": 43,
+              "dxzCm": 14.9,
+              "liftCm": 18.9
+            },
+            {
+              "f": 44,
+              "dxzCm": 18.5,
+              "liftCm": 18.7
+            },
+            {
+              "f": 45,
+              "dxzCm": 19.4,
+              "liftCm": 18.2
+            },
+            {
+              "f": 46,
+              "dxzCm": 17.6,
+              "liftCm": 17.6
+            },
+            {
+              "f": 47,
+              "dxzCm": 13.2,
+              "liftCm": 16.8
+            },
+            {
+              "f": 48,
+              "dxzCm": 6.1,
+              "liftCm": 15.4
+            },
+            {
+              "f": 49,
+              "dxzCm": 0.1,
+              "liftCm": 8.2
+            },
+            {
+              "f": 50,
+              "dxzCm": 0.0,
+              "liftCm": 0.8
+            },
+            {
+              "f": 51,
+              "dxzCm": 0.0,
+              "liftCm": 0.0
+            }
+          ],
+          "Right": [
+            {
+              "f": 34,
+              "dxzCm": 1.5,
+              "liftCm": 2.7
+            },
+            {
+              "f": 35,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 36,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 37,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 38,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 39,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 40,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 41,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 42,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 43,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 44,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 45,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 46,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 47,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 48,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 49,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 50,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            },
+            {
+              "f": 51,
+              "dxzCm": 0.0,
+              "liftCm": 2.7
+            }
+          ]
+        },
+        "bladePitchF33to51": {
+          "33": 19.9,
+          "34": 3.8,
+          "35": -4.4,
+          "36": -5.4,
+          "37": -5.3,
+          "38": -5.3,
+          "39": -4.4,
+          "40": -3.2,
+          "41": -2.2,
+          "42": -1.2,
+          "43": -0.3,
+          "44": 0.6,
+          "45": 1.6,
+          "46": 2.7,
+          "47": 4.1,
+          "48": 5.9,
+          "49": 7.1,
+          "50": 7.6,
+          "51": 7.6
+        },
+        "bladePitchF40to50": {
+          "min": -3.2,
+          "max": 7.6,
+          "maxRiseBetweenFrames": 1.7
+        },
+        "rollWorld": {
+          "rate": 1.2821,
+          "renderedFrames": 53,
+          "hipsWorldSpeedCmPerFrame": [
+            29.65,
+            33.58,
+            36.67,
+            39.97,
+            41.03,
+            41.86,
+            42.27,
+            41.19,
+            39.43,
+            35.63,
+            30.92,
+            27.11,
+            22.73,
+            19.11,
+            15.3,
+            12.51,
+            11.61,
+            11.33,
+            11.65,
+            12.18,
+            13.24,
+            15.04,
+            14.83,
+            13.54,
+            10.79,
+            5.76,
+            1.16,
+            0.55,
+            0.76,
+            2.89,
+            5.68,
+            9.17,
+            10.43,
+            8.64,
+            7.32,
+            5.32,
+            0.44,
+            1.92,
+            1.71,
+            5.57,
+            5.79,
+            5.42,
+            5.61,
+            5.42,
+            6.02,
+            7.27,
+            9.72,
+            12.02,
+            9.06,
+            3.94,
+            0.26,
+            0.0
+          ],
+          "join": {
+            "frame": 23,
+            "speeds": [
+              15.04,
+              14.83,
+              13.54,
+              10.79,
+              5.76,
+              1.16,
+              0.55
+            ],
+            "maxSpeedDropPerFrame": 5.03
+          },
+          "last3": [
+            3.94,
+            0.26,
+            0.0
+          ],
+          "contacts": {
+            "Left": {
+              "runs": [
+                {
+                  "clipS": [
+                    0.633,
+                    1.025
+                  ],
+                  "maxSlideCmPerRenderedFrame": 19.87,
+                  "drift": 3.41
+                },
+                {
+                  "clipS": [
+                    1.35,
+                    1.658
+                  ],
+                  "maxSlideCmPerRenderedFrame": 0.02,
+                  "drift": 0.0
+                },
+                {
+                  "clipS": [
+                    2.125,
+                    2.2
+                  ],
+                  "maxSlideCmPerRenderedFrame": 0.01,
+                  "drift": 0.0
+                }
+              ],
+              "minToeHeightCm": 2.74
+            },
+            "Right": {
+              "runs": [
+                {
+                  "clipS": [
+                    0.717,
+                    2.2
+                  ],
+                  "maxSlideCmPerRenderedFrame": 3.69,
+                  "drift": 2.72
+                }
+              ],
+              "minToeHeightCm": 5.23
+            }
+          },
+          "targets": {
+            "last3Below1cm": false,
+            "joinRampDropBelow6cm": true,
+            "contactSlideBelow1cm": false,
+            "toesAtLeastIdle": false
+          }
+        },
+        "rollGatesR5": {
+          "frames": 53,
+          "feetGetupToEnd": {
+            "nearGroundStepsOver2.9cm": {
+              "Left.heel": [
+                [
+                  24,
+                  3.3,
+                  2.8
+                ],
+                [
+                  25,
+                  8.5,
+                  14.4
+                ]
+              ],
+              "Left.toe": [
+                [
+                  24,
+                  3.7,
+                  0.7
+                ],
+                [
+                  25,
+                  9.0,
+                  12.9
+                ]
+              ],
+              "Right.heel": [
+                [
+                  17,
+                  3.2,
+                  1.6
+                ]
+              ],
+              "Right.toe": [
+                [
+                  16,
+                  5.2,
+                  4.9
+                ]
+              ]
+            },
+            "count": 6
+          },
+          "feet41_50": {
+            "perFoot": {
+              "Left": [
+                {
+                  "point": "heel",
+                  "maxNearGroundStepCm41_50": 0.0,
+                  "badSteps": [],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        49,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 0.0
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    18.3,
+                    18.8,
+                    18.9,
+                    18.7,
+                    18.2,
+                    17.6,
+                    16.8,
+                    15.4,
+                    8.2,
+                    0.8
+                  ],
+                  "stepCm41_50": [
+                    1.1,
+                    8.6,
+                    14.9,
+                    18.5,
+                    19.4,
+                    17.6,
+                    13.2,
+                    6.1,
+                    0.1,
+                    0.0
+                  ]
+                },
+                {
+                  "point": "toe",
+                  "maxNearGroundStepCm41_50": 0.0,
+                  "badSteps": [],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        49,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 0.0
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    16.2,
+                    16.8,
+                    17.2,
+                    17.4,
+                    17.4,
+                    17.1,
+                    16.7,
+                    15.4,
+                    8.2,
+                    0.8
+                  ],
+                  "stepCm41_50": [
+                    1.1,
+                    8.4,
+                    14.5,
+                    18.1,
+                    19.1,
+                    17.5,
+                    13.1,
+                    6.1,
+                    0.1,
+                    0.0
+                  ]
+                }
+              ],
+              "Right": [
+                {
+                  "point": "heel",
+                  "maxNearGroundStepCm41_50": 0.01,
+                  "badSteps": [],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        15,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 0.0
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    -0.0,
+                    0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "stepCm41_50": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                },
+                {
+                  "point": "toe",
+                  "maxNearGroundStepCm41_50": 0.01,
+                  "badSteps": [],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        16,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 0.0
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    -0.0,
+                    0.0,
+                    -0.0,
+                    -0.0,
+                    0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "stepCm41_50": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                }
+              ]
+            },
+            "maxNearGroundStepCm": 0.01,
+            "maxNearGroundRunDriftCm": 0.0,
+            "limitCm": 2.8,
+            "pass": true
+          },
+          "frontHeel31_37": {
+            "foot": "Left",
+            "driftCm": 0.0,
+            "clearanceCm": [
+              8.7,
+              2.1,
+              2.1,
+              2.1,
+              2.1,
+              2.1,
+              2.1
+            ]
+          },
+          "recovery": {
+            "strikeEndFrame": 37,
+            "peakFrame": 39,
+            "startFrame": 40,
+            "endFrame": 49,
+            "frames": 9,
+            "restFrame2cm": 50,
+            "snap4FrameShare": 0.48,
+            "meanJointErrCm": [
+              105.7,
+              106.3,
+              108.9,
+              109.3,
+              103.7,
+              96.4,
+              88.1,
+              78.5,
+              68.0,
+              56.5,
+              43.9,
+              29.9,
+              15.6,
+              5.1,
+              0.4,
+              0.1,
+              0.0
+            ],
+            "rule": "frames from 5 % to 95 % of the post-strike mean joint distance to the final pose >= 8 and no 4 frames cover more than half of it",
+            "pass": true
+          },
+          "sword": {
+            "threequarter": {
+              "pxPerFrame": [
+                29.9,
+                27.8,
+                21.1,
+                22.1,
+                19.5,
+                12.0,
+                7.0,
+                11.5,
+                9.8,
+                5.4,
+                15.1,
+                17.8,
+                19.4,
+                34.1,
+                25.0,
+                9.3,
+                10.5,
+                10.1,
+                9.2,
+                5.6,
+                4.1,
+                6.2,
+                6.8,
+                6.6,
+                4.8,
+                5.2,
+                11.0,
+                18.3,
+                23.5,
+                21.6,
+                7.5,
+                35.8,
+                71.2,
+                59.1,
+                31.7,
+                9.8,
+                0.5,
+                3.7,
+                8.0,
+                4.2,
+                10.2,
+                14.5,
+                17.3,
+                19.2,
+                19.4,
+                18.2,
+                15.9,
+                11.0,
+                5.6,
+                2.0,
+                0.1,
+                0.0
+              ],
+              "maxAfter41": 19.4,
+              "maxStrike": 71.2
+            },
+            "side": {
+              "pxPerFrame": [
+                35.1,
+                35.0,
+                29.2,
+                32.3,
+                28.5,
+                20.5,
+                16.6,
+                17.7,
+                15.8,
+                15.7,
+                22.9,
+                28.1,
+                30.0,
+                28.2,
+                14.4,
+                14.8,
+                12.6,
+                12.2,
+                12.3,
+                9.6,
+                7.6,
+                8.0,
+                8.8,
+                8.9,
+                7.5,
+                6.5,
+                10.4,
+                17.0,
+                21.4,
+                17.9,
+                5.0,
+                39.4,
+                47.1,
+                31.7,
+                29.0,
+                29.6,
+                1.2,
+                3.3,
+                10.9,
+                15.1,
+                12.2,
+                8.2,
+                6.0,
+                6.5,
+                8.9,
+                10.5,
+                10.8,
+                8.6,
+                5.3,
+                2.2,
+                0.0,
+                0.1
+              ],
+              "maxAfter41": 10.8,
+              "maxStrike": 47.1
+            },
+            "limitPx": 25.0,
+            "pass": true
+          },
+          "pass": true
+        }
+      },
+      "r4": {
+        "round": "r4",
+        "file": "Sourced_RollAttack_v6.glb",
+        "sha256": "b852e2fb6cde3865d4d1712fb0bdf2adb7f4dc2912db375c0204866199248329",
+        "duration": 2.2,
+        "rate": 1.2821,
+        "frames30": 53,
+        "chestYaw": [
+          -40.9,
+          80.5,
+          8.1
+        ],
+        "chestToBossMaxDeg": 80.5,
+        "pelvisYaw": [
+          -62.1,
+          52.9,
+          -2.4
+        ],
+        "pelvisToChestTwistMaxDeg": 62.0,
+        "pelvisToChestTwistMeanDeg": 18.1,
+        "freeArmSwingCm": {
+          "lateral": 67.6,
+          "up": 105.9,
+          "forward": 114.5,
+          "max": 114.5
+        },
+        "anklesFirstLastCm": [
+          56.8,
+          61.9
+        ],
+        "idleAnklesCm": 61.9,
+        "firstVsIdleCm": {
+          "max": 43.95,
+          "mean": 29.2
+        },
+        "lastVsIdleCm": {
+          "max": 0.02,
+          "mean": 0.0
+        },
+        "rollExitFeet": {
+          "Left": [
+            {
+              "f": 34,
+              "dxzCm": 5.7,
+              "liftCm": 0.0
+            },
+            {
+              "f": 35,
+              "dxzCm": 1.4,
+              "liftCm": 0.0
+            },
+            {
+              "f": 36,
+              "dxzCm": 0.0,
+              "liftCm": 0.1
+            },
+            {
+              "f": 37,
+              "dxzCm": 0.0,
+              "liftCm": 0.2
+            },
+            {
+              "f": 38,
+              "dxzCm": 0.1,
+              "liftCm": 1.0
+            },
+            {
+              "f": 39,
+              "dxzCm": 14.5,
+              "liftCm": 10.2
+            },
+            {
+              "f": 40,
+              "dxzCm": 29.4,
+              "liftCm": 14.7
+            },
+            {
+              "f": 41,
+              "dxzCm": 31.1,
+              "liftCm": 12.3
+            },
+            {
+              "f": 42,
+              "dxzCm": 19.7,
+              "liftCm": 4.2
+            },
+            {
+              "f": 43,
+              "dxzCm": 1.8,
+              "liftCm": 0.7
+            },
+            {
+              "f": 44,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            },
+            {
+              "f": 45,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            },
+            {
+              "f": 46,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            },
+            {
+              "f": 47,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            },
+            {
+              "f": 48,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            },
+            {
+              "f": 49,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            },
+            {
+              "f": 50,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            },
+            {
+              "f": 51,
+              "dxzCm": 0.0,
+              "liftCm": 0.7
+            }
+          ],
+          "Right": [
+            {
+              "f": 34,
+              "dxzCm": 4.5,
+              "liftCm": 2.7
+            },
+            {
+              "f": 35,
+              "dxzCm": 2.0,
+              "liftCm": 2.3
+            },
+            {
+              "f": 36,
+              "dxzCm": 0.0,
+              "liftCm": 2.6
+            },
+            {
+              "f": 37,
+              "dxzCm": 1.6,
+              "liftCm": 3.8
+            },
+            {
+              "f": 38,
+              "dxzCm": 1.3,
+              "liftCm": 4.8
+            },
+            {
+              "f": 39,
+              "dxzCm": 0.2,
+              "liftCm": 4.8
+            },
+            {
+              "f": 40,
+              "dxzCm": 1.9,
+              "liftCm": 3.5
+            },
+            {
+              "f": 41,
+              "dxzCm": 0.9,
+              "liftCm": 2.8
+            },
+            {
+              "f": 42,
+              "dxzCm": 0.0,
+              "liftCm": 2.8
+            },
+            {
+              "f": 43,
+              "dxzCm": 0.4,
+              "liftCm": 6.1
+            },
+            {
+              "f": 44,
+              "dxzCm": 3.5,
+              "liftCm": 12.2
+            },
+            {
+              "f": 45,
+              "dxzCm": 5.3,
+              "liftCm": 13.1
+            },
+            {
+              "f": 46,
+              "dxzCm": 4.9,
+              "liftCm": 8.4
+            },
+            {
+              "f": 47,
+              "dxzCm": 2.2,
+              "liftCm": 0.3
+            },
+            {
+              "f": 48,
+              "dxzCm": 0.0,
+              "liftCm": 0.0
+            },
+            {
+              "f": 49,
+              "dxzCm": 0.0,
+              "liftCm": 0.0
+            },
+            {
+              "f": 50,
+              "dxzCm": 0.0,
+              "liftCm": 0.0
+            },
+            {
+              "f": 51,
+              "dxzCm": 0.0,
+              "liftCm": 0.0
+            }
+          ]
+        },
+        "bladePitchF33to51": {
+          "33": 19.9,
+          "34": 3.8,
+          "35": -4.4,
+          "36": -5.4,
+          "37": -2.9,
+          "38": -1.3,
+          "39": -1.2,
+          "40": -0.9,
+          "41": -0.4,
+          "42": 0.4,
+          "43": 1.4,
+          "44": 2.6,
+          "45": 3.8,
+          "46": 4.9,
+          "47": 5.9,
+          "48": 6.7,
+          "49": 7.2,
+          "50": 7.5,
+          "51": 7.6
+        },
+        "bladePitchF40to50": {
+          "min": -0.9,
+          "max": 7.5,
+          "maxRiseBetweenFrames": 1.2
+        },
+        "rollWorld": {
+          "rate": 1.2821,
+          "renderedFrames": 53,
+          "hipsWorldSpeedCmPerFrame": [
+            29.65,
+            33.58,
+            36.67,
+            39.97,
+            41.03,
+            41.86,
+            42.27,
+            41.19,
+            39.43,
+            35.63,
+            30.92,
+            27.11,
+            22.73,
+            19.11,
+            15.3,
+            12.51,
+            11.61,
+            11.33,
+            11.65,
+            12.18,
+            13.24,
+            15.04,
+            14.83,
+            13.54,
+            10.79,
+            5.76,
+            1.16,
+            0.55,
+            0.76,
+            2.89,
+            5.68,
+            9.17,
+            10.43,
+            8.64,
+            7.32,
+            5.33,
+            2.93,
+            1.73,
+            1.43,
+            5.12,
+            8.07,
+            10.14,
+            11.32,
+            11.61,
+            11.01,
+            9.51,
+            7.13,
+            3.85,
+            0.43,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "join": {
+            "frame": 23,
+            "speeds": [
+              15.04,
+              14.83,
+              13.54,
+              10.79,
+              5.76,
+              1.16,
+              0.55
+            ],
+            "maxSpeedDropPerFrame": 5.03
+          },
+          "last3": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "contacts": {
+            "Left": {
+              "runs": [
+                {
+                  "clipS": [
+                    0.642,
+                    0.825
+                  ],
+                  "maxSlideCmPerRenderedFrame": 3.6,
+                  "drift": 2.89
+                },
+                {
+                  "clipS": [
+                    1.467,
+                    1.625
+                  ],
+                  "maxSlideCmPerRenderedFrame": 1.12,
+                  "drift": 0.22
+                },
+                {
+                  "clipS": [
+                    1.808,
+                    2.2
+                  ],
+                  "maxSlideCmPerRenderedFrame": 0.21,
+                  "drift": 0.04
+                }
+              ],
+              "minToeHeightCm": 3.3
+            },
+            "Right": {
+              "runs": [
+                {
+                  "clipS": [
+                    0.767,
+                    1.008
+                  ],
+                  "maxSlideCmPerRenderedFrame": 0.02,
+                  "drift": 0.0
+                },
+                {
+                  "clipS": [
+                    1.467,
+                    1.825
+                  ],
+                  "maxSlideCmPerRenderedFrame": 3.39,
+                  "drift": 0.7
+                },
+                {
+                  "clipS": [
+                    2.008,
+                    2.2
+                  ],
+                  "maxSlideCmPerRenderedFrame": 0.04,
+                  "drift": 0.01
+                }
+              ],
+              "minToeHeightCm": 3.39
+            }
+          },
+          "targets": {
+            "last3Below1cm": true,
+            "joinRampDropBelow6cm": true,
+            "contactSlideBelow1cm": false,
+            "toesAtLeastIdle": true
+          }
+        },
+        "rollGatesR5": {
+          "frames": 53,
+          "feetGetupToEnd": {
+            "nearGroundStepsOver2.9cm": {
+              "Left.heel": [
+                [
+                  20,
+                  3.2,
+                  7.4
+                ],
+                [
+                  21,
+                  5.2,
+                  6.8
+                ],
+                [
+                  22,
+                  8.7,
+                  5.0
+                ],
+                [
+                  23,
+                  12.2,
+                  1.9
+                ],
+                [
+                  24,
+                  12.2,
+                  2.3
+                ],
+                [
+                  25,
+                  10.7,
+                  2.9
+                ],
+                [
+                  26,
+                  7.6,
+                  3.0
+                ],
+                [
+                  27,
+                  4.8,
+                  3.5
+                ],
+                [
+                  28,
+                  5.0,
+                  4.1
+                ],
+                [
+                  29,
+                  8.2,
+                  3.9
+                ],
+                [
+                  30,
+                  10.6,
+                  1.6
+                ],
+                [
+                  31,
+                  9.6,
+                  0.7
+                ],
+                [
+                  32,
+                  8.9,
+                  -0.1
+                ],
+                [
+                  33,
+                  7.5,
+                  -0.5
+                ],
+                [
+                  34,
+                  5.7,
+                  -0.7
+                ],
+                [
+                  39,
+                  14.5,
+                  9.6
+                ],
+                [
+                  40,
+                  29.4,
+                  14.0
+                ],
+                [
+                  42,
+                  19.7,
+                  3.6
+                ]
+              ],
+              "Left.toe": [
+                [
+                  20,
+                  2.8,
+                  3.5
+                ],
+                [
+                  21,
+                  5.2,
+                  3.2
+                ],
+                [
+                  22,
+                  9.5,
+                  2.7
+                ],
+                [
+                  23,
+                  13.0,
+                  2.2
+                ],
+                [
+                  24,
+                  12.7,
+                  5.5
+                ],
+                [
+                  25,
+                  11.0,
+                  6.9
+                ],
+                [
+                  26,
+                  7.3,
+                  6.6
+                ],
+                [
+                  27,
+                  4.1,
+                  6.2
+                ],
+                [
+                  28,
+                  4.3,
+                  5.8
+                ],
+                [
+                  29,
+                  8.7,
+                  5.2
+                ],
+                [
+                  30,
+                  10.5,
+                  2.3
+                ],
+                [
+                  31,
+                  9.2,
+                  0.5
+                ],
+                [
+                  32,
+                  9.2,
+                  0.1
+                ],
+                [
+                  33,
+                  7.8,
+                  0.1
+                ],
+                [
+                  34,
+                  5.8,
+                  0.0
+                ],
+                [
+                  39,
+                  15.4,
+                  7.6
+                ],
+                [
+                  40,
+                  28.8,
+                  12.8
+                ],
+                [
+                  41,
+                  30.8,
+                  11.1
+                ],
+                [
+                  42,
+                  19.7,
+                  3.5
+                ]
+              ],
+              "Right.heel": [
+                [
+                  16,
+                  3.4,
+                  4.1
+                ],
+                [
+                  18,
+                  2.9,
+                  -0.1
+                ],
+                [
+                  25,
+                  5.8,
+                  2.4
+                ],
+                [
+                  26,
+                  4.9,
+                  2.7
+                ],
+                [
+                  28,
+                  3.9,
+                  2.1
+                ],
+                [
+                  29,
+                  4.8,
+                  1.6
+                ],
+                [
+                  30,
+                  4.3,
+                  1.4
+                ],
+                [
+                  33,
+                  4.0,
+                  2.9
+                ],
+                [
+                  34,
+                  4.5,
+                  2.7
+                ],
+                [
+                  44,
+                  3.5,
+                  12.2
+                ],
+                [
+                  46,
+                  4.9,
+                  8.4
+                ]
+              ],
+              "Right.toe": [
+                [
+                  16,
+                  4.6,
+                  5.2
+                ],
+                [
+                  19,
+                  5.2,
+                  -0.1
+                ],
+                [
+                  20,
+                  5.0,
+                  -0.9
+                ],
+                [
+                  21,
+                  3.7,
+                  -1.1
+                ],
+                [
+                  25,
+                  5.6,
+                  4.1
+                ],
+                [
+                  26,
+                  4.4,
+                  4.3
+                ],
+                [
+                  28,
+                  5.2,
+                  3.3
+                ],
+                [
+                  29,
+                  6.7,
+                  2.4
+                ],
+                [
+                  30,
+                  7.5,
+                  1.5
+                ],
+                [
+                  31,
+                  7.2,
+                  0.7
+                ],
+                [
+                  32,
+                  5.9,
+                  0.8
+                ],
+                [
+                  34,
+                  5.5,
+                  -1.3
+                ],
+                [
+                  35,
+                  4.5,
+                  -2.1
+                ],
+                [
+                  43,
+                  3.8,
+                  1.0
+                ],
+                [
+                  44,
+                  8.8,
+                  6.1
+                ],
+                [
+                  45,
+                  12.9,
+                  8.2
+                ],
+                [
+                  46,
+                  10.8,
+                  6.5
+                ],
+                [
+                  47,
+                  5.0,
+                  0.3
+                ]
+              ]
+            },
+            "count": 66
+          },
+          "feet41_50": {
+            "perFoot": {
+              "Left": [
+                {
+                  "point": "heel",
+                  "maxNearGroundStepCm41_50": 1.76,
+                  "badSteps": [],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        42,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 1.76
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    11.6,
+                    3.6,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    -0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "stepCm41_50": [
+                    31.1,
+                    19.7,
+                    1.8,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                },
+                {
+                  "point": "toe",
+                  "maxNearGroundStepCm41_50": 19.68,
+                  "badSteps": [
+                    [
+                      42,
+                      19.68
+                    ]
+                  ],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        41,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 21.58
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    11.1,
+                    3.5,
+                    0.0,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.0,
+                    0.1,
+                    0.1,
+                    0.0
+                  ],
+                  "stepCm41_50": [
+                    30.8,
+                    19.7,
+                    1.8,
+                    0.1,
+                    0.0,
+                    0.0,
+                    0.1,
+                    0.0,
+                    0.0,
+                    0.1
+                  ]
+                }
+              ],
+              "Right": [
+                {
+                  "point": "heel",
+                  "maxNearGroundStepCm41_50": 2.24,
+                  "badSteps": [],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        15,
+                        43
+                      ],
+                      "maxDriftInWindowCm": 0.87
+                    },
+                    {
+                      "frames": [
+                        46,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 2.25
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    2.8,
+                    2.8,
+                    6.1,
+                    12.2,
+                    13.1,
+                    8.4,
+                    0.3,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "stepCm41_50": [
+                    0.9,
+                    0.0,
+                    0.4,
+                    3.5,
+                    5.3,
+                    4.9,
+                    2.2,
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                },
+                {
+                  "point": "toe",
+                  "maxNearGroundStepCm41_50": 12.91,
+                  "badSteps": [
+                    [
+                      43,
+                      3.76
+                    ],
+                    [
+                      44,
+                      8.84
+                    ],
+                    [
+                      45,
+                      12.91
+                    ],
+                    [
+                      46,
+                      10.8
+                    ],
+                    [
+                      47,
+                      5.03
+                    ]
+                  ],
+                  "nearRuns": [
+                    {
+                      "frames": [
+                        16,
+                        52
+                      ],
+                      "maxDriftInWindowCm": 42.23
+                    }
+                  ],
+                  "clearanceCm41_50": [
+                    -1.3,
+                    -0.6,
+                    1.0,
+                    6.1,
+                    8.2,
+                    6.5,
+                    0.3,
+                    -0.2,
+                    -0.1,
+                    -0.0
+                  ],
+                  "stepCm41_50": [
+                    0.8,
+                    0.5,
+                    3.8,
+                    8.8,
+                    12.9,
+                    10.8,
+                    5.0,
+                    1.5,
+                    0.8,
+                    0.4
+                  ]
+                }
+              ]
+            },
+            "maxNearGroundStepCm": 19.68,
+            "maxNearGroundRunDriftCm": 42.23,
+            "limitCm": 2.8,
+            "pass": false
+          },
+          "frontHeel31_37": {
+            "foot": "Left",
+            "driftCm": 23.57,
+            "clearanceCm": [
+              0.7,
+              -0.1,
+              -0.5,
+              -0.7,
+              -0.6,
+              -0.5,
+              -0.5
+            ]
+          },
+          "recovery": {
+            "strikeEndFrame": 37,
+            "peakFrame": 38,
+            "startFrame": 41,
+            "endFrame": 48,
+            "frames": 7,
+            "restFrame2cm": 50,
+            "snap4FrameShare": 0.64,
+            "meanJointErrCm": [
+              106.2,
+              110.8,
+              113.0,
+              112.4,
+              108.7,
+              101.1,
+              87.9,
+              68.7,
+              47.4,
+              29.2,
+              16.7,
+              9.0,
+              5.2,
+              2.4,
+              0.7,
+              0.1,
+              0.0
+            ],
+            "rule": "frames from 5 % to 95 % of the post-strike mean joint distance to the final pose >= 8 and no 4 frames cover more than half of it",
+            "pass": false
+          },
+          "sword": {
+            "threequarter": {
+              "pxPerFrame": [
+                29.9,
+                27.8,
+                21.1,
+                22.1,
+                19.5,
+                12.0,
+                7.0,
+                11.5,
+                9.8,
+                5.4,
+                15.1,
+                17.8,
+                19.4,
+                34.1,
+                25.0,
+                9.3,
+                10.5,
+                10.1,
+                9.3,
+                5.8,
+                4.5,
+                6.5,
+                7.1,
+                6.8,
+                5.0,
+                4.9,
+                10.7,
+                17.9,
+                23.1,
+                21.2,
+                7.4,
+                36.0,
+                71.3,
+                59.1,
+                31.7,
+                9.8,
+                7.7,
+                5.6,
+                6.9,
+                9.1,
+                5.0,
+                15.4,
+                47.1,
+                52.1,
+                31.8,
+                4.2,
+                6.5,
+                8.1,
+                6.3,
+                3.4,
+                1.1,
+                0.1
+              ],
+              "maxAfter41": 52.1,
+              "maxStrike": 71.3
+            },
+            "side": {
+              "pxPerFrame": [
+                35.1,
+                35.0,
+                29.2,
+                32.3,
+                28.5,
+                20.5,
+                16.6,
+                17.7,
+                15.8,
+                15.7,
+                22.9,
+                28.1,
+                30.0,
+                28.2,
+                14.4,
+                14.8,
+                12.6,
+                12.2,
+                12.4,
+                9.8,
+                7.8,
+                8.3,
+                9.1,
+                9.1,
+                7.7,
+                6.3,
+                10.1,
+                16.5,
+                21.0,
+                17.5,
+                4.9,
+                39.5,
+                47.2,
+                31.7,
+                29.0,
+                29.6,
+                24.3,
+                15.4,
+                11.5,
+                21.5,
+                33.5,
+                36.7,
+                14.6,
+                17.4,
+                23.8,
+                14.3,
+                7.7,
+                4.1,
+                2.3,
+                1.5,
+                0.5,
+                0.1
+              ],
+              "maxAfter41": 36.7,
+              "maxStrike": 47.2
+            },
+            "limitPx": 25.0,
+            "pass": false
+          },
+          "pass": false
+        }
+      }
     }
-   }
+  },
+  "inheritedFromV030r": {
+    "StrafeRunLeft": {
+      "v030r": "ea9ab6cdd9a2a4ae09332f5cff0927d341bc107395bcfd7e90ec85fb94c05e31",
+      "fileNow": "ea9ab6cdd9a2a4ae09332f5cff0927d341bc107395bcfd7e90ec85fb94c05e31",
+      "identical": true
+    },
+    "StrafeRunLeftTwoHand": {
+      "v030r": "ee4993f447ebb317ed0e96a26cb53d389f04e9e8f7dda7be4cd9d42217256e67",
+      "fileNow": "ee4993f447ebb317ed0e96a26cb53d389f04e9e8f7dda7be4cd9d42217256e67",
+      "identical": true
+    },
+    "StrafeRunRight": {
+      "v030r": "534722bf3b107bca3e6df9c23cb7652d8bc0ed08020fa22bb2184d4f14c08516",
+      "fileNow": "534722bf3b107bca3e6df9c23cb7652d8bc0ed08020fa22bb2184d4f14c08516",
+      "identical": true
+    },
+    "StrafeRunRightTwoHand": {
+      "v030r": "de4be3e9a7949dd4e7e1ee7ab639b5a34f88a1f984eabb862b6728e232fa5f90",
+      "fileNow": "de4be3e9a7949dd4e7e1ee7ab639b5a34f88a1f984eabb862b6728e232fa5f90",
+      "identical": true
+    }
+  },
+  "keptRound3": {
+    "StrafeRight": {
+      "v030q": "630bdfae3eb836f063d171469d765c9bf627266b29a594b2f1f3960a6029e735",
+      "fileNow": "630bdfae3eb836f063d171469d765c9bf627266b29a594b2f1f3960a6029e735",
+      "identical": true
+    },
+    "StrafeRightTwoHand": {
+      "v030q": "2f7e6adaf5c7a952da4810b2eae59546a3cfba18848303d6b0c036a7d34e9edb",
+      "fileNow": "2f7e6adaf5c7a952da4810b2eae59546a3cfba18848303d6b0c036a7d34e9edb",
+      "identical": true
+    },
+    "BackpedalGuard": {
+      "v030q": "856c6d4b3f53deda565f01f506f67198492fc94fb7246eac4779bad0cfb9c7de",
+      "fileNow": "856c6d4b3f53deda565f01f506f67198492fc94fb7246eac4779bad0cfb9c7de",
+      "identical": true
+    },
+    "BackpedalGuardTwoHand": {
+      "v030q": "8bc0c876d4a30fc81d08dce254f7f7800f9ddf9366ab4534bc0ad3134a6e6794",
+      "fileNow": "8bc0c876d4a30fc81d08dce254f7f7800f9ddf9366ab4534bc0ad3134a6e6794",
+      "identical": true
+    }
+  },
+  "byteIdentical": {
+    "Local/FabRigTesting/Exports/Knight_StrafeLeft_v4c.glb": {
+      "before": "d3056114cd4dfa19cc3a2d432d095a1e7a4fed56bf0978319661a87560b3c2ae",
+      "after": "d3056114cd4dfa19cc3a2d432d095a1e7a4fed56bf0978319661a87560b3c2ae",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StrafeLeft_v4c.glb": {
+      "before": "769f7e3d0d93f00c06f7f20087f55059f091e70811187e9bb85c36c0f5a569d3",
+      "after": "769f7e3d0d93f00c06f7f20087f55059f091e70811187e9bb85c36c0f5a569d3",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StrafeLeft/Knight_StrafeLeft_v4c.uasset": {
+      "before": "8a1617e94c9f20b85ff13100d9f16e8634448afe0140e8d48ee8a47b868d2967",
+      "after": "8a1617e94c9f20b85ff13100d9f16e8634448afe0140e8d48ee8a47b868d2967",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StrafeLeftTwoHand_v4c.glb": {
+      "before": "62e0f53eae2e8165616c17eb969022c7e03b8b5f6c9bba821f4209afcf90baaf",
+      "after": "62e0f53eae2e8165616c17eb969022c7e03b8b5f6c9bba821f4209afcf90baaf",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StrafeLeftTwoHand_v4c.glb": {
+      "before": "b0ac8f5db8b66371762d3d953c406069f74548ae8cf41ef78792094b21f0f385",
+      "after": "b0ac8f5db8b66371762d3d953c406069f74548ae8cf41ef78792094b21f0f385",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StrafeLeftTwoHand/Knight_StrafeLeftTwoHand_v4c.uasset": {
+      "before": "ae281b553226edbfc399c9f1b10c95f9c8ece55af5c17c8606ecb5f49bb1afc8",
+      "after": "ae281b553226edbfc399c9f1b10c95f9c8ece55af5c17c8606ecb5f49bb1afc8",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerFront_v4.glb": {
+      "before": "37f8cb3fd97862b58b04ed6d957a49fc29f1bdbc4198d884930512f5fb8b65f6",
+      "after": "37f8cb3fd97862b58b04ed6d957a49fc29f1bdbc4198d884930512f5fb8b65f6",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerFront_v4.glb": {
+      "before": "88c21c7f556dc8299f8dd6261bdb52dc72f6a942542ba1659d23284cafb9f23d",
+      "after": "88c21c7f556dc8299f8dd6261bdb52dc72f6a942542ba1659d23284cafb9f23d",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerFront/Knight_StaggerFront_v4.uasset": {
+      "before": "3bace9eb5d4ba2f24a390a1c82df6b85baf0274462d4a375e3eb94fccbf09d13",
+      "after": "3bace9eb5d4ba2f24a390a1c82df6b85baf0274462d4a375e3eb94fccbf09d13",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerFrontTwoHand_v4.glb": {
+      "before": "9a4c9988921311396a7e3829c1f04cb5f1871b437058682d1c70265ddd0f4f71",
+      "after": "9a4c9988921311396a7e3829c1f04cb5f1871b437058682d1c70265ddd0f4f71",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerFrontTwoHand_v4.glb": {
+      "before": "6adbec1fd079bf88df9bb298aa82e104cebe53d115c78371a963f3c0ff8c33d7",
+      "after": "6adbec1fd079bf88df9bb298aa82e104cebe53d115c78371a963f3c0ff8c33d7",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerFrontTwoHand/Knight_StaggerFrontTwoHand_v4.uasset": {
+      "before": "f87a47b6318c505217efbebcf88e637af769565518ae89044ea62aeef0dc89d0",
+      "after": "f87a47b6318c505217efbebcf88e637af769565518ae89044ea62aeef0dc89d0",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerBack_v4.glb": {
+      "before": "5866f4e56000a8608ad12bece3d32113401665dbad7d3ec712517c170082e405",
+      "after": "5866f4e56000a8608ad12bece3d32113401665dbad7d3ec712517c170082e405",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerBack_v4.glb": {
+      "before": "e3bca007d797fcd35cdfa07ba2cd27d7ce82a209f2fd1eac028b67e0aa2a1c66",
+      "after": "e3bca007d797fcd35cdfa07ba2cd27d7ce82a209f2fd1eac028b67e0aa2a1c66",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerBack/Knight_StaggerBack_v4.uasset": {
+      "before": "0285375993a0e64a6cf436dbe7c9eed5ae93de993c400c8554e0650194691160",
+      "after": "0285375993a0e64a6cf436dbe7c9eed5ae93de993c400c8554e0650194691160",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerBackTwoHand_v4.glb": {
+      "before": "996605d1ea0a555060d907c5c7a300ffb3e6eb13f5437c2e334618f60ccc80fc",
+      "after": "996605d1ea0a555060d907c5c7a300ffb3e6eb13f5437c2e334618f60ccc80fc",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerBackTwoHand_v4.glb": {
+      "before": "012df6ad496ec91f128816556cc08239f7da684796639043ec6cc19e28648b00",
+      "after": "012df6ad496ec91f128816556cc08239f7da684796639043ec6cc19e28648b00",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerBackTwoHand/Knight_StaggerBackTwoHand_v4.uasset": {
+      "before": "237affd1a6ffc03f601f62b470ae38ca64f8d59994ab4dcca0893a8e5d2a9c36",
+      "after": "237affd1a6ffc03f601f62b470ae38ca64f8d59994ab4dcca0893a8e5d2a9c36",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerLeft_v4.glb": {
+      "before": "af4fb938a3da07eaaf51394dac1468e1c37c7193c6bb9ae1d4e03501a30a9e34",
+      "after": "af4fb938a3da07eaaf51394dac1468e1c37c7193c6bb9ae1d4e03501a30a9e34",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerLeft_v4.glb": {
+      "before": "3cedbcfca673485f228a33d970b309ff56744ad6c62285ad7be5adda503fb397",
+      "after": "3cedbcfca673485f228a33d970b309ff56744ad6c62285ad7be5adda503fb397",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerLeft/Knight_StaggerLeft_v4.uasset": {
+      "before": "b7c64ec91c69887c87be18c6a0f870f247e5f200614f66c9dbcad7bfa1c30bbb",
+      "after": "b7c64ec91c69887c87be18c6a0f870f247e5f200614f66c9dbcad7bfa1c30bbb",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerLeftTwoHand_v4.glb": {
+      "before": "f82ca79d46b57631e94fe69f66efe25ff02f3c3b858e56f0ca19f1f84993b116",
+      "after": "f82ca79d46b57631e94fe69f66efe25ff02f3c3b858e56f0ca19f1f84993b116",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerLeftTwoHand_v4.glb": {
+      "before": "bd596e31d39e6fe367ec98129537c455008ee6aa56c86730f9de32c817b5710b",
+      "after": "bd596e31d39e6fe367ec98129537c455008ee6aa56c86730f9de32c817b5710b",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerLeftTwoHand/Knight_StaggerLeftTwoHand_v4.uasset": {
+      "before": "baa8e971099abb177e84d8426472bcdf52a4555cc37a242d8b9c4117cbe95eea",
+      "after": "baa8e971099abb177e84d8426472bcdf52a4555cc37a242d8b9c4117cbe95eea",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerRight_v4.glb": {
+      "before": "1976030698320c9c569a7c71e6d6ee6eb046d60a1b41a6d20c225f80d5163b69",
+      "after": "1976030698320c9c569a7c71e6d6ee6eb046d60a1b41a6d20c225f80d5163b69",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerRight_v4.glb": {
+      "before": "3617a5eb105ca9db77945e0ed903128fff8740d9ed81efe53969f35418b2f943",
+      "after": "3617a5eb105ca9db77945e0ed903128fff8740d9ed81efe53969f35418b2f943",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerRight/Knight_StaggerRight_v4.uasset": {
+      "before": "957e3bf12bdd9f50ac06768f25c1fb9ef1a9d7b595a500c1cc351cf65b4f7ae5",
+      "after": "957e3bf12bdd9f50ac06768f25c1fb9ef1a9d7b595a500c1cc351cf65b4f7ae5",
+      "identical": true
+    },
+    "Local/FabRigTesting/Exports/Knight_StaggerRightTwoHand_v4.glb": {
+      "before": "afe5a0aa985815bdeed86a4035539ff87dc17dc7bd503ef3d34208ff60b83685",
+      "after": "afe5a0aa985815bdeed86a4035539ff87dc17dc7bd503ef3d34208ff60b83685",
+      "identical": true
+    },
+    "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerRightTwoHand_v4.glb": {
+      "before": "9a4c5929deb5641a843a83f4829602b735a5633ab8925be1cf85b5b09f6d12e3",
+      "after": "9a4c5929deb5641a843a83f4829602b735a5633ab8925be1cf85b5b09f6d12e3",
+      "identical": true
+    },
+    "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerRightTwoHand/Knight_StaggerRightTwoHand_v4.uasset": {
+      "before": "98c1dc48a9ae5b96d50d178f7c6867d15fb1dda3158e5ab7ffb588f0c679a6bd",
+      "after": "98c1dc48a9ae5b96d50d178f7c6867d15fb1dda3158e5ab7ffb588f0c679a6bd",
+      "identical": true
+    }
+  },
+  "byteIdenticalAll": true,
+  "inheritedFromV030rIdenticalAll": true,
+  "keptRound3IdenticalAll": true,
+  "gates_v030s_20261030T0351": {
+    "build": "Local/package-20261030T034537Z (v030s, Shipping, sourceId 986fbbb4..., replay stale-basis fix + corrected blendproof foot gate in the binary)",
+    "gpuWait": "GPU shared under the cap with the dragon fix-round-3 Blender jobs; gpu.json marks fps not perf-valid; owner's overnight rule allows overlapping sessions",
+    "runs": [
+      {
+        "mode": "controls",
+        "passed": true,
+        "fps": 41.4,
+        "frameCount": 1690,
+        "durationSeconds": 40.8,
+        "evidence": "Evidence/native-controls-20261030T040106Z",
+        "reason": "movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed",
+        "gpuUtilAvg": 40.9,
+        "gpuUtilMax": 59.0,
+        "perfValid": false
+      },
+      {
+        "mode": "core",
+        "passed": true,
+        "fps": 41.0,
+        "frameCount": 1775,
+        "durationSeconds": 43.3,
+        "evidence": "Evidence/native-core-20261030T035817Z",
+        "reason": "jump-disabled light heavy collapse head bonus completed rise and dodge contact observed",
+        "gpuUtilAvg": 44.3,
+        "gpuUtilMax": 62.0,
+        "perfValid": false
+      },
+      {
+        "mode": "death",
+        "passed": true,
+        "fps": 51.6,
+        "frameCount": 748,
+        "durationSeconds": 14.5,
+        "evidence": "Evidence/native-death-20261030T035925Z",
+        "reason": "death terminal pose, resource reset, movement and primary attack after restart verified",
+        "gpuUtilAvg": 55.0,
+        "gpuUtilMax": 61.0,
+        "perfValid": false
+      },
+      {
+        "mode": "guard",
+        "passed": true,
+        "fps": 28.2,
+        "frameCount": 2236,
+        "durationSeconds": 79.4,
+        "evidence": "Evidence/native-guard-20261030T040211Z",
+        "reason": "front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified",
+        "gpuUtilAvg": 40.4,
+        "gpuUtilMax": 66.0,
+        "perfValid": false
+      },
+      {
+        "mode": "integration",
+        "passed": true,
+        "fps": 24.7,
+        "frameCount": 2354,
+        "durationSeconds": 95.3,
+        "evidence": "Evidence/native-integration-20261030T035150Z",
+        "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+        "gpuUtilAvg": 31.0,
+        "gpuUtilMax": 61.0,
+        "perfValid": false
+      },
+      {
+        "mode": "integration",
+        "passed": true,
+        "fps": 22.9,
+        "frameCount": 2524,
+        "durationSeconds": 110.1,
+        "evidence": "Evidence/native-integration-20261030T035341Z",
+        "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+        "gpuUtilAvg": 28.6,
+        "gpuUtilMax": 59.0,
+        "perfValid": false
+      },
+      {
+        "mode": "integration",
+        "passed": true,
+        "fps": 23.4,
+        "frameCount": 2636,
+        "durationSeconds": 112.6,
+        "evidence": "Evidence/native-integration-20261030T035559Z",
+        "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+        "gpuUtilAvg": 36.8,
+        "gpuUtilMax": 69.0,
+        "perfValid": false
+      },
+      {
+        "mode": "lockon",
+        "passed": true,
+        "fps": 45.4,
+        "frameCount": 1666,
+        "durationSeconds": 36.7,
+        "evidence": "Evidence/native-lockon-20261030T040004Z",
+        "reason": "lock-on: 10 locomotion trials sampled their clips, max facing error 12.4 deg; blink direction 3/3; directional stagger lab 5/5",
+        "gpuUtilAvg": 43.0,
+        "gpuUtilMax": 59.0,
+        "perfValid": false
+      }
+    ],
+    "blendproof": {
+      "after": "Evidence/native-blendproof-20261030T034730Z",
+      "before": "Evidence/native-blendproof-20261030T034953Z",
+      "afterSummary": {
+        "sequencesPassed": 1,
+        "gripLock": true,
+        "swordMaxExcessCm": 1.789937973022461,
+        "feetSteadyCmPerS": {
+          "StrafeLeft_1H": 88.4,
+          "StrafeRunLeft_1H": 224.1,
+          "BlinkLeft_1H": 159.7,
+          "StrafeRight_2H": 88.7,
+          "BlinkRight_2H": 1.0,
+          "RollAttack_1H": 72.0,
+          "BackpedalGuard_1H": 39.9,
+          "StrafeRunRight_1H": 1.1,
+          "BlinkRight_1H": 0.8
+        },
+        "feetTransitionCmPerS": {
+          "StrafeLeft_1H": 538.5,
+          "StrafeRunLeft_1H": 1587.4,
+          "BlinkLeft_1H": 60.0,
+          "StrafeRight_2H": 604.8,
+          "BlinkRight_2H": 49.8,
+          "RollAttack_1H": 924.3,
+          "BackpedalGuard_1H": 164.2,
+          "StrafeRunRight_1H": 452.5,
+          "BlinkRight_1H": 60.1
+        }
+      },
+      "beforeSummary": {
+        "sequencesPassed": 1,
+        "gripLock": false,
+        "swordMaxExcessCm": 17.675613403320312,
+        "feetSteadyCmPerS": {
+          "StrafeLeft_1H": 94.1,
+          "StrafeRunLeft_1H": 169.0,
+          "BlinkLeft_1H": 86.0,
+          "StrafeRight_2H": 82.1,
+          "BlinkRight_2H": 0.7,
+          "RollAttack_1H": 20.0,
+          "BackpedalGuard_1H": 62.3,
+          "StrafeRunRight_1H": 153.2,
+          "BlinkRight_1H": 0.9
+        },
+        "feetTransitionCmPerS": {
+          "StrafeLeft_1H": 540.5,
+          "StrafeRunLeft_1H": 1587.9,
+          "BlinkLeft_1H": 60.1,
+          "StrafeRight_2H": 601.0,
+          "BlinkRight_2H": 65.5,
+          "RollAttack_1H": 504.1,
+          "BackpedalGuard_1H": 168.5,
+          "StrafeRunRight_1H": 688.0,
+          "BlinkRight_1H": 54.1
+        }
+      },
+      "note": "sword gate 9/9 with the grip lock (0.02-0.07 cm, BlinkRight_2H 1.79 cm), fails without it; planted-foot gate (corrected, 60 cm/s): steady playback under 2 cm/s for BlinkRight/sprint-right, BlinkLeft 160 cm/s over 4 windows at the landing settle (clip note), everything else is engine crossfade skating (open engine item, see blendproof-footgate-diagnosis.md section 5)"
+    },
+    "summary": "8/8 passed on v030s: controls 41.4, core 41.0, death 51.6, guard 28.2, integration 24.7, integration 22.9, integration 23.4, lockon 45.4 fps"
   }
- },
- "inheritedFromV030r": {
-  "StrafeRunLeft": {
-   "v030r": "ea9ab6cdd9a2a4ae09332f5cff0927d341bc107395bcfd7e90ec85fb94c05e31",
-   "fileNow": "ea9ab6cdd9a2a4ae09332f5cff0927d341bc107395bcfd7e90ec85fb94c05e31",
-   "identical": true
-  },
-  "StrafeRunLeftTwoHand": {
-   "v030r": "ee4993f447ebb317ed0e96a26cb53d389f04e9e8f7dda7be4cd9d42217256e67",
-   "fileNow": "ee4993f447ebb317ed0e96a26cb53d389f04e9e8f7dda7be4cd9d42217256e67",
-   "identical": true
-  },
-  "StrafeRunRight": {
-   "v030r": "534722bf3b107bca3e6df9c23cb7652d8bc0ed08020fa22bb2184d4f14c08516",
-   "fileNow": "534722bf3b107bca3e6df9c23cb7652d8bc0ed08020fa22bb2184d4f14c08516",
-   "identical": true
-  },
-  "StrafeRunRightTwoHand": {
-   "v030r": "de4be3e9a7949dd4e7e1ee7ab639b5a34f88a1f984eabb862b6728e232fa5f90",
-   "fileNow": "de4be3e9a7949dd4e7e1ee7ab639b5a34f88a1f984eabb862b6728e232fa5f90",
-   "identical": true
-  }
- },
- "keptRound3": {
-  "StrafeRight": {
-   "v030q": "630bdfae3eb836f063d171469d765c9bf627266b29a594b2f1f3960a6029e735",
-   "fileNow": "630bdfae3eb836f063d171469d765c9bf627266b29a594b2f1f3960a6029e735",
-   "identical": true
-  },
-  "StrafeRightTwoHand": {
-   "v030q": "2f7e6adaf5c7a952da4810b2eae59546a3cfba18848303d6b0c036a7d34e9edb",
-   "fileNow": "2f7e6adaf5c7a952da4810b2eae59546a3cfba18848303d6b0c036a7d34e9edb",
-   "identical": true
-  },
-  "BackpedalGuard": {
-   "v030q": "856c6d4b3f53deda565f01f506f67198492fc94fb7246eac4779bad0cfb9c7de",
-   "fileNow": "856c6d4b3f53deda565f01f506f67198492fc94fb7246eac4779bad0cfb9c7de",
-   "identical": true
-  },
-  "BackpedalGuardTwoHand": {
-   "v030q": "8bc0c876d4a30fc81d08dce254f7f7800f9ddf9366ab4534bc0ad3134a6e6794",
-   "fileNow": "8bc0c876d4a30fc81d08dce254f7f7800f9ddf9366ab4534bc0ad3134a6e6794",
-   "identical": true
-  }
- },
- "byteIdentical": {
-  "Local/FabRigTesting/Exports/Knight_StrafeLeft_v4c.glb": {
-   "before": "d3056114cd4dfa19cc3a2d432d095a1e7a4fed56bf0978319661a87560b3c2ae",
-   "after": "d3056114cd4dfa19cc3a2d432d095a1e7a4fed56bf0978319661a87560b3c2ae",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StrafeLeft_v4c.glb": {
-   "before": "769f7e3d0d93f00c06f7f20087f55059f091e70811187e9bb85c36c0f5a569d3",
-   "after": "769f7e3d0d93f00c06f7f20087f55059f091e70811187e9bb85c36c0f5a569d3",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StrafeLeft/Knight_StrafeLeft_v4c.uasset": {
-   "before": "8a1617e94c9f20b85ff13100d9f16e8634448afe0140e8d48ee8a47b868d2967",
-   "after": "8a1617e94c9f20b85ff13100d9f16e8634448afe0140e8d48ee8a47b868d2967",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StrafeLeftTwoHand_v4c.glb": {
-   "before": "62e0f53eae2e8165616c17eb969022c7e03b8b5f6c9bba821f4209afcf90baaf",
-   "after": "62e0f53eae2e8165616c17eb969022c7e03b8b5f6c9bba821f4209afcf90baaf",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StrafeLeftTwoHand_v4c.glb": {
-   "before": "b0ac8f5db8b66371762d3d953c406069f74548ae8cf41ef78792094b21f0f385",
-   "after": "b0ac8f5db8b66371762d3d953c406069f74548ae8cf41ef78792094b21f0f385",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StrafeLeftTwoHand/Knight_StrafeLeftTwoHand_v4c.uasset": {
-   "before": "ae281b553226edbfc399c9f1b10c95f9c8ece55af5c17c8606ecb5f49bb1afc8",
-   "after": "ae281b553226edbfc399c9f1b10c95f9c8ece55af5c17c8606ecb5f49bb1afc8",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerFront_v4.glb": {
-   "before": "37f8cb3fd97862b58b04ed6d957a49fc29f1bdbc4198d884930512f5fb8b65f6",
-   "after": "37f8cb3fd97862b58b04ed6d957a49fc29f1bdbc4198d884930512f5fb8b65f6",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerFront_v4.glb": {
-   "before": "88c21c7f556dc8299f8dd6261bdb52dc72f6a942542ba1659d23284cafb9f23d",
-   "after": "88c21c7f556dc8299f8dd6261bdb52dc72f6a942542ba1659d23284cafb9f23d",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerFront/Knight_StaggerFront_v4.uasset": {
-   "before": "3bace9eb5d4ba2f24a390a1c82df6b85baf0274462d4a375e3eb94fccbf09d13",
-   "after": "3bace9eb5d4ba2f24a390a1c82df6b85baf0274462d4a375e3eb94fccbf09d13",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerFrontTwoHand_v4.glb": {
-   "before": "9a4c9988921311396a7e3829c1f04cb5f1871b437058682d1c70265ddd0f4f71",
-   "after": "9a4c9988921311396a7e3829c1f04cb5f1871b437058682d1c70265ddd0f4f71",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerFrontTwoHand_v4.glb": {
-   "before": "6adbec1fd079bf88df9bb298aa82e104cebe53d115c78371a963f3c0ff8c33d7",
-   "after": "6adbec1fd079bf88df9bb298aa82e104cebe53d115c78371a963f3c0ff8c33d7",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerFrontTwoHand/Knight_StaggerFrontTwoHand_v4.uasset": {
-   "before": "f87a47b6318c505217efbebcf88e637af769565518ae89044ea62aeef0dc89d0",
-   "after": "f87a47b6318c505217efbebcf88e637af769565518ae89044ea62aeef0dc89d0",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerBack_v4.glb": {
-   "before": "5866f4e56000a8608ad12bece3d32113401665dbad7d3ec712517c170082e405",
-   "after": "5866f4e56000a8608ad12bece3d32113401665dbad7d3ec712517c170082e405",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerBack_v4.glb": {
-   "before": "e3bca007d797fcd35cdfa07ba2cd27d7ce82a209f2fd1eac028b67e0aa2a1c66",
-   "after": "e3bca007d797fcd35cdfa07ba2cd27d7ce82a209f2fd1eac028b67e0aa2a1c66",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerBack/Knight_StaggerBack_v4.uasset": {
-   "before": "0285375993a0e64a6cf436dbe7c9eed5ae93de993c400c8554e0650194691160",
-   "after": "0285375993a0e64a6cf436dbe7c9eed5ae93de993c400c8554e0650194691160",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerBackTwoHand_v4.glb": {
-   "before": "996605d1ea0a555060d907c5c7a300ffb3e6eb13f5437c2e334618f60ccc80fc",
-   "after": "996605d1ea0a555060d907c5c7a300ffb3e6eb13f5437c2e334618f60ccc80fc",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerBackTwoHand_v4.glb": {
-   "before": "012df6ad496ec91f128816556cc08239f7da684796639043ec6cc19e28648b00",
-   "after": "012df6ad496ec91f128816556cc08239f7da684796639043ec6cc19e28648b00",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerBackTwoHand/Knight_StaggerBackTwoHand_v4.uasset": {
-   "before": "237affd1a6ffc03f601f62b470ae38ca64f8d59994ab4dcca0893a8e5d2a9c36",
-   "after": "237affd1a6ffc03f601f62b470ae38ca64f8d59994ab4dcca0893a8e5d2a9c36",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerLeft_v4.glb": {
-   "before": "af4fb938a3da07eaaf51394dac1468e1c37c7193c6bb9ae1d4e03501a30a9e34",
-   "after": "af4fb938a3da07eaaf51394dac1468e1c37c7193c6bb9ae1d4e03501a30a9e34",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerLeft_v4.glb": {
-   "before": "3cedbcfca673485f228a33d970b309ff56744ad6c62285ad7be5adda503fb397",
-   "after": "3cedbcfca673485f228a33d970b309ff56744ad6c62285ad7be5adda503fb397",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerLeft/Knight_StaggerLeft_v4.uasset": {
-   "before": "b7c64ec91c69887c87be18c6a0f870f247e5f200614f66c9dbcad7bfa1c30bbb",
-   "after": "b7c64ec91c69887c87be18c6a0f870f247e5f200614f66c9dbcad7bfa1c30bbb",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerLeftTwoHand_v4.glb": {
-   "before": "f82ca79d46b57631e94fe69f66efe25ff02f3c3b858e56f0ca19f1f84993b116",
-   "after": "f82ca79d46b57631e94fe69f66efe25ff02f3c3b858e56f0ca19f1f84993b116",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerLeftTwoHand_v4.glb": {
-   "before": "bd596e31d39e6fe367ec98129537c455008ee6aa56c86730f9de32c817b5710b",
-   "after": "bd596e31d39e6fe367ec98129537c455008ee6aa56c86730f9de32c817b5710b",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerLeftTwoHand/Knight_StaggerLeftTwoHand_v4.uasset": {
-   "before": "baa8e971099abb177e84d8426472bcdf52a4555cc37a242d8b9c4117cbe95eea",
-   "after": "baa8e971099abb177e84d8426472bcdf52a4555cc37a242d8b9c4117cbe95eea",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerRight_v4.glb": {
-   "before": "1976030698320c9c569a7c71e6d6ee6eb046d60a1b41a6d20c225f80d5163b69",
-   "after": "1976030698320c9c569a7c71e6d6ee6eb046d60a1b41a6d20c225f80d5163b69",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerRight_v4.glb": {
-   "before": "3617a5eb105ca9db77945e0ed903128fff8740d9ed81efe53969f35418b2f943",
-   "after": "3617a5eb105ca9db77945e0ed903128fff8740d9ed81efe53969f35418b2f943",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerRight/Knight_StaggerRight_v4.uasset": {
-   "before": "957e3bf12bdd9f50ac06768f25c1fb9ef1a9d7b595a500c1cc351cf65b4f7ae5",
-   "after": "957e3bf12bdd9f50ac06768f25c1fb9ef1a9d7b595a500c1cc351cf65b4f7ae5",
-   "identical": true
-  },
-  "Local/FabRigTesting/Exports/Knight_StaggerRightTwoHand_v4.glb": {
-   "before": "afe5a0aa985815bdeed86a4035539ff87dc17dc7bd503ef3d34208ff60b83685",
-   "after": "afe5a0aa985815bdeed86a4035539ff87dc17dc7bd503ef3d34208ff60b83685",
-   "identical": true
-  },
-  "Local/CustomuseAssets/Knight20261029r2/knight/Knight_StaggerRightTwoHand_v4.glb": {
-   "before": "9a4c5929deb5641a843a83f4829602b735a5633ab8925be1cf85b5b09f6d12e3",
-   "after": "9a4c5929deb5641a843a83f4829602b735a5633ab8925be1cf85b5b09f6d12e3",
-   "identical": true
-  },
-  "Unreal/Veyr/Content/Characters/Customuse/KnightB/v030p/Animations/StaggerRightTwoHand/Knight_StaggerRightTwoHand_v4.uasset": {
-   "before": "98c1dc48a9ae5b96d50d178f7c6867d15fb1dda3158e5ab7ffb588f0c679a6bd",
-   "after": "98c1dc48a9ae5b96d50d178f7c6867d15fb1dda3158e5ab7ffb588f0c679a6bd",
-   "identical": true
-  }
- },
- "byteIdenticalAll": true,
- "inheritedFromV030rIdenticalAll": true,
- "keptRound3IdenticalAll": true
 }
