@@ -856,3 +856,79 @@ reused. `annotate_air.py` now takes the touchdown frame from the sampled action 
 rebuild hit the same wall on the roar sample (exit 75), so `Data/dragon/` still holds the v4 move data. Only the hover
 `loop_frames` annotation was applied (tests 3 OK). Re-run `BLENDER=... BLENDER_CAP=2 tools/movedata/run_veyr.sh` once
 the GPU is free.
+
+## Fix round 4 (2026-10-30): v6 Actions against the round-4 critique (NOT YET AUTHORED)
+
+Spec: `docs/dragon-critique-round4-20261030.md`. Rise and bite v5 shipped; round 4 covers only what the critic failed:
+air_land (blocker), roar, collapse, and the bite near wing. Every v6 recipe adds a layer on top of the v5 channels
+(`tools/dragon_refine/v4/refine_v6.py`, helpers `lib_v6.py`), so what v5 passed is kept. Blends:
+`Local/video2rig/dragon/Dragon_<Move>_sd_v2r_v6.blend`, Actions `<move>_v6`.
+
+**Status: not yet authored.** At 16:40 ET the coordinator's MPS training pinned the GPU at about 97 % for about 2 h, so
+`gpu_slot capture` would exit 75, and the Blender refine runs were stopped on the coordinator's instruction. One air_land
+trial was authored before that (16:39) into `Local/video2rig/dragon/refine/v6/work/t_air_land.blend`, and it was measured
+on the CPU. Roar, collapse and bite v6 have not been run. `tools/movedata/run_veyr.sh` still reads v5 for all four.
+
+Resume command (authoring and measuring, one Blender at a time through `gpu_slot capture --label dragon-r4-author`; a second
+exit 75 stops it; re-run to resume):
+
+    /Users/midir/dragon-boss-fight/tools/dragon_refine/v4/run_author_v6.sh air_land roar collapse bite
+    # air_land with new knobs (the trial failed the area target): FORCE=1 OPTS_air_land="fold_new_b=116 fold_lin=0.8" ... run_author_v6.sh air_land
+
+It scores v4, v5 and v6 into `Local/dragon-review-20261029/measure_v6.json` (`measure_v6.py`, CPU raster). It promotes each
+v6 that passes every target to `Dragon_<Move>_sd_v2r_v6.blend` and comments the rest out of
+`Local/dragon-review-20261029/queue_v6.txt` (labels AL6, RS6, CO6, BI6; served prefix `_r4_`; "Round 4 fix" column). Run the
+renders afterwards, once the GPU is free:
+
+    /Users/midir/dragon-boss-fight/tools/dragon_refine/v4/run_queue_v6.sh
+
+### What each v6 layer does
+- **air_land:**
+  - Re-times only the wing bones. New frames 96–110 play v5's 96–104 on an eased curve (half linear, half smoothstep), then
+    rejoin v5 at 122. Body, slam and feet timing stay as in v5.
+  - Slam hold (100–132): an 11-frame pant (spine 3.5°, neck 4.5°, jaw 4°, folded-wing heave 3°) plus a 16° sideways tail
+    lash on a 16-frame period, lagging down the tail.
+  - The feet are IK-planted back on v5's positions.
+- **roar:** a searched extra on the screen-left (PosZ) wing (root raise and sweep, elbow unfold) under v5's own flare envelope.
+  The target is equal half-spans about the frame-0 centre, at a raster span of 1.15 (critic about 1.11). v5's tremor, breath,
+  tail and feet are untouched.
+- **collapse:**
+  - A searched lying-pose extra lowers the front silhouette top: hips (Spine_1) pitch with a tail-root counter-pitch, plus
+    the screen-right (NegZ) wing's root, elbow and wrist. It is penalised for going through the floor, for leaving the body,
+    and for lateral spread.
+  - Three non-synchronous breathing layers: a 40-frame breath (spine, neck, folded wings), a 27-frame tail sway and a
+    33-frame head drift. Each is zero at the last frame. The feet are re-planted on v5's.
+- **bite:** a mirrored extra on both wings' root raise and sweep plus elbow unfold, over a 30–70 strike envelope. It is
+  searched to keep the 3/4 upper-left zone area at 0.82 or more of frame 0 at frames 44, 47 and 50.
+
+### Proxies and their calibration
+CPU raster against the round-4 critic's readings of the v4/v5 renders (more detail in the `measure_v6.py` docstring):
+- Roar half-spans about the **frame-0** centre. v5 raster: L 1.075, R 1.157 (gap 0.082). Critic: 1.03 and 1.11 (gap 0.085).
+  v5 used a per-frame centre, which read 3.2 % and missed this; that is why v5 "passed" in raster.
+- Roar span: critic ≈ raster − 0.04.
+- Bite upper-left quadrant about the frame-0 centroid. v4 raster: 0.27, 0.39, 0.54. Critic: 0.27, 0.37, 0.52. For v5,
+  critic ≈ raster − 0.07. v5's wing-mask area (0.887) was the wrong measure.
+- Collapse front end height: raster 0.531 against critic 0.53.
+
+### Numbers vs targets (CPU raster, `Local/dragon-review-20261029/measure_v6.json`)
+d is in the round-3 critic's units; the round-4 critic's d is about 2.5 times larger.
+
+| Move | Target (round-4 critique) | v5 | v6 |
+| --- | --- | --- | --- |
+| AL | front area change ≤12 % per frame (90–120) | 29.5 % at step 99: fail | trial 22 % at step 102: **fail** |
+| AL | no step >2.2x its neighbours | raster max 1.81 (the critic's render found 2.37 at 99) | trial 1.48: pass |
+| AL | front hold d 106–114 ≥0.4 | 0.00 (pixel-identical): fail | trial min 0.67: pass |
+| AL | tail whip (tail-tip sideways p2p after contact) | 14.7 cm | trial 32.2 cm |
+| AL | round-3 checks kept | all pass | trial: top drop within 6 f after contact 0.076 BH (needs 0.3; reaches 0.42 at C+7, held 19 f): **fail by one frame** |
+| RS | half-spans within 5 % (frame-0 centre) | L 1.075, R 1.157; gap 7.1 % mean, 9.0 % max: fail | not authored |
+| RS | hold span 1.10–1.12x (critic estimate, raster − 0.04) | 1.077 mean: fail | not authored |
+| RS | tremor not a 4-frame buzz | period 5.1 f (v4 2.7): pass | not authored |
+| CO | front lying height ≤0.50 | 0.531: fail | not authored |
+| CO | breathing, last-35-frame min d ≥ v4 (front/left/3q) | 0.20/0.16/0.20 against v4 0.36/0.27/0.27: fail | not authored |
+| CO | seam: collapse end IoU with rise_v5 frame 0 | 1.0 | not authored (the v6 lying pose changes it; report it) |
+| BI | 3/4 upper-left area ≥0.7 at 44–50 (critic estimate, raster − 0.07) | raster min 0.54, estimate 0.47: fail | not authored |
+
+The air_land trial was not promoted. `Dragon_AirLand_sd_v2r_v6.blend` does not exist. Two knobs to try next:
+`fold_new_b` (longer fold, e.g. 116) with `fold_lin=0.8`, which flattens the peak area change; and `fold_a` 1–2 frames
+earlier, so the slam silhouette still drops ≥0.3 BH within 6 frames of contact. The critic also allowed the source's choice:
+wings spread flat to the floor at impact. That is not implemented yet.
