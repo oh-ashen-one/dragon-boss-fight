@@ -286,3 +286,9 @@ cd ~/dragon-boss-fight && bash tools/movedata/run_veyr.sh && python3 -m unittest
 ```
 work out of ~/dragon-boss-fight on branch claude-code-enhancements, read HANDOFF.md, restore the v2r-dragon-20261028 bundle into Local/, pick up at next steps
 ```
+
+### 2026-10-30 03:05 UTC (orchestrator, Fable 5.1): fix-round-2 renders done, critic and lying start picture running
+
+- GPU handed over by the Hulk session (midir-60) at 02:37 UTC. `tools/dragon_refine/v4/run_queue_v4.sh` rendered all nine v4 Actions (AH4, TK4, AL4, FD4, RS4, CO4, RI4, BI4, LA4; `Local/dragon-review-20261029/queue_v4.log`, one Blender at a time through `gpu_slot.sh capture`, exit 0) and rebuilt the review page (`serve/index.html`, "Round 2 fix" column, lazy-load kept; served on port 8790).
+- Running: blind re-critique of fix round 2 on the ground clips plus the first critique of the four airborne clips (opus-critic, videos only, magnitude coupling criterion with the wing leading 0-4 frames) -> `Local/dragon-review-20261029/critique-round3.md`; the lying start picture for the rise clip (sonnet-builder: collapse v4 end pose rendered with the ground cameras via `render_start_air.py --cameras-from`, into `Local/video2rig/dragon-lying/start/`, note in `docs/dragon-lying-start-20261030.md`).
+- Next: fix round 3 from the critique (rebuild move data, tests), one Seedance 2.5 rise-from-lying clip (decline the preset recommendation), reader `prepare --init <ground reader.pt>`, fit, refine; push; then message midir-5b (Markhor) that it can run and tell midir-60 this session is done.
