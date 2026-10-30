@@ -959,10 +959,14 @@ bool AVeyrReplay::DriveIntegrationInputs()
     if(IntegrationPhase==0)
     {
         Neutral();
-        if(!Ready)return true;
+        if(!Ready){if(Trial.Lock)IntegrationConfiguredAt=Elapsed;return true;} // locked trials need a full Ready settle (not RunStop/Roll) before the input
         // Safety navigation is ordinary movement/roll input, not a teleport or AI pause.
         // Re-evaluate the actual telegraph every frame; pause trial setup to evade.
-        const FVector BlinkSide=Knight->GetActorRightVector()*(Trial.Kind==EExercise::BlinkLeft?-1.f:1.f);
+        // Locked blink/lateral trials use the basis the knight will have once locked on (boss-facing), never the stale pre-turn actor rotation.
+        const bool LockedBasis=Trial.Lock&&(Blink||Trial.Kind==EExercise::Lateral);
+        const FVector BossFlat=(Dragon->GetActorLocation()-Feet).GetSafeNormal2D();
+        const FVector TrialRight=LockedBasis?FRotationMatrix(FRotator(0.f,(Dragon->GetActorLocation()-Feet).Rotation().Yaw,0.f)).GetUnitAxis(EAxis::Y):Knight->GetActorRightVector();
+        const FVector BlinkSide=TrialRight*(Trial.Kind==EExercise::BlinkLeft?-1.f:1.f);
         const bool BlinkPathNearEdge=Blink&&(Feet+BlinkSide*300.f).Size2D()>2900.f;
         if(Threat||BossDistance<2300.f||BlinkPathNearEdge)
         {
@@ -984,6 +988,8 @@ bool AVeyrReplay::DriveIntegrationInputs()
         if(Knight->RunAnimationVariant!=Trial.RunVariant||Knight->HeavyAnimationVariant!=Trial.HeavyVariant||Knight->TwoHandHeavyAnimationVariant!=Trial.TwoHeavyVariant)
         {Knight->VeyrSetVariants(Trial.RunVariant,Trial.HeavyVariant,Trial.TwoHeavyVariant);Changed=true;}
         if(Changed){IntegrationConfiguredAt=Elapsed;return true;}
+        // Locked trials: the knight must actually face the boss (within ~8 deg) before the input, so the knight's own left/right decision matches the scenario's.
+        if(Trial.Lock&&FVector::DotProduct(Knight->GetActorForwardVector().GetSafeNormal2D(),BossFlat)<FMath::Cos(FMath::DegreesToRadians(8.f))){IntegrationConfiguredAt=Elapsed;return true;}
         if(Elapsed-IntegrationConfiguredAt<.40f)return true;
         IntegrationOrigin=Feet;IntegrationRequestedAt=Elapsed;IntegrationContactsBefore=Dragon->GetSwordContactCount();IntegrationHitsBefore=Knight->HitsTaken;
         IntegrationEchoesBefore=Knight->BlinkEchoCaptures;IntegrationHiddenWindowsBefore=Knight->BlinkHiddenWindows;IntegrationRollsBefore=Knight->Rolls;IntegrationRollAttacksBefore=Knight->RollAttacks;
@@ -991,7 +997,7 @@ bool AVeyrReplay::DriveIntegrationInputs()
         IntegrationTrial->SetNumberField(TEXT("requestedSeconds"),Elapsed);IntegrationTrial->SetNumberField(TEXT("healthBefore"),Knight->Health);
         IntegrationTrial->SetNumberField(TEXT("staminaBefore"),Knight->Stamina);IntegrationTrial->SetArrayField(TEXT("origin"),VectorJson(Feet));
         IntegrationTrial->SetBoolField(TEXT("twoHanded"),Knight->IsTwoHanded());IntegrationTrial->SetBoolField(TEXT("lockedOn"),Knight->bLockedOn);
-        IntegrationDirection=Trial.Kind==EExercise::Lateral?Knight->GetActorRightVector():Blink?BlinkSide:EscapeDirection();
+        IntegrationDirection=Trial.Kind==EExercise::Lateral?TrialRight:Blink?BlinkSide:EscapeDirection();
         bIntegrationIssued=true;IntegrationPhase=1;
         if(Trial.Kind==EExercise::Primary)Knight->PressPrimaryAttack();
         else if(Trial.Kind==EExercise::Backstep)Knight->TryBackstep();
