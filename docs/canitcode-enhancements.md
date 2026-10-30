@@ -932,3 +932,32 @@ The air_land trial was not promoted. `Dragon_AirLand_sd_v2r_v6.blend` does not e
 `fold_new_b` (longer fold, e.g. 116) with `fold_lin=0.8`, which flattens the peak area change; and `fold_a` 1–2 frames
 earlier, so the slam silhouette still drops ≥0.3 BH within 6 frames of contact. The critic also allowed the source's choice:
 wings spread flat to the floor at impact. That is not implemented yet.
+
+## Rise from lying: refine of the video2rig fit (2026-10-30, authored on the CPU, Blender run pending)
+
+The Seedance clip `rise_lying` (collapse end pose as start picture, `docs/dragon-lying-start-20261030.md`) was fitted with the lying reader
+(`Local/video2rig/dragon-lying/work/rise_lying/`, outline 0.77 / 0.81). The blind A/B (`docs/dragon-rise-ab-20261030.md`) called the AI clip clearly
+better than the authored rise v5 on two conditions: trim the opening hold to 1-1.5 s, and make the settle land on the idle pose. The scripts below
+turn the fit into Action `rise_lying_v1` on `dragon-lying/model.blend`. No Blender process was started while authoring them (GPU pinned by another
+session's training); every numpy part was run on the CPU, the Blender part (`refine_rise_lying.py`) was only syntax / name checked.
+
+| File (`tools/dragon_refine/v4/`) | Runs in | Does |
+| --- | --- | --- |
+| `lib_rise_lying.py` | numpy (CPU and Blender) | motion npz + rig loader, Euler view (video2rig's `Rx(a) Ry(b) Rz(c)`, b = twist), the stages, CPU linear-blend skinner (matches video2rig's skin to 1e-8 m and Blender's `d_idle_v2` dump to 0.3 mm), `dry` / `dump` / `info` commands |
+| `prep_wings_rl.py` | CPU (needs video2rig's camera class, cv2) | scores the fit's silhouette against the clip's panel masks and re-solves the wing roots / elbows / wrists per frame (window 100-134) with the twist capped; writes `refine_rl/wings_rl.npz` (+ views, + json) |
+| `refine_rise_lying.py` | Blender | import (video2rig `import_motion.py`, Action `rise_lying_fit` kept as raw reference), numpy stages, Action `rise_lying_v1`, IK foot lock, end pinned to idle_v2 frame 0, self-check vs the CPU skinner, mesh dump |
+| `measure_rise_lying.py`, `src_views_rl.py` | CPU | raster measure (pops, floor, hold, twist, steps, last frame vs idle, silhouette vs source), A/B numbers for rise v5 measured the same way |
+| `run_rise_lying.sh`, `run_queue_rl.sh`, `build_review_page_rl.py` | zsh | gated end-to-end run (every Blender through `gpu_slot.sh capture --label dragon-riselying`, exit 75 retry), render queue RL1, "Rise from lying" section on the review page |
+
+Stages (`numpy_pipeline`, same code in the dry run and in Blender): right hind knee relaxed 6 deg off its joint limit (plateau at -53.0 deg for 114 frames) ->
+wing clean over clip frames 100-134 (solved wings, twist soft-capped at 25 deg, 5-frame binomial smoothing, step cap 8 deg per frame) -> trim: keeps
+from raw frame 44 = push-up onset 74 minus 30 frames (`hold_s=1.25`), 6-frame ease from the collapse end pose (the rig's start pose) -> blend into the idle_v2
+frame-0 pose (body 8 frames, wings 16: the fit folds the wings 100-176 deg away from the idle fold) -> floor lift (faded to 0 at the end) -> in Blender: planted
+feet pinned by IK (stretches with the sole under 3 cm and slower than 1.2 cm per frame, cut when the foot creeps over 2 cm, sole snapped to the floor within 2 cm),
+last 5 frames pinned to the idle pose. Result: 101 frames = 4.17 s.
+
+CPU dry run on the real fit (`refine_rl/dry/`, before IK): wing twist 59.9 -> 22.5 deg max, wing step 17.8 -> 8.4 deg (8.0 inside the window; the 8.4 is
+the ease from the collapse end pose), outline match against the clip's masks over the wing window 0.68 / 0.65 raw -> 0.75 / 0.69 (front / side),
+whole clip 0.78 / 0.81 -> 0.79 / 0.82, last frame equals idle_v2 frame 0 to 0.3 mm, hold 1.46 s (body height onset), no pops in any view (raster, factor 1.0, same as rise v5).
+Known and not fixable on the CPU: three frames (96-98) with the hind +Y foot 0.9 cm under the floor before the IK lock; the lock itself; the 8-frame body blend moves
+the wings 19 deg per frame at the elbow (peak) even with the 16-frame wing window.
