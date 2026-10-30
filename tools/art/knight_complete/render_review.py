@@ -22,7 +22,11 @@ Round 3 options (all optional; jobs without them render exactly as before):
 Round 4 option (optional; jobs without it render exactly as before):
   job "views": [names]      subset/order of "front", "side", "threequarter", "top" (default the first three). "top" looks
                             straight down with the boss at the top of the image and the knight's right on the right, so
-                            pelvis / leg-plane yaw is readable directly (frames saved as top_NNNN.png)"""
+                            pelvis / leg-plane yaw is readable directly (frames saved as top_NNNN.png)
+
+Round 5 option (optional; jobs without it render exactly as before):
+  job "res": pixels       square render size per view (default 360); with "ortho" it frames a wider field at the same
+                          pixel scale (e.g. ortho 3.2 at res 540 keeps the whole RollAttack blade in frame, 1.42 game cm/px)"""
 import json
 import math
 import sys
@@ -160,6 +164,7 @@ def render_job(job):
     clear()
     travel = any(seg.get("root") for seg in job["segments"])
     cam = setup_scene(24 if travel else 6)
+    bpy.context.scene.render.resolution_x = bpy.context.scene.render.resolution_y = int(job.get("res", RES))
     # Pre-sample every segment pose at the output frame times.
     timeline = []  # (segment index, clip seconds) per output frame
     for k, seg in enumerate(job["segments"]):
