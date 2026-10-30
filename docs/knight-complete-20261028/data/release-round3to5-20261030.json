@@ -1,0 +1,49 @@
+{
+  "tag": "knight-complete-round3to5-20261030",
+  "repo": "oh-ashen-one/veyr-animation-sources",
+  "url": "https://github.com/oh-ashen-one/veyr-animation-sources/releases/tag/knight-complete-round3to5-20261030",
+  "branch": "fable/knight-complete-20261028",
+  "head": "807ad41e5e60d465523308165eb61a24922a1316",
+  "assets": [
+    {
+      "name": "Veyr-Knight-Round3to5-Native-v030q-v030s.zip",
+      "size": 3242829,
+      "sha256": "ca8c4e95111cd406775fe017fda4c6944cbf8441c6c9fbc7fea689877400b04c"
+    },
+    {
+      "name": "Veyr-Knight-Round3to5-Plans.zip",
+      "size": 71386,
+      "sha256": "a4d26f947698593277fefdaa4815bb002927ebf009bc8c1f6084446facfbae34"
+    },
+    {
+      "name": "Veyr-Knight-Review-Round3to5.zip",
+      "size": 136268686,
+      "sha256": "af4adf35694495ecf48732bc2df5abd5911550df9af570c8a304e53a01cb8c1c"
+    },
+    {
+      "name": "Veyr-Knight-Round3to5-Normalized-part1.zip",
+      "size": 1105385952,
+      "sha256": "ba01f9fbd15d74f12e13b6776c383ae6ac6cfc9074c0d75514dba92bbb0109d1"
+    },
+    {
+      "name": "Veyr-Knight-Round3to5-Authoring-part1.zip",
+      "size": 1452041964,
+      "sha256": "fc7274b1899ffd6d6001fff859ca6051a354693287c406ec8afe3f5d16d4a777"
+    },
+    {
+      "name": "Veyr-Knight-Round3to5-Authoring-part2.zip",
+      "size": 1465798556,
+      "sha256": "20dacdd0258f12d98e29de6e4acfcb2cbe1548604de29ac89fad322d71245af5"
+    },
+    {
+      "name": "Veyr-Knight-Round3to5-Authoring-part3.zip",
+      "size": 936946833,
+      "sha256": "596ec9c1e79ade8b93d04c4b80d7e90f70ef0ef068b25aa8d7a4cb2e4ce63f1e"
+    },
+    {
+      "name": "SHA256SUMS",
+      "size": 741,
+      "sha256": "d991765dcf65dce711d476c7c7a0c99d9c7e8349e965588dc86e1cd63aa98529"
+    }
+  ]
+}
