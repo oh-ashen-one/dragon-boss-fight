@@ -1,1307 +1,1418 @@
 {
- "idle": {
-  "one": {
-   "hipsY": 131.76405429840088,
-   "pitch": 7.595680851878686,
-   "ankles": 61.938867318349644
+  "idle": {
+    "one": {
+      "hipsY": 131.76405429840088,
+      "pitch": 7.595680851878686,
+      "ankles": 61.938867318349644
+    },
+    "two": {
+      "hipsY": 131.76405429840088,
+      "pitch": 68.07679755331814,
+      "ankles": 61.938867318349644
+    }
   },
-  "two": {
-   "hipsY": 131.76405429840088,
-   "pitch": 68.07679755331814,
-   "ankles": 61.938867318349644
+  "clips": {
+    "Knight_StrafeLeft_v4c": {
+      "file": "Knight_StrafeLeft_v4c.glb",
+      "duration": 1.133,
+      "rate": 1.2,
+      "frames30": 29,
+      "chestYaw": [
+        -3.7,
+        4.7,
+        0.0
+      ],
+      "pelvisYawMean": 66.1,
+      "kneeYaw": [
+        41.2,
+        88.6
+      ],
+      "hipsVsIdleCm": [
+        -25.6,
+        -15.0
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 8.7,
+      "bladePitch": [
+        4.6,
+        6.9
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 135.3,
+      "carryDegFirstLast": [
+        1.1,
+        1.1
+      ],
+      "tipOffsetFirstLastCm": [
+        21.7,
+        21.3
+      ],
+      "anklesFirstLastCm": [
+        62.2,
+        64.1
+      ],
+      "headPeakCm": {
+        "total": 16.1,
+        "back(-Z)": 12.3,
+        "left(+X)": 10.3,
+        "down": -0.4
+      },
+      "travelYaw": 89.9,
+      "stanceToeSpeedCmS": 189.8,
+      "plantedDriftMaxCm": 82.8,
+      "kneeVsTravelDeg": 48.7,
+      "chestVsBossDeg": 4.7
+    },
+    "Knight_StrafeRunLeft_v4c": {
+      "file": "Knight_StrafeRunLeft_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.1,
+      "frames30": 20,
+      "chestYaw": [
+        -13.7,
+        13.8,
+        0.4
+      ],
+      "pelvisYawMean": 77.5,
+      "kneeYaw": [
+        80.0,
+        97.8
+      ],
+      "hipsVsIdleCm": [
+        -8.7,
+        3.1
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 5.2,
+      "bladePitch": [
+        6.9,
+        6.9
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 150.9,
+      "carryDegFirstLast": [
+        0.8,
+        0.8
+      ],
+      "tipOffsetFirstLastCm": [
+        14.5,
+        14.7
+      ],
+      "anklesFirstLastCm": [
+        61.5,
+        63.5
+      ],
+      "headPeakCm": {
+        "total": 9.9,
+        "back(-Z)": 2.6,
+        "left(+X)": -3.3,
+        "down": -8.9
+      },
+      "travelYaw": 89.8,
+      "stanceToeSpeedCmS": 500.7,
+      "plantedDriftMaxCm": 66.5,
+      "kneeVsTravelDeg": 9.8,
+      "chestVsBossDeg": 13.8
+    },
+    "Knight_BlinkLeft_v4c": {
+      "file": "Knight_BlinkLeft_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.15,
+      "frames30": 19,
+      "chestYaw": [
+        -13.7,
+        13.9,
+        0.4
+      ],
+      "pelvisYawMean": 77.5,
+      "kneeYaw": [
+        80.0,
+        97.8
+      ],
+      "hipsVsIdleCm": [
+        -8.5,
+        3.4
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 5.2,
+      "bladePitch": [
+        6.9,
+        6.9
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 150.8,
+      "carryDegFirstLast": [
+        0.8,
+        0.8
+      ],
+      "tipOffsetFirstLastCm": [
+        14.5,
+        15.0
+      ],
+      "anklesFirstLastCm": [
+        61.5,
+        67.6
+      ],
+      "headPeakCm": {
+        "total": 9.8,
+        "back(-Z)": 2.6,
+        "left(+X)": -3.3,
+        "down": -8.9
+      },
+      "travelYaw": 89.9,
+      "stanceToeSpeedCmS": 521.7,
+      "plantedDriftMaxCm": 4.9,
+      "kneeVsTravelDeg": 9.9,
+      "chestVsBossDeg": 13.9
+    },
+    "Knight_StrafeLeftTwoHand_v4c": {
+      "file": "Knight_StrafeLeftTwoHand_v4c.glb",
+      "duration": 1.133,
+      "rate": 1.2,
+      "frames30": 29,
+      "chestYaw": [
+        -3.7,
+        4.7,
+        0.0
+      ],
+      "pelvisYawMean": 66.1,
+      "kneeYaw": [
+        41.2,
+        88.6
+      ],
+      "hipsVsIdleCm": [
+        -25.6,
+        -15.0
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 3.6,
+      "bladePitch": [
+        63.7,
+        65.1
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 376.5,
+      "carryDegFirstLast": [
+        4.5,
+        4.5
+      ],
+      "tipOffsetFirstLastCm": [
+        42.4,
+        41.9
+      ],
+      "anklesFirstLastCm": [
+        62.2,
+        64.1
+      ],
+      "headPeakCm": {
+        "total": 16.1,
+        "back(-Z)": 12.3,
+        "left(+X)": 10.3,
+        "down": -0.4
+      },
+      "travelYaw": 89.9,
+      "stanceToeSpeedCmS": 189.8,
+      "plantedDriftMaxCm": 82.8,
+      "kneeVsTravelDeg": 48.7,
+      "chestVsBossDeg": 4.7
+    },
+    "Knight_StrafeRunLeftTwoHand_v4c": {
+      "file": "Knight_StrafeRunLeftTwoHand_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.1,
+      "frames30": 20,
+      "chestYaw": [
+        -13.7,
+        13.8,
+        0.4
+      ],
+      "pelvisYawMean": 77.5,
+      "kneeYaw": [
+        80.0,
+        97.8
+      ],
+      "hipsVsIdleCm": [
+        -8.7,
+        3.1
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 4.4,
+      "bladePitch": [
+        63.4,
+        63.8
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 393.4,
+      "carryDegFirstLast": [
+        4.7,
+        4.7
+      ],
+      "tipOffsetFirstLastCm": [
+        30.1,
+        30.1
+      ],
+      "anklesFirstLastCm": [
+        61.5,
+        63.5
+      ],
+      "headPeakCm": {
+        "total": 9.9,
+        "back(-Z)": 2.6,
+        "left(+X)": -3.3,
+        "down": -8.9
+      },
+      "travelYaw": 89.8,
+      "stanceToeSpeedCmS": 500.7,
+      "plantedDriftMaxCm": 66.5,
+      "kneeVsTravelDeg": 9.8,
+      "chestVsBossDeg": 13.8
+    },
+    "Knight_BlinkLeftTwoHand_v4c": {
+      "file": "Knight_BlinkLeftTwoHand_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.15,
+      "frames30": 19,
+      "chestYaw": [
+        -13.7,
+        13.9,
+        0.4
+      ],
+      "pelvisYawMean": 77.5,
+      "kneeYaw": [
+        80.0,
+        97.8
+      ],
+      "hipsVsIdleCm": [
+        -8.5,
+        3.4
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 4.7,
+      "bladePitch": [
+        63.4,
+        63.8
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 393.5,
+      "carryDegFirstLast": [
+        4.7,
+        4.7
+      ],
+      "tipOffsetFirstLastCm": [
+        30.1,
+        30.1
+      ],
+      "anklesFirstLastCm": [
+        61.5,
+        67.6
+      ],
+      "headPeakCm": {
+        "total": 9.8,
+        "back(-Z)": 2.6,
+        "left(+X)": -3.3,
+        "down": -8.9
+      },
+      "travelYaw": 89.9,
+      "stanceToeSpeedCmS": 521.7,
+      "plantedDriftMaxCm": 4.9,
+      "kneeVsTravelDeg": 9.9,
+      "chestVsBossDeg": 13.9
+    },
+    "Knight_StrafeRight_v4c": {
+      "file": "Knight_StrafeRight_v4c.glb",
+      "duration": 1.133,
+      "rate": 1.2,
+      "frames30": 29,
+      "chestYaw": [
+        -4.6,
+        3.7,
+        0.1
+      ],
+      "pelvisYawMean": -71.4,
+      "kneeYaw": [
+        -88.2,
+        -41.0
+      ],
+      "hipsVsIdleCm": [
+        -25.6,
+        -14.9
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 3.8,
+      "bladePitch": [
+        6.9,
+        6.9
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 137.0,
+      "carryDegFirstLast": [
+        1.4,
+        1.4
+      ],
+      "tipOffsetFirstLastCm": [
+        15.2,
+        14.5
+      ],
+      "anklesFirstLastCm": [
+        62.0,
+        59.4
+      ],
+      "headPeakCm": {
+        "total": 13.1,
+        "back(-Z)": -10.7,
+        "left(+X)": 7.7,
+        "down": 0.8
+      },
+      "travelYaw": -89.7,
+      "stanceToeSpeedCmS": 193.5,
+      "plantedDriftMaxCm": 84.8,
+      "kneeVsTravelDeg": 48.7,
+      "chestVsBossDeg": 4.6
+    },
+    "Knight_StrafeRunRight_v4c": {
+      "file": "Knight_StrafeRunRight_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.1,
+      "frames30": 20,
+      "chestYaw": [
+        -13.7,
+        13.6,
+        -0.8
+      ],
+      "pelvisYawMean": -82.8,
+      "kneeYaw": [
+        -97.9,
+        -80.0
+      ],
+      "hipsVsIdleCm": [
+        -8.7,
+        3.2
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 5.2,
+      "bladePitch": [
+        6.8,
+        6.9
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 157.2,
+      "carryDegFirstLast": [
+        1.6,
+        1.6
+      ],
+      "tipOffsetFirstLastCm": [
+        14.8,
+        14.6
+      ],
+      "anklesFirstLastCm": [
+        62.3,
+        60.7
+      ],
+      "headPeakCm": {
+        "total": 9.6,
+        "back(-Z)": 1.4,
+        "left(+X)": 1.7,
+        "down": 9.4
+      },
+      "travelYaw": -89.7,
+      "stanceToeSpeedCmS": 498.4,
+      "plantedDriftMaxCm": 67.6,
+      "kneeVsTravelDeg": 9.7,
+      "chestVsBossDeg": 13.7
+    },
+    "Knight_BlinkRight_v4c": {
+      "file": "Knight_BlinkRight_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.15,
+      "frames30": 19,
+      "chestYaw": [
+        -13.7,
+        13.6,
+        -0.7
+      ],
+      "pelvisYawMean": -82.8,
+      "kneeYaw": [
+        -96.9,
+        -80.0
+      ],
+      "hipsVsIdleCm": [
+        -8.5,
+        3.2
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 5.3,
+      "bladePitch": [
+        6.8,
+        6.9
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 157.2,
+      "carryDegFirstLast": [
+        1.6,
+        1.6
+      ],
+      "tipOffsetFirstLastCm": [
+        14.8,
+        14.2
+      ],
+      "anklesFirstLastCm": [
+        62.3,
+        57.3
+      ],
+      "headPeakCm": {
+        "total": 9.5,
+        "back(-Z)": 0.8,
+        "left(+X)": 2.1,
+        "down": 9.2
+      },
+      "travelYaw": -89.8,
+      "stanceToeSpeedCmS": 508.7,
+      "plantedDriftMaxCm": 7.2,
+      "kneeVsTravelDeg": 9.8,
+      "chestVsBossDeg": 13.7
+    },
+    "Knight_StrafeRightTwoHand_v4c": {
+      "file": "Knight_StrafeRightTwoHand_v4c.glb",
+      "duration": 1.133,
+      "rate": 1.2,
+      "frames30": 29,
+      "chestYaw": [
+        -4.6,
+        3.7,
+        0.1
+      ],
+      "pelvisYawMean": -71.4,
+      "kneeYaw": [
+        -88.2,
+        -41.0
+      ],
+      "hipsVsIdleCm": [
+        -25.6,
+        -14.9
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 3.9,
+      "bladePitch": [
+        64.0,
+        65.7
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 377.6,
+      "carryDegFirstLast": [
+        4.9,
+        4.9
+      ],
+      "tipOffsetFirstLastCm": [
+        34.8,
+        34.3
+      ],
+      "anklesFirstLastCm": [
+        62.0,
+        59.4
+      ],
+      "headPeakCm": {
+        "total": 13.1,
+        "back(-Z)": -10.7,
+        "left(+X)": 7.7,
+        "down": 0.8
+      },
+      "travelYaw": -89.7,
+      "stanceToeSpeedCmS": 193.5,
+      "plantedDriftMaxCm": 84.8,
+      "kneeVsTravelDeg": 48.7,
+      "chestVsBossDeg": 4.6
+    },
+    "Knight_StrafeRunRightTwoHand_v4c": {
+      "file": "Knight_StrafeRunRightTwoHand_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.1,
+      "frames30": 20,
+      "chestYaw": [
+        -13.7,
+        13.6,
+        -0.8
+      ],
+      "pelvisYawMean": -82.8,
+      "kneeYaw": [
+        -97.9,
+        -80.0
+      ],
+      "hipsVsIdleCm": [
+        -8.7,
+        3.2
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 4.4,
+      "bladePitch": [
+        63.7,
+        64.9
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 395.8,
+      "carryDegFirstLast": [
+        4.4,
+        4.4
+      ],
+      "tipOffsetFirstLastCm": [
+        25.9,
+        25.9
+      ],
+      "anklesFirstLastCm": [
+        62.3,
+        60.7
+      ],
+      "headPeakCm": {
+        "total": 9.6,
+        "back(-Z)": 1.4,
+        "left(+X)": 1.7,
+        "down": 9.4
+      },
+      "travelYaw": -89.7,
+      "stanceToeSpeedCmS": 498.4,
+      "plantedDriftMaxCm": 67.6,
+      "kneeVsTravelDeg": 9.7,
+      "chestVsBossDeg": 13.7
+    },
+    "Knight_BlinkRightTwoHand_v4c": {
+      "file": "Knight_BlinkRightTwoHand_v4c.glb",
+      "duration": 0.7,
+      "rate": 1.15,
+      "frames30": 19,
+      "chestYaw": [
+        -13.7,
+        13.6,
+        -0.7
+      ],
+      "pelvisYawMean": -82.8,
+      "kneeYaw": [
+        -96.9,
+        -80.0
+      ],
+      "hipsVsIdleCm": [
+        -8.5,
+        3.2
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 4.5,
+      "bladePitch": [
+        63.8,
+        64.9
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 395.8,
+      "carryDegFirstLast": [
+        4.4,
+        4.4
+      ],
+      "tipOffsetFirstLastCm": [
+        25.9,
+        26.1
+      ],
+      "anklesFirstLastCm": [
+        62.3,
+        57.3
+      ],
+      "headPeakCm": {
+        "total": 9.5,
+        "back(-Z)": 0.8,
+        "left(+X)": 2.1,
+        "down": 9.2
+      },
+      "travelYaw": -89.8,
+      "stanceToeSpeedCmS": 508.7,
+      "plantedDriftMaxCm": 7.2,
+      "kneeVsTravelDeg": 9.8,
+      "chestVsBossDeg": 13.7
+    },
+    "Knight_StaggerFront_v4": {
+      "file": "Knight_StaggerFront_v4.glb",
+      "duration": 0.7,
+      "rate": 1.1667,
+      "frames30": 18,
+      "chestYaw": [
+        0.0,
+        0.8,
+        0.4
+      ],
+      "pelvisYawMean": -2.4,
+      "kneeYaw": [
+        -13.8,
+        10.3
+      ],
+      "hipsVsIdleCm": [
+        -1.8,
+        5.3
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 32.1,
+      "bladePitch": [
+        6.4,
+        21.8
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 205.2,
+      "carryDegFirstLast": [
+        0.0,
+        0.2
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        0.9
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 45.5,
+        "back(-Z)": 45.4,
+        "left(+X)": -0.2,
+        "down": 3.6
+      },
+      "travelYaw": 171.5,
+      "stanceToeSpeedCmS": 0.6,
+      "plantedDriftMaxCm": 0.4
+    },
+    "Knight_StaggerFrontTwoHand_v4": {
+      "file": "Knight_StaggerFrontTwoHand_v4.glb",
+      "duration": 0.7,
+      "rate": 1.1667,
+      "frames30": 18,
+      "chestYaw": [
+        -0.0,
+        0.8,
+        0.4
+      ],
+      "pelvisYawMean": -2.4,
+      "kneeYaw": [
+        -13.8,
+        10.3
+      ],
+      "hipsVsIdleCm": [
+        -1.8,
+        5.3
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 36.5,
+      "bladePitch": [
+        62.4,
+        78.1
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 415.5,
+      "carryDegFirstLast": [
+        0.0,
+        0.2
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        1.1
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 45.5,
+        "back(-Z)": 45.4,
+        "left(+X)": -0.2,
+        "down": 3.6
+      },
+      "travelYaw": 171.5,
+      "stanceToeSpeedCmS": 0.6,
+      "plantedDriftMaxCm": 0.4
+    },
+    "Knight_StaggerBack_v4": {
+      "file": "Knight_StaggerBack_v4.glb",
+      "duration": 0.967,
+      "rate": 1.6111,
+      "frames30": 19,
+      "chestYaw": [
+        -3.3,
+        6.3,
+        0.9
+      ],
+      "pelvisYawMean": -3.5,
+      "kneeYaw": [
+        -177.2,
+        176.6
+      ],
+      "hipsVsIdleCm": [
+        -0.9,
+        6.8
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 12.7,
+      "bladePitch": [
+        4.8,
+        7.6
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 155.3,
+      "carryDegFirstLast": [
+        0.0,
+        0.0
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        0.0
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 31.4,
+        "back(-Z)": -27.5,
+        "left(+X)": 8.0,
+        "down": 13.0
+      },
+      "travelYaw": 43.7,
+      "stanceToeSpeedCmS": 1.0,
+      "plantedDriftMaxCm": 0.0
+    },
+    "Knight_StaggerBackTwoHand_v4": {
+      "file": "Knight_StaggerBackTwoHand_v4.glb",
+      "duration": 0.967,
+      "rate": 1.6111,
+      "frames30": 19,
+      "chestYaw": [
+        -3.3,
+        6.3,
+        0.9
+      ],
+      "pelvisYawMean": -3.5,
+      "kneeYaw": [
+        -177.2,
+        176.6
+      ],
+      "hipsVsIdleCm": [
+        -0.9,
+        6.8
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 20.7,
+      "bladePitch": [
+        56.4,
+        68.1
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 400.0,
+      "carryDegFirstLast": [
+        0.0,
+        0.0
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        0.0
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 31.4,
+        "back(-Z)": -27.5,
+        "left(+X)": 8.0,
+        "down": 13.0
+      },
+      "travelYaw": 43.7,
+      "stanceToeSpeedCmS": 1.0,
+      "plantedDriftMaxCm": 0.0
+    },
+    "Knight_StaggerLeft_v4": {
+      "file": "Knight_StaggerLeft_v4.glb",
+      "duration": 0.7,
+      "rate": 1.1667,
+      "frames30": 18,
+      "chestYaw": [
+        0.0,
+        51.6,
+        23.6
+      ],
+      "pelvisYawMean": 8.0,
+      "kneeYaw": [
+        -11.5,
+        30.3
+      ],
+      "hipsVsIdleCm": [
+        -0.0,
+        9.7
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 20.0,
+      "bladePitch": [
+        7.6,
+        25.0
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 215.6,
+      "carryDegFirstLast": [
+        0.0,
+        0.2
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        0.8
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 53.1,
+        "back(-Z)": 17.1,
+        "left(+X)": -49.9,
+        "down": 6.2
+      },
+      "travelYaw": 105.9,
+      "stanceToeSpeedCmS": 0.8,
+      "plantedDriftMaxCm": 0.1
+    },
+    "Knight_StaggerLeftTwoHand_v4": {
+      "file": "Knight_StaggerLeftTwoHand_v4.glb",
+      "duration": 0.7,
+      "rate": 1.1667,
+      "frames30": 18,
+      "chestYaw": [
+        -0.0,
+        51.6,
+        23.6
+      ],
+      "pelvisYawMean": 8.0,
+      "kneeYaw": [
+        -11.5,
+        30.3
+      ],
+      "hipsVsIdleCm": [
+        -0.0,
+        9.7
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 18.0,
+      "bladePitch": [
+        68.1,
+        72.9
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 407.5,
+      "carryDegFirstLast": [
+        0.0,
+        0.2
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        0.8
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 53.1,
+        "back(-Z)": 17.1,
+        "left(+X)": -49.9,
+        "down": 6.2
+      },
+      "travelYaw": 105.9,
+      "stanceToeSpeedCmS": 0.8,
+      "plantedDriftMaxCm": 0.1
+    },
+    "Knight_StaggerRight_v4": {
+      "file": "Knight_StaggerRight_v4.glb",
+      "duration": 0.7,
+      "rate": 1.1667,
+      "frames30": 18,
+      "chestYaw": [
+        -48.7,
+        0.0,
+        -22.5
+      ],
+      "pelvisYawMean": -13.0,
+      "kneeYaw": [
+        -34.1,
+        7.3
+      ],
+      "hipsVsIdleCm": [
+        -0.0,
+        9.7
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 17.4,
+      "bladePitch": [
+        7.6,
+        21.4
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 216.3,
+      "carryDegFirstLast": [
+        0.0,
+        0.2
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        0.8
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 55.5,
+        "back(-Z)": 20.8,
+        "left(+X)": 51.3,
+        "down": 4.2
+      },
+      "travelYaw": -110.6,
+      "stanceToeSpeedCmS": 1.0,
+      "plantedDriftMaxCm": 0.2
+    },
+    "Knight_StaggerRightTwoHand_v4": {
+      "file": "Knight_StaggerRightTwoHand_v4.glb",
+      "duration": 0.7,
+      "rate": 1.1667,
+      "frames30": 18,
+      "chestYaw": [
+        -48.7,
+        -0.0,
+        -22.5
+      ],
+      "pelvisYawMean": -13.0,
+      "kneeYaw": [
+        -34.1,
+        7.3
+      ],
+      "hipsVsIdleCm": [
+        -0.0,
+        9.7
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 18.5,
+      "bladePitch": [
+        68.1,
+        78.1
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 415.7,
+      "carryDegFirstLast": [
+        0.0,
+        0.2
+      ],
+      "tipOffsetFirstLastCm": [
+        0.0,
+        0.9
+      ],
+      "anklesFirstLastCm": [
+        61.9,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 55.5,
+        "back(-Z)": 20.8,
+        "left(+X)": 51.3,
+        "down": 4.2
+      },
+      "travelYaw": -110.6,
+      "stanceToeSpeedCmS": 1.0,
+      "plantedDriftMaxCm": 0.2
+    },
+    "Knight_BackpedalGuard_v4": {
+      "file": "Knight_BackpedalGuard_v4.glb",
+      "duration": 1.2,
+      "rate": 1.6680567139282734,
+      "frames30": 22,
+      "chestYaw": [
+        -7.4,
+        5.9,
+        -0.6
+      ],
+      "pelvisYawMean": -2.6,
+      "kneeYaw": [
+        -13.9,
+        8.8
+      ],
+      "hipsVsIdleCm": [
+        -6.7,
+        -3.6
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 3.4,
+      "bladePitch": [
+        45.8,
+        47.7
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 308.7,
+      "carryDegFirstLast": [
+        39.8,
+        39.5
+      ],
+      "tipOffsetFirstLastCm": [
+        175.0,
+        174.7
+      ],
+      "anklesFirstLastCm": [
+        69.1,
+        69.1
+      ],
+      "headPeakCm": {
+        "total": 4.9,
+        "back(-Z)": -0.1,
+        "left(+X)": -4.5,
+        "down": -2.1
+      },
+      "travelYaw": 180.0,
+      "stanceToeSpeedCmS": 100.1,
+      "plantedDriftMaxCm": 32.7,
+      "kneeVsTravelDeg": 174.0,
+      "chestVsBossDeg": 7.4
+    },
+    "Knight_BackpedalGuardTwoHand_v4": {
+      "file": "Knight_BackpedalGuardTwoHand_v4.glb",
+      "duration": 1.2,
+      "rate": 1.6680567139282734,
+      "frames30": 22,
+      "chestYaw": [
+        -7.4,
+        5.9,
+        -0.6
+      ],
+      "pelvisYawMean": -2.6,
+      "kneeYaw": [
+        -13.9,
+        8.8
+      ],
+      "hipsVsIdleCm": [
+        -6.7,
+        -3.6
+      ],
+      "handToSocketCm": [
+        16.2,
+        16.2
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 5.1,
+      "bladePitch": [
+        46.1,
+        46.1
+      ],
+      "idleBladePitch": 68.1,
+      "tipHeightMaxCm": 333.5,
+      "carryDegFirstLast": [
+        23.4,
+        23.5
+      ],
+      "tipOffsetFirstLastCm": [
+        113.4,
+        113.7
+      ],
+      "anklesFirstLastCm": [
+        69.1,
+        69.1
+      ],
+      "headPeakCm": {
+        "total": 4.9,
+        "back(-Z)": -0.1,
+        "left(+X)": -4.5,
+        "down": -2.1
+      },
+      "travelYaw": 180.0,
+      "stanceToeSpeedCmS": 100.1,
+      "plantedDriftMaxCm": 32.7,
+      "kneeVsTravelDeg": 174.0,
+      "chestVsBossDeg": 7.4
+    },
+    "Sourced_RollAttack_v4": {
+      "file": "Sourced_RollAttack_v4.glb",
+      "duration": 2.2,
+      "rate": 1.282051282051282,
+      "frames30": 52,
+      "chestYaw": [
+        -40.9,
+        81.0,
+        8.2
+      ],
+      "pelvisYawMean": -3.2,
+      "kneeYaw": [
+        -176.2,
+        169.5
+      ],
+      "hipsVsIdleCm": [
+        -109.0,
+        6.4
+      ],
+      "handToSocketCm": [
+        14.9,
+        14.9
+      ],
+      "handSlipCm": 0.0,
+      "tipStepMaxCmPerFrame": 140.4,
+      "bladePitch": [
+        -5.4,
+        50.4
+      ],
+      "idleBladePitch": 7.6,
+      "tipHeightMaxCm": 334.5,
+      "carryDegFirstLast": [
+        0.0,
+        0.1
+      ],
+      "tipOffsetFirstLastCm": [
+        42.6,
+        2.1
+      ],
+      "anklesFirstLastCm": [
+        56.8,
+        61.9
+      ],
+      "headPeakCm": {
+        "total": 193.9,
+        "back(-Z)": 56.2,
+        "left(+X)": 22.7,
+        "down": 184.2
+      },
+      "travelYaw": -165.3,
+      "stanceToeSpeedCmS": 8.6,
+      "plantedDriftMaxCm": 19.6
+    }
+  },
+  "gates_20261029T0704": {
+    "build": "Local/package-20261029T055623Z (zip sha256 11afb863...200662ae)",
+    "gpuWait": "never below 30% in 20 min (98-100% throughout)",
+    "runs": [
+      {
+        "mode": "core",
+        "passed": true,
+        "fps": 12.9,
+        "evidence": "Evidence/native-core-20261029T070404Z"
+      },
+      {
+        "mode": "death",
+        "passed": true,
+        "fps": 12.4,
+        "evidence": "Evidence/native-death-20261029T070600Z"
+      },
+      {
+        "mode": "lockon",
+        "passed": true,
+        "fps": 12.8,
+        "evidence": "Evidence/native-lockon-20261029T070645Z",
+        "reason": "10 locomotion trials, facing 1.9 deg, blink direction 3/3, stagger lab 5/5"
+      },
+      {
+        "mode": "integration",
+        "passed": false,
+        "fps": 12.0,
+        "evidence": "Evidence/native-integration-20261029T070742Z",
+        "reason": "locked_blink_left: both afterimages captured, 298.6 cm travel, no frame inside the 0.16 s hidden window (0.40 s frames)"
+      },
+      {
+        "mode": "controls",
+        "passed": true,
+        "fps": 12.0,
+        "evidence": "Evidence/native-controls-20261029T070931Z"
+      },
+      {
+        "mode": "guard",
+        "passed": true,
+        "fps": 13.4,
+        "evidence": "Evidence/native-guard-20261029T071018Z"
+      }
+    ]
+  },
+  "gates_20261030T0238": {
+    "build": "Local/package-20261029T145507Z (v030p, repackaged 2026-10-29T14:55Z, verified bundle from receipt.json)",
+    "gpuWait": "GPU handed over by the Hulk session at 02:37 UTC (0 foreign clients at launch, no STREAMING flag). One Blender render (knight round-4 authoring/renders, then dragon v4) shared the GPU throughout under the two-client cap, so gpu.json marks every run perf_valid=false (no exclusive lock); per-run average util 32-67 %, peaks 59-96 %, one integration run saw a momentary third client during a Blender hand-over. Compare with gates_20261029T0704 at 98-100 % util (12-13 fps).",
+    "runs": [
+      {
+        "mode": "controls",
+        "passed": true,
+        "fps": 42.9,
+        "frameCount": 1763,
+        "durationSeconds": 41.1,
+        "evidence": "Evidence/native-controls-20261030T024835Z",
+        "reason": "movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed",
+        "gpuUtilAvg": 63.1,
+        "gpuUtilMax": 85.0,
+        "perfValid": false,
+        "gpuClientsMax": 2
+      },
+      {
+        "mode": "core",
+        "passed": true,
+        "fps": 40.7,
+        "frameCount": 1771,
+        "durationSeconds": 43.5,
+        "evidence": "Evidence/native-core-20261030T024545Z",
+        "reason": "jump-disabled light heavy collapse head bonus completed rise and dodge contact observed",
+        "gpuUtilAvg": 60.4,
+        "gpuUtilMax": 88.0,
+        "perfValid": false,
+        "gpuClientsMax": 2
+      },
+      {
+        "mode": "death",
+        "passed": true,
+        "fps": 51.1,
+        "frameCount": 756,
+        "durationSeconds": 14.8,
+        "evidence": "Evidence/native-death-20261030T024653Z",
+        "reason": "death terminal pose, resource reset, movement and primary attack after restart verified",
+        "gpuUtilAvg": 66.9,
+        "gpuUtilMax": 83.0,
+        "perfValid": false,
+        "gpuClientsMax": 2
+      },
+      {
+        "mode": "guard",
+        "passed": true,
+        "fps": 40.3,
+        "frameCount": 2009,
+        "durationSeconds": 49.8,
+        "evidence": "Evidence/native-guard-20261030T024940Z",
+        "reason": "front chip block, rear full damage while guarding with ample stamina, and real exhausted guard break verified",
+        "gpuUtilAvg": 64.3,
+        "gpuUtilMax": 96.0,
+        "perfValid": false,
+        "gpuClientsMax": 2
+      },
+      {
+        "mode": "integration",
+        "passed": true,
+        "fps": 30.2,
+        "frameCount": 2802,
+        "durationSeconds": 92.9,
+        "evidence": "Evidence/native-integration-20261030T023818Z",
+        "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+        "gpuUtilAvg": 34.0,
+        "gpuUtilMax": 59.0,
+        "perfValid": false,
+        "gpuClientsMax": 2
+      },
+      {
+        "mode": "integration",
+        "passed": true,
+        "fps": 30.7,
+        "frameCount": 2719,
+        "durationSeconds": 88.6,
+        "evidence": "Evidence/native-integration-20261030T024154Z",
+        "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+        "gpuUtilAvg": 32.3,
+        "gpuUtilMax": 89.0,
+        "perfValid": false,
+        "gpuClientsMax": 3
+      },
+      {
+        "mode": "integration",
+        "passed": true,
+        "fps": 30.1,
+        "frameCount": 2789,
+        "durationSeconds": 92.8,
+        "evidence": "Evidence/native-integration-20261030T024348Z",
+        "reason": "all18 updated integration features with explicit blink, sprint, authored grip completion and primary-button chains; contacts recorded separately",
+        "gpuUtilAvg": 36.6,
+        "gpuUtilMax": 65.0,
+        "perfValid": false,
+        "gpuClientsMax": 2
+      },
+      {
+        "mode": "lockon",
+        "passed": true,
+        "fps": 45.8,
+        "frameCount": 1744,
+        "durationSeconds": 38.1,
+        "evidence": "Evidence/native-lockon-20261030T024732Z",
+        "reason": "lock-on: 10 locomotion trials sampled their clips, max facing error 5.2 deg; blink direction 3/3; directional stagger lab 5/5",
+        "gpuUtilAvg": 65.1,
+        "gpuUtilMax": 88.0,
+        "perfValid": false,
+        "gpuClientsMax": 2
+      }
+    ],
+    "summary": "8/8 passed: integration x3 (30.1-30.7 fps), core 40.7, death 51.1, lockon 45.8, controls 42.9, guard 40.3 fps; fps measured with one Blender job sharing the GPU"
   }
- },
- "clips": {
-  "Knight_StrafeLeft_v4c": {
-   "file": "Knight_StrafeLeft_v4c.glb",
-   "duration": 1.133,
-   "rate": 1.2,
-   "frames30": 29,
-   "chestYaw": [
-    -3.7,
-    4.7,
-    0.0
-   ],
-   "pelvisYawMean": 66.1,
-   "kneeYaw": [
-    41.2,
-    88.6
-   ],
-   "hipsVsIdleCm": [
-    -25.6,
-    -15.0
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 8.7,
-   "bladePitch": [
-    4.6,
-    6.9
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 135.3,
-   "carryDegFirstLast": [
-    1.1,
-    1.1
-   ],
-   "tipOffsetFirstLastCm": [
-    21.7,
-    21.3
-   ],
-   "anklesFirstLastCm": [
-    62.2,
-    64.1
-   ],
-   "headPeakCm": {
-    "total": 16.1,
-    "back(-Z)": 12.3,
-    "left(+X)": 10.3,
-    "down": -0.4
-   },
-   "travelYaw": 89.9,
-   "stanceToeSpeedCmS": 189.8,
-   "plantedDriftMaxCm": 82.8,
-   "kneeVsTravelDeg": 48.7,
-   "chestVsBossDeg": 4.7
-  },
-  "Knight_StrafeRunLeft_v4c": {
-   "file": "Knight_StrafeRunLeft_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.1,
-   "frames30": 20,
-   "chestYaw": [
-    -13.7,
-    13.8,
-    0.4
-   ],
-   "pelvisYawMean": 77.5,
-   "kneeYaw": [
-    80.0,
-    97.8
-   ],
-   "hipsVsIdleCm": [
-    -8.7,
-    3.1
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 5.2,
-   "bladePitch": [
-    6.9,
-    6.9
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 150.9,
-   "carryDegFirstLast": [
-    0.8,
-    0.8
-   ],
-   "tipOffsetFirstLastCm": [
-    14.5,
-    14.7
-   ],
-   "anklesFirstLastCm": [
-    61.5,
-    63.5
-   ],
-   "headPeakCm": {
-    "total": 9.9,
-    "back(-Z)": 2.6,
-    "left(+X)": -3.3,
-    "down": -8.9
-   },
-   "travelYaw": 89.8,
-   "stanceToeSpeedCmS": 500.7,
-   "plantedDriftMaxCm": 66.5,
-   "kneeVsTravelDeg": 9.8,
-   "chestVsBossDeg": 13.8
-  },
-  "Knight_BlinkLeft_v4c": {
-   "file": "Knight_BlinkLeft_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.15,
-   "frames30": 19,
-   "chestYaw": [
-    -13.7,
-    13.9,
-    0.4
-   ],
-   "pelvisYawMean": 77.5,
-   "kneeYaw": [
-    80.0,
-    97.8
-   ],
-   "hipsVsIdleCm": [
-    -8.5,
-    3.4
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 5.2,
-   "bladePitch": [
-    6.9,
-    6.9
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 150.8,
-   "carryDegFirstLast": [
-    0.8,
-    0.8
-   ],
-   "tipOffsetFirstLastCm": [
-    14.5,
-    15.0
-   ],
-   "anklesFirstLastCm": [
-    61.5,
-    67.6
-   ],
-   "headPeakCm": {
-    "total": 9.8,
-    "back(-Z)": 2.6,
-    "left(+X)": -3.3,
-    "down": -8.9
-   },
-   "travelYaw": 89.9,
-   "stanceToeSpeedCmS": 521.7,
-   "plantedDriftMaxCm": 4.9,
-   "kneeVsTravelDeg": 9.9,
-   "chestVsBossDeg": 13.9
-  },
-  "Knight_StrafeLeftTwoHand_v4c": {
-   "file": "Knight_StrafeLeftTwoHand_v4c.glb",
-   "duration": 1.133,
-   "rate": 1.2,
-   "frames30": 29,
-   "chestYaw": [
-    -3.7,
-    4.7,
-    0.0
-   ],
-   "pelvisYawMean": 66.1,
-   "kneeYaw": [
-    41.2,
-    88.6
-   ],
-   "hipsVsIdleCm": [
-    -25.6,
-    -15.0
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 3.6,
-   "bladePitch": [
-    63.7,
-    65.1
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 376.5,
-   "carryDegFirstLast": [
-    4.5,
-    4.5
-   ],
-   "tipOffsetFirstLastCm": [
-    42.4,
-    41.9
-   ],
-   "anklesFirstLastCm": [
-    62.2,
-    64.1
-   ],
-   "headPeakCm": {
-    "total": 16.1,
-    "back(-Z)": 12.3,
-    "left(+X)": 10.3,
-    "down": -0.4
-   },
-   "travelYaw": 89.9,
-   "stanceToeSpeedCmS": 189.8,
-   "plantedDriftMaxCm": 82.8,
-   "kneeVsTravelDeg": 48.7,
-   "chestVsBossDeg": 4.7
-  },
-  "Knight_StrafeRunLeftTwoHand_v4c": {
-   "file": "Knight_StrafeRunLeftTwoHand_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.1,
-   "frames30": 20,
-   "chestYaw": [
-    -13.7,
-    13.8,
-    0.4
-   ],
-   "pelvisYawMean": 77.5,
-   "kneeYaw": [
-    80.0,
-    97.8
-   ],
-   "hipsVsIdleCm": [
-    -8.7,
-    3.1
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 4.4,
-   "bladePitch": [
-    63.4,
-    63.8
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 393.4,
-   "carryDegFirstLast": [
-    4.7,
-    4.7
-   ],
-   "tipOffsetFirstLastCm": [
-    30.1,
-    30.1
-   ],
-   "anklesFirstLastCm": [
-    61.5,
-    63.5
-   ],
-   "headPeakCm": {
-    "total": 9.9,
-    "back(-Z)": 2.6,
-    "left(+X)": -3.3,
-    "down": -8.9
-   },
-   "travelYaw": 89.8,
-   "stanceToeSpeedCmS": 500.7,
-   "plantedDriftMaxCm": 66.5,
-   "kneeVsTravelDeg": 9.8,
-   "chestVsBossDeg": 13.8
-  },
-  "Knight_BlinkLeftTwoHand_v4c": {
-   "file": "Knight_BlinkLeftTwoHand_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.15,
-   "frames30": 19,
-   "chestYaw": [
-    -13.7,
-    13.9,
-    0.4
-   ],
-   "pelvisYawMean": 77.5,
-   "kneeYaw": [
-    80.0,
-    97.8
-   ],
-   "hipsVsIdleCm": [
-    -8.5,
-    3.4
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 4.7,
-   "bladePitch": [
-    63.4,
-    63.8
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 393.5,
-   "carryDegFirstLast": [
-    4.7,
-    4.7
-   ],
-   "tipOffsetFirstLastCm": [
-    30.1,
-    30.1
-   ],
-   "anklesFirstLastCm": [
-    61.5,
-    67.6
-   ],
-   "headPeakCm": {
-    "total": 9.8,
-    "back(-Z)": 2.6,
-    "left(+X)": -3.3,
-    "down": -8.9
-   },
-   "travelYaw": 89.9,
-   "stanceToeSpeedCmS": 521.7,
-   "plantedDriftMaxCm": 4.9,
-   "kneeVsTravelDeg": 9.9,
-   "chestVsBossDeg": 13.9
-  },
-  "Knight_StrafeRight_v4c": {
-   "file": "Knight_StrafeRight_v4c.glb",
-   "duration": 1.133,
-   "rate": 1.2,
-   "frames30": 29,
-   "chestYaw": [
-    -4.6,
-    3.7,
-    0.1
-   ],
-   "pelvisYawMean": -71.4,
-   "kneeYaw": [
-    -88.2,
-    -41.0
-   ],
-   "hipsVsIdleCm": [
-    -25.6,
-    -14.9
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 3.8,
-   "bladePitch": [
-    6.9,
-    6.9
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 137.0,
-   "carryDegFirstLast": [
-    1.4,
-    1.4
-   ],
-   "tipOffsetFirstLastCm": [
-    15.2,
-    14.5
-   ],
-   "anklesFirstLastCm": [
-    62.0,
-    59.4
-   ],
-   "headPeakCm": {
-    "total": 13.1,
-    "back(-Z)": -10.7,
-    "left(+X)": 7.7,
-    "down": 0.8
-   },
-   "travelYaw": -89.7,
-   "stanceToeSpeedCmS": 193.5,
-   "plantedDriftMaxCm": 84.8,
-   "kneeVsTravelDeg": 48.7,
-   "chestVsBossDeg": 4.6
-  },
-  "Knight_StrafeRunRight_v4c": {
-   "file": "Knight_StrafeRunRight_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.1,
-   "frames30": 20,
-   "chestYaw": [
-    -13.7,
-    13.6,
-    -0.8
-   ],
-   "pelvisYawMean": -82.8,
-   "kneeYaw": [
-    -97.9,
-    -80.0
-   ],
-   "hipsVsIdleCm": [
-    -8.7,
-    3.2
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 5.2,
-   "bladePitch": [
-    6.8,
-    6.9
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 157.2,
-   "carryDegFirstLast": [
-    1.6,
-    1.6
-   ],
-   "tipOffsetFirstLastCm": [
-    14.8,
-    14.6
-   ],
-   "anklesFirstLastCm": [
-    62.3,
-    60.7
-   ],
-   "headPeakCm": {
-    "total": 9.6,
-    "back(-Z)": 1.4,
-    "left(+X)": 1.7,
-    "down": 9.4
-   },
-   "travelYaw": -89.7,
-   "stanceToeSpeedCmS": 498.4,
-   "plantedDriftMaxCm": 67.6,
-   "kneeVsTravelDeg": 9.7,
-   "chestVsBossDeg": 13.7
-  },
-  "Knight_BlinkRight_v4c": {
-   "file": "Knight_BlinkRight_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.15,
-   "frames30": 19,
-   "chestYaw": [
-    -13.7,
-    13.6,
-    -0.7
-   ],
-   "pelvisYawMean": -82.8,
-   "kneeYaw": [
-    -96.9,
-    -80.0
-   ],
-   "hipsVsIdleCm": [
-    -8.5,
-    3.2
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 5.3,
-   "bladePitch": [
-    6.8,
-    6.9
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 157.2,
-   "carryDegFirstLast": [
-    1.6,
-    1.6
-   ],
-   "tipOffsetFirstLastCm": [
-    14.8,
-    14.2
-   ],
-   "anklesFirstLastCm": [
-    62.3,
-    57.3
-   ],
-   "headPeakCm": {
-    "total": 9.5,
-    "back(-Z)": 0.8,
-    "left(+X)": 2.1,
-    "down": 9.2
-   },
-   "travelYaw": -89.8,
-   "stanceToeSpeedCmS": 508.7,
-   "plantedDriftMaxCm": 7.2,
-   "kneeVsTravelDeg": 9.8,
-   "chestVsBossDeg": 13.7
-  },
-  "Knight_StrafeRightTwoHand_v4c": {
-   "file": "Knight_StrafeRightTwoHand_v4c.glb",
-   "duration": 1.133,
-   "rate": 1.2,
-   "frames30": 29,
-   "chestYaw": [
-    -4.6,
-    3.7,
-    0.1
-   ],
-   "pelvisYawMean": -71.4,
-   "kneeYaw": [
-    -88.2,
-    -41.0
-   ],
-   "hipsVsIdleCm": [
-    -25.6,
-    -14.9
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 3.9,
-   "bladePitch": [
-    64.0,
-    65.7
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 377.6,
-   "carryDegFirstLast": [
-    4.9,
-    4.9
-   ],
-   "tipOffsetFirstLastCm": [
-    34.8,
-    34.3
-   ],
-   "anklesFirstLastCm": [
-    62.0,
-    59.4
-   ],
-   "headPeakCm": {
-    "total": 13.1,
-    "back(-Z)": -10.7,
-    "left(+X)": 7.7,
-    "down": 0.8
-   },
-   "travelYaw": -89.7,
-   "stanceToeSpeedCmS": 193.5,
-   "plantedDriftMaxCm": 84.8,
-   "kneeVsTravelDeg": 48.7,
-   "chestVsBossDeg": 4.6
-  },
-  "Knight_StrafeRunRightTwoHand_v4c": {
-   "file": "Knight_StrafeRunRightTwoHand_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.1,
-   "frames30": 20,
-   "chestYaw": [
-    -13.7,
-    13.6,
-    -0.8
-   ],
-   "pelvisYawMean": -82.8,
-   "kneeYaw": [
-    -97.9,
-    -80.0
-   ],
-   "hipsVsIdleCm": [
-    -8.7,
-    3.2
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 4.4,
-   "bladePitch": [
-    63.7,
-    64.9
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 395.8,
-   "carryDegFirstLast": [
-    4.4,
-    4.4
-   ],
-   "tipOffsetFirstLastCm": [
-    25.9,
-    25.9
-   ],
-   "anklesFirstLastCm": [
-    62.3,
-    60.7
-   ],
-   "headPeakCm": {
-    "total": 9.6,
-    "back(-Z)": 1.4,
-    "left(+X)": 1.7,
-    "down": 9.4
-   },
-   "travelYaw": -89.7,
-   "stanceToeSpeedCmS": 498.4,
-   "plantedDriftMaxCm": 67.6,
-   "kneeVsTravelDeg": 9.7,
-   "chestVsBossDeg": 13.7
-  },
-  "Knight_BlinkRightTwoHand_v4c": {
-   "file": "Knight_BlinkRightTwoHand_v4c.glb",
-   "duration": 0.7,
-   "rate": 1.15,
-   "frames30": 19,
-   "chestYaw": [
-    -13.7,
-    13.6,
-    -0.7
-   ],
-   "pelvisYawMean": -82.8,
-   "kneeYaw": [
-    -96.9,
-    -80.0
-   ],
-   "hipsVsIdleCm": [
-    -8.5,
-    3.2
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 4.5,
-   "bladePitch": [
-    63.8,
-    64.9
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 395.8,
-   "carryDegFirstLast": [
-    4.4,
-    4.4
-   ],
-   "tipOffsetFirstLastCm": [
-    25.9,
-    26.1
-   ],
-   "anklesFirstLastCm": [
-    62.3,
-    57.3
-   ],
-   "headPeakCm": {
-    "total": 9.5,
-    "back(-Z)": 0.8,
-    "left(+X)": 2.1,
-    "down": 9.2
-   },
-   "travelYaw": -89.8,
-   "stanceToeSpeedCmS": 508.7,
-   "plantedDriftMaxCm": 7.2,
-   "kneeVsTravelDeg": 9.8,
-   "chestVsBossDeg": 13.7
-  },
-  "Knight_StaggerFront_v4": {
-   "file": "Knight_StaggerFront_v4.glb",
-   "duration": 0.7,
-   "rate": 1.1667,
-   "frames30": 18,
-   "chestYaw": [
-    0.0,
-    0.8,
-    0.4
-   ],
-   "pelvisYawMean": -2.4,
-   "kneeYaw": [
-    -13.8,
-    10.3
-   ],
-   "hipsVsIdleCm": [
-    -1.8,
-    5.3
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 32.1,
-   "bladePitch": [
-    6.4,
-    21.8
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 205.2,
-   "carryDegFirstLast": [
-    0.0,
-    0.2
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    0.9
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 45.5,
-    "back(-Z)": 45.4,
-    "left(+X)": -0.2,
-    "down": 3.6
-   },
-   "travelYaw": 171.5,
-   "stanceToeSpeedCmS": 0.6,
-   "plantedDriftMaxCm": 0.4
-  },
-  "Knight_StaggerFrontTwoHand_v4": {
-   "file": "Knight_StaggerFrontTwoHand_v4.glb",
-   "duration": 0.7,
-   "rate": 1.1667,
-   "frames30": 18,
-   "chestYaw": [
-    -0.0,
-    0.8,
-    0.4
-   ],
-   "pelvisYawMean": -2.4,
-   "kneeYaw": [
-    -13.8,
-    10.3
-   ],
-   "hipsVsIdleCm": [
-    -1.8,
-    5.3
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 36.5,
-   "bladePitch": [
-    62.4,
-    78.1
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 415.5,
-   "carryDegFirstLast": [
-    0.0,
-    0.2
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    1.1
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 45.5,
-    "back(-Z)": 45.4,
-    "left(+X)": -0.2,
-    "down": 3.6
-   },
-   "travelYaw": 171.5,
-   "stanceToeSpeedCmS": 0.6,
-   "plantedDriftMaxCm": 0.4
-  },
-  "Knight_StaggerBack_v4": {
-   "file": "Knight_StaggerBack_v4.glb",
-   "duration": 0.967,
-   "rate": 1.6111,
-   "frames30": 19,
-   "chestYaw": [
-    -3.3,
-    6.3,
-    0.9
-   ],
-   "pelvisYawMean": -3.5,
-   "kneeYaw": [
-    -177.2,
-    176.6
-   ],
-   "hipsVsIdleCm": [
-    -0.9,
-    6.8
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 12.7,
-   "bladePitch": [
-    4.8,
-    7.6
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 155.3,
-   "carryDegFirstLast": [
-    0.0,
-    0.0
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    0.0
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 31.4,
-    "back(-Z)": -27.5,
-    "left(+X)": 8.0,
-    "down": 13.0
-   },
-   "travelYaw": 43.7,
-   "stanceToeSpeedCmS": 1.0,
-   "plantedDriftMaxCm": 0.0
-  },
-  "Knight_StaggerBackTwoHand_v4": {
-   "file": "Knight_StaggerBackTwoHand_v4.glb",
-   "duration": 0.967,
-   "rate": 1.6111,
-   "frames30": 19,
-   "chestYaw": [
-    -3.3,
-    6.3,
-    0.9
-   ],
-   "pelvisYawMean": -3.5,
-   "kneeYaw": [
-    -177.2,
-    176.6
-   ],
-   "hipsVsIdleCm": [
-    -0.9,
-    6.8
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 20.7,
-   "bladePitch": [
-    56.4,
-    68.1
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 400.0,
-   "carryDegFirstLast": [
-    0.0,
-    0.0
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    0.0
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 31.4,
-    "back(-Z)": -27.5,
-    "left(+X)": 8.0,
-    "down": 13.0
-   },
-   "travelYaw": 43.7,
-   "stanceToeSpeedCmS": 1.0,
-   "plantedDriftMaxCm": 0.0
-  },
-  "Knight_StaggerLeft_v4": {
-   "file": "Knight_StaggerLeft_v4.glb",
-   "duration": 0.7,
-   "rate": 1.1667,
-   "frames30": 18,
-   "chestYaw": [
-    0.0,
-    51.6,
-    23.6
-   ],
-   "pelvisYawMean": 8.0,
-   "kneeYaw": [
-    -11.5,
-    30.3
-   ],
-   "hipsVsIdleCm": [
-    -0.0,
-    9.7
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 20.0,
-   "bladePitch": [
-    7.6,
-    25.0
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 215.6,
-   "carryDegFirstLast": [
-    0.0,
-    0.2
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    0.8
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 53.1,
-    "back(-Z)": 17.1,
-    "left(+X)": -49.9,
-    "down": 6.2
-   },
-   "travelYaw": 105.9,
-   "stanceToeSpeedCmS": 0.8,
-   "plantedDriftMaxCm": 0.1
-  },
-  "Knight_StaggerLeftTwoHand_v4": {
-   "file": "Knight_StaggerLeftTwoHand_v4.glb",
-   "duration": 0.7,
-   "rate": 1.1667,
-   "frames30": 18,
-   "chestYaw": [
-    -0.0,
-    51.6,
-    23.6
-   ],
-   "pelvisYawMean": 8.0,
-   "kneeYaw": [
-    -11.5,
-    30.3
-   ],
-   "hipsVsIdleCm": [
-    -0.0,
-    9.7
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 18.0,
-   "bladePitch": [
-    68.1,
-    72.9
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 407.5,
-   "carryDegFirstLast": [
-    0.0,
-    0.2
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    0.8
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 53.1,
-    "back(-Z)": 17.1,
-    "left(+X)": -49.9,
-    "down": 6.2
-   },
-   "travelYaw": 105.9,
-   "stanceToeSpeedCmS": 0.8,
-   "plantedDriftMaxCm": 0.1
-  },
-  "Knight_StaggerRight_v4": {
-   "file": "Knight_StaggerRight_v4.glb",
-   "duration": 0.7,
-   "rate": 1.1667,
-   "frames30": 18,
-   "chestYaw": [
-    -48.7,
-    0.0,
-    -22.5
-   ],
-   "pelvisYawMean": -13.0,
-   "kneeYaw": [
-    -34.1,
-    7.3
-   ],
-   "hipsVsIdleCm": [
-    -0.0,
-    9.7
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 17.4,
-   "bladePitch": [
-    7.6,
-    21.4
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 216.3,
-   "carryDegFirstLast": [
-    0.0,
-    0.2
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    0.8
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 55.5,
-    "back(-Z)": 20.8,
-    "left(+X)": 51.3,
-    "down": 4.2
-   },
-   "travelYaw": -110.6,
-   "stanceToeSpeedCmS": 1.0,
-   "plantedDriftMaxCm": 0.2
-  },
-  "Knight_StaggerRightTwoHand_v4": {
-   "file": "Knight_StaggerRightTwoHand_v4.glb",
-   "duration": 0.7,
-   "rate": 1.1667,
-   "frames30": 18,
-   "chestYaw": [
-    -48.7,
-    -0.0,
-    -22.5
-   ],
-   "pelvisYawMean": -13.0,
-   "kneeYaw": [
-    -34.1,
-    7.3
-   ],
-   "hipsVsIdleCm": [
-    -0.0,
-    9.7
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 18.5,
-   "bladePitch": [
-    68.1,
-    78.1
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 415.7,
-   "carryDegFirstLast": [
-    0.0,
-    0.2
-   ],
-   "tipOffsetFirstLastCm": [
-    0.0,
-    0.9
-   ],
-   "anklesFirstLastCm": [
-    61.9,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 55.5,
-    "back(-Z)": 20.8,
-    "left(+X)": 51.3,
-    "down": 4.2
-   },
-   "travelYaw": -110.6,
-   "stanceToeSpeedCmS": 1.0,
-   "plantedDriftMaxCm": 0.2
-  },
-  "Knight_BackpedalGuard_v4": {
-   "file": "Knight_BackpedalGuard_v4.glb",
-   "duration": 1.2,
-   "rate": 1.6680567139282734,
-   "frames30": 22,
-   "chestYaw": [
-    -7.4,
-    5.9,
-    -0.6
-   ],
-   "pelvisYawMean": -2.6,
-   "kneeYaw": [
-    -13.9,
-    8.8
-   ],
-   "hipsVsIdleCm": [
-    -6.7,
-    -3.6
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 3.4,
-   "bladePitch": [
-    45.8,
-    47.7
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 308.7,
-   "carryDegFirstLast": [
-    39.8,
-    39.5
-   ],
-   "tipOffsetFirstLastCm": [
-    175.0,
-    174.7
-   ],
-   "anklesFirstLastCm": [
-    69.1,
-    69.1
-   ],
-   "headPeakCm": {
-    "total": 4.9,
-    "back(-Z)": -0.1,
-    "left(+X)": -4.5,
-    "down": -2.1
-   },
-   "travelYaw": 180.0,
-   "stanceToeSpeedCmS": 100.1,
-   "plantedDriftMaxCm": 32.7,
-   "kneeVsTravelDeg": 174.0,
-   "chestVsBossDeg": 7.4
-  },
-  "Knight_BackpedalGuardTwoHand_v4": {
-   "file": "Knight_BackpedalGuardTwoHand_v4.glb",
-   "duration": 1.2,
-   "rate": 1.6680567139282734,
-   "frames30": 22,
-   "chestYaw": [
-    -7.4,
-    5.9,
-    -0.6
-   ],
-   "pelvisYawMean": -2.6,
-   "kneeYaw": [
-    -13.9,
-    8.8
-   ],
-   "hipsVsIdleCm": [
-    -6.7,
-    -3.6
-   ],
-   "handToSocketCm": [
-    16.2,
-    16.2
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 5.1,
-   "bladePitch": [
-    46.1,
-    46.1
-   ],
-   "idleBladePitch": 68.1,
-   "tipHeightMaxCm": 333.5,
-   "carryDegFirstLast": [
-    23.4,
-    23.5
-   ],
-   "tipOffsetFirstLastCm": [
-    113.4,
-    113.7
-   ],
-   "anklesFirstLastCm": [
-    69.1,
-    69.1
-   ],
-   "headPeakCm": {
-    "total": 4.9,
-    "back(-Z)": -0.1,
-    "left(+X)": -4.5,
-    "down": -2.1
-   },
-   "travelYaw": 180.0,
-   "stanceToeSpeedCmS": 100.1,
-   "plantedDriftMaxCm": 32.7,
-   "kneeVsTravelDeg": 174.0,
-   "chestVsBossDeg": 7.4
-  },
-  "Sourced_RollAttack_v4": {
-   "file": "Sourced_RollAttack_v4.glb",
-   "duration": 2.2,
-   "rate": 1.282051282051282,
-   "frames30": 52,
-   "chestYaw": [
-    -40.9,
-    81.0,
-    8.2
-   ],
-   "pelvisYawMean": -3.2,
-   "kneeYaw": [
-    -176.2,
-    169.5
-   ],
-   "hipsVsIdleCm": [
-    -109.0,
-    6.4
-   ],
-   "handToSocketCm": [
-    14.9,
-    14.9
-   ],
-   "handSlipCm": 0.0,
-   "tipStepMaxCmPerFrame": 140.4,
-   "bladePitch": [
-    -5.4,
-    50.4
-   ],
-   "idleBladePitch": 7.6,
-   "tipHeightMaxCm": 334.5,
-   "carryDegFirstLast": [
-    0.0,
-    0.1
-   ],
-   "tipOffsetFirstLastCm": [
-    42.6,
-    2.1
-   ],
-   "anklesFirstLastCm": [
-    56.8,
-    61.9
-   ],
-   "headPeakCm": {
-    "total": 193.9,
-    "back(-Z)": 56.2,
-    "left(+X)": 22.7,
-    "down": 184.2
-   },
-   "travelYaw": -165.3,
-   "stanceToeSpeedCmS": 8.6,
-   "plantedDriftMaxCm": 19.6
-  }
- },
- "gates_20261029T0704": {
-  "build": "Local/package-20261029T055623Z (zip sha256 11afb863...200662ae)",
-  "gpuWait": "never below 30% in 20 min (98-100% throughout)",
-  "runs": [
-   {
-    "mode": "core",
-    "passed": true,
-    "fps": 12.9,
-    "evidence": "Evidence/native-core-20261029T070404Z"
-   },
-   {
-    "mode": "death",
-    "passed": true,
-    "fps": 12.4,
-    "evidence": "Evidence/native-death-20261029T070600Z"
-   },
-   {
-    "mode": "lockon",
-    "passed": true,
-    "fps": 12.8,
-    "evidence": "Evidence/native-lockon-20261029T070645Z",
-    "reason": "10 locomotion trials, facing 1.9 deg, blink direction 3/3, stagger lab 5/5"
-   },
-   {
-    "mode": "integration",
-    "passed": false,
-    "fps": 12.0,
-    "evidence": "Evidence/native-integration-20261029T070742Z",
-    "reason": "locked_blink_left: both afterimages captured, 298.6 cm travel, no frame inside the 0.16 s hidden window (0.40 s frames)"
-   },
-   {
-    "mode": "controls",
-    "passed": true,
-    "fps": 12.0,
-    "evidence": "Evidence/native-controls-20261029T070931Z"
-   },
-   {
-    "mode": "guard",
-    "passed": true,
-    "fps": 13.4,
-    "evidence": "Evidence/native-guard-20261029T071018Z"
-   }
-  ]
- }
 }
