@@ -3,6 +3,8 @@
 // with no data the dragon is exactly the hard-coded encounter.
 
 #include "VeyrDragon.h"
+#include "VeyrGameMode.h"
+#include "VeyrFightFeel.h"
 #include "VeyrKnight.h"
 #include "VeyrMoveData.h"
 #include "VeyrSkeletalPresentation.h"
@@ -383,6 +385,9 @@ void AVeyrDragon::UpdateDataMove(float DeltaSeconds)
     const FBossMove* DataMove=MoveData.Find(CurrentDataMove);
     if(!DataMove){StopDataMove();return;}
     const float From=DataMoveClipSeconds;
+    if(!DataOnlyClip.IsNone()&&CurrentDataMove==FName(TEXT("roar"))&&From<.45f&&From+DeltaSeconds>=.45f)
+        if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
+            Mode->FightFeel->Impact(GetHeadLocation(),.65f,TEXT("roar"));
     if(bDataMoveFollowsEnum)
     {
         // Clip time follows the hard-coded state clock from the start of the wind-up.

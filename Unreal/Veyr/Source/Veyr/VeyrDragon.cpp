@@ -1,4 +1,6 @@
 #include "VeyrDragon.h"
+#include "VeyrGameMode.h"
+#include "VeyrFightFeel.h"
 #include "VeyrKnight.h"
 #include "VeyrArena.h"
 #include "VeyrVisualDefinition.h"
@@ -247,6 +249,16 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     UpdateHurtParts();
     // Data windows read the pose just evaluated (same clock as the hard-coded contact).
     UpdateDataMove(DeltaSeconds);
+    const FVeyrDragonFootprint Contact=GetActiveFootprint();
+    const bool GroundImpact=(Move==EVeyrDragonMove::BackStomp||Move==EVeyrDragonMove::TailSmack||
+        (Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery));
+    if(!bFightFeelContactPlayed&&GroundImpact&&Contact.bDamaging)
+    {
+        bFightFeelContactPlayed=true;
+        if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
+            Mode->FightFeel->Impact(Contact.Origin,Move==EVeyrDragonMove::FlyAway?1.f:.8f,
+                Move==EVeyrDragonMove::FlyAway?TEXT("landing"):Move==EVeyrDragonMove::BackStomp?TEXT("stomp"):TEXT("tail"));
+    }
     // Kinematic anatomy can advance into a stationary player. Publish physical
     // blockers after attack contact, then resolve genuine penetration through
     // the native movement component instead of letting the next move tunnel.
@@ -267,6 +279,7 @@ void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
             State==EVeyrDragonState::Collapse?1-Ease(StateElapsed/StateDuration):0.f;
     }
     State=Next; StateElapsed=0; StateDuration=Duration;
+    bFightFeelContactPlayed=false;
     bPreviousContactPoseValid=false;PreviousContacts.Reset();
     const bool Landing=Next==EVeyrDragonState::Recovery&&Move==EVeyrDragonMove::FlyAway&&HasAuthoredFlight();
     if(Next!=EVeyrDragonState::Windup&&Next!=EVeyrDragonState::Active&&!Landing)CommittedWarning.Reset();
@@ -908,6 +921,8 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
     LastSwordDamage*=FMath::Clamp(PartDamageScale,0.f,2.f);
     if(Region==4&&IsHeadExposed())++HeadBonusHitCount;
     Health=FMath::Max(0.f,Health-LastSwordDamage);
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(Mode->FightFeel)Mode->FightFeel->SwordContact(this,bHeavy);
     if(Region<4)LegFlash[Region]=1;
     if(Health<=0){EnterState(EVeyrDragonState::Dead,3.4f);return;}
     if(Region<4&&CanStagger())
@@ -1438,6 +1453,8 @@ void AVeyrDragon::UpdateImportedPresentation()
         const float Trimmed=FMath::Clamp(StateElapsed/FMath::Max(.001f,StateDuration),0.f,1.f)*VisualClipDuration(BiteClip,0.f);
         Gaze=BiteGroundRotations(Config.StartSeconds+Trimmed,BiteGroundPitchDegrees);
     }
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(Mode->FightFeel)Mode->FightFeel->AddBossFlinch(this,Gaze);
     if(!ImportedPresentation->SetComponentSpaceBoneRotations(Gaze))return;
     FString Name;
     switch(State)

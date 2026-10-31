@@ -6,6 +6,7 @@
 #include "VeyrReplay.h"
 #include "VeyrAudio.h"
 #include "VeyrDragonEffects.h"
+#include "VeyrFightFeel.h"
 #include "VeyrIdentity.h"
 #include "AudioMixerBlueprintLibrary.h"
 #include "Misc/Paths.h"
@@ -34,7 +35,8 @@ void AVeyrGameMode::StartPlay()
 {
     Super::StartPlay();
     // Shipping ignores startup console execution; enforce the delivered frame cap directly.
-    if(GEngine)GEngine->SetMaxFPS(60.f);
+    const FString SlotCap=FPlatformMisc::GetEnvironmentVariable(TEXT("GPU_SLOT_FPS_CAP"));
+    if(GEngine)GEngine->SetMaxFPS(SlotCap==TEXT("30")?30.f:60.f);
     // Optional test-only capture records this game's master submix, never
     // the microphone or system audio. Ordinary launches create no recordings.
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioCapture="),MixCaptureDirectory))
@@ -51,6 +53,13 @@ void AVeyrGameMode::StartPlay()
         GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("EffectsVolume"),UserEffectsVolume,GGameUserSettingsIni);
         GConfig->GetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
     }
+    if(GConfig)
+    {
+        GConfig->GetBool(TEXT("Veyr.UserSettings"),TEXT("CameraShake"),bUserCameraShake,GGameUserSettingsIni);
+        GConfig->GetBool(TEXT("Veyr.UserSettings"),TEXT("HitFlash"),bUserHitFlash,GGameUserSettingsIni);
+        GConfig->GetBool(TEXT("Veyr.UserSettings"),TEXT("HitStop"),bUserHitStop,GGameUserSettingsIni);
+    }
+    FightFeel=GetWorld()->SpawnActor<AVeyrFightFeel>();
     UserMasterVolume=FMath::Clamp(UserMasterVolume,0.f,1.f);
     UserMusicVolume=FMath::Clamp(UserMusicVolume,0.f,1.f);UserEffectsVolume=FMath::Clamp(UserEffectsVolume,0.f,1.f);
     UserMouseSensitivity=FMath::Clamp(UserMouseSensitivity,.25f,2.5f);
@@ -59,6 +68,7 @@ void AVeyrGameMode::StartPlay()
     Arena=GetWorld()->SpawnActor<AVeyrArena>(FVector::ZeroVector,FRotator::ZeroRotator,Params);
     Dragon=GetWorld()->SpawnActor<AVeyrDragon>(FVector(500,0,0),FRotator(0,180,0),Params);
     if(Arena&&Dragon)Arena->AddTickPrerequisiteActor(Dragon);
+    if(Dragon&&FightFeel)Dragon->AddTickPrerequisiteActor(FightFeel);
     DragonEffects=GetWorld()->SpawnActor<AVeyrDragonEffects>();
     if(DragonEffects)DragonEffects->Initialize(Dragon);
     UE_LOG(LogTemp,Display,TEXT("VEYR_UNREAL_ENCOUNTER_STARTED project=%s engine=%s"),FApp::GetProjectName(),*FEngineVersion::Current().ToString());
@@ -83,6 +93,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         Audio=GetWorld()->SpawnActor<AVeyrAudio>();
         if(Audio){Audio->MasterVolume=UserMasterVolume;Audio->MusicVolume=UserMusicVolume;Audio->EffectsVolume=UserEffectsVolume;Audio->Initialize(Knight,Dragon);}
         Knight->MouseSensitivity=UserMouseSensitivity;
+        if(FightFeel)Knight->AddTickPrerequisiteActor(FightFeel);
         bPawnPositioned=true;
         FString ReplayMode,EvidenceDirectory;
         if(FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayMode))
@@ -141,6 +152,7 @@ bool AVeyrGameMode::SetPauseMenuOpen(bool bOpen)
     if(bPauseMenuOpen==bOpen)return true;
     if(!UGameplayStatics::SetGamePaused(this,bOpen))return false;
     bPauseMenuOpen=bOpen;
+    if(FightFeel&&bOpen)FightFeel->CancelHitStop();
     UE_LOG(LogTemp,Display,TEXT("VEYR_WORLD_PAUSE open=%d worldTime=%.3f encounter=%.3f"),bOpen,GetWorld()->GetTimeSeconds(),EncounterSeconds);
     return true;
 }
@@ -165,6 +177,18 @@ void AVeyrGameMode::SetMouseSensitivity(float Value)
     if(Knight)Knight->MouseSensitivity=UserMouseSensitivity;
     SaveUserSettings();
 }
+void AVeyrGameMode::SetCameraShakeEnabled(bool bEnabled)
+{
+    bUserCameraShake=bEnabled;if(FightFeel)FightFeel->RefreshSettings();SaveUserSettings();
+}
+void AVeyrGameMode::SetHitFlashEnabled(bool bEnabled)
+{
+    bUserHitFlash=bEnabled;if(FightFeel)FightFeel->RefreshSettings();SaveUserSettings();
+}
+void AVeyrGameMode::SetHitStopEnabled(bool bEnabled)
+{
+    bUserHitStop=bEnabled;if(FightFeel)FightFeel->RefreshSettings();SaveUserSettings();
+}
 void AVeyrGameMode::SaveUserSettings()
 {
     if(!GConfig)return;
@@ -172,6 +196,9 @@ void AVeyrGameMode::SaveUserSettings()
     GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MusicVolume"),UserMusicVolume,GGameUserSettingsIni);
     GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("EffectsVolume"),UserEffectsVolume,GGameUserSettingsIni);
     GConfig->SetFloat(TEXT("Veyr.UserSettings"),TEXT("MouseSensitivity"),UserMouseSensitivity,GGameUserSettingsIni);
+    GConfig->SetBool(TEXT("Veyr.UserSettings"),TEXT("CameraShake"),bUserCameraShake,GGameUserSettingsIni);
+    GConfig->SetBool(TEXT("Veyr.UserSettings"),TEXT("HitFlash"),bUserHitFlash,GGameUserSettingsIni);
+    GConfig->SetBool(TEXT("Veyr.UserSettings"),TEXT("HitStop"),bUserHitStop,GGameUserSettingsIni);
     GConfig->Flush(false,GGameUserSettingsIni);
 }
 

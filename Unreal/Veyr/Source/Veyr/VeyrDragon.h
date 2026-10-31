@@ -313,6 +313,7 @@ private:
     bool CalibrateBiteGroundAim();
     TMap<FName,FRotator> BiteGroundRotations(float SourceSeconds,float PitchDegrees) const;
 
+    bool bFightFeelContactPlayed=false;
     float LegStagger[4] = {0,0,0,0};
     float LegFlash[4] = {0,0,0,0};
     FVector LegLocal[4];

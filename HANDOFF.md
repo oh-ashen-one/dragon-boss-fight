@@ -1,3 +1,19 @@
+# Current continuation — 2026-10-31 fight feel (Codex)
+
+**Candidate only; not visually accepted or shipped.** Work stays on `fable/knight-complete-20261028`; dragon checkout remains `claude-code-enhancements`. Owner work order: 7 → 4 → 3 → 8 → 1/2/5/6. No main merge/push.
+
+- Day-one audit ran before implementation: five missing systems over 33 source files. After the candidate: all code-checkable systems present over 35 files. This is presence, not quality.
+- Native Epic MCP verified through this checkout's `tools/unreal/native_mcp.py`: tools/list, list_toolsets, inspect_project and ListSkills succeeded. Editor identified this checkout, UE 5.8.3 and VeyrArena; KnightB/v030t and **DragonV3B/v028** are active. No Roar clip is in the active dragon definition. The later dragon Blender improvements are not established as integrated here. Native response saved locally in `Local/fightfeel-editor-20261031T205408Z/native-connection.json`.
+- Owned editor launched through unmodified shared GPU gate, background/windowed; SIGTERM shutdown completed. No other session's process touched. No engine remains from that verification.
+- Added original contact-driven `AVeyrFightFeel`: distance/weight shake, bounded real-time hit-stop, additive head/neck flinch, local contact flash and bounded textured sword trail. Settings persist separately for shake/flashes/impact pause. `-VeyrFightFeelOff` is the comparison baseline; `-VeyrCleanVideo` hides the HUD for review.
+- Reference pack was studied only. Reuses existing project ember material and installed Epic plane; no reference files copied, no downloads/generation/spend.
+- Shipping compile passed: `Local/unreal-build-20261031T210029101213Z/receipt.json`, source ID `6f78e5785c0a26dc0e463fd1af6d44bfe3cbd4376b2a2aa65fc80a198db2e63a`. Initial compile errors were corrected. Packaging currently running under `Local/package-20261031T210020Z`; check the live process/receipt before restarting anything.
+- Still required for item 7: matched rendered before/after video, persistent-settings/runtime checks, blind Opus quality verdict. First-round tie means stop and report; no acceptance by code audit alone. Roar hook exists but cannot be observed until a real roar clip is integrated.
+- No fight-health tuning, every-move replay, new knight-source gallery, sprint/heal/wing changes or audio generation done yet. About 19 GiB directly free before cooking; preserve existing assets and other sessions' evidence.
+- Candidate plan: `docs/fight-feel-20261031/PLAN.md`. Replay verifier: `tools/unreal/audit_fight_feel.py`; bare seekable video page: `tools/unreal/review_video.py`. `run_native.py` now uses windowed/background LaunchServices and retains the coordinator's current cap; runtime honors the slot's 30/60 fps environment cap.
+
+---
+
 # HANDOFF — dragon-boss-fight (Can It Code north-star pass)
 
 Date: 2026-10-28 · Branch: `claude-code-enhancements` · Host: Studio (midirstudio) · Status: **WIP, pipeline proven, runtime compile-only; switching to laptop**

@@ -1,6 +1,7 @@
 #include "VeyrKnight.h"
 #include "VeyrArena.h"
 #include "VeyrGameMode.h"
+#include "VeyrFightFeel.h"
 #include "VeyrDragon.h"
 #include "VeyrHUD.h"
 #include "VeyrSkeletalPresentation.h"
@@ -611,6 +612,8 @@ void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnb
     }
     Health = FMath::Clamp(Health - Amount, 0.f, 100.f);
     ++HitsTaken; DamageGrace = .30f;
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(Mode->FightFeel)Mode->FightFeel->PlayerContact(this,Amount,bCanBlock&&!bBroken);
     if (IsDead())
     {
         bGuardRequested = false; bLockedOn = false;
@@ -692,6 +695,8 @@ void AVeyrKnight::Tick(float DeltaSeconds)
         if(!FMath::IsNearlyEqual(UGameplayStatics::GetGlobalTimeDilation(this),Want))UGameplayStatics::SetGlobalTimeDilation(this,Want);
     }
     UpdateCamera(DeltaSeconds);
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(Mode->FightFeel)Mode->FightFeel->UpdateWeaponTrail(this,DeltaSeconds);
     UpdateTemporaryPresentation(DeltaSeconds);
 }
 
@@ -856,6 +861,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     CameraFramingArm=FMath::Min(Arm,static_cast<float>(FVector::Distance(
         CameraBoom->GetComponentLocation(),CombatCamera->GetComponentLocation())));
     CameraFloorClearance=CombatCamera->GetComponentLocation().Z-CameraFloorZ;
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(Mode->FightFeel)Mode->FightFeel->ApplyCameraShake(CombatCamera);
     UpdateCameraOcclusion(DeltaSeconds);
 }
 
@@ -1358,6 +1365,19 @@ void AVeyrKnight::ApplyAuthoredRootMotion(float PreviousSeconds,float NewSeconds
     GetCharacterMovement()->SafeMoveUpdatedComponent(Delta,GetActorQuat(),true,Hit);
     if(Hit.IsValidBlockingHit()){++RootMotionBlockedCount;bActionRootBlocked=true;}
     ActionRootTravelCm+=(GetActorLocation()-Before).Size2D();
+}
+
+bool AVeyrKnight::IsWeaponTrailActive() const
+{
+    const bool Attack=Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack||
+        Action==EVeyrKnightAction::Combo||Action==EVeyrKnightAction::RollAttack;
+    if(!Attack||!CustomuseVisualDefinition)return false;
+    const auto* Clip=CustomuseVisualDefinition->Clips.Find(ActionPresentationClip);
+    if(!Clip)return false;
+    const float Source=PrimarySourceOffset+ActionElapsed*VisualClipPlayRate(ActionPresentationClip);
+    for(const FVector2D& Window:Clip->DamageWindows)
+        if(Source>=Window.X-.04f&&Source<=Window.Y+.025f)return true;
+    return false;
 }
 
 void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)

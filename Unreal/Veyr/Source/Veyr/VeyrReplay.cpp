@@ -3,6 +3,7 @@
 #include "VeyrDragon.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrGameMode.h"
+#include "VeyrFightFeel.h"
 #include "VeyrAudio.h"
 #include "VeyrArena.h"
 #include "VeyrBlendProof.h"
@@ -209,6 +210,23 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     if(ReplayMode==TEXT("integration"))O->SetObjectField(TEXT("integration"),IntegrationEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())O->SetObjectField(TEXT("blendProofState"),BlendProof->CurrentState());
     O->SetStringField(TEXT("replayStage"),bRestartVerification?TEXT("restart_verification"):bAwaitingReload?TEXT("awaiting_reload"):bTerminalSettling?TEXT("terminal_settling"):TEXT("combat"));
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
+    {
+        const auto* Feel=Mode->FightFeel.Get();
+        TSharedPtr<FJsonObject> F=MakeShared<FJsonObject>();
+        F->SetBoolField(TEXT("enabled"),Feel->IsEnabled());
+        F->SetNumberField(TEXT("shakeEvents"),Feel->ShakeEvents);
+        F->SetNumberField(TEXT("hitStopEvents"),Feel->HitStopEvents);
+        F->SetNumberField(TEXT("hitFlashEvents"),Feel->HitFlashEvents);
+        F->SetNumberField(TEXT("flinchEvents"),Feel->FlinchEvents);
+        F->SetNumberField(TEXT("trailSamples"),Feel->TrailSamples);
+        F->SetNumberField(TEXT("visibleTrailSegments"),Feel->VisibleTrailSegments);
+        F->SetNumberField(TEXT("lastHitStopSeconds"),Feel->LastHitStopSeconds);
+        F->SetNumberField(TEXT("lastShakeDegrees"),Feel->LastShakeDegrees);
+        F->SetNumberField(TEXT("lastShakeDistanceCm"),Feel->LastShakeDistance);
+        F->SetNumberField(TEXT("timeDilation"),UGameplayStatics::GetGlobalTimeDilation(this));
+        O->SetObjectField(TEXT("fightFeel"),F);
+    }
     if(!IsValid(Knight)||!IsValid(Dragon))return O;
     O->SetNumberField(TEXT("playerHealth"),Knight->Health); O->SetNumberField(TEXT("stamina"),Knight->Stamina);
     O->SetNumberField(TEXT("healsRemaining"),Knight->HealingCharges); O->SetNumberField(TEXT("bossHealth"),Dragon->Health);

@@ -8,6 +8,7 @@ class AVeyrKnight;
 class AVeyrReplay;
 class AVeyrAudio;
 class AVeyrDragonEffects;
+class AVeyrFightFeel;
 
 UCLASS()
 class VEYR_API AVeyrGameMode : public AGameModeBase
@@ -32,6 +33,13 @@ public:
     UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetMusicVolume(float Value);
     UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetEffectsVolume(float Value);
     UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetMouseSensitivity(float Value);
+    UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetCameraShakeEnabled(bool bEnabled);
+    UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetHitFlashEnabled(bool bEnabled);
+    UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetHitStopEnabled(bool bEnabled);
+    UPROPERTY(BlueprintReadOnly) TObjectPtr<AVeyrFightFeel> FightFeel;
+    UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") bool bUserCameraShake=true;
+    UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") bool bUserHitFlash=true;
+    UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") bool bUserHitStop=true;
     void SaveUserSettings();
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Menu") bool bPauseMenuOpen=false;
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") float UserMasterVolume=.65f;

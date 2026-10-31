@@ -25,6 +25,8 @@
 #include "Engine/Font.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Misc/Paths.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Fonts/FontMeasure.h"
 #include "Rendering/SlateRenderer.h"
@@ -155,6 +157,7 @@ void AVeyrHUD::Keycap(const FString& Key,float X,float Y)
 
 void AVeyrHUD::DrawHUD()
 {
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrCleanVideo")))return;
     Super::DrawHUD();
     if(!bShowHUD||!Canvas||!GEngine||Canvas->SizeX<1||Canvas->SizeY<1)return;
     const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
@@ -383,6 +386,9 @@ void AVeyrHUD::RebuildPauseMenu()
             [Self,Mode](){if(Self.IsValid()){Mode->SetEffectsVolume(Mode->UserEffectsVolume+.1f);Self->SetPausePage(1);}});
         SettingRow(FString::Printf(TEXT("Mouse sensitivity  %.2f×"),Mode->UserMouseSensitivity),
             [Self](){if(Self.IsValid())Self->ChangeSensitivity(-.1f);},[Self](){if(Self.IsValid())Self->ChangeSensitivity(.1f);});
+        AddButton(Mode->bUserCameraShake?TEXT("Camera shake  ·  On"):TEXT("Camera shake  ·  Off"),[Self,Mode](){if(Self.IsValid()){Mode->SetCameraShakeEnabled(!Mode->bUserCameraShake);Self->SetPausePage(1);}});
+        AddButton(Mode->bUserHitFlash?TEXT("Hit flashes  ·  On"):TEXT("Hit flashes  ·  Off"),[Self,Mode](){if(Self.IsValid()){Mode->SetHitFlashEnabled(!Mode->bUserHitFlash);Self->SetPausePage(1);}});
+        AddButton(Mode->bUserHitStop?TEXT("Impact pause  ·  On"):TEXT("Impact pause  ·  Off"),[Self,Mode](){if(Self.IsValid()){Mode->SetHitStopEnabled(!Mode->bUserHitStop);Self->SetPausePage(1);}});
         if(UGameUserSettings* Settings=GEngine?GEngine->GetGameUserSettings():nullptr)
         {
             AddButton(Settings->GetFullscreenMode()==EWindowMode::Windowed?TEXT("Display  ·  Windowed"):TEXT("Display  ·  Borderless"),[Self](){if(Self.IsValid())Self->ToggleDisplayMode();});

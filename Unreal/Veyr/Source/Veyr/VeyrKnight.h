@@ -178,6 +178,10 @@ public:
     /** Hit source direction relative to the knight's facing, degrees: 0 front, +90 right, -90 left. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float LastStaggerSourceYaw=0.f;
 
+    /** Read-only blade geometry and authored contact-window state for combat presentation. */
+    bool GetWeaponSweep(FVector& Base,FVector& Tip);
+    bool IsWeaponTrailActive() const;
+
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -189,7 +193,6 @@ private:
     bool bBoatReleased=false;
     float BoatReleaseTime=0.f;
     FTransform BoatReleaseStart,BoatReleaseRest;
-    bool GetWeaponSweep(FVector& Base,FVector& Tip);
     void UpdateEquippedWeapon();
     UPROPERTY() TObjectPtr<UStaticMeshComponent> LeftLeg;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> RightLeg;
