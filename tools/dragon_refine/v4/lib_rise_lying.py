@@ -321,6 +321,18 @@ def _lift_vertices(rig):
     foot = np.isin(names, ["bone_9", "tripo::1_Left_Limb_1", "bone_14", "tripo::0_Left_Limb_2", "tripo::0_Left_Limb_3",
                            "tripo::1_Right_Limb_3", "tripo::1_Right_Limb_4", "tripo::0_Right_Limb_3", "tripo::0_Right_Limb_4"])
     return np.where(~foot & ~np.char.startswith(names, "VeyrWing"))[0][::3]
+def stage_tail_ease(m, k=10, extra=12):
+    """2026-10-31 (final critic: full speed into a dead stop at the end): retime the last k frames into k+extra frames on an ease-out
+    time map s = 1-(1-t)^2 (starts near the incoming speed, ends at zero speed). Returns Motion with N+extra frames."""
+    if k <= 0 or extra <= 0: return m
+    o = m.copy(); a = m.N - 1 - k; n = k + extra
+    t = np.arange(1, n + 1) / float(n); x = a + k * (1 - (1 - t) ** 2)
+    i0 = np.floor(x).astype(int).clip(0, m.N - 1); i1 = (i0 + 1).clip(0, m.N - 1); w = x - i0
+    qt = hemi(nlerp(m.q[i0], m.q[i1], w)) if 'hemi' in globals() else nlerp(m.q[i0], m.q[i1], w)
+    lt = m.loc[i0] * (1 - w)[:, None] + m.loc[i1] * w[:, None]
+    o.q = np.concatenate([m.q[:a + 1], qt]); o.loc = np.concatenate([m.loc[:a + 1], lt]); o.N = len(o.q)
+    o.times = np.arange(o.N) / 24.0
+    return o
 def _foot_vertices(rig):
     names = np.array(rig.names)[rig.dom]
     foot = np.isin(names, ["bone_9", "tripo::1_Left_Limb_1", "bone_14", "tripo::0_Left_Limb_2", "tripo::0_Left_Limb_3",
@@ -348,8 +360,8 @@ def start_pose_of(m, rig):
     sq, sl = rig.start_q(); j = [rig.names.index(b) for b in m.bones]; return sq[j], sl
 
 # ---------------------------------------------------------------- the whole numpy side as one function (used by the Blender script and the CPU dry run)
-DEFAULTS = dict(hold_s=1.25, ease=6, lead=4, idle_blend=8, wing_blend=16, wing_a=100, wing_b=134, twist_cap=25.0, knee=15.0, smooth=5, jump_cap=8.0, wing_ramp=6,
-                relax_bones="tripo::0_Right_Limb_2,tripo::1_Right_Limb_2", relax_margin=6.0, floor=0.0055, start=-1, floor_fade=3, feet_floor=-0.001)
+DEFAULTS = dict(hold_s=1.25, ease=6, lead=4, idle_blend=12, wing_blend=24, wing_a=100, wing_b=134, twist_cap=25.0, knee=15.0, smooth=5, jump_cap=8.0, wing_ramp=6,
+                relax_bones="tripo::0_Right_Limb_2,tripo::1_Right_Limb_2", relax_margin=6.0, floor=0.0055, start=-1, floor_fade=3, feet_floor=-0.001, tail_k=10, tail_extra=12)
 def numpy_pipeline(m, rig, idle_q, idle_loc, overrides=None, **kw):
     """m: raw Motion (145 frames), idle_q [B,4] / idle_loc [3] the idle_v2 frame-0 channels in m's bone order, overrides = solved wing Euler
     ({bone: [N,3] rad} of prep_wings_rl.py) or None. Order: knee relax -> wing clean (clip frames) -> trim + ease -> idle blend -> floor lift.
@@ -363,6 +375,7 @@ def numpy_pipeline(m, rig, idle_q, idle_loc, overrides=None, **kw):
         ps, _ = push_start(m, rig); start = max(0, ps - int(p["lead"]) - int(round(float(p["hold_s"]) * 24)))
     rep["trim"] = {"push_start_frame": ps, "start": start, "kept_frames": m.N - start, "hold_frames_kept": int(round(float(p["hold_s"]) * 24)), "ease_frames": int(p["ease"])}
     m3 = stage_trim_ease(m2, start, int(p["ease"]), start_pose_of(m, rig))
+    m3 = stage_tail_ease(m3, int(p["tail_k"]), int(p["tail_extra"])); rep["tail_ease"] = {"k": int(p["tail_k"]), "extra": int(p["tail_extra"]), "frames_after": int(m3.N)}
     m4, w, ww = stage_idle_blend(m3, idle_q, idle_loc, int(p["idle_blend"]), int(p["wing_blend"]))
     rep["idle_blend"] = {"frames": int(p["idle_blend"]), "from_frame": int(m4.N - int(p["idle_blend"])), "wing_frames": max(int(p["idle_blend"]), int(p["wing_blend"])),
                          "wing_from_frame": int(m4.N - max(int(p["idle_blend"]), int(p["wing_blend"])))}

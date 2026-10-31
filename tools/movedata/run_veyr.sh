@@ -22,7 +22,7 @@ MOVES=(
   "$D/Dragon_Roar_sd_v2r_v5.blend|roar_v5|roar|0"
   "$D/Dragon_Collapse_sd_v2r_v5.blend|collapse_v5|collapse|0"
   "$D/Dragon_Death_sd_v2r_v3.blend|death_v3|death|0"
-  "$D/Dragon_Bite_sd_v2r_v5.blend|bite_v5|bite|0"
+  "$D/Dragon_Bite_sd_v2r_v6.blend|bite_v6|bite|0"
   "$D/Dragon_ClawSwipe_sd_v2r_v3.blend|claw_swipe_v3|claw_swipe|0"
   "$D/Dragon_Stagger_sd_v2r_v3.blend|stagger_v3|stagger|0"
   "$D/Dragon_Land2_sd_v2r_v4.blend|land2_v4|land|0"
