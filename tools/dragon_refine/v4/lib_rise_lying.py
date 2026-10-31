@@ -349,7 +349,7 @@ def start_pose_of(m, rig):
 
 # ---------------------------------------------------------------- the whole numpy side as one function (used by the Blender script and the CPU dry run)
 DEFAULTS = dict(hold_s=1.25, ease=6, lead=4, idle_blend=8, wing_blend=16, wing_a=100, wing_b=134, twist_cap=25.0, knee=15.0, smooth=5, jump_cap=8.0, wing_ramp=6,
-                relax_bones="tripo::0_Right_Limb_2,tripo::1_Right_Limb_2", relax_margin=6.0, floor=0.0015, start=-1, floor_fade=3, feet_floor=-0.001)
+                relax_bones="tripo::0_Right_Limb_2,tripo::1_Right_Limb_2", relax_margin=6.0, floor=0.0055, start=-1, floor_fade=3, feet_floor=-0.001)
 def numpy_pipeline(m, rig, idle_q, idle_loc, overrides=None, **kw):
     """m: raw Motion (145 frames), idle_q [B,4] / idle_loc [3] the idle_v2 frame-0 channels in m's bone order, overrides = solved wing Euler
     ({bone: [N,3] rad} of prep_wings_rl.py) or None. Order: knee relax -> wing clean (clip frames) -> trim + ease -> idle blend -> floor lift.
