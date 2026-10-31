@@ -321,11 +321,19 @@ def _lift_vertices(rig):
     foot = np.isin(names, ["bone_9", "tripo::1_Left_Limb_1", "bone_14", "tripo::0_Left_Limb_2", "tripo::0_Left_Limb_3",
                            "tripo::1_Right_Limb_3", "tripo::1_Right_Limb_4", "tripo::0_Right_Limb_3", "tripo::0_Right_Limb_4"])
     return np.where(~foot & ~np.char.startswith(names, "VeyrWing"))[0][::3]
-def stage_floor_lift(m, rig, floor=0.0015, fade_out=8, sigma=2.0):
+def _foot_vertices(rig):
+    names = np.array(rig.names)[rig.dom]
+    foot = np.isin(names, ["bone_9", "tripo::1_Left_Limb_1", "bone_14", "tripo::0_Left_Limb_2", "tripo::0_Left_Limb_3",
+                           "tripo::1_Right_Limb_3", "tripo::1_Right_Limb_4", "tripo::0_Right_Limb_3", "tripo::0_Right_Limb_4"])
+    return np.where(foot)[0][::2]
+def stage_floor_lift(m, rig, floor=0.0015, fade_out=8, sigma=2.0, feet_floor=None):
     """raise the body (root location) on frames where a non-foot, non-wing vertex is under `floor`; smoothed, faded to 0 over the
     last `fade_out` frames so the clip still ends exactly on the idle pose. Returns (Motion, lift [N] metres)"""
     o = m.copy(); q = reorder(m, rig); sel = _lift_vertices(rig); need = np.zeros(m.N)
     for f in range(m.N): need[f] = max(0.0, floor - float(rig.skin(q[f], m.loc[f], sel=sel)[:, 2].min()))
+    if feet_floor is not None:                      # 2026-10-31: the feet too (the idle blend dips a hind foot ~0.9 cm), with their own tolerance
+        fsel = _foot_vertices(rig)
+        for f in range(m.N): need[f] = max(need[f], feet_floor - float(rig.skin(q[f], m.loc[f], sel=fsel)[:, 2].min()))
     mx = np.array([need[max(0, i - 3):i + 4].max() for i in range(m.N)])
     k = np.exp(-.5 * (np.arange(-6, 7) / sigma) ** 2); k /= k.sum()
     lift = np.maximum(np.convolve(np.pad(mx, 6, mode="edge"), k, mode="valid"), need)
@@ -341,7 +349,7 @@ def start_pose_of(m, rig):
 
 # ---------------------------------------------------------------- the whole numpy side as one function (used by the Blender script and the CPU dry run)
 DEFAULTS = dict(hold_s=1.25, ease=6, lead=4, idle_blend=8, wing_blend=16, wing_a=100, wing_b=134, twist_cap=25.0, knee=15.0, smooth=5, jump_cap=8.0, wing_ramp=6,
-                relax_bones="tripo::0_Right_Limb_2,tripo::1_Right_Limb_2", relax_margin=6.0, floor=0.0015, start=-1)
+                relax_bones="tripo::0_Right_Limb_2,tripo::1_Right_Limb_2", relax_margin=6.0, floor=0.0015, start=-1, floor_fade=3, feet_floor=-0.001)
 def numpy_pipeline(m, rig, idle_q, idle_loc, overrides=None, **kw):
     """m: raw Motion (145 frames), idle_q [B,4] / idle_loc [3] the idle_v2 frame-0 channels in m's bone order, overrides = solved wing Euler
     ({bone: [N,3] rad} of prep_wings_rl.py) or None. Order: knee relax -> wing clean (clip frames) -> trim + ease -> idle blend -> floor lift.
@@ -358,7 +366,7 @@ def numpy_pipeline(m, rig, idle_q, idle_loc, overrides=None, **kw):
     m4, w, ww = stage_idle_blend(m3, idle_q, idle_loc, int(p["idle_blend"]), int(p["wing_blend"]))
     rep["idle_blend"] = {"frames": int(p["idle_blend"]), "from_frame": int(m4.N - int(p["idle_blend"])), "wing_frames": max(int(p["idle_blend"]), int(p["wing_blend"])),
                          "wing_from_frame": int(m4.N - max(int(p["idle_blend"]), int(p["wing_blend"])))}
-    m5, lift = stage_floor_lift(m4, rig, float(p["floor"]), fade_out=int(p["idle_blend"]))
+    m5, lift = stage_floor_lift(m4, rig, float(p["floor"]), fade_out=int(p["floor_fade"]), feet_floor=float(p["feet_floor"]))
     rep["floor_lift_cm_max"] = round(float(lift.max() * 100), 3)
     return m5, rep
 
