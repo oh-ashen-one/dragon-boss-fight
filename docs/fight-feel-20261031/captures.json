@@ -1,0 +1,62 @@
+{
+  "before": {
+    "evidence": "Evidence/native-core-20261031T210751Z/unreal-core-20261031T210811Z-738968EF/evidence.json",
+    "passed": true,
+    "reason": "jump-disabled light heavy collapse head bonus completed rise and dodge contact observed",
+    "sourceId": "6f78e5785c0a26dc0e463fd1af6d44bfe3cbd4376b2a2aa65fc80a198db2e63a",
+    "gameSeconds": 42.45615768432617,
+    "frameCount": 2292,
+    "feedback": {
+      "enabled": false,
+      "shakeEvents": 0,
+      "hitStopEvents": 0,
+      "hitFlashEvents": 0,
+      "flinchEvents": 0,
+      "trailSamples": 0,
+      "visibleTrailSegments": 0,
+      "lastHitStopSeconds": 0,
+      "lastShakeDegrees": 0,
+      "lastShakeDistanceCm": 0,
+      "timeDilation": 1
+    },
+    "nativeVideo": {
+      "requestedFPS": 15,
+      "savedFrames": 567,
+      "failedFrames": 0,
+      "skippedSlots": 44,
+      "elapsedWallSeconds": 45.34061012789607,
+      "stopped": true,
+      "stopReason": "replay completed"
+    }
+  },
+  "after": {
+    "evidence": "Evidence/native-core-20261031T210922Z/unreal-core-20261031T210936Z-F10D0B25/evidence.json",
+    "passed": true,
+    "reason": "jump-disabled light heavy collapse head bonus completed rise and dodge contact observed",
+    "sourceId": "6f78e5785c0a26dc0e463fd1af6d44bfe3cbd4376b2a2aa65fc80a198db2e63a",
+    "gameSeconds": 42.42216110229492,
+    "frameCount": 2308,
+    "feedback": {
+      "enabled": true,
+      "shakeEvents": 8,
+      "hitStopEvents": 5,
+      "hitFlashEvents": 5,
+      "flinchEvents": 4,
+      "trailSamples": 43,
+      "visibleTrailSegments": 0,
+      "lastHitStopSeconds": 0.0949999988079071,
+      "lastShakeDegrees": 1.1361637115478516,
+      "lastShakeDistanceCm": 850.95166015625,
+      "timeDilation": 1
+    },
+    "nativeVideo": {
+      "requestedFPS": 15,
+      "savedFrames": 577,
+      "failedFrames": 0,
+      "skippedSlots": 36,
+      "elapsedWallSeconds": 45.77110379189253,
+      "stopped": true,
+      "stopReason": "replay completed"
+    }
+  }
+}

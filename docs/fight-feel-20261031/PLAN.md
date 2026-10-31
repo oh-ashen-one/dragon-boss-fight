@@ -1,6 +1,6 @@
 # Fight feel — 2026-10-31
 
-Status: candidate implementation; no visual acceptance yet.
+Status: STOPPED — first completed blind Opus review returned TIE. Candidate not accepted. Shipping package and both core replays passed, but did not prove a visible improvement.
 
 ## Ownership and baseline
 
@@ -34,3 +34,12 @@ Reuse: existing project FXv3 ember material, unchanged; installed Epic Engine Ba
 5. Owner subjective feel remains separate. Do not mark done on compile, audit or fidelity alone.
 
 Still required: native render/capture; full comparison; critic; roar hook with integrated sourced roar; timing and settings checks. Whole backlog remains active in owner order.
+
+
+## First rendered verification
+
+Shipping package `Local/package-20261031T210020Z/receipt.json` passed cook, dependency and signature checks. Baseline and candidate used the same package and assets, 1280×720, requested capture cadence 15 fps, hidden HUD, normal game timestep. Both core replays passed light/heavy/collapse/head-punish/rise/dodge coverage in about 42.4 game seconds. These are core validation runs, **not victory duration measurements**.
+
+`runtime-check.json` passes bounded amplitude/trail, contact-only hit-stop accounting, disabled baseline, observed candidate effects, and restored game time. Candidate: 8 shake events; 5 hit-stops/flashes; 4 flinches; 43 trail samples. No subjective quality or settings-interaction acceptance follows from these counters. Full captured-frame metadata is under the local evidence directories listed in `captures.json`.
+
+Owner first-tie rule applied. See `critique-round1.md`. No further iterations or later backlog work commenced after that verdict.
