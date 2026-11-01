@@ -55,6 +55,15 @@
       "error": false,
       "reportedEstimatedUSD": 0.36822659999999996,
       "durationMs": 45439
+    },
+    {
+      "receipt": "pacing-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.4744124,
+      "durationMs": 60705
     }
   ]
 }

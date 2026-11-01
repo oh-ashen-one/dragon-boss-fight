@@ -157,7 +157,8 @@ void AVeyrHUD::Keycap(const FString& Key,float X,float Y)
 
 void AVeyrHUD::DrawHUD()
 {
-    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrCleanVideo")))return;
+    const bool BossBarOnly=FParse::Param(FCommandLine::Get(),TEXT("VeyrBossBarOnly"));
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrCleanVideo"))&&!BossBarOnly)return;
     Super::DrawHUD();
     if(!bShowHUD||!Canvas||!GEngine||Canvas->SizeX<1||Canvas->SizeY<1)return;
     const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
@@ -188,16 +189,27 @@ void AVeyrHUD::DrawHUD()
     // painted equipment reliquaries at lower right, clear center/feet region.
     const float BossWidth=FMath::Min(656.f,W*.515f),BossX=(W-BossWidth)*.5f;
     const float Cap=36.f,BarWidth=BossWidth-2.f*Cap;
-    Atlas(BossX,22,Cap,60.5f,240,50,100,110);
-    Atlas(BossX+Cap,22,BarWidth,60.5f,340,50,990,110);
-    Atlas(BossX+BossWidth-Cap,22,Cap,60.5f,1330,50,110,110);
-    Text(TEXT("Veyr, the Cinder Warden"),W*.5f,7,27,Ivory,true);
+    if(!BossBarOnly)
+    {
+        Atlas(BossX,22,Cap,60.5f,240,50,100,110);
+        Atlas(BossX+Cap,22,BarWidth,60.5f,340,50,990,110);
+        Atlas(BossX+BossWidth-Cap,22,Cap,60.5f,1330,50,110,110);
+        Text(TEXT("Veyr, the Cinder Warden"),W*.5f,7,27,Ivory,true);
+    }
     const float BX=BossX+Cap+2,BY=44.8f,BW=BarWidth-4;
     Rect(BX,BY,BW,8.4f,FLinearColor(.013f,.018f,.023f,.94f));
     if(BossTrail>BossHealth)Rect(BX,BY,BW*BossTrail,8.4f,FLinearColor(.31f,.20f,.20f,.9f));
     Rect(BX,BY,BW*BossHealth,8.4f,FLinearColor(.32f,.045f,.06f,1.f));
     Rect(BX,BY+2,BW*BossHealth,3.8f,FLinearColor(.49f,.10f,.12f,1.f));
     Line(BX,BY+.5f,BX+BW*BossHealth,BY+.5f,FLinearColor(.77f,.54f,.50f,.6f),.7f);
+    if(BossBarOnly)
+    {
+        // Capture-only variant of the existing live gauge: no atlas lettering,
+        // labels, control legend or end-screen text is drawn into the movie.
+        Line(BX-1,BY-1,BX+BW+1,BY-1,Pewter,.8f);Line(BX-1,BY+9.4f,BX+BW+1,BY+9.4f,Pewter,.8f);
+        Line(BX-1,BY-1,BX-1,BY+9.4f,Pewter,.8f);Line(BX+BW+1,BY-1,BX+BW+1,BY+9.4f,Pewter,.8f);
+        return;
+    }
 
     ArcMeter(108.f,H-100.f,90.7f,7.2f,198.f,125.f,Health,HealthTrail,FLinearColor(.59f,.105f,.12f,1.f));
     ArcMeter(108.f,H-100.f,76.8f,9.f,155.f,191.f,Stamina,Stamina,FLinearColor(.34f,.53f,.38f,1.f));

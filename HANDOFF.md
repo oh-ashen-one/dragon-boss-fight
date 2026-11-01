@@ -1,6 +1,6 @@
 # Current continuation — 2026-11-01 (Codex)
 
-**Goal active. Fight-feel revision 3 passed relative visual review; 150-second tuning is in progress. Full backlog is not complete.** Only game branches: `fable/knight-complete-20261028` in this checkout; dragon art remains `claude-code-enhancements`. No main push/merge.
+**STOPPED per owner first-tie rule. Fight-feel revision 3 passed its relative review, but the first blind pacing review returned TIE. The provisional 650 HP meets numerical timing gates and is NOT accepted as a visible pacing improvement. Full backlog is incomplete.** Only game branches: `fable/knight-complete-20261028` in this checkout; dragon art remains `claude-code-enhancements`. No main push/merge.
 
 ## Verified progress
 
@@ -15,16 +15,21 @@
 - Health is now a **provisional 650 HP** (original 2800 remains selectable only for fresh victory comparisons with `-VeyrLegacyBossHealth`). No damage, stamina, immunity or boss-choice rules changed. The gate requires >0 and <=150 **active wall seconds**, includes hit-stop, excludes pauses/pre-engagement and death/restart, and survives the restart check. The same C++ clock header passed compiled start/pause/end tests.
 - 1200 HP failed at 271.078 s with the inherited rear-leg route. Inspection found the old victory driver used an unbound standalone heavy hook. A front-leg run using the actual LMB primary chain still failed at 217.144 s (`native-victory-20261101T064819Z`). Its first stagger/head chain dealt 656 damage by ~105.5 s, motivating the 650 candidate. The victory driver now uses actual primary press/hold/release and the player's real readiness predicate, including run-stop interruption. Other action labs retain their existing scoped handlers. See `health-tuning-plan.md`.
 - **650 HP package passed**: `Local/package-20261101T071339Z/receipt.json`; source ID `562358b0434b7798517cab9d2a127dfebc0e23cafde81c63cec70126661d3524`; verified runtime app `/private/tmp/veyr-verified-bundle-rzrw3du5/Veyr-Mac-Shipping.app`.
-- **One-handed 650 HP victory PASSED at 113.384 active wall seconds**, with death pose and post-restart resource/movement/primary checks (`Evidence/native-victory-20261101T072120Z`). Two-handed timing is now running through the shared GPU gate; inspect its live process/newest victory evidence before relaunching. Original-health comparison remains pending.
+- **650 HP victories PASSED:** one-hand 113.384 s (`native-victory-20261101T072120Z`), two-hand 40.507 s (`native-victory-20261101T072748Z`), and the text-free one-hand film 124.164 s (`native-victory-20261101T083215Z`). All include terminal pose and restart checks. The grip timing gap remains an owner-playtest/balance concern. Original 2800 HP with the same input policy was still alive at 150 s with 2144 HP (`native-victory-20261101T074051Z`). The filmed original-health cutoff also ended at 150.02 s with 2144 HP remaining (`native-victory-20261101T083604Z`); first blind pacing review returned TIE; stopped.
 - `-VeyrStopAfterDeadline` optionally ends a failed comparison attempt after 150 s with the boss still alive; it never grants victory or changes HP. Default victory runs continue to the actual result. Capture now allows 18,000 frames / 600 s with a 4-GiB free-space stop. `encode_video.py --world-index 0` excludes automated restart verification from the film. Seven encoder/manifest tests pass.
 
-## Remaining work
+- Newest Shipping package: `Local/package-20261101T075300Z/receipt.json`, source ID `710f4c1373be907f497a37de38b9c315bbb2da1ca856929f191f4216662fec17`, verified app `/private/tmp/veyr-verified-bundle-8h2tvccs/Veyr-Mac-Shipping.app`. Its text-free `-VeyrBossBarOnly` film retains the native health gauge; normal HUD is unchanged. Actual filmed victory has verified this package at runtime.
+- Dragon read-only inspection (dragon branch `13c6048`): approved idle/roar and selected bite/rise share 51 rest bones matching canonical v028; canonical adds only VeyrRoot. No new action is imported yet.
 
-1. Establish <=150 s victories with the physically available primary path in both grips, film original/tuned health under the same policy, and update checks. Preserve failures; never force a kill or weaken the deadline.
+- Final pacing pair is served on port 8802 with seekable range responses verified. Both continuous movies use source ID 710f4c13…, zero failed frames, timestamp error <=0.5 microseconds. Durations include normal intro/end holds (153.054 s baseline / 128.979 s candidate); the active encounter timer remains 150.02 cutoff / 124.164 victory. Uniform anonymous frame-sequence Opus review returned TIE; it cannot establish continuous motion quality. Candidate A has a burst-heavy abrupt finish; baseline B stalls. The critic found shared camera occlusion and long no-damage approach. See `critique-pacing-round1.md`.
+
+## Remaining work — only after owner continuation
+
+1. Numerical target is met in both grips and the filmed one-hand run, but first pacing quality gate tied. Owner must direct continuation. If resumed, address readable damage distribution, approach/camera occlusion and a distinct death beat before another review; do not merely reduce HP again.
 2. Every-move replay/film, including real roar. Reconcile dragon branch authoring versus the currently integrated v028 definition; do not claim all dragon improvements are imported.
 3. Source free two-handed heavy/jump/running attack candidates and stage them for the owner to select; owner handles store/login clicks.
 4. Sprint feel, idle wing spread, sourced heal-cup correction, music/SFX. These are still outstanding.
-5. Recheck core after lowering health: its coverage needs a head punish followed by Rise, so release further head attacks after the first bonus instead of accidentally killing the shorter-health boss before Rise. Keep this as controller behavior, not health manipulation.
+5. Core regression recheck passed (`native-core-20261101T083909Z`): light/heavy leg contact, collapse, head bonus, completed Rise and dodge contact. The controller releases after the first head bonus; no HP/state manipulation.
 
 Comparison flags: `-VeyrFightFeelOff` = original disabled baseline; `-VeyrFightFeelLegacy` = revision 1; `-VeyrFightFeelMarkerOnly` = revision 2; default = revision 3. `-VeyrCleanVideo` removes HUD text. Bare review servers from this task use ports 8797–8801; preserve other review servers/checkouts. Final videos are under this chat's `outputs/`. Current source/assets are not owner-approved as a complete game. Wiki updates are on `codex/veyr-fightfeel-20261031` (PR #3 unmerged), not main.
 

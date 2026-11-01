@@ -1,5 +1,5 @@
 {
-  "status": "in progress; one-hand 650 passed, two-hand and baseline pending",
+  "status": "STOPPED: first blind pacing review TIE; numerical target passed but candidate unaccepted",
   "runs": [
     {
       "run": "Evidence/native-victory-20261101T060046Z/unreal-victory-20261101T060109Z-4E87519D/evidence.json",
@@ -10,7 +10,25 @@
       "reason": "victory wall-time gate failed: 271.078 seconds; limit 150",
       "attackPolicy": "legacy standalone hooks",
       "primaryPresses": null,
-      "twoHandedRequested": false
+      "twoHandedRequested": false,
+      "capturedVideo": {
+        "requestedFPS": 30,
+        "requestedFrames": 8229,
+        "savedFrames": 8229,
+        "failedFrames": 0,
+        "skippedSlots": 162,
+        "worldIndex": 1,
+        "pngWriteSeconds": 345.19882318004966,
+        "pixelCopySeconds": 0.399486280977726,
+        "backgroundPNGJobInFlight": false,
+        "peakBackgroundPNGJobs": 3,
+        "maximumBackgroundPNGJobs": 4,
+        "elapsedWallSeconds": 279.8269112445414,
+        "stopped": true,
+        "stopReason": "replay completed",
+        "manifest": "native-video/frames.jsonl",
+        "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+      }
     },
     {
       "run": "Evidence/native-victory-20261101T064819Z/unreal-victory-20261101T064839Z-0C6C06E2/evidence.json",
@@ -21,7 +39,25 @@
       "reason": "victory wall-time gate failed: 217.144 seconds; limit 150",
       "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
       "primaryPresses": 12,
-      "twoHandedRequested": false
+      "twoHandedRequested": false,
+      "capturedVideo": {
+        "requestedFPS": 30,
+        "requestedFrames": 6624,
+        "savedFrames": 6624,
+        "failedFrames": 0,
+        "skippedSlots": 147,
+        "worldIndex": 1,
+        "pngWriteSeconds": 279.8971452638507,
+        "pixelCopySeconds": 0.32428745552897453,
+        "backgroundPNGJobInFlight": false,
+        "peakBackgroundPNGJobs": 3,
+        "maximumBackgroundPNGJobs": 4,
+        "elapsedWallSeconds": 225.81791295856237,
+        "stopped": true,
+        "stopReason": "replay completed",
+        "manifest": "native-video/frames.jsonl",
+        "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+      }
     },
     {
       "run": "Evidence/native-victory-20261101T072120Z/unreal-victory-20261101T072140Z-CE794977/evidence.json",
@@ -32,7 +68,133 @@
       "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
       "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
       "primaryPresses": 5,
+      "twoHandedRequested": false,
+      "capturedVideo": {
+        "requestedFPS": 30,
+        "requestedFrames": 3619,
+        "savedFrames": 3619,
+        "failedFrames": 0,
+        "skippedSlots": 35,
+        "worldIndex": 1,
+        "pngWriteSeconds": 151.37212922424078,
+        "pixelCopySeconds": 0.1745627112686634,
+        "backgroundPNGJobInFlight": false,
+        "peakBackgroundPNGJobs": 3,
+        "maximumBackgroundPNGJobs": 4,
+        "elapsedWallSeconds": 121.92737516760826,
+        "stopped": true,
+        "stopReason": "replay completed",
+        "manifest": "native-video/frames.jsonl",
+        "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+      }
+    },
+    {
+      "run": "Evidence/native-victory-20261101T072748Z/unreal-victory-20261101T072801Z-839158BD/evidence.json",
+      "sourceId": "562358b0434b7798517cab9d2a127dfebc0e23cafde81c63cec70126661d3524",
+      "terminalWallSeconds": 40.50672787800431,
+      "terminalGameSeconds": 40.17694854736328,
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
+      "primaryPresses": 5,
+      "twoHandedRequested": true,
+      "capturedVideo": {
+        "requestedFPS": 30,
+        "requestedFrames": 1462,
+        "savedFrames": 1462,
+        "failedFrames": 0,
+        "skippedSlots": 3,
+        "worldIndex": 1,
+        "pngWriteSeconds": 61.73910352215171,
+        "pixelCopySeconds": 0.07037519663572311,
+        "backgroundPNGJobInFlight": false,
+        "peakBackgroundPNGJobs": 3,
+        "maximumBackgroundPNGJobs": 4,
+        "elapsedWallSeconds": 48.9580462500453,
+        "stopped": true,
+        "stopReason": "replay completed",
+        "manifest": "native-video/frames.jsonl",
+        "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+      }
+    },
+    {
+      "run": "Evidence/native-victory-20261101T074051Z/unreal-victory-20261101T074105Z-5598EFD7/evidence.json",
+      "sourceId": "562358b0434b7798517cab9d2a127dfebc0e23cafde81c63cec70126661d3524",
+      "terminalWallSeconds": -1,
+      "terminalGameSeconds": -1,
+      "passed": false,
+      "reason": "victory attempt exceeded 150 active wall seconds; boss still alive",
+      "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
+      "primaryPresses": 5,
+      "twoHandedRequested": false,
+      "capturedVideo": {
+        "requestedFPS": 30,
+        "requestedFrames": 4546,
+        "savedFrames": 4546,
+        "failedFrames": 0,
+        "skippedSlots": 45,
+        "worldIndex": 0,
+        "pngWriteSeconds": 189.4651051685214,
+        "pixelCopySeconds": 0.21902327239513397,
+        "backgroundPNGJobInFlight": false,
+        "peakBackgroundPNGJobs": 4,
+        "maximumBackgroundPNGJobs": 4,
+        "elapsedWallSeconds": 153.0725926272571,
+        "stopped": true,
+        "stopReason": "replay completed",
+        "manifest": "native-video/frames.jsonl",
+        "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+      }
+    },
+    {
+      "run": "Evidence/native-victory-20261101T083215Z/unreal-victory-20261101T083235Z-EA85E048/evidence.json",
+      "sourceId": "710f4c1373be907f497a37de38b9c315bbb2da1ca856929f191f4216662fec17",
+      "terminalWallSeconds": 124.16421354189515,
+      "terminalGameSeconds": 123.86035919189453,
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
+      "primaryPresses": 5,
+      "twoHandedRequested": false,
+      "capturedVideo": {
+        "requestedFPS": 30,
+        "requestedFrames": 3923,
+        "savedFrames": 3923,
+        "failedFrames": 0,
+        "skippedSlots": 56,
+        "worldIndex": 1,
+        "pngWriteSeconds": 166.25688096880913,
+        "pixelCopySeconds": 0.18887656927108765,
+        "backgroundPNGJobInFlight": false,
+        "peakBackgroundPNGJobs": 3,
+        "maximumBackgroundPNGJobs": 4,
+        "elapsedWallSeconds": 132.75742308050394,
+        "stopped": true,
+        "stopReason": "replay completed",
+        "manifest": "native-video/frames.jsonl",
+        "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+      }
+    },
+    {
+      "run": "Evidence/native-victory-20261101T083604Z/unreal-victory-20261101T083617Z-07B82135/evidence.json",
+      "sourceId": "710f4c1373be907f497a37de38b9c315bbb2da1ca856929f191f4216662fec17",
+      "terminalWallSeconds": -1,
+      "passed": false,
+      "reason": "victory attempt exceeded 150 active wall seconds; boss still alive",
+      "activeWallAtCutoff": 153.0545655414462,
+      "bossHealthAtCutoff": 2144,
+      "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
+      "primaryPresses": 5,
       "twoHandedRequested": false
     }
-  ]
+  ],
+  "visualGate": {
+    "verdict": "TIE",
+    "mappingAfterReview": {
+      "A": "650 HP candidate",
+      "B": "2800 HP baseline"
+    },
+    "report": "critique-pacing-round1.md",
+    "scope": "uniform chronological native-frame sequences; continuous movies for owner review"
+  }
 }

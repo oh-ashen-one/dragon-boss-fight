@@ -2228,6 +2228,11 @@ void AVeyrReplay::DriveInputs()
             }
         }
     }
+    // Core covers head punishment followed by Rise. With the shorter real
+    // health pool, release after one confirmed bonus instead of killing the
+    // boss before that state can be observed. No health/state mutation.
+    if(ReplayMode==TEXT("core")&&Dragon->IsHeadExposed()&&Dragon->GetHeadBonusHitCount()>0)
+    {bLight=false;bHeavy=false;}
     if(PrimaryVictory)
     {
         const int32 Step=Knight->GetPrimaryChainStep();
