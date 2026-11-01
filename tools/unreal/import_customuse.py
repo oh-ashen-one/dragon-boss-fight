@@ -271,7 +271,13 @@ def finalize_existing(plan):
         slots=list(mesh.get_editor_property('materials'))
         if len(slots)!=1:raise RuntimeError('Expected the approved single dragon material')
         source=slots[0].get_editor_property('material_interface')
-        if plan.get('preserve_inherited_material_bindings'):
+        reuse_material=plan.get('existing_camera_occlusion_material')
+        if reuse_material:
+            material=unreal.load_asset(reuse_material)
+            if not isinstance(material,unreal.Material) or unreal.EditorAssetLibrary.get_metadata_tag(material,visibility.TAG_OWNER)!=visibility.OWNER:
+                raise RuntimeError('Existing visibility shader lacks the expected ownership tags')
+            record['reusedVisibilityMaterial']=material.get_path_name()
+        elif plan.get('preserve_inherited_material_bindings'):
             # Even an existing visibility shader can be shared by older builds.
             # Start this candidate from its original PBR source in a new clone.
             original=unreal.EditorAssetLibrary.get_metadata_tag(source,visibility.TAG_SOURCE)
@@ -292,12 +298,14 @@ def finalize_existing(plan):
             if len(names)!=1:raise RuntimeError('Ambiguous required material usage: '+token)
             usage=getattr(unreal.MaterialUsage,names[0])
             if not unreal.MaterialEditingLibrary.has_material_usage(material,usage):
+                if reuse_material:raise RuntimeError('Existing visibility shader lacks required usage; preserved unchanged')
                 unreal.MaterialEditingLibrary.set_base_material_usage(material,usage,True)
                 usage_changes.append(names[0])
             if not unreal.MaterialEditingLibrary.has_material_usage(material,usage):raise RuntimeError('Dragon material usage did not persist: '+token)
-        errors=list(unreal.MaterialEditingLibrary.recompile_material(material))
-        if errors:raise RuntimeError('Dragon material compile failed: '+str(errors))
-        if not unreal.EditorAssetLibrary.save_loaded_asset(material,False):raise RuntimeError('Dragon material usage save failed')
+        if not reuse_material:
+            errors=list(unreal.MaterialEditingLibrary.recompile_material(material))
+            if errors:raise RuntimeError('Dragon material compile failed: '+str(errors))
+            if not unreal.EditorAssetLibrary.save_loaded_asset(material,False):raise RuntimeError('Dragon material usage save failed')
         record['dragonMaterialUsage']={'material':material.get_path_name(),'changed':usage_changes,'skeletalAndMorphVerified':True}
         if plan.get('preserve_inherited_material_bindings'):
             # New animation-only revisions must not rewrite a shared approved

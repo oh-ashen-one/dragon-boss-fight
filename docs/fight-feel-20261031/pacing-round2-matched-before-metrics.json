@@ -1,0 +1,79 @@
+{
+  "sourceId": "fcd1d8007a9968be0bad76aeadc72035675f01694ec7982ca81cfb79da324d2b",
+  "initialHP": 650,
+  "victoryPassed": true,
+  "terminalActiveSeconds": 105.55353350192308,
+  "firstHitActiveSeconds": 73.59402446076274,
+  "longestNoDamageGap": {
+    "start": 0,
+    "end": 73.59402446076274,
+    "seconds": 73.59402446076274
+  },
+  "damageGapsOver20Seconds": [
+    {
+      "start": 0,
+      "end": 73.59402446076274,
+      "seconds": 73.59402446076274
+    }
+  ],
+  "largestFourSecondHealthLossFraction": 0.7907692307692308,
+  "hits": [
+    {
+      "activeSeconds": 73.59402446076274,
+      "damage": 34,
+      "remainingHP": 616,
+      "region": 0,
+      "dragonState": "Recovery",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 74.74495720863342,
+      "damage": 34,
+      "remainingHP": 582,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 84.8778363764286,
+      "damage": 34,
+      "remainingHP": 548,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 99.10834566876292,
+      "damage": 34,
+      "remainingHP": 514,
+      "region": 0,
+      "dragonState": "Buckle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 102.8533124178648,
+      "damage": 125,
+      "remainingHP": 389,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 125
+    },
+    {
+      "activeSeconds": 103.98066471144557,
+      "damage": 125,
+      "remainingHP": 264,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 125
+    },
+    {
+      "activeSeconds": 105.55339296162128,
+      "damage": 270,
+      "remainingHP": 0,
+      "region": 4,
+      "dragonState": "Dead",
+      "observedHealthLoss": 264
+    }
+  ],
+  "scope": "Native event timing; not a visual, difficulty or human-feel quality gate"
+}

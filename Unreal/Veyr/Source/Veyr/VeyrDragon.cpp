@@ -155,6 +155,7 @@ UStaticMeshComponent* AVeyrDragon::CreateTemporaryPart(FName Name,UStaticMesh* M
 void AVeyrDragon::BeginPlay()
 {
     bLegacyPacing=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingLegacy"));
+    if(UsesPacingRevision())NextFlightAt=20.f;
     Super::BeginPlay();
     FString ReplayMode;
     if(FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBossHealth"))&&
@@ -372,6 +373,9 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             if(StateElapsed>=StateDuration)
             {
                 for(float& Stagger:LegStagger)Stagger=0;
+                // Do not spend the whole post-punish exchange airborne merely
+                // because the flight clock expired during the downed window.
+                if(UsesPacingRevision())NextFlightAt=FMath::Max(NextFlightAt,EncounterClock+10.f);
                 StaggerProtection=1.5f; EnterState(EVeyrDragonState::Idle,.8f);
             }
             break;
@@ -389,7 +393,10 @@ void AVeyrDragon::ChooseAttack()
         if(EncounterClock>=NextFlightAt){BeginAttack(EVeyrDragonMove::FlyAway);return;}
         if(Positional<0){BeginReposition();return;}
         EVeyrDragonMove Next=static_cast<EVeyrDragonMove>(Positional);
-        if(TotalAttacks%4==3&&EncounterClock+6.f>=NextFlightAt)Next=EVeyrDragonMove::FlyAway;
+        // The old range fallback and fourth-attack shortcut both bypassed the
+        // flight cooldown. Close distance on foot until flight is available.
+        if(UsesPacingRevision()&&Next==EVeyrDragonMove::FlyAway){BeginReposition();return;}
+        if(!UsesPacingRevision()&&TotalAttacks%4==3&&EncounterClock+6.f>=NextFlightAt)Next=EVeyrDragonMove::FlyAway;
         if(Next==LastMove&&RepeatedMoveCount>=2){BeginReposition();return;}
         if(Next==EVeyrDragonMove::ClawSwipe)
             ClawLeg=CachedWarningContains(ImportedMoveClip(Next,0,TEXT("Active")),Target->GetFootLocation())?0:1;

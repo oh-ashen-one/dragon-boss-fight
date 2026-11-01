@@ -702,7 +702,10 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     else
     {
         // Victory stops combat immediately, but the visible recovery must finish.
-        GetCharacterMovement()->StopMovementImmediately();bLockedOn=false;bGuardRequested=false;
+        GetCharacterMovement()->StopMovementImmediately();bGuardRequested=false;
+        const bool FollowFall=IsValid(Boss)&&Boss->UsesPacingRevision()&&Boss->IsDead()&&
+            Boss->GetStateElapsed()<=Boss->GetStateDuration()+1.1f;
+        if(!FollowFall)bLockedOn=false;
         if(Action!=EVeyrKnightAction::Ready)
         {
             ActionElapsed+=DeltaSeconds;
@@ -832,7 +835,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     {
         ConsumeMovementInputVector();Movement->StopMovementImmediately();Movement->MaxWalkSpeed=0.f;
     }
-    if (bLockedOn && IsValid(Boss) && ((Action==EVeyrKnightAction::Ready&&(MoveIntent.IsNearlyZero()||bFaceBoss))||(bAttack&&ActionElapsed<.16f)))
+    if (bLockedOn && IsValid(Boss) && (!Boss->UsesPacingRevision()||!Boss->IsDead()) && ((Action==EVeyrKnightAction::Ready&&(MoveIntent.IsNearlyZero()||bFaceBoss))||(bAttack&&ActionElapsed<.16f)))
     {
         const FVector Toward = (CombatAimPoint() - GetActorLocation()).GetSafeNormal2D();
         if (!Toward.IsNearlyZero()) SetActorRotation(FMath::RInterpTo(GetActorRotation(), Toward.Rotation(), DeltaSeconds, 10.f));
@@ -875,9 +878,15 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     if(Controller)
     {
         FRotator Look=Controller->GetControlRotation().GetNormalized();
-        if(bLockedOn&&IsValid(Boss)&&!Boss->IsDead()&&ManualCameraRemaining<=0.f)
+        const bool FollowFall=IsValid(Boss)&&Boss->UsesPacingRevision()&&Boss->IsDead()&&
+            Boss->GetStateElapsed()<=Boss->GetStateDuration()+1.1f;
+        if(bLockedOn&&IsValid(Boss)&&(!Boss->IsDead()||FollowFall)&&ManualCameraRemaining<=0.f)
         {
             FVector Focus=Boss->GetHeadLocation();
+            // Preserve an existing lock through the fall so a standing kill
+            // does not leave the head outside the frame. No forced lock,
+            // lens change or pawn rotation; manual look still takes priority.
+            if(FollowFall)Focus=FMath::Lerp(Boss->GetActorLocation()+FVector(0,0,100),Focus,.7f);
             const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
             if(Mode&&Mode->FightFeel&&Mode->FightFeel->UsesContactFraming())
             {
