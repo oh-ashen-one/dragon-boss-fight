@@ -2,6 +2,14 @@
 
 **Goal active. The resumed pacing/death pass has two independent blind Opus PASS verdicts. Full backlog is unfinished; every-move replay is filmed and has a scoped first-round blind PASS.** HP stayed 650 throughout the resumed fixes. Only game branches: `fable/knight-complete-20261028` here and `claude-code-enhancements` in the dragon checkout. No main merge/push.
 
+## Sprint continuation — measured baseline, no gameplay correction yet
+
+- Attack selection/download remains owner-dependent on page 8807. Independent sprint pass uses already approved Fab Run/RunTwoHand; no new motion/asset change.
+- Added `-VeyrSprintProof` to blendproof: four ordinary-input start/stop and walk/run/walk trials, both grips, passive boss, side camera/checker. Existing foot/grip thresholds retained; records speed, clip phase and sprint request.
+- Harness-only Shipping receipt `Local/package-20261101T230709Z/receipt.json`, source `305b39127115bb18717a7d471acc886d624cc5c967c445f877bb734199b876bc`, verified app `/private/tmp/veyr-verified-bundle-i287w93v/Veyr-Mac-Shipping.app`. This is newest Shipping; gameplay is unchanged from accepted pacing/showcase build.
+- Native baseline `native-blendproof-20261101T230912Z`: 47.174 game seconds; all four sequences completed, all four foot gates failed, weapon grip passed. Clean app exit; scenario exit 1 is a measurement failure, not a crash. No engine remains. Baseline film encoded in chat outputs/sprint-review-20261101/before.mp4.
+- Diagnostics and interpretation in `docs/sprint-20261101/PLAN.md` and baseline-results.json. Peak drift includes natural start turnarounds; do not mistake all unblended drift for steady straight-line error. Source stance phase is broadly aligned, and small-sample nominal-speed estimates are not calibration authority. Next: focused runtime transition/contact correction with legacy flag, matched film/critic and victory regression. Sprint is not done or quality-approved.
+
 ## Every-move replay checkpoint (filmed; blind PASS)
 
 - New `showcase` replay is explicitly non-combat: production attack/state playback, damage suppressed only in this mode, no victory timing, no combat HUD. It contains 20 segments with all attack phases, fire-down, both claws/stomps, all four buckle→collapse→exposed→rise cycles, locomotion, roar and death. Unknown/missing clips fail; retained aliases/legacy entries are cataloged.
@@ -14,7 +22,7 @@
 
 ## Current playable state and evidence
 
-- **Newest tested Shipping:** `Local/package-20261101T223210Z/receipt.json`; source ID `02e6920c2763b067033a1fadba8e85f9177901246569e4b9ec8337a1e5a6aff9`; verified app `/private/tmp/veyr-verified-bundle-2stiyco0/Veyr-Mac-Shipping.app`. Use this or a subsequently verified newer Shipping package when opening the game for the owner.
+- **Latest fully regression-tested gameplay Shipping (newer harness-only build above):** `Local/package-20261101T223210Z/receipt.json`; source ID `02e6920c2763b067033a1fadba8e85f9177901246569e4b9ec8337a1e5a6aff9`; verified app `/private/tmp/veyr-verified-bundle-2stiyco0/Veyr-Mac-Shipping.app`. Use this or a subsequently verified newer Shipping package when opening the game for the owner.
 - Native definitions: KnightB/v030t and DragonV3B/v031showcase. Native Epic MCP worked on two verified owned editor instances. Both editors and all capture/Blender processes exited cleanly; only this task's review HTTP servers remain. Rebuild VeyrEditor before new-code PIE/live actor work: its last loaded module predates the final showcase camera changes.
 - Final one-hand replay **75.918 active wall seconds**, first hit **16.281 s**, longest no-damage gap **16.281 s**, no gaps over 20 s, last two hits **3.686 s** apart. Final-quarter flight starts: zero. Two-hand **24.753 s** through the ordinary grip input. Both passed completed native death pose and restart resource/movement/primary checks. Latest core passed light/heavy contacts, head punish, completed Rise and actual dodge contact. Exact runs/results: `docs/fight-feel-20261031/pacing-final-results.json`.
 - Original matched legacy replay (650 HP) first hit at ~73.6 s and won at 105.615 s; 73.846% of HP vanished in four seconds. The earlier rejected pilot had a 79.077% burst. Revised maximum four-second loss is 38.462%. HP was not reduced to obtain the resumed improvements.

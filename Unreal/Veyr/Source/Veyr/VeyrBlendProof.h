@@ -31,7 +31,8 @@ public:
         FName Clip, From; FString Action; int32 Serial=0; bool bBlend=false, bHidden=false;
         FVector Capsule=FVector::ZeroVector, Toe[2]={FVector::ZeroVector,FVector::ZeroVector}, Ankle[2]={FVector::ZeroVector,FVector::ZeroVector};
         FVector Sword=FVector::ZeroVector, Hand=FVector::ZeroVector, SwordLocal=FVector::ZeroVector;
-        bool bSwordValid=false, bHandValid=false, bFeetValid=false;
+        bool bSwordValid=false, bHandValid=false, bFeetValid=false, bSprintRequested=false;
+        float Speed=0.f, ClipPhase=0.f;
         float SwordHandCm=0.f, SwordExcessCm=0.f, SwordLocalErrCm=0.f;
         float CapsuleTravel=0.f, ToeTravel[2]={0.f,0.f}, AnkleTravel[2]={0.f,0.f};
         float ToeHeight[2]={0.f,0.f}, AnkleHeight[2]={0.f,0.f};
@@ -47,7 +48,7 @@ public:
     TSharedPtr<FJsonObject> CurrentState() const;
 
 private:
-    enum class EKind : uint8 { Strafe, Blink, RollAttack };
+    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition };
     enum class EPhase : uint8 { Setup, PreIdle, Action, PostIdle };
     struct FDef
     {
@@ -60,8 +61,8 @@ private:
         double GameStart=0, GameEnd=0; int32 Frames=0;
         TSharedPtr<FJsonObject> Metrics;
     };
-    static const FDef& Def(int32 Index);
-    static int32 DefCount();
+    const FDef& Def(int32 Index) const;
+    int32 DefCount() const;
 
     TWeakObjectPtr<UWorld> World;
     TWeakObjectPtr<AVeyrKnight> Knight;
@@ -71,6 +72,7 @@ private:
     FHooks Hooks;
     FString RunDirectory, FramesFile;
     bool bDone=false, bBegan=false, bProofFloorApplied=false, bCameraApplied=false;
+    bool bSprintProof=false;
     int32 CheckerInstances=0;
     FVector Home=FVector::ZeroVector, Fwd0=FVector::ForwardVector, Right0=FVector::RightVector;
     float FloorZ=0.f;

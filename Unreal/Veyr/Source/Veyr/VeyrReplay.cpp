@@ -207,7 +207,8 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         if(!BlendProof->Begin(GetWorld(),Knight,Dragon,RunDirectory,FParse::Param(FCommandLine::Get(),TEXT("VeyrProofFloor")),Hooks))
         {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED blendproof could not begin"));return false;}
     }
-    if(ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&!Knight->bLockedOn)Knight->ToggleLockOn();
+    if(ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&
+       !(ReplayMode==TEXT("blendproof")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof")))&&!Knight->bLockedOn)Knight->ToggleLockOn();
     if(ReplayMode==TEXT("stance"))Event(TEXT("stance_idle_before_input"));
     Event(bResume?TEXT("restart_world_loaded"):TEXT("start")); SaveEvidence(false);
     if(bResume&&!bFreshResourcesVerified)Finish(false,TEXT("restart resource reset failed"));

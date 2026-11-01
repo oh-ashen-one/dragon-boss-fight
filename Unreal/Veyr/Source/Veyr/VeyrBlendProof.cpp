@@ -20,6 +20,8 @@
 #include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 
 namespace
 {
@@ -52,8 +54,18 @@ namespace
     FString Num(float V){return FString::Printf(TEXT("%.2f"),V);}
 }
 
-const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index)
+const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
 {
+    if(bSprintProof)
+    {
+        static const FDef SprintDefs[]={
+            {TEXT("SprintStop_1H"),EKind::Strafe,0,true,false,2.2f,1276.f,TEXT("Run"),90.f},
+            {TEXT("SprintStop_2H"),EKind::Strafe,0,true,true,2.2f,1276.f,TEXT("RunTwoHand"),90.f},
+            {TEXT("WalkSprintWalk_1H"),EKind::SpeedTransition,0,true,false,3.6f,1408.f,TEXT("Run"),90.f},
+            {TEXT("WalkSprintWalk_2H"),EKind::SpeedTransition,0,true,true,3.6f,1408.f,TEXT("RunTwoHand"),90.f},
+        };
+        return SprintDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(SprintDefs)-1)];
+    }
     // Name, kind, move direction (0 fwd 1 back 2 left 3 right), sprint, two-handed, action seconds, expected travel (for start offset), clip, camera azimuth.
     static const FDef Defs[]={
         {TEXT("StrafeLeft_1H"),EKind::Strafe,2,false,false,2.4f,420.f,TEXT("StrafeLeft"),35.f},
@@ -68,7 +80,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index)
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount(){return 9;}
+int32 FVeyrBlendProof::DefCount() const{return bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {
@@ -89,6 +101,7 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
 {
     if(bBegan||!InWorld||!InKnight||!InDragon)return false;
     World=InWorld;Knight=InKnight;Dragon=InDragon;Hooks=MoveTemp(InHooks);RunDirectory=InRunDirectory;
+    bSprintProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof"));
     FramesFile=FPaths::Combine(RunDirectory,TEXT("blendproof-frames.jsonl"));
     IFileManager::Get().Delete(*FramesFile,false,true,true);
     Dragon->bProofPassive=true; // boss breathes, never attacks
@@ -96,7 +109,7 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     Fwd0=(Dragon->GetActorLocation()-Home).GetSafeNormal2D();
     if(Fwd0.IsNearlyZero())Fwd0=FVector::ForwardVector;
     Right0=FVector::CrossProduct(FVector::UpVector,Fwd0).GetSafeNormal();
-    if(!Knight->bLockedOn)Knight->ToggleLockOn();
+    if(Knight->bLockedOn==bSprintProof)Knight->ToggleLockOn();
     // Fixed chase camera: an engine camera actor that follows the capsule with a world-fixed orientation.
     FActorSpawnParameters Params;Params.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     ACameraActor* Cam=World->SpawnActor<ACameraActor>(Home+FVector(0,0,190),FRotator::ZeroRotator,Params);
@@ -196,6 +209,7 @@ void FVeyrBlendProof::Sample(double Elapsed,float Dt)
     F.Clip=K->RequestedPresentationClip;F.From=K->ProofBlendFromClip;F.Alpha=K->ProofBlendAlpha;F.bBlend=K->bProofBlendActive;F.Serial=K->ProofTransitionSerial;
     F.Action=StaticEnum<EVeyrKnightAction>()->GetNameStringByValue(static_cast<int64>(K->Action));
     F.ActionElapsed=K->GetActionElapsed();F.bHidden=K->bBlinkHidden;
+    F.Speed=K->GetPlanarSpeed();F.bSprintRequested=K->IsSprinting();F.ClipPhase=P?P->CurrentPhase:0.f;
     F.Capsule=K->GetActorLocation();F.FloorZ=K->GetFootLocation().Z;
     FTransform HandT,SwordT,T;
     if(P&&P->bPoseEvaluated)
@@ -240,7 +254,7 @@ void FVeyrBlendProof::DriveSetup(double Elapsed,float Dt)
 {
     AVeyrKnight* K=Knight.Get();const FDef& D=Def(SeqIndex);
     if(SeqSetupStart<0)SeqSetupStart=Elapsed;
-    if(!K->bLockedOn)K->ToggleLockOn();
+    if(K->bLockedOn==bSprintProof)K->ToggleLockOn();
     const bool Ready=K->Action==EVeyrKnightAction::Ready&&K->IsGrounded();
     if(Elapsed-SeqSetupStart>30.0){bSetupTimedOut=true;SetupStable=1.f;}
     if(!Ready){Neutral();SetupStable=0.f;return;}
@@ -269,9 +283,13 @@ void FVeyrBlendProof::DriveAction(double Elapsed,float Dt)
         bMidActionShot=true;
         Hooks.Shot(FString::Printf(TEXT("bp_%02d_%s_cycle"),SeqIndex+1,D.Name));
     }
-    if(D.Kind==EKind::Strafe)
+    if(D.Kind==EKind::Strafe||D.Kind==EKind::SpeedTransition)
     {
-        if(InAction<D.ActionSeconds){Input(DirVector(D),D.bSprint);return;}
+        if(InAction<D.ActionSeconds)
+        {
+            const bool Sprint=D.Kind==EKind::SpeedTransition?(InAction>=1.0&&InAction<2.6):D.bSprint;
+            Input(DirVector(D),Sprint);return;
+        }
         Neutral();EnterPhase(EPhase::PostIdle,Elapsed);return;
     }
     if(D.Kind==EKind::Blink)
@@ -521,7 +539,21 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     if(FootSlideMax>GSlideLimitCmPerSecond)
         Fail.Add(FString::Printf(TEXT("planted_foot_slide_%.0fcm_per_s_%s"),FootSlideMax,bWorstTransition?TEXT("transition"):TEXT("steady")));
     if(D.Kind==EKind::Blink&&CapsuleNet<GBlinkMinTravelCm)Fail.Add(FString::Printf(TEXT("blink_root_carry_%.0fcm"),CapsuleNet));
-    if(D.Kind==EKind::Strafe&&CapsuleNet<GStrafeMinTravelCm)Fail.Add(FString::Printf(TEXT("locomotion_travel_%.0fcm"),CapsuleNet));
+    if((D.Kind==EKind::Strafe||D.Kind==EKind::SpeedTransition)&&CapsuleNet<GStrafeMinTravelCm)Fail.Add(FString::Printf(TEXT("locomotion_travel_%.0fcm"),CapsuleNet));
+    float PeakSpeed=0.f;int32 WalkBeforeRun=0,WalkAfterRun=0;bool SeenRun=false;
+    for(const FFrame& F:Frames)
+    {
+        PeakSpeed=FMath::Max(PeakSpeed,F.Speed);
+        if(F.Clip==FName(D.ExpectedClip)&&F.Phase==1)SeenRun=true;
+        if(F.Phase==1&&F.Clip==FName(D.bTwo?TEXT("WalkTwoHand"):TEXT("Walk")))
+        {if(SeenRun)++WalkAfterRun;else ++WalkBeforeRun;}
+    }
+    if(bSprintProof)
+    {
+        if(PeakSpeed<500.f)Fail.Add(TEXT("sprint_speed_not_reached"));
+        if(Frames.IsEmpty()||Frames.Last().Speed>10.f)Fail.Add(TEXT("did_not_settle_to_stop"));
+        if(D.Kind==EKind::SpeedTransition&&(WalkBeforeRun<2||WalkAfterRun<2))Fail.Add(TEXT("walk_run_walk_coverage_missing"));
+    }
     if(D.Kind==EKind::RollAttack)
     {
         if(!bRollUpgradeSeen)Fail.Add(TEXT("roll_attack_never_started"));
@@ -536,6 +568,7 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     M->SetBoolField(TEXT("passed"),R.bPassed);M->SetStringField(TEXT("reason"),R.Reason);M->SetBoolField(TEXT("completed"),R.bCompleted);
     M->SetNumberField(TEXT("gameStartSeconds"),R.GameStart);M->SetNumberField(TEXT("gameEndSeconds"),R.GameEnd);M->SetNumberField(TEXT("frames"),N);
     M->SetNumberField(TEXT("expectedClipFrames"),ClipFrames);M->SetNumberField(TEXT("maxFrameSeconds"),MaxFrameDt);
+    M->SetNumberField(TEXT("peakSpeedCmPerSecond"),PeakSpeed);M->SetNumberField(TEXT("walkBeforeRunFrames"),WalkBeforeRun);M->SetNumberField(TEXT("walkAfterRunFrames"),WalkAfterRun);
     M->SetBoolField(TEXT("setupTimedOut"),bSetupTimedOut);M->SetBoolField(TEXT("actionTimedOut"),bActionTimedOut);
     TSharedPtr<FJsonObject> Sw=MakeShared<FJsonObject>();
     Sw->SetNumberField(TEXT("maxExcessCm"),SwordExcessMax);Sw->SetNumberField(TEXT("maxBlendExcessCm"),SwordBlendExcessMax);Sw->SetNumberField(TEXT("maxSteadyExcessCm"),SwordSteadyExcessMax);
@@ -589,6 +622,7 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         O->SetStringField(TEXT("clip"),F.Clip.ToString());O->SetStringField(TEXT("blendFrom"),F.From.ToString());O->SetNumberField(TEXT("blendAlpha"),F.Alpha);
         O->SetBoolField(TEXT("blending"),F.bBlend);O->SetNumberField(TEXT("transition"),F.Serial);O->SetStringField(TEXT("action"),F.Action);O->SetNumberField(TEXT("actionElapsed"),F.ActionElapsed);
         O->SetBoolField(TEXT("blinkHidden"),F.bHidden);
+        O->SetBoolField(TEXT("sprintRequested"),F.bSprintRequested);O->SetNumberField(TEXT("speedCmPerSecond"),F.Speed);O->SetNumberField(TEXT("clipPhase"),F.ClipPhase);
         O->SetArrayField(TEXT("capsule"),Vec(F.Capsule));O->SetNumberField(TEXT("capsuleTravelCm"),F.CapsuleTravel);O->SetNumberField(TEXT("floorZ"),F.FloorZ);
         O->SetArrayField(TEXT("toeL"),Vec(F.Toe[0]));O->SetArrayField(TEXT("toeR"),Vec(F.Toe[1]));
         O->SetArrayField(TEXT("ankleL"),Vec(F.Ankle[0]));O->SetArrayField(TEXT("ankleR"),Vec(F.Ankle[1]));
@@ -646,6 +680,7 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
 {
     TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
     O->SetBoolField(TEXT("done"),bDone);O->SetNumberField(TEXT("sequencesPassed"),PassedCount);O->SetNumberField(TEXT("sequencesTotal"),DefCount());
+    O->SetBoolField(TEXT("sprintProof"),bSprintProof);
     O->SetBoolField(TEXT("allPassed"),bDone&&PassedCount==DefCount());
     O->SetStringField(TEXT("framesFile"),TEXT("blendproof-frames.jsonl"));
     TSharedPtr<FJsonObject> Setup=MakeShared<FJsonObject>();
