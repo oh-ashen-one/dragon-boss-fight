@@ -1,0 +1,648 @@
+{
+  "sourceId": "02e6920c2763b067033a1fadba8e85f9177901246569e4b9ec8337a1e5a6aff9",
+  "mode": "showcase",
+  "passed": true,
+  "requiredSegments": 20,
+  "completedSegments": 20,
+  "playerCameraBaseline": true,
+  "combatResourcesUnchanged": true,
+  "noVictoryTiming": true,
+  "fireDownFrames": 52,
+  "roarShakeEvents": 1,
+  "roarShakeDegrees": 0.4243919551372528,
+  "roarShakeDistanceCm": 2063.02001953125,
+  "durationGameSeconds": 120.84700775146484,
+  "chapters": [
+    {
+      "segment": "Idle",
+      "startSeconds": 0.6095666885375977,
+      "endSeconds": 6.611672401428223,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 330,
+      "obstructedFrames": 0,
+      "clips": {
+        "Idle": {
+          "frames": 330,
+          "framedFrames": 0,
+          "minPhase": 0.00035103163099847734,
+          "maxPhase": 0.9975715279579163
+        }
+      }
+    },
+    {
+      "segment": "Roar",
+      "startSeconds": 7.525961399078369,
+      "endSeconds": 12.527432441711426,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 275,
+      "obstructedFrames": 0,
+      "clips": {
+        "Roar": {
+          "frames": 275,
+          "framedFrames": 0,
+          "minPhase": 0.0033333420287817717,
+          "maxPhase": 1
+        }
+      }
+    },
+    {
+      "segment": "Walk",
+      "startSeconds": 13.43906307220459,
+      "endSeconds": 16.6428279876709,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 176,
+      "obstructedFrames": 0,
+      "clips": {
+        "Walk": {
+          "frames": 175,
+          "framedFrames": 0,
+          "minPhase": 0.006309960503131151,
+          "maxPhase": 0.9959677457809448
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.7738046646118164,
+          "maxPhase": 0.7738046646118164
+        }
+      }
+    },
+    {
+      "segment": "TurnLeft",
+      "startSeconds": 17.546703338623047,
+      "endSeconds": 19.842554092407227,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 126,
+      "obstructedFrames": 0,
+      "clips": {
+        "TurnLeft": {
+          "frames": 125,
+          "framedFrames": 0,
+          "minPhase": 0.009184603579342365,
+          "maxPhase": 0.9930709004402161
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.3070923388004303,
+          "maxPhase": 0.3070923388004303
+        }
+      }
+    },
+    {
+      "segment": "TurnRight",
+      "startSeconds": 20.748388290405273,
+      "endSeconds": 23.06195831298828,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 127,
+      "obstructedFrames": 0,
+      "clips": {
+        "TurnLeft": {
+          "frames": 126,
+          "framedFrames": 0,
+          "minPhase": 9.655952453613281e-06,
+          "maxPhase": 0.9916320443153381
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.8436596989631653,
+          "maxPhase": 0.8436596989631653
+        }
+      }
+    },
+    {
+      "segment": "TurnLeftFine",
+      "startSeconds": 23.97597312927246,
+      "endSeconds": 25.792861938476562,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 100,
+      "obstructedFrames": 0,
+      "clips": {
+        "TurnLeftFine": {
+          "frames": 99,
+          "framedFrames": 0,
+          "minPhase": 0.000255584716796875,
+          "maxPhase": 0.9999999403953552
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.29881033301353455,
+          "maxPhase": 0.29881033301353455
+        }
+      }
+    },
+    {
+      "segment": "TurnRightFine",
+      "startSeconds": 26.701265335083008,
+      "endSeconds": 28.525440216064453,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 100,
+      "obstructedFrames": 0,
+      "clips": {
+        "TurnRightFine": {
+          "frames": 99,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9996383786201477
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.7542400360107422,
+          "maxPhase": 0.7542400360107422
+        }
+      }
+    },
+    {
+      "segment": "Fire",
+      "startSeconds": 29.43106460571289,
+      "endSeconds": 32.961360931396484,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 194,
+      "obstructedFrames": 0,
+      "clips": {
+        "FireWindup": {
+          "frames": 62,
+          "framedFrames": 0,
+          "minPhase": 0.014711285009980202,
+          "maxPhase": 0.9958589673042297
+        },
+        "FireActive": {
+          "frames": 92,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9936138391494751
+        },
+        "FireRecovery": {
+          "frames": 39,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9830257892608643
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.49356016516685486,
+          "maxPhase": 0.49356016516685486
+        }
+      }
+    },
+    {
+      "segment": "Flight",
+      "startSeconds": 33.873069763183594,
+      "endSeconds": 40.894500732421875,
+      "passed": true,
+      "flightFireDownFrames": 52,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 385,
+      "obstructedFrames": 0,
+      "clips": {
+        "FlightWindup": {
+          "frames": 82,
+          "framedFrames": 0,
+          "minPhase": 0.013160084374248981,
+          "maxPhase": 0.9931328296661377
+        },
+        "FlightActive": {
+          "frames": 220,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9927138090133667
+        },
+        "FlightRecovery": {
+          "frames": 82,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9963011741638184
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.8157501220703125,
+          "maxPhase": 0.8157501220703125
+        }
+      }
+    },
+    {
+      "segment": "Claw0",
+      "startSeconds": 41.80546951293945,
+      "endSeconds": 45.061058044433594,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 179,
+      "obstructedFrames": 0,
+      "clips": {
+        "Claw0Windup": {
+          "frames": 63,
+          "framedFrames": 0,
+          "minPhase": 0.017295505851507187,
+          "maxPhase": 0.9930164217948914
+        },
+        "Claw0Active": {
+          "frames": 27,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9883776903152466
+        },
+        "Claw0Recovery": {
+          "frames": 88,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.989096462726593
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.5101763606071472,
+          "maxPhase": 0.5101763606071472
+        }
+      }
+    },
+    {
+      "segment": "Claw1",
+      "startSeconds": 45.972381591796875,
+      "endSeconds": 49.228065490722656,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 179,
+      "obstructedFrames": 0,
+      "clips": {
+        "Claw1Windup": {
+          "frames": 63,
+          "framedFrames": 0,
+          "minPhase": 0.0171433687210083,
+          "maxPhase": 0.9926694631576538
+        },
+        "Claw1Active": {
+          "frames": 27,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9901027083396912
+        },
+        "Claw1Recovery": {
+          "frames": 88,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9887910485267639
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.20467758178710938,
+          "maxPhase": 0.20467758178710938
+        }
+      }
+    },
+    {
+      "segment": "Stomp2",
+      "startSeconds": 50.13328552246094,
+      "endSeconds": 53.19438171386719,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 169,
+      "obstructedFrames": 0,
+      "clips": {
+        "Stomp2Windup": {
+          "frames": 69,
+          "framedFrames": 0,
+          "minPhase": 0.013333430513739586,
+          "maxPhase": 0.9936156272888184
+        },
+        "Stomp2Active": {
+          "frames": 16,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.96731036901474
+        },
+        "Stomp2Recovery": {
+          "frames": 83,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9965264797210693
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.8657302856445312,
+          "maxPhase": 0.8657302856445312
+        }
+      }
+    },
+    {
+      "segment": "Stomp3",
+      "startSeconds": 54.10576248168945,
+      "endSeconds": 57.16106414794922,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 166,
+      "obstructedFrames": 0,
+      "clips": {
+        "Stomp3Windup": {
+          "frames": 66,
+          "framedFrames": 0,
+          "minPhase": 0.01557853538542986,
+          "maxPhase": 0.9894577860832214
+        },
+        "Stomp3Active": {
+          "frames": 16,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9666649103164673
+        },
+        "Stomp3Recovery": {
+          "frames": 83,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9965354800224304
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.5268440246582031,
+          "maxPhase": 0.5268440246582031
+        }
+      }
+    },
+    {
+      "segment": "Tail",
+      "startSeconds": 58.07231140136719,
+      "endSeconds": 61.980228424072266,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 211,
+      "obstructedFrames": 0,
+      "clips": {
+        "TailWindup": {
+          "frames": 79,
+          "framedFrames": 0,
+          "minPhase": 0.013539738953113556,
+          "maxPhase": 0.9906025528907776
+        },
+        "TailActive": {
+          "frames": 32,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9743871688842773
+        },
+        "TailRecovery": {
+          "frames": 99,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.992670476436615
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.33003807067871094,
+          "maxPhase": 0.33003807067871094
+        }
+      }
+    },
+    {
+      "segment": "Bite",
+      "startSeconds": 62.89306640625,
+      "endSeconds": 64.71073150634766,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 100,
+      "obstructedFrames": 0,
+      "clips": {
+        "BiteWindup": {
+          "frames": 21,
+          "framedFrames": 0,
+          "minPhase": 0.04166708141565323,
+          "maxPhase": 0.9556418061256409
+        },
+        "BiteActive": {
+          "frames": 35,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9742127060890198
+        },
+        "BiteRecovery": {
+          "frames": 43,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9978308081626892
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.7851219177246094,
+          "maxPhase": 0.7851219177246094
+        }
+      }
+    },
+    {
+      "segment": "Stagger0",
+      "startSeconds": 65.62539672851562,
+      "endSeconds": 76.28878784179688,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 579,
+      "obstructedFrames": 0,
+      "clips": {
+        "Buckle0": {
+          "frames": 35,
+          "framedFrames": 0,
+          "minPhase": 0.025648333132267,
+          "maxPhase": 0.976055920124054
+        },
+        "Collapse": {
+          "frames": 55,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9836511611938477
+        },
+        "Exposed": {
+          "frames": 382,
+          "framedFrames": 0,
+          "minPhase": 0.0011738368775695562,
+          "maxPhase": 0.9987923502922058
+        },
+        "Rise": {
+          "frames": 106,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9933149218559265
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.7147979736328125,
+          "maxPhase": 0.7147979736328125
+        }
+      }
+    },
+    {
+      "segment": "Stagger1",
+      "startSeconds": 77.19684600830078,
+      "endSeconds": 87.85948181152344,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 578,
+      "obstructedFrames": 0,
+      "clips": {
+        "Buckle1": {
+          "frames": 35,
+          "framedFrames": 0,
+          "minPhase": 0.025647947564721107,
+          "maxPhase": 0.9752848148345947
+        },
+        "Collapse": {
+          "frames": 55,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.983867883682251
+        },
+        "Exposed": {
+          "frames": 377,
+          "framedFrames": 0,
+          "minPhase": 0.00016130719450302422,
+          "maxPhase": 0.9971520304679871
+        },
+        "Rise": {
+          "frames": 110,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9916825294494629
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.6432469487190247,
+          "maxPhase": 0.6432469487190247
+        }
+      }
+    },
+    {
+      "segment": "Stagger2",
+      "startSeconds": 88.76773071289062,
+      "endSeconds": 99.44746398925781,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 577,
+      "obstructedFrames": 0,
+      "clips": {
+        "Buckle2": {
+          "frames": 35,
+          "framedFrames": 0,
+          "minPhase": 0.03445839881896973,
+          "maxPhase": 0.9827170372009277
+        },
+        "Collapse": {
+          "frames": 51,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9887143969535828
+        },
+        "Exposed": {
+          "frames": 380,
+          "framedFrames": 0,
+          "minPhase": 0.0013514927122741938,
+          "maxPhase": 0.9989700317382812
+        },
+        "Rise": {
+          "frames": 110,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9923145174980164
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.5745773315429688,
+          "maxPhase": 0.5745773315429688
+        }
+      }
+    },
+    {
+      "segment": "Stagger3",
+      "startSeconds": 100.36038970947266,
+      "endSeconds": 111.0268783569336,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 572,
+      "obstructedFrames": 0,
+      "clips": {
+        "Buckle3": {
+          "frames": 35,
+          "framedFrames": 0,
+          "minPhase": 0.025641093030571938,
+          "maxPhase": 0.9782698750495911
+        },
+        "Collapse": {
+          "frames": 55,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9837521314620972
+        },
+        "Exposed": {
+          "frames": 378,
+          "framedFrames": 0,
+          "minPhase": 0.0021503993775695562,
+          "maxPhase": 0.9997678399085999
+        },
+        "Rise": {
+          "frames": 103,
+          "framedFrames": 0,
+          "minPhase": 0,
+          "maxPhase": 0.9911953210830688
+        },
+        "Idle": {
+          "frames": 1,
+          "framedFrames": 0,
+          "minPhase": 0.504479706287384,
+          "maxPhase": 0.504479706287384
+        }
+      }
+    },
+    {
+      "segment": "Death",
+      "startSeconds": 111.93141174316406,
+      "endSeconds": 119.9406509399414,
+      "passed": true,
+      "flightFireDownFrames": 0,
+      "minimumAnatomicalSupportsFramed": 0,
+      "frustumMissFrames": 433,
+      "obstructedFrames": 0,
+      "clips": {
+        "DeathFall": {
+          "frames": 433,
+          "framedFrames": 0,
+          "minPhase": 0.0023809820413589478,
+          "maxPhase": 1
+        }
+      }
+    }
+  ],
+  "scope": "Native fidelity/coverage audit only; rendered visibility/quality needs independent review"
+}

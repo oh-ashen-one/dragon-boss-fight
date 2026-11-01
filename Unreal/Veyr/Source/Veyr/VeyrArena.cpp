@@ -941,3 +941,10 @@ void AVeyrArena::UpdatePropCameraOcclusion(APlayerController* Player,const FVect
     for(auto It=HiddenPropTimers.CreateIterator();It;++It)
         if(!It.Key().IsValid()||It.Value()<=0.f){Player->HiddenPrimitiveComponents.Remove(It.Key().Get());It.RemoveCurrent();}
 }
+
+void AVeyrArena::RestorePropCameraOcclusion(APlayerController* Player)
+{
+    if(!Player)return;
+    for(const auto& Pair:HiddenPropTimers)Player->HiddenPrimitiveComponents.Remove(Pair.Key.Get());
+    HiddenPropTimers.Reset();
+}

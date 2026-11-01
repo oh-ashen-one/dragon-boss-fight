@@ -22,6 +22,7 @@ public:
     AVeyrArena();
     virtual void Tick(float DeltaSeconds) override;
     void UpdatePropCameraOcclusion(APlayerController* Player,const FVector& Camera,const FVector& Focus,float DeltaSeconds);
+    void RestorePropCameraOcclusion(APlayerController* Player);
     void DamagePropsAlongSweep(const FVector& PreviousBase,const FVector& PreviousTip,const FVector& Base,const FVector& Tip);
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 BrokenProps=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") bool bOverhaulAssetsReady=false;

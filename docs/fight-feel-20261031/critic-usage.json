@@ -82,6 +82,15 @@
       "error": false,
       "reportedEstimatedUSD": 0.4792394,
       "durationMs": 76218
+    },
+    {
+      "receipt": "showcase-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 1.5200608000000002,
+      "durationMs": 149987
     }
   ]
 }

@@ -1,0 +1,18 @@
+{
+  "sourceId": "02e6920c2763b067033a1fadba8e85f9177901246569e4b9ec8337a1e5a6aff9",
+  "beforeRun": "native-showcase-20261101T224204Z",
+  "afterRun": "native-showcase-20261101T223921Z",
+  "normalVictoryRun": "native-victory-20261101T224534Z",
+  "normalVictoryActiveSeconds": 79.93922850117087,
+  "normalVictoryHP": 650,
+  "requiredSegments": 20,
+  "chapterButtonsPerVideo": 23,
+  "blindVerdict": "PASS B",
+  "B": "after",
+  "qualityScope": "relative inspection framing from sampled native images; not continuous motion or gameplay feel",
+  "remainingNotes": [
+    "dark full-body shots",
+    "roar weaker than front player view",
+    "wings obscure head in some stagger views"
+  ]
+}

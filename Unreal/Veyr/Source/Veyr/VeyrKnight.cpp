@@ -1,6 +1,7 @@
 #include "VeyrKnight.h"
 #include "VeyrArena.h"
 #include "VeyrGameMode.h"
+#include "VeyrReplay.h"
 #include "VeyrFightFeel.h"
 #include "VeyrDragon.h"
 #include "VeyrHUD.h"
@@ -969,6 +970,15 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
     if (Player != OcclusionController.Get()) RestoreCameraOcclusion();
     if (!Player || !Player->IsLocalController() || !IsValid(Boss)) { RestoreCameraOcclusion(); return; }
     OcclusionController = Player;
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(Mode->Replay&&Mode->Replay->IsShowcase()&&Player->GetViewTarget()!=this)
+        {
+            // The observer is not the hidden knight's camera. Do not punch
+            // visibility holes in the dragon or arena from that unused view.
+            RestoreCameraOcclusion();
+            if(Mode->Arena)Mode->Arena->RestorePropCameraOcclusion(Player);
+            return;
+        }
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->Arena)Mode->Arena->UpdatePropCameraOcclusion(Player,CombatCamera->GetComponentLocation(),GetFootLocation()+FVector(0,0,145),DeltaSeconds);
     if(Boss->bUsingCustomuseVisual)
     {
