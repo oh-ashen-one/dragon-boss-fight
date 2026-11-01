@@ -44,6 +44,22 @@ class CaptureManifestTests(unittest.TestCase):
             elapsed += duration
         self.assertLessEqual(abs(elapsed / 1000000 - (end - frames[0]["wallSeconds"])), .000000501)
 
+    def test_selects_original_fight_without_restart_frames(self):
+        for row in self.rows:
+            row["worldIndex"] = 0
+        second = [{"type": "world_start", "worldIndex": 1, "requestedFPS": 60, "wallSeconds": 1.}]
+        for index in range(4, 7):
+            name = f"frame-{index:06d}.png"
+            (self.root / name).write_bytes((self.root / "frame-000001.png").read_bytes())
+            second.append({"type": "frame", "worldIndex": 1, "file": name, "sourceId": "synthetic-test",
+                           "wallSeconds": 1 + (index - 4) / 60, "width": 16, "height": 16})
+        self.rows.extend(second + [{"type": "world_end", "worldIndex": 1, "wallSeconds": 1.05}])
+        self.read()
+        _, frames, end, observed, _ = read_capture(self.root / "frames.jsonl", world_index=0)
+        self.assertEqual(len(frames), 3)
+        self.assertTrue(all(row["worldIndex"] == 0 for row in frames))
+        self.assertEqual((end, observed), (.05, True))
+
     def test_rejects_out_of_order_completion_records(self):
         self.rows[1], self.rows[2] = self.rows[2], self.rows[1]
         with self.assertRaisesRegex(ValueError, "strictly increasing"):

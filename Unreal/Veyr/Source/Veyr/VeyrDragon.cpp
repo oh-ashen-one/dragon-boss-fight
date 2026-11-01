@@ -19,6 +19,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/World.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 
 namespace
 {
@@ -152,7 +154,12 @@ UStaticMeshComponent* AVeyrDragon::CreateTemporaryPart(FName Name,UStaticMesh* M
 
 void AVeyrDragon::BeginPlay()
 {
-    Super::BeginPlay(); Health=MaxHealth;
+    Super::BeginPlay();
+    FString ReplayMode;
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBossHealth"))&&
+       FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayMode)&&ReplayMode.Equals(TEXT("victory"),ESearchCase::IgnoreCase))
+        MaxHealth=2800.f; // Comparison-only initial baseline; never changes health during combat.
+    Health=MaxHealth;
     WarningArena=Cast<AVeyrArena>(UGameplayStatics::GetActorOfClass(this,AVeyrArena::StaticClass()));
     UMaterialInterface* Base=LoadObject<UMaterialInterface>(nullptr,TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
     if(Base)

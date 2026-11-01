@@ -75,12 +75,19 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return Health <= 0.f; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsGrounded() const;
+    /** Same readiness predicate used by physical attack, roll and heal inputs. */
+    bool CanStartGroundedAction() const;
     UFUNCTION(BlueprintPure, Category="Combat") bool IsRollingInvulnerable() const;
     UFUNCTION(BlueprintPure, Category="Combat") bool IsGuardBroken() const { return bGuardBroken; }
     UFUNCTION(BlueprintPure, Category="Combat") float GetActionElapsed() const { return ActionElapsed; }
     UFUNCTION(BlueprintPure, Category="Combat") float GetActionDuration() const { return ActionDuration; }
     UFUNCTION(BlueprintPure, Category="Combat") float GetSwordContactTime() const;
     UFUNCTION(BlueprintPure, Category="Combat") float GetAttackDuration(bool bHeavy) const;
+    int32 GetPrimaryChainStep() const { return bPrimaryChainActive?PrimaryChainStep:INDEX_NONE; }
+    float GetPrimaryStepCost(int32 Step) const;
+    float GetPrimaryFirstStepDuration() const;
+    float GetPrimaryChainDuration() const;
+    float GetPrimaryChainRemainingSeconds() const;
     UFUNCTION(BlueprintPure, Category="Combat") float GetAttackContactTime(bool bHeavy) const;
     UFUNCTION(BlueprintPure, Category="Combat") float GetPlanarSpeed() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetFootLocation() const;
@@ -317,9 +324,10 @@ private:
     void SprintReleased();
     void BlinkPressed();
     void PausePressed();
+    float PrimarySegmentSourceStart(int32 Step) const;
     bool StartPrimaryStep(int32 Step);
     FVector AuthoredRootDisplacementWorld(const FVector& Delta) const;
-    bool CanStartGroundedAction() const;
+
     void BeginAction(EVeyrKnightAction NewAction, float Duration);
     void FinishAction();
     void AdvanceCombat(float DeltaSeconds);

@@ -123,6 +123,10 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bGuardRechargeLatched=false;bRearGuardArmed=false;GuardRechargeCount=0;
     LastObservedFullDamageGuardCost=0.f;bGuardSampleValid=false;
     bFrontGuardVerified=bRearGuardVerified=bGuardBreakVerified=false;
+    // Core deliberately visits a rear leg to exercise stomp invulnerability.
+    // Victory uses a reachable front leg instead of inheriting that lab route;
+    // attacks still pass ordinary movement, range, stamina and danger checks.
+    if(ReplayMode==TEXT("victory"))TargetLeg=0;
     if(bLegIsolation)TargetLeg=FCString::Atoi(*ReplayMode.Right(1));
     ControlOrigin=Knight->GetFootLocation();
     const bool bResume=PendingRestartEvidence.IsValid()&&PendingRestartEvidence->GetStringField(TEXT("mode"))==ReplayMode;
@@ -133,7 +137,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         Saved->TryGetBoolField(TEXT("victoryStartTwoHandedRequested"),bVictoryStartTwoHandedRequested);
         Saved->TryGetBoolField(TEXT("victoryGripInputIssued"),bVictoryGripInputIssued);
         Saved->TryGetBoolField(TEXT("victoryGripTransitionCompleted"),bVictoryGripTransitionCompleted);
+        double Presses=0;if(Saved->TryGetNumberField(TEXT("victoryPrimaryPresses"),Presses))VictoryPrimaryPresses=static_cast<int32>(Presses);
         Elapsed=Saved->GetNumberField(TEXT("durationSeconds"));TerminalSeconds=Saved->GetNumberField(TEXT("terminalSeconds"));
+        Saved->TryGetNumberField(TEXT("terminalWallSeconds"),TerminalWallSeconds);
         FrameCount=Saved->GetNumberField(TEXT("frameCount"));MaximumFrameSeconds=Saved->GetNumberField(TEXT("maximumFrameSeconds"));
         Samples=Saved->GetArrayField(TEXT("samples"));Events=Saved->GetArrayField(TEXT("events"));
         double SavedFailures=0;if(Saved->TryGetNumberField(TEXT("warningContainmentFailures"),SavedFailures))ObservedWarningContainmentFailures=SavedFailures;
@@ -229,6 +235,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         O->SetObjectField(TEXT("fightFeel"),F);
     }
     if(!IsValid(Knight)||!IsValid(Dragon))return O;
+    O->SetNumberField(TEXT("bossMaxHealth"),Dragon->MaxHealth);
+    if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())O->SetNumberField(TEXT("encounterWallSeconds"),Mode->GetFightWallSeconds());
     O->SetNumberField(TEXT("playerHealth"),Knight->Health); O->SetNumberField(TEXT("stamina"),Knight->Stamina);
     O->SetNumberField(TEXT("healsRemaining"),Knight->HealingCharges); O->SetNumberField(TEXT("bossHealth"),Dragon->Health);
     O->SetStringField(TEXT("action"),StaticEnum<EVeyrKnightAction>()->GetNameStringByValue(static_cast<int64>(Knight->Action)));
@@ -2112,8 +2120,11 @@ void AVeyrReplay::DriveInputs()
     FVector Movement=FVector::ZeroVector;
     bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false;
     bool bWantLock=true;
+    bool bPrimaryStart=false;
+    const bool PrimaryVictory=ReplayMode==TEXT("victory");
     const FVector Feet=Knight->GetFootLocation();
-    const bool bAvailable=Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
+    const bool bAvailable=PrimaryVictory?Knight->CanStartGroundedAction():
+        Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
     const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
     if(ReplayMode!=TEXT("death"))
     {
@@ -2196,14 +2207,51 @@ void AVeyrReplay::DriveInputs()
             {
                 Movement=FVector::ZeroVector;
                 const float SafeTime=Dragon->IsHeadExposed()?Remaining-.1f:SafeStationarySeconds(Feet);
-                const bool bNeedLight=(ReplayMode==TEXT("core")||bLegIsolation)&&!bLightLegContact&&!bDown;
                 const float Reserve=bDown?0.f:18.f;
-                bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>Knight->GetAttackDuration(true)&&(!bDown||Dragon->IsHeadExposed());
-                // Heavy reaches the safe head distance. Ready intervals refill
-                // stamina naturally rather than substituting a short light cut.
-                bLight=!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false);
+                if(PrimaryVictory)
+                {
+                    float Cost=Knight->GetPrimaryStepCost(0)+Reserve;
+                    float Need=Knight->GetPrimaryFirstStepDuration();
+                    if(Dragon->IsHeadExposed())
+                    {
+                        Need=Knight->GetPrimaryChainDuration();Cost=0.f;
+                        for(int32 Step=0;Step<3;++Step)Cost+=Knight->GetPrimaryStepCost(Step);
+                    }
+                    bPrimaryStart=(!bDown||Dragon->IsHeadExposed())&&Knight->Stamina>=Cost&&SafeTime>Need+.1f;
+                }
+                else
+                {
+                    const bool bNeedLight=(ReplayMode==TEXT("core")||bLegIsolation)&&!bLightLegContact&&!bDown;
+                    bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>Knight->GetAttackDuration(true)&&(!bDown||Dragon->IsHeadExposed());
+                    bLight=!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false);
+                }
             }
         }
+    }
+    if(PrimaryVictory)
+    {
+        const int32 Step=Knight->GetPrimaryChainStep();
+        const bool Active=Step!=INDEX_NONE;
+        const bool Threat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
+        const bool DownTransition=Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse||Dragon->State==EVeyrDragonState::Rise;
+        const float Safe=Dragon->IsHeadExposed()?Dragon->GetHeadWindowRemaining()-.1f:SafeStationarySeconds(Feet);
+        float RemainingCost=Dragon->IsHeadExposed()?0.f:18.f;
+        for(int32 Next=Step+1;Next<3;++Next)RemainingCost+=Knight->GetPrimaryStepCost(Next);
+        const bool Hold=Active&&Step<2&&!Threat&&!bCombatHealSeeking&&!Dragon->IsAirborne()&&!DownTransition&&
+            Knight->Stamina>=RemainingCost&&Safe>Knight->GetPrimaryChainRemainingSeconds()+.1f;
+        // The bound LMB path supplies light-light-heavy, with its real costs,
+        // buffering and recovery. Never call the unbound standalone heavy here.
+        if(bPrimaryStart||Hold)
+        {
+            if(!bVictoryPrimaryHeld||bAvailable)
+            {
+                Knight->PressPrimaryAttack();++VictoryPrimaryPresses;bVictoryPrimaryHeld=true;
+                Event(TEXT("victory_primary_press"),false);
+            }
+        }
+        else if(bVictoryPrimaryHeld){Knight->ReleasePrimaryAttack();bVictoryPrimaryHeld=false;}
+        if(Active&&!Threat&&!bCombatHealSeeking&&!DownTransition){Movement=FVector::ZeroVector;bWantLock=true;}
+        bLight=false;bHeavy=false;
     }
     if(Knight->bLockedOn!=bWantLock)Knight->ToggleLockOn();
     Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!bHeal);
@@ -2272,9 +2320,15 @@ void AVeyrReplay::ServiceVideoCapture()
 {
     if(VideoFPS<=0||bVideoStopped||bAwaitingReload)return;
     const double Now=FPlatformTime::Seconds();
-    if(Now-VideoStartedWallTime>=600.||VideoFrameIndex>=6000)
+    if(Now-VideoStartedWallTime>=600.||VideoFrameIndex>=18000)
     {
         StopVideoCapture(TEXT("bounded capture limit reached"));return;
+    }
+    if(VideoFrameIndex%120==0)
+    {
+        uint64 Total=0,Free=0;
+        if(FPlatformMisc::GetDiskTotalAndFreeSpace(VideoDirectory,Total,Free)&&Free<4ull*1024*1024*1024)
+        {StopVideoCapture(TEXT("capture stopped to preserve 4 GiB disk headroom"));return;}
     }
     if(Now<VideoNextWallTime)return;
     const double Interval=1./VideoFPS;
@@ -2416,6 +2470,8 @@ void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
 {
     if(bFinished)return;
     FString VerifiedReason=Reason;
+    if(bSuccess&&ReplayMode==TEXT("victory")&&(!FMath::IsFinite(TerminalWallSeconds)||TerminalWallSeconds<=0.||TerminalWallSeconds>150.))
+    {bSuccess=false;VerifiedReason=FString::Printf(TEXT("victory wall-time gate failed: %.3f seconds; limit 150"),TerminalWallSeconds);}
     const AVeyrGameMode* FinishMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     const AVeyrArena* FinishArena=FinishMode?FinishMode->Arena.Get():nullptr;
     if(bSuccess&&(!Knight->bUsingPolishDefinition||!Dragon->bUsingPolishDefinition||!FinishArena||!FinishArena->bConnectedCourtAssetsReady))
@@ -2443,6 +2499,7 @@ void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
 void AVeyrReplay::BeginTerminalVerification()
 {
     bTerminalSettling=true;TerminalSeconds=Elapsed;TerminalClock=0;
+    if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())TerminalWallSeconds=Mode->GetFightWallSeconds();
     Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
     Event(TEXT("terminal_reached_waiting_for_pose"));SaveEvidence(false);
 }
@@ -2510,7 +2567,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Video->SetNumberField(TEXT("elapsedWallSeconds"),VideoStartedWallTime>0?FPlatformTime::Seconds()-VideoStartedWallTime:0);
     Video->SetBoolField(TEXT("stopped"),bVideoStopped);Video->SetStringField(TEXT("stopReason"),VideoStopReason);
     Video->SetStringField(TEXT("manifest"),VideoFPS>0?TEXT("native-video/frames.jsonl"):TEXT(""));
-    Video->SetStringField(TEXT("scope"),TEXT("silent native viewport; wall-clock pixel timestamps; 6000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"));
+    Video->SetStringField(TEXT("scope"),TEXT("silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"));
     Root->SetObjectField(TEXT("nativeVideo"),Video);
     Root->SetStringField(TEXT("mode"),ReplayMode); Root->SetStringField(TEXT("engine"),FEngineVersion::Current().ToString());
     Root->SetStringField(TEXT("sourceId"),VEYR_SOURCE_ID);
@@ -2601,10 +2658,14 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetStringField(TEXT("controlsCoverageLimit"),TEXT("input hook validates gameplay action paths, not physical key bindings; empty flask, rear guard and guard break are not assertions in controls mode"));
     Root->SetStringField(TEXT("avoidanceCoverageDefinition"),TEXT("inside actual warning at least once during windup, then no HitsTaken increase through completed recovery; no boss move forcing"));
     Root->SetNumberField(TEXT("terminalSeconds"),TerminalSeconds);
-    Root->SetBoolField(TEXT("victoryWithinThreeToFiveMinutes"),ReplayMode==TEXT("victory")&&TerminalSeconds>=180.f&&TerminalSeconds<=300.f);
+    Root->SetNumberField(TEXT("terminalWallSeconds"),TerminalWallSeconds);
+    Root->SetBoolField(TEXT("victoryWithin150Seconds"),ReplayMode==TEXT("victory")&&TerminalWallSeconds>0.&&TerminalWallSeconds<=150.);
+    Root->SetStringField(TEXT("fightTimeScope"),TEXT("monotonic active-encounter wall time; includes hit-stop, excludes menus/pre-engagement and death/restart presentation; preserved across restart"));
     Root->SetBoolField(TEXT("victoryStartTwoHandedRequested"),bVictoryStartTwoHandedRequested);
     Root->SetBoolField(TEXT("victoryGripInputIssued"),bVictoryGripInputIssued);
     Root->SetBoolField(TEXT("victoryGripTransitionCompleted"),bVictoryGripTransitionCompleted);
+    Root->SetNumberField(TEXT("victoryPrimaryPresses"),VictoryPrimaryPresses);
+    Root->SetStringField(TEXT("victoryAttackPolicy"),TEXT("front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks"));
     Root->SetBoolField(TEXT("restartPrimaryInputIssued"),bRestartAttackInputIssued);
     Root->SetBoolField(TEXT("restartRequested"),bAwaitingReload||bRestartVerification);Root->SetBoolField(TEXT("restartResourcesVerified"),bFreshResourcesVerified);
     Root->SetBoolField(TEXT("restartMovementVerified"),bRestartMoved);Root->SetBoolField(TEXT("restartAttackVerified"),bRestartAttackAccepted);
@@ -2673,6 +2734,9 @@ void AVeyrReplay::Tick(float DeltaSeconds)
         Finish(true,TEXT("all six naturally selected moves threatened the player in windup and completed recovery without a damaging hit"));
     else if(ReplayMode==TEXT("core")&&Knight->SuccessfulJumps==0&&!Knight->CanJump()&&bLightLegContact&&bHeavyLegContact&&Dragon->GetCollapseCount()>0&&Dragon->GetHeadBonusHitCount()>0&&bRiseCompleted&&Knight->DodgedHits>0)
         Finish(true,TEXT("jump-disabled light heavy collapse head bonus completed rise and dodge contact observed"));
+    else if(ReplayMode==TEXT("victory")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrStopAfterDeadline"))&&
+        GetWorld()->GetAuthGameMode<AVeyrGameMode>()->GetFightWallSeconds()>150.)
+        Finish(false,TEXT("victory attempt exceeded 150 active wall seconds; boss still alive"));
     else if(Elapsed>DurationLimit)Finish(false,TEXT("objective timeout; inspect event history and policy"));
     if(!bFinished&&!bTerminalSettling&&!bAwaitingReload&&!bRestartVerification)DriveInputs();ServiceCapture();
     if(SaveClock>=(bPerformanceMode?30.f:5.f)){SaveClock=0;SaveEvidence(false);}

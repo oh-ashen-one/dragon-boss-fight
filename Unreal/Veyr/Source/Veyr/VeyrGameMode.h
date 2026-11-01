@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "VeyrFightClock.h"
 #include "VeyrGameMode.generated.h"
 class AVeyrArena;
 class AVeyrDragon;
@@ -48,7 +49,11 @@ public:
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") float UserMouseSensitivity=1.f;
     UPROPERTY(BlueprintReadOnly) float EncounterSeconds=0;
     UPROPERTY(BlueprintReadOnly) float VictorySeconds=-1;
+    UPROPERTY(BlueprintReadOnly) double VictoryWallSeconds=-1.;
+    double GetFightWallSeconds() const;
 private:
+    FVeyrFightClock FightClock;
+    void SampleFightClock();
     bool bPawnPositioned=false;
     FString MixCaptureDirectory,MixCaptureName;
     double MixCaptureStarted=0;

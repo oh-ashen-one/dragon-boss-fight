@@ -77,8 +77,9 @@ void AVeyrGameMode::StartPlay()
 void AVeyrGameMode::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    SampleFightClock();
     if(MixCaptureStarted>0&&!bMixCaptureFinished&&FPlatformTime::Seconds()-MixCaptureStarted>=MixCaptureDuration)FinishMixCapture();
-    // Only the optional bounded recording timer ticks while paused.
+    // Wall-clock bookkeeping and the optional recording timer also tick while paused.
     if(UGameplayStatics::IsGamePaused(this))return;
     if(!Knight)
     {
@@ -108,6 +109,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
     }
     if(Knight&&Dragon&&Knight->HasEnteredEncounter())
     {
+        SampleFightClock();
         if(!MixCaptureDirectory.IsEmpty()&&MixCaptureStarted==0&&!bMixCaptureFinished)
         {
             UAudioMixerBlueprintLibrary::StartRecordingOutput(this,MixCaptureDuration+1.f);
@@ -118,9 +120,20 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         if(Dragon->IsDead()&&VictorySeconds<0)
         {
             VictorySeconds=EncounterSeconds;
-            UE_LOG(LogTemp,Display,TEXT("VEYR_UNREAL_VICTORY seconds=%.3f"),VictorySeconds);
+            FightClock.Finish(FPlatformTime::Seconds(),false);VictoryWallSeconds=GetFightWallSeconds();
+            UE_LOG(LogTemp,Display,TEXT("VEYR_UNREAL_VICTORY game_seconds=%.3f active_wall_seconds=%.3f"),VictorySeconds,VictoryWallSeconds);
         }
     }
+}
+
+void AVeyrGameMode::SampleFightClock()
+{
+    FightClock.Sample(FPlatformTime::Seconds(),Knight&&Knight->HasEnteredEncounter(),UGameplayStatics::IsGamePaused(this));
+}
+
+double AVeyrGameMode::GetFightWallSeconds() const
+{
+    return FightClock.Seconds(FPlatformTime::Seconds(),UGameplayStatics::IsGamePaused(this));
 }
 
 bool AVeyrGameMode::StartNativeValidation(const FString& Mode,const FString& EvidenceDirectory)
@@ -150,6 +163,7 @@ bool AVeyrGameMode::StartNativeValidation(const FString& Mode,const FString& Evi
 bool AVeyrGameMode::SetPauseMenuOpen(bool bOpen)
 {
     if(bPauseMenuOpen==bOpen)return true;
+    SampleFightClock(); // Account for the interval using the old pause state.
     if(!UGameplayStatics::SetGamePaused(this,bOpen))return false;
     bPauseMenuOpen=bOpen;
     if(FightFeel&&bOpen)FightFeel->CancelHitStop();

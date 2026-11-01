@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 
-def read_capture(manifest):
+def read_capture(manifest, world_index=None):
     records = []
     for number, line in enumerate(manifest.read_text().splitlines(), 1):
         if not line.strip():
@@ -29,9 +29,19 @@ def read_capture(manifest):
         if not isinstance(row, dict):
             raise ValueError(f"Manifest line {number} must be an object")
         records.append(row)
+    if world_index is not None:
+        starts = [r for r in records if r.get("type") == "world_start" and r.get("worldIndex", 0) == world_index]
+        selected = [r for r in records if r.get("type") == "frame" and r.get("worldIndex", 0) == world_index]
+        if not starts or not selected:
+            raise ValueError("Requested world has no captured frames/start record")
+        low = starts[0].get("wallSeconds", selected[0]["wallSeconds"])
+        ends = [r["wallSeconds"] for r in records if r.get("type") == "world_end" and r.get("worldIndex", 0) == world_index]
+        high = min((t for t in ends if t > selected[-1]["wallSeconds"]), default=selected[-1]["wallSeconds"])
+        records = [r for r in records if (r.get("type") in {"world_start", "world_end", "frame"} and r.get("worldIndex", 0) == world_index)
+                   or (r.get("type") not in {"world_start", "world_end", "frame"} and low <= r.get("wallSeconds", -1) <= high)]
     frames = [row for row in records if row.get("type") == "frame"]
-    if not 2 <= len(frames) <= 6000:
-        raise ValueError("Need 2 through 6000 successfully captured native frames")
+    if not 2 <= len(frames) <= 18000:
+        raise ValueError("Need 2 through 18000 successfully captured native frames")
     sources = {row.get("sourceId") for row in frames}
     if len(sources) != 1 or not next(iter(sources)):
         raise ValueError("All frames must identify the same nonempty native source ID")
@@ -90,6 +100,7 @@ def main():
     parser.add_argument("--ffmpeg", default=shutil.which("ffmpeg"))
     parser.add_argument("--ffprobe", default=shutil.which("ffprobe"))
     parser.add_argument("--threads", type=int, choices=range(1,5), default=2, help="Bounded software encoder workers")
+    parser.add_argument("--world-index", type=int, help="Export one complete world, e.g. 0 to omit automated restart verification from the film")
     args = parser.parse_args()
     if not args.ffmpeg or not args.ffprobe:
         parser.error("Installed ffmpeg and ffprobe are required; this tool installs nothing")
@@ -100,7 +111,7 @@ def main():
     if any(path.exists() for path in (output, concat, receipt)):
         parser.error("Output, ffconcat or receipt already exists; choose a fresh --output filename")
     try:
-        records, frames, end, observed_tail, dimensions = read_capture(manifest)
+        records, frames, end, observed_tail, dimensions = read_capture(manifest, args.world_index)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -139,6 +150,7 @@ def main():
     valid = (len(encoded_pts) == len(expected_pts) and max_pts_error <= .002 and
              abs(actual_duration - expected_duration) <= .025 and (stream["width"], stream["height"]) == dimensions)
     report = {
+        "selectedWorldIndex": args.world_index,
         "sourceId": frames[0]["sourceId"], "manifestSHA256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
         "videoSHA256": hashlib.sha256(output.read_bytes()).hexdigest(), "nativeFrames": len(frames),
         "requestedFPS": next(row["requestedFPS"] for row in records if row.get("type") == "world_start"),

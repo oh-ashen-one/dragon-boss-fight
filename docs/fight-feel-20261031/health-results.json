@@ -1,0 +1,38 @@
+{
+  "status": "in progress; one-hand 650 passed, two-hand and baseline pending",
+  "runs": [
+    {
+      "run": "Evidence/native-victory-20261101T060046Z/unreal-victory-20261101T060109Z-4E87519D/evidence.json",
+      "sourceId": "ee8a482b8640ac2082e0cadd768dfc79665995441e1e04d1c5b7d87db6f36506",
+      "terminalWallSeconds": 271.07825979217887,
+      "terminalGameSeconds": 270.1197204589844,
+      "passed": false,
+      "reason": "victory wall-time gate failed: 271.078 seconds; limit 150",
+      "attackPolicy": "legacy standalone hooks",
+      "primaryPresses": null,
+      "twoHandedRequested": false
+    },
+    {
+      "run": "Evidence/native-victory-20261101T064819Z/unreal-victory-20261101T064839Z-0C6C06E2/evidence.json",
+      "sourceId": "d274d1de25634dc8f16c9e9f47fcd5c43903faf65659dafa74ccf1d527d2eb50",
+      "terminalWallSeconds": 217.14447775110602,
+      "terminalGameSeconds": 216.3641357421875,
+      "passed": false,
+      "reason": "victory wall-time gate failed: 217.144 seconds; limit 150",
+      "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
+      "primaryPresses": 12,
+      "twoHandedRequested": false
+    },
+    {
+      "run": "Evidence/native-victory-20261101T072120Z/unreal-victory-20261101T072140Z-CE794977/evidence.json",
+      "sourceId": "562358b0434b7798517cab9d2a127dfebc0e23cafde81c63cec70126661d3524",
+      "terminalWallSeconds": 113.38384145870805,
+      "terminalGameSeconds": 113.06122589111328,
+      "passed": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "attackPolicy": "front-leg approach; bound LMB primary press/hold/release; no standalone light/heavy shortcuts; normal collision, danger and stamina checks",
+      "primaryPresses": 5,
+      "twoHandedRequested": false
+    }
+  ]
+}

@@ -108,11 +108,11 @@ public:
     UFUNCTION(BlueprintCallable, Category="Presentation|Camera")
     bool SetViewOcclusion(const FVector& CameraWorld,const FVector& FocusWorld,bool bEnabled);
 
-    // Calibrated for the native characters' safe approach and head-punish
-    // cadence. October26 tuning reduces the health burden while retaining independent leg thresholds.
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 2800.f;
+    // Owner target: a competent victory within 150 wall seconds. Health is
+    // calibrated by input-only victory replays; leg stagger thresholds stay independent.
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float Health = 650.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") FVector LastSwordContactWorld=FVector::ZeroVector;
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 2800.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float MaxHealth = 650.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonState State = EVeyrDragonState::Idle;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") EVeyrDragonMove Move = EVeyrDragonMove::ClawSwipe;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<AVeyrKnight> Target;
