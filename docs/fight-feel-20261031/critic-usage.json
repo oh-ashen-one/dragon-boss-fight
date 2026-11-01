@@ -1,0 +1,33 @@
+{
+  "provider": "Claude Code",
+  "billingNote": "CLI-reported estimates, not verified invoice charges. No Higgsfield or asset-generation jobs.",
+  "calls": [
+    {
+      "receipt": "fightfeel-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": true,
+      "reportedEstimatedUSD": 5.924414400000002,
+      "durationMs": 150231
+    },
+    {
+      "receipt": "fightfeel-critic-bounded-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.31530400000000003,
+      "durationMs": 42669
+    },
+    {
+      "receipt": "fightfeel-resumed-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.38619380000000003,
+      "durationMs": 49901
+    }
+  ]
+}

@@ -215,6 +215,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         const auto* Feel=Mode->FightFeel.Get();
         TSharedPtr<FJsonObject> F=MakeShared<FJsonObject>();
         F->SetBoolField(TEXT("enabled"),Feel->IsEnabled());
+        F->SetNumberField(TEXT("revision"),Feel->GetRevision());
         F->SetNumberField(TEXT("shakeEvents"),Feel->ShakeEvents);
         F->SetNumberField(TEXT("hitStopEvents"),Feel->HitStopEvents);
         F->SetNumberField(TEXT("hitFlashEvents"),Feel->HitFlashEvents);

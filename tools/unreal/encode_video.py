@@ -73,12 +73,23 @@ def read_capture(manifest):
     return records, frames, end, bool(endings), next(iter(dimensions))
 
 
+def capture_duration_ticks(frames, end):
+    origin = frames[0]["wallSeconds"]
+    points = [round((row["wallSeconds"] - origin) * 1000000) for row in frames]
+    points.append(round((end - origin) * 1000000))
+    durations = [b - a for a, b in zip(points, points[1:])]
+    if any(ticks <= 0 for ticks in durations):
+        raise ValueError("Capture boundaries collapse at microsecond precision")
+    return durations
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--output", type=Path, help="Default: gameplay-vfr.mp4 beside the manifest; refuses overwrite")
     parser.add_argument("--ffmpeg", default=shutil.which("ffmpeg"))
     parser.add_argument("--ffprobe", default=shutil.which("ffprobe"))
+    parser.add_argument("--threads", type=int, choices=range(1,5), default=2, help="Bounded software encoder workers")
     args = parser.parse_args()
     if not args.ffmpeg or not args.ffprobe:
         parser.error("Installed ffmpeg and ffprobe are required; this tool installs nothing")
@@ -94,17 +105,20 @@ def main():
         parser.error(str(error))
     output.parent.mkdir(parents=True, exist_ok=True)
     lines = ["ffconcat version 1.0"]
-    for index, frame in enumerate(frames):
-        following = frames[index + 1]["wallSeconds"] if index + 1 < len(frames) else end
-        lines += [f"file '{frame['file']}'", "option framerate 1000", f"duration {following - frame['wallSeconds']:.9f}"]
+    durations = capture_duration_ticks(frames, end)
+    for frame, ticks in zip(frames, durations):
+        # Quantize absolute boundaries before differencing. Independently
+        # truncating thousands of float durations in FFmpeg accumulates drift.
+        duration = f"{ticks // 1000000}.{ticks % 1000000:06d}"
+        lines += [f"file '{frame['file']}'", "option framerate 1000000", f"duration {duration}"]
     # The final repeated still establishes the preceding frame's actual hold.
-    # There is no generated in-between motion; timestamp precision is 1ms.
-    lines += [f"file '{frames[-1]['file']}'", "option framerate 1000"]
+    # There is no generated in-between motion; timestamp precision is 1us.
+    lines += [f"file '{frames[-1]['file']}'", "option framerate 1000000"]
     concat.write_text("\n".join(lines) + "\n")
     command = [args.ffmpeg, "-hide_banner", "-nostdin", "-n", "-f", "concat", "-safe", "0", "-i", str(concat),
-               "-an", "-c:v", "libx264", "-threads", "2", "-preset", "veryfast", "-crf", "18",
+               "-an", "-c:v", "libx264", "-threads", str(args.threads), "-preset", "veryfast", "-crf", "18",
                # Nominal encoder rate avoids advertising the concat demuxer's
-               # 1000-Hz timestamp precision as a level-6 video stream. Passing
+               # microsecond timestamp precision as a level-6 video stream. Passing
                # through PTS preserves every actual variable-rate capture.
                "-pix_fmt", "yuv420p", "-bf", "0", "-x264-params", "fps=60/1:force-cfr=0",
                "-fps_mode", "vfr", "-enc_time_base", "1:1000000",
@@ -137,7 +151,7 @@ def main():
         "encodedFrameCount": len(encoded_pts), "maximumFrameTimestampErrorSeconds": max_pts_error if math.isfinite(max_pts_error) else None,
         "lastFrameEndObserved": observed_tail, "terminalHoldSeconds": end - frames[-1]["wallSeconds"],
         "silent": True, "timingVerified": valid, "probe": probe,
-        "timingPolicy": "Actual monotonic native pixel-callback timestamps; 1ms encoding precision; skipped captures and reload gaps hold the previous frame. No interpolation. Final endpoint is one repeated still.",
+        "timingPolicy": "Actual monotonic native pixel-callback timestamps; 1us encoding precision; skipped captures and reload gaps hold the previous frame. No interpolation. Final endpoint is one repeated still.",
         "ffmpegVersion": subprocess.run([args.ffmpeg, "-version"], check=True, capture_output=True, text=True).stdout.splitlines()[0],
     }
     receipt.write_text(json.dumps(report, indent=2) + "\n")

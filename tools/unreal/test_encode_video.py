@@ -5,7 +5,7 @@ import struct
 import tempfile
 import unittest
 
-from encode_video import read_capture
+from encode_video import read_capture, capture_duration_ticks
 
 
 class CaptureManifestTests(unittest.TestCase):
@@ -32,6 +32,17 @@ class CaptureManifestTests(unittest.TestCase):
         _, frames, end, observed, dimensions = self.read()
         self.assertEqual([row["wallSeconds"] for row in frames], [0, 1 / 60, 2 / 60])
         self.assertEqual((end, observed, dimensions), (.05, True, (16, 16)))
+
+    def test_long_capture_durations_do_not_accumulate_rounding_drift(self):
+        frames = [{"wallSeconds": 7 + i * .02353360317647457} for i in range(5000)]
+        end = frames[-1]["wallSeconds"] + .041915085166692734
+        ticks = capture_duration_ticks(frames, end)
+        elapsed = 0
+        for frame, duration in zip(frames, ticks):
+            expected = frame["wallSeconds"] - frames[0]["wallSeconds"]
+            self.assertLessEqual(abs(elapsed / 1000000 - expected), .000000501)
+            elapsed += duration
+        self.assertLessEqual(abs(elapsed / 1000000 - (end - frames[0]["wallSeconds"])), .000000501)
 
     def test_rejects_out_of_order_completion_records(self):
         self.rows[1], self.rows[2] = self.rows[2], self.rows[1]

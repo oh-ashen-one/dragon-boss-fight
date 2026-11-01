@@ -3,6 +3,7 @@
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
 #include "VeyrVisualDefinition.h"
+#include "VeyrSkeletalPresentation.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/PointLightComponent.h"
@@ -33,12 +34,18 @@ AVeyrFightFeel::AVeyrFightFeel()
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Plane(TEXT("/Engine/BasicShapes/Plane.Plane"));
     static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> Material(TEXT("/Game/Veyr/FX/v3/M_VeyrBreathEmber.M_VeyrBreathEmber"));
     WeaponTrail->SetStaticMesh(Plane.Get());WeaponTrail->SetMaterial(0,Material.Get());
+    HitMarker=CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("SurfaceHitMarker"));
+    HitMarker->SetupAttachment(GetRootComponent());HitMarker->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    HitMarker->SetGenerateOverlapEvents(false);HitMarker->SetCanEverAffectNavigation(false);
+    HitMarker->SetCastShadow(false);HitMarker->SetNumCustomDataFloats(4);HitMarker->SetVisibility(false);
+    HitMarker->SetStaticMesh(Plane.Get());HitMarker->SetMaterial(0,Material.Get());
 }
 
 void AVeyrFightFeel::BeginPlay()
 {
     Super::BeginPlay();
     bDisabled=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelOff"));
+    bLegacy=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelLegacy"));
     LastRealTime=GetWorld()->GetRealTimeSeconds();
     if(UMaterialInterface* Parent=WeaponTrail->GetMaterial(0))
     {
@@ -47,7 +54,14 @@ void AVeyrFightFeel::BeginPlay()
         Material->SetScalarParameterValue(TEXT("Brightness"),.85f);WeaponTrail->SetMaterial(0,Material);
     }
     for(int32 I=0;I<24;++I)WeaponTrail->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
-    UE_LOG(LogTemp,Display,TEXT("VEYR_FIGHT_FEEL enabled=%d"),!bDisabled);
+    if(UMaterialInterface* Parent=HitMarker->GetMaterial(0))
+    {
+        auto* Material=UMaterialInstanceDynamic::Create(Parent,this);
+        Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.86f,.58f));
+        Material->SetScalarParameterValue(TEXT("Brightness"),4.f);HitMarker->SetMaterial(0,Material);
+    }
+    HitMarker->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
+    UE_LOG(LogTemp,Display,TEXT("VEYR_FIGHT_FEEL enabled=%d revision=%d"),!bDisabled,GetRevision());
 }
 
 void AVeyrFightFeel::RestoreTime()
@@ -64,7 +78,7 @@ void AVeyrFightFeel::RefreshSettings()
     if(!Mode)return;
     if(bDisabled||!Mode->bUserHitStop)RestoreTime();
     if(bDisabled||!Mode->bUserCameraShake){ShakeAmplitude=0.f;ShakeAge=ShakeLife;}
-    if(bDisabled||!Mode->bUserHitFlash){FlashAge=1.f;HitFlash->SetIntensity(0.f);HitFlash->SetVisibility(false);}
+    if(bDisabled||!Mode->bUserHitFlash){FlashAge=1.f;HitFlash->SetIntensity(0.f);HitFlash->SetVisibility(false);HitMarker->SetVisibility(false);}
 }
 
 void AVeyrFightFeel::Tick(float DeltaSeconds)
@@ -81,8 +95,31 @@ void AVeyrFightFeel::Tick(float DeltaSeconds)
     }
     ShakeAge+=RealDelta;FlashAge+=RealDelta;FlinchAge+=DeltaSeconds;
     const bool ShowFlash=!bDisabled&&FlashAge<.18f;
-    HitFlash->SetVisibility(ShowFlash);
-    HitFlash->SetIntensity(ShowFlash?(500.f+900.f*FlashWeight)*FMath::Exp(-FlashAge/.045f):0.f);
+    HitFlash->SetVisibility(ShowFlash&&bLegacy);
+    HitFlash->SetIntensity(ShowFlash&&bLegacy?(500.f+900.f*FlashWeight)*FMath::Exp(-FlashAge/.045f):0.f);
+    HitMarker->SetVisibility(ShowFlash&&!bLegacy);
+    if(ShowFlash&&!bLegacy)
+    {
+        FVector Position=FlashWorldPoint;
+        if(FlashMesh.IsValid()&&!FlashBone.IsNone())
+        {
+            const int32 Bone=FlashMesh->GetBoneIndex(FlashBone);
+            if(Bone!=INDEX_NONE)Position=FlashMesh->GetBoneTransform(Bone).TransformPosition(FlashLocalPoint);
+        }
+        const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+        if(Mode&&Mode->Knight&&Mode->Knight->CombatCamera)
+        {
+            const FVector TowardCamera=(Mode->Knight->CombatCamera->GetComponentLocation()-Position).GetSafeNormal();
+            const float Size=FMath::Lerp(14.f,26.f,FlashWeight)*(1.f+FlashAge*2.f);
+            // A depth-tested glint at the accepted blade contact, following
+            // the struck bone. It cannot light the floor like a point light.
+            HitMarker->UpdateInstanceTransform(0,FTransform(FRotationMatrix::MakeFromZ(TowardCamera).ToQuat(),
+                Position+TowardCamera*8.f,FVector(Size/100.f,Size/100.f,1.f)),true,false,true);
+            HitMarker->SetCustomDataValue(0,0,.9f*FMath::Exp(-FlashAge/.045f),false);
+            HitMarker->SetCustomDataValue(0,1,.3f,false);HitMarker->SetCustomDataValue(0,2,FlashAge/.18f,false);
+            HitMarker->SetCustomDataValue(0,3,.8f,false);HitMarker->MarkRenderStateDirty();
+        }
+    }
 }
 
 void AVeyrFightFeel::RequestHitStop(float Seconds)
@@ -127,11 +164,19 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
     Camera->SetRelativeRotation(FRotator(A*FMath::Cos(13.f*T),A*.55f*FMath::Sin(17.f*T),A*.3f*FMath::Sin(11.f*T)));
 }
 
-void AVeyrFightFeel::Flash(const FVector& Position,float Weight)
+void AVeyrFightFeel::Flash(const FVector& Position,float Weight,USkeletalMeshComponent* Mesh)
 {
     const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(bDisabled||!Mode||!Mode->bUserHitFlash)return;
     FlashAge=0.f;FlashWeight=Weight;HitFlash->SetWorldLocation(Position+FVector(0,0,18));
+    FlashWorldPoint=Position;FlashMesh=Mesh;FlashBone=NAME_None;
+    if(Mesh)
+    {
+        FlashBone=Mesh->FindClosestBone(Position);
+        const int32 Bone=Mesh->GetBoneIndex(FlashBone);
+        if(Bone!=INDEX_NONE)FlashLocalPoint=Mesh->GetBoneTransform(Bone).InverseTransformPosition(Position);
+        else FlashBone=NAME_None;
+    }
     HitFlash->SetAttenuationRadius(100.f+100.f*Weight);++HitFlashEvents;
 }
 
@@ -140,7 +185,7 @@ void AVeyrFightFeel::SwordContact(AVeyrDragon* Boss,bool bHeavy)
     if(bDisabled||!Boss)return;
     const float Weight=bHeavy?1.f:.45f;
     Impact(Boss->LastSwordContactWorld,Weight,TEXT("sword"));
-    RequestHitStop(bHeavy?.095f:.055f);Flash(Boss->LastSwordContactWorld,Weight);
+    RequestHitStop(bHeavy?.095f:.055f);Flash(Boss->LastSwordContactWorld,Weight,Boss->ImportedPresentation);
     FlinchAge=0.f;FlinchWeight=Weight;
     FlinchSide=FVector::DotProduct(Boss->LastSwordContactWorld-Boss->GetActorLocation(),Boss->GetActorRightVector())>=0.f?1.f:-1.f;
     ++FlinchEvents;
@@ -151,7 +196,7 @@ void AVeyrFightFeel::PlayerContact(AVeyrKnight* Player,float Damage,bool bBlocke
     if(!Player||bDisabled)return;
     const float Weight=bBlocked?.2f:FMath::Clamp(Damage/40.f,.35f,1.f);
     Impact(Player->GetActorLocation(),Weight,bBlocked?TEXT("guard"):TEXT("player_damage"));
-    RequestHitStop(bBlocked?.05f:.07f);Flash(Player->GetActorLocation()+FVector(0,0,35),Weight*.6f);
+    RequestHitStop(bBlocked?.05f:.07f);Flash(Player->GetActorLocation()+FVector(0,0,35),Weight*.6f,Player->ImportedPresentation);
 }
 
 void AVeyrFightFeel::AddBossFlinch(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotations) const

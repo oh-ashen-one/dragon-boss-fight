@@ -1,0 +1,35 @@
+{
+  "before": {
+    "instrumentation": true,
+    "expectedMode": true,
+    "amplitudeBound": true,
+    "trailBound": true,
+    "validClock": true,
+    "contactOnlyStops": true,
+    "finalClockRestored": true,
+    "completedEvidence": true,
+    "shakeEventsDisabled": true,
+    "hitStopEventsDisabled": true,
+    "hitFlashEventsDisabled": true,
+    "flinchEventsDisabled": true,
+    "trailSamplesDisabled": true
+  },
+  "after": {
+    "instrumentation": true,
+    "expectedMode": true,
+    "amplitudeBound": true,
+    "trailBound": true,
+    "validClock": true,
+    "contactOnlyStops": true,
+    "finalClockRestored": true,
+    "completedEvidence": true,
+    "shakeEventsObserved": true,
+    "hitStopEventsObserved": true,
+    "hitFlashEventsObserved": true,
+    "flinchEventsObserved": true,
+    "trailSamplesObserved": true,
+    "stopDurationBound": true
+  },
+  "qualityVerdict": "unproven: requires blind video critique and owner playtest",
+  "engineeringPassed": true
+}

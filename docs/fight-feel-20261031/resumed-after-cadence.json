@@ -1,0 +1,75 @@
+{
+  "overall": {
+    "frames": 3599,
+    "fps": 41.902114459998714,
+    "medianGapMs": 23.53360317647457,
+    "p95GapMs": 24.37545731663704,
+    "maximumGapMs": 395.27150243520737
+  },
+  "contacts": [
+    {
+      "frames": 25,
+      "fps": 42.50995003681914,
+      "medianGapMs": 23.57351966202259,
+      "p95GapMs": 24.038124829530716,
+      "maximumGapMs": 24.7952938079834,
+      "event": "leg_contact",
+      "gameSeconds": 49.79579544067383,
+      "estimatedWallSeconds": 49.68971550092101
+    },
+    {
+      "frames": 25,
+      "fps": 42.491942951812206,
+      "medianGapMs": 23.48858304321766,
+      "p95GapMs": 23.981623351573944,
+      "maximumGapMs": 24.381045252084732,
+      "event": "leg_contact",
+      "gameSeconds": 63.33549880981445,
+      "estimatedWallSeconds": 63.29549804329872
+    },
+    {
+      "frames": 25,
+      "fps": 42.455809156452304,
+      "medianGapMs": 23.54220673441887,
+      "p95GapMs": 24.317044764757156,
+      "maximumGapMs": 24.395085871219635,
+      "event": "leg_contact",
+      "gameSeconds": 64.80110168457031,
+      "estimatedWallSeconds": 64.87280166521668
+    },
+    {
+      "frames": 25,
+      "fps": 42.5121803949699,
+      "medianGapMs": 23.52762408554554,
+      "p95GapMs": 23.949377238750458,
+      "maximumGapMs": 24.169333279132843,
+      "event": "leg_contact",
+      "gameSeconds": 71.79702758789062,
+      "estimatedWallSeconds": 71.93520787358284
+    },
+    {
+      "frames": 25,
+      "fps": 42.452101221050334,
+      "medianGapMs": 23.480938747525215,
+      "p95GapMs": 24.187374860048294,
+      "maximumGapMs": 24.222206324338913,
+      "event": "head_contact",
+      "gameSeconds": 77.14407348632812,
+      "estimatedWallSeconds": 77.3494869582355
+    },
+    {
+      "frames": 25,
+      "fps": 42.48283251215058,
+      "medianGapMs": 23.523228242993355,
+      "p95GapMs": 24.47495609521866,
+      "maximumGapMs": 24.516623467206955,
+      "event": "head_contact",
+      "gameSeconds": 78.96285247802734,
+      "estimatedWallSeconds": 79.27980820834637
+    }
+  ],
+  "sourceId": "8df9ccb7353ceaedf1889067722dd997c52626816f18118ad98157a850750fe7",
+  "failedFrames": 0,
+  "qualityAccepted": false,
+  "scope": "Pixel callback timing, not scene motion or render performance. Contact wall time is the nearest capture request to the game's event."
+}

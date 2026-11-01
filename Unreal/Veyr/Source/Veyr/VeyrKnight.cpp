@@ -838,7 +838,31 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         FRotator Look=Controller->GetControlRotation().GetNormalized();
         if(bLockedOn&&IsValid(Boss)&&!Boss->IsDead()&&ManualCameraRemaining<=0.f)
         {
-            const FVector Focus=Boss->GetHeadLocation();
+            FVector Focus=Boss->GetHeadLocation();
+            const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+            if(Mode&&Mode->FightFeel&&Mode->FightFeel->UsesContactFraming())
+            {
+                // At a grounded dragon's feet, staring at its elevated head
+                // pushes the knight and the struck limb below the viewport.
+                // Blend toward the nearby contact zone by distance, not by
+                // attack state. Lens/arm length and manual look stay unchanged.
+                if(!Boss->IsAirborne()&&!Boss->IsHeadExposed()&&!Boss->IsDead())
+                {
+                    float Nearest=TNumericLimits<float>::Max();FVector Leg=Focus;
+                    for(int32 I=0;I<4;++I)
+                    {
+                        const FVector Foot=Boss->GetLegLocation(I);
+                        const float D=FVector::Dist2D(GetFootLocation(),Foot);
+                        if(D<Nearest){Nearest=D;Leg=Foot;}
+                    }
+                    Leg.Z=GetFootLocation().Z+170.f;
+                    const float Blend=FMath::SmoothStep(0.f,1.f,FMath::Clamp((650.f-Nearest)/350.f,0.f,1.f));
+                    Focus=FMath::Lerp(Focus,Leg,Blend);
+                }
+                if(!bContactCameraFocusInitialized){ContactCameraFocus=Focus;bContactCameraFocusInitialized=true;}
+                ContactCameraFocus=FMath::VInterpTo(ContactCameraFocus,Focus,DeltaSeconds,3.f);Focus=ContactCameraFocus;
+            }
+            else bContactCameraFocusInitialized=false;
             const FVector Delta=Focus-CameraBoom->GetComponentLocation();
             FRotator Desired=Delta.Rotation();
             Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,25.f);
