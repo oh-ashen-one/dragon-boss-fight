@@ -1,0 +1,113 @@
+{
+  "sourceId": "54762f896ee1859d462fb7fe46db3fe3c5dca7bb7ac3983e2e212f1611d85c8d",
+  "initialHP": 650,
+  "victoryPassed": true,
+  "terminalActiveSeconds": 82.45011454075575,
+  "firstHitActiveSeconds": 16.12952908501029,
+  "longestNoDamageGap": {
+    "start": 65.45845787599683,
+    "end": 82.44997262582183,
+    "seconds": 16.991514749825
+  },
+  "damageGapsOver20Seconds": [],
+  "largestFourSecondHealthLossFraction": 0.38461538461538464,
+  "hits": [
+    {
+      "activeSeconds": 16.12952908501029,
+      "damage": 45,
+      "remainingHP": 605,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 20.662564292550087,
+      "damage": 45,
+      "remainingHP": 560,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 21.787077501416206,
+      "damage": 45,
+      "remainingHP": 515,
+      "region": 0,
+      "dragonState": "Windup",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 36.467452958226204,
+      "damage": 45,
+      "remainingHP": 470,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 41.11212141811848,
+      "damage": 45,
+      "remainingHP": 425,
+      "region": 0,
+      "dragonState": "Buckle",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 44.78728070855141,
+      "damage": 65,
+      "remainingHP": 360,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 65
+    },
+    {
+      "activeSeconds": 45.914110124111176,
+      "damage": 65,
+      "remainingHP": 295,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 65
+    },
+    {
+      "activeSeconds": 47.42630187422037,
+      "damage": 120,
+      "remainingHP": 175,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 120
+    },
+    {
+      "activeSeconds": 55.24855637550354,
+      "damage": 45,
+      "remainingHP": 130,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 64.32857625186443,
+      "damage": 45,
+      "remainingHP": 85,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 65.45845787599683,
+      "damage": 45,
+      "remainingHP": 40,
+      "region": 0,
+      "dragonState": "Windup",
+      "observedHealthLoss": 45
+    },
+    {
+      "activeSeconds": 82.44997262582183,
+      "damage": 45,
+      "remainingHP": 0,
+      "region": 0,
+      "dragonState": "Dead",
+      "observedHealthLoss": 40
+    }
+  ],
+  "scope": "Native event timing; not a visual, difficulty or human-feel quality gate"
+}

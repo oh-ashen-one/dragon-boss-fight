@@ -155,6 +155,7 @@ UStaticMeshComponent* AVeyrDragon::CreateTemporaryPart(FName Name,UStaticMesh* M
 void AVeyrDragon::BeginPlay()
 {
     bLegacyPacing=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingLegacy"));
+    bLegacyFinisher=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingNoFinisher"));
     if(UsesPacingRevision())NextFlightAt=20.f;
     Super::BeginPlay();
     FString ReplayMode;
@@ -390,7 +391,10 @@ void AVeyrDragon::ChooseAttack()
         if(!bImportedTargetsValid||!bImportedAttackCacheReady)
         {EnterState(EVeyrDragonState::Idle,1.f);return;}
         const int32 Positional=PredictPositionalMove(Target->GetFootLocation());
-        if(EncounterClock>=NextFlightAt){BeginAttack(EVeyrDragonMove::FlyAway);return;}
+        // A nearly defeated boss keeps its final exchange on the ground;
+        // an expiring flight timer must not turn one remaining hit into a wait.
+        const bool FlightAvailable=!UsesFinisherRevision()||Health>MaxHealth*.25f;
+        if(FlightAvailable&&EncounterClock>=NextFlightAt){BeginAttack(EVeyrDragonMove::FlyAway);return;}
         if(Positional<0){BeginReposition();return;}
         EVeyrDragonMove Next=static_cast<EVeyrDragonMove>(Positional);
         // The old range fallback and fourth-attack shortcut both bypassed the

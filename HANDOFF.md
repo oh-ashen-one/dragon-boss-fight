@@ -1,6 +1,6 @@
 # Current continuation — 2026-11-01 (Codex)
 
-**Goal active. Owner resumed the first pacing TIE and requested shorter damage gaps, less camera occlusion and a clear death pose. HP remains 650. Final matched captures and a fresh blind Opus review are pending; the full backlog is not complete.** Work only on `fable/knight-complete-20261028` here and `claude-code-enhancements` in the dragon checkout. No main merge/push.
+**Goal active. Owner resumed the first pacing TIE and requested shorter damage gaps, less camera occlusion and a clear death pose. HP remains 650. Round 2 passed a fresh blind Opus comparison; a scoped follow-up is addressing its remaining low-health flight stall and end-frame overlap. The full backlog is not complete.** Work only on `fable/knight-complete-20261028` here and `claude-code-enhancements` in the dragon checkout. No main merge/push.
 
 ## Verified state
 
@@ -18,10 +18,16 @@
 - **Newest Shipping package:** `Local/package-20261101T193704Z/receipt.json`, source ID `54762f896ee1859d462fb7fe46db3fe3c5dca7bb7ac3983e2e212f1611d85c8d`, verified app `/private/tmp/veyr-verified-bundle-kmymtf5w/Veyr-Mac-Shipping.app`. This final framing package's replay/capture is now running: inspect newest victory evidence and owned process before launching again.
 - Native victory verification requires actual completed non-looping DeathFall/DeathFallDown and visibility material binding. Timeline review includes uniform 2 s samples plus 0.25 s final-ten-second sequences. Neither is a substitute for continuous video or owner feel.
 
+## Finisher follow-up (current)
+
+- Latest package `Local/package-20261101T201830Z/receipt.json`, source `d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5`, verified app `/private/tmp/veyr-verified-bundle-x5xt6ab1/Veyr-Mac-Shipping.app`. Default keeps the final quarter on the ground and offsets the locked death camera to reveal the head; `-VeyrPacingNoFinisher` selects the already-passed previous behavior. No HP reduction.
+- Initial 15% cutoff committed flight too early (at 130 HP), so it was raised to 25% before the next review. That first test passed at 87.063 s and visibly cleared the head, but was not submitted to a critic.
+- Current final-quarter capture is running; inspect newest victory evidence/process before relaunching. No editor/Blender is held open. The accepted round-2 pair is on port 8803; final follow-up will have a new page.
+
 ## Next steps
 
 1. Finish the latest package's one-hand capture, confirm the death framing, film `-VeyrPacingLegacy` at the same HP, recheck two-hand and core as needed, encode world 0 with verified timestamps, serve a fresh bare page. Keep all failed/intermediate evidence.
-2. Fresh blind Opus 5.5 high review on anonymous native frames, without source notes or mapping. No round-2 critic has run yet. Stop on a tie per owner rule. Numeric/fidelity passes alone do not ship.
+2. Fresh blind Opus 5.5 high review on anonymous native frames, without source notes or mapping. Round-2 critic returned PASS A (after); see `critique-pacing-round2.md`. A fresh finisher comparison is still pending. Stop on a tie per owner rule. Numeric/fidelity passes alone do not ship.
 3. Every-move replay and film, including real roar; active gameplay lacks Roar. Then source/pick page for free weapon-true heavy/jump/running attacks (owner does store/login clicks), then sprint, idle wings, heal, music/SFX. These remain unfinished.
 
 Flags: `-VeyrPacingLegacy` restores the pre-revision pacing/camera/death behavior, not 2800 HP. `-VeyrLegacyBossHealth` is a separate fresh victory baseline flag. `-VeyrCleanVideo -VeyrBossBarOnly` retains only the live unlabeled health gauge. The older first-tie page remains on port 8802; new captures have not replaced that page. Current evidence and code are WIP pending review.

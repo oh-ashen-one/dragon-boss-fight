@@ -119,6 +119,7 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return State == EVeyrDragonState::Dead; }
     bool UsesPacingRevision() const { return !bLegacyPacing; }
+    bool UsesFinisherRevision() const { return !bLegacyPacing&&!bLegacyFinisher; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadExposed() const { return State == EVeyrDragonState::Exposed; }
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetHeadLocation() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
@@ -217,6 +218,7 @@ protected:
 
 private:
     bool bLegacyPacing=false;
+    bool bLegacyFinisher=false;
     UPROPERTY() TObjectPtr<USceneComponent> SceneRoot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> BodyMesh;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> ChestMesh;

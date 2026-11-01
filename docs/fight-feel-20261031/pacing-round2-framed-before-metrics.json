@@ -1,0 +1,87 @@
+{
+  "sourceId": "54762f896ee1859d462fb7fe46db3fe3c5dca7bb7ac3983e2e212f1611d85c8d",
+  "initialHP": 650,
+  "victoryPassed": true,
+  "terminalActiveSeconds": 105.61483587697148,
+  "firstHitActiveSeconds": 73.61574429273605,
+  "longestNoDamageGap": {
+    "start": 0,
+    "end": 73.61574429273605,
+    "seconds": 73.61574429273605
+  },
+  "damageGapsOver20Seconds": [
+    {
+      "start": 0,
+      "end": 73.61574429273605,
+      "seconds": 73.61574429273605
+    }
+  ],
+  "largestFourSecondHealthLossFraction": 0.7384615384615385,
+  "hits": [
+    {
+      "activeSeconds": 73.61574429273605,
+      "damage": 34,
+      "remainingHP": 616,
+      "region": 0,
+      "dragonState": "Recovery",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 74.74551725015044,
+      "damage": 34,
+      "remainingHP": 582,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 84.91552754119039,
+      "damage": 34,
+      "remainingHP": 548,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 86.04528971016407,
+      "damage": 34,
+      "remainingHP": 514,
+      "region": 0,
+      "dragonState": "Windup",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 99.19829858466983,
+      "damage": 34,
+      "remainingHP": 480,
+      "region": 0,
+      "dragonState": "Buckle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 102.9125500023365,
+      "damage": 125,
+      "remainingHP": 355,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 125
+    },
+    {
+      "activeSeconds": 104.06047854200006,
+      "damage": 125,
+      "remainingHP": 230,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 125
+    },
+    {
+      "activeSeconds": 105.61469108238816,
+      "damage": 270,
+      "remainingHP": 0,
+      "region": 4,
+      "dragonState": "Dead",
+      "observedHealthLoss": 230
+    }
+  ],
+  "scope": "Native event timing; not a visual, difficulty or human-feel quality gate"
+}

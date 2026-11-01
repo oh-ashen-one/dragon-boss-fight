@@ -865,6 +865,7 @@ FVector AVeyrKnight::CombatAimPoint() const
 
 void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 {
+    const float PreviousShoulder=CameraBoom->SocketOffset.Y;
     // A player camera, including during flight. Only world collision may
     // shorten this arm; combat state never widens the lens or pulls it back.
     constexpr float Arm=560.f;
@@ -880,6 +881,11 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         FRotator Look=Controller->GetControlRotation().GetNormalized();
         const bool FollowFall=IsValid(Boss)&&Boss->UsesPacingRevision()&&Boss->IsDead()&&
             Boss->GetStateElapsed()<=Boss->GetStateDuration()+1.1f;
+        if(FollowFall&&bLockedOn&&DeathCameraSide==0.f)
+        {
+            const FVector Right=FRotationMatrix(FRotator(0,Look.Yaw,0)).GetUnitAxis(EAxis::Y);
+            DeathCameraSide=FVector::DotProduct(Boss->GetHeadLocation()-GetActorLocation(),Right)>10.f?1.f:-1.f;
+        }
         if(bLockedOn&&IsValid(Boss)&&(!Boss->IsDead()||FollowFall)&&ManualCameraRemaining<=0.f)
         {
             FVector Focus=Boss->GetHeadLocation();
@@ -928,6 +934,11 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
         const float Pivot=FMath::Max(170.f,90.f+Arm*FMath::Sin(R)-12.f*FMath::Cos(R));
         CameraBoom->SetRelativeLocation(FVector(0,0,Pivot-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
         CameraBoom->SocketOffset.Y=FMath::GetMappedRangeValueClamped(FVector2D(15,68),FVector2D(42,180),Look.Pitch);
+        if(IsValid(Boss)&&Boss->UsesFinisherRevision()&&Boss->IsDead())
+        {
+            const float Shoulder=FollowFall&&bLockedOn&&ManualCameraRemaining<=0.f?DeathCameraSide*280.f:CameraBoom->SocketOffset.Y;
+            CameraBoom->SocketOffset.Y=FMath::FInterpTo(PreviousShoulder,Shoulder,DeltaSeconds,4.f);
+        }
     }
     // The spring-arm sphere sweep resolves walls and floor at steep pitch.
     // Keeping the boots visible is deliberately not a pitch restriction.

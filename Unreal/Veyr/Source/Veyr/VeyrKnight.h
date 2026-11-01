@@ -272,6 +272,7 @@ private:
     float PresentationPreviousActionElapsed=-1.f;
     bool bPresentationTransitionActive=false;
     float CameraDistance = 560.f;
+    float DeathCameraSide=0.f;
     FVector ContactCameraFocus=FVector::ZeroVector;
     bool bContactCameraFocusInitialized=false;
     float ManualCameraRemaining=0.f;

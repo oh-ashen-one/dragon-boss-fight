@@ -64,6 +64,15 @@
       "error": false,
       "reportedEstimatedUSD": 0.4744124,
       "durationMs": 60705
+    },
+    {
+      "receipt": "pacing-round2-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.5452772,
+      "durationMs": 65317
     }
   ]
 }
