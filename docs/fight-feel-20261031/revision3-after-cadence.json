@@ -1,0 +1,65 @@
+{
+  "overall": {
+    "frames": 3665,
+    "fps": 42.289213480692545,
+    "medianGapMs": 23.53493869304657,
+    "p95GapMs": 25.433961302042007,
+    "maximumGapMs": 81.4615860581398
+  },
+  "contacts": [
+    {
+      "frames": 25,
+      "fps": 42.50061205965254,
+      "medianGapMs": 23.56604114174843,
+      "p95GapMs": 24.130873382091522,
+      "maximumGapMs": 24.194996803998947,
+      "event": "leg_contact",
+      "gameSeconds": 48.16513442993164,
+      "estimatedWallSeconds": 48.062945667654276
+    },
+    {
+      "frames": 25,
+      "fps": 42.48108114630754,
+      "medianGapMs": 23.510415107011795,
+      "p95GapMs": 25.118250399827957,
+      "maximumGapMs": 25.965876877307892,
+      "event": "leg_contact",
+      "gameSeconds": 51.643409729003906,
+      "estimatedWallSeconds": 51.60680162534118
+    },
+    {
+      "frames": 25,
+      "fps": 42.54500079589639,
+      "medianGapMs": 23.55356328189373,
+      "p95GapMs": 26.417002081871033,
+      "maximumGapMs": 26.449166238307953,
+      "event": "leg_contact",
+      "gameSeconds": 68.9028091430664,
+      "estimatedWallSeconds": 68.93442029133439
+    },
+    {
+      "frames": 25,
+      "fps": 42.44991408348709,
+      "medianGapMs": 23.543082177639008,
+      "p95GapMs": 24.727623909711838,
+      "maximumGapMs": 25.10416880249977,
+      "event": "leg_contact",
+      "gameSeconds": 72.64983367919922,
+      "estimatedWallSeconds": 72.74636070802808
+    },
+    {
+      "frames": 25,
+      "fps": 42.50049290062205,
+      "medianGapMs": 23.591790348291397,
+      "p95GapMs": 24.004127830266953,
+      "maximumGapMs": 24.846166372299194,
+      "event": "head_contact",
+      "gameSeconds": 78.36451721191406,
+      "estimatedWallSeconds": 78.5732943341136
+    }
+  ],
+  "sourceId": "d43141470d0f74f873d2d4a874520fc352afed1b8074b3345300df2ece27ee9b",
+  "failedFrames": 0,
+  "qualityAccepted": false,
+  "scope": "Pixel callback timing, not scene motion or render performance. Contact wall time is the nearest capture request to the game's event."
+}

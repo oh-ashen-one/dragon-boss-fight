@@ -28,6 +28,24 @@
       "error": false,
       "reportedEstimatedUSD": 0.38619380000000003,
       "durationMs": 49901
+    },
+    {
+      "receipt": "fightfeel-r2-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.3761316,
+      "durationMs": 46422
+    },
+    {
+      "receipt": "fightfeel-r3-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.36109240000000004,
+      "durationMs": 37325
     }
   ]
 }

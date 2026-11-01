@@ -46,6 +46,11 @@ void AVeyrFightFeel::BeginPlay()
     Super::BeginPlay();
     bDisabled=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelOff"));
     bLegacy=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelLegacy"));
+    bMarkerOnlyReview=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelMarkerOnly"));
+    // Channel 1 already belongs to the knight, sword, cup and dragon.
+    // Reuse it without changing receivers or the dragon-only rim channel 2.
+    HitFlash->SetLightingChannels(bLegacy,!bLegacy,false);
+    HitFlash->SetIndirectLightingIntensity(bLegacy?1.f:0.f);
     LastRealTime=GetWorld()->GetRealTimeSeconds();
     if(UMaterialInterface* Parent=WeaponTrail->GetMaterial(0))
     {
@@ -95,8 +100,9 @@ void AVeyrFightFeel::Tick(float DeltaSeconds)
     }
     ShakeAge+=RealDelta;FlashAge+=RealDelta;FlinchAge+=DeltaSeconds;
     const bool ShowFlash=!bDisabled&&FlashAge<.18f;
-    HitFlash->SetVisibility(ShowFlash&&bLegacy);
-    HitFlash->SetIntensity(ShowFlash&&bLegacy?(500.f+900.f*FlashWeight)*FMath::Exp(-FlashAge/.045f):0.f);
+    const bool LightVisible=ShowFlash&&(bLegacy||!bMarkerOnlyReview);
+    HitFlash->SetVisibility(LightVisible);
+    HitFlash->SetIntensity(LightVisible?(500.f+900.f*FlashWeight)*FMath::Exp(-FlashAge/.045f):0.f);
     HitMarker->SetVisibility(ShowFlash&&!bLegacy);
     if(ShowFlash&&!bLegacy)
     {

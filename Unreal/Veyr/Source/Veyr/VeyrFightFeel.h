@@ -30,7 +30,7 @@ public:
     void CancelHitStop() { RestoreTime(); }
     bool IsEnabled() const {return !bDisabled;}
     bool UsesContactFraming() const {return !bDisabled&&!bLegacy;}
-    int32 GetRevision() const {return bDisabled?0:bLegacy?1:2;}
+    int32 GetRevision() const {return bDisabled?0:bLegacy?1:bMarkerOnlyReview?2:3;}
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 ShakeEvents=0,HitStopEvents=0,HitFlashEvents=0,FlinchEvents=0,TrailSamples=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") float LastHitStopSeconds=0.f,LastShakeDegrees=0.f,LastShakeDistance=0.f;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 VisibleTrailSegments=0;
@@ -41,7 +41,7 @@ private:
     TWeakObjectPtr<USkeletalMeshComponent> FlashMesh;
     FName FlashBone=NAME_None;
     FVector FlashLocalPoint=FVector::ZeroVector,FlashWorldPoint=FVector::ZeroVector;
-    bool bDisabled=false,bLegacy=false,bOwnsDilation=false,bHaveBlade=false;
+    bool bDisabled=false,bLegacy=false,bMarkerOnlyReview=false,bOwnsDilation=false,bHaveBlade=false;
     float SavedDilation=1.f,StopRemaining=0.f;
     float ShakeAge=1.f,ShakeLife=.3f,ShakeAmplitude=0.f;
     float FlashAge=1.f,FlashWeight=0.f,FlinchAge=1.f,FlinchWeight=0.f,FlinchSide=1.f;
