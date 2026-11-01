@@ -2,7 +2,9 @@
 
 Read-only source inspection for the knight/game continuation. No dragon assets have been replaced or imported by this step. The approved Roar v2 and Idle v2, Bite v6 and Rise v5 all share the same 51-bone rest rig. All 51 shared rest transforms match the v028 canonical GLB within floating-point tolerance; canonical adds only `VeyrRoot`. Canonical geometry remains protected. Report: `docs/native-source-compatibility-20261101.json`; reproduction tool: `tools/dragon_refine/inspect_native_sources.py`. Blender 5.2 LTS ran background through the shared GPU gate; source scenes were opened read-only and never saved.
 
-Next: preserve the canonical skin and root wrapper while adapting approved actions; validate sampled poses, native import, runtime playback and before/after blind review before claiming integration. Roar is still absent from the game's active v028 definition. Failed newer roar/collapse/air-land/rise-lying candidates are not implicitly approved. Work stays on `claude-code-enhancements`; no main merge/push.
+**Stopped after the game pacing change received its first blind TIE (2026-11-01).** This source inspection is complete; integration has not begun. Do not continue imports or tuning until the owner resumes. The game handoff contains the review and films.
+
+If resumed: preserve the canonical skin and root wrapper while adapting approved actions; validate sampled poses, native import, runtime playback and before/after blind review before claiming integration. Roar is still absent from the game's active v028 definition. Failed newer roar/collapse/air-land/rise-lying candidates are not implicitly approved. Work stays on `claude-code-enhancements`; no main merge/push.
 
 ---
 
