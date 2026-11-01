@@ -414,9 +414,12 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
 void AVeyrReplay::Event(const FString& Name, bool bScreenshot)
 {
     TSharedPtr<FJsonObject> O=Snapshot(); O->SetStringField(TEXT("event"),Name); Events.Add(MakeShared<FJsonValueObject>(O));
-    // Coalesce pending requests rather than giving a later frame a stale event label.
-    // Every event remains in JSON; each screenshot also carries its own sampled state.
-    if(bScreenshot&&!bPerformanceMode){CaptureQueue.Reset();CaptureQueue.Add(Name);PendingCaptureTriggerTime=Elapsed;}
+    // Standalone event PNGs use the engine's synchronous default writer. In
+    // high-cadence video runs they would stall exactly on the contact being
+    // reviewed. Keep the complete event/state JSON; the continuous video owns
+    // image evidence in that mode. Low-cadence and screenshot-only runs retain
+    // their named stills.
+    if(bScreenshot&&!bPerformanceMode&&VideoFPS<=15){CaptureQueue.Reset();CaptureQueue.Add(Name);PendingCaptureTriggerTime=Elapsed;}
     UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_EVENT seconds=%.3f event=%s"),Elapsed,*Name);
 }
 
@@ -2235,9 +2238,9 @@ void AVeyrReplay::InitializeVideo()
     if(bPerformanceMode)return;
     int32 RequestedFPS=0;
     if(!FParse::Value(FCommandLine::Get(),TEXT("VeyrVideoFPS="),RequestedFPS))return;
-    if(RequestedFPS<1||RequestedFPS>15)
+    if(RequestedFPS<1||RequestedFPS>60)
     {
-        bVideoStopped=true;VideoStopReason=TEXT("invalid FPS: accepted range is 1 through 15");
+        bVideoStopped=true;VideoStopReason=TEXT("invalid FPS: accepted range is 1 through 60");
         UE_LOG(LogTemp,Warning,TEXT("VEYR_VIDEO_DISABLED %s"),*VideoStopReason);return;
     }
     VideoFPS=RequestedFPS;VideoDirectory=FPaths::Combine(RunDirectory,TEXT("native-video"));
@@ -2260,7 +2263,7 @@ void AVeyrReplay::InitializeVideo()
     Record->SetStringField(TEXT("type"),TEXT("world_start"));Record->SetNumberField(TEXT("worldIndex"),VideoWorldIndex);
     Record->SetStringField(TEXT("sourceId"),VEYR_SOURCE_ID);Record->SetNumberField(TEXT("requestedFPS"),VideoFPS);
     Record->SetNumberField(TEXT("wallSeconds"),FPlatformTime::Seconds()-VideoStartedWallTime);
-    Record->SetStringField(TEXT("timing"),TEXT("monotonic screenshot pixel-callback time; one background PNG job; native readback and pixel copy remain on game thread; real game timestep unchanged; silent"));
+    Record->SetStringField(TEXT("timing"),TEXT("monotonic screenshot pixel-callback time; bounded four-job PNG queue; native readback and pixel copy remain on game thread; real game timestep unchanged; silent"));
     if(!AppendVideoRecord(Record))StopVideoCapture(TEXT("manifest write failed"));
 }
 
@@ -2275,11 +2278,14 @@ void AVeyrReplay::ServiceVideoCapture()
     if(Now<VideoNextWallTime)return;
     const double Interval=1./VideoFPS;
     const int32 Missed=FMath::Max(0,FMath::FloorToInt((Now-VideoNextWallTime)/Interval));
-    VideoNextWallTime=Now+Interval; // Never issue catch-up captures after a slow frame.
+    // Keep cadence anchored: Now+Interval skips alternate render frames under
+    // ordinary scheduling jitter near 60 Hz. Still issue at most one request
+    // per game tick; missed intervals are recorded, never fabricated.
+    VideoNextWallTime+=(Missed+1)*Interval;
     const IConsoleVariable* ScreenshotDelegate=IConsoleManager::Get().FindConsoleVariable(TEXT("r.ScreenshotDelegate"));
     FString SkipReason;
     if(FScreenshotRequest::IsScreenshotRequested()||!PendingVideoFile.IsEmpty())SkipReason=TEXT("screenshot busy or event priority");
-    else if(VideoWriteFuture.IsValid())SkipReason=TEXT("background PNG job busy; no queue");
+    else if(VideoWriteFutures.Num()>=MaximumVideoWriteJobs)SkipReason=TEXT("bounded background PNG queue full");
     else if(UGameViewportClient::OnScreenshotCaptured().IsBound())SkipReason=TEXT("another pixel callback owns capture");
     else if(!ScreenshotDelegate||ScreenshotDelegate->GetInt()==0)SkipReason=TEXT("native screenshot callback disabled");
     if(Missed>0||!SkipReason.IsEmpty())
@@ -2304,7 +2310,7 @@ void AVeyrReplay::OnVideoPixels(int32 Width,int32 Height,const TArray<FColor>& P
 {
     const double Captured=FPlatformTime::Seconds();
     if(PendingVideoFile.IsEmpty()||FScreenshotRequest::GetFilename()!=PendingVideoFile)return;
-    if(VideoWriteFuture.IsValid())return; // Never replace an owned in-flight job.
+    if(VideoWriteFutures.Num()>=MaximumVideoWriteJobs)return; // Never replace owned work.
     bVideoPixelsReceived=true;
     FVeyrVideoWriteResult Request;
     Request.File=PendingVideoFile;Request.SourceId=VEYR_SOURCE_ID;
@@ -2313,13 +2319,13 @@ void AVeyrReplay::OnVideoPixels(int32 Width,int32 Height,const TArray<FColor>& P
     Request.CapturedWallSeconds=Captured-VideoStartedWallTime;
     Request.RequestedWallSeconds=VideoRequestWallTime-VideoStartedWallTime;
     Request.RequestedGameSeconds=VideoRequestGameTime;
-    // At most one copied frame, capped at 64 MiB of pixels. Invalid/oversized
+    // At most four copied frames, each capped at 64 MiB of pixels. Invalid/oversized
     // frames produce a failed result without allocating a large worker copy.
     TArray<FColor> PixelCopy;
     if(Width>0&&Height>0&&static_cast<int64>(Width)*Height==Pixels.Num()&&Pixels.Num()<=16*1024*1024)
         PixelCopy=Pixels;
     Request.PixelCopySeconds=FPlatformTime::Seconds()-Captured;
-    VideoWriteFuture=Async(EAsyncExecution::ThreadPool,[Request=MoveTemp(Request),PixelCopy=MoveTemp(PixelCopy)]()
+    VideoWriteFutures.Add(Async(EAsyncExecution::ThreadPool,[Request=MoveTemp(Request),PixelCopy=MoveTemp(PixelCopy)]()
     {
         // Captures are immutable values. No this pointer, actor access, delegate,
         // manifest append or game-thread callback is needed to finish the job.
@@ -2337,30 +2343,35 @@ void AVeyrReplay::OnVideoPixels(int32 Width,int32 Height,const TArray<FColor>& P
         Result.bSaved=!PNG.IsEmpty()&&FFileHelper::SaveArrayToFile(PNG,*Request.File);
         Result.PNGWriteSeconds=FPlatformTime::Seconds()-WriteStarted;
         return Result;
-    });
+    }));
+    PeakVideoWriteJobs=FMath::Max(PeakVideoWriteJobs,VideoWriteFutures.Num());
 }
 
 void AVeyrReplay::ConsumeVideoWrite(bool bWait)
 {
-    if(!VideoWriteFuture.IsValid()||(!bWait&&!VideoWriteFuture.IsReady()))return;
-    // Normal ticks only consume ready work. Shutdown/reload may wait for this
-    // one owned task; its worker never waits for the game thread.
-    const FVeyrVideoWriteResult Result=VideoWriteFuture.Consume();
-    VideoWriteSeconds+=Result.PNGWriteSeconds;VideoPixelCopySeconds+=Result.PixelCopySeconds;
-    if(Result.bSaved)++VideoFramesSaved;else ++VideoFailedFrames;
-    TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();Record->SetStringField(TEXT("type"),Result.bSaved?TEXT("frame"):TEXT("failed_frame"));
-    Record->SetStringField(TEXT("file"),FPaths::GetCleanFilename(Result.File));Record->SetNumberField(TEXT("index"),Result.Index);
-    Record->SetStringField(TEXT("sourceId"),Result.SourceId);Record->SetNumberField(TEXT("worldIndex"),Result.WorldIndex);
-    Record->SetNumberField(TEXT("width"),Result.Width);Record->SetNumberField(TEXT("height"),Result.Height);
-    Record->SetNumberField(TEXT("wallSeconds"),Result.CapturedWallSeconds);
-    Record->SetNumberField(TEXT("requestedWallSeconds"),Result.RequestedWallSeconds);
-    Record->SetNumberField(TEXT("requestedGameSeconds"),Result.RequestedGameSeconds);
-    Record->SetNumberField(TEXT("pngWriteSeconds"),Result.PNGWriteSeconds);
-    Record->SetNumberField(TEXT("pixelCopySeconds"),Result.PixelCopySeconds);
-    Record->SetBoolField(TEXT("backgroundPNG"),true);
-    Record->SetNumberField(TEXT("pngZlibLevel"),1);
-    if(!Result.bSaved)Record->SetStringField(TEXT("reason"),TEXT("invalid/oversized pixels or PNG encode/write failure"));
-    if(!AppendVideoRecord(Record)){bVideoStopped=true;VideoStopReason=TEXT("manifest write failed");}
+    // Publish in request order even when workers finish out of order. At
+    // teardown drain only this bounded queue; workers never touch the actor.
+    while(!VideoWriteFutures.IsEmpty())
+    {
+        if(!bWait&&!VideoWriteFutures[0].IsReady())break;
+        const FVeyrVideoWriteResult Result=VideoWriteFutures[0].Consume();
+        VideoWriteFutures.RemoveAt(0);
+        VideoWriteSeconds+=Result.PNGWriteSeconds;VideoPixelCopySeconds+=Result.PixelCopySeconds;
+        if(Result.bSaved)++VideoFramesSaved;else ++VideoFailedFrames;
+        TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();Record->SetStringField(TEXT("type"),Result.bSaved?TEXT("frame"):TEXT("failed_frame"));
+        Record->SetStringField(TEXT("file"),FPaths::GetCleanFilename(Result.File));Record->SetNumberField(TEXT("index"),Result.Index);
+        Record->SetStringField(TEXT("sourceId"),Result.SourceId);Record->SetNumberField(TEXT("worldIndex"),Result.WorldIndex);
+        Record->SetNumberField(TEXT("width"),Result.Width);Record->SetNumberField(TEXT("height"),Result.Height);
+        Record->SetNumberField(TEXT("wallSeconds"),Result.CapturedWallSeconds);
+        Record->SetNumberField(TEXT("requestedWallSeconds"),Result.RequestedWallSeconds);
+        Record->SetNumberField(TEXT("requestedGameSeconds"),Result.RequestedGameSeconds);
+        Record->SetNumberField(TEXT("pngWriteSeconds"),Result.PNGWriteSeconds);
+        Record->SetNumberField(TEXT("pixelCopySeconds"),Result.PixelCopySeconds);
+        Record->SetBoolField(TEXT("backgroundPNG"),true);
+        Record->SetNumberField(TEXT("pngZlibLevel"),1);
+        if(!Result.bSaved)Record->SetStringField(TEXT("reason"),TEXT("invalid/oversized pixels or PNG encode/write failure"));
+        if(!AppendVideoRecord(Record)){bVideoStopped=true;VideoStopReason=TEXT("manifest write failed");}
+    }
 }
 
 void AVeyrReplay::OnVideoRequestProcessed()
@@ -2492,12 +2503,13 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Video->SetNumberField(TEXT("skippedSlots"),VideoSkippedSlots);Video->SetNumberField(TEXT("worldIndex"),VideoWorldIndex);
     Video->SetNumberField(TEXT("pngWriteSeconds"),VideoWriteSeconds);
     Video->SetNumberField(TEXT("pixelCopySeconds"),VideoPixelCopySeconds);
-    Video->SetBoolField(TEXT("backgroundPNGJobInFlight"),VideoWriteFuture.IsValid());
-    Video->SetNumberField(TEXT("maximumBackgroundPNGJobs"),1);
+    Video->SetBoolField(TEXT("backgroundPNGJobInFlight"),!VideoWriteFutures.IsEmpty());
+    Video->SetNumberField(TEXT("peakBackgroundPNGJobs"),PeakVideoWriteJobs);
+    Video->SetNumberField(TEXT("maximumBackgroundPNGJobs"),MaximumVideoWriteJobs);
     Video->SetNumberField(TEXT("elapsedWallSeconds"),VideoStartedWallTime>0?FPlatformTime::Seconds()-VideoStartedWallTime:0);
     Video->SetBoolField(TEXT("stopped"),bVideoStopped);Video->SetStringField(TEXT("stopReason"),VideoStopReason);
     Video->SetStringField(TEXT("manifest"),VideoFPS>0?TEXT("native-video/frames.jsonl"):TEXT(""));
-    Video->SetStringField(TEXT("scope"),TEXT("silent native viewport; wall-clock pixel timestamps; 6000 requests and 600 wall-second bounds; one background PNG job; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"));
+    Video->SetStringField(TEXT("scope"),TEXT("silent native viewport; wall-clock pixel timestamps; 6000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"));
     Root->SetObjectField(TEXT("nativeVideo"),Video);
     Root->SetStringField(TEXT("mode"),ReplayMode); Root->SetStringField(TEXT("engine"),FEngineVersion::Current().ToString());
     Root->SetStringField(TEXT("sourceId"),VEYR_SOURCE_ID);

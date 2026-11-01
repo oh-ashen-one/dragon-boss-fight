@@ -145,7 +145,9 @@ private:
     bool bVideoStopped=false, bVideoPixelsReceived=false;
     double VideoStartedWallTime=0, VideoNextWallTime=0, VideoRequestWallTime=0, VideoRequestGameTime=0;
     double VideoWriteSeconds=0, VideoPixelCopySeconds=0;
-    TFuture<FVeyrVideoWriteResult> VideoWriteFuture;
+    static constexpr int32 MaximumVideoWriteJobs=4;
+    TArray<TFuture<FVeyrVideoWriteResult>> VideoWriteFutures;
+    int32 PeakVideoWriteJobs=0;
     FString VideoDirectory, PendingVideoFile, VideoStopReason;
     FDelegateHandle VideoPixelsHandle, VideoProcessedHandle;
     TArray<double> WallFrameIntervals;

@@ -1,0 +1,12 @@
+{
+  "buildReceipt": "Local/package-20261101T040434Z/receipt.json",
+  "method": "CUA keyboard navigation in the real Shipping settings panel; saved config inspected separately",
+  "defaultOnObserved": true,
+  "allThreeOffObserved": true,
+  "offWrittenToConfig": true,
+  "offSurvivedProcessRelaunch": true,
+  "allThreeOnRestoredInUIAndConfig": true,
+  "mouseInteractionVerified": false,
+  "mouseLimitation": "CUA coordinate clicks did not activate Slate buttons; keyboard Tab/Return did. No claim of a proven game mouse defect.",
+  "affectsCombatFeedbackOnly": true
+}

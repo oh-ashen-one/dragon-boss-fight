@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Encode unchanged native viewport PNGs using their actual capture timestamps.
 
-Input: an ignored native-video/frames.jsonl produced by -VeyrVideoFPS=1..15.
+Input: an ignored native-video/frames.jsonl produced by -VeyrVideoFPS=1..60.
 Output: silent VFR H.264, timing/identity receipt and an inspectable ffconcat file.
 No image generation, interpolation, fixed-step capture or missing-frame invention.
 """
@@ -63,7 +63,7 @@ def read_capture(manifest):
     if len(dimensions) != 1:
         raise ValueError("Capture dimensions changed; encode separate runs instead of silently resizing")
     fps_values = [row["requestedFPS"] for row in records if row.get("type") == "world_start"]
-    if not fps_values or any(not isinstance(fps, (int, float)) or not 1 <= fps <= 15 for fps in fps_values):
+    if not fps_values or any(not isinstance(fps, (int, float)) or not 1 <= fps <= 60 for fps in fps_values):
         raise ValueError("Missing or invalid native requested FPS metadata")
     # The first world_end after the last pixel timestamp gives the observed tail.
     # If a process crashed without one, use one requested interval and label it.
