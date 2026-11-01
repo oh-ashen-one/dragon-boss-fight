@@ -31,7 +31,7 @@
 ## Remaining scope and next actions
 
 1. **Every-move replay delivered for owner inspection:** page port 8806, first blind PASS B, limitations above. Preserve prior rejected candidates. Data/dragon remains outside the packaged move-data path; no silent activation.
-2. **Attack candidate page:** free Fab/Mixamo and other licensed sources for weapon-true two-hand heavies, jump and running attacks. Owner picks candidates and performs store/login clicks. Current attack assets and large grip timing difference are not claimed balanced or owner-approved.
+2. **Attack candidate page staged on port 8807:** six live Mixamo animated previews, free Epic Kwang listing still and free Kevin Iglesias 2H alternative. Source ledger/fit notes in `docs/attack-candidates-20261101/`. Owner selection question is pending; owner handles store/login/download clicks. No new asset acquisition, retarget or import. Current attack assets and large grip timing difference are not claimed balanced or owner-approved.
 3. Sprint feel, idle wing spread, heal-cup motion, music/SFX remain open.
 4. Preserve remaining critic notes: early aerial framing/untargetable stretches; dark knight/weapon overlap during close head punishes; limited weapon visibility in the final pose. The passes are relative quality improvements, not a perfect-camera or whole-game approval. Recheck timings after future animation changes.
 
