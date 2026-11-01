@@ -6,6 +6,7 @@
 #include "AnimationRuntime.h"
 #include "Engine/SkeletalMesh.h"
 #include "Animation/Skeleton.h"
+#include "TwoBoneIK.h"
 
 namespace
 {
@@ -71,6 +72,53 @@ namespace
         TArray<FBoneIndexType> MaskBoneMap;
         TArray<float> LowerMask,LowerWeights;
         TMap<FName,FRotator> BoneRotations;
+        TArray<FTransform> FootTargets;
+        TArray<float> FootWeights;
+
+        bool ApplyFootTargets(FPoseContext& Output)
+        {
+            if(FootTargets.IsEmpty())return true;
+            const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
+            const FReferenceSkeleton& Ref=Bones.GetReferenceSkeleton();
+            TArray<FTransform> CS;CS.SetNum(Output.Pose.GetNumBones());
+            for(FCompactPoseBoneIndex I:Output.Pose.ForEachBoneIndex())
+            {
+                const auto Parent=Bones.GetParentBoneIndex(I);
+                CS[I.GetInt()]=Parent.GetInt()==INDEX_NONE?Output.Pose[I]:Output.Pose[I]*CS[Parent.GetInt()];
+            }
+            const TCHAR* Names[2][3]={{TEXT("LeftUpLeg"),TEXT("LeftLeg"),TEXT("LeftFoot")},{TEXT("RightUpLeg"),TEXT("RightLeg"),TEXT("RightFoot")}};
+            for(int32 Side=0;Side<2;++Side)
+            {
+                if(FootWeights[Side]<=0.f)continue;
+                FCompactPoseBoneIndex Indices[3];
+                for(int32 J=0;J<3;++J)
+                {
+                    const int32 Mesh=Ref.FindBoneIndex(Names[Side][J]);
+                    if(Mesh==INDEX_NONE){EvaluationError=TEXT("Foot IK bone missing");return false;}
+                    Indices[J]=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Mesh));
+                    if(Indices[J].GetInt()==INDEX_NONE){EvaluationError=TEXT("Foot IK bone not evaluated");return false;}
+                }
+                if(Bones.GetParentBoneIndex(Indices[2])!=Indices[1]||Bones.GetParentBoneIndex(Indices[1])!=Indices[0])
+                {EvaluationError=TEXT("Foot IK requires direct two-bone leg chains");return false;}
+                FTransform Upper=CS[Indices[0].GetInt()],Knee=CS[Indices[1].GetInt()],Foot=CS[Indices[2].GetInt()];
+                const FQuat FootRotation=FQuat::Slerp(Foot.GetRotation(),FootTargets[Side].GetRotation(),FootWeights[Side]).GetNormalized();
+                const FVector Target=FMath::Lerp(Foot.GetLocation(),FootTargets[Side].GetLocation(),FootWeights[Side]);
+                const double UpperLength=FVector::Distance(Upper.GetLocation(),Knee.GetLocation());
+                const double LowerLength=FVector::Distance(Knee.GetLocation(),Foot.GetLocation());
+                const FVector Pole=Knee.GetLocation()+(Knee.GetLocation()-(Upper.GetLocation()+Foot.GetLocation())*.5).GetSafeNormal()*100.f;
+                AnimationCore::SolveTwoBoneIK(Upper,Knee,Foot,Pole,Target,false,1.,1.);
+                if(!FMath::IsNearlyEqual(FVector::Distance(Upper.GetLocation(),Knee.GetLocation()),UpperLength,.01)||
+                   !FMath::IsNearlyEqual(FVector::Distance(Knee.GetLocation(),Foot.GetLocation()),LowerLength,.01))
+                {EvaluationError=TEXT("Foot correction changed leg length");return false;}
+                Foot.SetRotation(FootRotation);
+                const auto Parent=Bones.GetParentBoneIndex(Indices[0]);
+                Output.Pose[Indices[0]]=Parent.GetInt()==INDEX_NONE?Upper:Upper.GetRelativeTransform(CS[Parent.GetInt()]);
+                Output.Pose[Indices[1]]=Knee.GetRelativeTransform(Upper);
+                Output.Pose[Indices[2]]=Foot.GetRelativeTransform(Knee);
+                for(int32 J=0;J<3;++J)Output.Pose[Indices[J]].NormalizeRotation();
+            }
+            return true;
+        }
 
         bool ApplyBoneRotations(FPoseContext& Output)
         {
@@ -186,6 +234,7 @@ namespace
             LastPublished.bValid=TransitionSource.bValid=false;Alpha=1.f;
             EvaluationError.Reset();EvaluationSerial=0;
             LowerSequence=nullptr;LowerSeconds=LowerWeight=0.f;BoneRotations.Reset();
+            FootTargets.Reset();FootWeights.Reset();
             MaskAsset.Reset();MaskBoneMap.Reset();LowerMask.Reset();LowerWeights.Reset();
         }
 
@@ -224,6 +273,7 @@ namespace
                     FAnimationRuntime::BlendTwoPosesTogetherInPlace(DestinationData,SourceData,Alpha);
                 }
             }
+            if(!ApplyFootTargets(Output)){LastPublished.bValid=false;return true;}
             if(Output.ContainsNaN())
             {
                 EvaluationError=TEXT("Explicit pose transition produced a non-finite pose");
@@ -241,6 +291,18 @@ namespace
 FAnimInstanceProxy* UVeyrSingleNodeInstance::CreateAnimInstanceProxy()
 {
     return new FVeyrSingleNodeProxy(this);
+}
+
+bool UVeyrSingleNodeInstance::SetExplicitFootTargets(const TArray<FTransform>& Targets,const TArray<float>& Weights)
+{
+    if(!IsInGameThread()||Targets.Num()!=2||Weights.Num()!=2)return false;
+    for(int32 I=0;I<2;++I)if(Targets[I].ContainsNaN()||!FMath::IsFinite(Weights[I])||Weights[I]<0.f||Weights[I]>1.f)return false;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();P.FootTargets=Targets;P.FootWeights=Weights;return true;
+}
+void UVeyrSingleNodeInstance::ClearExplicitFootTargets()
+{
+    if(!IsInGameThread())return;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();P.FootTargets.Reset();P.FootWeights.Reset();
 }
 
 bool UVeyrSingleNodeInstance::CaptureTransitionSource()

@@ -26,6 +26,9 @@ public:
      * destination pose before transition blending and publication. */
     bool SetExplicitBoneRotations(const TMap<FName,FRotator>& Rotations);
     void ClearExplicitBoneRotations();
+    /** Two component-space ankle targets, L/R. Corrective IK only; never stretches limbs. */
+    bool SetExplicitFootTargets(const TArray<FTransform>& Targets,const TArray<float>& Weights);
+    void ClearExplicitFootTargets();
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
 private:

@@ -240,6 +240,7 @@ void AVeyrKnight::BeginPlay()
     bLockOnStrafeEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoLockOnStrafe"));
     bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
     float RequestedRunStopBlend=0.f;
+    bSprintContactRevision=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintContactRevision"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
@@ -1249,6 +1250,8 @@ void AVeyrKnight::UpdateEquippedWeapon()
 void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
 {
     if(!bImportedPresentationActive||!ImportedPresentation||!CustomuseVisualDefinition)return;
+    // Detect contacts on the sourced/blended pose, not last frame's IK result.
+    ImportedPresentation->ClearFootTargets();
     const bool Moving=Action==EVeyrKnightAction::Ready&&IsGrounded()&&GetPlanarSpeed()>8.f&&!bLateralDodgeBlocked;
     FName Clip=Action==EVeyrKnightAction::Ready?(Moving?SelectDirectionalLocomotion(true):(bTwoHanded?FName(TEXT("IdleTwoHand")):FName(TEXT("Idle")))):ActionPresentationClip;
     float Time=Action==EVeyrKnightAction::Ready?VisualClock:ActionElapsed;
@@ -1304,7 +1307,8 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
            ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),W))
         {WeaponGripTarget=W.GetRelativeTransform(H);bWeaponGripBlendActive=true;WeaponGripAlpha=Alpha;}
     }
-    const bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,SampleTime,Alpha);
+    bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,SampleTime,Alpha);
+    if(Sampled)Sampled=UpdateLocomotionFootContacts(DeltaSeconds);
     if(Alpha>=1.f)bPresentationTransitionActive=false;
     bRequestedPresentationClipSampled=Sampled;bPresentationUsingFallback=!Sampled;
     PresentationPreviousActionElapsed=Action==EVeyrKnightAction::Ready?-1.f:ActionElapsed;
@@ -1314,6 +1318,58 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     if(Sampled){SetPresentationDiagnostic(FString());return;}
     SetPresentationDiagnostic(TEXT("Native approved clip evaluation failed: ")+Clip.ToString()+TEXT("; ")+ImportedPresentation->LastError);
     // Keep failures explicit and harmless: never substitute an attack or deal fallback damage.
+}
+
+bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
+{
+    const bool Eligible=bSprintContactRevision&&IsGrounded()&&!IsLockOnStrafing()&&
+        (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::RunStop);
+    if(!Eligible||DeltaSeconds<=0.f||DeltaSeconds>.1f)
+    {
+        for(auto& F:LocomotionFeet)F=FLocomotionFootPlant();
+        return true;
+    }
+    const FVector Velocity=GetVelocity();const FVector Travel=Velocity.GetSafeNormal2D();
+    const float Floor=GetFootLocation().Z;
+    const TCHAR* ToeNames[2]={TEXT("left_foot"),TEXT("right_foot")};
+    const FName AnkleNames[2]={TEXT("LeftFoot"),TEXT("RightFoot")};
+    TArray<FTransform> Targets;TArray<float> Weights;
+    for(int32 Side=0;Side<2;++Side)
+    {
+        auto& F=LocomotionFeet[Side];FTransform Toe;
+        if(!ImportedPresentation->GetBoneTargetWorldTransform(ToeNames[Side],Toe))return false;
+        if(ImportedPresentation->GetBoneIndex(AnkleNames[Side])==INDEX_NONE)return false;
+        const FTransform Raw=ImportedPresentation->GetSocketTransform(AnkleNames[Side],RTS_World);
+        const float ToeHeight=Toe.GetLocation().Z-Floor,AnkleHeight=Raw.GetLocation().Z-Floor;
+        const FVector RelativeVelocity=F.bHasPrevious?(Raw.GetLocation()-F.PreviousRaw)/DeltaSeconds-Velocity:FVector::ZeroVector;
+        const float SwingSpeed=FVector::DotProduct(RelativeVelocity,Travel);
+        const bool Lifted=ToeHeight>10.f||AnkleHeight>24.5f;
+        const bool Swinging=GetPlanarSpeed()>30.f&&SwingSpeed>100.f;
+        const bool TooFar=F.bLocked&&FVector::Dist2D(Toe.GetLocation(),F.AnchorToe)>130.f;
+        // Raw world velocity includes the actor's turn. It can reject a new
+        // contact, but must not release an already planted foot during a pivot.
+        if(F.bLocked&&(Lifted||TooFar))F.bLocked=false;
+        if(!F.bLocked&&F.Weight<=.001f&&!Lifted&&!Swinging&&ToeHeight<=7.5f&&AnkleHeight<=22.f)
+        {
+            F.Anchor=Raw;
+            // Only correct an actually submerged toe marker; normal bone-to-sole
+            // height is preserved. No new gait or limb length is authored here.
+            F.Anchor.AddToTranslation(FVector(0,0,FMath::Max(0.f,-ToeHeight)));
+            F.AnchorToe=Toe.GetLocation();F.AnchorToe.Z=FMath::Max(double(Floor),F.AnchorToe.Z);
+            F.bLocked=true;F.Weight=1.f;
+        }
+        if(!F.bLocked)F.Weight=FMath::Max(0.f,F.Weight-DeltaSeconds/.06f);
+        // Anchor the toe while retaining the source's heel roll and foot
+        // orientation. On release the authored vertical lift is immediate;
+        // only the planar correction fades, so a lifting foot cannot skate
+        // across the floor while a full-transform blend holds it down.
+        FVector Correction=(F.AnchorToe-Toe.GetLocation())*F.Weight;
+        if(!F.bLocked)Correction.Z=0.f;
+        FTransform Target=Raw;Target.AddToTranslation(Correction);
+        Targets.Add(Target.GetRelativeTransform(ImportedPresentation->GetComponentTransform()));Weights.Add(F.Weight>.001f?1.f:0.f);
+        F.PreviousRaw=Raw.GetLocation();F.bHasPrevious=true;
+    }
+    return ImportedPresentation->SetComponentSpaceFootTargets(Targets,Weights);
 }
 
 bool AVeyrKnight::GetProofWeaponWorld(FTransform& Out) const

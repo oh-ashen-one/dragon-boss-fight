@@ -2,13 +2,16 @@
 
 **Goal active. The resumed pacing/death pass has two independent blind Opus PASS verdicts. Full backlog is unfinished; every-move replay is filmed and has a scoped first-round blind PASS.** HP stayed 650 throughout the resumed fixes. Only game branches: `fable/knight-complete-20261028` here and `claude-code-enhancements` in the dragon checkout. No main merge/push.
 
-## Sprint continuation — measured baseline, no gameplay correction yet
+## Sprint continuation — opt-in correction in progress
 
 - Attack selection/download remains owner-dependent on page 8807. Independent sprint pass uses already approved Fab Run/RunTwoHand; no new motion/asset change.
 - Added `-VeyrSprintProof` to blendproof: four ordinary-input start/stop and walk/run/walk trials, both grips, passive boss, side camera/checker. Existing foot/grip thresholds retained; records speed, clip phase and sprint request.
 - Harness-only Shipping receipt `Local/package-20261101T230709Z/receipt.json`, source `305b39127115bb18717a7d471acc886d624cc5c967c445f877bb734199b876bc`, verified app `/private/tmp/veyr-verified-bundle-i287w93v/Veyr-Mac-Shipping.app`. This is newest Shipping; gameplay is unchanged from accepted pacing/showcase build.
 - Native baseline `native-blendproof-20261101T230912Z`: 47.174 game seconds; all four sequences completed, all four foot gates failed, weapon grip passed. Clean app exit; scenario exit 1 is a measurement failure, not a crash. No engine remains. Baseline film encoded in chat outputs/sprint-review-20261101/before.mp4.
-- Diagnostics and interpretation in `docs/sprint-20261101/PLAN.md` and baseline-results.json. Peak drift includes natural start turnarounds; do not mistake all unblended drift for steady straight-line error. Source stance phase is broadly aligned, and small-sample nominal-speed estimates are not calibration authority. Next: focused runtime transition/contact correction with legacy flag, matched film/critic and victory regression. Sprint is not done or quality-approved.
+- First opt-in contact pilot is compiled/filmed but rejected: source `1d40b3a513ad3225baf7fad8cae100d679c268b181b2d6be7c2ca39d522d4425`, run `native-blendproof-20261101T232105Z`, 0/4 foot gates. One-hand steady improved to 39.9 cm/s; two-hand turnaround release worsened to 1469.8 cm/s. No blind verdict or default activation.
+- Second opt-in pilot completed: `native-blendproof-20261101T232837Z`, source `ba452f6fdb0b37a82b01ed715d64d2cc6200c1bb07863d3d3da9d3b2dcd01d80`, 0/4 foot gates. Both SprintStop steady maxima are below 60 (39.0 / 1.1); transition and walk/turn failures remain. Flag enabled in all 185 snapshots, no native pose/bone-length errors. App exited cleanly.
+- Third opt-in pilot is packaging via `work/sprint-contact3-package.log`: toe anchoring retains sourced heel roll/orientation, and vertical lift is released independently from planar correction. Per-frame anchor weights added. Check actual process/receipt before launching; no duplicate jobs. No blind verdict and flag remains off by default.
+- Diagnostics and interpretation in `docs/sprint-20261101/PLAN.md` and baseline-results.json. Peak drift includes natural start turnarounds; do not mistake all unblended drift for steady straight-line error. Source stance phase is broadly aligned, and small-sample nominal-speed estimates are not calibration authority. Next: finish second pilot, diagnose remaining contact failures; then same-build default/opt-in films, blind review and victory regression. The feature stays behind `-VeyrSprintContactRevision`, off by default. Sprint is not done or quality-approved.
 
 ## Every-move replay checkpoint (filmed; blind PASS)
 

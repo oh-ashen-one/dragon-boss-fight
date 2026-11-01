@@ -93,6 +93,9 @@ public:
      * blending/publication, so all rendered and queried targets use one pose.
      * Empty map clears; reference-pose sampling also clears. No time advances. */
     bool SetComponentSpaceBoneRotations(const TMap<FName,FRotator>& Rotations);
+    /** Re-evaluate the current explicit pose with bounded corrective foot targets. */
+    bool SetComponentSpaceFootTargets(const TArray<FTransform>& Targets,const TArray<float>& Weights);
+    void ClearFootTargets();
 
     /** Offset is applied in bone-local space: LocalOffset * BoneWorldTransform.
      * Requires a successful sample; missing/unevaluated bones fail with Identity

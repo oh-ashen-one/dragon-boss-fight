@@ -47,6 +47,8 @@ public:
     UFUNCTION(BlueprintCallable, Category="Input") void PressPrimaryAttack();
     UFUNCTION(BlueprintCallable, Category="Input") void ReleasePrimaryAttack();
     UFUNCTION(BlueprintPure, Category="Input") bool IsSprinting() const { return bSprintHeld; }
+    bool UsesSprintContactRevision() const { return bSprintContactRevision; }
+    float GetLocomotionFootWeight(int32 Side) const { return Side>=0&&Side<2?LocomotionFeet[Side].Weight:0.f; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsChangingGrip() const { return Action==EVeyrKnightAction::GripToTwoHand||Action==EVeyrKnightAction::GripToOneHand; }
     /** Elapsed trimmed source seconds, including a primary-combo segment offset. */
     UFUNCTION(BlueprintPure, Category="Combat") float GetActionSourceSeconds() const;
@@ -226,6 +228,16 @@ private:
     float BlinkCooldownRemaining=0.f;
     bool bWasRunning=false;
     bool bSprintHeld=false;
+    struct FLocomotionFootPlant
+    {
+        FTransform Anchor=FTransform::Identity;
+        FVector AnchorToe=FVector::ZeroVector;
+        FVector PreviousRaw=FVector::ZeroVector;
+        float Weight=0.f;
+        bool bLocked=false,bHasPrevious=false;
+    };
+    FLocomotionFootPlant LocomotionFeet[2];
+    bool bSprintContactRevision=false;
     bool bPrimaryAttackHeld=false,bPrimaryAttackBuffered=false,bPrimaryChainActive=false,bStartingPrimaryStep=false;
     int32 PrimaryChainStep=0,PrimarySwingBase=0;
     float PrimarySourceOffset=0.f;
@@ -339,6 +351,7 @@ private:
     void RestoreCameraOcclusion();
     void UpdateTemporaryPresentation(float DeltaSeconds);
     void UpdateImportedPresentation(float DeltaSeconds=0.f);
+    bool UpdateLocomotionFootContacts(float DeltaSeconds);
     FName SelectDirectionalLocomotion(bool bAllowRun) const;
     void UpdateHealFlask();
     void SetPresentationDiagnostic(const FString& Diagnostic);

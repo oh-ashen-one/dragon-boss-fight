@@ -267,6 +267,21 @@ bool UVeyrSkeletalPresentation::BeginTransition()
     return true;
 }
 
+void UVeyrSkeletalPresentation::ClearFootTargets()
+{
+    if(!IsInGameThread())return;
+    HandleExistingParallelEvaluationTask(true,true);
+    if(auto* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance()))I->ClearExplicitFootTargets();
+}
+bool UVeyrSkeletalPresentation::SetComponentSpaceFootTargets(const TArray<FTransform>& Targets,const TArray<float>& Weights)
+{
+    if(!IsInGameThread()||!bPoseEvaluated||!CheckReady())return false;
+    HandleExistingParallelEvaluationTask(true,true);
+    auto* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    if(!I||!I->SetExplicitFootTargets(Targets,Weights))return Fail(TEXT("Invalid corrective foot targets"));
+    return EvaluatePoseSynchronously();
+}
+
 bool UVeyrSkeletalPresentation::SampleClipTimeInternal(FName ClipName, float ElapsedSeconds, float Alpha, bool bBlend, bool bKeepLowerLayer)
 {
     if(!IsInGameThread())return false;

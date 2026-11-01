@@ -32,7 +32,8 @@ public:
         FVector Capsule=FVector::ZeroVector, Toe[2]={FVector::ZeroVector,FVector::ZeroVector}, Ankle[2]={FVector::ZeroVector,FVector::ZeroVector};
         FVector Sword=FVector::ZeroVector, Hand=FVector::ZeroVector, SwordLocal=FVector::ZeroVector;
         bool bSwordValid=false, bHandValid=false, bFeetValid=false, bSprintRequested=false;
-        float Speed=0.f, ClipPhase=0.f;
+        float Speed=0.f, ClipPhase=0.f, ActorYaw=0.f;
+        float FootAnchorWeight[2]={0.f,0.f};
         float SwordHandCm=0.f, SwordExcessCm=0.f, SwordLocalErrCm=0.f;
         float CapsuleTravel=0.f, ToeTravel[2]={0.f,0.f}, AnkleTravel[2]={0.f,0.f};
         float ToeHeight[2]={0.f,0.f}, AnkleHeight[2]={0.f,0.f};

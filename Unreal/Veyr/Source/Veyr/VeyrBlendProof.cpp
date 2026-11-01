@@ -210,6 +210,8 @@ void FVeyrBlendProof::Sample(double Elapsed,float Dt)
     F.Action=StaticEnum<EVeyrKnightAction>()->GetNameStringByValue(static_cast<int64>(K->Action));
     F.ActionElapsed=K->GetActionElapsed();F.bHidden=K->bBlinkHidden;
     F.Speed=K->GetPlanarSpeed();F.bSprintRequested=K->IsSprinting();F.ClipPhase=P?P->CurrentPhase:0.f;
+    F.ActorYaw=K->GetActorRotation().Yaw;
+    for(int32 Side=0;Side<2;++Side)F.FootAnchorWeight[Side]=K->GetLocomotionFootWeight(Side);
     F.Capsule=K->GetActorLocation();F.FloorZ=K->GetFootLocation().Z;
     FTransform HandT,SwordT,T;
     if(P&&P->bPoseEvaluated)
@@ -623,6 +625,8 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         O->SetBoolField(TEXT("blending"),F.bBlend);O->SetNumberField(TEXT("transition"),F.Serial);O->SetStringField(TEXT("action"),F.Action);O->SetNumberField(TEXT("actionElapsed"),F.ActionElapsed);
         O->SetBoolField(TEXT("blinkHidden"),F.bHidden);
         O->SetBoolField(TEXT("sprintRequested"),F.bSprintRequested);O->SetNumberField(TEXT("speedCmPerSecond"),F.Speed);O->SetNumberField(TEXT("clipPhase"),F.ClipPhase);
+        O->SetNumberField(TEXT("actorYawDegrees"),F.ActorYaw);
+        O->SetArrayField(TEXT("footAnchorWeight"),{MakeShared<FJsonValueNumber>(F.FootAnchorWeight[0]),MakeShared<FJsonValueNumber>(F.FootAnchorWeight[1])});
         O->SetArrayField(TEXT("capsule"),Vec(F.Capsule));O->SetNumberField(TEXT("capsuleTravelCm"),F.CapsuleTravel);O->SetNumberField(TEXT("floorZ"),F.FloorZ);
         O->SetArrayField(TEXT("toeL"),Vec(F.Toe[0]));O->SetArrayField(TEXT("toeR"),Vec(F.Toe[1]));
         O->SetArrayField(TEXT("ankleL"),Vec(F.Ankle[0]));O->SetArrayField(TEXT("ankleR"),Vec(F.Ankle[1]));

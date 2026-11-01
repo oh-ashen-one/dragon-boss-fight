@@ -24,3 +24,23 @@ Harness-only Shipping `Local/package-20261101T230709Z/receipt.json`, source `305
 Interpretation limits: “steady” means unblended, not necessarily straight or constant-speed. Setup walks backward to each start, so the following forward sprint includes a natural turnaround; images at t=16.66 and 17.4 confirm rotation settles during the first part of the 2H trial. Do not misattribute its entire 780 cm/s maximum to stride mismatch. Among constant-speed (>550), unblended planted-foot samples, median signed world drift is about -51 cm/s right and -65 cm/s left; the implied source stance speed is 871–891 versus configured 800. Left stance sample count is only two per clip in this run, so this is a diagnostic, not sufficient calibration authority. Native run stance phases are ~0.47 left / ~0.97 right; walk phases broadly agree (~0.5 / ~0.92), so a wholesale phase offset is not supported.
 
 A fixed-rate increase alone is not an adequate fix. Next investigate outgoing-pose continuation and foot contacts across start/downshift/stop, separately from turning. Preserve source assets, baseline films and strict gate. Add actor facing to per-frame diagnostics for the correction comparison. After the focused correction, capture same-build legacy/revision views plus actual gameplay camera, then blind review and combat regression.
+
+## Opt-in contact candidate (unreviewed)
+
+`-VeyrSprintContactRevision` enables corrective stance anchoring only for grounded, unlocked Ready/RunStop locomotion. No source animation, speed, cadence, attack or damage change. The actor samples the uncorrected native pose, tracks low-foot contact and swing/lift/reach release, then re-evaluates with component-space ankle targets. The native proxy uses Epic AnimationCore two-bone IK without limb stretching, after the existing pose transition and before published bone/render data. Locked feet release over 60 ms when the sourced motion lifts/swings them or the correction exceeds 65 cm. A submerged toe marker may be lifted to floor level; normal bone/sole height is retained. Source curves/upper body are unchanged. Default gameplay remains legacy until review.
+
+The pilot must verify no missing-bone fallback, finite transforms, unchanged bone lengths, contact release/no stuck feet, knee bend and rendered transitions. Existing foot/grip limits are not relaxed. Current Shipping compile succeeded; package/pilot pending. Actor yaw was added to evidence so turnaround drift can be distinguished from straight running. No quality claim or blind verdict yet.
+
+
+### First contact pilot: rejected before blind review
+
+Source `1d40b3a513ad3225baf7fad8cae100d679c268b181b2d6be7c2ca39d522d4425`, package 231844, run `native-blendproof-20261101T232105Z`: all four completed, all foot gates still failed. One-hand steady peak improved 203.5→39.9 cm/s, but two-hand start transition worsened to 1469.8 cm/s. Exact results in contact-pilot1-results.json. Native frames and yaw telemetry show the held foot released around alpha .5 during a 180-degree startup turn, then travelled 49 cm in 34 ms while still low. The world-relative velocity was incorrectly used to release an already planted foot. This candidate is not accepted and remains opt-in.
+
+Second pilot removes velocity-based release for an existing plant (velocity still prevents false acquisition), retaining actual lift release; the raw-displacement escape is increased from 65 to 130 cm to avoid reacting to the rotation sweep. The solver still forbids stretching; explicit native upper/lower bone-length invariants and missing-ankle rejection were added. Runtime evidence now records the enabled flag and foot weights. Package/capture pending; no default activation or quality verdict.
+
+
+### Second pilot and next correction
+
+`native-blendproof-20261101T232837Z`, source `ba452f6fdb0b37a82b01ed715d64d2cc6200c1bb07863d3d3da9d3b2dcd01d80`, package 232613: all four completed, foot gates 0/4. Enabled flag observed in all 185 snapshots; no native presentation diagnostic or bone-length failure. SprintStop steady maxima are now 39.0 (1H) and 1.1 (2H) cm/s, but transitions remain 406 / 291 cm/s; WalkSprintWalk also fails. Results preserved in contact-pilot2-results.json.
+
+Next pilot keeps the toe anchor but follows the source foot orientation/heel roll, and releases vertical correction immediately on sourced lift while fading only planar correction. Full-transform release had held the foot low while moving it. Per-frame anchor weights are now recorded. This is still opt-in and unreviewed; no source motion, gait speed or gate limit was altered. Package/capture pending.
