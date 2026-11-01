@@ -307,6 +307,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("knightFallback"),Knight->bPresentationUsingFallback);
     O->SetStringField(TEXT("dragonClip"),Dragon->ImportedPresentation?Dragon->ImportedPresentation->CurrentClip.ToString():FString());
     O->SetStringField(TEXT("dragonMissingClip"),Dragon->MissingVisualClip.ToString());
+    O->SetBoolField(TEXT("pacingRevision"),Dragon->UsesPacingRevision());
+    O->SetNumberField(TEXT("dragonClipPhase"),Dragon->ImportedPresentation?Dragon->ImportedPresentation->CurrentPhase:0.f);
     O->SetNumberField(TEXT("comboAttacks"),Knight->ComboAttacks);
     O->SetNumberField(TEXT("rollAttacks"),Knight->RollAttacks);
     O->SetNumberField(TEXT("blinkDodges"),Knight->BlinkDodges);
@@ -373,6 +375,9 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         Metrics->SetNumberField(TEXT("yaw"),Knight->CombatCamera->GetComponentRotation().Yaw);
         Metrics->SetNumberField(TEXT("requestedArmCm"),Knight->CameraBoom->TargetArmLength);
         Metrics->SetNumberField(TEXT("fieldOfViewDegrees"),Knight->CombatCamera->FieldOfView);
+        Metrics->SetBoolField(TEXT("dragonVisibilityMaterialReady"),Dragon->bCameraOcclusionReady);
+        Metrics->SetBoolField(TEXT("dragonVisibilityMaterialEnabled"),Dragon->bCameraOcclusionEnabled);
+        Metrics->SetStringField(TEXT("dragonVisibilityDiagnostic"),Dragon->CameraOcclusionDiagnostic);
         Metrics->SetNumberField(TEXT("pivotDistanceCm"),FVector::Distance(Pivot,Camera));
         Metrics->SetBoolField(TEXT("collisionFixApplied"),Knight->CameraBoom->IsCollisionFixApplied());
         Metrics->SetNumberField(TEXT("hiddenProxyParts"),Knight->CameraHiddenProxyParts);
@@ -2515,7 +2520,19 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
     {
         TerminalClock+=DeltaSeconds;
         const float Settle=Dragon->IsDead()?FMath::Max(3.6f,Dragon->GetStateDuration()+.2f):3.6f;
-        if(TerminalClock>=Settle&&TerminalClock-DeltaSeconds<Settle)Event(TEXT("terminal_pose_settled"));
+        if(TerminalClock>=Settle&&TerminalClock-DeltaSeconds<Settle)
+        {
+            if(Dragon->IsDead()&&Dragon->UsesPacingRevision())
+            {
+                const auto* Pose=Dragon->ImportedPresentation.Get();
+                const bool Fall=Pose&&(Pose->CurrentClip==FName(TEXT("DeathFall"))||Pose->CurrentClip==FName(TEXT("DeathFallDown")));
+                if(!Fall||!Pose->bPoseEvaluated||Pose->bCurrentClipLoops||Pose->CurrentPhase<.99f)
+                {Finish(false,TEXT("pacing candidate did not finish its native non-looping death fall"));return;}
+                if(!Dragon->bCameraOcclusionReady)
+                {Finish(false,TEXT("pacing candidate visibility material was not bound at terminal verification"));return;}
+            }
+            Event(TEXT("terminal_pose_settled"));
+        }
         // Leave enough time for the requested terminal screenshot to reach disk.
         if(TerminalClock>=Settle+.9f&&!FScreenshotRequest::IsScreenshotRequested())
         {

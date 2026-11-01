@@ -4,7 +4,7 @@
 
 ## Active round-2 checkpoint
 
-- Shipping code compile passed: source `4ddc5188…`, receipt `Local/unreal-build-20261101T175855557261Z/receipt.json`. Latest packaged/player-verified build is still the earlier 075300 package; new death/material assets are not imported yet.
+- Shipping code compile passed: latest source `a24974ac…`, receipt `Local/unreal-build-20261101T181315807396Z/receipt.json`. Candidate victory now also requires the actual final death-fall pose and visibility-material binding; the first compiler error in this guard was fixed with TObjectPtr.Get(). Latest packaged/player-verified build is still the earlier 075300 package; new death/material assets are not imported yet.
 - Source revision keeps 650 HP, targets nearby limbs for locked attacks, leaves a 1.25 s post-move opening, shifts damage toward normal contacts, lowers close camera focus, and waits for actual death-animation duration. Legacy flag preserves the comparison behavior. No new runtime/quality pass claimed.
 - Baseline event audit: first hit 63.812 s, next gap 35.387 s, 79.077% HP lost in four seconds. New audit has three passing safety tests.
 - GPU streaming flag currently gives zero capture slots. Blender export is queued (`dragon-boss-fight/Local/native-pacing-20261101/export-wait.log`); editor is queued (`Local/pacing-editor-20261101/launcher-ready.log`). Both current waits are bounded at 3600 s. Check actual receipts/processes before any relaunch; no gate edits/overrides. Initial 180 s waits exited 75 without rendering.

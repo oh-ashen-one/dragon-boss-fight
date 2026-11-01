@@ -13,6 +13,20 @@ from PIL import Image
 from encode_video import read_capture
 
 
+def make_sheets(source, selected, origin, directory, label):
+    pages=[]
+    for page,start in enumerate(range(0,len(selected),16),1):
+        tile_frames=selected[start:start+16]
+        sheet=Image.new('RGB',(1920,1080))
+        for index,frame in enumerate(tile_frames):
+            with Image.open(source/frame['file']) as im:
+                sheet.paste(im.convert('RGB').resize((480,270),Image.Resampling.LANCZOS),
+                            ((index%4)*480,(index//4)*270))
+        name=f'{label}-{page:02}.jpg';sheet.save(directory/name,quality=94)
+        pages.append({'file':name,'tileElapsedSeconds':[round(f['wallSeconds']-origin,3) for f in tile_frames]})
+    return pages
+
+
 def prepare(before, after, directory, mapping_file):
     directory, mapping_file = directory.resolve(), mapping_file.resolve()
     if mapping_file.is_relative_to(directory):
@@ -28,6 +42,7 @@ def prepare(before, after, directory, mapping_file):
         raise ValueError('Pacing comparison must use the same build')
     directory.mkdir(parents=True)
     manifest = {'scope': 'Uniform 2-second native frame samples, plus the last frame; '
+                'ending sheets sample the final 10 seconds every 0.25 seconds for the death transition. '
                 'read sheets left-to-right then top-to-bottom. Black cells are padding. '
                 'No generated/interpolated frames. Sheets show temporal progress but '
                 'cannot establish continuous motion quality or human gameplay feel.',
@@ -43,21 +58,19 @@ def prepare(before, after, directory, mapping_file):
             target += 2.0
         if chosen[-1]['file'] != frames[-1]['file']:
             chosen.append(frames[-1])
-        pages = []
-        for page, start in enumerate(range(0, len(chosen), 16), 1):
-            tile_frames = chosen[start:start + 16]
-            sheet = Image.new('RGB', (1920, 1080))
-            for index, frame in enumerate(tile_frames):
-                with Image.open(path.parent / frame['file']) as im:
-                    sheet.paste(im.convert('RGB').resize((480, 270), Image.Resampling.LANCZOS),
-                                ((index % 4) * 480, (index // 4) * 270))
-            name = f'{label}-timeline-{page:02}.jpg'
-            sheet.save(directory / name, quality=94)
-            pages.append({'file': name, 'tileElapsedSeconds':
-                          [round(f['wallSeconds'] - origin, 3) for f in tile_frames]})
+        pages=make_sheets(path.parent,chosen,origin,directory,f'{label}-timeline')
+        last=frames[-1]['wallSeconds']
+        target=max(frames[0]['wallSeconds'],last-10.0)
+        ending=[]
+        while target<last:
+            ending.append(min(frames,key=lambda f:abs(f['wallSeconds']-target)))
+            target+=.25
+        if not ending or ending[-1]['file']!=frames[-1]['file']:ending.append(frames[-1])
+        end_pages=make_sheets(path.parent,ending,origin,directory,f'{label}-ending')
         with Image.open(path.parent / frames[-1]['file']) as im:
             im.convert('RGB').save(directory / f'{label}-last.jpg', quality=96)
         manifest['variants'][label] = {'durationSeconds': end - origin, 'sheets': pages,
+                                      'endingSheets':end_pages,
                                       'lastDetail': f'{label}-last.jpg'}
     (directory / 'sequence.json').write_text(json.dumps(manifest, indent=2) + '\n')
     mapping_file.parent.mkdir(parents=True, exist_ok=True)
