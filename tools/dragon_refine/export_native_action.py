@@ -16,11 +16,12 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--source', type=Path, required=True)
 parser.add_argument('--canonical', type=Path, required=True)
 parser.add_argument('--output', type=Path, required=True)
+parser.add_argument('--rig', help='Explicit source rig for an editable scene containing comparison rigs')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
 if args.output.exists() or args.output.with_suffix('.json').exists():
     raise RuntimeError('Refusing overwrite')
 bpy.ops.wm.open_mainfile(filepath=str(args.source), load_ui=False)
-source = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
+source = bpy.data.objects[args.rig] if args.rig else next(o for o in bpy.data.objects if o.type == 'ARMATURE')
 action = source.animation_data.action
 start, end = (int(round(x)) for x in action.frame_range)
 fps, fps_base = bpy.context.scene.render.fps, bpy.context.scene.render.fps_base

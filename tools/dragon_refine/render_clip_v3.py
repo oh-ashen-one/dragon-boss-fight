@@ -33,6 +33,7 @@ if TALL:   # airborne moves: 1.35x farther and aimed higher, so a 0.75 m hop sta
         CAMS = {"front": Vector((4.20, 0.00, 0.70)), "left": Vector((0.00, 4.20, 0.65)), "threequarter": Vector((3.00, 3.00, 1.15))}
 LENS_MM = 50.0
 RES = (960, 540)
+if '--quick' in args: RES=(480,270)
 FPS = 24
 WORLD_GREY = 0.30      # linear
 GROUND_A, GROUND_B = 0.18, 0.22   # faint two-tone checker (0.25-unit squares) for foot-slide reference
@@ -62,7 +63,7 @@ sc.display_settings.display_device = "sRGB"
 if hasattr(sc.render, "use_motion_blur"):
     sc.render.use_motion_blur = False
 try:
-    sc.eevee.taa_render_samples = 32
+    sc.eevee.taa_render_samples = 8 if '--quick' in args else 32
 except Exception:
     pass
 for attr in ("use_bloom", "use_gtao", "use_ssr", "use_raytracing"):

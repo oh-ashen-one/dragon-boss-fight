@@ -1,0 +1,28 @@
+{
+  "source": "existing owner-owned video2rig death_v3; scoped Blender neck-floor correction only",
+  "sourceSceneSHA256": "f9c19c833f55476b091a4b86c647e5b926911fdc27ffa3228431aef3fa0dad84",
+  "authoredSceneSHA256": "45fbbd8344b1f3a14a2f33a70792f9f5d1f4f0579c11a34a0a6a3e5919f5d968",
+  "correction": {
+    "changedChannel": "bone_4.rotation_quaternion after frame 55 only",
+    "settledByFrame": 110,
+    "correctionDegrees": 15.165022015571594,
+    "headMinimumBeforeMeters": 0.024753719568252563,
+    "headMinimumAfterMeters": 0.0014999806880950928,
+    "maximumNewPenetrationMeters": 0.0,
+    "maximumNeckTranslationChange": 6.322027276634104e-08,
+    "maximumNeckScaleChange": 2.457562461863554e-07,
+    "scope": "Blender contact correction; native deformation and visual review still required"
+  },
+  "graftProof": {
+    "canonicalSHA256": "3d16e58e191fbcb9de606677bb0364a212ee754d7c08d26f7056000630ed8818",
+    "blenderExportSHA256": "0330537aa1ca0c6bcfa662f10971fa741aaaf829e0969ffc5779eb0fb2751564",
+    "outputSHA256": "c16cbe188fbc01b5598a6c7a0c0922abeef16ee8f9928d83a93b62f8a63efae3",
+    "sampleCount": 337,
+    "maximumJointMatrixError": 0.0,
+    "canonicalGeometrySkinMaterialsPreserved": true,
+    "durationSeconds": 7.0,
+    "scope": "Representation equivalence, not native import or visual quality"
+  },
+  "status": "native import/fidelity passed; current package capture and blind review pending",
+  "generationSpend": 0
+}
