@@ -271,7 +271,15 @@ def finalize_existing(plan):
         slots=list(mesh.get_editor_property('materials'))
         if len(slots)!=1:raise RuntimeError('Expected the approved single dragon material')
         source=slots[0].get_editor_property('material_interface')
-        if unreal.EditorAssetLibrary.get_metadata_tag(source,visibility.TAG_OWNER)==visibility.OWNER:
+        if plan.get('preserve_inherited_material_bindings'):
+            # Even an existing visibility shader can be shared by older builds.
+            # Start this candidate from its original PBR source in a new clone.
+            original=unreal.EditorAssetLibrary.get_metadata_tag(source,visibility.TAG_SOURCE)
+            original=str(original) if original else source.get_path_name()
+            destination=original.split('/Rig/',1)[0]+'/Visibility/M_VeyrDragonPacing'
+            result=visibility.run(original,destination)
+            material=unreal.load_asset(result['material'])
+        elif unreal.EditorAssetLibrary.get_metadata_tag(source,visibility.TAG_OWNER)==visibility.OWNER:
             material=source
         else:
             result=visibility.run(source.get_path_name())
