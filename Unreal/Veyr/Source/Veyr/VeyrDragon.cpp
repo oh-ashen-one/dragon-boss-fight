@@ -214,7 +214,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     if(!IsValid(Target))Target=Cast<AVeyrKnight>(UGameplayStatics::GetPlayerCharacter(this,0));
     // A freshly opened window cannot attack a player who has not clicked to
     // begin. Once engaged, releasing the mouse does not pause the encounter.
-    if(IsValid(Target)&&(bProofPassive||!Target->HasEnteredEncounter()))
+    if(!bShowcaseMode&&IsValid(Target)&&(bProofPassive||!Target->HasEnteredEncounter()))
     {
         // Combat waits for deliberate input; the creature still breathes and
         // shifts its weight while the player studies the opening view.
@@ -258,7 +258,17 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     UpdateImportedPresentation();
     UpdateHurtParts();
     // Data windows read the pose just evaluated (same clock as the hard-coded contact).
-    UpdateDataMove(DeltaSeconds);
+    if(!bShowcaseMode)UpdateDataMove(DeltaSeconds);
+    if(bShowcaseMode&&ShowcaseOverrideClip==FName(TEXT("Roar"))&&!bFightFeelContactPlayed)
+    {
+        const auto* Clip=VisualDefinition?VisualDefinition->Clips.Find(TEXT("Roar")):nullptr;
+        if(Clip&&StateElapsed>=Clip->ImpactSeconds)
+        {
+            bFightFeelContactPlayed=true;
+            if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
+                Mode->FightFeel->Impact(GetHeadLocation(),.7f,TEXT("roar"));
+        }
+    }
     const FVeyrDragonFootprint Contact=GetActiveFootprint();
     const bool GroundImpact=(Move==EVeyrDragonMove::BackStomp||Move==EVeyrDragonMove::TailSmack||
         (Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery));
@@ -304,7 +314,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
     switch(State)
     {
         case EVeyrDragonState::Idle:
-            if(StateElapsed>=StateDuration&&IsValid(Target)&&!Target->IsDead()&&!IsDataOnlyMovePlaying())ChooseAttack();
+            if(!bShowcaseMode&&StateElapsed>=StateDuration&&IsValid(Target)&&!Target->IsDead()&&!IsDataOnlyMovePlaying())ChooseAttack();
             break;
         case EVeyrDragonState::Reposition:
         {
@@ -659,7 +669,8 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
             AttackOrigin=Ground(GetActorTransform().TransformPosition(FVector(170,0,0))); break;
         case EVeyrDragonMove::BackStomp:
             WindupDuration=1.25f; ActiveDuration=.28f; RecoveryDuration=1.5f; AttackDamage=32.f;
-            StompLeg=FVector::DistSquared(Target->GetActorLocation(),GetLegLocation(2))<FVector::DistSquared(Target->GetActorLocation(),GetLegLocation(3))?2:3;
+            StompLeg=bShowcaseMode&&ShowcaseLeg>=2?ShowcaseLeg:
+                FVector::DistSquared(Target->GetActorLocation(),GetLegLocation(2))<FVector::DistSquared(Target->GetActorLocation(),GetLegLocation(3))?2:3;
             AttackOrigin=Ground(GetActorTransform().TransformPosition(RestFeet[StompLeg])); break;
         case EVeyrDragonMove::TailSmack:
             WindupDuration=1.45f; ActiveDuration=.65f; RecoveryDuration=1.8f; AttackDamage=30.f;
@@ -694,8 +705,11 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
     }
     EnterState(EVeyrDragonState::Windup,WindupDuration);
     if(bUsingCustomuseVisual)CommitImportedWarning();
-    if(const FName* DataMove=DataMoveForEnum.Find(Move))BeginDataMove(*DataMove,true);
-    else if(bDataMoveFollowsEnum)StopDataMove();
+    if(!bShowcaseMode)
+    {
+        if(const FName* DataMove=DataMoveForEnum.Find(Move))BeginDataMove(*DataMove,true);
+        else if(bDataMoveFollowsEnum)StopDataMove();
+    }
 }
 
 FVeyrDragonFootprint AVeyrDragon::GetWarningFootprint() const
@@ -749,6 +763,7 @@ bool AVeyrDragon::IsPointInsideActiveDanger(const FVector& Point) const {return 
 
 void AVeyrDragon::TryDamageTarget()
 {
+    if(bShowcaseMode)return; // Presentation rehearsal is not a damage/difficulty test.
     if(!IsValid(Target)||Target->IsDead()||IsDead())return;
     if(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active&&!bEncounterStopped&&!bAerialFireConsumed&&bImportedTargetsValid&&bImportedAttackCacheReady&&MissingVisualClip.IsNone())
     {
@@ -1330,7 +1345,7 @@ void AVeyrDragon::UpdateSolidBody()
 void AVeyrDragon::ResolveKnightBodyPenetration()
 {
     SolidBodyPenetrationDepthCm=0.f;
-    if(!bSolidBodyReady||!IsValid(Target)||Target->IsDead())return;
+    if(bShowcaseMode||!bSolidBodyReady||!IsValid(Target)||Target->IsDead())return;
     UCapsuleComponent* PlayerCapsule=Target->GetCapsuleComponent();
     UCharacterMovementComponent* Movement=Target->GetCharacterMovement();
     if(!PlayerCapsule||!Movement||!GetWorld())return;
@@ -1420,7 +1435,7 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 
 void AVeyrDragon::UpdateGaze(float DeltaSeconds)
 {
-    const bool Allowed=!bEncounterStopped&&IsValid(Target)&&!Target->IsDead()&&
+    const bool Allowed=ShowcaseOverrideClip!=FName(TEXT("Roar"))&&!IsDataOnlyMovePlaying()&&!bEncounterStopped&&IsValid(Target)&&!Target->IsDead()&&
         (State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)&&
         !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery);
     float DesiredYaw=0.f,DesiredPitch=0.f,Weight=0.f;
@@ -1462,7 +1477,7 @@ void AVeyrDragon::UpdateImportedPresentation()
     TMap<FName,FRotator> Gaze;
     const bool GroundBite=HasGroundTargetBite()&&bBiteGroundAimReady&&Move==EVeyrDragonMove::Bite&&
         (State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery);
-    if((State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)&&
+    if(ShowcaseOverrideClip!=FName(TEXT("Roar"))&&!IsDataOnlyMovePlaying()&&(State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)&&
        !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery)&&!GroundBite)
     {
         const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
@@ -1485,7 +1500,8 @@ void AVeyrDragon::UpdateImportedPresentation()
     FString Name;
     switch(State)
     {
-        case EVeyrDragonState::Idle:Name=IsDataOnlyMovePlaying()&&!DataOnlyClip.IsNone()?DataOnlyClip.ToString():FString(TEXT("Idle"));break;
+        case EVeyrDragonState::Idle:Name=!ShowcaseOverrideClip.IsNone()?ShowcaseOverrideClip.ToString():
+            IsDataOnlyMovePlaying()&&!DataOnlyClip.IsNone()?DataOnlyClip.ToString():FString(TEXT("Idle"));break;
         case EVeyrDragonState::Reposition:
             Name=bRepositionWalking?TEXT("Walk"):(bRepositionAuthoredTurn||RepositionTurnClip==FName(TEXT("TurnLeftFine"))||
                 RepositionTurnClip==FName(TEXT("TurnRightFine")))?RepositionTurnClip.ToString():
@@ -1558,12 +1574,14 @@ void AVeyrDragon::UpdateImportedPresentation()
             ImportedTransitionSeconds=LastImportedState==EVeyrDragonState::Rise&&State==EVeyrDragonState::Idle?.55f:
                 HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active?.2f:.12f;
             if(State==EVeyrDragonState::Dead&&UsesPacingRevision()&&Name.StartsWith(TEXT("DeathFall")))ImportedTransitionSeconds=.35f;
+            if(Clip!=LastImportedClip&&(Clip==FName(TEXT("Roar"))||LastImportedClip==FName(TEXT("Roar"))))ImportedTransitionSeconds=.6f;
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
         }
         const float TransitionSeconds=ImportedTransitionSeconds;
         const float Alpha=bImportedTransitionReady?FMath::Clamp((Clock-ImportedTransitionStarted)/TransitionSeconds,0.f,1.f):1.f;
         const bool Loop=VisualDefinition->Clips[Clip].bLoop;
         if(IsDataOnlyMovePlaying()&&Clip==DataOnlyClip){SampleSeconds=DataMoveClipSeconds;}
+        if(bShowcaseMode&&!ShowcaseOverrideClip.IsNone())SampleSeconds=StateElapsed;
         Sampled=Loop||AuthoredTurn||(IsDataOnlyMovePlaying()&&Clip==DataOnlyClip)?ImportedPresentation->SampleClipTimeBlended(Clip,SampleSeconds,Alpha):
             ImportedPresentation->SampleClipPhaseBlended(Clip,StateElapsed/FMath::Max(.001f,StateDuration),Alpha);
     }

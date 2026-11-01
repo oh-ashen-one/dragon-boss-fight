@@ -1,0 +1,554 @@
+{
+  "Buckle0": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Buckle0/Legacy_Buckle0.Legacy_Buckle0"
+    },
+    "approvedSourceFile": "Buckle0.glb",
+    "approvedSourceSHA256": "f9a0fdd6c40fd57f6ee6a63846ee5248916bd48a8f1ce2c035db2051e7c261c8",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Buckle1": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Buckle1/Legacy_Buckle1.Legacy_Buckle1"
+    },
+    "approvedSourceFile": "Buckle1.glb",
+    "approvedSourceSHA256": "dc1b8ad0bae2b1d311eeed695e1844f5c7bfd8753bd801bade8cab75b3cf9830",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Buckle2": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Buckle2/Legacy_Buckle2.Legacy_Buckle2"
+    },
+    "approvedSourceFile": "Buckle2.glb",
+    "approvedSourceSHA256": "cc914ca258d23caea9282f750263626d13c46846d31eae33c4d9b379304c5436",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Buckle3": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Buckle3/Legacy_Buckle3.Legacy_Buckle3"
+    },
+    "approvedSourceFile": "Buckle3.glb",
+    "approvedSourceSHA256": "2b64fd9be3a0cadbb1c61fa8716efdcbcc660a98c48a1714d442ff937602cd4c",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Claw0Active": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Claw0Active/Legacy_Claw0Active.Legacy_Claw0Active"
+    },
+    "approvedSourceFile": "Claw0Active.glb",
+    "approvedSourceSHA256": "1fcb0f09c5a642e28b8fafc346e8de664b9b3adb3c780b25a20a826ac3ec1bf3",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Claw0Recovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Claw0Recovery/Legacy_Claw0Recovery.Legacy_Claw0Recovery"
+    },
+    "approvedSourceFile": "Claw0Recovery.glb",
+    "approvedSourceSHA256": "90484dc701788d77918c3d0047ede3e046cd0314f83560f43b9d7644de7ec018",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Claw0Windup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Claw0Windup/Legacy_Claw0Windup.Legacy_Claw0Windup"
+    },
+    "approvedSourceFile": "Claw0Windup.glb",
+    "approvedSourceSHA256": "8293b05a5c499d2bb7da305bf7d16830f88450404522c292ce71723f6507d71b",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Claw1Active": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Claw1Active/Legacy_Claw1Active.Legacy_Claw1Active"
+    },
+    "approvedSourceFile": "Claw1Active.glb",
+    "approvedSourceSHA256": "8649bc6eecc0c81dc968a9b4bef36264a6148665919970bdaf12189e4300103b",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Claw1Recovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Claw1Recovery/Legacy_Claw1Recovery.Legacy_Claw1Recovery"
+    },
+    "approvedSourceFile": "Claw1Recovery.glb",
+    "approvedSourceSHA256": "15b368f2119a6e87667a6f3d9db041c2d6645e7c8eccc3155b75983d3bd67960",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Claw1Windup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Claw1Windup/Legacy_Claw1Windup.Legacy_Claw1Windup"
+    },
+    "approvedSourceFile": "Claw1Windup.glb",
+    "approvedSourceSHA256": "4275dea274984fcdc34cb796c520884714905876a40f24bcd438487288902448",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "ClawActive": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/ClawActive/Legacy_ClawActive.Legacy_ClawActive"
+    },
+    "approvedSourceFile": "ClawActive.glb",
+    "approvedSourceSHA256": "a1fee078f0c0e25ee68edbc8974ba742de6824f19d7f2ea50e7232879cd24b84",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "ClawRecovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/ClawRecovery/Legacy_ClawRecovery.Legacy_ClawRecovery"
+    },
+    "approvedSourceFile": "ClawRecovery.glb",
+    "approvedSourceSHA256": "0d92efd82cc46fb0e0710750041f84bea7b073b90b5ac88f9b95b202348bbf35",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "ClawWindup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/ClawWindup/Legacy_ClawWindup.Legacy_ClawWindup"
+    },
+    "approvedSourceFile": "ClawWindup.glb",
+    "approvedSourceSHA256": "e55f4eb2898248a7cd24d6ee0a127d45646b3d378e56bbef802f02df16433f5a",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Collapse": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Collapse/Legacy_Collapse.Legacy_Collapse"
+    },
+    "approvedSourceFile": "Collapse.glb",
+    "approvedSourceSHA256": "8818864db69bed9380876ab460edea9636d2722a7ae594612ab175cdf05d24ab",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Death": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Death/Legacy_Death.Legacy_Death"
+    },
+    "approvedSourceFile": "Death.glb",
+    "approvedSourceSHA256": "d29c6a25f14d0f43510bf7aadedaa9183c091b14baea7a853bb412b2e6d86b83",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "DeathDown": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/DeathDown/Legacy_DeathDown.Legacy_DeathDown"
+    },
+    "approvedSourceFile": "DeathDown.glb",
+    "approvedSourceSHA256": "bea43efbe306ff7d37e50e61f43596f00fa84d02f41c0156a253f45251bdf58e",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Exposed": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Exposed/Legacy_Exposed.Legacy_Exposed"
+    },
+    "approvedSourceFile": "Exposed.glb",
+    "approvedSourceSHA256": "53d4cc1df083f84d78faf5c8efeee418f574feeeb8e5ff85532460d7e9a82fbb",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": true,
+    "impactSeconds": -1
+  },
+  "Rise": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Rise/Legacy_Rise.Legacy_Rise"
+    },
+    "approvedSourceFile": "Rise.glb",
+    "approvedSourceSHA256": "e01ec91f3258534f8b9113561eed1c9c90d12b4ae5076a24f9004c915a7ed409",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Stomp2Active": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Stomp2Active/Legacy_Stomp2Active.Legacy_Stomp2Active"
+    },
+    "approvedSourceFile": "Stomp2Active.glb",
+    "approvedSourceSHA256": "06c185b7e06e8281cdac446f13861647ec187675a6c2a5043f69ea8188b6a008",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Stomp2Recovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Stomp2Recovery/Legacy_Stomp2Recovery.Legacy_Stomp2Recovery"
+    },
+    "approvedSourceFile": "Stomp2Recovery.glb",
+    "approvedSourceSHA256": "497cac7969ac57b8ae9b9322c9bcf5cff673a666dddc1b59764885c98f084e8e",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Stomp2Windup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Stomp2Windup/Legacy_Stomp2Windup.Legacy_Stomp2Windup"
+    },
+    "approvedSourceFile": "Stomp2Windup.glb",
+    "approvedSourceSHA256": "ebf9d7b5cd74a75dbcc04ce73a60ff2b71ebc547ab5b70358114eab609161f4d",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Stomp3Active": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Stomp3Active/Legacy_Stomp3Active.Legacy_Stomp3Active"
+    },
+    "approvedSourceFile": "Stomp3Active.glb",
+    "approvedSourceSHA256": "51191d543172852f5aa4543071180a270d7dcd5c9822aa1275d44d538bd967f8",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Stomp3Recovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Stomp3Recovery/Legacy_Stomp3Recovery.Legacy_Stomp3Recovery"
+    },
+    "approvedSourceFile": "Stomp3Recovery.glb",
+    "approvedSourceSHA256": "a15bfeee24aa4e295f84caebd254fafe4b3c2ebdcd02c0ac18d7feabe663e039",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Stomp3Windup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Stomp3Windup/Legacy_Stomp3Windup.Legacy_Stomp3Windup"
+    },
+    "approvedSourceFile": "Stomp3Windup.glb",
+    "approvedSourceSHA256": "56e4ba292a091a1670678ec22cec329898d95310e2f104617dbe13b6b675d9f1",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "TailActive": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/TailActive/Legacy_TailActive.Legacy_TailActive"
+    },
+    "approvedSourceFile": "TailActive.glb",
+    "approvedSourceSHA256": "b370c93eb5550aa072e390c717026a1c842a73c993c5269aab2d981c3287f413",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "TailRecovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/TailRecovery/Legacy_TailRecovery.Legacy_TailRecovery"
+    },
+    "approvedSourceFile": "TailRecovery.glb",
+    "approvedSourceSHA256": "fd4ae6bdd091e85e892535c07df356f8128b9d989a3e1628a512a0cc187719d6",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "TailWindup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/TailWindup/Legacy_TailWindup.Legacy_TailWindup"
+    },
+    "approvedSourceFile": "TailWindup.glb",
+    "approvedSourceSHA256": "c149c929aa6d7e3f495550244fce116af3b3afd9b3c24f55159d21227e1979c7",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "TurnRight": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/TurnRight/Legacy_TurnRight.Legacy_TurnRight"
+    },
+    "approvedSourceFile": "TurnRight.glb",
+    "approvedSourceSHA256": "2e8f2db700377242c84451b1e3b9bfefe051c1c6123b0413437f11d40819f2f2",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "TurnLeftFine": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/TurnLeftFine/Legacy_TurnLeft.Legacy_TurnLeft"
+    },
+    "approvedSourceFile": "TurnLeft.glb",
+    "approvedSourceSHA256": "85132572c386383f8ee88d23eba08c86343138363f4b379382d2d9d4cf5c2da4",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": true,
+    "impactSeconds": -1
+  },
+  "TurnRightFine": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/TurnRight/Legacy_TurnRight.Legacy_TurnRight"
+    },
+    "approvedSourceFile": "TurnRight.glb",
+    "approvedSourceSHA256": "2e8f2db700377242c84451b1e3b9bfefe051c1c6123b0413437f11d40819f2f2",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": true,
+    "impactSeconds": -1
+  },
+  "Idle": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Idle/Dragon_Idle_Blender_v1r3Dragon_Idle_Blender_v1r3.Dragon_Idle_Blender_v1r3Dragon_Idle_Blender_v1r3"
+    },
+    "approvedSourceFile": "Dragon_Idle_Blender_v1r3.glb",
+    "approvedSourceSHA256": "7c057fd666e3dbbf91ecdbf8f9707a36cb767d16ab461f5565ecd229f5f4c6f8",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": true,
+    "impactSeconds": -1
+  },
+  "Walk": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Walk/Dragon_Walk_Blender_v1r2Dragon_Walk_Blender_v1r2.Dragon_Walk_Blender_v1r2Dragon_Walk_Blender_v1r2"
+    },
+    "approvedSourceFile": "Dragon_Walk_Blender_v1r2.glb",
+    "approvedSourceSHA256": "8919042832443e6bff6943ada1854c1b75e4f83874f9a366896f290a20939d24",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": true,
+    "impactSeconds": -1
+  },
+  "TurnLeft": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/TurnLeft/Dragon_Turn_Blender_v1r2Dragon_Turn_Blender_v1r2.Dragon_Turn_Blender_v1r2Dragon_Turn_Blender_v1r2"
+    },
+    "approvedSourceFile": "Dragon_Turn_Blender_v1r2.glb",
+    "approvedSourceSHA256": "9b1ecd268dac928799c078599337784056f53d5df2de746e3e5c0dab2c878a80",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "FlightWindup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v028/Animations/FlightWindup/Dragon_Takeoff_DangleJoin_v2Dragon_Takeoff_DangleJoin_v2.Dragon_Takeoff_DangleJoin_v2Dragon_Takeoff_DangleJoin_v2"
+    },
+    "approvedSourceFile": "Dragon_Takeoff_DangleJoin_v2.glb",
+    "approvedSourceSHA256": "0e7b277682be75be7a0da04284b90ecbb401dc515f573c857f7afec86abf7950",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "FlightActive": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v028/Animations/FlightActive/Dragon_FlyHover_Blender_dangle_v2Dragon_FlyHover_Blender_dangle_v2.Dragon_FlyHover_Blender_dangle_v2Dragon_FlyHover_Blender_dangle_v2"
+    },
+    "approvedSourceFile": "Dragon_FlyHover_Blender_dangle_v2.glb",
+    "approvedSourceSHA256": "2f4ce12d171e1134117e58358a569b9915d5170fa104de0947e34394d1d8c725",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": true,
+    "impactSeconds": -1
+  },
+  "FlightRecovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v028/Animations/FlightRecovery/Dragon_Land_DangleJoin_v2Dragon_Land_DangleJoin_v2.Dragon_Land_DangleJoin_v2Dragon_Land_DangleJoin_v2"
+    },
+    "approvedSourceFile": "Dragon_Land_DangleJoin_v2.glb",
+    "approvedSourceSHA256": "e25902561ce0d3dade3e7552778d375288553ddffa2c9a4ccb89014816c2927e",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": 0.8333333134651184
+  },
+  "FlightHoverAlternate": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v028/Animations/FlightActive/Dragon_FlyHover_Blender_dangle_v2Dragon_FlyHover_Blender_dangle_v2.Dragon_FlyHover_Blender_dangle_v2Dragon_FlyHover_Blender_dangle_v2"
+    },
+    "approvedSourceFile": "Dragon_FlyHover_Blender_dangle_v2.glb",
+    "approvedSourceSHA256": "2f4ce12d171e1134117e58358a569b9915d5170fa104de0947e34394d1d8c725",
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "gameplayPlayRate": 1,
+    "bLoop": true,
+    "impactSeconds": -1
+  },
+  "FireWindup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/FireWindup/Dragon_FireBreath_Blender_v1Dragon_FireBreath_Blender_v1.Dragon_FireBreath_Blender_v1Dragon_FireBreath_Blender_v1"
+    },
+    "approvedSourceFile": "Dragon_FireBreath_Blender_v1.glb",
+    "approvedSourceSHA256": "2d7bca2eefb7f28a3e8321f7732125a138aa5b6523f943c7d81b710db126c428",
+    "startSeconds": 0,
+    "endSeconds": 1.1333333253860474,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "FireActive": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/FireWindup/Dragon_FireBreath_Blender_v1Dragon_FireBreath_Blender_v1.Dragon_FireBreath_Blender_v1Dragon_FireBreath_Blender_v1"
+    },
+    "approvedSourceFile": "Dragon_FireBreath_Blender_v1.glb",
+    "approvedSourceSHA256": "2d7bca2eefb7f28a3e8321f7732125a138aa5b6523f943c7d81b710db126c428",
+    "startSeconds": 1.1333333253860474,
+    "endSeconds": 2.799999952316284,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "FireRecovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/FireWindup/Dragon_FireBreath_Blender_v1Dragon_FireBreath_Blender_v1.Dragon_FireBreath_Blender_v1Dragon_FireBreath_Blender_v1"
+    },
+    "approvedSourceFile": "Dragon_FireBreath_Blender_v1.glb",
+    "approvedSourceSHA256": "2d7bca2eefb7f28a3e8321f7732125a138aa5b6523f943c7d81b710db126c428",
+    "startSeconds": 2.799999952316284,
+    "endSeconds": 3.5,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "BiteWindup": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/BiteWindup/Dragon_Bite_Blender_v2Dragon_Bite_Blender_v2.Dragon_Bite_Blender_v2Dragon_Bite_Blender_v2"
+    },
+    "approvedSourceFile": "Dragon_Bite_Blender_v2.glb",
+    "approvedSourceSHA256": "97d859eaaa521bbd0fee485c19c254db27648a438208c632e481a717060dcd63",
+    "startSeconds": 0,
+    "endSeconds": 0.4000000059604645,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "BiteActive": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/BiteWindup/Dragon_Bite_Blender_v2Dragon_Bite_Blender_v2.Dragon_Bite_Blender_v2Dragon_Bite_Blender_v2"
+    },
+    "approvedSourceFile": "Dragon_Bite_Blender_v2.glb",
+    "approvedSourceSHA256": "97d859eaaa521bbd0fee485c19c254db27648a438208c632e481a717060dcd63",
+    "startSeconds": 0.4000000059604645,
+    "endSeconds": 1.0333333015441895,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "BiteRecovery": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/BiteWindup/Dragon_Bite_Blender_v2Dragon_Bite_Blender_v2.Dragon_Bite_Blender_v2Dragon_Bite_Blender_v2"
+    },
+    "approvedSourceFile": "Dragon_Bite_Blender_v2.glb",
+    "approvedSourceSHA256": "97d859eaaa521bbd0fee485c19c254db27648a438208c632e481a717060dcd63",
+    "startSeconds": 1.0333333015441895,
+    "endSeconds": 1.7999999523162842,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "DeathFall": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v030pacing/Animations/DeathFall/Dragon_Death_v4_HeadContactAnimation.Dragon_Death_v4_HeadContactAnimation"
+    },
+    "approvedSourceFile": "Dragon_Death_v4_HeadContact.blend",
+    "approvedSourceSHA256": "45fbbd8344b1f3a14a2f33a70792f9f5d1f4f0579c11a34a0a6a3e5919f5d968",
+    "startSeconds": 0,
+    "endSeconds": 7,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "DeathFallDown": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v030pacing/Animations/DeathFall/Dragon_Death_v4_HeadContactAnimation.Dragon_Death_v4_HeadContactAnimation"
+    },
+    "approvedSourceFile": "Dragon_Death_v4_HeadContact.blend",
+    "approvedSourceSHA256": "45fbbd8344b1f3a14a2f33a70792f9f5d1f4f0579c11a34a0a6a3e5919f5d968",
+    "startSeconds": 2,
+    "endSeconds": 7,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": -1
+  },
+  "Roar": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/DragonV3B/v031showcase/Animations/Roar/Dragon_Roar_v2_CanonicalAnimation.Dragon_Roar_v2_CanonicalAnimation"
+    },
+    "approvedSourceFile": "Dragon_Roar_sd_v2r_v2.blend",
+    "approvedSourceSHA256": "73554bb81a18050e48c0eec6f39a2f17ad09a522b06ce95ee2a27554e60a3626",
+    "startSeconds": 0,
+    "endSeconds": 5,
+    "gameplayPlayRate": 1,
+    "bLoop": false,
+    "impactSeconds": 2.5833332538604736
+  }
+}

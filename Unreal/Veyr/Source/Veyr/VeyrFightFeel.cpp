@@ -4,6 +4,8 @@
 #include "VeyrDragon.h"
 #include "VeyrVisualDefinition.h"
 #include "VeyrSkeletalPresentation.h"
+#include "VeyrReplay.h"
+#include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/PointLightComponent.h"
@@ -148,7 +150,9 @@ void AVeyrFightFeel::Impact(const FVector& Position,float Weight,FName Kind)
 {
     const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(bDisabled||!Mode||!Mode->bUserCameraShake||!Mode->Knight)return;
-    const FVector Listener=Mode->Knight->CombatCamera?Mode->Knight->CombatCamera->GetComponentLocation():Mode->Knight->GetActorLocation();
+    FVector Listener=Mode->Knight->CombatCamera?Mode->Knight->CombatCamera->GetComponentLocation():Mode->Knight->GetActorLocation();
+    if(Mode->Replay&&Mode->Replay->IsShowcase())
+        if(auto* PC=Cast<APlayerController>(Mode->Knight->GetController())){FRotator Rotation;PC->GetPlayerViewPoint(Listener,Rotation);}
     LastShakeDistance=FVector::Distance(Listener,Position);
     const float Falloff=FMath::Square(FMath::Clamp(1.f-LastShakeDistance/5000.f,0.f,1.f));
     const float W=FMath::Clamp(Weight,0.f,1.f);

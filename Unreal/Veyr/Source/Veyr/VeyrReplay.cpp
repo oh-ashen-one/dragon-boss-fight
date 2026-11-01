@@ -7,6 +7,7 @@
 #include "VeyrAudio.h"
 #include "VeyrArena.h"
 #include "VeyrBlendProof.h"
+#include "VeyrShowcase.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -107,7 +108,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bPerformanceMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrPerformance"));
     bVictoryStartTwoHandedRequested=ReplayMode==TEXT("victory")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof and absolute evidence directory")); return false;
     }
@@ -188,6 +189,15 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     StartedWallTime=LastWallFrameTime;
     DurationLimit=ReplayMode==TEXT("blendproof")?420.f:ReplayMode==TEXT("lockon")?180.f:ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
     InitializeVideo();
+    if(IsShowcase())
+    {
+        DurationLimit=300.f;Showcase=MakeShared<FVeyrShowcase>();
+        FVeyrShowcase::FHooks Hooks;
+        Hooks.Event=[this](const FString& Name){Event(Name,false);};
+        Hooks.Finish=[this](bool Ok,const FString& Reason){Finish(Ok,Reason);};
+        if(!Showcase->Begin(GetWorld(),Knight,Dragon,FParse::Param(FCommandLine::Get(),TEXT("VeyrShowcasePlayerCamera")),Hooks))
+        {Finish(false,TEXT("Every-move showcase preflight failed; no missing-clip substitution"));if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Showcase preflight failed"));return false;}
+    }
     if(ReplayMode==TEXT("blendproof"))
     {
         BlendProof=MakeShared<FVeyrBlendProof>();
@@ -215,6 +225,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     if(ReplayMode==TEXT("collision"))O->SetObjectField(TEXT("collision"),CollisionEvidence());
     if(ReplayMode==TEXT("integration"))O->SetObjectField(TEXT("integration"),IntegrationEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())O->SetObjectField(TEXT("blendProofState"),BlendProof->CurrentState());
+    if(IsShowcase()&&Showcase.IsValid())O->SetObjectField(TEXT("showcase"),Showcase->Evidence());
     O->SetStringField(TEXT("replayStage"),bRestartVerification?TEXT("restart_verification"):bAwaitingReload?TEXT("awaiting_reload"):bTerminalSettling?TEXT("terminal_settling"):TEXT("combat"));
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
     {
@@ -2621,7 +2632,8 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Presentation->SetStringField(TEXT("equippedWeaponMesh"),WeaponPath);
     Presentation->SetBoolField(TEXT("equippedWeaponVisible"),bWeaponVisible);
     Root->SetObjectField(TEXT("presentationAssets"),Presentation);
-    Root->SetStringField(TEXT("policy"),TEXT("input-only provisional navigation; runtime tuning required"));
+    Root->SetStringField(TEXT("policy"),IsShowcase()?TEXT("explicit non-combat production-animation rehearsal; scripted state selection, no combat victory claim"):TEXT("input-only provisional navigation; runtime tuning required"));
+    if(IsShowcase()&&Showcase.IsValid())Root->SetObjectField(TEXT("showcase"),Showcase->Evidence());
     if(ReplayMode==TEXT("integration"))Root->SetObjectField(TEXT("integration"),IntegrationEvidence(true));
     if(ReplayMode==TEXT("collision"))Root->SetObjectField(TEXT("collision"),CollisionEvidence(true));
     if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
@@ -2744,6 +2756,12 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     Elapsed+=DeltaSeconds;++FrameCount;MaximumFrameSeconds=FMath::Max(MaximumFrameSeconds,DeltaSeconds);
     SampleClock+=DeltaSeconds;SaveClock+=DeltaSeconds;Observe();
     if(SampleClock>=(bPerformanceMode?5.f:.25f)){SampleClock=0;Samples.Add(MakeShared<FJsonValueObject>(Snapshot()));}
+    if(IsShowcase()&&Showcase.IsValid())
+    {
+        Showcase->Tick(DeltaSeconds,Elapsed);
+        if(!bFinished&&Elapsed>DurationLimit)Finish(false,TEXT("every-move showcase timeout"));
+        ServiceCapture();if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+    }
     if(bTerminalSettling||bAwaitingReload||bRestartVerification)AdvanceRestart(DeltaSeconds);
     else if(ReplayMode==TEXT("death")&&Knight->IsDead())BeginTerminalVerification();
     else if(Knight->IsDead())Finish(false,TEXT("player died before objectives"));
@@ -2767,6 +2785,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
 
 void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    if(Showcase.IsValid())Showcase->End();
     if(IsValid(Knight)&&Knight->GetCapsuleComponent())Knight->GetCapsuleComponent()->OnComponentHit.RemoveDynamic(this,&AVeyrReplay::ObserveCollisionHit);
     if(EndPlayReason==EEndPlayReason::EndPlayInEditor||EndPlayReason==EEndPlayReason::Quit)
     {

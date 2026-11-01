@@ -120,6 +120,14 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return State == EVeyrDragonState::Dead; }
     bool UsesPacingRevision() const { return !bLegacyPacing; }
     bool UsesFinisherRevision() const { return !bLegacyPacing&&!bLegacyFinisher; }
+    /** Explicit non-combat rehearsal; never used by victory validation. */
+    bool BeginShowcase();
+    bool StartShowcaseSegment(FName Segment,FString& Error);
+    bool IsShowcaseSegmentComplete() const;
+    void RestAfterShowcaseSegment();
+    TArray<FTransform> GetShowcaseFramingTransforms() const;
+    FVector GetShowcaseFlightFacing() const;
+    bool IsShowcase() const { return bShowcaseMode; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadExposed() const { return State == EVeyrDragonState::Exposed; }
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetHeadLocation() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
@@ -219,6 +227,9 @@ protected:
 private:
     bool bLegacyPacing=false;
     bool bLegacyFinisher=false;
+    bool bShowcaseMode=false;
+    FName ShowcaseSegment=NAME_None,ShowcaseOverrideClip=NAME_None;
+    int32 ShowcaseLeg=INDEX_NONE;
     UPROPERTY() TObjectPtr<USceneComponent> SceneRoot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> BodyMesh;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> ChestMesh;

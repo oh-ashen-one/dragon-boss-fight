@@ -2,6 +2,14 @@
 
 **Goal active. The resumed pacing/death pass has two independent blind Opus PASS verdicts. Full backlog is unfinished; every-move replay is next.** HP stayed 650 throughout the resumed fixes. Only game branches: `fable/knight-complete-20261028` here and `claude-code-enhancements` in the dragon checkout. No main merge/push.
 
+## Every-move replay checkpoint (in progress)
+
+- New `showcase` replay is explicitly non-combat: production attack/state playback, damage suppressed only in this mode, no victory timing, no combat HUD. It contains 20 segments with all attack phases, fire-down, both claws/stomps, all four buckle→collapse→exposed→rise cycles, locomotion, roar and death. Unknown/missing clips fail; retained aliases/legacy entries are cataloged.
+- Owner-approved Roar v2 is imported into DragonV3B/**v031showcase**. Canonical mesh/skin/material bytes and prior native assets are preserved; 276 native pose samples/transitions passed. Roar shake cue is measured at 2.5833 s (80% of authored jaw opening); a native rehearsal observed one 0.432-degree pulse at 2036 cm. No new generation/spend.
+- First framing attempt failed Roar and was too overhead. Anatomical framing passed Idle/Roar/Walk, then failed TurnLeft. Root-motion envelope fitting corrected that: `native-showcase-20261101T221501Z` passed all 20 segments in 120.804 game seconds. This is fidelity/coverage evidence, not a quality verdict.
+- A better flight-facing shot is now being captured (`native-showcase-20261101T222346Z`) using `/private/tmp/veyr-verified-bundle-pmotrgtv/Veyr-Mac-Shipping.app`; see `Local/showcase-flight-latest.json`. Check its live process/evidence before relaunching. No editor or Blender remains open.
+- Final player-camera baseline film, chapter-page verification, blind Opus review and normal victory regression are pending. `docs/showcase-20261101/PLAN.md` records failed iterations; chapter conversion tests pass 3/3. The next source edits must not overwrite the active capture's binary/evidence.
+
 ## Current playable state and evidence
 
 - **Newest tested Shipping:** `Local/package-20261101T201830Z/receipt.json`; source ID `d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5`; verified app `/private/tmp/veyr-verified-bundle-x5xt6ab1/Veyr-Mac-Shipping.app`. Use this or a subsequently verified newer Shipping package when opening the game for the owner.

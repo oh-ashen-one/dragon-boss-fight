@@ -7,6 +7,7 @@
 class AVeyrKnight;
 class AVeyrDragon;
 class FVeyrBlendProof;
+class FVeyrShowcase;
 class FJsonObject;
 class FJsonValue;
 class UPrimitiveComponent;
@@ -22,7 +23,7 @@ struct FVeyrVideoWriteResult
     bool bSaved=false;
 };
 
-/** Optional input-only native validation. No authority to alter encounter state. */
+/** Input-only combat validation, plus an explicitly separate non-combat showcase. */
 UCLASS()
 class VEYR_API AVeyrReplay : public AActor
 {
@@ -30,6 +31,7 @@ class VEYR_API AVeyrReplay : public AActor
 public:
     AVeyrReplay();
     bool Initialize(const FString& Mode, const FString& EvidenceDirectory);
+    bool IsShowcase() const { return ReplayMode==TEXT("showcase"); }
     static bool GetPendingRestartRequest(FString& OutMode, FString& OutEvidenceDirectory);
     virtual void Tick(float DeltaSeconds) override;
 protected:
@@ -198,6 +200,7 @@ private:
     TArray<TSharedPtr<FJsonValue>> LockOnTrials;
     // Blend proof 2026-10-29 ("blendproof" mode): sword socket, blink foot lock and roll-attack root carry proof.
     TSharedPtr<FVeyrBlendProof> BlendProof;
+    TSharedPtr<FVeyrShowcase> Showcase;
     bool DriveBlendProofInputs();
     bool bCombatHealSeeking=false;
     int32 CombatHealCountAtRequest=0;

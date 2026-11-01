@@ -1,0 +1,15 @@
+{
+  "scope": "All current production move families and state variants, with retained compatibility entries explained explicitly",
+  "retainedEntries": {
+    "TurnRight": "Legacy turn asset retained for compatibility; current gameplay uses the measured TurnLeft root trajectory in reverse for large right turns, and the rehearsal shows that route.",
+    "FlightHoverAlternate": "Same approved source SHA, trim, loop and play rate as FlightActive; covered by the flight chapter.",
+    "Death": "Legacy comparison-only crouched death; current default uses DeathFall/DeathFallDown.",
+    "DeathDown": "Legacy comparison-only crouched death; current default uses DeathFall/DeathFallDown.",
+    "DeathFallDown": "Same source as DeathFall, trimmed to seconds 2\u20137; its motion is included in the full DeathFall. Its transition is separately verified in the victory captures.",
+    "ClawWindup": "Legacy generic entry; current move router selects Claw0 or Claw1, both shown explicitly.",
+    "ClawActive": "Legacy generic entry; current move router selects Claw0 or Claw1, both shown explicitly.",
+    "ClawRecovery": "Legacy generic entry; current move router selects Claw0 or Claw1, both shown explicitly."
+  },
+  "nativeClipCount": 46,
+  "scriptedSegments": 20
+}
