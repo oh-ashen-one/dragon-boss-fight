@@ -52,6 +52,8 @@ class VEYR_API UVeyrVisualDefinition : public UDataAsset
     GENERATED_BODY()
 public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMesh> SkeletalMesh;
+    /** Optional clone of the dragon's surface shader; original mesh materials remain untouched. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<class UMaterialInterface> CameraOcclusionMaterial;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FTransform MeshRelativeTransform=FTransform::Identity;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName,FVeyrVisualClip> Clips;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TMap<FName,TObjectPtr<UStaticMesh>> Props;

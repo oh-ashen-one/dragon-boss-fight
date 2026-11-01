@@ -291,16 +291,23 @@ def finalize_existing(plan):
         if errors:raise RuntimeError('Dragon material compile failed: '+str(errors))
         if not unreal.EditorAssetLibrary.save_loaded_asset(material,False):raise RuntimeError('Dragon material usage save failed')
         record['dragonMaterialUsage']={'material':material.get_path_name(),'changed':usage_changes,'skeletalAndMorphVerified':True}
-        meshes={mesh.get_path_name():mesh}
-        for clip in definition.clips.values():
-            variant=clip.get_editor_property('mesh_override')
-            if variant:meshes[variant.get_path_name()]=variant
-        for target in meshes.values():
-            materials=list(target.get_editor_property('materials'))
-            for slot in materials:slot.set_editor_property('material_interface',material)
-            target.set_editor_property('materials',materials)
-            if not unreal.EditorAssetLibrary.save_loaded_asset(target,False):raise RuntimeError('Could not save approved dragon visibility material binding')
-            record['materials'].append({'mesh':target.get_path_name(),'material':material.get_path_name()})
+        if plan.get('preserve_inherited_material_bindings'):
+            # New animation-only revisions must not rewrite a shared approved
+            # mesh. The actor creates transient MIDs from this explicit clone.
+            definition.set_editor_property('camera_occlusion_material',material)
+            record['cameraOcclusionMaterial']=material.get_path_name()
+            record['inheritedMeshMaterialBindingsPreserved']=True
+        else:
+            meshes={mesh.get_path_name():mesh}
+            for clip in definition.clips.values():
+                variant=clip.get_editor_property('mesh_override')
+                if variant:meshes[variant.get_path_name()]=variant
+            for target in meshes.values():
+                materials=list(target.get_editor_property('materials'))
+                for slot in materials:slot.set_editor_property('material_interface',material)
+                target.set_editor_property('materials',materials)
+                if not unreal.EditorAssetLibrary.save_loaded_asset(target,False):raise RuntimeError('Could not save approved dragon visibility material binding')
+                record['materials'].append({'mesh':target.get_path_name(),'material':material.get_path_name()})
     unreal.EditorAssetLibrary.save_loaded_asset(definition,False)
     receipt=ROOT/'Local/CustomuseImports'/('finalized-'+character+'-'+version+'.json')
     receipt.write_text(json.dumps(record,indent=2)+'\n')

@@ -154,6 +154,7 @@ UStaticMeshComponent* AVeyrDragon::CreateTemporaryPart(FName Name,UStaticMesh* M
 
 void AVeyrDragon::BeginPlay()
 {
+    bLegacyPacing=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingLegacy"));
     Super::BeginPlay();
     FString ReplayMode;
     if(FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBossHealth"))&&
@@ -282,6 +283,9 @@ void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
     {
         if(GetActorLocation().Z>1.f){TerminalDescentStart=GetActorLocation();bTerminalDescent=true;TerminalDescentElapsed=0.f;}
         DeathStartDown=GetDownAmount();
+        const FName Fall=DeathStartDown>.5f?TEXT("DeathFallDown"):TEXT("DeathFall");
+        if(UsesPacingRevision()&&VisualDefinition&&VisualDefinition->Clips.Contains(Fall))
+            Duration=VisualClipDuration(Fall,Duration);
         DeathStartBuckle=State==EVeyrDragonState::Buckle?Ease(StateElapsed/StateDuration):
             State==EVeyrDragonState::Collapse?1-Ease(StateElapsed/StateDuration):0.f;
     }
@@ -351,7 +355,9 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             break;
         case EVeyrDragonState::Recovery:
             if(IsLandingContactWindow()){UpdateImportedPresentation();TryDamageTarget();}
-            if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,.40f);}
+            // A readable grounded opening after each committed move. This is
+            // ordinary combat time, not a replay-only damage opportunity.
+            if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,UsesPacingRevision()?1.25f:.40f);}
             break;
         case EVeyrDragonState::Buckle:
             if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Collapse,1.f);
@@ -923,6 +929,8 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
     if(RecentSwings.Num()>512){AcceptedSwings.Remove(RecentSwings[0]);RecentSwings.RemoveAt(0);}
     LastHitRegion=Region; ++SwordContactCount;
     LastSwordDamage=Region<4?(bHeavy?72.f:34.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?270.f:125.f):(bHeavy?85.f:44.f);
+    if(UsesPacingRevision())
+        LastSwordDamage=Region<4?(bHeavy?85.f:45.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?120.f:65.f):(bHeavy?85.f:44.f);
     LastSwordDamage*=FMath::Clamp(DamageMultiplier,1.f,1.55f);
     // boxes.json body-part share (wings 0.5, tail 0.7); 1 for every hard-coded region.
     LastSwordDamage*=FMath::Clamp(PartDamageScale,0.f,2.f);
@@ -1482,7 +1490,14 @@ void AVeyrDragon::UpdateImportedPresentation()
         case EVeyrDragonState::Collapse:Name=TEXT("Collapse");break;
         case EVeyrDragonState::Exposed:Name=TEXT("Exposed");break;
         case EVeyrDragonState::Rise:Name=TEXT("Rise");break;
-        case EVeyrDragonState::Dead:Name=DeathStartDown>.5f?TEXT("DeathDown"):TEXT("Death");break;
+        case EVeyrDragonState::Dead:
+            Name=DeathStartDown>.5f?TEXT("DeathDown"):TEXT("Death");
+            if(UsesPacingRevision())
+            {
+                const FString Fall=DeathStartDown>.5f?TEXT("DeathFallDown"):TEXT("DeathFall");
+                if(VisualDefinition->Clips.Contains(FName(*Fall)))Name=Fall;
+            }
+            break;
         default:
         {
             static const TCHAR* Moves[]={TEXT("Fire"),TEXT("Flight"),TEXT("Claw"),TEXT("Stomp"),TEXT("Tail"),TEXT("Bite")};
@@ -1531,6 +1546,7 @@ void AVeyrDragon::UpdateImportedPresentation()
             // the approved resting silhouette weight instead of snapping shut.
             ImportedTransitionSeconds=LastImportedState==EVeyrDragonState::Rise&&State==EVeyrDragonState::Idle?.55f:
                 HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active?.2f:.12f;
+            if(State==EVeyrDragonState::Dead&&UsesPacingRevision()&&Name.StartsWith(TEXT("DeathFall")))ImportedTransitionSeconds=.35f;
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
         }
         const float TransitionSeconds=ImportedTransitionSeconds;
@@ -2010,7 +2026,8 @@ bool AVeyrDragon::InitializeCameraOcclusionMaterials()
     // shader must not be reported as a functioning visibility tunnel.
     for(int32 Slot=0;Slot<ImportedPresentation->GetNumMaterials();++Slot)
     {
-        UMaterialInterface* Parent=ImportedPresentation->GetMaterial(Slot);
+        UMaterialInterface* Parent=UsesPacingRevision()&&VisualDefinition&&VisualDefinition->CameraOcclusionMaterial&&ImportedPresentation->GetNumMaterials()==1?
+            VisualDefinition->CameraOcclusionMaterial.Get():ImportedPresentation->GetMaterial(Slot);
         FString Missing;
         if(!Parent)Missing=TEXT("material");
         else if(Parent->GetBlendMode()!=BLEND_Masked)Missing=TEXT("masked surface shader");

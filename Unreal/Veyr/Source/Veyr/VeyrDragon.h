@@ -118,6 +118,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<AVeyrKnight> Target;
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return State == EVeyrDragonState::Dead; }
+    bool UsesPacingRevision() const { return !bLegacyPacing; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadExposed() const { return State == EVeyrDragonState::Exposed; }
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetHeadLocation() const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
@@ -215,6 +216,7 @@ protected:
     virtual void BeginPlay() override;
 
 private:
+    bool bLegacyPacing=false;
     UPROPERTY() TObjectPtr<USceneComponent> SceneRoot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> BodyMesh;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> ChestMesh;

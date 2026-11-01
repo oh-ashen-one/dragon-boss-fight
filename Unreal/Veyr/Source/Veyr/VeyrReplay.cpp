@@ -452,8 +452,8 @@ void AVeyrReplay::Observe()
     {
         if(Dragon->GetLastHitRegion()<4)
         {
-            bLightLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),34.f);
-            bHeavyLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),72.f);
+            bLightLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),Dragon->UsesPacingRevision()?45.f:34.f);
+            bHeavyLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),Dragon->UsesPacingRevision()?85.f:72.f);
         }
         Event(Dragon->GetLastHitRegion()==4?TEXT("head_contact"):Dragon->GetLastHitRegion()==5?TEXT("body_contact"):TEXT("leg_contact")); PreviousContacts=Dragon->GetSwordContactCount();
     }
@@ -2514,9 +2514,10 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
     if(bTerminalSettling)
     {
         TerminalClock+=DeltaSeconds;
-        if(TerminalClock>=3.6f&&TerminalClock-DeltaSeconds<3.6f)Event(TEXT("terminal_pose_settled"));
+        const float Settle=Dragon->IsDead()?FMath::Max(3.6f,Dragon->GetStateDuration()+.2f):3.6f;
+        if(TerminalClock>=Settle&&TerminalClock-DeltaSeconds<Settle)Event(TEXT("terminal_pose_settled"));
         // Leave enough time for the requested terminal screenshot to reach disk.
-        if(TerminalClock>=4.5f&&!FScreenshotRequest::IsScreenshotRequested())
+        if(TerminalClock>=Settle+.9f&&!FScreenshotRequest::IsScreenshotRequested())
         {
             ConsumeVideoWrite(true); // Include the last frame before copying restart evidence.
             bAwaitingReload=true;bTerminalSettling=false;Event(TEXT("restart_requested"),false);SaveEvidence(false);

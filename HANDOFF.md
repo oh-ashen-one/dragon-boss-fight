@@ -1,6 +1,14 @@
 # Current continuation — 2026-11-01 (Codex)
 
-**STOPPED per owner first-tie rule. Fight-feel revision 3 passed its relative review, but the first blind pacing review returned TIE. The provisional 650 HP meets numerical timing gates and is NOT accepted as a visible pacing improvement. Full backlog is incomplete.** Only game branches: `fable/knight-complete-20261028` in this checkout; dragon art remains `claude-code-enhancements`. No main push/merge.
+**ACTIVE again: owner resumed on 2026-11-01 and requested fixing damage gaps, camera occlusion and death readability while keeping the 150-second target.** Prior first pacing TIE is preserved; 650 HP stays unchanged. Round-2 source changes compile, but GPU streaming gate currently prevents all renderer launches. Native integration, Shipping capture and new blind review are NOT done. See `docs/fight-feel-20261031/pacing-round2-plan.md`. Only game branches remain `fable/knight-complete-20261028` and `claude-code-enhancements`; no main push/merge.
+
+## Active round-2 checkpoint
+
+- Shipping code compile passed: source `4ddc5188…`, receipt `Local/unreal-build-20261101T175855557261Z/receipt.json`. Latest packaged/player-verified build is still the earlier 075300 package; new death/material assets are not imported yet.
+- Source revision keeps 650 HP, targets nearby limbs for locked attacks, leaves a 1.25 s post-move opening, shifts damage toward normal contacts, lowers close camera focus, and waits for actual death-animation duration. Legacy flag preserves the comparison behavior. No new runtime/quality pass claimed.
+- Baseline event audit: first hit 63.812 s, next gap 35.387 s, 79.077% HP lost in four seconds. New audit has three passing safety tests.
+- GPU streaming flag currently gives zero capture slots. Blender export is queued (`dragon-boss-fight/Local/native-pacing-20261101/export-wait.log`); editor is queued (`Local/pacing-editor-20261101/launcher-ready.log`). Both current waits are bounded at 3600 s. Check actual receipts/processes before any relaunch; no gate edits/overrides. Initial 180 s waits exited 75 without rendering.
+- Reusable existing death_v3 shows a distinct flank-down terminal pose. Export, native import and actual transition are pending. Original scenes and approved meshes stay protected. Exact next commands and asset plan are in `pacing-round2-plan.md`.
 
 ## Verified progress
 
@@ -23,9 +31,9 @@
 
 - Final pacing pair is served on port 8802 with seekable range responses verified. Both continuous movies use source ID 710f4c13…, zero failed frames, timestamp error <=0.5 microseconds. Durations include normal intro/end holds (153.054 s baseline / 128.979 s candidate); the active encounter timer remains 150.02 cutoff / 124.164 victory. Uniform anonymous frame-sequence Opus review returned TIE; it cannot establish continuous motion quality. Candidate A has a burst-heavy abrupt finish; baseline B stalls. The critic found shared camera occlusion and long no-damage approach. See `critique-pacing-round1.md`.
 
-## Remaining work — only after owner continuation
+## Remaining work — resumed round 2
 
-1. Numerical target is met in both grips and the filmed one-hand run, but first pacing quality gate tied. Owner must direct continuation. If resumed, address readable damage distribution, approach/camera occlusion and a distinct death beat before another review; do not merely reduce HP again.
+1. Numerical target is met in both grips and the filmed one-hand run, but first pacing quality gate tied. Owner resumed. Address readable damage distribution, approach/camera occlusion and a distinct death beat before another review; do not merely reduce HP again.
 2. Every-move replay/film, including real roar. Reconcile dragon branch authoring versus the currently integrated v028 definition; do not claim all dragon improvements are imported.
 3. Source free two-handed heavy/jump/running attack candidates and stage them for the owner to select; owner handles store/login clicks.
 4. Sprint feel, idle wing spread, sourced heal-cup correction, music/SFX. These are still outstanding.

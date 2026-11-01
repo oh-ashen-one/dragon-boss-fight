@@ -834,7 +834,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     }
     if (bLockedOn && IsValid(Boss) && ((Action==EVeyrKnightAction::Ready&&(MoveIntent.IsNearlyZero()||bFaceBoss))||(bAttack&&ActionElapsed<.16f)))
     {
-        const FVector Toward = (Boss->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+        const FVector Toward = (CombatAimPoint() - GetActorLocation()).GetSafeNormal2D();
         if (!Toward.IsNearlyZero()) SetActorRotation(FMath::RInterpTo(GetActorRotation(), Toward.Rotation(), DeltaSeconds, 10.f));
     }
     else if (Action == EVeyrKnightAction::Guard && Controller)
@@ -843,6 +843,21 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
         const FRotator Facing(0.f, Controller->GetControlRotation().Yaw, 0.f);
         SetActorRotation(FMath::RInterpTo(GetActorRotation(), Facing, DeltaSeconds, 10.f));
     }
+}
+
+FVector AVeyrKnight::CombatAimPoint() const
+{
+    if(!IsValid(Boss))return GetActorLocation()+GetActorForwardVector()*200.f;
+    if(!Boss->UsesPacingRevision())return Boss->GetActorLocation();
+    if(Boss->IsHeadExposed())return Boss->GetHeadLocation();
+    FVector Point=Boss->GetActorLocation();float Nearest=450.f;
+    if(!Boss->IsAirborne())for(int32 I=0;I<4;++I)
+    {
+        const FVector Leg=Boss->GetLegLocation(I);
+        const float Distance=FVector::Dist2D(GetFootLocation(),Leg);
+        if(Distance<Nearest){Nearest=Distance;Point=Leg;}
+    }
+    return Point;
 }
 
 void AVeyrKnight::UpdateCamera(float DeltaSeconds)
@@ -879,7 +894,9 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
                         const float D=FVector::Dist2D(GetFootLocation(),Foot);
                         if(D<Nearest){Nearest=D;Leg=Foot;}
                     }
-                    Leg.Z=GetFootLocation().Z+170.f;
+                    // Look down toward the contact instead of horizontally
+                    // into the torso. The arm/lens remain player-controlled.
+                    Leg.Z=GetFootLocation().Z+(Boss->UsesPacingRevision()?100.f:170.f);
                     const float Blend=FMath::SmoothStep(0.f,1.f,FMath::Clamp((650.f-Nearest)/350.f,0.f,1.f));
                     Focus=FMath::Lerp(Focus,Leg,Blend);
                 }

@@ -183,7 +183,7 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
                     raise RuntimeError('Different existing runtime revision; preserved')
                 # Explicit version-to-version promotion, with the old source DA
                 # and every inherited sequence retained as recovery points.
-                for field in ('skeletal_mesh','mesh_relative_transform','clips','props','bone_targets','required_clips','required_bone_targets','source_sha256','native_presentation_verified'):
+                for field in ('skeletal_mesh','camera_occlusion_material','mesh_relative_transform','clips','props','bone_targets','required_clips','required_bone_targets','source_sha256','native_presentation_verified'):
                     existing.set_editor_property(field,source.get_editor_property(field))
                 unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPreviousSourceDefinition',previous)
                 unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPolishSourceDefinition',source_path)

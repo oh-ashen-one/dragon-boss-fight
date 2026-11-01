@@ -1,0 +1,84 @@
+{
+  "sourceId": "710f4c1373be907f497a37de38b9c315bbb2da1ca856929f191f4216662fec17",
+  "initialHP": 650,
+  "victoryPassed": true,
+  "terminalActiveSeconds": 124.16421354189515,
+  "firstHitActiveSeconds": 63.81164154037833,
+  "longestNoDamageGap": {
+    "start": 0,
+    "end": 63.81164154037833,
+    "seconds": 63.81164154037833
+  },
+  "damageGapsOver20Seconds": [
+    {
+      "start": 0,
+      "end": 63.81164154037833,
+      "seconds": 63.81164154037833
+    },
+    {
+      "start": 63.81164154037833,
+      "end": 99.19892333075404,
+      "seconds": 35.38728179037571
+    }
+  ],
+  "largestFourSecondHealthLossFraction": 0.7907692307692308,
+  "hits": [
+    {
+      "activeSeconds": 63.81164154037833,
+      "damage": 34,
+      "remainingHP": 616,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 99.19892333075404,
+      "damage": 34,
+      "remainingHP": 582,
+      "region": 0,
+      "dragonState": "Recovery",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 100.32192474976182,
+      "damage": 34,
+      "remainingHP": 548,
+      "region": 0,
+      "dragonState": "Idle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 117.83202666416764,
+      "damage": 34,
+      "remainingHP": 514,
+      "region": 0,
+      "dragonState": "Buckle",
+      "observedHealthLoss": 34
+    },
+    {
+      "activeSeconds": 121.51063508167863,
+      "damage": 125,
+      "remainingHP": 389,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 125
+    },
+    {
+      "activeSeconds": 122.65698791667819,
+      "damage": 125,
+      "remainingHP": 264,
+      "region": 4,
+      "dragonState": "Exposed",
+      "observedHealthLoss": 125
+    },
+    {
+      "activeSeconds": 124.16405949741602,
+      "damage": 270,
+      "remainingHP": 0,
+      "region": 4,
+      "dragonState": "Dead",
+      "observedHealthLoss": 264
+    }
+  ],
+  "scope": "Native event timing; not a visual, difficulty or human-feel quality gate"
+}

@@ -333,6 +333,7 @@ private:
     void AdvanceCombat(float DeltaSeconds);
     void UpdateMovement(float DeltaSeconds);
     void UpdateCamera(float DeltaSeconds);
+    FVector CombatAimPoint() const;
     void UpdateCameraOcclusion(float DeltaSeconds);
     void RestoreCameraOcclusion();
     void UpdateTemporaryPresentation(float DeltaSeconds);
