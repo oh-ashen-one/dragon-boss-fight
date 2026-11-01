@@ -1,38 +1,34 @@
 # Current continuation — 2026-11-01 (Codex)
 
-**Goal active. Owner resumed the first pacing TIE and requested shorter damage gaps, less camera occlusion and a clear death pose. HP remains 650. Round 2 passed a fresh blind Opus comparison; a scoped follow-up is addressing its remaining low-health flight stall and end-frame overlap. The full backlog is not complete.** Work only on `fable/knight-complete-20261028` here and `claude-code-enhancements` in the dragon checkout. No main merge/push.
+**Goal active. The resumed pacing/death pass has two independent blind Opus PASS verdicts. Full backlog is unfinished; every-move replay is next.** HP stayed 650 throughout the resumed fixes. Only game branches: `fable/knight-complete-20261028` here and `claude-code-enhancements` in the dragon checkout. No main merge/push.
 
-## Verified state
+## Current playable state and evidence
 
-- Fight-feel revision 3 passed earlier relative blind reviews; shake/flash/impact-pause settings persisted across a real process relaunch. Owner gameplay feel remains separate. Roar feedback still awaits the missing real Roar clip.
-- Current native dragon definition is **v030pacing**, Knight remains v030t. Native Epic MCP project/world/schema discovery was verified on the owned editor. Both owned editor sessions exited cleanly after asset work. The initial streaming gate wait ended normally; no gate overrides or flag changes.
-- Pacing uses nearby-limb lock-on aiming, a 1.25 s grounded post-move opening, 45/85 limb damage and 65/120 exposed-head damage, unchanged stance scaling, and actual flight cooldown enforcement. Initial flight is unavailable for 20 s; after Rise, ten grounded seconds are reserved. Legacy comparison flag preserves the original behavior at the same 650 HP.
-- Existing death_v3 was transferred without changing canonical mesh/skin bytes. Native sampling passed 270 poses plus transition endpoints. A runtime head-floor gap then prompted a scoped Blender correction: late bone_4 rotation only, eased frames 55–110, 15.165 degrees, about 53 cm → 3.2 cm clearance at game scale, no added sampled penetration. Original scenes are preserved. Front/side/three-quarter source renders inspected. `docs/fight-feel-20261031/pacing-round2-native-integration.json` and dragon `docs/death-head-contact-20261101.json` hold provenance.
-- Only RuntimePolish/DA_Dragon changed among protected native files. Original meshes, skeleton, clips and visibility shader were preserved; new version assets are separate. Visibility material is an optional definition reference applied via transient MIDs, not a rewrite of inherited mesh materials.
+- **Newest tested Shipping:** `Local/package-20261101T201830Z/receipt.json`; source ID `d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5`; verified app `/private/tmp/veyr-verified-bundle-x5xt6ab1/Veyr-Mac-Shipping.app`. Use this or a subsequently verified newer Shipping package when opening the game for the owner.
+- Native definitions: KnightB/v030t and DragonV3B/v030pacing. Native Epic MCP worked on two verified owned editor instances. Both editors and all capture/Blender processes exited cleanly; only this task's review HTTP servers remain. Rebuild VeyrEditor before new-code PIE/live actor work: its last loaded module predates the final C++ finisher changes.
+- Final one-hand replay **75.918 active wall seconds**, first hit **16.281 s**, longest no-damage gap **16.281 s**, no gaps over 20 s, last two hits **3.686 s** apart. Final-quarter flight starts: zero. Two-hand **24.753 s** through the ordinary grip input. Both passed completed native death pose and restart resource/movement/primary checks. Latest core passed light/heavy contacts, head punish, completed Rise and actual dodge contact. Exact runs/results: `docs/fight-feel-20261031/pacing-final-results.json`.
+- Original matched legacy replay (650 HP) first hit at ~73.6 s and won at 105.615 s; 79.077% of HP vanished in four seconds. Revised maximum four-second loss is 38.462%. HP was not reduced to obtain the resumed improvements.
+- Blind round 2: **PASS A** for distributed progress and a clear grounded fall. Follow-up finisher comparison: **PASS A** for the final grounded exchange and unobstructed head. Reports `critique-pacing-round2.md` and `critique-pacing-finisher.md`; estimates logged in `critic-usage.json`. Labels/mapping withheld until each verdict. Critics saw sampled native frames, not continuous playback; owner gameplay feel remains separate.
+- Continuous native films have no text overlays (only the unlabeled live health gauge), zero failed frames, verified timestamps. Full original→final overview page uses port **8805**; controlled round-2 page **8803**; same-build finisher page **8804**. The full overview spans two builds; each critic comparison used a single build. Videos/reports are in this chat's `outputs/`.
 
-## Measurements and current build
+## What changed
 
-- Original rejected film: first hit 63.812 s, a second gap 35.387 s, 79.077% HP lost in four seconds.
-- Same-build v029pacing comparison: legacy won at 105.554 s but first hit took 73.594 s; revised won at 90.681 s, first hit 16.079 s, max gap 18.015 s, largest four-second loss 38.462%. Two-hand passed at 24.642 s through the normal grip input. Core passed light/heavy, head bonus, completed Rise and dodge contact. The large grip timing gap is not claimed balanced.
-- v030pacing contact-corrected film (`native-victory-20261101T193026Z`) passed at 86.950 s, first hit 16.079 s, max gap 17.108 s. It demonstrated a standing death; its head was partly outside the held camera. A final code change now retains an existing lock through the fall, tracking a head/body point without changing arm/FOV or forcing a lock; manual look remains available and pawn auto-facing stops during death.
-- **Newest Shipping package:** `Local/package-20261101T193704Z/receipt.json`, source ID `54762f896ee1859d462fb7fe46db3fe3c5dca7bb7ac3983e2e212f1611d85c8d`, verified app `/private/tmp/veyr-verified-bundle-kmymtf5w/Veyr-Mac-Shipping.app`. This final framing package's replay/capture is now running: inspect newest victory evidence and owned process before launching again.
-- Native victory verification requires actual completed non-looping DeathFall/DeathFallDown and visibility material binding. Timeline review includes uniform 2 s samples plus 0.25 s final-ten-second sequences. Neither is a substitute for continuous video or owner feel.
+- Locked attacks face the nearby limb rather than body center; completed moves leave a 1.25 s grounded opening. Limb damage 45/85, exposed-head damage 65/120 before unchanged stance scaling. Flight respects cooldown in every selection; first flight is delayed to 20 s, Rise reserves ten grounded seconds, final quarter stays grounded. No forced damage, victory or HP changes during combat.
+- Close camera focus is lower; the camera visibility shader is a separate definition reference applied through transient MIDs. Existing lock tracks the fall, with a smooth shoulder offset chosen to separate the knight from the head. Arm/FOV and manual look are preserved; pawn auto-facing stops during death.
+- Existing death_v3 reused with canonical geometry/skin preserved. A late neck rotation authored in Blender (15.165 degrees, frames 55–110) settles the snout from about 53 cm to 3.2 cm clearance at native scale, without new sampled penetration. Original scenes, meshes, skeleton and clips are retained. v030pacing adds separate death sequences; only RuntimePolish/DA_Dragon changed among protected native assets. 270 native pose samples plus transition endpoints passed. Three source views rendered/inspected. Provenance: `pacing-round2-native-integration.json`, dragon `docs/death-head-contact-20261101.json`.
+- Fight-feel revision 3 and its persistent shake/flash/impact-pause toggles were verified earlier. The reference pack was studied only. No new AI video/asset generation or purchases in this pass.
 
-## Finisher follow-up (current)
+## Remaining scope and next actions
 
-- Latest package `Local/package-20261101T201830Z/receipt.json`, source `d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5`, verified app `/private/tmp/veyr-verified-bundle-x5xt6ab1/Veyr-Mac-Shipping.app`. Default keeps the final quarter on the ground and offsets the locked death camera to reveal the head; `-VeyrPacingNoFinisher` selects the already-passed previous behavior. No HP reduction.
-- Initial 15% cutoff committed flight too early (at 130 HP), so it was raised to 25% before the next review. That first test passed at 87.063 s and visibly cleared the head, but was not submitted to a critic.
-- Current final-quarter capture is running; inspect newest victory evidence/process before relaunching. No editor/Blender is held open. The accepted round-2 pair is on port 8803; final follow-up will have a new page.
+1. **Every-move replay and film.** Active dragon still lacks Roar. Reconcile approved authoring clips with runtime; use the proven Blender→canonical graft→native import path, preserve rejected candidates, then show all moves/states. Do not stage data-driven collision changes silently: Data/dragon is not currently part of the packaged move-data path.
+2. **Attack candidate page:** free Fab/Mixamo and other licensed sources for weapon-true two-hand heavies, jump and running attacks. Owner picks candidates and performs store/login clicks. Current attack assets and large grip timing difference are not claimed balanced or owner-approved.
+3. Sprint feel, idle wing spread, heal-cup motion, music/SFX remain open.
+4. Preserve remaining critic notes: early aerial framing/untargetable stretches; dark knight/weapon overlap during close head punishes; limited weapon visibility in the final pose. The passes are relative quality improvements, not a perfect-camera or whole-game approval. Recheck timings after future animation changes.
 
-## Next steps
-
-1. Finish the latest package's one-hand capture, confirm the death framing, film `-VeyrPacingLegacy` at the same HP, recheck two-hand and core as needed, encode world 0 with verified timestamps, serve a fresh bare page. Keep all failed/intermediate evidence.
-2. Fresh blind Opus 5.5 high review on anonymous native frames, without source notes or mapping. Round-2 critic returned PASS A (after); see `critique-pacing-round2.md`. A fresh finisher comparison is still pending. Stop on a tie per owner rule. Numeric/fidelity passes alone do not ship.
-3. Every-move replay and film, including real roar; active gameplay lacks Roar. Then source/pick page for free weapon-true heavy/jump/running attacks (owner does store/login clicks), then sprint, idle wings, heal, music/SFX. These remain unfinished.
-
-Flags: `-VeyrPacingLegacy` restores the pre-revision pacing/camera/death behavior, not 2800 HP. `-VeyrLegacyBossHealth` is a separate fresh victory baseline flag. `-VeyrCleanVideo -VeyrBossBarOnly` retains only the live unlabeled health gauge. The older first-tie page remains on port 8802; new captures have not replaced that page. Current evidence and code are WIP pending review.
+Flags: `-VeyrPacingLegacy` restores the original pacing/camera/death behavior at 650 HP; `-VeyrPacingNoFinisher` selects the already-passed intermediate pacing without final-quarter/shoulder refinements. `-VeyrLegacyBossHealth` is a separate fresh victory-only 2800 HP baseline. `-VeyrCleanVideo -VeyrBossBarOnly` makes the text-free health-gauge film. Earlier first-tie evidence and pages remain preserved. Wiki changes are on `codex/veyr-fightfeel-20261031` (PR #3 unmerged).
 
 ---
+
 
 
 # HANDOFF — dragon-boss-fight (Can It Code north-star pass)

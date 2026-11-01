@@ -1,0 +1,364 @@
+{
+  "status": "pacing and finisher passed two scoped blind reviews; full backlog incomplete",
+  "health": 650,
+  "sourceId": "d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5",
+  "originalBefore": {
+    "sourceId": "54762f896ee1859d462fb7fe46db3fe3c5dca7bb7ac3983e2e212f1611d85c8d",
+    "initialHP": 650,
+    "victoryPassed": true,
+    "terminalActiveSeconds": 105.61483587697148,
+    "firstHitActiveSeconds": 73.61574429273605,
+    "longestNoDamageGap": {
+      "start": 0,
+      "end": 73.61574429273605,
+      "seconds": 73.61574429273605
+    },
+    "damageGapsOver20Seconds": [
+      {
+        "start": 0,
+        "end": 73.61574429273605,
+        "seconds": 73.61574429273605
+      }
+    ],
+    "largestFourSecondHealthLossFraction": 0.7384615384615385,
+    "hits": [
+      {
+        "activeSeconds": 73.61574429273605,
+        "damage": 34,
+        "remainingHP": 616,
+        "region": 0,
+        "dragonState": "Recovery",
+        "observedHealthLoss": 34
+      },
+      {
+        "activeSeconds": 74.74551725015044,
+        "damage": 34,
+        "remainingHP": 582,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 34
+      },
+      {
+        "activeSeconds": 84.91552754119039,
+        "damage": 34,
+        "remainingHP": 548,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 34
+      },
+      {
+        "activeSeconds": 86.04528971016407,
+        "damage": 34,
+        "remainingHP": 514,
+        "region": 0,
+        "dragonState": "Windup",
+        "observedHealthLoss": 34
+      },
+      {
+        "activeSeconds": 99.19829858466983,
+        "damage": 34,
+        "remainingHP": 480,
+        "region": 0,
+        "dragonState": "Buckle",
+        "observedHealthLoss": 34
+      },
+      {
+        "activeSeconds": 102.9125500023365,
+        "damage": 125,
+        "remainingHP": 355,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 125
+      },
+      {
+        "activeSeconds": 104.06047854200006,
+        "damage": 125,
+        "remainingHP": 230,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 125
+      },
+      {
+        "activeSeconds": 105.61469108238816,
+        "damage": 270,
+        "remainingHP": 0,
+        "region": 4,
+        "dragonState": "Dead",
+        "observedHealthLoss": 230
+      }
+    ],
+    "scope": "Native event timing; not a visual, difficulty or human-feel quality gate"
+  },
+  "finisherBefore": {
+    "sourceId": "d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5",
+    "initialHP": 650,
+    "victoryPassed": true,
+    "terminalActiveSeconds": 86.99955670908093,
+    "firstHitActiveSeconds": 16.093129124492407,
+    "longestNoDamageGap": {
+      "start": 65.47938758507371,
+      "end": 82.52683670818806,
+      "seconds": 17.047449123114347
+    },
+    "damageGapsOver20Seconds": [],
+    "largestFourSecondHealthLossFraction": 0.38461538461538464,
+    "hits": [
+      {
+        "activeSeconds": 16.093129124492407,
+        "damage": 45,
+        "remainingHP": 605,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 20.766283083707094,
+        "damage": 45,
+        "remainingHP": 560,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 36.416004460304976,
+        "damage": 45,
+        "remainingHP": 515,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 41.09612100198865,
+        "damage": 45,
+        "remainingHP": 470,
+        "region": 0,
+        "dragonState": "Buckle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 44.74935541674495,
+        "damage": 65,
+        "remainingHP": 405,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 65
+      },
+      {
+        "activeSeconds": 45.896208208054304,
+        "damage": 65,
+        "remainingHP": 340,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 65
+      },
+      {
+        "activeSeconds": 47.410054583102465,
+        "damage": 120,
+        "remainingHP": 220,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 120
+      },
+      {
+        "activeSeconds": 55.24903370812535,
+        "damage": 45,
+        "remainingHP": 175,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 64.34745121002197,
+        "damage": 45,
+        "remainingHP": 130,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 65.47938758507371,
+        "damage": 45,
+        "remainingHP": 85,
+        "region": 0,
+        "dragonState": "Windup",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 82.52683670818806,
+        "damage": 45,
+        "remainingHP": 40,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 86.99939395859838,
+        "damage": 45,
+        "remainingHP": 0,
+        "region": 0,
+        "dragonState": "Dead",
+        "observedHealthLoss": 40
+      }
+    ],
+    "scope": "Native event timing; not a visual, difficulty or human-feel quality gate"
+  },
+  "after": {
+    "sourceId": "d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5",
+    "initialHP": 650,
+    "victoryPassed": true,
+    "terminalActiveSeconds": 75.91800408437848,
+    "firstHitActiveSeconds": 16.281394958496094,
+    "longestNoDamageGap": {
+      "start": 0,
+      "end": 16.281394958496094,
+      "seconds": 16.281394958496094
+    },
+    "damageGapsOver20Seconds": [],
+    "largestFourSecondHealthLossFraction": 0.38461538461538464,
+    "hits": [
+      {
+        "activeSeconds": 16.281394958496094,
+        "damage": 45,
+        "remainingHP": 605,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 20.94415608420968,
+        "damage": 45,
+        "remainingHP": 560,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 36.67921758443117,
+        "damage": 45,
+        "remainingHP": 515,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 41.29838950186968,
+        "damage": 45,
+        "remainingHP": 470,
+        "region": 0,
+        "dragonState": "Buckle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 44.92467775195837,
+        "damage": 65,
+        "remainingHP": 405,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 65
+      },
+      {
+        "activeSeconds": 46.08593087643385,
+        "damage": 65,
+        "remainingHP": 340,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 65
+      },
+      {
+        "activeSeconds": 47.57870329171419,
+        "damage": 120,
+        "remainingHP": 220,
+        "region": 4,
+        "dragonState": "Exposed",
+        "observedHealthLoss": 120
+      },
+      {
+        "activeSeconds": 55.461230125278234,
+        "damage": 45,
+        "remainingHP": 175,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 64.57784758508205,
+        "damage": 45,
+        "remainingHP": 130,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 69.26540287584066,
+        "damage": 45,
+        "remainingHP": 85,
+        "region": 0,
+        "dragonState": "Idle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 72.23158358410001,
+        "damage": 45,
+        "remainingHP": 40,
+        "region": 0,
+        "dragonState": "Buckle",
+        "observedHealthLoss": 45
+      },
+      {
+        "activeSeconds": 75.91782550141215,
+        "damage": 65,
+        "remainingHP": 0,
+        "region": 4,
+        "dragonState": "Dead",
+        "observedHealthLoss": 40
+      }
+    ],
+    "scope": "Native event timing; not a visual, difficulty or human-feel quality gate"
+  },
+  "mappingAfterVerdict": {
+    "A": "final-quarter grounded fight and clear death shoulder",
+    "B": "previously passed pacing without finisher refinements"
+  },
+  "reviews": [
+    "critique-pacing-round2.md",
+    "critique-pacing-finisher.md"
+  ],
+  "twoHanded": {
+    "sourceId": "d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5",
+    "passed": true,
+    "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+    "terminalWallSeconds": 24.753373708575964,
+    "victoryGripTransitionCompleted": true,
+    "lightLegContact": false,
+    "heavyLegContact": false,
+    "riseCompleted": false,
+    "evidence": "Evidence/native-victory-20261101T203004Z/unreal-victory-20261101T203017Z-5CE6ECAE/evidence.json"
+  },
+  "core": {
+    "sourceId": "d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5",
+    "passed": true,
+    "reason": "jump-disabled light heavy collapse head bonus completed rise and dodge contact observed",
+    "terminalWallSeconds": -1,
+    "victoryGripTransitionCompleted": false,
+    "lightLegContact": true,
+    "heavyLegContact": true,
+    "riseCompleted": true,
+    "evidence": "Evidence/native-core-20261101T203328Z/unreal-core-20261101T203341Z-5C2DD542/evidence.json"
+  },
+  "finalHitGapSeconds": 3.6862419173121452,
+  "comparisonScope": "First review compares legacy to pacing revision on one build; second compares that revision to the finisher on another single build. Full overview page spans those two builds; it is not presented as a single-build comparison.",
+  "controlledComparison": {
+    "before": {
+      "sourceId": "d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5",
+      "passed": true,
+      "noFinisherFlag": true,
+      "lowHealthFlightStarts": 1
+    },
+    "after": {
+      "sourceId": "d57fa8a0f0601129be2bd2f09102b44d05bfdc6c62183c6c13e6d7942e4badb5",
+      "passed": true,
+      "noFinisherFlag": false,
+      "lowHealthFlightStarts": 0
+    }
+  }
+}

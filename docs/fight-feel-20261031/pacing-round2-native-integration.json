@@ -1,6 +1,6 @@
 {
   "version": "v030pacing",
-  "status": "native import/fidelity passed; current package capture and blind review pending",
+  "status": "v030pacing imported, captured and passed two scoped blind reviews; whole backlog incomplete",
   "source": "existing owner-owned video2rig death_v3; scoped Blender neck-floor correction only",
   "sourceSceneSHA256": "f9c19c833f55476b091a4b86c647e5b926911fdc27ffa3228431aef3fa0dad84",
   "authoredSceneSHA256": "45fbbd8344b1f3a14a2f33a70792f9f5d1f4f0579c11a34a0a6a3e5919f5d968",

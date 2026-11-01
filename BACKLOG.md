@@ -5,6 +5,12 @@ better now". These are his notes for the next session, in his order, with the fa
 Start with `HANDOFF.md`, then pick items here. Each item needs a before/after the owner can watch (bare page: video plus
 BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called done.
 
+## Continuation status — 2026-11-01
+
+- Item 7: implemented and rendered; revision 3 passed relative blind review and settings persisted. Real roar feedback remains linked to importing the missing Roar clip in item 3; owner subjective feel remains separate.
+- Item 4: current 650-HP pacing passes at 75.918 s one-hand and 24.753 s two-hand, with two blind visual PASS rounds. Full evidence and remaining framing/readability notes are in HANDOFF.md and `docs/fight-feel-20261031/pacing-final-results.json`. Remeasure after new attack/dragon clips.
+- Item 3 is next. Items 8, 1, 2, 5 and 6 remain unfinished. Baseline descriptions below preserve the owner's original playtest context.
+
 ## 1. Knight running feels blocky, not like a sprint
 - Owner: "the running still feels a bit blocky. It doesn't feel like you're actually sprinting, and it doesn't seem too fluid."
 - Runtime run clips: Run / RunAlternate / RunTwoHand (approved Fab run v18 family, see `docs/knight-complete-20261028/local-assets-provenance.json`), RunStop join 0.30 s.
@@ -20,7 +26,7 @@ BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called d
 
 ## 4. Fight too long: 2.5 minutes max
 - Owner: "The dragon has too much health, and it takes forever to kill him. It should be a 2.5-minute boss fight max."
-- Now: `AVeyrDragon::MaxHealth = 2800` (`Unreal/Veyr/Source/Veyr/VeyrDragon.h:115`). Knight damage 28 / 62 per light hit (1H / 2H), heavy 43.4 / 96.1 (see `docs/handoffs/HANDOFF-codex-v030-chain-20261028.md`). 2800 HP is about 100 one-hand light hits.
+- Baseline at the owner playtest: `AVeyrDragon::MaxHealth = 2800` (`Unreal/Veyr/Source/Veyr/VeyrDragon.h:115`). Knight damage 28 / 62 per light hit (1H / 2H), heavy 43.4 / 96.1 (see `docs/handoffs/HANDOFF-codex-v030-chain-20261028.md`). 2800 HP is about 100 one-hand light hits.
 - Tune health (and/or damage, stagger/exposed multipliers) so a competent player wins in at most 150 s; measure with the `victory` replay and an owner playtest. Update the gates that assume the old fight length.
 
 ## 5. Knight drinking-cup (heal) animation is bad

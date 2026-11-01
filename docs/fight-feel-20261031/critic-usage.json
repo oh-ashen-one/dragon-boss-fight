@@ -73,6 +73,15 @@
       "error": false,
       "reportedEstimatedUSD": 0.5452772,
       "durationMs": 65317
+    },
+    {
+      "receipt": "pacing-finisher-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.4792394,
+      "durationMs": 76218
     }
   ]
 }
