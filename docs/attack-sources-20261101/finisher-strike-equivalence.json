@@ -1,0 +1,12 @@
+{
+  "finisher": "Local/CustomuseAssets/Polish20261025/knight-v038combo/knight/Kevin_Heavy_M_v10finisher.glb",
+  "standalone": "Local/CustomuseAssets/Polish20261025/knight-v037combat/knight/Kevin_Heavy_M_v10.glb",
+  "intervalSeconds": [
+    0.45,
+    2.8333332538604736
+  ],
+  "samples": 287,
+  "maxJointMatrixError": 1.2900322257092256e-06,
+  "sameStrikeAndRecovery": true,
+  "scope": "Only entry differs; standalone slow inspection covers the identical sourced cut and recovery, not the combo entry."
+}

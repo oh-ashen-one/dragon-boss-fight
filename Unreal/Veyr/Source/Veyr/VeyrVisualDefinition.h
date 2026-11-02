@@ -34,6 +34,7 @@ struct FVeyrVisualClip
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<float> RootYawSamplesDegrees;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float RootSampleRate=60.f;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bRootMotionRemoved=false;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bRootMotionVertical=false;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FString ApprovedSourceFile;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FString ApprovedSourceSHA256;
 };

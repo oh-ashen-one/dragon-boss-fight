@@ -15,12 +15,17 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version',default='v032kevin')
 parser.add_argument('--export-name',default='Kevin_Heavy_M_v7')
 parser.add_argument('--previous-version',default='v030t')
+parser.add_argument('--clip-key',default='HeavyAttackTwoHandSourced')
+parser.add_argument('--base-plan',type=Path,default=ROOT/'Local/CustomuseAssets/Polish20261025/knight-v030t/import-plan-KnightB.json')
+parser.add_argument('--export-file',type=Path);parser.add_argument('--append-plan',type=Path)
 args=parser.parse_args()
-if not all(x.replace('_','').isalnum() for x in [args.version,args.export_name,args.previous_version]):parser.error('Names must contain only letters, digits or underscores')
-base=json.loads((ROOT/'Local/CustomuseAssets/Polish20261025/knight-v030t/import-plan-KnightB.json').read_text())
-folder=ROOT/f'Local/CustomuseAssets/Polish20261025/knight-{args.version}'
-assert not folder.exists()
-exported=ROOT/'Local/AttackSources20261101/KevinIglesias/Retarget/Exports'/f'{args.export_name}.glb'
+if args.append_plan:args.append_plan=args.append_plan.resolve()
+if args.export_file:args.export_file=args.export_file.resolve()
+if not all(x.replace('_','').isalnum() for x in [args.version,args.export_name,args.previous_version,args.clip_key]):parser.error('Names must contain only letters, digits or underscores')
+base=json.loads((args.append_plan or args.base_plan).read_text())
+folder=args.append_plan.parent if args.append_plan else ROOT/f'Local/CustomuseAssets/Polish20261025/knight-{args.version}'
+if not args.append_plan:assert not folder.exists()
+exported=args.export_file or ROOT/'Local/AttackSources20261101/KevinIglesias/Retarget/Exports'/f'{args.export_name}.glb'
 fit=json.loads(exported.with_suffix('.json').read_text())
 assert hashlib.sha256(exported.read_bytes()).hexdigest()==fit['sha256']
 canonical=Path(base['rig']['file']);assert hashlib.sha256(canonical.read_bytes()).hexdigest()==base['rig']['sha256']
@@ -47,9 +52,10 @@ native_scale=base['target_height_cm']/float(np.ptp(body_vertices[:,1]))
 reach=float(max(0.,points[low:high+1,2].max())*native_scale)
 if window[1]-window[0]<.05:raise ValueError('Measured strike window is too short')
 plan={k:v for k,v in base.items() if k!='clips'}
-plan.update(version=args.version,replace_runtime_source=f'/Game/Characters/Customuse/KnightB/{args.previous_version}/DA_KnightB',owner_approved=False,owner_requested_revision=True)
-plan['required_clips']=sorted(set(base['required_clips'])|{'HeavyAttackTwoHandSourced'})
-plan['clips']=[dict(name='HeavyAttackTwoHandSourced',**entry,mesh_variant=base['canonical_mesh_variant'],start_seconds=0.,end_seconds=duration,loop=False,
+if not args.append_plan:plan.update(version=args.version,replace_runtime_source=f'/Game/Characters/Customuse/KnightB/{args.previous_version}/DA_KnightB',owner_approved=False,owner_requested_revision=True)
+plan['required_clips']=sorted(set(base['required_clips'])|{args.clip_key})
+assert not args.append_plan or all(c['name']!=args.clip_key for c in base['clips'])
+plan['clips']=(base['clips'] if args.append_plan else [])+[dict(name=args.clip_key,**entry,mesh_variant=base['canonical_mesh_variant'],start_seconds=0.,end_seconds=duration,loop=False,
  gameplay_play_rate=1.,nominal_speed_cm_per_second=0.,attack_reach_cm=reach,damage_windows=[window],impact_seconds=float(times[peak]),
  weapon_file=base['clips'][0]['weapon_file'],root_motion_policy='preserve',root_motion_removed=False,root_sample_rate=120.,
  root_translation_samples_cm=[],root_yaw_samples_degrees=[],source_duration=duration,approved_source_file=exported.name,approved_source_sha256=fit['sha256'])]
@@ -59,5 +65,5 @@ receipt={'plan':str(path),'sourceExport':str(exported),'normalization':normal,'g
  'attackReachCm':reach,'reachMethod':'Maximum forward blade-tip position within the measured damage window, scaled by target height divided by canonical mesh height',
  'ownerAuthority':'Owner delegated source/implementation decisions on 2026-11-01; no human playback approval is claimed',
  'status':'Offline candidate only; native integration, runtime contacts and blind quality review pending'}
-(folder/'preparation.json').write_text(json.dumps(receipt,indent=2)+'\n')
+(folder/f'preparation-{args.clip_key}.json').write_text(json.dumps(receipt,indent=2)+'\n')
 print('Prepared licensed heavy; duration',duration,'measured damage window',window,'impact',float(times[peak]))

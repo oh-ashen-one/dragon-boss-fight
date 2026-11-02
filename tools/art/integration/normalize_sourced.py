@@ -12,7 +12,7 @@ ROOT=Path(__file__).resolve().parents[3]
 BASE=ROOT/'Local/CustomuseAssets/Polish20261025/idle-joins/import-plan-KnightB.json'
 OUT=ROOT/'Local/CustomuseAssets/Sourced20261025'
 
-def normalize_file(path,canonical,out,fps,root_prefix=None):
+def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False):
  src=GLB(path);names=canonical.skin_names();assert set(src.skin_names())==set(names)
  writer=Writer(src.g,src.binary);g=writer.g;body_index,body=src.body();_,cb=canonical.body()
  g['nodes']=copy.deepcopy(canonical.g['nodes']);g['scenes']=copy.deepcopy(canonical.g['scenes']);g['scene']=canonical.g.get('scene',0)
@@ -26,12 +26,14 @@ def normalize_file(path,canonical,out,fps,root_prefix=None):
   for attr,acc in list(primitive['attributes'].items()):
    if attr.startswith('JOINTS_'):primitive['attributes'][attr]=writer.add(palette[src.accessor(acc).astype(np.uint16)],'VEC4',5123)
  duration=src.duration();count=round(duration*fps);times=np.linspace(0,duration,count+1);poses=[];actors=[];initial=None;last_actor=None
+ first_world,_=src.sample(0.);last_world,_=src.sample(duration)
+ vertical_base=max(first_world[src.names['Hips']][1,3],last_world[src.names['Hips']][1,3])
  for t in times:
   world,_=src.sample(float(t));hips=world[src.names['Hips']][:3,3]
   if initial is None:initial=hips.copy()
   actor=np.eye(4)
   if root_prefix is not None:
-   if t<=root_prefix+1e-6 or last_actor is None:actor[:3,3]=hips-initial;actor[1,3]=0;last_actor=actor.copy()
+   if t<=root_prefix+1e-6 or last_actor is None:actor[:3,3]=hips-initial;actor[1,3]=max(0.,hips[1]-vertical_base) if root_vertical else 0;last_actor=actor.copy()
    else:actor=last_actor.copy()
   actors.append(actor);counter=np.linalg.inv(actor);poses.append({n:counter@world[src.names[n]] for n in names})
  animation={'name':Path(path).stem,'samplers':[],'channels':[]};time_accessor=writer.add(times,'SCALAR',bounds=True)

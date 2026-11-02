@@ -1,0 +1,62 @@
+{
+  "idle": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/KnightB/v026/Animations/Idle/IdleOneHand_Blender_v2r4.IdleOneHand_Blender_v2r4"
+    },
+    "approvedSourceFile": "IdleOneHand_Blender_v2r4.glb",
+    "approvedSourceSHA256": "0ea615d1b0f5978e78d0d7f3e69f2dea7498a71525616cdaf6c7e769590f8493",
+    "gameplayPlayRate": 1,
+    "nominalSpeedCmPerSecond": 0,
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "bLoop": true
+  },
+  "idleTwoHand": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/KnightB/v026/Animations/IdleTwoHand/IdleTwoHand_Blender_v2r4.IdleTwoHand_Blender_v2r4"
+    },
+    "approvedSourceFile": "IdleTwoHand_Blender_v2r4.glb",
+    "approvedSourceSHA256": "98e3bc6da65dbff373b72fccf5a453d26b24ff83f929b6699fab1172b96c0182",
+    "gameplayPlayRate": 1,
+    "nominalSpeedCmPerSecond": 0,
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "bLoop": true
+  },
+  "run": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/KnightB/v027/Animations/Run/Fab_RunOneHand_v18.Fab_RunOneHand_v18"
+    },
+    "approvedSourceFile": "Fab_RunOneHand_v18.glb",
+    "approvedSourceSHA256": "a60395b262f6452fc8f63f3d789edd1cc7ba17059beb883c91e2d2e7a3e86faf",
+    "gameplayPlayRate": 1,
+    "nominalSpeedCmPerSecond": 800,
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "bLoop": true
+  },
+  "runStop": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/KnightB/v026/Animations/RunStop/RunStop_Blender_v1r2.RunStop_Blender_v1r2"
+    },
+    "approvedSourceFile": "RunStop_Blender_v1r2.glb",
+    "approvedSourceSHA256": "bd5ee8f30e6198ffa39475c9a44e4a8f474c1673c4d29b2e9b22ba23782d4aee",
+    "gameplayPlayRate": 1,
+    "nominalSpeedCmPerSecond": 0,
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "bLoop": false
+  },
+  "runTwoHand": {
+    "sequence": {
+      "refPath": "/Game/Characters/Customuse/KnightB/v027/Animations/RunTwoHand/Fab_Run_v17.Fab_Run_v17"
+    },
+    "approvedSourceFile": "Fab_Run_v17.glb",
+    "approvedSourceSHA256": "bf2496e6440a74140c85d526466f3611955cd4b2c9c310d8d6c615d9acafc139",
+    "gameplayPlayRate": 1,
+    "nominalSpeedCmPerSecond": 800,
+    "startSeconds": 0,
+    "endSeconds": -1,
+    "bLoop": true
+  }
+}

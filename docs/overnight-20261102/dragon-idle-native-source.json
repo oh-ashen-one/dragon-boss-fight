@@ -1,0 +1,9 @@
+{
+  "sequence": {
+    "refPath": "/Game/Characters/Customuse/DragonV3B/v026/Animations/Idle/Dragon_Idle_Blender_v1r3Dragon_Idle_Blender_v1r3.Dragon_Idle_Blender_v1r3Dragon_Idle_Blender_v1r3"
+  },
+  "approvedSourceFile": "Dragon_Idle_Blender_v1r3.glb",
+  "approvedSourceSHA256": "7c057fd666e3dbbf91ecdbf8f9707a36cb767d16ab461f5565ecd229f5f4c6f8",
+  "gameplayPlayRate": 1,
+  "bLoop": true
+}

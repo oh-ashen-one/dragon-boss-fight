@@ -1,0 +1,51 @@
+{
+  "checkedUTC": "2026-11-02T08:43:50.080975+00:00",
+  "completedLaunches": [
+    [
+      1793606306.858,
+      "Local/v037-editor-20261102/gpu.json",
+      "veyr-v037-editor"
+    ],
+    [
+      1793607269.195,
+      "Evidence/native-core-20261102T081415Z/gpu.json",
+      "veyr-core"
+    ],
+    [
+      1793607839.859,
+      "Evidence/native-blendproof-20261102T082336Z/gpu.json",
+      "veyr-blendproof"
+    ],
+    [
+      1793607937.736,
+      "Evidence/native-blendproof-20261102T082436Z/gpu.json",
+      "veyr-blendproof"
+    ],
+    [
+      1793607989.986,
+      "Evidence/native-blendproof-20261102T082609Z/gpu.json",
+      "veyr-blendproof"
+    ],
+    [
+      1793608139.53,
+      "Evidence/native-blendproof-20261102T082830Z/gpu.json",
+      "veyr-blendproof"
+    ],
+    [
+      1793608337.55,
+      "Local/heavy-combo-entry-gpu.json",
+      "veyr-heavy-combo-entry"
+    ],
+    [
+      1793608552.605,
+      "Local/heavy-combo-grip-gpu.json",
+      "veyr-heavy-combo-grip"
+    ],
+    [
+      1793608687.991,
+      "Evidence/native-core-20261102T083754Z/gpu.json",
+      "veyr-core"
+    ]
+  ],
+  "note": "Completed receipts only; add any verified running owned renderer before considering another launch."
+}

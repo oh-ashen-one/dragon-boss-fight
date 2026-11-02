@@ -18,7 +18,7 @@ def solve(w,target):
     q0=(b-a).rotation_difference(joint-a)@w[0].to_quaternion();q1=(c-b).rotation_difference(target-joint)@w[1].to_quaternion()
     return [Matrix.LocRotScale(a,q0,w[0].to_scale()),Matrix.LocRotScale(joint,q1,w[1].to_scale()),Matrix.LocRotScale(target,w[2].to_quaternion(),w[2].to_scale())]
 
-def paired_shift(left,right,left_target):
+def paired_shift(left,right,left_target,max_shift=.06):
     shift=Vector();right_target=right[2].translation
     # Alternating projections of the common rigid grip translation into the
     # two reachable-arm balls. Both wrists move together; the source handle
@@ -27,7 +27,7 @@ def paired_shift(left,right,left_target):
         for w,target in [(left,left_target),(right,right_target)]:
             delta=target+shift-w[0].translation;maximum=length(w)-.0001
             if delta.length>maximum:shift+=delta.normalized()*maximum-delta
-    if shift.length>.06:return None
+    if shift.length>max_shift:return None
     for w,target in [(left,left_target),(right,right_target)]:
         if (target+shift-w[0].translation).length>length(w)-.00005:return None
     return shift

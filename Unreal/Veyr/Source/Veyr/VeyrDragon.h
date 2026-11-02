@@ -119,6 +119,7 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return State == EVeyrDragonState::Dead; }
     bool UsesPacingRevision() const { return !bLegacyPacing; }
+    FName IdlePresentationClip() const { return bOpenIdleWings?FName(TEXT("IdleOpen")):FName(TEXT("Idle")); }
     bool UsesFinisherRevision() const { return !bLegacyPacing&&!bLegacyFinisher; }
     /** Explicit non-combat rehearsal; never used by victory validation. */
     bool BeginShowcase();
@@ -226,6 +227,7 @@ protected:
 
 private:
     bool bLegacyPacing=false;
+    bool bOpenIdleWings=false;
     bool bLegacyFinisher=false;
     bool bShowcaseMode=false;
     FName ShowcaseSegment=NAME_None,ShowcaseOverrideClip=NAME_None;

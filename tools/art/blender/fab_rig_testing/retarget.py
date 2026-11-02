@@ -24,7 +24,7 @@ def reset():
  s=bpy.context.scene;s.render.fps=30;s.render.fps_base=1
  return s
 
-def render(label,frames):
+def render(label,frames,ortho_scale=2.1):
  s=bpy.context.scene
  # Attach the intact boat sword only for review; GLB retains the same socket.
  before=set(s.objects);bpy.ops.import_scene.gltf(filepath=str(ROOT/'Local/polish-review-20261025/BoatGreatsword_OneHand_v4.glb'))
@@ -41,7 +41,7 @@ def render(label,frames):
  s.render.resolution_x=640;s.render.resolution_y=640;s.render.resolution_percentage=100;s.render.image_settings.file_format='PNG'
  center=Vector((0,0,.5));folder=OUT/'Evidence'/label;folder.mkdir(parents=True,exist_ok=True)
  for v,off in {'front':(0,-3,.4),'side':(3,0,.4),'threequarter':(2,-3,.5)}.items():
-  cam.location=center+Vector(off);cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=2.1
+  cam.location=center+Vector(off);cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=ortho_scale
   for f in frames:
    s.frame_set(f)
    hip=bpy.data.objects['Knight_Comparison'].pose.bones['Hips'].head;focus=Vector((hip.x,hip.y,.5));cam.location=focus+Vector(off);cam.rotation_euler=(focus-cam.location).to_track_quat('-Z','Y').to_euler()

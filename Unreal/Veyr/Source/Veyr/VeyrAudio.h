@@ -56,6 +56,10 @@ private:
     bool VoiceFollowsDragon[VoiceCount]={};
     int32 LastRolls=0,LastBlinks=0;
     float FootstepClock=0.f,WingClock=0.f,RoarClock=8.f;
+    bool bAudioPolish=false,bFootNearFloor[2]={false,false},bRoarCuePlayed=false,bDrinkCuePlayed=false;
+    FVector LastPlayerPosition=FVector::ZeroVector;
+    float PreviousWingHeight=0.f,PreviousWingVelocity=0.f,MusicDuckGain=1.f,MusicEnvelope=0.f;
+    double MusicDuckUntil=-1.;
     FVector DestructionLocation=FVector::ZeroVector;
     void UpdateBeds();
     void LoadRecordedSamples();

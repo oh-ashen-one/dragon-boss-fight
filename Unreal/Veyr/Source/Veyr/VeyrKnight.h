@@ -50,6 +50,10 @@ public:
     bool UsesSprintContactRevision() const { return bSprintContactRevision; }
     bool UsesSourcedHeavy() const { return bSourcedTwoHandHeavy; }
     bool UsesSourcedHeal() const { return bSourcedHeal; }
+    bool UsesSourcedMoves() const { return bSourcedMoves; }
+    void TryRunningAttack();
+    void TryLeapAttack();
+    int32 RunningAttacks=0,LeapingAttacks=0;
     float PreferredHeavyStandOffCm() const;
     float GetLocomotionFootWeight(int32 Side) const { return Side>=0&&Side<2?LocomotionFeet[Side].Weight:0.f; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsChangingGrip() const { return Action==EVeyrKnightAction::GripToTwoHand||Action==EVeyrKnightAction::GripToOneHand; }
@@ -243,6 +247,8 @@ private:
     bool bSprintContactRevision=false;
     bool bSourcedTwoHandHeavy=false;
     bool bSourcedHeal=false;
+    bool bSourcedMoves=false;
+    void LeapPressed();
     bool bPrimaryAttackHeld=false,bPrimaryAttackBuffered=false,bPrimaryChainActive=false,bStartingPrimaryStep=false;
     int32 PrimaryChainStep=0,PrimarySwingBase=0;
     float PrimarySourceOffset=0.f;
@@ -252,6 +258,7 @@ private:
     FName LastLocomotionClip=NAME_None;
     FName PendingStaggerClip=NAME_None;
     bool bTransitionInvolvesRunStop=false;
+    bool bTransitionInvolvesMobility=false;
     bool bLockOnStrafingLastFrame=false;
     bool bTransitionLockOnEdge=false;
     bool bBlinkHiddenStartRecorded=false,bBlinkHiddenEndRecorded=false;

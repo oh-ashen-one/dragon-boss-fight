@@ -33,6 +33,8 @@ public:
         FVector Sword=FVector::ZeroVector, Hand=FVector::ZeroVector, SwordLocal=FVector::ZeroVector;
         bool bSwordValid=false, bHandValid=false, bFeetValid=false, bSprintRequested=false;
         float Speed=0.f, ClipPhase=0.f, ActorYaw=0.f;
+        float HipHeight=0.f;
+        bool bAuthoredSliding=false;
         float FootAnchorWeight[2]={0.f,0.f};
         float SwordHandCm=0.f, SwordExcessCm=0.f, SwordLocalErrCm=0.f;
         float CapsuleTravel=0.f, ToeTravel[2]={0.f,0.f}, AnkleTravel[2]={0.f,0.f};
@@ -49,7 +51,7 @@ public:
     TSharedPtr<FJsonObject> CurrentState() const;
 
 private:
-    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack };
+    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack, RunningAttack, LeapAttack };
     enum class EPhase : uint8 { Setup, PreIdle, Action, PostIdle };
     struct FDef
     {
@@ -76,6 +78,7 @@ private:
     bool bSprintProof=false;
     bool bHeavyProof=false;
     bool bPrimaryHeavyProof=false;
+    bool bMobilityProof=false;
     int32 HeavyCountAtInput=0;
     float HeavyReviewSlowMo=1.f;
     int32 CheckerInstances=0;

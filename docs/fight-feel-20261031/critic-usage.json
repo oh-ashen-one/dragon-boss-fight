@@ -127,6 +127,24 @@
       "error": false,
       "reportedEstimatedUSD": 0.8708166,
       "durationMs": 132073
+    },
+    {
+      "receipt": "heavy-round4-final-critic.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 1.1132754,
+      "durationMs": 153142
+    },
+    {
+      "receipt": "overnight-feature-critic.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.8391342,
+      "durationMs": 109191
     }
   ]
 }

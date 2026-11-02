@@ -1,0 +1,58 @@
+{
+  "normal-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T082336Z",
+    "passed": false,
+    "frames": 1056,
+    "skippedSlots": 6,
+    "worldWallSeconds": 35.44647549837828,
+    "sourceId": "54bf5505c2584c3255860831d93522d67fb045c39c7c4aa8897bbcc0d7fdc495",
+    "reasons": [
+      "planted_foot_slide_262cm_per_s_transition",
+      "planted_foot_slide_165cm_per_s_transition",
+      "planted_foot_slide_413cm_per_s_transition",
+      "planted_foot_slide_211cm_per_s_transition"
+    ]
+  },
+  "normal-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T082436Z",
+    "passed": false,
+    "frames": 890,
+    "skippedSlots": 19,
+    "worldWallSeconds": 30.337783832103014,
+    "sourceId": "54bf5505c2584c3255860831d93522d67fb045c39c7c4aa8897bbcc0d7fdc495",
+    "reasons": [
+      "planted_foot_slide_90cm_per_s_steady",
+      "planted_foot_slide_89cm_per_s_steady",
+      "planted_foot_slide_86cm_per_s_steady",
+      "ok"
+    ]
+  },
+  "slow-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T082609Z",
+    "passed": true,
+    "frames": 3465,
+    "skippedSlots": 96,
+    "worldWallSeconds": 118.73863691464067,
+    "sourceId": "54bf5505c2584c3255860831d93522d67fb045c39c7c4aa8897bbcc0d7fdc495",
+    "reasons": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ]
+  },
+  "slow-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T082830Z",
+    "passed": false,
+    "frames": 2943,
+    "skippedSlots": 24,
+    "worldWallSeconds": 98.93507574871182,
+    "sourceId": "54bf5505c2584c3255860831d93522d67fb045c39c7c4aa8897bbcc0d7fdc495",
+    "reasons": [
+      "planted_foot_slide_118cm_per_s_steady",
+      "planted_foot_slide_118cm_per_s_steady",
+      "planted_foot_slide_118cm_per_s_steady",
+      "planted_foot_slide_118cm_per_s_steady"
+    ]
+  }
+}

@@ -156,6 +156,8 @@ void AVeyrDragon::BeginPlay()
 {
     bLegacyPacing=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingLegacy"));
     bLegacyFinisher=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingNoFinisher"));
+    // Half-spread idle won blind review; the original breathing is preserved.
+    bOpenIdleWings=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyIdleWings"));
     if(UsesPacingRevision())NextFlightAt=20.f;
     Super::BeginPlay();
     FString ReplayMode;
@@ -1539,6 +1541,7 @@ void AVeyrDragon::UpdateImportedPresentation()
             break;
         }
     }
+    if(Name==TEXT("Idle"))Name=IdlePresentationClip().ToString();
     const FName Clip(*Name);
     bool Sampled=false;
     if(VisualDefinition->Clips.Contains(Clip)&&VisualDefinition->Clips[Clip].Sequence)
@@ -1575,6 +1578,7 @@ void AVeyrDragon::UpdateImportedPresentation()
                 HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active?.2f:.12f;
             if(State==EVeyrDragonState::Dead&&UsesPacingRevision()&&Name.StartsWith(TEXT("DeathFall")))ImportedTransitionSeconds=.35f;
             if(Clip!=LastImportedClip&&(Clip==FName(TEXT("Roar"))||LastImportedClip==FName(TEXT("Roar"))))ImportedTransitionSeconds=.6f;
+            if(Clip==FName(TEXT("IdleOpen"))||LastImportedClip==FName(TEXT("IdleOpen")))ImportedTransitionSeconds=FMath::Max(ImportedTransitionSeconds,.35f);
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
         }
         const float TransitionSeconds=ImportedTransitionSeconds;

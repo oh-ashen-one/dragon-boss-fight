@@ -1,0 +1,28 @@
+{
+  "title": "Potion Drinking Gulp 02",
+  "creator": "SFXMint",
+  "sourcePage": "https://sfxmint.com/sounds/drinking-gulp-02",
+  "download": "https://sfxmint.com/dl/drinking-gulp-02.wav",
+  "license": "CC0 1.0 public library asset",
+  "licensePage": "https://sfxmint.com/license",
+  "origin": "Pre-existing AI-generated library asset; no generation requested. Creator states it produces the library and dedicates outputs to CC0.",
+  "commercialUse": "Public-library CC0; not the separate noncommercial free custom-generation tier",
+  "acquired": "2026-11-02",
+  "priceUSD": 0,
+  "sha256": "5967527cc5d157aa2dbac3e5b4ad15939dc58d2a8435c11596e230c40fe14f0f",
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "pcm_s16le",
+        "sample_rate": "44100",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "1.700204"
+    }
+  },
+  "status": "Acquired candidate only; not integrated or quality-approved"
+}

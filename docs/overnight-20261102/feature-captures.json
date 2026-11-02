@@ -1,0 +1,66 @@
+{
+  "heavy-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T123140Z",
+    "passed": false,
+    "reason": "blendproof: 3/4 sequences passed their gates; see VEYR_GATE lines and blendProof in evidence.json",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 955,
+    "failedFrames": 0
+  },
+  "heavy-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T123240Z",
+    "passed": false,
+    "reason": "blendproof: 0/4 sequences passed their gates; see VEYR_GATE lines and blendProof in evidence.json",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 907,
+    "failedFrames": 0
+  },
+  "mobility-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T123332Z",
+    "passed": false,
+    "reason": "blendproof: 0/4 sequences passed their gates; see VEYR_GATE lines and blendProof in evidence.json",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 1883,
+    "failedFrames": 0
+  },
+  "mobility-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T123457Z",
+    "passed": false,
+    "reason": "blendproof: 0/4 sequences passed their gates; see VEYR_GATE lines and blendProof in evidence.json",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 1279,
+    "failedFrames": 0
+  },
+  "wings-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-showcase-20261102T123601Z",
+    "passed": true,
+    "reason": "Every-move rehearsal completed with native clip/state coverage; not a combat victory",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 2452,
+    "failedFrames": 0
+  },
+  "wings-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-showcase-20261102T123827Z",
+    "passed": true,
+    "reason": "Every-move rehearsal completed with native clip/state coverage; not a combat victory",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 2450,
+    "failedFrames": 0
+  },
+  "heal-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-healing-20261102T124053Z",
+    "passed": true,
+    "reason": "four real heal completions consumed four charges; 100 HP cap and injured empty-flask rejection verified",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 1352,
+    "failedFrames": 0
+  },
+  "heal-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-healing-20261102T124200Z",
+    "passed": true,
+    "reason": "four real heal completions consumed four charges; 100 HP cap and injured empty-flask rejection verified",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "frames": 1352,
+    "failedFrames": 0
+  }
+}

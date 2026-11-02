@@ -137,7 +137,7 @@ void AVeyrHUD::ControlLegend(float W,float H,bool bTerminal)
     // height: 17 layout pixels gives about 13–14 readable pixels at 1280x720.
     const float X=W-263.f,Y=H-275.f;
     Rect(X-8,Y-7,250,105,FLinearColor(.008f,.014f,.023f,.48f));
-    const TCHAR* Rows[]={TEXT("WASD  Move    SHIFT  Sprint"),TEXT("LMB  Attack    F  Heavy"),TEXT("RMB  Guard    E  Grip"),TEXT("Q  Roll    SPACE  Blink"),TEXT("R  Heal    TAB  Lock"),TEXT("ESC  Menu")};
+    const TCHAR* Rows[]={TEXT("WASD  Move    SHIFT  Sprint"),TEXT("LMB  Attack    F  Heavy"),TEXT("RMB  Guard    E  Grip"),TEXT("Q  Roll    SPACE  Blink"),TEXT("R  Heal    TAB  Lock"),Cast<AVeyrKnight>(GetOwningPawn())&&Cast<AVeyrKnight>(GetOwningPawn())->UsesSourcedMoves()?TEXT("C  Leap    ESC  Menu"):TEXT("ESC  Menu")};
     UFont* LegendFont=GEngine->GetMediumFont();float TW=0.f,TH=0.f;GetTextSize(TEXT("Ag"),TW,TH,LegendFont);
     const float LegendScale=16.f*Unit/FMath::Max(1.f,TH);
     for(int32 I=0;I<UE_ARRAY_COUNT(Rows);++I)DrawText(Rows[I],Ivory,X*Unit,(Y+I*16)*Unit,LegendFont,LegendScale,false);
@@ -416,6 +416,9 @@ void AVeyrHUD::RebuildPauseMenu()
     {
         const TCHAR* Lines[]={TEXT("WASD  —  Move / jog"),TEXT("Shift  —  Sprint, in either grip"),TEXT("LMB  —  Attack; repeat or hold to chain"),TEXT("F  —  Heavy attack"),TEXT("RMB  —  Guard"),TEXT("Q  —  Directional roll / dodge"),TEXT("Space  —  Blink in your movement direction"),TEXT("E  —  One / two hands on the same sword"),TEXT("R  —  Drink Ember Draught"),TEXT("Tab  —  Lock on / release target"),TEXT("Enter  —  Restart after death or victory"),TEXT("Escape  —  Pause / resume")};
         for(const TCHAR* LineText:Lines)Content->AddSlot().AutoHeight().Padding(0,5)[SNew(STextBlock).Text(FText::FromString(LineText)).Font(BodyFont).ColorAndOpacity(Ivory)];
+        if(const auto* K=Cast<AVeyrKnight>(GetOwningPawn());K&&K->UsesSourcedMoves())
+            for(const TCHAR* Label:{TEXT("Shift + LMB  —  Running attack"),TEXT("C  —  Leaping attack")})
+                Content->AddSlot().AutoHeight().Padding(0,5)[SNew(STextBlock).Text(FText::FromString(Label)).Font(BodyFont).ColorAndOpacity(Ivory)];
         AddButton(TEXT("Back"),[Self](){if(Self.IsValid())Self->SetPausePage(0);});
     }
     Content->AddSlot().AutoHeight().Padding(0,18,0,0)[SNew(STextBlock).Text(FText::FromString(TEXT("ESC  /  Resume"))).Font(SmallFont).ColorAndOpacity(Quiet)];

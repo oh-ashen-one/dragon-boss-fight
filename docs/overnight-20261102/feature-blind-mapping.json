@@ -1,0 +1,14 @@
+{
+  "heavy": {
+    "A": "after",
+    "B": "before"
+  },
+  "wings": {
+    "A": "before",
+    "B": "after"
+  },
+  "heal": {
+    "A": "after",
+    "B": "before"
+  }
+}

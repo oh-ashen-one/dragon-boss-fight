@@ -1,0 +1,26 @@
+{
+  "title": "Victory",
+  "creator": "Umplix",
+  "sourcePage": "https://opengameart.org/content/victory-4",
+  "download": "https://opengameart.org/sites/default/files/victory_0.wav",
+  "license": "CC0",
+  "licenseVerification": "Creator listing viewed directly; explicitly says CC0 and no Apple Loops used.",
+  "acquired": "2026-11-02",
+  "priceUSD": 0,
+  "sha256": "b5ece016f3c22970c09bd4f1f8c4aa78ed233156f5c7f31ad7a3490d4e638097",
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "pcm_s24le",
+        "sample_rate": "44100",
+        "channels": 2
+      }
+    ],
+    "format": {
+      "duration": "12.631655"
+    }
+  },
+  "status": "Acquired candidate; not integrated or listening-approved"
+}

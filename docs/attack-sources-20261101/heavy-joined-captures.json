@@ -1,0 +1,26 @@
+{
+  "after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T092115Z",
+    "passed": false,
+    "sourceId": "d8f56a1a039c9fe42d58718bbd3bd88f52510fbcb282f18fff2b196c0e1c63ff",
+    "frames": 1027,
+    "reasons": [
+      "ok",
+      "ok",
+      "planted_foot_slide_124cm_per_s_transition",
+      "ok"
+    ]
+  },
+  "before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T092303Z",
+    "passed": false,
+    "sourceId": "d8f56a1a039c9fe42d58718bbd3bd88f52510fbcb282f18fff2b196c0e1c63ff",
+    "frames": 906,
+    "reasons": [
+      "planted_foot_slide_81cm_per_s_transition",
+      "planted_foot_slide_94cm_per_s_steady",
+      "planted_foot_slide_92cm_per_s_steady",
+      "planted_foot_slide_102cm_per_s_steady"
+    ]
+  }
+}

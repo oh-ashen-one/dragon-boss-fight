@@ -222,6 +222,7 @@ def verify_sourced_definition(plan,definition,check_replacements=True):
             if abs(float(c.get_editor_property(field))-float(spec[field]))>.001:raise RuntimeError('Imported metadata differs: '+spec['name']+'/'+field)
         if abs(float(c.attack_reach_cm)-float(spec.get('attack_reach_cm',0.)))>.001:raise RuntimeError('Imported attack reach differs: '+spec['name'])
         if bool(c.root_motion_removed)!=bool(spec['root_motion_removed']) or bool(c.loop)!=bool(spec['loop']):raise RuntimeError('Imported motion policy differs: '+spec['name'])
+        if bool(c.root_motion_vertical)!=bool(spec.get('root_motion_vertical',False)):raise RuntimeError('Imported vertical root policy differs: '+spec['name'])
         actual=list(c.root_translation_samples_cm);expected_samples=spec['root_translation_samples_cm']
         if len(actual)!=len(expected_samples) or any(max(abs(v.x-p[0]),abs(v.y-p[1]),abs(v.z-p[2]))>.001 for v,p in zip(actual,expected_samples)):raise RuntimeError('Imported root samples differ: '+spec['name'])
         windows=list(c.damage_windows)
@@ -649,6 +650,7 @@ def run(plan_file):
                 entry.set_editor_property("root_yaw_samples_degrees", specification.get("root_yaw_samples_degrees", []))
                 entry.set_editor_property("root_sample_rate", specification.get("root_sample_rate", 60.0))
                 entry.set_editor_property("root_motion_removed", specification.get("root_motion_removed", False))
+                entry.set_editor_property("root_motion_vertical", specification.get("root_motion_vertical", False))
                 if specification.get("weapon_file"):
                     entry.set_editor_property("weapon_mesh", props_by_file[specification["weapon_file"]])
             clips[specification["name"]] = entry

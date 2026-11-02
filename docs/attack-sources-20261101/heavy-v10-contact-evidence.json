@@ -1,0 +1,41 @@
+{
+  "run": "Evidence/native-core-20261102T083754Z",
+  "overallCorePassed": false,
+  "overallCoreReason": "objective timeout; inspect event history and policy",
+  "scope": "Observed actual light/heavy limb contacts only; does not claim the full core Rise/head sequence passed. Full default core and victory regressions still required.",
+  "sourceId": "abdef2ed54383858d9ef73bb91aa95c64639e566131d0a674d2122f2d421ae5c",
+  "lightLegContact": true,
+  "heavyLegContact": true,
+  "contacts": [
+    {
+      "seconds": 16.650178909301758,
+      "event": "leg_contact",
+      "lastHitRegion": 2,
+      "lastSwordDamage": 69.75,
+      "knightClip": "LightCombo",
+      "twoHanded": true,
+      "sourcedTwoHandHeavy": true,
+      "bossHealth": 394.25
+    },
+    {
+      "seconds": 20.306499481201172,
+      "event": "leg_contact",
+      "lastHitRegion": 2,
+      "lastSwordDamage": 131.75,
+      "knightClip": "HeavyAttackTwoHandSourced",
+      "twoHanded": true,
+      "sourcedTwoHandHeavy": true,
+      "bossHealth": 262.5
+    },
+    {
+      "seconds": 68.19924926757812,
+      "event": "leg_contact",
+      "lastHitRegion": 2,
+      "lastSwordDamage": 69.75,
+      "knightClip": "LightCombo",
+      "twoHanded": true,
+      "sourcedTwoHandHeavy": true,
+      "bossHealth": 0
+    }
+  ]
+}

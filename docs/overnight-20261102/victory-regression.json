@@ -1,0 +1,58 @@
+{
+  "oneHand": {
+    "passed": true,
+    "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+    "terminalSeconds": 78.79264068603516,
+    "durationSeconds": 85.69297790527344,
+    "sourceId": "8eddb73dd01b9441e0f51387760eccf33b5b66580f4449ad16e83491df064ece",
+    "warningContainmentFailures": 0,
+    "bothCustomuseCharactersActive": true,
+    "nativeVideo": {
+      "requestedFPS": 20,
+      "requestedFrames": 1782,
+      "savedFrames": 1782,
+      "failedFrames": 0,
+      "skippedSlots": 6,
+      "worldIndex": 1,
+      "pngWriteSeconds": 75.02214770391583,
+      "pixelCopySeconds": 0.09090456366539001,
+      "backgroundPNGJobInFlight": false,
+      "peakBackgroundPNGJobs": 2,
+      "maximumBackgroundPNGJobs": 4,
+      "elapsedWallSeconds": 89.47089383751154,
+      "stopped": true,
+      "stopReason": "replay completed",
+      "manifest": "native-video/frames.jsonl",
+      "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+    },
+    "evidence": "Evidence/native-victory-20261102T133800Z/unreal-victory-20261102T133820Z-59B5C5B3/evidence.json"
+  },
+  "twoHand": {
+    "passed": true,
+    "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+    "terminalSeconds": 25.145305633544922,
+    "durationSeconds": 31.964365005493164,
+    "sourceId": "8eddb73dd01b9441e0f51387760eccf33b5b66580f4449ad16e83491df064ece",
+    "warningContainmentFailures": 0,
+    "bothCustomuseCharactersActive": true,
+    "nativeVideo": {
+      "requestedFPS": 20,
+      "requestedFrames": 694,
+      "savedFrames": 694,
+      "failedFrames": 0,
+      "skippedSlots": 14,
+      "worldIndex": 1,
+      "pngWriteSeconds": 31.818287804722786,
+      "pixelCopySeconds": 0.036545418202877045,
+      "backgroundPNGJobInFlight": false,
+      "peakBackgroundPNGJobs": 2,
+      "maximumBackgroundPNGJobs": 4,
+      "elapsedWallSeconds": 35.468201745301485,
+      "stopped": true,
+      "stopReason": "replay completed",
+      "manifest": "native-video/frames.jsonl",
+      "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+    },
+    "evidence": "Evidence/native-victory-20261102T134013Z/unreal-victory-20261102T134027Z-443395E5/evidence.json"
+  }
+}

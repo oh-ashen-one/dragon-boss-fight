@@ -10,6 +10,7 @@
 #include "VeyrShowcase.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraActor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/InputSettings.h"
@@ -118,6 +119,16 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED initialize only after knight and dragon are ready")); return false;
     }
     Knight=ModeActor->Knight; Dragon=ModeActor->Dragon;
+    if(ReplayMode==TEXT("healing")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrHealInspection")))
+    {
+        // Observation only: ordinary combat still supplies damage and heal inputs.
+        HealInspectionCamera=GetWorld()->SpawnActor<ACameraActor>();
+        if(HealInspectionCamera)
+        {
+            HealInspectionCamera->GetCameraComponent()->FieldOfView=45.f;
+            if(APlayerController* PC=Cast<APlayerController>(Knight->GetController()))PC->SetViewTarget(HealInspectionCamera);
+        }
+    }
     if(Knight->CameraBoom)AddTickPrerequisiteComponent(Knight->CameraBoom);
     if(ReplayMode==TEXT("collision"))Knight->GetCapsuleComponent()->OnComponentHit.AddDynamic(this,&AVeyrReplay::ObserveCollisionHit);
     // A new/restarted world never inherits a pending guard trial or readiness latch.
@@ -350,6 +361,9 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("sourcedTwoHandHeavy"),Knight->UsesSourcedHeavy());
     O->SetNumberField(TEXT("preferredHeavyStandOffCm"),Knight->PreferredHeavyStandOffCm());
     O->SetBoolField(TEXT("sourcedHeal"),Knight->UsesSourcedHeal());
+    O->SetBoolField(TEXT("sourcedMoves"),Knight->UsesSourcedMoves());
+    O->SetNumberField(TEXT("runningAttacks"),Knight->RunningAttacks);
+    O->SetNumberField(TEXT("leapingAttacks"),Knight->LeapingAttacks);
     O->SetArrayField(TEXT("locomotionFootWeights"),{MakeShared<FJsonValueNumber>(Knight->GetLocomotionFootWeight(0)),MakeShared<FJsonValueNumber>(Knight->GetLocomotionFootWeight(1))});
     O->SetNumberField(TEXT("actionSourceSeconds"),Knight->GetActionSourceSeconds());
     O->SetBoolField(TEXT("dragonSolidBodyReady"),Dragon->bSolidBodyReady);
@@ -2153,8 +2167,9 @@ void AVeyrReplay::DriveInputs()
     bool bWantLock=true;
     bool bPrimaryStart=false;
     const bool PrimaryVictory=ReplayMode==TEXT("victory");
+    const bool PrimaryCore=ReplayMode==TEXT("core")&&bVictoryStartTwoHandedRequested;
     const FVector Feet=Knight->GetFootLocation();
-    const bool bAvailable=PrimaryVictory?Knight->CanStartGroundedAction():
+    const bool bAvailable=(PrimaryVictory||PrimaryCore)?Knight->CanStartGroundedAction():
         Knight->Action==EVeyrKnightAction::Ready||Knight->Action==EVeyrKnightAction::Guard;
     const float Remaining=Dragon->GetStateDuration()-Dragon->GetStateElapsed();
     if(ReplayMode!=TEXT("death"))
@@ -2260,7 +2275,8 @@ void AVeyrReplay::DriveInputs()
                     // opening as long as the entire recovery animation.
                     const float HeavyOpening=bNeedHeavy?Knight->GetAttackContactTime(true)+.05f:Knight->GetAttackDuration(true);
                     bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>HeavyOpening&&(!bDown||Dragon->IsHeadExposed());
-                    bLight=!bNeedHeavy&&!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false);
+                    const float LightOpening=PrimaryCore?Knight->GetPrimaryFirstStepDuration():Knight->GetAttackDuration(false);
+                    bLight=!bNeedHeavy&&!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>LightOpening;
                 }
             }
         }
@@ -2297,6 +2313,12 @@ void AVeyrReplay::DriveInputs()
         bLight=false;bHeavy=false;
     }
     if(Knight->bLockedOn!=bWantLock)Knight->ToggleLockOn();
+    if(PrimaryCore&&bLight&&bAvailable)
+    {
+        // Use a real LMB tap for the two-hand light. Its bound primary clip is
+        // LightCombo's first segment; the standalone light is a legacy lab path.
+        Knight->PressPrimaryAttack();Knight->ReleasePrimaryAttack();bLight=false;
+    }
     Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!bHeal);
     Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,false);
     TrackFlightWithLookInput();
@@ -2768,6 +2790,15 @@ void AVeyrReplay::Tick(float DeltaSeconds)
         bFinished=true;bPassed=false;OutcomeReason=TEXT("encounter actors lost");StopVideoCapture(OutcomeReason);SaveEvidence(true);bFinalSaved=true;return;
     }
     CaptureClock+=DeltaSeconds;
+    if(HealInspectionCamera)
+    {
+        const FVector Feet=Knight->GetFootLocation();
+        FTransform Head;
+        const bool HasHead=Knight->ImportedPresentation&&Knight->ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),Head);
+        const FVector Focus=(HasHead?Head.GetLocation():Feet+FVector(0,0,300.f))-FVector(0,0,35.f);
+        const FVector Position=Focus+Knight->GetActorForwardVector()*350.f-Knight->GetActorRightVector()*270.f+FVector(0,0,20.f);
+        HealInspectionCamera->SetActorLocationAndRotation(Position,(Focus-Position).Rotation());
+    }
     if(bFinished)
     {
         FinishClock+=DeltaSeconds;

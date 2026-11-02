@@ -77,6 +77,8 @@ if a.start_two_handed:
     if a.mode not in ('core','victory'):p.error('--start-two-handed applies only to core/victory validation')
     cmd.append('-VeyrReplayStartTwoHanded')
 print('Native run:', run, flush=True)
+from owned_launch_budget import wait_for_budget
+wait_for_budget(ROOT)
 with (run/'launcher.log').open('w') as output:
     environment = os.environ.copy()
     # Direct executable launches do not receive Info.plist LSEnvironment from

@@ -6,6 +6,7 @@
 
 class AVeyrKnight;
 class AVeyrDragon;
+class ACameraActor;
 class FVeyrBlendProof;
 class FVeyrShowcase;
 class FJsonObject;
@@ -39,6 +40,7 @@ protected:
 private:
     UPROPERTY() TObjectPtr<AVeyrKnight> Knight;
     UPROPERTY() TObjectPtr<AVeyrDragon> Dragon;
+    UPROPERTY() TObjectPtr<ACameraActor> HealInspectionCamera;
     FString ReplayMode, RunDirectory, OutcomeReason;
     bool bInitialized=false, bFinished=false, bFinalSaved=false, bPassed=false, bQuit=false;
     bool bPerformanceMode=false;

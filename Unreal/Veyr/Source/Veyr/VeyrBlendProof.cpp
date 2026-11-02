@@ -57,9 +57,22 @@ namespace
 
 const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
 {
+    if(bMobilityProof)
+    {
+        const bool New=Knight.IsValid()&&Knight->UsesSourcedMoves();
+        static const FDef Mobility[]={
+            {TEXT("Running_attack_side"),EKind::RunningAttack,0,false,true,.7f,0.f,New?TEXT("RunningAttackSourced"):TEXT("LightCombo"),90.f},
+            {TEXT("Running_attack_threequarter"),EKind::RunningAttack,0,false,true,.7f,0.f,New?TEXT("RunningAttackSourced"):TEXT("LightCombo"),35.f},
+            {TEXT("Leap_attack_side"),EKind::LeapAttack,0,false,true,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttackTwoHand"),90.f},
+            {TEXT("Leap_attack_threequarter"),EKind::LeapAttack,0,false,true,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttackTwoHand"),35.f},
+        };
+        return Mobility[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Mobility)-1)];
+    }
     if(bHeavyProof)
     {
-        const TCHAR* Clip=Knight.IsValid()&&Knight->UsesSourcedHeavy()?TEXT("HeavyAttackTwoHandSourced"):bPrimaryHeavyProof?TEXT("LightCombo"):TEXT("HeavyAttackTwoHand");
+        const TCHAR* Clip=Knight.IsValid()&&Knight->UsesSourcedHeavy()?
+            (bPrimaryHeavyProof?TEXT("HeavyFinisherTwoHandSourced"):TEXT("HeavyAttackTwoHandSourced")):
+            bPrimaryHeavyProof?TEXT("LightCombo"):TEXT("HeavyAttackTwoHand");
         static const FDef HeavyDefs[]={
             {TEXT("Heavy_2H_side"),EKind::HeavyAttack,0,false,true,0.f,0.f,Clip,90.f},
             {TEXT("Heavy_2H_threequarter"),EKind::HeavyAttack,0,false,true,0.f,0.f,Clip,35.f},
@@ -92,7 +105,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount() const{return bHeavyProof?4:bSprintProof?4:9;}
+int32 FVeyrBlendProof::DefCount() const{return bMobilityProof?4:bHeavyProof?4:bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {
@@ -106,6 +119,7 @@ FVector FVeyrBlendProof::DirVector(const FDef& D) const
 }
 FVector FVeyrBlendProof::SequenceStart(const FDef& D) const
 {
+    if(bMobilityProof)return Home-Fwd0*1200.f;
     return Home-DirVector(D)*(.5f*D.ExpectedTravelCm);
 }
 
@@ -114,9 +128,10 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     if(bBegan||!InWorld||!InKnight||!InDragon)return false;
     World=InWorld;Knight=InKnight;Dragon=InDragon;Hooks=MoveTemp(InHooks);RunDirectory=InRunDirectory;
     bSprintProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof"));
+    bMobilityProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrMobilityAttackProof"));
     bPrimaryHeavyProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryHeavyProof"));
     bHeavyProof=bPrimaryHeavyProof||FParse::Param(FCommandLine::Get(),TEXT("VeyrHeavyProof"));
-    if(bSprintProof&&bHeavyProof)return false;
+    if(int32(bSprintProof)+int32(bHeavyProof)+int32(bMobilityProof)>1)return false;
     if(bHeavyProof&&FParse::Value(FCommandLine::Get(),TEXT("VeyrHeavyReviewSlowMo="),HeavyReviewSlowMo)&&FMath::IsFinite(HeavyReviewSlowMo))
         HeavyReviewSlowMo=FMath::Clamp(HeavyReviewSlowMo,.1f,1.f);
     else HeavyReviewSlowMo=1.f;
@@ -194,10 +209,10 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
     const FVector Target=K->GetActorLocation();
     if(bSnap||!bFocusValid){Focus=Target;bFocusValid=true;}
     else Focus+=(Target-Focus)*FMath::Clamp(Dt*4.f,0.f,1.f);
-    FVector Look(Focus.X,Focus.Y,FloorZ+(bHeavyProof?220.f:100.f));
+    FVector Look(Focus.X,Focus.Y,FloorZ+((bHeavyProof||bMobilityProof)?220.f:100.f));
     const float Az=FMath::DegreesToRadians(D.CameraAzimuthDeg);
     const FVector Dir=Fwd0*FMath::Cos(Az)+Right0*FMath::Sin(Az);
-    FVector Location=Look+Dir*(bHeavyProof?900.f:580.f);Location.Z=FloorZ+(bHeavyProof?240.f:190.f);
+    FVector Location=Look+Dir*(bMobilityProof?1100.f:bHeavyProof?900.f:580.f);Location.Z=FloorZ+((bHeavyProof||bMobilityProof)?240.f:190.f);
     // Extra inspection chapter follows the actual rendered hand, so the
     // reviewer can judge contact through the fast strike without a crop.
     if(bHeavyProof&&SeqIndex==3&&K->ImportedPresentation)
@@ -209,7 +224,7 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
             Cam->GetCameraComponent()->SetFieldOfView(40.f);
         }
     }
-    else Cam->GetCameraComponent()->SetFieldOfView(bHeavyProof?55.f:45.f);
+    else Cam->GetCameraComponent()->SetFieldOfView((bHeavyProof||bMobilityProof)?55.f:45.f);
     Cam->SetActorLocationAndRotation(Location,(Look-Location).Rotation());
     if(!bCameraApplied)
         if(APlayerController* PC=Cast<APlayerController>(K->GetController())){PC->SetViewTarget(Cam);bCameraApplied=true;}
@@ -243,7 +258,8 @@ void FVeyrBlendProof::Sample(double Elapsed,float Dt)
     F.Speed=K->GetPlanarSpeed();F.bSprintRequested=K->IsSprinting();F.ClipPhase=P?P->CurrentPhase:0.f;
     F.ActorYaw=K->GetActorRotation().Yaw;
     for(int32 Side=0;Side<2;++Side)F.FootAnchorWeight[Side]=K->GetLocomotionFootWeight(Side);
-    F.Capsule=K->GetActorLocation();F.FloorZ=K->GetFootLocation().Z;
+    F.Capsule=K->GetActorLocation();F.FloorZ=bMobilityProof?FloorZ:K->GetFootLocation().Z;
+    if(K->ImportedPresentation)F.HipHeight=K->ImportedPresentation->GetBoneLocation(TEXT("Hips")).Z-F.FloorZ;
     FTransform HandT,SwordT,T;
     if(P&&P->bPoseEvaluated)
     {
@@ -315,6 +331,23 @@ void FVeyrBlendProof::DriveAction(double Elapsed,float Dt)
     {
         bMidActionShot=true;
         Hooks.Shot(FString::Printf(TEXT("bp_%02d_%s_cycle"),SeqIndex+1,D.Name));
+    }
+    if(D.Kind==EKind::RunningAttack||D.Kind==EKind::LeapAttack)
+    {
+        if(!bActionIssued)
+        {
+            if(D.Kind==EKind::RunningAttack&&InAction<.7){Input(Fwd0,true);return;}
+            if(K->Action!=EVeyrKnightAction::Ready)return;
+            if(D.Kind==EKind::RunningAttack){K->PressPrimaryAttack();K->ReleasePrimaryAttack();}
+            else if(K->UsesSourcedMoves())K->TryLeapAttack();
+            else K->TryHeavyAttack();
+            bActionIssued=true;return;
+        }
+        Neutral();
+        if(K->Action==EVeyrKnightAction::RunningAttack||K->Action==EVeyrKnightAction::LeapAttack||K->Action==EVeyrKnightAction::Combo||K->Action==EVeyrKnightAction::HeavyAttack)bExpectedActionSeen=true;
+        if(bExpectedActionSeen&&K->Action==EVeyrKnightAction::Ready&&K->IsGrounded()){EnterPhase(EPhase::PostIdle,Elapsed);return;}
+        if(InAction>10.){bActionTimedOut=true;EnterPhase(EPhase::PostIdle,Elapsed);}
+        return;
     }
     if(D.Kind==EKind::HeavyAttack)
     {
@@ -412,6 +445,17 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     R.bCompleted=!bSetupTimedOut&&!bActionTimedOut&&N>10;
     // 1. Idle-stance foot heights (planted reference) from the first idle second, after a short settle.
     float IdleToe[2]={0,0},IdleAnk[2]={0,0};
+    TArray<float> IdleHips;for(const FFrame& F:Frames)if(F.Phase==0&&F.HipHeight>0)IdleHips.Add(F.HipHeight);
+    const float IdleHip=Median(IdleHips);int32 AuthoredSlidingFrames=0;
+    for(FFrame& F:Frames)
+    {
+        // A low, travelling slide is not a planted foot. Only this sourced
+        // running-slide action's low-hip phase is classified as sliding;
+        // its entry, exit and all other actions keep the unchanged plant gate.
+        F.bAuthoredSliding=D.Kind==EKind::RunningAttack&&F.Action==TEXT("RunningAttack")&&IdleHip>10.f&&
+            F.HipHeight<IdleHip*.7f&&F.Dt>.001f&&F.CapsuleTravel/F.Dt>60.f;
+        AuthoredSlidingFrames+=F.bAuthoredSliding?1:0;
+    }
     for(int32 S=0;S<2;++S)
     {
         TArray<float> T,A;
@@ -486,7 +530,7 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
             FFrame& F=Frames[I];const FFrame& P=Frames[I-1];
             const bool bTeleport=F.Dt>.001f&&F.CapsuleTravel/F.Dt>GTeleportCmPerSecond;
             if(bTeleport&&S==0)++TeleportPairs;
-            if(F.bHidden||P.bHidden||F.Dt<=.001f||bTeleport||!F.bFootPlanted[S]||!P.bFootPlanted[S]){Win.Reset();WinCm=WinSeconds=0.f;continue;}
+            if(F.bHidden||P.bHidden||F.bAuthoredSliding||P.bAuthoredSliding||F.Dt<=.001f||bTeleport||!F.bFootPlanted[S]||!P.bFootPlanted[S]){Win.Reset();WinCm=WinSeconds=0.f;continue;}
             ++PlantedPairs;
             Win.Add(I);WinCm+=PairCm(I);WinSeconds+=F.Dt;
             while(Win.Num()>1&&WinSeconds-Frames[Win[0]].Dt>=GSlideWindowSeconds){WinCm-=PairCm(Win[0]);WinSeconds-=Frames[Win[0]].Dt;Win.RemoveAt(0);}
@@ -585,6 +629,12 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     if(!R.bCompleted)Fail.Add(TEXT("sequence_incomplete"));
     if(ClipFrames<2)Fail.Add(FString::Printf(TEXT("expected_clip_%s_seen_%d_frames"),D.ExpectedClip,ClipFrames));
     if(D.Kind==EKind::HeavyAttack&&!bExpectedActionSeen)Fail.Add(TEXT("heavy_input_never_started"));
+    if(bMobilityProof&&Knight.IsValid()&&Knight->UsesSourcedMoves())
+    {
+        float MinZ=1e9f,MaxZ=-1e9f;for(const FFrame& F:Frames){MinZ=FMath::Min(MinZ,float(F.Capsule.Z));MaxZ=FMath::Max(MaxZ,float(F.Capsule.Z));}
+        if(CapsulePath<100.f)Fail.Add(TEXT("authored_attack_travel_missing"));
+        if(D.Kind==EKind::LeapAttack&&MaxZ-MinZ<15.f)Fail.Add(TEXT("physical_capsule_leap_missing"));
+    }
     if(SwordExcessMax>GSwordLimitCm)Fail.Add(FString::Printf(TEXT("sword_excess_%.2fcm"),SwordExcessMax));
     if(SwordLocalErrMax>GSwordLimitCm)Fail.Add(FString::Printf(TEXT("sword_hand_space_error_%.2fcm"),SwordLocalErrMax));
     if(FootSlideMax>GSlideLimitCmPerSecond)
@@ -631,6 +681,7 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     Ft->SetNumberField(TEXT("maxSteadySlideCmPerSecond"),FootSlideSteadyMax);Ft->SetNumberField(TEXT("maxTransitionSlideCmPerSecond"),FootSlideTransitionMax);
     Ft->SetNumberField(TEXT("maxSlidePreIdleCmPerSecond"),SlidePhase[0]);Ft->SetNumberField(TEXT("maxSlideActionCmPerSecond"),SlidePhase[1]);Ft->SetNumberField(TEXT("maxSlidePostIdleCmPerSecond"),SlidePhase[2]);
     Ft->SetNumberField(TEXT("windowsOverLimit"),SlideFrames);Ft->SetNumberField(TEXT("windows"),FootWindows);Ft->SetNumberField(TEXT("plantedFootFramePairs"),PlantedPairs);
+    Ft->SetNumberField(TEXT("authoredSlidingFrames"),AuthoredSlidingFrames);
     Ft->SetNumberField(TEXT("teleportPairsExcluded"),TeleportPairs);Ft->SetStringField(TEXT("worst"),SlideWorst);
     Ft->SetNumberField(TEXT("limitCmPerSecond"),GSlideLimitCmPerSecond);Ft->SetNumberField(TEXT("windowSeconds"),GSlideWindowSeconds);
     Ft->SetNumberField(TEXT("idleToeHeightCm"),(IdleToe[0]+IdleToe[1])*.5f);Ft->SetNumberField(TEXT("idleAnkleHeightCm"),(IdleAnk[0]+IdleAnk[1])*.5f);
@@ -685,6 +736,7 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         O->SetArrayField(TEXT("anklePlanted"),{MakeShared<FJsonValueBoolean>(F.bAnklePlanted[0]),MakeShared<FJsonValueBoolean>(F.bAnklePlanted[1])});
         O->SetArrayField(TEXT("footPlanted"),{MakeShared<FJsonValueBoolean>(F.bFootPlanted[0]),MakeShared<FJsonValueBoolean>(F.bFootPlanted[1])});
         O->SetArrayField(TEXT("footSlideCmPerSecond"),{MakeShared<FJsonValueNumber>(F.FootSlide[0]),MakeShared<FJsonValueNumber>(F.FootSlide[1])});
+        O->SetBoolField(TEXT("authoredSlidingContact"),F.bAuthoredSliding);O->SetNumberField(TEXT("hipHeightCm"),F.HipHeight);
         O->SetArrayField(TEXT("toeTravelCm"),{MakeShared<FJsonValueNumber>(F.ToeTravel[0]),MakeShared<FJsonValueNumber>(F.ToeTravel[1])});
         O->SetArrayField(TEXT("ankleTravelCm"),{MakeShared<FJsonValueNumber>(F.AnkleTravel[0]),MakeShared<FJsonValueNumber>(F.AnkleTravel[1])});
         O->SetArrayField(TEXT("sword"),Vec(F.Sword));O->SetArrayField(TEXT("hand"),Vec(F.Hand));O->SetArrayField(TEXT("swordInHandSpace"),Vec(F.SwordLocal));
@@ -736,6 +788,7 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     O->SetBoolField(TEXT("sprintProof"),bSprintProof);
     O->SetBoolField(TEXT("heavyProof"),bHeavyProof);
     O->SetBoolField(TEXT("primaryHeavyProof"),bPrimaryHeavyProof);
+    O->SetBoolField(TEXT("mobilityAttackProof"),bMobilityProof);
     O->SetNumberField(TEXT("heavyReviewTimeDilation"),HeavyReviewSlowMo);
     O->SetBoolField(TEXT("allPassed"),bDone&&PassedCount==DefCount());
     O->SetStringField(TEXT("framesFile"),TEXT("blendproof-frames.jsonl"));

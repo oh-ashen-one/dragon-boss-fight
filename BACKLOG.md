@@ -5,12 +5,17 @@ better now". These are his notes for the next session, in his order, with the fa
 Start with `HANDOFF.md`, then pick items here. Each item needs a before/after the owner can watch (bare page: video plus
 BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called done.
 
-## Continuation status — 2026-11-01
+## Continuation status — 2026-11-02
 
-- Item 7: implemented and rendered; revision 3 passed relative blind review and settings persisted. Approved Roar v2 is now imported and its measured jaw cue emits distance-scaled feedback in item 3; owner subjective feel remains separate.
-- Item 4: current 650-HP pacing passes at 75.918 s one-hand and 24.753 s two-hand, with two blind visual PASS rounds. Full evidence and remaining framing/readability notes are in HANDOFF.md and `docs/fight-feel-20261031/pacing-final-results.json`. Remeasure after new attack/dragon clips.
-- Item 3: all 20 segments filmed; 23 chapter controls per movie on port 8806; first blind Opus PASS B for observer framing. Remaining dark/roar/stagger limitations are recorded. Latest normal victory regression: 79.939 s at 650 HP.
-- Item 8: free candidate gallery staged on port 8807; owner delegated selection on 2026-11-01. Kevin free sources downloaded and retarget candidates under evaluation; Kwang entitlement acquired but download handoff met a security check. Kevin v032kevin is now imported and activated behind a default-off heavy test flag; 294 native pose samples passed. Gameplay footage and blind review remain pending. Item 1 now has a filmed opt-in contact candidate, but its first blind round TIED; disabled by default. The overnight goal now permits fresh iterations after a TIE; reject the candidate, continue the task. Items 1, 2, 5 and 6 remain unfinished. Baseline descriptions below preserve the owner's original playtest context.
+- Item 7: accepted fight-feel revision preserved, including persistent settings.
+- Item 4: new default build victory **78.793 s one-hand / 25.145 s two-hand**, unchanged 650 HP; death/restart checks pass. Human balance acceptance remains open.
+- Item 3: all 20 moves freshly filmed with wider idle wings; native coverage passes.
+- Item 8: Mixamo downward two-hand heavy/finisher won blind Opus review and is default. Kevin rejected after two failed revisions. Jump/run assets imported but disabled: landing/startup contact failures remain. New heavy passed contact scope; broad primary test still has one old-light foot failure.
+- Item 2: half-spread idle wings won blind review; default. Original breathing curves preserved exactly; subtle breathing not independently visible in sampled critic frames.
+- Item 1: sprint/stop unfinished; failed contact experiment off. Correct forward run and stop sources acquired.
+- Item 5: sourced heal passes resource mechanics, but first blind pair was inconclusive due framing. Disabled pending closeup review.
+- Item 6: free licensed audio cues and timing/mix candidate implemented, disabled pending listening acceptance.
+- Full goal incomplete. Current review/build paths, cleanup and exact failures: HANDOFF.md. Descriptions below preserve original playtest context.
 
 ## 1. Knight running feels blocky, not like a sprint
 - Owner: "the running still feels a bit blocky. It doesn't feel like you're actually sprinting, and it doesn't seem too fluid."

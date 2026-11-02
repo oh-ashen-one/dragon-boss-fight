@@ -1,0 +1,24 @@
+[
+  {
+    "cue": "Heal",
+    "source": "Local/AudioSources20261102/potion-drinking-gulp-02.wav",
+    "sourceSHA256": "5967527cc5d157aa2dbac3e5b4ad15939dc58d2a8435c11596e230c40fe14f0f",
+    "outputSHA256": "a843c2c592cdca389502bfc0553efb365ea878bd6aab3b21e3070d242a42eee0",
+    "durationSeconds": 1.7002083333333333,
+    "sampleRate": 24000,
+    "channels": 1,
+    "peak": 0.6499999761581421,
+    "clippedSamples": 0
+  },
+  {
+    "cue": "Victory",
+    "source": "Local/AudioSources20261102/victory-umplix.wav",
+    "sourceSHA256": "b5ece016f3c22970c09bd4f1f8c4aa78ed233156f5c7f31ad7a3490d4e638097",
+    "outputSHA256": "b1e065e1cc65294681cc69b183f0f141aa6190754a796dbdae4eca9873cb0773",
+    "durationSeconds": 12.631666666666666,
+    "sampleRate": 24000,
+    "channels": 1,
+    "peak": 0.6499999761581421,
+    "clippedSamples": 0
+  }
+]

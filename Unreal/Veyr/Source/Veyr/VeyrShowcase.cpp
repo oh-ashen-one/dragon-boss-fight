@@ -57,7 +57,7 @@ bool FVeyrShowcase::Begin(UWorld* World,AVeyrKnight* InKnight,AVeyrDragon* InDra
     Hooks=InHooks;Knight=InKnight;Dragon=InDragon;bPlayerCamera=PlayerCamera;
     if(!World||!InKnight||!InDragon||!InDragon->VisualDefinition)return false;
     auto Add=[this](const TCHAR* Name,TArray<FName> Clips,TArray<FString> RequiredStates){Steps.Add({FName(Name),MoveTemp(Clips),MoveTemp(RequiredStates)});};
-    Add(TEXT("Idle"),{TEXT("Idle")},{TEXT("Idle")});
+    Add(TEXT("Idle"),{InDragon->IdlePresentationClip()},{TEXT("Idle")});
     Add(TEXT("Roar"),{TEXT("Roar")},{TEXT("Idle")});
     Add(TEXT("Walk"),{TEXT("Walk")},{TEXT("Reposition")});
     Add(TEXT("TurnLeft"),{TEXT("TurnLeft")},{TEXT("Reposition")});
@@ -81,6 +81,7 @@ bool FVeyrShowcase::Begin(UWorld* World,AVeyrKnight* InKnight,AVeyrDragon* InDra
     }
     TSet<FName> Accounted;
     for(const FStep& Step:Steps)for(FName Name:Step.Clips)Accounted.Add(Name);
+    Accounted.Add(TEXT("Idle"));Accounted.Add(TEXT("IdleOpen")); // inactive visual variant retained for comparisons
     for(FName Name:{FName(TEXT("TurnRight")),FName(TEXT("FlightHoverAlternate")),FName(TEXT("ClawWindup")),FName(TEXT("ClawActive")),
         FName(TEXT("ClawRecovery")),FName(TEXT("Death")),FName(TEXT("DeathDown")),FName(TEXT("DeathFallDown"))})Accounted.Add(Name);
     for(const auto& Entry:InDragon->VisualDefinition->Clips)
