@@ -1,0 +1,16 @@
+{
+  "applied": true,
+  "removed": {
+    "/private/tmp/veyr-verified-bundle-w2j1isim": {
+      "receipt": "Local/package-20261102T133506Z/receipt.json",
+      "reason": "superseded app; videos and receipts preserved"
+    }
+  },
+  "retained": [
+    "/private/tmp/veyr-verified-bundle-1qepc1gn/Veyr-Mac-Shipping.app"
+  ],
+  "skipped": {},
+  "freeBytesBefore": 21520392192,
+  "freeBytesAfter": 22741434368,
+  "utc": "2026-11-02T13:56:34.027722+00:00"
+}

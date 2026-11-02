@@ -145,6 +145,15 @@
       "error": false,
       "reportedEstimatedUSD": 0.8391342,
       "durationMs": 109191
+    },
+    {
+      "receipt": "heal-close-critic.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 0.36498800000000003,
+      "durationMs": 51558
     }
   ]
 }

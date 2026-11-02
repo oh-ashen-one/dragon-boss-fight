@@ -1,0 +1,14 @@
+{
+  "A": {
+    "variant": "before",
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-healing-20261102T135106Z",
+    "sourceId": "93fc561499203047ee7aaa7a5dc22c5a2bfd8c8a05de10b76eeb030a5361a584",
+    "healStartSeconds": 6.873924732208252
+  },
+  "B": {
+    "variant": "after",
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-healing-20261102T134944Z",
+    "sourceId": "93fc561499203047ee7aaa7a5dc22c5a2bfd8c8a05de10b76eeb030a5361a584",
+    "healStartSeconds": 6.920097351074219
+  }
+}

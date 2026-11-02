@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "reason": "jump-disabled light heavy collapse head bonus completed rise and dodge contact observed",
+  "sourceId": "8eddb73dd01b9441e0f51387760eccf33b5b66580f4449ad16e83491df064ece",
+  "durationSeconds": 132.88270568847656,
+  "lightLegContact": true,
+  "heavyLegContact": true,
+  "riseObserved": true,
+  "riseCompleted": true,
+  "warningContainmentFailures": 0,
+  "evidence": "Evidence/native-core-20261102T134622Z/unreal-core-20261102T134636Z-048CB32B/evidence.json"
+}
