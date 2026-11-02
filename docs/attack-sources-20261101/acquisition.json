@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-01",
+  "ownerInstruction": "Compare Kwang or Kevin Iglesias first; stop asking questions and make decisions autonomously",
+  "selectedForFirstRetarget": "Kevin Iglesias Human Melee Animations FREE 2.0.2",
+  "creatorURL": "https://kevdev.itch.io/human-melee-animatons-free",
+  "archiveSHA256": "bcd47d323e40419d4dda188d51bd5d91021e6ca42d8dc0c30f1e5053401244f5",
+  "priceUSD": 0,
+  "loginRequired": false,
+  "licenseIncluded": "License : Standard Asset Store EULA \u25cf Royalty-free and allowed for commercial use. \u25cf Resale not allowed. \u25cf Attribution not required. More license details: https://www.keviniglesias.com/#license ",
+  "licensePDFSHA256": "7d0c631afad5ca09b597f4d74cba7a9a1e9acac8014191f7244457381ead4634",
+  "rawDistribution": "Keep raw FBX/Blend/archive local and out of Git",
+  "filesVerified": [
+    "HumanM@Attack2H01.fbx",
+    "HumanF@Attack2H01.fbx",
+    "HumanM@CombatIdle2H01.fbx"
+  ],
+  "attackSeconds": 1.6,
+  "rigMatchedMaleModel": true,
+  "retargetedCandidates": 2,
+  "integrated": false,
+  "qualityAccepted": false,
+  "kwang": {
+    "url": "https://www.fab.com/listings/f4c67e92-b976-4b5b-ab9f-4c25b010f6f3",
+    "priceUSD": 0,
+    "libraryEntitlementVerified": true,
+    "downloaded": false,
+    "blocker": "Browser launcher handoff requires a security check; no bypass attempted. Owned launcher closed."
+  }
+}

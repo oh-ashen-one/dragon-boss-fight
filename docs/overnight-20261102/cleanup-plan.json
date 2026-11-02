@@ -1,0 +1,325 @@
+{
+  "retained": {
+    "/private/tmp/veyr-verified-bundle-2stiyco0": "full-victory regression fallback until candidate passes",
+    "/private/tmp/veyr-verified-bundle-h4hboyni": "newest harness build"
+  },
+  "targets": {
+    "/private/tmp/veyr-verified-bundle-gci1c_19": {
+      "receipt": "Local/package-20261029T145507Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1465940
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261029T160302Z": {
+      "receipt": "Local/package-20261029T160302Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2831892
+    },
+    "/private/tmp/veyr-verified-bundle-nzhkqcyr": {
+      "receipt": "Local/package-20261029T160302Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1466044
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261030T034537Z": {
+      "receipt": "Local/package-20261030T034537Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2831868
+    },
+    "/private/tmp/veyr-verified-bundle-hq3vlr71": {
+      "receipt": "Local/package-20261030T034537Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1465996
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261031T171249Z": {
+      "receipt": "Local/package-20261031T171249Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2832000
+    },
+    "/private/tmp/veyr-verified-bundle-xe6q635x": {
+      "receipt": "Local/package-20261031T171249Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1466064
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261031T210020Z": {
+      "receipt": "Local/package-20261031T210020Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842856
+    },
+    "/private/tmp/veyr-verified-bundle-q9rsrmbn": {
+      "receipt": "Local/package-20261031T210020Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1477944
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T040434Z": {
+      "receipt": "Local/package-20261101T040434Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842860
+    },
+    "/private/tmp/veyr-verified-bundle-rch9wl9x": {
+      "receipt": "Local/package-20261101T040434Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1475384
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T041130Z": {
+      "receipt": "Local/package-20261101T041130Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842864
+    },
+    "/private/tmp/veyr-verified-bundle-4fu8gpza": {
+      "receipt": "Local/package-20261101T041130Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472712
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T044155Z": {
+      "receipt": "Local/package-20261101T044155Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842856
+    },
+    "/private/tmp/veyr-verified-bundle-9sg98zgw": {
+      "receipt": "Local/package-20261101T044155Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472712
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T050648Z": {
+      "receipt": "Local/package-20261101T050648Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842856
+    },
+    "/private/tmp/veyr-verified-bundle-yy_egusb": {
+      "receipt": "Local/package-20261101T050648Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1473592
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T055120Z": {
+      "receipt": "Local/package-20261101T055120Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842860
+    },
+    "/private/tmp/veyr-verified-bundle-rxty4lr5": {
+      "receipt": "Local/package-20261101T055120Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1479992
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T061102Z": {
+      "receipt": "Local/package-20261101T061102Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842856
+    },
+    "/private/tmp/veyr-verified-bundle-y1wddaqg": {
+      "receipt": "Local/package-20261101T061102Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472712
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T063702Z": {
+      "receipt": "Local/package-20261101T063702Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842868
+    },
+    "/private/tmp/veyr-verified-bundle-slq0e6p8": {
+      "receipt": "Local/package-20261101T063702Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1474616
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T071339Z": {
+      "receipt": "Local/package-20261101T071339Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842864
+    },
+    "/private/tmp/veyr-verified-bundle-rzrw3du5": {
+      "receipt": "Local/package-20261101T071339Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1479224
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T075300Z": {
+      "receipt": "Local/package-20261101T075300Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2842868
+    },
+    "/private/tmp/veyr-verified-bundle-8h2tvccs": {
+      "receipt": "Local/package-20261101T075300Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472712
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T184030Z": {
+      "receipt": "Local/package-20261101T184030Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843080
+    },
+    "/private/tmp/veyr-verified-bundle-9pocoew5": {
+      "receipt": "Local/package-20261101T184030Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472860
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T184916Z": {
+      "receipt": "Local/package-20261101T184916Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843084
+    },
+    "/private/tmp/veyr-verified-bundle-q9umalpc": {
+      "receipt": "Local/package-20261101T184916Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472860
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T192609Z": {
+      "receipt": "Local/package-20261101T192609Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843016
+    },
+    "/private/tmp/veyr-verified-bundle-vua54mup": {
+      "receipt": "Local/package-20261101T192609Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472796
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T193704Z": {
+      "receipt": "Local/package-20261101T193704Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843020
+    },
+    "/private/tmp/veyr-verified-bundle-kmymtf5w": {
+      "receipt": "Local/package-20261101T193704Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472796
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T200403Z": {
+      "receipt": "Local/package-20261101T200403Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843020
+    },
+    "/private/tmp/veyr-verified-bundle-xb6t0mrn": {
+      "receipt": "Local/package-20261101T200403Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472796
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T200741Z": {
+      "receipt": "Local/package-20261101T200741Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843020
+    },
+    "/private/tmp/veyr-verified-bundle-qmvhge_1": {
+      "receipt": "Local/package-20261101T200741Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472796
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T201830Z": {
+      "receipt": "Local/package-20261101T201830Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843020
+    },
+    "/private/tmp/veyr-verified-bundle-x5xt6ab1": {
+      "receipt": "Local/package-20261101T201830Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472796
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T214755Z": {
+      "receipt": "Local/package-20261101T214755Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843236
+    },
+    "/private/tmp/veyr-verified-bundle-gjocqlp5": {
+      "receipt": "Local/package-20261101T214755Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472900
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T220222Z": {
+      "receipt": "Local/package-20261101T220222Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843236
+    },
+    "/private/tmp/veyr-verified-bundle-5u86neix": {
+      "receipt": "Local/package-20261101T220222Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472900
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T221223Z": {
+      "receipt": "Local/package-20261101T221223Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843244
+    },
+    "/private/tmp/veyr-verified-bundle-e5mzzg45": {
+      "receipt": "Local/package-20261101T221223Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472900
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T222104Z": {
+      "receipt": "Local/package-20261101T222104Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843248
+    },
+    "/private/tmp/veyr-verified-bundle-pmotrgtv": {
+      "receipt": "Local/package-20261101T222104Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472900
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T223210Z": {
+      "receipt": "Local/package-20261101T223210Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843284
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T230709Z": {
+      "receipt": "Local/package-20261101T230709Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843284
+    },
+    "/private/tmp/veyr-verified-bundle-i287w93v": {
+      "receipt": "Local/package-20261101T230709Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472920
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T231844Z": {
+      "receipt": "Local/package-20261101T231844Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843284
+    },
+    "/private/tmp/veyr-verified-bundle-88x0h67q": {
+      "receipt": "Local/package-20261101T231844Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472920
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T232613Z": {
+      "receipt": "Local/package-20261101T232613Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843288
+    },
+    "/private/tmp/veyr-verified-bundle-y93dizw1": {
+      "receipt": "Local/package-20261101T232613Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472920
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T233052Z": {
+      "receipt": "Local/package-20261101T233052Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843288
+    },
+    "/private/tmp/veyr-verified-bundle-gmk6lq22": {
+      "receipt": "Local/package-20261101T233052Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472920
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T233800Z": {
+      "receipt": "Local/package-20261101T233800Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843288
+    },
+    "/private/tmp/veyr-verified-bundle-2m47z0f5": {
+      "receipt": "Local/package-20261101T233800Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472920
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T234343Z": {
+      "receipt": "Local/package-20261101T234343Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843288
+    },
+    "/private/tmp/veyr-verified-bundle-h64b76gd": {
+      "receipt": "Local/package-20261101T234343Z/receipt.json",
+      "kind": "temporary-app",
+      "allocated_kib": 1472920
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261101T235414Z": {
+      "receipt": "Local/package-20261101T235414Z/receipt.json",
+      "kind": "archive",
+      "allocated_kib": 2843288
+    }
+  },
+  "allocated_gib": 130.27128982543945,
+  "status": "verified-plan"
+}

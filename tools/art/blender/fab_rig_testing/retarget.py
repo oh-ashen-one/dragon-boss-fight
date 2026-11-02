@@ -47,7 +47,7 @@ def render(label,frames):
    hip=bpy.data.objects['Knight_Comparison'].pose.bones['Hips'].head;focus=Vector((hip.x,hip.y,.5));cam.location=focus+Vector(off);cam.rotation_euler=(focus-cam.location).to_track_quat('-Z','Y').to_euler()
    s.render.filepath=str(folder/f'{v}_{f:04d}.png');bpy.ops.render.render(write_still=True)
 
-def run(file,kind,name,travel=False,mirror=False):
+def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None):
  s=reset();bpy.ops.import_scene.gltf(filepath=str(TARGET));t=next(o for o in s.objects if o.type=='ARMATURE');t.name='Knight_Comparison'
  body=[o for o in s.objects if o.type=='MESH'];s.frame_set(0)
  grip=t.pose.bones['RightHand'].matrix.inverted()@t.pose.bones['WeaponSocket'].matrix
@@ -62,11 +62,23 @@ def run(file,kind,name,travel=False,mirror=False):
  sw=src.matrix_world.copy();tw=t.matrix_world.copy();rest={n:(tw@b.matrix_local).copy() for n,b in t.data.bones.items()};sr={n:(sw@src.data.bones[v].matrix_local).copy() for n,v in mapping.items()}
  # Calibrate each segment's anatomical direction; imported glTF bone axes are
  # arbitrary and the knight's bind pose has relaxed arms instead of a T-pose.
- refs={}
+ refs={};calibrated_hands=[]
  for n in mapping:
   correction=Quaternion((1,0,0,0))
   child=MAIN.get(n)
-  if child and child in mapping:
+  if hand_frames and n.endswith('Hand'):
+    def palm_frame(matrices,prefix,get_name):
+     h=matrices[get_name(prefix)].translation
+     longitudinal=(matrices[get_name(prefix+'Middle')].translation-h).normalized()
+     lateral=matrices[get_name(prefix+'Index')].translation-matrices[get_name(prefix+'Pinky')].translation
+     lateral=(lateral-longitudinal*lateral.dot(longitudinal)).normalized()
+     return Matrix((longitudinal,lateral,longitudinal.cross(lateral))).transposed().to_quaternion()
+    target_frame=palm_frame(rest,n,lambda x:x)
+    source_rest={key:sw@src.data.bones[key].matrix_local for key in src.data.bones.keys()}
+    source_frame=palm_frame(source_rest,n,lambda x:source_name(x,kind))
+    correction=source_frame@target_frame.inverted()
+    calibrated_hands.append(n)
+  elif child and child in mapping:
    a=(rest[child].translation-rest[n].translation).normalized();b=(sr[child].translation-sr[n].translation).normalized();correction=a.rotation_difference(b)
   elif n.endswith('Hand'):
    child=source_name(n+'Middle',kind)
@@ -109,6 +121,10 @@ def run(file,kind,name,travel=False,mirror=False):
    for prop in ('location','rotation_quaternion','scale'):b.keyframe_insert(prop,frame=f)
   sock=t.pose.bones['WeaponSocket'];sock.matrix=t.pose.bones['RightHand'].matrix@grip;bpy.context.view_layer.update()
   for prop in ('location','rotation_quaternion','scale'):sock.keyframe_insert(prop,frame=f)
+  if finger_hold:
+   for finger,matrix in finger_hold.items():
+    b=t.pose.bones[finger];b.matrix_basis=matrix
+    for prop in ('location','rotation_quaternion','scale'):b.keyframe_insert(prop,frame=f)
  for layer in act.layers:
   for st in layer.strips:
    for cb in st.channelbags:
@@ -126,4 +142,4 @@ def run(file,kind,name,travel=False,mirror=False):
  s['session_owner']=OWNER;s['retarget_source']=str(file);s['retarget_scale']=scale
  bpy.ops.wm.save_as_mainfile(filepath=str(path.with_suffix('.blend')),compress=True)
  render(name,[0,N//4,N//2,3*N//4,N])
- report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'scale':scale,'rootTravel':travel,'mirrored':mirror,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
+ report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'fullPalmFrameBones':calibrated_hands,'preservedFingerBones':list(finger_hold or {}),'scale':scale,'rootTravel':travel,'mirrored':mirror,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))

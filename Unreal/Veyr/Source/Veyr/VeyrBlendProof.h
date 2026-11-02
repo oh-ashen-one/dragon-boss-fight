@@ -49,7 +49,7 @@ public:
     TSharedPtr<FJsonObject> CurrentState() const;
 
 private:
-    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition };
+    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack };
     enum class EPhase : uint8 { Setup, PreIdle, Action, PostIdle };
     struct FDef
     {
@@ -74,6 +74,7 @@ private:
     FString RunDirectory, FramesFile;
     bool bDone=false, bBegan=false, bProofFloorApplied=false, bCameraApplied=false;
     bool bSprintProof=false;
+    bool bHeavyProof=false;
     int32 CheckerInstances=0;
     FVector Home=FVector::ZeroVector, Fwd0=FVector::ForwardVector, Right0=FVector::RightVector;
     float FloorZ=0.f;

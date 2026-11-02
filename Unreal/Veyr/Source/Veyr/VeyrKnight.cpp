@@ -241,6 +241,7 @@ void AVeyrKnight::BeginPlay()
     bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
     float RequestedRunStopBlend=0.f;
     bSprintContactRevision=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintContactRevision"));
+    bSourcedTwoHandHeavy=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedTwoHandHeavy"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
@@ -298,6 +299,7 @@ FName AVeyrKnight::ChooseAttackClip(bool bHeavy) const
 {
     if(bHeavy)
     {
+        if(bTwoHanded&&bSourcedTwoHandHeavy&&TwoHandHeavyAnimationVariant==0)return TEXT("HeavyAttackTwoHandSourced");
         if(bTwoHanded)return TwoHandHeavyAnimationVariant==1?TEXT("HeavyAttackTwoHandAlternate"):TEXT("HeavyAttackTwoHand");
         return HeavyAnimationVariant==1?TEXT("HeavyAttackAlternate"):TEXT("HeavyAttack");
     }
