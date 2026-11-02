@@ -1,3 +1,13 @@
+# Current Veyr idle-wing pass — 2026-11-02, Codex
+
+Task branch `claude-code-enhancements`; game integration remains in `~/veyr-knight-20261028` on `fable/knight-complete-20261028`. No main merge.
+
+`tools/dragon_refine/open_idle_wings.py` adapts the existing approved idle into a relaxed half-spread mantle. Editable source/output and measurements: `Local/idle-wings-20261102/v4/Dragon_Idle_Open_v4.{blend,glb,json}`. Existing source checkout was read-only. Non-wing bone and morph-curve errors are zero; same geometry/skin. First two fold-relaxation prototypes crumpled and were rejected; half-spread approach passed independent blind Opus as B versus original A. Breathing preservation is numerical; sampled dark review frames did not visibly establish breathing.
+
+Native DragonV3B/v033wings imported with 282 pose checks, all passed. Every-move film covers 20 segments and passes. Idle wings now default in game; `-VeyrLegacyIdleWings` restores baseline. Bare review: localhost port 8809 `/overnight/wings/`. Exact review/evidence receipts live in knight `docs/overnight-20261102/`. Broader overnight goal remains incomplete; see knight HANDOFF. No new AI video generation/spend.
+
+---
+
 # Native integration inspection — 2026-11-01 (Codex)
 
 Source inspection and native integration for the knight/game continuation. Original dragon authoring scenes remain preserved. The approved Roar v2 and Idle v2, Bite v6 and Rise v5 all share the same 51-bone rest rig. All 51 shared rest transforms match the v028 canonical GLB within floating-point tolerance; canonical adds only `VeyrRoot`. Canonical geometry remains protected. Report: `docs/native-source-compatibility-20261101.json`; reproduction tool: `tools/dragon_refine/inspect_native_sources.py`. Blender 5.2 LTS ran background through the shared GPU gate; source scenes were opened read-only and never saved.
