@@ -230,11 +230,11 @@ private:
     bool bSprintHeld=false;
     struct FLocomotionFootPlant
     {
-        FTransform Anchor=FTransform::Identity;
         FVector AnchorToe=FVector::ZeroVector;
-        FVector PreviousRaw=FVector::ZeroVector;
-        float Weight=0.f;
-        bool bLocked=false,bHasPrevious=false;
+        FVector AnchorForward=FVector::ForwardVector;
+        FVector PreviousRawLocal=FVector::ZeroVector;
+        float Weight=0.f,Clearance=0.f;
+        bool bLocked=false,bHasPrevious=false,bPivotRelease=false;
     };
     FLocomotionFootPlant LocomotionFeet[2];
     bool bSprintContactRevision=false;

@@ -346,6 +346,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("twoHanded"),Knight->IsTwoHanded());
     O->SetBoolField(TEXT("gripTransitionActive"),Knight->IsChangingGrip());
     O->SetBoolField(TEXT("sprintRequested"),Knight->IsSprinting());
+    O->SetBoolField(TEXT("sprintContactRevision"),Knight->UsesSprintContactRevision());
+    O->SetArrayField(TEXT("locomotionFootWeights"),{MakeShared<FJsonValueNumber>(Knight->GetLocomotionFootWeight(0)),MakeShared<FJsonValueNumber>(Knight->GetLocomotionFootWeight(1))});
     O->SetNumberField(TEXT("actionSourceSeconds"),Knight->GetActionSourceSeconds());
     O->SetBoolField(TEXT("dragonSolidBodyReady"),Dragon->bSolidBodyReady);
     O->SetNumberField(TEXT("dragonSolidPushCount"),Dragon->SolidBodyPushCount);

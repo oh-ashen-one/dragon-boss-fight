@@ -10,7 +10,7 @@ BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called d
 - Item 7: implemented and rendered; revision 3 passed relative blind review and settings persisted. Approved Roar v2 is now imported and its measured jaw cue emits distance-scaled feedback in item 3; owner subjective feel remains separate.
 - Item 4: current 650-HP pacing passes at 75.918 s one-hand and 24.753 s two-hand, with two blind visual PASS rounds. Full evidence and remaining framing/readability notes are in HANDOFF.md and `docs/fight-feel-20261031/pacing-final-results.json`. Remeasure after new attack/dragon clips.
 - Item 3: all 20 segments filmed; 23 chapter controls per movie on port 8806; first blind Opus PASS B for observer framing. Remaining dark/roar/stagger limitations are recorded. Latest normal victory regression: 79.939 s at 650 HP.
-- Item 8: free candidate gallery staged on port 8807; owner selection and account/download steps pending. No new retarget/import. Items 1, 2, 5 and 6 remain unfinished. Baseline descriptions below preserve the owner's original playtest context.
+- Item 8: free candidate gallery staged on port 8807; owner selection and account/download steps pending. No new retarget/import. Item 1 now has a filmed opt-in contact candidate, but its first blind round TIED; stopped under owner rule, disabled by default. Items 1, 2, 5 and 6 remain unfinished. Baseline descriptions below preserve the owner's original playtest context.
 
 ## 1. Knight running feels blocky, not like a sprint
 - Owner: "the running still feels a bit blocky. It doesn't feel like you're actually sprinting, and it doesn't seem too fluid."

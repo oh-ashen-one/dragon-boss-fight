@@ -113,13 +113,14 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     // Fixed chase camera: an engine camera actor that follows the capsule with a world-fixed orientation.
     FActorSpawnParameters Params;Params.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     ACameraActor* Cam=World->SpawnActor<ACameraActor>(Home+FVector(0,0,190),FRotator::ZeroRotator,Params);
-    if(Cam)
+    if(Cam&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintGameplayCamera")))
     {
         Cam->GetCameraComponent()->bConstrainAspectRatio=false;
         Cam->GetCameraComponent()->SetFieldOfView(45.f);
         Camera=Cam;
         if(APlayerController* PC=Cast<APlayerController>(Knight->GetController())){PC->SetViewTarget(Cam);bCameraApplied=true;}
     }
+    else if(Cam)Cam->Destroy();
     ApplyCamera(0.f,true);
     if(bProofFloor)BuildChecker();
     bBegan=true;

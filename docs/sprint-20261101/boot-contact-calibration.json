@@ -1,0 +1,35 @@
+{
+  "sourceSHA256": "846c9bbb2d5f761c1a7bb9ee3d8897ef7a4edee33dd6dc627e3c7c993a146ef0",
+  "sourceUnchanged": true,
+  "measurementScript": "tools/art/knight_complete/measure_boot_contact.py",
+  "nativeTargetHeightCm": 244,
+  "nativeCmPerBlenderUnit": 244,
+  "scaleEvidence": {
+    "method": "Ankle-to-toe vertical separation in unblended native Run matched to source stance phase",
+    "pairedScaleEstimates": [
+      245.0594711829773,
+      243.92064291719217
+    ],
+    "nativePhases": [
+      0.47462475299835205,
+      0.9680274128913879
+    ],
+    "sourcePhases": [
+      0.47,
+      0.97
+    ]
+  },
+  "footMarker": "ToeBase head, no target offset",
+  "geometryRule": "vertices with at least 0.5 combined weight on Foot/ToeBase; no geometry edits",
+  "left": {
+    "sourcePhase": 0.47,
+    "sourceToeAboveSole": 0.014637847431004047,
+    "roundedNativeToeAboveSoleCm": 3.6
+  },
+  "right": {
+    "sourcePhase": 0.97,
+    "sourceToeAboveSole": 0.018077915534377098,
+    "roundedNativeToeAboveSoleCm": 4.4
+  },
+  "scope": "Measured on approved canonical boot mesh; validate rendered stance after correction. Not a new authored gait."
+}

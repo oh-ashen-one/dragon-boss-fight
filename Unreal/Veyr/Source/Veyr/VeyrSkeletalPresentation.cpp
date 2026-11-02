@@ -189,6 +189,7 @@ bool UVeyrSkeletalPresentation::SampleReferencePose()
     HandleExistingParallelEvaluationTask(true,true);
     UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
     Instance->ClearTransitionSource();
+    Instance->ClearExplicitFootTargets();
     Instance->ClearExplicitLowerBody();
     Instance->ClearExplicitBoneRotations();
     CurrentLowerClip=NAME_None;CurrentLowerSequenceSeconds=CurrentLowerWeight=0.f;

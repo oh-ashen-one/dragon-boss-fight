@@ -1,0 +1,150 @@
+{
+  "status": "first blind TIE; stopped under owner rule",
+  "defaultEnabled": false,
+  "flag": "-VeyrSprintContactRevision",
+  "sourceId": "d0656427ab499ab2e839f203459f4e1ede457759e8e164edf5f0c561d0c032ac",
+  "runs": {
+    "before-game": {
+      "evidence": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T000402Z/unreal-blendproof-20261102T000416Z-9B5D1AD9/evidence.json",
+      "finished": true,
+      "fidelityPassed": false,
+      "sequences": [
+        {
+          "name": "SprintStop_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_761cm_per_s_transition"
+        },
+        {
+          "name": "SprintStop_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "sword_hand_space_error_2.03cm,planted_foot_slide_841cm_per_s_steady"
+        },
+        {
+          "name": "WalkSprintWalk_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_648cm_per_s_transition"
+        },
+        {
+          "name": "WalkSprintWalk_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_1149cm_per_s_transition"
+        }
+      ],
+      "videoDurationSeconds": 50.053747,
+      "timingVerified": true,
+      "failedFrames": 0
+    },
+    "after-game": {
+      "evidence": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T000506Z/unreal-blendproof-20261102T000528Z-8AFE0190/evidence.json",
+      "finished": true,
+      "fidelityPassed": false,
+      "sequences": [
+        {
+          "name": "SprintStop_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_74cm_per_s_steady"
+        },
+        {
+          "name": "SprintStop_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "sword_hand_space_error_2.04cm,planted_foot_slide_284cm_per_s_transition"
+        },
+        {
+          "name": "WalkSprintWalk_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_296cm_per_s_transition"
+        },
+        {
+          "name": "WalkSprintWalk_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_402cm_per_s_transition"
+        }
+      ],
+      "videoDurationSeconds": 50.026284,
+      "timingVerified": true,
+      "failedFrames": 0
+    },
+    "before-lab": {
+      "evidence": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T000222Z/unreal-blendproof-20261102T000236Z-B8F1B497/evidence.json",
+      "finished": true,
+      "fidelityPassed": false,
+      "sequences": [
+        {
+          "name": "SprintStop_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_798cm_per_s_transition"
+        },
+        {
+          "name": "SprintStop_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_752cm_per_s_steady"
+        },
+        {
+          "name": "WalkSprintWalk_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_647cm_per_s_transition"
+        },
+        {
+          "name": "WalkSprintWalk_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_676cm_per_s_transition"
+        }
+      ],
+      "videoDurationSeconds": 50.051642,
+      "timingVerified": true,
+      "failedFrames": 0
+    },
+    "after-lab": {
+      "evidence": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261101T235653Z/unreal-blendproof-20261101T235714Z-7AE22A3D/evidence.json",
+      "finished": true,
+      "fidelityPassed": false,
+      "sequences": [
+        {
+          "name": "SprintStop_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_72cm_per_s_steady"
+        },
+        {
+          "name": "SprintStop_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_360cm_per_s_transition"
+        },
+        {
+          "name": "WalkSprintWalk_1H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_118cm_per_s_transition"
+        },
+        {
+          "name": "WalkSprintWalk_2H",
+          "completed": true,
+          "passed": false,
+          "reason": "planted_foot_slide_69cm_per_s_steady"
+        }
+      ],
+      "videoDurationSeconds": 50.121082,
+      "timingVerified": true,
+      "failedFrames": 0
+    }
+  },
+  "blindVerdict": "TIE",
+  "mapping": {
+    "A": "before",
+    "B": "after"
+  },
+  "accepted": false
+}

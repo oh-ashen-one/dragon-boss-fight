@@ -1,3 +1,5 @@
+# Status: first blind TIE — stopped; candidate disabled
+
 # Sprint investigation — baseline first
 
 Owner attack-source selection remains pending. This independent pass refines runtime handling of the already approved Fab run, preserving the selected motion and its provenance. No new motion is authored or imported. Full backlog remains active.
@@ -44,3 +46,20 @@ Second pilot removes velocity-based release for an existing plant (velocity stil
 `native-blendproof-20261101T232837Z`, source `ba452f6fdb0b37a82b01ed715d64d2cc6200c1bb07863d3d3da9d3b2dcd01d80`, package 232613: all four completed, foot gates 0/4. Enabled flag observed in all 185 snapshots; no native presentation diagnostic or bone-length failure. SprintStop steady maxima are now 39.0 (1H) and 1.1 (2H) cm/s, but transitions remain 406 / 291 cm/s; WalkSprintWalk also fails. Results preserved in contact-pilot2-results.json.
 
 Next pilot keeps the toe anchor but follows the source foot orientation/heel roll, and releases vertical correction immediately on sourced lift while fading only planar correction. Full-transform release had held the foot low while moving it. Per-frame anchor weights are now recorded. This is still opt-in and unreviewed; no source motion, gait speed or gate limit was altered. Package/capture pending.
+
+
+### Third/fourth pilot evidence
+
+Third run `native-blendproof-20261101T233320Z`: 0/4 foot gates, worst maxima 152 / 975 / 753 / 624 cm/s. Toe anchoring retained heel roll, but foot heading still rotated while planted and raw low-swing frames were counted as contact. Fourth run `native-blendproof-20261101T234007Z`: 0/4, maxima 140 / 519 / 788 / 273 cm/s; one 2H sword hand-space check was 2.02 cm against unchanged 2 cm limit. Actor-space source velocity and bounded swing clearance improve several measures but do not establish acceptance. All cases/frames remain preserved.
+
+Fifth pilot preserves planted heading while retaining source heel roll, releases large (>50 degree) pivots with clearance before replanting, and holds existing plants during stationary stop/idle blends. Normal authored swing/lift still releases the contact. Pose-reference resets explicitly clear the new IK targets. Compiling/packaging; still opt-in, no default activation, no blind verdict.
+
+
+### Calibrated candidate and first blind review
+
+Final reviewed candidate is package 235414, source d0656427ab499ab2e839f203459f4e1ede457759e8e164edf5f0c561d0c032ac. Boot sole offsets were measured read-only from the approved glTF in owned background Blender; source SHA unchanged. Same-build lab and ordinary-camera before/after films are complete; all timing verified, zero failed captures. Page 8808 switches views without text on the films. Fidelity failures are retained in review-results.json; no tolerance change or automatic acceptance. The independent first blind review is running on all 41 native frame sheets. No further visual iteration until its result; first TIE stops work.
+
+
+## First blind outcome — TIE, stop
+
+The critic inspected all 41 sheets and found no meaningful overall preference. A (baseline) closes feet rapidly into a cleaner idle stance; B (candidate) keeps contact but freezes a wide/unresolved stride. Starts, running and downshift are effectively unchanged; downshift remains abrupt. Do not claim sprint improvement from numerical changes. The user explicitly requires stopping on the first blind tie; no further implementation/review/engine launch was performed after this verdict. Candidate remains opt-in/off by default. Owner continuation is required. The suggested next investigation is a sourced stop/step-in that reaches a deliberate stance without skating, followed by genuinely matched visual evidence; do not silently continue it now.

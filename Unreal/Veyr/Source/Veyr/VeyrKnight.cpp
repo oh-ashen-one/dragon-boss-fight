@@ -1329,8 +1329,10 @@ bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
         for(auto& F:LocomotionFeet)F=FLocomotionFootPlant();
         return true;
     }
-    const FVector Velocity=GetVelocity();const FVector Travel=Velocity.GetSafeNormal2D();
     const float Floor=GetFootLocation().Z;
+    // Approved canonical boot geometry at flat source stance, scaled to the
+    // native 244 cm rig: see docs/sprint-20261101/boot-contact-calibration.json.
+    const float SoleToToeMarkerCm[2]={3.6f,4.4f};
     const TCHAR* ToeNames[2]={TEXT("left_foot"),TEXT("right_foot")};
     const FName AnkleNames[2]={TEXT("LeftFoot"),TEXT("RightFoot")};
     TArray<FTransform> Targets;TArray<float> Weights;
@@ -1341,21 +1343,28 @@ bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
         if(ImportedPresentation->GetBoneIndex(AnkleNames[Side])==INDEX_NONE)return false;
         const FTransform Raw=ImportedPresentation->GetSocketTransform(AnkleNames[Side],RTS_World);
         const float ToeHeight=Toe.GetLocation().Z-Floor,AnkleHeight=Raw.GetLocation().Z-Floor;
-        const FVector RelativeVelocity=F.bHasPrevious?(Raw.GetLocation()-F.PreviousRaw)/DeltaSeconds-Velocity:FVector::ZeroVector;
-        const float SwingSpeed=FVector::DotProduct(RelativeVelocity,Travel);
+        const FVector RawLocal=GetActorTransform().InverseTransformPosition(Raw.GetLocation());
+        // These clips run forward in actor space even while the actor turns.
+        // Removing the complete actor transform avoids interpreting a pivot
+        // as either a stance or swing velocity in the source animation.
+        const float SwingSpeed=F.bHasPrevious?(RawLocal.X-F.PreviousRawLocal.X)/DeltaSeconds:0.f;
         const bool Lifted=ToeHeight>10.f||AnkleHeight>24.5f;
         const bool Swinging=GetPlanarSpeed()>30.f&&SwingSpeed>100.f;
         const bool TooFar=F.bLocked&&FVector::Dist2D(Toe.GetLocation(),F.AnchorToe)>130.f;
-        // Raw world velocity includes the actor's turn. It can reject a new
-        // contact, but must not release an already planted foot during a pivot.
-        if(F.bLocked&&(Lifted||TooFar))F.bLocked=false;
-        if(!F.bLocked&&F.Weight<=.001f&&!Lifted&&!Swinging&&ToeHeight<=7.5f&&AnkleHeight<=22.f)
+        const FVector FootForward=(Toe.GetLocation()-Raw.GetLocation()).GetSafeNormal2D();
+        const float YawCorrection=FMath::Atan2(FVector::CrossProduct(FootForward,F.AnchorForward).Z,FVector::DotProduct(FootForward,F.AnchorForward));
+        if(F.bLocked&&GetPlanarSpeed()>30.f&&FMath::Abs(YawCorrection)>FMath::DegreesToRadians(50.f))F.bPivotRelease=true;
+        const bool HoldingStop=MoveIntent.IsNearlyZero()&&(Action==EVeyrKnightAction::RunStop||GetPlanarSpeed()<50.f);
+        if(F.bLocked&&((!HoldingStop&&(Lifted||Swinging))||F.bPivotRelease||TooFar))F.bLocked=false;
+        const float ClearanceTarget=!F.bLocked&&(Swinging||F.bPivotRelease)?FMath::Clamp(FMath::Max3(0.f,10.f-ToeHeight,24.f-AnkleHeight),0.f,18.f):0.f;
+        F.Clearance=FMath::FInterpConstantTo(F.Clearance,ClearanceTarget,DeltaSeconds,200.f);
+        if(!F.bLocked&&F.Weight<=.001f&&F.Clearance<.5f&&!Lifted&&!Swinging&&ToeHeight<=7.5f&&AnkleHeight<=22.f)
         {
-            F.Anchor=Raw;
-            // Only correct an actually submerged toe marker; normal bone-to-sole
-            // height is preserved. No new gait or limb length is authored here.
-            F.Anchor.AddToTranslation(FVector(0,0,FMath::Max(0.f,-ToeHeight)));
-            F.AnchorToe=Toe.GetLocation();F.AnchorToe.Z=FMath::Max(double(Floor),F.AnchorToe.Z);
+            // Land at the measured sole plane, not at the arbitrary height of
+            // the first near-floor sample. Otherwise each newly captured plant
+            // can float higher and move the contact reference along with it.
+            F.AnchorToe=Toe.GetLocation();F.AnchorToe.Z=Floor+SoleToToeMarkerCm[Side];
+            F.AnchorForward=FootForward;F.bPivotRelease=false;
             F.bLocked=true;F.Weight=1.f;
         }
         if(!F.bLocked)F.Weight=FMath::Max(0.f,F.Weight-DeltaSeconds/.06f);
@@ -1363,11 +1372,16 @@ bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
         // orientation. On release the authored vertical lift is immediate;
         // only the planar correction fades, so a lifting foot cannot skate
         // across the floor while a full-transform blend holds it down.
-        FVector Correction=(F.AnchorToe-Toe.GetLocation())*F.Weight;
-        if(!F.bLocked)Correction.Z=0.f;
-        FTransform Target=Raw;Target.AddToTranslation(Correction);
-        Targets.Add(Target.GetRelativeTransform(ImportedPresentation->GetComponentTransform()));Weights.Add(F.Weight>.001f?1.f:0.f);
-        F.PreviousRaw=Raw.GetLocation();F.bHasPrevious=true;
+        const FVector ToeLocal=Raw.InverseTransformPosition(Toe.GetLocation());
+        FTransform Target=Raw;
+        const float LockedYaw=FMath::Atan2(FVector::CrossProduct(FootForward,F.AnchorForward).Z,FVector::DotProduct(FootForward,F.AnchorForward));
+        Target.SetRotation((FQuat(FVector::UpVector,LockedYaw*F.Weight)*Raw.GetRotation()).GetNormalized());
+        FVector TargetLocation=FMath::Lerp(Toe.GetLocation(),F.AnchorToe,F.Weight)-Target.TransformVector(ToeLocal);
+        if(!F.bLocked)TargetLocation.Z=Raw.GetLocation().Z;
+        TargetLocation.Z+=F.Clearance;Target.SetLocation(TargetLocation);
+        Targets.Add(Target.GetRelativeTransform(ImportedPresentation->GetComponentTransform()));Weights.Add(F.Weight>.001f||F.Clearance>.001f?1.f:0.f);
+        if(F.Weight<=.001f)F.bPivotRelease=false;
+        F.PreviousRawLocal=RawLocal;F.bHasPrevious=true;
     }
     return ImportedPresentation->SetComponentSpaceFootTargets(Targets,Weights);
 }

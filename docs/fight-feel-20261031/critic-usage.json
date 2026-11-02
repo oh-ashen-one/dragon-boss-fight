@@ -91,6 +91,15 @@
       "error": false,
       "reportedEstimatedUSD": 1.5200608000000002,
       "durationMs": 149987
+    },
+    {
+      "receipt": "sprint-contact-critic-result.json",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "error": false,
+      "reportedEstimatedUSD": 1.6455612,
+      "durationMs": 207034
     }
   ]
 }
