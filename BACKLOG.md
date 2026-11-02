@@ -13,7 +13,7 @@ BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called d
 - Item 8: Mixamo downward two-hand heavy/finisher won blind Opus review and is default. Kevin rejected after two failed revisions. Jump/run assets imported but disabled: landing/startup contact failures remain. New heavy passed contact scope; broad primary test still has one old-light foot failure.
 - Item 2: half-spread idle wings won blind review; default. Original breathing curves preserved exactly; subtle breathing not independently visible in sampled critic frames.
 - Item 1: sprint/stop unfinished; failed contact experiment off. Correct forward run and stop sources acquired.
-- Item 5: sourced heal passes resource mechanics, but first blind pair was inconclusive due framing. Disabled pending closeup review.
+- Item 5: sourced heal passes resource mechanics, but first blind pair was inconclusive due framing. Second closeup critic BOTH FAIL: no convincing cup tip; disabled.
 - Item 6: free licensed audio cues and timing/mix candidate implemented, disabled pending listening acceptance.
 - Full goal incomplete. Current review/build paths, cleanup and exact failures: HANDOFF.md. Descriptions below preserve original playtest context.
 

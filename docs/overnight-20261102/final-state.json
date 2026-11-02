@@ -1,0 +1,18 @@
+{
+  "goalComplete": false,
+  "latestVerifiedApp": "/private/tmp/veyr-verified-bundle-1qepc1gn/Veyr-Mac-Shipping.app",
+  "packageReceipt": "Local/package-20261102T134559Z/receipt.json",
+  "sourceId": "93fc561499203047ee7aaa7a5dc22c5a2bfd8c8a05de10b76eeb030a5361a584",
+  "victorySeconds": 71.87911224365234,
+  "removedDirectories": 110,
+  "cumulativeReclaimedGiB": 216.35537719726562,
+  "freeGiB": 21.011062622070312,
+  "reviewURL": "http://localhost:8810/",
+  "assetAudioGenerationSpendUSD": 0,
+  "unfinished": [
+    "sprint/stop",
+    "running/leap contacts",
+    "heal tipping/contact/joins",
+    "audio listening/mix"
+  ]
+}

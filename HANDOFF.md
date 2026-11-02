@@ -1,3 +1,13 @@
+# Final cutoff state — 2026-11-02 09:00 America/New_York
+
+**Full goal incomplete.** Only retained task-owned app: `/private/tmp/veyr-verified-bundle-1qepc1gn/Veyr-Mac-Shipping.app`. Latest package `Local/package-20261102T134559Z/receipt.json`; victory **71.879 s**, restart checks pass. Core passed on preceding package (only subsequent code change is opt-in observer camera). Filmed default victories 78.793 s / 25.145 s remain available.
+
+Current working review page: **http://localhost:8810/**. Added HTTP byte-range support and visibly verified Safari playback. Use this instead of port 8809 for current films. Heavy and wings default after blind PASS; sourced heal closeup second critic BOTH FAIL: cup never tips convincingly, contact and joins unresolved. Keep heal, running/leap, sprint and audio experiments disabled; change healing source/contact approach next.
+
+Cleanup: **110 obsolete directories, 216.36 GiB cumulative measured recovery; 21.01 GiB currently free.** Only latest app retained. Source/editable assets, final videos, receipts and critic evidence preserved. Raw-frame cleanup was conservatively withheld after secondary decode-to-discard muxer timestamp warnings; no raw frames deleted. Other historical Downloads v030 app has separate ownership, preserved. Exact facts: `docs/overnight-20261102/final-state.json`. No asset/audio-generation spend. Lightweight review server remains available; no further GPU work at cutoff.
+
+---
+
 # Overnight continuation — 2026-11-02 (Codex)
 
 **Current at 13:44 UTC; cutoff 14:00 UTC (09:00 America/New_York). Full goal incomplete.** Owner delegated decisions and free downloads; a tied/losing review rejects the candidate, not the task. Two failed revisions require a different approach. Full objective: `docs/overnight-20261102/objective.md`.
