@@ -210,7 +210,7 @@ def verify_sourced_definition(plan,definition,check_replacements=True):
         if key in replacements:continue
         new=clips.get(key)
         if not new:raise RuntimeError('Inherited clip missing: '+key)
-        for field in ('sequence','mesh_override','weapon_mesh','approved_source_sha256','start_seconds','end_seconds','gameplay_play_rate','loop'):
+        for field in ('sequence','mesh_override','weapon_mesh','approved_source_sha256','start_seconds','end_seconds','gameplay_play_rate','attack_reach_cm','loop'):
             if old.get_editor_property(field)!=new.get_editor_property(field):raise RuntimeError('Inherited clip changed: '+key+'/'+field)
         preserved.append(key)
     if not check_replacements:return {'guard':actual_guard,'preservedClips':preserved}
@@ -220,6 +220,7 @@ def verify_sourced_definition(plan,definition,check_replacements=True):
         if not c or c.approved_source_sha256!=spec['approved_source_sha256'] or c.approved_source_file!=spec['approved_source_file']:raise RuntimeError('Imported source identity differs: '+spec['name'])
         for field in ('gameplay_play_rate','nominal_speed_cm_per_second','start_seconds','end_seconds','root_sample_rate'):
             if abs(float(c.get_editor_property(field))-float(spec[field]))>.001:raise RuntimeError('Imported metadata differs: '+spec['name']+'/'+field)
+        if abs(float(c.attack_reach_cm)-float(spec.get('attack_reach_cm',0.)))>.001:raise RuntimeError('Imported attack reach differs: '+spec['name'])
         if bool(c.root_motion_removed)!=bool(spec['root_motion_removed']) or bool(c.loop)!=bool(spec['loop']):raise RuntimeError('Imported motion policy differs: '+spec['name'])
         actual=list(c.root_translation_samples_cm);expected_samples=spec['root_translation_samples_cm']
         if len(actual)!=len(expected_samples) or any(max(abs(v.x-p[0]),abs(v.y-p[1]),abs(v.z-p[2]))>.001 for v,p in zip(actual,expected_samples)):raise RuntimeError('Imported root samples differ: '+spec['name'])
@@ -642,6 +643,7 @@ def run(plan_file):
                 entry.set_editor_property("approved_source_sha256", specification.get("approved_source_sha256", ""))
                 entry.set_editor_property("damage_windows", [unreal.Vector2D(*window) for window in specification.get("damage_windows", [])])
                 entry.set_editor_property("nominal_speed_cm_per_second", specification.get("nominal_speed_cm_per_second", 0.0))
+                entry.set_editor_property("attack_reach_cm", specification.get("attack_reach_cm", 0.0))
                 entry.set_editor_property("gameplay_play_rate", specification.get("gameplay_play_rate", 1.0))
                 entry.set_editor_property("root_translation_samples_cm", [unreal.Vector(*point) for point in specification.get("root_translation_samples_cm", [])])
                 entry.set_editor_property("root_yaw_samples_degrees", specification.get("root_yaw_samples_degrees", []))

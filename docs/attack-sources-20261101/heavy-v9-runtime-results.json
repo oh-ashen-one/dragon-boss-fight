@@ -1,0 +1,37 @@
+{
+  "normal": {
+    "run": "native-blendproof-20261102T065207Z",
+    "passed": true,
+    "sourceId": "55ecb99b8710c2e1e9bbd94d4e09342bc6ebd08566f80d1e4627484cbf143ec1",
+    "sequences": [
+      {
+        "name": "Heavy_2H_side",
+        "passed": true,
+        "footCmPerSecond": 2.6842803955078125,
+        "gripExcessCm": 1.390599250793457,
+        "handSpaceErrorCm": 0.628724992275238
+      },
+      {
+        "name": "Heavy_2H_threequarter",
+        "passed": true,
+        "footCmPerSecond": 2.3666815757751465,
+        "gripExcessCm": 1.390218734741211,
+        "handSpaceErrorCm": 0.629928469657898
+      },
+      {
+        "name": "Heavy_2H_front",
+        "passed": true,
+        "footCmPerSecond": 3.4841980934143066,
+        "gripExcessCm": 1.3903388977050781,
+        "handSpaceErrorCm": 0.6345770359039307
+      },
+      {
+        "name": "Heavy_2H_grip",
+        "passed": true,
+        "footCmPerSecond": 1.5935004949569702,
+        "gripExcessCm": 1.3897809982299805,
+        "handSpaceErrorCm": 0.34984681010246277
+      }
+    ]
+  }
+}

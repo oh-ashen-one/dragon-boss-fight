@@ -22,6 +22,7 @@
 #include "Misc/Paths.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+#include "Kismet/GameplayStatics.h"
 
 namespace
 {
@@ -58,11 +59,12 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
 {
     if(bHeavyProof)
     {
-        const TCHAR* Clip=Knight.IsValid()&&Knight->UsesSourcedHeavy()?TEXT("HeavyAttackTwoHandSourced"):TEXT("HeavyAttackTwoHand");
+        const TCHAR* Clip=Knight.IsValid()&&Knight->UsesSourcedHeavy()?TEXT("HeavyAttackTwoHandSourced"):bPrimaryHeavyProof?TEXT("LightCombo"):TEXT("HeavyAttackTwoHand");
         static const FDef HeavyDefs[]={
             {TEXT("Heavy_2H_side"),EKind::HeavyAttack,0,false,true,0.f,0.f,Clip,90.f},
             {TEXT("Heavy_2H_threequarter"),EKind::HeavyAttack,0,false,true,0.f,0.f,Clip,35.f},
             {TEXT("Heavy_2H_front"),EKind::HeavyAttack,0,false,true,0.f,0.f,Clip,0.f},
+            {TEXT("Heavy_2H_grip"),EKind::HeavyAttack,0,false,true,0.f,0.f,Clip,35.f},
         };
         return HeavyDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(HeavyDefs)-1)];
     }
@@ -90,7 +92,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount() const{return bHeavyProof?3:bSprintProof?4:9;}
+int32 FVeyrBlendProof::DefCount() const{return bHeavyProof?4:bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {
@@ -112,8 +114,12 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     if(bBegan||!InWorld||!InKnight||!InDragon)return false;
     World=InWorld;Knight=InKnight;Dragon=InDragon;Hooks=MoveTemp(InHooks);RunDirectory=InRunDirectory;
     bSprintProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof"));
-    bHeavyProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrHeavyProof"));
+    bPrimaryHeavyProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryHeavyProof"));
+    bHeavyProof=bPrimaryHeavyProof||FParse::Param(FCommandLine::Get(),TEXT("VeyrHeavyProof"));
     if(bSprintProof&&bHeavyProof)return false;
+    if(bHeavyProof&&FParse::Value(FCommandLine::Get(),TEXT("VeyrHeavyReviewSlowMo="),HeavyReviewSlowMo)&&FMath::IsFinite(HeavyReviewSlowMo))
+        HeavyReviewSlowMo=FMath::Clamp(HeavyReviewSlowMo,.1f,1.f);
+    else HeavyReviewSlowMo=1.f;
     FramesFile=FPaths::Combine(RunDirectory,TEXT("blendproof-frames.jsonl"));
     IFileManager::Get().Delete(*FramesFile,false,true,true);
     Dragon->bProofPassive=true; // boss breathes, never attacks
@@ -188,10 +194,22 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
     const FVector Target=K->GetActorLocation();
     if(bSnap||!bFocusValid){Focus=Target;bFocusValid=true;}
     else Focus+=(Target-Focus)*FMath::Clamp(Dt*4.f,0.f,1.f);
-    const FVector Look(Focus.X,Focus.Y,FloorZ+(bHeavyProof?220.f:100.f));
+    FVector Look(Focus.X,Focus.Y,FloorZ+(bHeavyProof?220.f:100.f));
     const float Az=FMath::DegreesToRadians(D.CameraAzimuthDeg);
     const FVector Dir=Fwd0*FMath::Cos(Az)+Right0*FMath::Sin(Az);
     FVector Location=Look+Dir*(bHeavyProof?900.f:580.f);Location.Z=FloorZ+(bHeavyProof?240.f:190.f);
+    // Extra inspection chapter follows the actual rendered hand, so the
+    // reviewer can judge contact through the fast strike without a crop.
+    if(bHeavyProof&&SeqIndex==3&&K->ImportedPresentation)
+    {
+        FTransform Hand;
+        if(K->ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_hand"),Hand))
+        {
+            Look=Hand.GetLocation();Location=Look+Dir*300.f+FVector(0,0,45.f);
+            Cam->GetCameraComponent()->SetFieldOfView(40.f);
+        }
+    }
+    else Cam->GetCameraComponent()->SetFieldOfView(bHeavyProof?55.f:45.f);
     Cam->SetActorLocationAndRotation(Location,(Look-Location).Rotation());
     if(!bCameraApplied)
         if(APlayerController* PC=Cast<APlayerController>(K->GetController())){PC->SetViewTarget(Cam);bCameraApplied=true;}
@@ -302,12 +320,15 @@ void FVeyrBlendProof::DriveAction(double Elapsed,float Dt)
     {
         if(!bActionIssued&&K->Action==EVeyrKnightAction::Ready)
         {
-            K->SetSprintRequested(false);K->SetReplayInput(FVector::ZeroVector,false,true,false,false,false,false);bActionIssued=true;return;
+            HeavyCountAtInput=K->HeavyAttacks;
+            K->SetSprintRequested(false);K->SetReplayInput(FVector::ZeroVector,false,!bPrimaryHeavyProof,false,false,false,false);
+            if(bPrimaryHeavyProof)K->PressPrimaryAttack();
+            bActionIssued=true;return;
         }
         Neutral();
-        if(K->Action==EVeyrKnightAction::HeavyAttack)bExpectedActionSeen=true;
-        if(bExpectedActionSeen&&K->Action==EVeyrKnightAction::Ready){EnterPhase(EPhase::PostIdle,Elapsed);return;}
-        if(InAction>8.){bActionTimedOut=true;EnterPhase(EPhase::PostIdle,Elapsed);}
+        if(K->HeavyAttacks>HeavyCountAtInput)bExpectedActionSeen=true;
+        if(bExpectedActionSeen&&K->Action==EVeyrKnightAction::Ready){K->ReleasePrimaryAttack();EnterPhase(EPhase::PostIdle,Elapsed);return;}
+        if(InAction>8.){K->ReleasePrimaryAttack();bActionTimedOut=true;EnterPhase(EPhase::PostIdle,Elapsed);}
         return;
     }
     if(D.Kind==EKind::Strafe||D.Kind==EKind::SpeedTransition)
@@ -361,6 +382,8 @@ void FVeyrBlendProof::Drive(double Elapsed,float Dt)
     AVeyrKnight* K=Knight.Get();AVeyrDragon* B=Dragon.Get();
     if(!bBegan||!K||!B){return;}
     B->bProofPassive=true;
+    if(bHeavyProof&&HeavyReviewSlowMo<1.f)
+        UGameplayStatics::SetGlobalTimeDilation(K,bDone?1.f:HeavyReviewSlowMo);
     ApplyCamera(Dt,false);
     if(bDone){Neutral();return;}
     if(SeqIndex>=DefCount()){bDone=true;Neutral();return;}
@@ -712,6 +735,8 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     O->SetBoolField(TEXT("done"),bDone);O->SetNumberField(TEXT("sequencesPassed"),PassedCount);O->SetNumberField(TEXT("sequencesTotal"),DefCount());
     O->SetBoolField(TEXT("sprintProof"),bSprintProof);
     O->SetBoolField(TEXT("heavyProof"),bHeavyProof);
+    O->SetBoolField(TEXT("primaryHeavyProof"),bPrimaryHeavyProof);
+    O->SetNumberField(TEXT("heavyReviewTimeDilation"),HeavyReviewSlowMo);
     O->SetBoolField(TEXT("allPassed"),bDone&&PassedCount==DefCount());
     O->SetStringField(TEXT("framesFile"),TEXT("blendproof-frames.jsonl"));
     TSharedPtr<FJsonObject> Setup=MakeShared<FJsonObject>();

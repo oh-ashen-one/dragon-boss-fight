@@ -1,0 +1,52 @@
+[
+  {
+    "version": "v032kevin",
+    "poseProof": "Local/CustomuseImports/native-pose-proof-KnightB-v032kevin.json",
+    "passed": true,
+    "samples": 294,
+    "failures": 0,
+    "protectedAssetCount": 1029,
+    "activationReceipt": "Local/kevin-editor-20261102/activate_polish_character.json",
+    "qualityAccepted": false
+  },
+  {
+    "version": "v033kevin",
+    "poseProof": "Local/CustomuseImports/native-pose-proof-KnightB-v033kevin.json",
+    "passed": true,
+    "samples": 294,
+    "failures": 0,
+    "protectedAssetCount": 1031,
+    "activationReceipt": "Local/kevin-v8-editor-20261102/activate.json",
+    "qualityAccepted": false
+  },
+  {
+    "version": "v034kevin",
+    "poseProof": "Local/CustomuseImports/native-pose-proof-KnightB-v034kevin.json",
+    "passed": true,
+    "samples": 294,
+    "failures": 0,
+    "protectedAssetCount": 1033,
+    "activationReceipt": "Local/kevin-v9-editor-20261102/activate.json",
+    "qualityAccepted": false
+  },
+  {
+    "version": "v035kevin",
+    "poseProof": "Local/CustomuseImports/native-pose-proof-KnightB-v035kevin.json",
+    "passed": true,
+    "samples": 294,
+    "failures": 0,
+    "protectedAssetCount": 1035,
+    "activationReceipt": "Local/kevin-v10-editor-20261102/activate.json",
+    "qualityAccepted": false
+  },
+  {
+    "version": "v037combat",
+    "poseProof": "Local/CustomuseImports/native-pose-proof-KnightB-v037combat.json",
+    "passed": true,
+    "samples": 300,
+    "failures": 0,
+    "protectedAssetCount": 1037,
+    "activationReceipt": "Local/v037-editor-20261102/activate.json",
+    "qualityAccepted": false
+  }
+]

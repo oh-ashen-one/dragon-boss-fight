@@ -242,6 +242,7 @@ void AVeyrKnight::BeginPlay()
     float RequestedRunStopBlend=0.f;
     bSprintContactRevision=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintContactRevision"));
     bSourcedTwoHandHeavy=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedTwoHandHeavy"));
+    bSourcedHeal=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedHeal"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
@@ -325,6 +326,11 @@ FName AVeyrKnight::ChooseStaggerClip(const FVector& Source)
     return Clip;
 }
 float AVeyrKnight::GetAttackDuration(bool bHeavy) const { return VisualClipDuration(ChooseAttackClip(bHeavy),bTwoHanded?(bHeavy?1.20f:.90f):(bHeavy?.90f:.66f)); }
+float AVeyrKnight::PreferredHeavyStandOffCm() const
+{
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ChooseAttackClip(true)):nullptr;
+    return C&&FMath::IsFinite(C->AttackReachCm)&&C->AttackReachCm>0.f?FMath::Max(185.f,C->AttackReachCm*.95f):185.f;
+}
 float AVeyrKnight::GetAttackContactTime(bool bHeavy) const
 {
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ChooseAttackClip(bHeavy)):nullptr;
@@ -367,7 +373,7 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::GripToTwoHand:return TEXT("GripToTwoHand");
         case EVeyrKnightAction::GripToOneHand:return TEXT("GripToOneHand");
         case EVeyrKnightAction::Guard:return TEXT("GuardTwoHand");
-        case EVeyrKnightAction::Heal:return TEXT("Heal");
+        case EVeyrKnightAction::Heal:return bSourcedHeal?TEXT("HealSourced"):TEXT("Heal");
         case EVeyrKnightAction::Stagger:return PendingStaggerClip.IsNone()?FName(TEXT("Stagger")):PendingStaggerClip;
         case EVeyrKnightAction::Dead:return TEXT("Death");
         default:return bTwoHanded?TEXT("IdleTwoHand"):TEXT("Idle");
@@ -468,7 +474,7 @@ void AVeyrKnight::TryHeal()
 {
     if (!CanStartGroundedAction() || HealingCharges <= 0 || Health >= 100.f) return;
     --HealingCharges;
-    BeginAction(EVeyrKnightAction::Heal,VisualClipDuration(TEXT("Heal"),1.25f));
+    BeginAction(EVeyrKnightAction::Heal,VisualClipDuration(ResolveActionClip(EVeyrKnightAction::Heal),1.25f));
 }
 
 bool AVeyrKnight::TryBlink(bool bLeft)
@@ -532,12 +538,17 @@ float AVeyrKnight::GetPrimaryFirstStepDuration() const
 }
 float AVeyrKnight::GetPrimaryChainDuration() const
 {
+    if(bTwoHanded&&bSourcedTwoHandHeavy)return PrimarySegmentSourceStart(2)/VisualClipPlayRate(TEXT("LightCombo"))+GetAttackDuration(true);
     return bTwoHanded?VisualClipDuration(TEXT("LightCombo"),3.32f):2.f*GetAttackDuration(false)+GetAttackDuration(true);
 }
 float AVeyrKnight::GetPrimaryChainRemainingSeconds() const
 {
     if(!bPrimaryChainActive)return GetPrimaryChainDuration();
-    if(bTwoHanded)return FMath::Max(0.f,GetPrimaryChainDuration()-GetActionSourceSeconds()/VisualClipPlayRate(TEXT("LightCombo")));
+    if(bTwoHanded)
+    {
+        if(bSourcedTwoHandHeavy&&PrimaryChainStep==2)return FMath::Max(0.f,ActionDuration-ActionElapsed);
+        return FMath::Max(0.f,GetPrimaryChainDuration()-GetActionSourceSeconds()/VisualClipPlayRate(TEXT("LightCombo")));
+    }
     float Remaining=FMath::Max(0.f,ActionDuration-ActionElapsed);
     for(int32 Step=PrimaryChainStep+1;Step<3;++Step)Remaining+=GetAttackDuration(Step==2);
     return Remaining;
@@ -550,21 +561,22 @@ bool AVeyrKnight::StartPrimaryStep(int32 Step)
     const float Cost=GetPrimaryStepCost(Step);
     if(Stamina<Cost)return false;
     const bool Two=bTwoHanded;
+    const bool SourcedFinisher=Two&&Heavy&&bSourcedTwoHandHeavy;
     if(Two&&!HasVisualClip(TEXT("LightCombo")))return false;
     if(Step==0){PrimarySwingBase=SwingId+1;SwingId+=3;++ComboAttacks;}
     Stamina-=Cost;RegenDelay=Heavy?.65f:.5f;bSwingTwoHanded=Two;
     if(Heavy)++HeavyAttacks;else ++LightAttacks;
-    ActionSwingBase=Two?PrimarySwingBase:PrimarySwingBase+Step;
+    ActionSwingBase=Two&&!SourcedFinisher?PrimarySwingBase:PrimarySwingBase+Step;
     bStartingPrimaryStep=true;
     // Two-hand chain segments begin a fixed wind-up lead before swings 2 and 3 (v5: .65/1.40 s = window starts
     // .7667/1.60 minus .117/.20 s). Derived from the clip's own damage windows so a retimed LightCombo (A1, v030t:
     // .625/1.35 s) keeps every strike inside its segment; legacy constants without three windows.
     const float Starts[]={0.f,PrimarySegmentSourceStart(1),PrimarySegmentSourceStart(2)};
     const float Ends[]={Starts[1],Starts[2],VisualClipDuration(TEXT("LightCombo"),3.32f)*VisualClipPlayRate(TEXT("LightCombo"))};
-    const float Duration=Two?(Ends[Step]-Starts[Step])/VisualClipPlayRate(TEXT("LightCombo")):GetAttackDuration(Heavy);
-    BeginAction(Two?EVeyrKnightAction::Combo:Heavy?EVeyrKnightAction::HeavyAttack:EVeyrKnightAction::LightAttack,Duration);
+    const float Duration=Two&&!SourcedFinisher?(Ends[Step]-Starts[Step])/VisualClipPlayRate(TEXT("LightCombo")):GetAttackDuration(Heavy);
+    BeginAction(Two&&!SourcedFinisher?EVeyrKnightAction::Combo:Heavy?EVeyrKnightAction::HeavyAttack:EVeyrKnightAction::LightAttack,Duration);
     bStartingPrimaryStep=false;bPrimaryChainActive=true;bPrimaryAttackBuffered=false;PrimaryChainStep=Step;
-    PrimarySourceOffset=Two?Starts[Step]:0.f;
+    PrimarySourceOffset=Two&&!SourcedFinisher?Starts[Step]:0.f;
     UE_LOG(LogTemp,Display,TEXT("VEYR_PRIMARY_STEP step=%d twoHanded=%d sourceOffset=%.3f duration=%.3f"),Step+1,Two,PrimarySourceOffset,Duration);
     return true;
 }
@@ -1706,6 +1718,7 @@ void AVeyrKnight::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AVeyrKnight::CaptureMouseOrAttack);
     Input->BindKey(EKeys::LeftMouseButton, IE_Released, this, &AVeyrKnight::ReleasePrimaryAttack);
     Input->BindKey(EKeys::E, IE_Pressed, this, &AVeyrKnight::GripPressed);
+    Input->BindKey(EKeys::F, IE_Pressed, this, &AVeyrKnight::HeavyPressed);
     Input->BindKey(EKeys::LeftShift, IE_Pressed, this, &AVeyrKnight::SprintPressed);
     Input->BindKey(EKeys::LeftShift, IE_Released, this, &AVeyrKnight::SprintReleased);
     Input->BindKey(EKeys::RightShift, IE_Pressed, this, &AVeyrKnight::SprintPressed);

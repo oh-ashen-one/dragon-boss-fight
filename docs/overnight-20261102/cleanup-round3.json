@@ -1,0 +1,18 @@
+{
+  "removed": {
+    "/private/tmp/veyr-stage-5hjsmdwx": "completed owned stage",
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261102T064917Z": "redundant original/repaired archive",
+    "/private/tmp/veyr-stage-nj9jz4un": "completed owned stage",
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261102T065555Z": "redundant original/repaired archive",
+    "/private/tmp/veyr-verified-bundle-geesxps4": "superseded heavy candidate; films and evidence preserved",
+    "/private/tmp/veyr-verified-bundle-xevhzkf1": "superseded heavy candidate; films and evidence preserved"
+  },
+  "retained": [
+    "/private/tmp/veyr-verified-bundle-h4hboyni",
+    "/private/tmp/veyr-verified-bundle-2stiyco0",
+    "/private/tmp/veyr-verified-bundle-myt0qsi3"
+  ],
+  "freeBytesBefore": 67361865728,
+  "freeBytesAfter": 80255557632,
+  "utc": "2026-11-02T07:21:21Z"
+}

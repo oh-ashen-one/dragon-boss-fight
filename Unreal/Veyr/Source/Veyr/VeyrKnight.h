@@ -49,6 +49,8 @@ public:
     UFUNCTION(BlueprintPure, Category="Input") bool IsSprinting() const { return bSprintHeld; }
     bool UsesSprintContactRevision() const { return bSprintContactRevision; }
     bool UsesSourcedHeavy() const { return bSourcedTwoHandHeavy; }
+    bool UsesSourcedHeal() const { return bSourcedHeal; }
+    float PreferredHeavyStandOffCm() const;
     float GetLocomotionFootWeight(int32 Side) const { return Side>=0&&Side<2?LocomotionFeet[Side].Weight:0.f; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsChangingGrip() const { return Action==EVeyrKnightAction::GripToTwoHand||Action==EVeyrKnightAction::GripToOneHand; }
     /** Elapsed trimmed source seconds, including a primary-combo segment offset. */
@@ -240,6 +242,7 @@ private:
     FLocomotionFootPlant LocomotionFeet[2];
     bool bSprintContactRevision=false;
     bool bSourcedTwoHandHeavy=false;
+    bool bSourcedHeal=false;
     bool bPrimaryAttackHeld=false,bPrimaryAttackBuffered=false,bPrimaryChainActive=false,bStartingPrimaryStep=false;
     int32 PrimaryChainStep=0,PrimarySwingBase=0;
     float PrimarySourceOffset=0.f;

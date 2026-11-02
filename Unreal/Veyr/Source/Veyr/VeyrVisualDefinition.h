@@ -25,6 +25,8 @@ struct FVeyrVisualClip
     /** Exact approved rigid weapon variant, animated by the helper bone. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMesh> WeaponMesh;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float NominalSpeedCmPerSecond=0.f;
+    /** Measured maximum forward blade reach during the active window, at native character scale. */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) float AttackReachCm=0.f;
     /** Runtime cadence only; the imported approved sequence remains unchanged. */
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float GameplayPlayRate=1.f;
     /** Extracted original root path, in imported mesh-local centimetres. */

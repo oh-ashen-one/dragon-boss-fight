@@ -1,12 +1,15 @@
 """Blender correction of sourced heavy contacts and idle joins; retain the source strike."""
-import bpy, json, hashlib, math
+import bpy, json, hashlib, math, argparse, sys
 from pathlib import Path
 from mathutils import Matrix, Vector
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT/'Local/AttackSources20261101/KevinIglesias/Retarget/Exports'
 source = OUT/'Kevin_Heavy_M_v7.blend'
-dest = OUT/'Kevin_Heavy_M_v8'
+parser=argparse.ArgumentParser();parser.add_argument('--version',default='v8');parser.add_argument('--stepped-clearance',action='store_true');parser.add_argument('--soften-strike',action='store_true')
+args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+assert args.version.isalnum()
+dest = OUT/f'Kevin_Heavy_M_{args.version}'
 assert not dest.with_suffix('.blend').exists()
 helper = Path(__file__).with_name('fit_paired_grip.py')
 ns = {'__file__': str(helper)}
@@ -48,14 +51,24 @@ scene.frame_set(0);bpy.context.view_layer.update()
 source_feet={s:world(rig,s+'Foot') for s in ['Left','Right']}
 source_grip=world(rig,'RightHand').inverted()@world(rig,'WeaponSocket')
 original_fps=scene.render.fps/scene.render.fps_base
-fps=120; intro=.45; strike=1.6; outro=.65; total=int(round((intro+strike+outro)*fps))
+fps=120; intro=.45; strike=1.73 if args.soften_strike else 1.6; outro=.65; total=int(round((intro+strike+outro)*fps))
+def source_time(t):
+    if not args.soften_strike:return t
+    # Monotone cubic DCC time warp: preserve the sourced path, spread the
+    # concentrated torso drop, and keep nonzero velocity through the cut.
+    xs=[0.,.40,.48,.68,.76,1.73];ys=[0.,.40,.46,.55,.63,1.6]
+    slopes=[(ys[i+1]-ys[i])/(xs[i+1]-xs[i]) for i in range(len(xs)-1)]
+    tangents=[slopes[0]]+[2*slopes[i-1]*slopes[i]/(slopes[i-1]+slopes[i]) for i in range(1,len(slopes))]+[slopes[-1]]
+    i=min(len(xs)-2,next((j for j in range(len(xs)-1) if t<=xs[j+1]),len(xs)-2))
+    h=xs[i+1]-xs[i];u=max(0.,min(1.,(t-xs[i])/h))
+    return (2*u**3-3*u**2+1)*ys[i]+(u**3-2*u**2+u)*h*tangents[i]+(-2*u**3+3*u**2)*ys[i+1]+(u**3-u*u)*h*tangents[i+1]
 samples=[]
 for f in range(total+1):
-    t=f/fps; st=max(0.,min(strike,t-intro))*original_fps
+    t=f/fps; st=source_time(max(0.,min(strike,t-intro)))*original_fps
     rig.animation_data.action=original;scene.frame_set(int(st),subframe=st-int(st));bpy.context.view_layer.update()
     samples.append(pose(rig))
 scene.render.fps=fps;scene.render.fps_base=1;scene.frame_start=0;scene.frame_end=total
-action=bpy.data.actions.new('Kevin_Heavy_M_v8_ContactAndIdleJoins');rig.animation_data.action=action
+action=bpy.data.actions.new(f'Kevin_Heavy_M_{args.version}_ContactAndIdleJoins');rig.animation_data.action=action
 previous={};report=[]
 for f,src_pose in enumerate(samples):
     t=f/fps;scene.frame_set(f)
@@ -68,13 +81,18 @@ for f,src_pose in enumerate(samples):
     for side in ['Right','Left']:
         if t<intro:
             start,end=(0.,.25) if side=='Right' else (.20,.45)
-            u=smooth((t-start)/(end-start));foot=mix(idle_feet[side],source_feet[side],u)
+            phase=max(0.,min(1.,(t-start)/(end-start)))
+            u=smooth((phase-.25)/.5) if args.stepped_clearance else smooth(phase)
+            foot=mix(idle_feet[side],source_feet[side],u)
         elif t>intro+strike:
             ot=t-intro-strike;start,end=(.25,.65) if side=='Right' else (0.,.35)
-            u=smooth((ot-start)/(end-start));foot=mix(source_feet[side],idle_feet[side],u)
+            phase=max(0.,min(1.,(ot-start)/(end-start)))
+            u=smooth((phase-.25)/.5) if args.stepped_clearance else smooth(phase)
+            foot=mix(source_feet[side],idle_feet[side],u)
         else:
-            u=0.;foot=source_feet[side].copy()
-        foot.translation.z+=.035*math.sin(math.pi*u)
+            phase=u=0.;foot=source_feet[side].copy()
+        lift=.05*min(smooth(phase/.25),smooth((1-phase)/.25)) if args.stepped_clearance else .035*math.sin(math.pi*u)
+        foot.translation.z+=lift
         targets[side]=foot
     drop=0.
     for side,foot in targets.items():

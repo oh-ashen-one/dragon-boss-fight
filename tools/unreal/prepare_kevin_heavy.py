@@ -41,17 +41,22 @@ low=high=peak
 while low>0 and score[low-1]>=threshold:low-=1
 while high<len(times)-1 and score[high+1]>=threshold:high+=1
 window=[float(times[low]),float(times[high])]
+body=GLB(canonical)
+body_vertices=np.concatenate([body.accessor(p['attributes']['POSITION']) for m in body.json['meshes'] for p in m['primitives']])
+native_scale=base['target_height_cm']/float(np.ptp(body_vertices[:,1]))
+reach=float(max(0.,points[low:high+1,2].max())*native_scale)
 if window[1]-window[0]<.05:raise ValueError('Measured strike window is too short')
 plan={k:v for k,v in base.items() if k!='clips'}
 plan.update(version=args.version,replace_runtime_source=f'/Game/Characters/Customuse/KnightB/{args.previous_version}/DA_KnightB',owner_approved=False,owner_requested_revision=True)
 plan['required_clips']=sorted(set(base['required_clips'])|{'HeavyAttackTwoHandSourced'})
 plan['clips']=[dict(name='HeavyAttackTwoHandSourced',**entry,mesh_variant=base['canonical_mesh_variant'],start_seconds=0.,end_seconds=duration,loop=False,
- gameplay_play_rate=1.,nominal_speed_cm_per_second=0.,damage_windows=[window],impact_seconds=float(times[peak]),
+ gameplay_play_rate=1.,nominal_speed_cm_per_second=0.,attack_reach_cm=reach,damage_windows=[window],impact_seconds=float(times[peak]),
  weapon_file=base['clips'][0]['weapon_file'],root_motion_policy='preserve',root_motion_removed=False,root_sample_rate=120.,
  root_translation_samples_cm=[],root_yaw_samples_degrees=[],source_duration=duration,approved_source_file=exported.name,approved_source_sha256=fit['sha256'])]
 path=folder/'import-plan-KnightB.json';path.write_text(json.dumps(plan,indent=2)+'\n')
 receipt={'plan':str(path),'sourceExport':str(exported),'normalization':normal,'graft':proof,'damageWindow':window,'impactSeconds':float(times[peak]),
  'windowMethod':'Contiguous blade-tip speed above 30 percent of forward-strike peak, sampled at 120 Hz; glTF +Z is character forward',
+ 'attackReachCm':reach,'reachMethod':'Maximum forward blade-tip position within the measured damage window, scaled by target height divided by canonical mesh height',
  'ownerAuthority':'Owner delegated source/implementation decisions on 2026-11-01; no human playback approval is claimed',
  'status':'Offline candidate only; native integration, runtime contacts and blind quality review pending'}
 (folder/'preparation.json').write_text(json.dumps(receipt,indent=2)+'\n')

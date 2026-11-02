@@ -106,7 +106,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(bInitialized)return false;
     ReplayMode=Mode.ToLower();
     bPerformanceMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrPerformance"));
-    bVictoryStartTwoHandedRequested=ReplayMode==TEXT("victory")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
+    bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
     if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
@@ -335,7 +335,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("headWindow"),Dragon->GetHeadWindowRemaining());
     O->SetNumberField(TEXT("targetLeg"),TargetLeg);
     const FVector ReviewLeg=Dragon->GetLegLocation(TargetLeg);
-    const FVector ReviewGoal=ReviewLeg+(ReviewLeg-Dragon->GetActorLocation()).GetSafeNormal2D()*(ReplayMode==TEXT("stance")?250.f:185.f);
+    const FVector ReviewGoal=ReplayMode==TEXT("stance")?ReviewLeg+(ReviewLeg-Dragon->GetActorLocation()).GetSafeNormal2D()*250.f:LegApproachGoal();
     O->SetNumberField(TEXT("targetLegGoalDistanceCm"),FVector::Dist2D(Knight->GetFootLocation(),ReviewGoal));
     O->SetNumberField(TEXT("targetLegFacingDot"),FVector::DotProduct(Knight->GetActorForwardVector(),(ReviewLeg-Knight->GetFootLocation()).GetSafeNormal2D()));
     O->SetBoolField(TEXT("combatHealSeeking"),bCombatHealSeeking);
@@ -348,6 +348,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("sprintRequested"),Knight->IsSprinting());
     O->SetBoolField(TEXT("sprintContactRevision"),Knight->UsesSprintContactRevision());
     O->SetBoolField(TEXT("sourcedTwoHandHeavy"),Knight->UsesSourcedHeavy());
+    O->SetNumberField(TEXT("preferredHeavyStandOffCm"),Knight->PreferredHeavyStandOffCm());
+    O->SetBoolField(TEXT("sourcedHeal"),Knight->UsesSourcedHeal());
     O->SetArrayField(TEXT("locomotionFootWeights"),{MakeShared<FJsonValueNumber>(Knight->GetLocomotionFootWeight(0)),MakeShared<FJsonValueNumber>(Knight->GetLocomotionFootWeight(1))});
     O->SetNumberField(TEXT("actionSourceSeconds"),Knight->GetActionSourceSeconds());
     O->SetBoolField(TEXT("dragonSolidBodyReady"),Dragon->bSolidBodyReady);
@@ -472,8 +474,9 @@ void AVeyrReplay::Observe()
     {
         if(Dragon->GetLastHitRegion()<4)
         {
-            bLightLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),Dragon->UsesPacingRevision()?45.f:34.f);
-            bHeavyLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),Dragon->UsesPacingRevision()?85.f:72.f);
+            const float GripMultiplier=Knight->IsTwoHanded()?1.55f:1.f;
+            bLightLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),(Dragon->UsesPacingRevision()?45.f:34.f)*GripMultiplier);
+            bHeavyLegContact|=FMath::IsNearlyEqual(Dragon->GetLastSwordDamage(),(Dragon->UsesPacingRevision()?85.f:72.f)*GripMultiplier);
         }
         Event(Dragon->GetLastHitRegion()==4?TEXT("head_contact"):Dragon->GetLastHitRegion()==5?TEXT("body_contact"):TEXT("leg_contact")); PreviousContacts=Dragon->GetSwordContactCount();
     }
@@ -1896,6 +1899,14 @@ FVector AVeyrReplay::GuardDamageSource() const
     return Warning.IsEmpty()?Dragon->GetActorLocation():Warning[0].Origin;
 }
 
+FVector AVeyrReplay::LegApproachGoal() const
+{
+    const FVector Leg=Dragon->GetLegLocation(TargetLeg);
+    const bool NeedHeavy=(ReplayMode==TEXT("core")||bLegIsolation)&&bLightLegContact&&!bHeavyLegContact;
+    const float StandOff=NeedHeavy?Knight->PreferredHeavyStandOffCm():185.f;
+    return Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*StandOff;
+}
+
 FVector AVeyrReplay::HeadApproachGoal(FName* OutBlocker,float* OutSweepDistance) const
 {
     if(OutBlocker)*OutBlocker=NAME_None;
@@ -2181,8 +2192,7 @@ void AVeyrReplay::DriveInputs()
         }
         else
         {
-            const FVector Leg=Dragon->GetLegLocation(TargetLeg);
-            Goal=Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*185.f;
+            Goal=LegApproachGoal();
         }
         const float GoalDistance=static_cast<float>(FVector::Dist2D(Feet,Goal));
         // Use the same optional lock toggle available to a player: run around
@@ -2242,8 +2252,15 @@ void AVeyrReplay::DriveInputs()
                 else
                 {
                     const bool bNeedLight=(ReplayMode==TEXT("core")||bLegIsolation)&&!bLightLegContact&&!bDown;
-                    bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>Knight->GetAttackDuration(true)&&(!bDown||Dragon->IsHeadExposed());
-                    bLight=!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false);
+                    const bool bNeedHeavy=(ReplayMode==TEXT("core")||bLegIsolation)&&bLightLegContact&&!bHeavyLegContact&&!bDown;
+                    // A longer sourced recovery does not move the actual contact
+                    // later. Exercise the required heavy in a real opening that
+                    // reaches its measured contact, without draining the short
+                    // encounter through repeated lights while waiting for an
+                    // opening as long as the entire recovery animation.
+                    const float HeavyOpening=bNeedHeavy?Knight->GetAttackContactTime(true)+.05f:Knight->GetAttackDuration(true);
+                    bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>HeavyOpening&&(!bDown||Dragon->IsHeadExposed());
+                    bLight=!bNeedHeavy&&!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>Knight->GetAttackDuration(false);
                 }
             }
         }
@@ -2251,7 +2268,8 @@ void AVeyrReplay::DriveInputs()
     // Core covers head punishment followed by Rise. With the shorter real
     // health pool, release after one confirmed bonus instead of killing the
     // boss before that state can be observed. No health/state mutation.
-    if(ReplayMode==TEXT("core")&&Dragon->IsHeadExposed()&&Dragon->GetHeadBonusHitCount()>0)
+    if(ReplayMode==TEXT("core")&&Dragon->GetHeadBonusHitCount()>0&&
+       (Dragon->IsHeadExposed()||!bRiseCompleted||Knight->DodgedHits==0))
     {bLight=false;bHeavy=false;}
     if(PrimaryVictory)
     {

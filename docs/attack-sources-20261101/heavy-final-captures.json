@@ -1,0 +1,34 @@
+{
+  "normal-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T070319Z",
+    "passed": true,
+    "frames": 878,
+    "skippedSlots": 1,
+    "worldWallSeconds": 29.342420917004347,
+    "sourceId": "d00bca78bfc8f8a9892db521d18633053ddf25f4794d09123a16ee792cd25c1e"
+  },
+  "normal-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T070410Z",
+    "passed": false,
+    "frames": 736,
+    "skippedSlots": 11,
+    "worldWallSeconds": 24.94280554354191,
+    "sourceId": "d00bca78bfc8f8a9892db521d18633053ddf25f4794d09123a16ee792cd25c1e"
+  },
+  "slow-after": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T070458Z",
+    "passed": true,
+    "frames": 3492,
+    "skippedSlots": 4,
+    "worldWallSeconds": 116.56783078983426,
+    "sourceId": "d00bca78bfc8f8a9892db521d18633053ddf25f4794d09123a16ee792cd25c1e"
+  },
+  "slow-before": {
+    "run": "/Users/midir/veyr-knight-20261028/Evidence/native-blendproof-20261102T070716Z",
+    "passed": false,
+    "frames": 2956,
+    "skippedSlots": 10,
+    "worldWallSeconds": 98.90717191621661,
+    "sourceId": "d00bca78bfc8f8a9892db521d18633053ddf25f4794d09123a16ee792cd25c1e"
+  }
+}

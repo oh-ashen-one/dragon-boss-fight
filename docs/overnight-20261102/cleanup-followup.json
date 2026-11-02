@@ -1,0 +1,17 @@
+{
+  "removed": {
+    "/private/tmp/veyr-stage-1anlq3g7": "completed owned package stage",
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261102T061007Z": "duplicate original/repaired archive; signed app retained separately",
+    "/private/tmp/veyr-verified-bundle-ybw6qcvv": "superseded heavy v7 candidate; before/after films and verdict retained",
+    "/private/tmp/veyr-stage-v0gsj5st": "completed owned package stage",
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261102T063101Z": "duplicate original/repaired archive; signed app retained separately"
+  },
+  "retained": [
+    "/private/tmp/veyr-verified-bundle-h4hboyni",
+    "/private/tmp/veyr-verified-bundle-2stiyco0",
+    "/private/tmp/veyr-verified-bundle-geesxps4"
+  ],
+  "freeBytesBefore": 106056560640,
+  "freeBytesAfter": 117694132224,
+  "utc": "2026-11-02T06:37:45Z"
+}

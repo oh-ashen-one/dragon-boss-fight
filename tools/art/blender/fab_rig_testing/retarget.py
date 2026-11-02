@@ -47,13 +47,22 @@ def render(label,frames):
    hip=bpy.data.objects['Knight_Comparison'].pose.bones['Hips'].head;focus=Vector((hip.x,hip.y,.5));cam.location=focus+Vector(off);cam.rotation_euler=(focus-cam.location).to_track_quat('-Z','Y').to_euler()
    s.render.filepath=str(folder/f'{v}_{f:04d}.png');bpy.ops.render.render(write_still=True)
 
-def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None):
+def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None,source_action=None):
  s=reset();bpy.ops.import_scene.gltf(filepath=str(TARGET));t=next(o for o in s.objects if o.type=='ARMATURE');t.name='Knight_Comparison'
  body=[o for o in s.objects if o.type=='MESH'];s.frame_set(0)
  grip=t.pose.bones['RightHand'].matrix.inverted()@t.pose.bones['WeaponSocket'].matrix
  t.animation_data_clear()
  for b in t.pose.bones:b.matrix_basis=Matrix.Identity(4);b.rotation_mode='QUATERNION'
- before=set(s.objects);bpy.ops.import_scene.fbx(filepath=str(file));src=next(o for o in set(s.objects)-before if o.type=='ARMATURE');src.name='Source_'+kind
+ before=set(s.objects)
+ if Path(file).suffix.lower() in ('.glb','.gltf'):bpy.ops.import_scene.gltf(filepath=str(file))
+ else:bpy.ops.import_scene.fbx(filepath=str(file))
+ src=next(o for o in set(s.objects)-before if o.type=='ARMATURE');src.name='Source_'+kind
+ if source_action:
+  actions=[a for a in bpy.data.actions if a.name==source_action or a.name.startswith(source_action+'_')]
+  if len(actions)!=1:raise ValueError(f'Expected one named source action {source_action}; found {[a.name for a in actions]}')
+  src.animation_data_create()
+  for track in src.animation_data.nla_tracks:track.mute=True
+  src.animation_data.action=actions[0]
  for o in set(s.objects)-before:
   o.hide_render=True
   if o.type=='MESH':o.hide_set(True)

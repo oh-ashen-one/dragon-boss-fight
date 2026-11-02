@@ -75,6 +75,9 @@ private:
     bool bDone=false, bBegan=false, bProofFloorApplied=false, bCameraApplied=false;
     bool bSprintProof=false;
     bool bHeavyProof=false;
+    bool bPrimaryHeavyProof=false;
+    int32 HeavyCountAtInput=0;
+    float HeavyReviewSlowMo=1.f;
     int32 CheckerInstances=0;
     FVector Home=FVector::ZeroVector, Fwd0=FVector::ForwardVector, Right0=FVector::RightVector;
     float FloorZ=0.f;

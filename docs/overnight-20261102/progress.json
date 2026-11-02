@@ -1,0 +1,37 @@
+{
+  "cutoff": "2026-11-02T09:00:00-05:00",
+  "goalComplete": false,
+  "priorAccepted": [
+    "fight feel revision 3 and settings",
+    "650 HP pacing/death camera improvements",
+    "every dragon move replay"
+  ],
+  "remaining": {
+    "knightAttacks": {
+      "status": "in_progress",
+      "heavy": "v10 retimed cut imported in v037combat with measured 368 cm blade reach; both solo heavy and two-hand primary finisher wired behind a default-off flag. 300 native pose checks passed across definition including heal; new core test running. Latest visual verdict remains rejected v9 torso snap.",
+      "running": "CC0 Sword_Dash retargeted, rendered, not integrated.",
+      "jump": "No accepted source yet; CC0 heavy combo has no actual airborne phase and must not be labeled a jump attack.",
+      "transitions": "heavy joins being corrected; other actions pending"
+    },
+    "sprint": "CC0 sprint candidate retargeted/rendered; no proper stop or accepted improvement yet. Old experiment stays disabled.",
+    "dragonIdleWings": "not started this overnight pass",
+    "healCup": "Quaternius Consume fitted v4 imported as HealSourced in v037combat; 2.4 second duration preserved; default-off, runtime/visual comparison pending.",
+    "musicSFX": "not started this overnight pass",
+    "wholeFightRegression": "pending new accepted animations; keep 150 second target and HP unchanged"
+  },
+  "diskCleanup": {
+    "removedDirectories": 74,
+    "immediateFreeSpaceGainGiBApprox": 144.47,
+    "reports": [
+      "cleanup-results.json",
+      "cleanup-followup.json",
+      "cleanup-round3.json"
+    ]
+  },
+  "spend": {
+    "assetsUSD": 0,
+    "newAudioVideoCreditsUSD": 0,
+    "criticEstimatesSeparateFromInvoices": true
+  }
+}

@@ -21,7 +21,7 @@ p.add_argument('--video-fps', type=int, choices=range(1,61), help='Optional nati
 p.add_argument('--launch-services',action='store_true',help='Use the normal macOS app launch path; success still requires native final evidence')
 p.add_argument('--performance',action='store_true',help='Exclusive GPU lease; no screenshots/video, sparse diagnostics; audio remains enabled')
 p.add_argument('--audio-capture-seconds',type=int,choices=range(1,121),help='Record only the game master submix; enables sound and is incompatible with performance mode')
-p.add_argument('--start-two-handed', action='store_true', help='Victory QA uses the ordinary authored grip input before combat')
+p.add_argument('--start-two-handed', action='store_true', help='Core/victory QA uses the ordinary authored grip input before combat')
 p.add_argument('--extra-arg', action='append', default=[], help='Extra game command-line flag (repeatable), e.g. -VeyrNoWeaponGripLock for the blendproof before-run')
 p.add_argument('--no-proof-floor', action='store_true', help='blendproof only: do not apply the 25 cm checker (-VeyrProofFloor)')
 p.add_argument('--width', type=int, default=1280)
@@ -74,7 +74,7 @@ for extra in a.extra_arg:
     if not extra.startswith('-Veyr') or ' ' in extra:p.error('--extra-arg accepts only a single -Veyr* flag')
     cmd.append(extra)
 if a.start_two_handed:
-    if a.mode!='victory':p.error('--start-two-handed applies only to victory validation')
+    if a.mode not in ('core','victory'):p.error('--start-two-handed applies only to core/victory validation')
     cmd.append('-VeyrReplayStartTwoHanded')
 print('Native run:', run, flush=True)
 with (run/'launcher.log').open('w') as output:
