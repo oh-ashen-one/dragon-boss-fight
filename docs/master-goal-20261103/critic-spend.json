@@ -1,0 +1,19 @@
+{
+  "calls": [
+    {
+      "receipt": "critique-map-round1-receipt.json",
+      "estimatedCostUSD": 0.8079124000000001
+    },
+    {
+      "receipt": "critique-map-round2-receipt.json",
+      "estimatedCostUSD": 0.8109289999999999
+    },
+    {
+      "receipt": "blind-heal-v041-receipt.json",
+      "estimatedCostUSD": 0.946893
+    }
+  ],
+  "totalEstimatedUSD": 2.5657344,
+  "invoice": false,
+  "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported"
+}

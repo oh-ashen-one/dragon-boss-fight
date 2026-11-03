@@ -57,9 +57,12 @@
     {
       "id": "healing",
       "requirement": "Sourced drink with convincing cup tilt/contact and transitions",
-      "status": "v041_native_imported_before_after_mechanics_capture_in_progress_disabled",
+      "status": "v042_mechanics_and_first_use_texture_capture_pass_blind_pending_disabled",
       "evidence": [
-        "heal-native.json"
+        "heal-native.json",
+        "blind-heal-v041-review.md",
+        "blind-heal-v041-receipt.json",
+        "heal-v042-native.json"
       ]
     },
     {
@@ -117,7 +120,7 @@
     "flag": "VeyrFortress",
     "editorCompile": true,
     "shippingPackage": true,
-    "candidateApp": "/private/tmp/veyr-verified-bundle-kt6q0wmk/Veyr-Mac-Shipping.app",
+    "candidateApp": "/private/tmp/veyr-verified-bundle-61jsfhdp/Veyr-Mac-Shipping.app",
     "nativeGameplayVerified": "R3 architecture tour8/8; zero clearance/floor failures. No final combat victory claim.",
     "blindQualityAccepted": false,
     "blindVerdict": "R1/R2 preferred fortress but DO NOT SHIP. R3 internally rejected for still-flat floor; no R3 critic yet."

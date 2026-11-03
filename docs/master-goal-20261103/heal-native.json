@@ -9,5 +9,13 @@
   "runtimeDefinitionActivated": true,
   "featureDefaultEnabled": false,
   "runtimeFlag": "VeyrSourcedHeal",
-  "qualityAccepted": false
+  "qualityAccepted": false,
+  "nativeMechanicsBeforeAfter": {
+    "before": "native-healing-20261103T144249Z",
+    "after": "native-healing-20261103T144423Z",
+    "passed": true,
+    "scope": "four actual completions/four charges;100HP cap and injured empty rejection"
+  },
+  "blindVerdict": "Clear winner revised B for drinking pose; BOTH FAIL/DO NOT SHIP for shoulder deformation and first-frame flat rendering; depth/continuous-motion limitations",
+  "nextRevision": "Lower elbow pole and mouth contact; prewarm enabled variant textures; native side/continuous captures required"
 }

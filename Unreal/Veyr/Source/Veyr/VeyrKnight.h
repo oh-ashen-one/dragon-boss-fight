@@ -19,6 +19,7 @@ class UVeyrVisualDefinition;
 class UPoseableMeshComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
+class UTexture2D;
 
 /** Native combat owner. Primitive presentation is explicitly temporary pending Customuse. */
 UCLASS()
@@ -52,6 +53,7 @@ public:
     bool UsesSourcedHeal() const { return bSourcedHeal; }
     bool UsesSourcedMoves() const { return bSourcedMoves; }
     bool UsesSourcedSprint() const { return bSourcedSprint; }
+    FString VariantTextureResidency() const;
     void TryRunningAttack();
     void TryLeapAttack();
     int32 RunningAttacks=0,LeapingAttacks=0;
@@ -251,6 +253,7 @@ private:
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
     bool bLocomotionPhaseMatch=false;
+    UPROPERTY() TArray<TObjectPtr<UTexture2D>> WarmedVariantTextures;
     UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> LocomotionPoseProbe;
     struct FLocomotionPhasePose { float Time=0.f; FVector Points[4]; };
     struct FLocomotionPhaseCache { TArray<FLocomotionPhasePose> Poses; float NominalSpeed=0.f; };

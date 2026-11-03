@@ -17,6 +17,7 @@
 #include "Components/PoseableMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
 #include "Framework/Application/SlateApplication.h"
@@ -1093,8 +1094,17 @@ void AVeyrKnight::SetPresentationDiagnostic(const FString& Diagnostic)
     if (!Diagnostic.IsEmpty()) UE_LOG(LogTemp, Warning, TEXT("VEYR_KNIGHT_PRESENTATION %s"), *Diagnostic);
 }
 
+FString AVeyrKnight::VariantTextureResidency() const
+{
+    FString Result;
+    for(UTexture2D* Texture:WarmedVariantTextures)if(Texture)
+        Result+=FString::Printf(TEXT("%s:%d/%d;"),*Texture->GetName(),Texture->GetNumResidentMips(),Texture->GetNumMipsAllowed(false));
+    return Result;
+}
+
 bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
+    WarmedVariantTextures.Reset();
     CustomuseVisualDefinition = Definition;
     bUsingPolishDefinition=Definition&&Definition->GetPathName().Contains(TEXT("/RuntimePolish/"));
     bApprovedNativeDefinitionActive=Definition&&(bUsingPolishDefinition||Definition->GetPathName().Contains(TEXT("/RuntimeApproved/")));
@@ -1121,6 +1131,30 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     {
         SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported component or definition missing"));
         return false;
+    }
+    if(bSourcedHeal||bSourcedSprint)
+    {
+        // Experimental variants are first drawn mid-action. Request their
+        // texture mips during encounter setup, not after the first heal/run
+        // frame is drawn. This tests the streaming hypothesis for a flat first
+        // frame; native capture must still establish the cause/fix. Only enabled variants
+        // participate; the rest of the library is not forced resident.
+        TSet<UTexture2D*> Textures;
+        for(const auto& Entry:Definition->Clips)
+        {
+            const bool Selected=(bSourcedHeal&&Entry.Key==FName(TEXT("HealSourced")))||
+                (bSourcedSprint&&(Entry.Key==FName(TEXT("RunTwoHandSourced"))||
+                 Entry.Key==FName(TEXT("RunStopOneHandSourced"))||Entry.Key==FName(TEXT("RunStopTwoHandSourced"))));
+            if(!Selected)continue;
+            USkeletalMesh* Mesh=Entry.Value.MeshOverride?Entry.Value.MeshOverride.Get():Definition->SkeletalMesh.Get();
+            if(!Mesh)continue;
+            for(const FSkeletalMaterial& Slot:Mesh->GetMaterials())if(Slot.MaterialInterface)
+            {
+                TArray<UTexture*> Used;Slot.MaterialInterface->GetUsedTextures(Used);
+                for(UTexture* Texture:Used)if(UTexture2D* T=Cast<UTexture2D>(Texture))Textures.Add(T);
+            }
+        }
+        for(UTexture2D* Texture:Textures){Texture->SetForceMipLevelsToBeResident(180.f);WarmedVariantTextures.Add(Texture);}
     }
     if (!ImportedPresentation->SetVisualDefinition(Definition,false))
     {

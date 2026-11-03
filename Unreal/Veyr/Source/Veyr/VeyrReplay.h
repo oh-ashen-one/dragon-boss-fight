@@ -42,6 +42,7 @@ private:
     UPROPERTY() TObjectPtr<AVeyrKnight> Knight;
     UPROPERTY() TObjectPtr<AVeyrDragon> Dragon;
     UPROPERTY() TObjectPtr<ACameraActor> HealInspectionCamera;
+    int32 HealInspectionView=0;
     UPROPERTY() TObjectPtr<ACameraActor> EnvironmentCamera;
     int32 EnvironmentShot=INDEX_NONE,EnvironmentSweepFailures=0,EnvironmentFloorFailures=0;
     bool bEnvironmentProbed=false;
@@ -50,6 +51,7 @@ private:
     FString ReplayMode, RunDirectory, OutcomeReason;
     bool bInitialized=false, bFinished=false, bFinalSaved=false, bPassed=false, bQuit=false;
     bool bPerformanceMode=false;
+    bool bAwaitingNextReplayWorld=false;
     bool bLightLegContact=false, bHeavyLegContact=false, bSawRise=false, bRiseCompleted=false;
     bool bTerminalSettling=false, bAwaitingReload=false, bRestartVerification=false;
     bool bFreshResourcesVerified=false, bRestartMoved=false, bRestartAttackAccepted=false;

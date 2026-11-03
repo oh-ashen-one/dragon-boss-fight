@@ -1,0 +1,176 @@
+{
+  "mapping": {
+    "A": "native-healing-20261103T144249Z",
+    "B": "native-healing-20261103T144423Z"
+  },
+  "frames": [
+    {
+      "label": "A",
+      "index": 1,
+      "relativeSeconds": -0.15143156051635742,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000200.png",
+      "sha256": "1c9821c9de7dae4c73bf356799345e1935e3479cc6b153c2955a56f5419a6a63"
+    },
+    {
+      "label": "A",
+      "index": 2,
+      "relativeSeconds": 0.10930585861206055,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000208.png",
+      "sha256": "71dd8e5f42719dbba4f6973d055d28f7d702e4271f6a95e94755e5356639b095"
+    },
+    {
+      "label": "A",
+      "index": 3,
+      "relativeSeconds": 0.34227752685546875,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000215.png",
+      "sha256": "5fd05b7cae128dd0ed3b7d99b197f978ae5641d9736a28bf484fad3d58e5d536"
+    },
+    {
+      "label": "A",
+      "index": 4,
+      "relativeSeconds": 0.6131401062011719,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000223.png",
+      "sha256": "38143b0e1dadd0faca1e3afa3b5af2740cb63a9388dda4418cd0fa5e3625dccb"
+    },
+    {
+      "label": "A",
+      "index": 5,
+      "relativeSeconds": 0.8486905097961426,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000230.png",
+      "sha256": "dc572c3c3d4bdb428b8a4b7fe0d7fc80ece25af25d924a27ac42793c42b67a1e"
+    },
+    {
+      "label": "A",
+      "index": 6,
+      "relativeSeconds": 1.0841526985168457,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000237.png",
+      "sha256": "3c6fb13953aeb04c433c3d3ae8c0a715d94823d53529aa9928d6eda9d10597cf"
+    },
+    {
+      "label": "A",
+      "index": 7,
+      "relativeSeconds": 1.3459253311157227,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000245.png",
+      "sha256": "3290399a46df670cc1843f028dafe86204b7c3cd94f8264c7881f9aeebeb3077"
+    },
+    {
+      "label": "A",
+      "index": 8,
+      "relativeSeconds": 1.6140928268432617,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000253.png",
+      "sha256": "d0f55998ebda0753a017d0d3796ac33eaeb7f90b5ec8efc3037468d887164754"
+    },
+    {
+      "label": "A",
+      "index": 9,
+      "relativeSeconds": 1.8493051528930664,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000260.png",
+      "sha256": "bf81191eefa3912d90203b449f4dc9995a754f2627d84312d23fbf24477a31a0"
+    },
+    {
+      "label": "A",
+      "index": 10,
+      "relativeSeconds": 2.1080846786499023,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000268.png",
+      "sha256": "ac8dd342ac8681a311611232486c21ac4dbe1ad36d63cf8980ceca14b6c12ac0"
+    },
+    {
+      "label": "A",
+      "index": 11,
+      "relativeSeconds": 2.3439035415649414,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000275.png",
+      "sha256": "b1bc15cf5a043ee3123c6ac357f690653ebafcb9032f04c4b53adf1e52467ff4"
+    },
+    {
+      "label": "A",
+      "index": 12,
+      "relativeSeconds": 2.6104421615600586,
+      "source": "Evidence/native-healing-20261103T144249Z/unreal-healing-20261103T144303Z-91438859/native-video/frame-000283.png",
+      "sha256": "36144c3af48bba1b4bd0b69804dd3b81c133f56ef6e790407a35d21b2810725d"
+    },
+    {
+      "label": "B",
+      "index": 1,
+      "relativeSeconds": -0.14102649688720703,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000201.png",
+      "sha256": "56f02de6c861a79cc8521fdb44aebb73ae8052983d97adaebc26b596525ee01f"
+    },
+    {
+      "label": "B",
+      "index": 2,
+      "relativeSeconds": 0.09113931655883789,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000208.png",
+      "sha256": "ed74ca329e90fed0c2f139e7f51a0471e914383fac969cb1fd6e6535fd8c64fe"
+    },
+    {
+      "label": "B",
+      "index": 3,
+      "relativeSeconds": 0.3526177406311035,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000216.png",
+      "sha256": "ec302ac7f22572156f255ec344718abbafdb61b77636df727440960de4d6a91a"
+    },
+    {
+      "label": "B",
+      "index": 4,
+      "relativeSeconds": 0.5934157371520996,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000223.png",
+      "sha256": "34e6e1fd536fb885fd0f82db5e9645ebebedf67cfb73526ff6c198f6323d1050"
+    },
+    {
+      "label": "B",
+      "index": 5,
+      "relativeSeconds": 0.8540396690368652,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000231.png",
+      "sha256": "3500ea21e1cb1f4a5c418ce0ab1fb8196e302b9b3b3034130509a949f7771f9e"
+    },
+    {
+      "label": "B",
+      "index": 6,
+      "relativeSeconds": 1.0808372497558594,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000238.png",
+      "sha256": "bbd49962c0eea052b75c8d2fe193967cf1e03742e743fdd112848947e9877b61"
+    },
+    {
+      "label": "B",
+      "index": 7,
+      "relativeSeconds": 1.3601303100585938,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000246.png",
+      "sha256": "ab9ef67452351f6b45d9b5a910e9af4f066eefa6a76650f7240d07bd7cacd468"
+    },
+    {
+      "label": "B",
+      "index": 8,
+      "relativeSeconds": 1.5846023559570312,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000253.png",
+      "sha256": "3628f69a9dc4304f3327e4873c0e8c20d5433c5610b63c3ace6e9fa5f0e469ae"
+    },
+    {
+      "label": "B",
+      "index": 9,
+      "relativeSeconds": 1.858210563659668,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000261.png",
+      "sha256": "1ba5898acc93833e2ef15e5172c5a85866c2042d73a0f740f2ad4a7cd592723f"
+    },
+    {
+      "label": "B",
+      "index": 10,
+      "relativeSeconds": 2.089130401611328,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000268.png",
+      "sha256": "3627c75e4ad86b1df04a0959a0612d72c0d238fd97dc3b4edc5e527bd17039ce"
+    },
+    {
+      "label": "B",
+      "index": 11,
+      "relativeSeconds": 2.3590707778930664,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000276.png",
+      "sha256": "fc613eaced8a860834a1da1250788d1ef91013ecc3dd175340b4356b0f72e776"
+    },
+    {
+      "label": "B",
+      "index": 12,
+      "relativeSeconds": 2.61788272857666,
+      "source": "Evidence/native-healing-20261103T144423Z/unreal-healing-20261103T144544Z-4835F998/native-video/frame-000284.png",
+      "sha256": "6f8392d42d83cc45ab08db94bcacaece65a7766633a78cd220c3b2c086b9dc92"
+    }
+  ]
+}

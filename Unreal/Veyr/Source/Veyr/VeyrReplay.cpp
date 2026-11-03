@@ -49,6 +49,9 @@ namespace
     TSharedPtr<FJsonObject> PendingRestartEvidence;
     FString PendingRestartDirectory;
     double RestartRequestedWallTime=0;
+    // Optional two-scenario QA run: reload a fresh world in this owned process
+    // instead of cold-starting another renderer. Never carries gameplay state.
+    bool bNextReplayWorldStarted=false;
     TArray<TSharedPtr<FJsonValue>> VectorJson(const FVector& V)
     {
         return { MakeShared<FJsonValueNumber>(V.X), MakeShared<FJsonValueNumber>(V.Y), MakeShared<FJsonValueNumber>(V.Z) };
@@ -106,6 +109,13 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
 {
     if(bInitialized)return false;
     ReplayMode=Mode.ToLower();
+    FString NextReplay;
+    if(FParse::Value(FCommandLine::Get(),TEXT("VeyrReplayNext="),NextReplay))
+    {
+        NextReplay=NextReplay.ToLower();
+        if(NextReplay!=TEXT("environment")&&NextReplay!=TEXT("showcase")&&NextReplay!=TEXT("healing"))return false;
+        if(bNextReplayWorldStarted)ReplayMode=NextReplay;
+    }
     bPerformanceMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrPerformance"));
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
@@ -393,6 +403,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("sourcedTwoHandHeavy"),Knight->UsesSourcedHeavy());
     O->SetNumberField(TEXT("preferredHeavyStandOffCm"),Knight->PreferredHeavyStandOffCm());
     O->SetBoolField(TEXT("sourcedHeal"),Knight->UsesSourcedHeal());
+    O->SetStringField(TEXT("variantTextureResidency"),Knight->VariantTextureResidency());
     O->SetBoolField(TEXT("sourcedMoves"),Knight->UsesSourcedMoves());
     O->SetNumberField(TEXT("runningAttacks"),Knight->RunningAttacks);
     O->SetNumberField(TEXT("leapingAttacks"),Knight->LeapingAttacks);
@@ -2826,17 +2837,33 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     CaptureClock+=DeltaSeconds;
     if(HealInspectionCamera)
     {
+        if(Knight->Action!=EVeyrKnightAction::Heal&&FParse::Param(FCommandLine::Get(),TEXT("VeyrHealInspectionAngles")))
+            HealInspectionView=VerifiedHealCharges%2;
         const FVector Feet=Knight->GetFootLocation();
         FTransform Head;
         const bool HasHead=Knight->ImportedPresentation&&Knight->ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),Head);
         const FVector Focus=(HasHead?Head.GetLocation():Feet+FVector(0,0,300.f))-FVector(0,0,35.f);
-        const FVector Position=Focus+Knight->GetActorForwardVector()*350.f-Knight->GetActorRightVector()*270.f+FVector(0,0,20.f);
+        const FVector Position=Focus+Knight->GetActorForwardVector()*(HealInspectionView?100.f:350.f)-
+            Knight->GetActorRightVector()*(HealInspectionView?420.f:270.f)+FVector(0,0,20.f);
         HealInspectionCamera->SetActorLocationAndRotation(Position,(Focus-Position).Rotation());
     }
     if(bFinished)
     {
+        if(bAwaitingNextReplayWorld)return;
         FinishClock+=DeltaSeconds;
-        if(FinishClock>3.f){StopVideoCapture(TEXT("replay completed"));SaveEvidence(true);bFinalSaved=true;if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Veyr replay completed"));}
+        if(FinishClock>3.f)
+        {
+            StopVideoCapture(TEXT("replay completed"));SaveEvidence(true);bFinalSaved=true;
+            FString Next;
+            if(!bNextReplayWorldStarted&&FParse::Value(FCommandLine::Get(),TEXT("VeyrReplayNext="),Next))
+            {
+                const FString Level=UGameplayStatics::GetCurrentLevelName(this,true);
+                if(Level.IsEmpty()){if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Next replay map missing"));return;}
+                bNextReplayWorldStarted=true;bAwaitingNextReplayWorld=true;
+                UGameplayStatics::OpenLevel(this,FName(*Level));
+            }
+            else if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Veyr replay completed"));
+        }
         else ServiceCapture();
         return;
     }

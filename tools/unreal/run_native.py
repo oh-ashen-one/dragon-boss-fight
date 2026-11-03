@@ -16,6 +16,7 @@ runtime.add_argument('--engine', type=Path)
 runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
 p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment'], required=True)
+p.add_argument('--next-mode',choices=['environment','showcase','healing'],help='One additional scenario in a fresh world, using the same owned renderer process')
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--video-fps', type=int, choices=range(1,61), help='Optional native capture cadence; adds measurable overhead')
 p.add_argument('--launch-services',action='store_true',help='Use the normal macOS app launch path; success still requires native final evidence')
@@ -68,6 +69,10 @@ if a.audio_capture_seconds:
     cmd.extend(['-ini:Engine:[Audio]:UnfocusedVolumeMultiplier=1.0','-VeyrAudioCapture='+str(audio_dir),'-VeyrAudioCaptureSeconds='+str(a.audio_capture_seconds)])
 if a.video_fps:
     cmd.append('-VeyrVideoFPS='+str(a.video_fps))
+if a.next_mode:
+    if a.next_mode==a.mode:p.error('Use distinct modes for a two-scenario run')
+    if a.performance or a.audio_capture_seconds:p.error('Performance/audio measurements require a single scenario')
+    cmd.append('-VeyrReplayNext='+a.next_mode)
 if a.mode=='blendproof' and not a.no_proof_floor:
     cmd.append('-VeyrProofFloor')
 for extra in a.extra_arg:
@@ -90,8 +95,10 @@ print('Process exit:', result.returncode, 'Evidence:', run, flush=True)
 if result.returncode:
     raise SystemExit(result.returncode)
 results = list(run.glob('unreal-*/evidence.json'))
-if len(results) != 1:
-    raise SystemExit('Expected one completed native evidence file')
-evidence = json.loads(results[0].read_text())
-print('Scenario:', evidence.get('passed'), evidence.get('reason'), flush=True)
-raise SystemExit(0 if evidence.get('finalWrite') and evidence.get('finished') and evidence.get('passed') else 1)
+expected=[a.mode]+([a.next_mode] if a.next_mode else [])
+if len(results) != len(expected):raise SystemExit('Expected one completed evidence file per requested scenario')
+evidence=[json.loads(p.read_text()) for p in results]
+if sorted(d.get('mode','') for d in evidence)!=sorted(expected):raise SystemExit('Recorded scenarios differ from the requested run')
+if len({d.get('sourceId') for d in evidence})!=1:raise SystemExit('Source identity changed during the run')
+for d in evidence:print('Scenario:',d.get('mode'),d.get('passed'),d.get('reason'),flush=True)
+raise SystemExit(0 if all(d.get('finalWrite') and d.get('finished') and d.get('passed') for d in evidence) else 1)

@@ -1,0 +1,10 @@
+{
+  "modelUsageIds": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "imageReadsVerified": 24,
+  "estimatedCostUSD": 0.946893,
+  "invoice": false,
+  "scope": "Blind24-frame native pose/progression review, not continuous video playback"
+}

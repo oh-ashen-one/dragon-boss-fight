@@ -16,7 +16,22 @@
       "visualDecision": "Reject: mural lighting clearer, but flat blue replacement wall finish visibly inferior to textured stone",
       "requestedFPS": 15,
       "matchedComparison": true
+    },
+    {
+      "candidate": "kt6q0wmk",
+      "capture": "native-environment-20261103T143506Z",
+      "nativeCoverage": "8/8 views;0clearance/0floor failures",
+      "visualDecision": "Reject: floor still dark/flat despite correct PBR binding and mips; frames26/100/440 inspected",
+      "matchedComparison": true
+    },
+    {
+      "candidate": "zaa0qms9",
+      "capture": "native-environment-20261103T144709Z",
+      "nativeCoverage": "8/8 views;0clearance/0floor failures",
+      "visualDecision": "Higher moon removes isolated bright crenellation gaps and lights central floor. Terrain/connected backdrop retained. Paving scale/readability still being revised, no quality promotion.",
+      "matchedComparison": true
     }
   ],
-  "approachChange": "Use a dedicated textured stone curtain-wall mesh. Keep the mural-frame mesh only for four artworks. Do not keep tuning the rejected blank-panel tint."
+  "approachChange": "Use a dedicated textured stone curtain-wall mesh. Keep the mural-frame mesh only for four artworks. Do not keep tuning the rejected blank-panel tint.",
+  "scope": "Historical internal pilots; independent blind R1/R2 verdicts are recorded separately."
 }

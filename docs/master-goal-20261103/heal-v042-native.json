@@ -1,0 +1,26 @@
+{
+  "version": "v042heal",
+  "sourceVersion": "v7arm",
+  "nativePoseVerification": {
+    "definition": "/Game/Characters/Customuse/KnightB/v042heal/DA_KnightB",
+    "report": "/Users/midir/veyr-knight-20261028/Local/CustomuseImports/native-pose-proof-KnightB-v042heal.json",
+    "passed": true,
+    "samples": 336
+  },
+  "runtimeDefinitionActivated": true,
+  "featureDefaultEnabled": false,
+  "qualityAccepted": false,
+  "scope": "Lower elbow and lower helmet contact, canonical geometry unchanged; native visual/first-frame residency/blind gates pending",
+  "nativeMechanicsAfter": {
+    "evidence": "Evidence/native-healing-20261103T150901Z",
+    "passed": true,
+    "scope": "four real heal completions/four charges,100HP cap, injured empty rejection"
+  },
+  "nativeFramesInspected": [
+    208,
+    241,
+    428
+  ],
+  "textureObservation": "First heal begins with all selected textures fully resident13/13 or1/1; inspected+.10second frame is textured, unlike v041. No claim of a controlled single-variable streaming ablation.",
+  "renderedObservation": "Lower elbow/contact visible in front and side; cup tips to lower faceplate. Bright metal reflections remain and need careful distinction from geometry tearing. Blind review pending."
+}

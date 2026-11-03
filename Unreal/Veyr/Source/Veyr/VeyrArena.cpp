@@ -125,6 +125,15 @@ void AVeyrArena::BeginPlay()
     FloorLight = MakeBatch(TEXT("PROTO_FlagstonePaversLight"), CubeMesh, FlagstoneLight);
     FloorWet = MakeBatch(TEXT("OriginalBroadWetPaverAreas"), CubeMesh, WetStone);
     UMaterialInterface* FloorMaterial=CathedralFloorParent?CathedralFloorParent.Get():Flagstone;
+    if(bFortressCandidate&&CathedralFloorParent)
+    {
+        // Large courtyard flags must remain legible at the combat camera's
+        // distance. Preserve the scan's warm stone variation beneath moonlight.
+        auto* CourtPaving=UMaterialInstanceDynamic::Create(CathedralFloorParent,this,TEXT("FortressCourtPaving"));
+        CourtPaving->SetScalarParameterValue(TEXT("FloorTileCm"),1000.f);
+        CourtPaving->SetScalarParameterValue(TEXT("FloorDesaturation"),.60f);
+        Materials.Add(CourtPaving);FloorMaterial=CourtPaving;
+    }
     FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
     // Continue the same world-space paving through the rectangular court's
     // perimeter instead of exposing a different smooth material past the disc.

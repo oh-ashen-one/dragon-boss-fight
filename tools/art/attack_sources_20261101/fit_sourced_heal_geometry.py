@@ -3,8 +3,9 @@ import bpy,json,hashlib,math,sys,argparse
 import numpy as np
 from pathlib import Path
 from mathutils import Matrix,Vector
-parser=argparse.ArgumentParser();parser.add_argument('--helmet-fit',action='store_true');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
-ROOT=Path(__file__).resolve().parents[3];OUT=ROOT/'Local/AttackSources20261103/HealGeometry';OUT.mkdir(parents=True,exist_ok=True);DEST=OUT/('Quaternius_Heal_v6helmet' if args.helmet_fit else 'Quaternius_Heal_v5geometry');assert not DEST.with_suffix('.blend').exists()
+parser=argparse.ArgumentParser();parser.add_argument('--helmet-fit',action='store_true');parser.add_argument('--low-elbow',action='store_true');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+assert not args.low_elbow or args.helmet_fit
+ROOT=Path(__file__).resolve().parents[3];OUT=ROOT/'Local/AttackSources20261103/HealGeometry';OUT.mkdir(parents=True,exist_ok=True);DEST=OUT/('Quaternius_Heal_v7arm' if args.low_elbow else 'Quaternius_Heal_v6helmet' if args.helmet_fit else 'Quaternius_Heal_v5geometry');assert not DEST.with_suffix('.blend').exists()
 APPROVED=ROOT/'Local/CustomuseAssets/Polish20261025/idle-joins/knight/Heal_Blender_v4.glb';SOURCE=ROOT/'Local/AttackSources20261102/QuaterniusRetarget/Exports/Quaternius_Consume_v1.blend';CUP=ROOT/'Local/CustomuseAssets/Polish20261025/props/DrinkingCup.glb'
 measured=json.loads((ROOT/'docs/master-goal-20261103/heal-socket-basis.json').read_text());basis=Matrix(measured['samples'][0]['staticMeshLocalToBoneLocal']);assert max(abs(basis[i][j]-(1 if i==j else 0)) for i in range(4) for j in range(4))<1e-5
 RIM=basis@Vector((.060,-.023,-.091));NORMAL=(basis.to_3x3()@Vector((0,-1,0))).normalized()
@@ -13,6 +14,18 @@ def mix(a,b,w):
  p,q,s=a.decompose();pp,qq,ss=b.decompose();return Matrix.LocRotScale(p.lerp(pp,w),q.slerp(qq,w),s.lerp(ss,w))
 def world(r,n):return (r.matrix_world@r.pose.bones[n].matrix).copy()
 helper=Path(__file__).with_name('fit_paired_grip.py');ns={'__file__':str(helper)};exec(compile(helper.read_text().split('reports=[]')[0],str(helper),'exec'),ns);solve=ns['solve']
+def solve_lower_elbow(chain,target,weight):
+ # Change only the elbow pole; retain both measured arm lengths and the
+ # source wrist target/timing. This avoids dragging the pauldron upward.
+ a,b,c=[m.translation.copy() for m in chain];u=(b-a).length;v=(c-b).length;delta=target-a;d=delta.length
+ if not abs(u-v)+1e-6<d<u+v-1e-6:raise ValueError('Unreachable lowered-elbow target')
+ direction=delta.normalized();pole=b-a;pole-=direction*pole.dot(direction)
+ down=Vector((.35 if a.x>0 else -.35,-.10,-1.));down-=direction*down.dot(direction)
+ if pole.length<1e-6 or down.length<1e-6:raise ValueError('Ambiguous lowered-elbow plane')
+ pole=pole.normalized().lerp(down.normalized(),.70*weight).normalized()
+ along=(u*u-v*v+d*d)/(2*d);joint=a+direction*along+pole*math.sqrt(max(0,u*u-along*along))
+ q0=(b-a).rotation_difference(joint-a)@chain[0].to_quaternion();q1=(c-b).rotation_difference(target-joint)@chain[1].to_quaternion()
+ return [Matrix.LocRotScale(a,q0,chain[0].to_scale()),Matrix.LocRotScale(joint,q1,chain[1].to_scale()),Matrix.LocRotScale(target,chain[2].to_quaternion(),chain[2].to_scale())]
 bpy.ops.wm.read_factory_settings(use_empty=True);bpy.context.scene.render.fps=120;bpy.ops.import_scene.gltf(filepath=str(APPROVED));rig=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE');scene=bpy.context.scene
 scene.frame_set(42);bpy.context.view_layer.update();hold=world(rig,'LeftHand');grip=hold.inverted()@world(rig,'CupSocket');cup_normal=(hold@grip).to_3x3()@NORMAL;up_fix=cup_normal.normalized().rotation_difference(Vector((0,0,1)));hold_rotation=up_fix@hold.to_quaternion()
 head_ref=world(rig,'Head');mouth_ref=head_ref.translation+Vector((0,-.10,.03));helmet_bounds=None
@@ -26,9 +39,9 @@ if args.helmet_fit:
   evaluated=obj.evaluated_get(deps);mesh=evaluated.to_mesh()
   coords.extend([list(evaluated.matrix_world@mesh.vertices[i].co) for i in ids]);evaluated.to_mesh_clear()
  points=np.array(coords);assert len(points)>50
- lo,hi=points.min(0),points.max(0);x=float((lo[0]+hi[0])*.5);z=float(lo[2]+(hi[2]-lo[2])*.30)
+ lo,hi=points.min(0),points.max(0);x=float((lo[0]+hi[0])*.5);z=float(lo[2]+(hi[2]-lo[2])*(.18 if args.low_elbow else .30))
  band=points[(abs(points[:,0]-x)<.025)&(abs(points[:,2]-z)<.015)];assert len(band)>10
- mouth_ref=Vector((x,float(np.quantile(band[:,1],.02))-.006,z));helmet_bounds=[lo.tolist(),hi.tolist()]
+ mouth_ref=Vector((x,float(np.quantile(band[:,1],.02))-(.012 if args.low_elbow else .006),z));helmet_bounds=[lo.tolist(),hi.tolist()]
 mouth_local=head_ref.inverted()@mouth_ref;face_local=head_ref.to_3x3().inverted()@Vector((0,-1,0))
 fingers={b.name:b.matrix_basis.copy() for b in rig.pose.bones if b.name.startswith('LeftHand') and b.name!='LeftHand'};rest={b.name:b.matrix_local.copy() for b in rig.data.bones};approved=[]
 for f in range(289):scene.frame_set(f);bpy.context.view_layer.update();approved.append({b.name:b.matrix_basis.copy() for b in rig.pose.bones})
@@ -56,7 +69,7 @@ for f in range(289):
   if toward.length<1e-5:toward=Vector((0,0,-1))-normal*normal.dot(Vector((0,0,-1)))
   rim_edge=RIM+(cup_linear.inverted()@toward.normalized()).normalized()*.026
  rim_hand=grip@rim_edge;target=mouth-Matrix.LocRotScale(Vector(),desired_rotation,current.to_scale()).to_3x3()@rim_hand;position=current.translation.lerp(target,contact)
- old=[world(rig,'Left'+n) for n in ['Arm','ForeArm','Hand']];solved=solve(old,position);solved[-1]=Matrix.LocRotScale(position,desired_rotation,current.to_scale())
+ old=[world(rig,'Left'+n) for n in ['Arm','ForeArm','Hand']];solved=solve_lower_elbow(old,position,contact) if args.low_elbow else solve(old,position);solved[-1]=Matrix.LocRotScale(position,desired_rotation,current.to_scale())
  for suffix,m in zip(['Arm','ForeArm','Hand'],solved):rig.pose.bones['Left'+suffix].matrix=rig.matrix_world.inverted()@m;bpy.context.view_layer.update()
  cup=world(rig,'LeftHand')@grip;location,rotation,scale=cup.decompose();visible=max(1e-5,min(smooth(t/.12),smooth((2.4-t)/.12)));rig.pose.bones['CupSocket'].matrix=rig.matrix_world.inverted()@Matrix.LocRotScale(location,rotation,scale*visible);bpy.context.view_layer.update()
  if contact>=1.-1e-7:contacts.append((cup@rim_edge-mouth).length)
@@ -71,7 +84,7 @@ for layer in action.layers:
   for bag in strip.channelbags:
    for fc in bag.fcurves:
     for k in fc.keyframe_points:k.interpolation='LINEAR'
-(OUT/('fit-helmet-diagnostic.json' if args.helmet_fit else 'fit-diagnostic.json')).write_text(json.dumps({'fullContactSamples':len(contacts),'maxFullContactError':max(contacts,default=None),'maximumSipTiltDegrees':max(angles[48:240]),'minimumVisibleTiltDegrees':min(angles[24:264])},indent=2)+'\n')
+(OUT/('fit-arm-diagnostic.json' if args.low_elbow else 'fit-helmet-diagnostic.json' if args.helmet_fit else 'fit-diagnostic.json')).write_text(json.dumps({'fullContactSamples':len(contacts),'maxFullContactError':max(contacts,default=None),'maximumSipTiltDegrees':max(angles[48:240]),'minimumVisibleTiltDegrees':min(angles[24:264]),'lowerElbow':args.low_elbow},indent=2)+'\n')
 assert max(contacts)<1e-5 and max(angles[48:240])>50,'Contact or visible tipping requirement not met'
 scene.frame_set(0);bpy.ops.object.select_all(action='DESELECT');rig.select_set(True)
 for o in scene.objects:
@@ -84,5 +97,5 @@ before=set(scene.objects);bpy.ops.import_scene.gltf(filepath=str(CUP));cup_obj=n
 for f,m in enumerate(cup_matrices):
  scene.frame_set(f);cup_obj.matrix_world=m@basis@B.inverted()@import_basis;cup_obj.keyframe_insert('location',frame=f);cup_obj.keyframe_insert('rotation_quaternion',frame=f);cup_obj.keyframe_insert('scale',frame=f)
 scene.frame_set(144);bpy.ops.wm.save_as_mainfile(filepath=str(DEST.with_suffix('.blend')),compress=True)
-report={'source':str(SOURCE.relative_to(ROOT)),'sourceSHA256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),'approvedCupSHA256':hashlib.sha256(CUP.read_bytes()).hexdigest(),'sha256':hashlib.sha256(DEST.with_suffix('.glb').read_bytes()).hexdigest(),'license':'CC0 Consume gesture; unchanged project-owned cup and support pose','duration':2.4,'fps':120,'restBasisMaximumError':rest_error,'measuredRimBoneLocal':list(RIM),'rimBasisCorrectionRequired':False,'approachChange':'Preserve source wrist rotation delta; calibrate upright grasp once; fit near rim by no-stretch IK without substituting the rejected old sip orientation','maxRimContactErrorSourceUnits':max(contacts),'contactSamples':len(contacts),'cupTiltDegreesMinMax':[min(angles[24:264]),max(angles[24:264])],'accepted':False,'nativeImported':False,'helmetLandmarkMeasured':args.helmet_fit,'helmetReferenceBounds':helmet_bounds,'mouthReferencePoint':list(mouth_ref),'sourceTiltAdaptation':'Source timing retained; soft80-degree limit and face-directed opening during contact' if args.helmet_fit else 'Original source rotation delta'}
+report={'source':str(SOURCE.relative_to(ROOT)),'sourceSHA256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),'approvedCupSHA256':hashlib.sha256(CUP.read_bytes()).hexdigest(),'sha256':hashlib.sha256(DEST.with_suffix('.glb').read_bytes()).hexdigest(),'license':'CC0 Consume gesture; unchanged project-owned cup and support pose','duration':2.4,'fps':120,'restBasisMaximumError':rest_error,'measuredRimBoneLocal':list(RIM),'rimBasisCorrectionRequired':False,'approachChange':'Preserve source wrist rotation delta; calibrate upright grasp once; fit near rim by no-stretch IK without substituting the rejected old sip orientation','maxRimContactErrorSourceUnits':max(contacts),'contactSamples':len(contacts),'cupTiltDegreesMinMax':[min(angles[24:264]),max(angles[24:264])],'accepted':False,'nativeImported':False,'helmetLandmarkMeasured':args.helmet_fit,'lowerElbowPole':args.low_elbow,'helmetLandmarkHeightFraction':.18 if args.low_elbow else .30,'helmetReferenceBounds':helmet_bounds,'mouthReferencePoint':list(mouth_ref),'sourceTiltAdaptation':'Source timing retained; soft80-degree limit and face-directed opening during contact' if args.helmet_fit else 'Original source rotation delta'}
 DEST.with_suffix('.json').write_text(json.dumps(report,indent=2)+'\n');print('HEAL_SOURCE_ROTATION_AND_RIM_FITTED',flush=True)
