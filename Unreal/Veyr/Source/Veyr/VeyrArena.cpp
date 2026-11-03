@@ -20,6 +20,8 @@
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 
 namespace
 {
@@ -399,6 +401,14 @@ void AVeyrArena::ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector&
 bool AVeyrArena::BuildImportedCathedral()
 {
     if(!bConnectedCourtAssetsReady)return false;
+    const bool GateProbe=FParse::Param(FCommandLine::Get(),TEXT("VeyrFortressGateTest"));
+    if(GateProbe)
+    {
+        UStaticMesh* GateMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/FortressGatehouse_v001/SM_FortressGatehouse_v001.SM_FortressGatehouse_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        if(!GateMesh){ConnectedCourtDiagnostic+=TEXT("; fortress gate probe asset missing");return false;}
+        PolishMeshes.Add(TEXT("FortressGatehouse"),GateMesh);
+        bFortressGateProbeReady=true;
+    }
     const FVector Wall=KitSize(TEXT("CloisterWall"),1400.f),Gate=KitSize(TEXT("RuinedGatehouse"),1600.f);
     const float GateHalf=FMath::Min(CourtHalfY-1200.f,static_cast<float>(Gate.X)*.46f);
     // Broken polygonal transepts turn the rectangular build boundary into
@@ -417,8 +427,10 @@ bool AVeyrArena::BuildImportedCathedral()
     }
     // This asset is a complete 40.55 m deep cathedral. Its near face, not its
     // centre, defines the east court boundary; one building is sufficient.
-    const FVector Apse=KitSize(TEXT("ApseWall"),2400.f);
-    KitPiece(TEXT("ApseWall"),FVector(CourtHalfX,0,AisleHeight),2400,90,true,true);
+    const FName FarBuilding=GateProbe?FName(TEXT("FortressGatehouse")):FName(TEXT("ApseWall"));
+    const float FarHeight=GateProbe?2000.f:2400.f;
+    const FVector Apse=KitSize(FarBuilding,FarHeight);
+    KitPiece(FarBuilding,FVector(CourtHalfX,0,AisleHeight),FarHeight,90,true,true);
     const float ApseHalf=static_cast<float>(Apse.X)*.5f-60.f;
     KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,-CourtHalfY,0),FVector(CourtHalfX,-ApseHalf,0),FVector(-1,0,0),1400,AisleHeight);
     KitWallRun(TEXT("CloisterWall"),FVector(CourtHalfX,ApseHalf,0),FVector(CourtHalfX,CourtHalfY,0),FVector(-1,0,0),1400,AisleHeight);

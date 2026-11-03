@@ -1,0 +1,25 @@
+{
+  "run": "Evidence/native-showcase-20261103T063500Z",
+  "sourceId": "c2b4956eb6b6d2c647790feabd0b44f20cd784fc10fe7932791b567f77054524",
+  "passed": true,
+  "reason": "Every-move rehearsal completed with native clip/state coverage; not a combat victory",
+  "video": {
+    "requestedFPS": 15,
+    "requestedFrames": 1801,
+    "savedFrames": 1801,
+    "failedFrames": 0,
+    "skippedSlots": 56,
+    "worldIndex": 0,
+    "pngWriteSeconds": 76.49885157495737,
+    "pixelCopySeconds": 0.09504519030451775,
+    "backgroundPNGJobInFlight": false,
+    "peakBackgroundPNGJobs": 3,
+    "maximumBackgroundPNGJobs": 4,
+    "elapsedWallSeconds": 123.80443020537496,
+    "stopped": true,
+    "stopReason": "replay completed",
+    "manifest": "native-video/frames.jsonl",
+    "scope": "silent native viewport; wall-clock pixel timestamps; 18000 requests and 600 wall-second bounds; bounded four-job PNG queue; readback, pixel copy, event screenshots and evidence I/O still affect frame pacing; pngWriteSeconds is worker time"
+  },
+  "scope": "Pre-overhaul baseline, current Shipping, all dragon moves; no map change yet"
+}

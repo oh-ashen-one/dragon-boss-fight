@@ -1,0 +1,95 @@
+{
+  "images": [
+    {
+      "file": "ArtSource/Fortress20261103/Murals/mural-01-siege.png",
+      "sha256": "58937754e5a80d5ca5ca2a33b1e0b94f78561105ec15b6797af9eb7cf70c78c6",
+      "dimensions": [
+        1774,
+        887
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/Murals/mural-02-fallen-banners.png",
+      "sha256": "50507b07653b2a1e6c94551767c5f4422ab59f412d24f5ad6aa1cc5e2e47ec9c",
+      "dimensions": [
+        1774,
+        887
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/Murals/mural-03-chained-wyrm.png",
+      "sha256": "82bb5165a30bcce335456ca7e5f4cfa0672cd54164f0a802a4082ab05316ba9e",
+      "dimensions": [
+        1774,
+        887
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/Murals/mural-04-war-chart.png",
+      "sha256": "d4d3183b7c4778b52a3c761ee5a15c7fa5fb2ddc02d8b054f40fd6f34221eacd",
+      "dimensions": [
+        1774,
+        887
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/References/fortress-overview-v1.png",
+      "sha256": "e5616026f346a28b8823a6046b070ca31e77831a0addbf5b6b4df66445dc0800",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/References/fortress-player-view-v1.png",
+      "sha256": "773b7938484ce8059693a16b7d644fa0f5e0ab6407a0604cdfbd72da87a1fb29",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/References/fortress-reverse-view-v1.png",
+      "sha256": "ae2beb1a0aae6526b8c01e731309e53f794a12a2da880aaae15c6c9bcdc887d5",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/References/gatehouse-v1.png",
+      "sha256": "68db4ca6df2c2b0728b1b6b8f6644821f7c3eb04567e60ade4f2d441c1dec0fb",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/References/mural-wall-bay-v1.png",
+      "sha256": "65bfd0ee02c094e08e8356155ad81d38e9eff329a9f45a27531e2dfa482f0116",
+      "dimensions": [
+        1448,
+        1086
+      ],
+      "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/References/watchtower-v1.png",
+      "sha256": "1d8767c24742b7c5abe5b3c768cd560685bf838f396ab19854896be2883fccf1",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "metadataKeys": []
+    }
+  ],
+  "metadataAudit": "All PNG metadata keys enumerated; no personal metadata found."
+}

@@ -1,0 +1,64 @@
+{
+  "images": [
+    {
+      "provider": "built-in image_gen",
+      "requestedModel": "GPT Image 2.5",
+      "actualModel": "not exposed by tool",
+      "file": "Local/Fortress20261103/References/fortress-player-view-v1.png",
+      "sha256": "773b7938484ce8059693a16b7d644fa0f5e0ab6407a0604cdfbd72da87a1fb29",
+      "purpose": "Chosen environment direction, not implemented game result",
+      "visualReview": "Fortified gate, battlements, military banners, broad combat floor, wall murals; no church/altar/pew/nave composition. Knight/dragon remain scale guides only; do not replace their approved assets.",
+      "canonicalSource": "ArtSource/Fortress20261103/References/fortress-player-view-v1.png",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-player-view.txt"
+    },
+    {
+      "provider": "built-in image_gen",
+      "actualModel": "not exposed by tool",
+      "file": "Local/Fortress20261103/References/gatehouse-v1.png",
+      "sha256": "68db4ca6df2c2b0728b1b6b8f6644821f7c3eb04567e60ade4f2d441c1dec0fb",
+      "purpose": "Image-to-3D gatehouse source",
+      "visualReview": "Single isolated secular defensive gate; open passage, square battlements, no religious architecture. Accepted as generation input; mesh/result not yet verified.",
+      "canonicalSource": "ArtSource/Fortress20261103/References/gatehouse-v1.png",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-gatehouse-asset.txt"
+    },
+    {
+      "provider": "built-in image_gen",
+      "actualModel": "not exposed by tool",
+      "file": "Local/Fortress20261103/References/fortress-reverse-view-v1.png",
+      "sha256": "ae2beb1a0aae6526b8c01e731309e53f794a12a2da880aaae15c6c9bcdc887d5",
+      "purpose": "Reverse-angle companion target",
+      "visualReview": "Same military wall/galleries/stone/lighting palette, lower approach gate; different secular murals; accepted as reference, not game implementation.",
+      "canonicalSource": "ArtSource/Fortress20261103/References/fortress-reverse-view-v1.png",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-reverse-view.txt"
+    },
+    {
+      "provider": "built-in image_gen",
+      "actualModel": "not exposed by tool",
+      "file": "Local/Fortress20261103/References/fortress-overview-v1.png",
+      "sha256": "e5616026f346a28b8823a6046b070ca31e77831a0addbf5b6b4df66445dc0800",
+      "purpose": "High oblique spatial target",
+      "visualReview": "Clear circular combat court, military gate hierarchy, perimeter galleries, four mural roles; scale must be measured in actual code, not inferred from art.",
+      "canonicalSource": "ArtSource/Fortress20261103/References/fortress-overview-v1.png",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-overview.txt"
+    },
+    {
+      "provider": "built-in image_gen",
+      "requestedModel": "GPT Image 2.5",
+      "actualModel": "not exposed by tool",
+      "file": "ArtSource/Fortress20261103/References/mural-wall-bay-v1.png",
+      "sha256": "65bfd0ee02c094e08e8356155ad81d38e9eff329a9f45a27531e2dfa482f0116",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-mural-wall-bay.txt",
+      "purpose": "Second modular Tripo input; broad unpainted recess for native mural overlay",
+      "visualReview": "Military crenellated wall, no church vocabulary, broad blank plaster area; measure actual recess after mesh download."
+    },
+    {
+      "provider": "built-in image_gen",
+      "actualModel": "not exposed by tool",
+      "file": "ArtSource/Fortress20261103/References/watchtower-v1.png",
+      "sha256": "1d8767c24742b7c5abe5b3c768cd560685bf838f396ab19854896be2883fccf1",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-watchtower.txt",
+      "purpose": "Reusable military tower input for a later Tripo generation",
+      "visualReview": "Square military tower with slight battlement damage, no sacred architecture; model not generated yet."
+    }
+  ]
+}

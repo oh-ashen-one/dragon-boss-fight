@@ -5,9 +5,9 @@ better now". These are his notes for the next session, in his order, with the fa
 Start with `HANDOFF.md`, then pick items here. Each item needs a before/after the owner can watch (bare page: video plus
 BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called done.
 
-## New map requirement — 2026-11-03 (not started)
+## New map requirement — 2026-11-03 (active; incomplete)
 
-Owner wants the map substantially improved using built-in image generation (requested GPT Image 2.5) for references and wall murals, plus Tripo **via browser control** for 3D assets. Target: gothic fortress/war-court, **not a church**. Build toward the selected references in the actual playable arena. Full scope, execution and acceptance criteria are in MASTER_GOAL.md; short activation is in GOAL_PROMPT.md. Writing the brief is not implementation or quality acceptance.
+Owner wants the map substantially improved using built-in image generation (requested GPT Image 2.5) for references and wall murals, plus Tripo **via browser control** for 3D assets. Target: gothic fortress/war-court, **not a church**. Build toward the selected references in the actual playable arena. Full scope, execution and acceptance criteria are in MASTER_GOAL.md; short activation is in GOAL_PROMPT.md. References and four mural textures now exist; gate native import and a scoped showcase probe pass. Full fortress assembly, mural placement, blind review and gameplay regression remain unfinished. See the active checkpoint at the top of HANDOFF.md.
 
 ## Audio scope update — 2026-11-03
 

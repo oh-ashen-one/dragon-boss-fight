@@ -309,6 +309,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     const AVeyrGameMode* SnapshotMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     const AVeyrArena* SnapshotArena=SnapshotMode?SnapshotMode->Arena.Get():nullptr;
     O->SetBoolField(TEXT("connectedCourtAssetsReady"),SnapshotArena&&SnapshotArena->bConnectedCourtAssetsReady);
+    O->SetBoolField(TEXT("fortressGateProbeReady"),SnapshotArena&&SnapshotArena->bFortressGateProbeReady);
     O->SetBoolField(TEXT("overhaulAssetsReady"),SnapshotArena&&SnapshotArena->bOverhaulAssetsReady);
     O->SetNumberField(TEXT("breakablePropCount"),SnapshotArena?SnapshotArena->BreakablePropCount:0);
     O->SetNumberField(TEXT("brokenProps"),SnapshotArena?SnapshotArena->BrokenProps:0);

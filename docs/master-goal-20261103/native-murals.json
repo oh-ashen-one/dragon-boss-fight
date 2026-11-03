@@ -1,0 +1,44 @@
+{
+  "completed": true,
+  "sourceHashes": [
+    "58937754e5a80d5ca5ca2a33b1e0b94f78561105ec15b6797af9eb7cf70c78c6",
+    "50507b07653b2a1e6c94551767c5f4422ab59f412d24f5ad6aa1cc5e2e47ec9c",
+    "82bb5165a30bcce335456ca7e5f4cfa0672cd54164f0a802a4082ab05316ba9e",
+    "d4d3183b7c4778b52a3c761ee5a15c7fa5fb2ddc02d8b054f40fd6f34221eacd"
+  ],
+  "textureSizes": {
+    "1": {
+      "x": 2048,
+      "y": 1024
+    },
+    "2": {
+      "x": 2048,
+      "y": 1024
+    },
+    "3": {
+      "x": 2048,
+      "y": 1024
+    },
+    "4": {
+      "x": 2048,
+      "y": 1024
+    }
+  },
+  "material": {
+    "refPath": "/Game/ArtPass/FortressMurals/v001/M_FortressMural.M_FortressMural"
+  },
+  "instances": {
+    "1": {
+      "refPath": "/Game/ArtPass/FortressMurals/v001/MI_Mural01.MI_Mural01"
+    },
+    "2": {
+      "refPath": "/Game/ArtPass/FortressMurals/v001/MI_Mural02.MI_Mural02"
+    },
+    "3": {
+      "refPath": "/Game/ArtPass/FortressMurals/v001/MI_Mural03.MI_Mural03"
+    },
+    "4": {
+      "refPath": "/Game/ArtPass/FortressMurals/v001/MI_Mural04.MI_Mural04"
+    }
+  }
+}

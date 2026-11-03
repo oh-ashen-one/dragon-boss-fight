@@ -1,0 +1,12 @@
+{
+  "gitleaksVersion": "8.30.1",
+  "configRevision": "6556abef36d83277f6e0f239384d0cf00101680f",
+  "staged": "PASS, no findings",
+  "allReachableHistory": {
+    "commits": 278,
+    "findings": 2,
+    "disposition": "Both generic-api-key findings are static .mp4 evidence filenames in tools/dragon_refine/v3/build_review_page_v3.py lines78-79 at706064cb8afffe27aa94b336ab219bf573bf75fd. Parsed surrounding calls and verified filename suffixes; no credential use. No broad suppression."
+  },
+  "images": "10 generated PNGs, metadata keys enumerated in image-files.json; no personal metadata",
+  "scope": "Source/reference checkpoint only; raw GLBs, blends, native assets and builds excluded. Existing HANDOFF local app paths intentionally retained for operator continuity. Actual staged identity is verified GitHub noreply."
+}

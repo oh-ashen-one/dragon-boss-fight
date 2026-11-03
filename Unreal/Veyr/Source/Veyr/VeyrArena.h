@@ -40,6 +40,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") int32 ConnectedCourtMeshCount=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") int32 ConnectedCourtInstanceCount=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") FString ConnectedCourtDiagnostic;
+    /** Opt-in single-asset integration probe; not acceptance of the full fortress map. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bFortressGateProbeReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") TMap<FName,FVector> ConnectedMeshDimensionsCm;
     UFUNCTION(BlueprintPure, Category="Environment") float GetMaximumWalkableHeightNear(const FVector& WorldPoint,float RadiusCm) const;
     /** GLB front is provisionally +Y after import; root verifies native orientation. */

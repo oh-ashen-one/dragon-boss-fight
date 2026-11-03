@@ -1,0 +1,106 @@
+{
+  "goalComplete": false,
+  "requirements": [
+    {
+      "id": "references",
+      "requirement": "Three coherent built-in image references, actual model metadata, chosen direction",
+      "status": "complete_reference_pack_only",
+      "evidence": [
+        "reference-ledger.json",
+        "image-files.json",
+        "asset-plan.md"
+      ]
+    },
+    {
+      "id": "tripo",
+      "requirement": "Browser-generated modular 3D assets downloaded, verified, imported and used",
+      "status": "in_progress",
+      "evidence": [
+        "tripo-spend.json"
+      ]
+    },
+    {
+      "id": "murals",
+      "requirement": "At least four distinct generated secular wall murals integrated and viewed",
+      "status": "native_materials_created_placement_and_visual_review_pending",
+      "evidence": [
+        "native-murals.json",
+        "image-files.json"
+      ]
+    },
+    {
+      "id": "arena",
+      "requirement": "Playable gothic fortress; no church/cathedral reading; readable combat/camera",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "running_leap",
+      "requirement": "Sourced attacks with contacts, root/capsule motion, interrupts and blind improvement",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "sprint",
+      "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "healing",
+      "requirement": "Sourced drink with convincing cup tilt/contact and transitions",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "attack_polish",
+      "requirement": "Resolve light-foot and transition defects without heavy regression",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "balance",
+      "requirement": "Both-grip risk/reward and measured <=150s victories",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "regression",
+      "requirement": "Gameplay, camera, collision, warnings, death, restart and every-move film",
+      "status": "unverified",
+      "evidence": []
+    },
+    {
+      "id": "delivery",
+      "requirement": "Shipping build, launcher, evidence, source/provenance/spend, pushes/wiki/security/cleanup",
+      "status": "unverified",
+      "evidence": []
+    }
+  ],
+  "imageProvider": "built-in image_gen",
+  "requestedImageModel": "GPT Image 2.5",
+  "actualImageModel": "not exposed by tool",
+  "priorTurnClassification": "Active master goal; partial art/native integration only. Full map and combat scope open.",
+  "dragonCheckoutRestored": {
+    "branch": "claude-code-enhancements",
+    "commit": "898b4d7",
+    "method": "Fresh clone of existing remote branch into missing requested path; no existing files overwritten",
+    "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
+  },
+  "localRenderGate": {
+    "status": "headroom_returned",
+    "exitCode": 75,
+    "observedGPUUtilPercent": 36,
+    "cause": "Another owner play session occupies GPU headroom; no override and no foreign process touched. Blender was not launched.",
+    "nextAction": "Second guarded preparation request started after observed state change; first timeout receipt retained."
+  },
+  "gateProbeCode": {
+    "flag": "VeyrFortressGateTest",
+    "compiled": true,
+    "nativeImported": true,
+    "runtimeTested": true,
+    "scope": "Single gate replaces only far apse in a test branch; full fortress overhaul remains unimplemented.",
+    "candidateApp": "/private/tmp/veyr-verified-bundle-q75xu5vf/Veyr-Mac-Shipping.app",
+    "evidence": "gate-probe-result.json"
+  }
+}
