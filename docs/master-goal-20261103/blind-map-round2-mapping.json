@@ -1,0 +1,124 @@
+{
+  "mapping": {
+    "A": "legacy",
+    "B": "fortress"
+  },
+  "runs": {
+    "legacy": "native-environment-20261103T120151Z",
+    "fortress": "native-environment-20261103T115426Z"
+  },
+  "frames": [
+    {
+      "label": "A",
+      "view": 1,
+      "requestedGameSeconds": 1.9666802883148193,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000028.png",
+      "sha256": "ed29948e0fc7df28888875692b91c7a45e393268da3dc681d92a4a45cf7fff4a"
+    },
+    {
+      "label": "A",
+      "view": 2,
+      "requestedGameSeconds": 5.967474460601807,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000088.png",
+      "sha256": "9dd82218816077ed8b579705bb16bec2756237ccb50c30b44060b19404f983dd"
+    },
+    {
+      "label": "A",
+      "view": 3,
+      "requestedGameSeconds": 9.968254089355469,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000148.png",
+      "sha256": "73178eb70bbb952331c3d56b2c9db17dd6ac1deae79a326299f0847d92c8aca6"
+    },
+    {
+      "label": "A",
+      "view": 4,
+      "requestedGameSeconds": 13.96892261505127,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000208.png",
+      "sha256": "e834a285e86e949f20c6498beed032bfb9dad0352b57a8aec3200d3f4f934783"
+    },
+    {
+      "label": "A",
+      "view": 5,
+      "requestedGameSeconds": 17.96962547302246,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000268.png",
+      "sha256": "77ac2db5a0f3c7bfa2fef3444686b2e1a41391e21e24751327bf2e18c531cdfd"
+    },
+    {
+      "label": "A",
+      "view": 6,
+      "requestedGameSeconds": 21.970359802246094,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000328.png",
+      "sha256": "9dd1319065749e418d355bf5e34c9341c5d38259616b1719fa2100bc6e6c0cb5"
+    },
+    {
+      "label": "A",
+      "view": 7,
+      "requestedGameSeconds": 25.971193313598633,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000388.png",
+      "sha256": "da6d59c443ed000a2c4de59c3bab9c20ccee08a95362f04a3e33d0b9536dfbe7"
+    },
+    {
+      "label": "A",
+      "view": 8,
+      "requestedGameSeconds": 30.02192497253418,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000449.png",
+      "sha256": "29c071bccf5afb841c7a699feb34e4115a134a88a0e0d7bf5e076282c6e2ffd6"
+    },
+    {
+      "label": "B",
+      "view": 1,
+      "requestedGameSeconds": 2.0305910110473633,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000029.png",
+      "sha256": "c6b728c8c76715296d1c937d80b0f4c86d7e741f3d0a7d94fb5804d03b223574"
+    },
+    {
+      "label": "B",
+      "view": 2,
+      "requestedGameSeconds": 6.031347751617432,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000089.png",
+      "sha256": "1379d3343ba8b065f3db8296cf176ca6bc01a8b6585ca0f67d8446d7689f0aef"
+    },
+    {
+      "label": "B",
+      "view": 3,
+      "requestedGameSeconds": 10.032079696655273,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000149.png",
+      "sha256": "4d087cd1d9056cc3886820f985c4e00c0506e0efa28ff4dc7cb93c611c17e0ac"
+    },
+    {
+      "label": "B",
+      "view": 4,
+      "requestedGameSeconds": 14.03274154663086,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000209.png",
+      "sha256": "874afb9dfbda844947977bbced0284ddd335ec27cf64b2e7dcfab183c9081207"
+    },
+    {
+      "label": "B",
+      "view": 5,
+      "requestedGameSeconds": 18.016830444335938,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000269.png",
+      "sha256": "a63d55e52e90ced60313fecaca29d4bcbddfaf79297080c80095317657b310ab"
+    },
+    {
+      "label": "B",
+      "view": 6,
+      "requestedGameSeconds": 22.022438049316406,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000329.png",
+      "sha256": "5ac81c32893f68a4e7ab3b132429c49bae14812e68d685280c9d131802a69348"
+    },
+    {
+      "label": "B",
+      "view": 7,
+      "requestedGameSeconds": 26.028858184814453,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000389.png",
+      "sha256": "ebcd51218e8eec332a5291db170687bd42840f1a719c90c1b3d6208481598498"
+    },
+    {
+      "label": "B",
+      "view": 8,
+      "requestedGameSeconds": 30.0295467376709,
+      "sourceFrame": "Evidence/native-environment-20261103T115426Z/unreal-environment-20261103T115447Z-B68C24D5/native-video/frame-000449.png",
+      "sha256": "1ca1104c7c11e879bcb8ff3555c0f960c7b0f3cbea537b3c3ffaeaa4496e8a20"
+    }
+  ]
+}

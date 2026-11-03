@@ -1,0 +1,27 @@
+{
+  "source": "Local/AttackSources20261102/QuaterniusRetarget/Exports/Quaternius_Consume_v1.glb",
+  "duration": 1.3333333730697632,
+  "hands": {
+    "Left": {
+      "minHeadDistanceCm": 66.18247004633557,
+      "maxHeadDistanceCm": 91.47121151165153,
+      "handWorldTravelRangeCm": [
+        9.099291213908232,
+        72.04823133925271,
+        67.78828023565026
+      ],
+      "closestFraction": 0.8166666666666667
+    },
+    "Right": {
+      "minHeadDistanceCm": 85.61108449571897,
+      "maxHeadDistanceCm": 89.94050288429354,
+      "handWorldTravelRangeCm": [
+        3.1739160942753983,
+        5.512396124540574,
+        20.910009914508226
+      ],
+      "closestFraction": 0.0
+    }
+  },
+  "scope": "Read-only retargeted source trajectory diagnostic; no visual/native acceptance."
+}

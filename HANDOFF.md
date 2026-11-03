@@ -1,3 +1,19 @@
+# Map round 2 checkpoint — 2026-11-03, continuation required
+
+**Goal active; full brief unfinished.** Independent blind Opus5.5 high read all19 R2 images: A=legacy, B=fortress. **Clear winner B, DO NOT SHIP / BOTH FAIL again.** Cost estimate $0.810929; two reviews total $1.6188414 (not invoices). After two rejected rounds, change approach: inspect actual floor material/render binding and build one connected foundation/backdrop, not more surface tinting or scattered towers. Supporting licensed scans may be used; custom Tripo pieces/murals remain in scope.
+
+- Current R2 app: `/private/tmp/veyr-verified-bundle-duvmbwpe/Veyr-Mac-Shipping.app`, package Local/package-20261103T113610Z. Candidate opt-in -VeyrFortress; latest accepted play pointer still slmpyfnq. Source includes an opt-in -VeyrSourcedSprint flag, but its clips are NOT imported: do not enable it yet.
+- R2 native tour after native-environment-20261103T115426Z passed8 views,0 clearance/0 floor failures. Matched legacy before120151Z completed views with6 clearance failures. Latest20-move coverage belongs to R1 app895jzvyq, not this R2 build. Native runtime victory/balance and final map motion/performance remain open.
+- R2 used a derived painted-stone wall (two UV sets retained at all LODs), v002 mural materials blending over original stone, new dry floor material, iron baskets, dark gate bars and revised layout/framing. Five active modules; five paid Tripo jobs total275 credits. Character definitions/source map unchanged. No native character-motion promotion yet.
+- R2 critic: murals improved to6/10 but still too bright/with iron-band seams; floor2/10, backdrop looks like spare assets on slabs/void edges, gate material and wall grounding need work. Full report and mapping in docs/master-goal-20261103. The white floor shapes persisted after patch/disc removal; that hypothesis was not confirmed. Add runtime binding evidence instead of guessing.
+- Native material gotcha fixed: glTF texture indices are not semantic order; source wall base-color index1, normal index0. Read the glTF material fields. Recompile/save succeeded after correction. Full material recipe in import_fortress_finish_mcp.py.
+- Locomotion candidate v040locomotion is prepared privately with source forward run and both-grip stops; canonical geometry/skin/materials preserved. Source loop factors linear cycle travel (562.07cm/s) while stops retain root profiles. Code/proof routes are opt-in, thresholds unchanged. No native import/acceptance.
+- Heal v5geometry exported after preserving source wrist motion, but visual closeups still miss convincing helmet contact. Numeric contact was against a guessed mouth offset. Socket-basis audit disproved the earlier coordinate hypothesis: original rim coordinates were correct. Next use a landmark measured on helmet geometry and bounded, face-directed cup tilt. Keep source/failed previews; no native import or quality claim. Files under Local/AttackSources20261103/HealGeometry.
+- All owned renderers have exited at this checkpoint. Source research via local web-access/treg has begun; its published catalog ID is absent, installed skill read. Check outstanding tool jobs and GPU state before any launch. Never touch other sessions.
+- Review page8813 currently shows R1 fight/tour comparisons and explicitly says revisions required. R2 films need encoding/page update. Keep only accepted build plus active candidate after source checkpoint push; old895jzvyq/6dor32mh are now obsolete once receipts/films are preserved.
+
+---
+
 # Blind map review round 1 — 2026-11-03
 
 **Goal active; not shippable.** Independent blind Claude Opus5.5 high opened all19 requested images. A=legacy, B=fortress. **Clear winner B; DO NOT SHIP; BOTH FAIL.** Estimated CLI cost $0.8079124 (not invoice). Exact report/mapping/receipt in docs/master-goal-20261103. No motion or audio verdict claimed from these stills.

@@ -5,7 +5,7 @@ from pathlib import Path
 from native_mcp import NativeMCP
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'Local/FortressModulesEditor20261103'
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--asset',action='append',choices=['FortressMuralWall','FortressWatchtower','FortressCurtainWall']);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--asset',action='append',choices=['FortressMuralWall','FortressWatchtower','FortressCurtainWall','FortressPaintedWall','FortressBrazier']);args=parser.parse_args()
     OUT.mkdir(exist_ok=True);c=NativeMCP(timeout=900);c.initialize()
     def meta(name,args):
         r=c.request('tools/call',{'name':name,'arguments':args})

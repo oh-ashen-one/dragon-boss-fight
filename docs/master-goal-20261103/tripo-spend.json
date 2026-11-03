@@ -132,7 +132,7 @@
     },
     {
       "asset": "FortressBrazier_v001",
-      "status": "generating",
+      "status": "native_imported_pending_visual_acceptance",
       "quotedCredits": 55,
       "balanceBefore": 72710,
       "uiModel": "H3.1 \u2013 Best Quality",
@@ -143,7 +143,19 @@
       "purpose": "Blind critic identified existing white chalice braziers as church furniture; replace with a functional military iron fire basket.",
       "jobId": "43d0356a-e8bc-482d-bfa6-4afdbc02112d",
       "balanceAfter": 72655,
-      "observedCreditDeduction": 55
+      "observedCreditDeduction": 55,
+      "rawFile": "Local/Fortress20261103/Tripo/FortressBrazier_raw_v001.glb",
+      "rawSHA256": "adc8ec4f9e132081c18fc0e43d0148089d4638c1a66ee3941aa6878c2e2ae8c4",
+      "exportFormat": "GLB",
+      "exportTextureResolution": "2k",
+      "uiFaces": 1950254,
+      "uiVertices": 1017474,
+      "visualReview": "Inspected browser preview: heavy iron cage, three splayed legs and charcoal; no chalice form. Native/grounding review pending.",
+      "nativeLodTriangles": [
+        40000,
+        15000,
+        3000
+      ]
     }
   ],
   "totalObservedCredits": 275

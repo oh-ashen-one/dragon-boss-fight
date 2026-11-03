@@ -1,0 +1,132 @@
+{
+  "nativeMaterialRecipeCompleted": true,
+  "muralMaterial": {
+    "refPath": "/Game/ArtPass/FortressMurals/v002/M_FortressMural.M_FortressMural"
+  },
+  "instances": {
+    "1": {
+      "refPath": "/Game/ArtPass/FortressMurals/v002/MI_Mural01.MI_Mural01"
+    },
+    "2": {
+      "refPath": "/Game/ArtPass/FortressMurals/v002/MI_Mural02.MI_Mural02"
+    },
+    "3": {
+      "refPath": "/Game/ArtPass/FortressMurals/v002/MI_Mural03.MI_Mural03"
+    },
+    "4": {
+      "refPath": "/Game/ArtPass/FortressMurals/v002/MI_Mural04.MI_Mural04"
+    }
+  },
+  "floorMaterial": {
+    "refPath": "/Game/ArtPass/FortressMaterials/v001/M_FortressFloor.M_FortressFloor"
+  },
+  "floorChanges": [
+    "scale",
+    "albedo",
+    "roughness",
+    "roughness_limits",
+    "specular",
+    "bump"
+  ],
+  "floorSourceSHA256": "e3268bf887a3fd868d1f3993f74f6638bb44f8ac455df1482e6647dd66d3630f",
+  "paintMethod": "UV1 artwork blended over UV0 original stone albedo and normal; soft worn edges, original relief and projecting iron preserved",
+  "actualTextureSemantics": "Read base-color and normal indices from the normalized glTF; do not assume exporter index order",
+  "visualQualityAccepted": false,
+  "FortressPaintedWall": {
+    "success": true,
+    "assets": [
+      {
+        "mesh": "/Game/ArtPass/Tripo/FortressPaintedWall_v001/SM_FortressPaintedWall_v001",
+        "lods": [
+          {
+            "lod": 0,
+            "targetTriangles": 150000,
+            "triangles": 150000,
+            "vertices": 238743,
+            "uvChannels": 2,
+            "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+            "sectionMaterialSlots": [
+              0,
+              1
+            ],
+            "screenSize": 1.0
+          },
+          {
+            "lod": 1,
+            "targetTriangles": 60000,
+            "triangles": 60000,
+            "vertices": 97621,
+            "uvChannels": 2,
+            "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+            "sectionMaterialSlots": [
+              0,
+              1
+            ],
+            "screenSize": 0.45
+          },
+          {
+            "lod": 2,
+            "targetTriangles": 15000,
+            "triangles": 15000,
+            "vertices": 24164,
+            "uvChannels": 2,
+            "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+            "sectionMaterialSlots": [
+              0,
+              1
+            ],
+            "screenSize": 0.18
+          }
+        ],
+        "status": "IMPORTED_REDUCED_SAVED_NATIVE_VISUAL_REVIEW_PENDING"
+      }
+    ]
+  },
+  "FortressBrazier": {
+    "success": true,
+    "assets": [
+      {
+        "mesh": "/Game/ArtPass/Tripo/FortressBrazier_v001/SM_FortressBrazier_v001",
+        "lods": [
+          {
+            "lod": 0,
+            "targetTriangles": 40000,
+            "triangles": 40000,
+            "vertices": 57910,
+            "uvChannels": 1,
+            "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+            "sectionMaterialSlots": [
+              0
+            ],
+            "screenSize": 1.0
+          },
+          {
+            "lod": 1,
+            "targetTriangles": 15000,
+            "triangles": 15000,
+            "vertices": 22182,
+            "uvChannels": 1,
+            "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+            "sectionMaterialSlots": [
+              0
+            ],
+            "screenSize": 0.45
+          },
+          {
+            "lod": 2,
+            "targetTriangles": 3000,
+            "triangles": 3000,
+            "vertices": 5057,
+            "uvChannels": 1,
+            "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+            "sectionMaterialSlots": [
+              0
+            ],
+            "screenSize": 0.18
+          }
+        ],
+        "status": "IMPORTED_REDUCED_SAVED_NATIVE_VISUAL_REVIEW_PENDING"
+      }
+    ]
+  }
+}

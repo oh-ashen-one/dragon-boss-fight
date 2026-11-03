@@ -12,7 +12,7 @@ ROOT=Path(__file__).resolve().parents[3]
 BASE=ROOT/'Local/CustomuseAssets/Polish20261025/idle-joins/import-plan-KnightB.json'
 OUT=ROOT/'Local/CustomuseAssets/Sourced20261025'
 
-def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False):
+def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False,root_linear=False):
  src=GLB(path);names=canonical.skin_names();assert set(src.skin_names())==set(names)
  writer=Writer(src.g,src.binary);g=writer.g;body_index,body=src.body();_,cb=canonical.body()
  g['nodes']=copy.deepcopy(canonical.g['nodes']);g['scenes']=copy.deepcopy(canonical.g['scenes']);g['scene']=canonical.g.get('scene',0)
@@ -33,7 +33,9 @@ def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False):
   if initial is None:initial=hips.copy()
   actor=np.eye(4)
   if root_prefix is not None:
-   if t<=root_prefix+1e-6 or last_actor is None:actor[:3,3]=hips-initial;actor[1,3]=max(0.,hips[1]-vertical_base) if root_vertical else 0;last_actor=actor.copy()
+   if t<=root_prefix+1e-6 or last_actor is None:
+    actor[:3,3]=(last_world[src.names['Hips']][:3,3]-first_world[src.names['Hips']][:3,3])*(t/duration) if root_linear else hips-initial
+    actor[1,3]=max(0.,hips[1]-vertical_base) if root_vertical else 0;last_actor=actor.copy()
    else:actor=last_actor.copy()
   actors.append(actor);counter=np.linalg.inv(actor);poses.append({n:counter@world[src.names[n]] for n in names})
  animation={'name':Path(path).stem,'samplers':[],'channels':[]};time_accessor=writer.add(times,'SCALAR',bounds=True)
@@ -50,7 +52,7 @@ def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False):
  for i in sorted(set([0,len(times)//4,len(times)//2,3*len(times)//4,len(times)-1])):
   actual,_=check.sample(float(times[i]));raw,_=src.sample(float(times[i]));worst=max(worst,max(float(np.max(np.abs(actors[i]@actual[check.names[n]]-raw[src.names[n]]))) for n in names))
  assert worst<3e-5,(path,worst)
- return {'file':str(out),'sha256':sha,'sourceFile':str(Path(path).resolve()),'sourceSHA256':src.sha,'duration':duration,'rootSampleRate':count/duration,'rootTranslationSamplesCm':[(UE@a[:3,3]*100).tolist() for a in actors],'rootYawSamplesDegrees':[],'bRootMotionRemoved':root_prefix is not None,'rootMode':'authored_planar_profile' if root_prefix is not None else 'in_place','mesh_variant':'knight_'+mesh_variant(check)[:16],'canonicalReconstructionMaxMatrixError':worst}
+ return {'file':str(out),'sha256':sha,'sourceFile':str(Path(path).resolve()),'sourceSHA256':src.sha,'duration':duration,'rootSampleRate':count/duration,'rootTranslationSamplesCm':[(UE@a[:3,3]*100).tolist() for a in actors],'rootYawSamplesDegrees':[],'bRootMotionRemoved':root_prefix is not None,'rootMode':'linear_cycle_travel' if root_linear else 'authored_planar_profile' if root_prefix is not None else 'in_place','mesh_variant':'knight_'+mesh_variant(check)[:16],'canonicalReconstructionMaxMatrixError':worst}
 
 if __name__=='__main__':
  import argparse

@@ -107,9 +107,10 @@
     "flag": "VeyrFortress",
     "editorCompile": true,
     "shippingPackage": true,
-    "candidateApp": "/private/tmp/veyr-verified-bundle-895jzvyq/Veyr-Mac-Shipping.app",
+    "candidateApp": "/private/tmp/veyr-verified-bundle-duvmbwpe/Veyr-Mac-Shipping.app",
     "nativeGameplayVerified": "Non-combat showcase20/20 and architecture tour8/8 only; no final combat victory claim",
     "blindQualityAccepted": false,
-    "blindVerdict": "Clear winner B, DO NOT SHIP, BOTH FAIL; revisions required"
-  }
+    "blindVerdict": "Round2: clear winner B, DO NOT SHIP, BOTH FAIL; floor/backdrop are high-priority defects"
+  },
+  "mapApproachChange": "After two rejected blind rounds: inspect runtime floor binding, use licensed scanned support assets where useful, replace disconnected backdrop with a connected foundation."
 }

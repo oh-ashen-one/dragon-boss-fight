@@ -246,6 +246,7 @@ void AVeyrKnight::BeginPlay()
     bSourcedTwoHandHeavy=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyTwoHandHeavy"));
     bSourcedHeal=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedHeal"));
     bSourcedMoves=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedMoves"));
+    bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
@@ -370,7 +371,7 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::Combo:return TEXT("LightCombo");
         case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
         case EVeyrKnightAction::Roll:return TEXT("Roll");
-        case EVeyrKnightAction::RunStop:return TEXT("RunStop");
+        case EVeyrKnightAction::RunStop:return bSourcedSprint?(bTwoHanded?TEXT("RunStopTwoHandSourced"):TEXT("RunStopOneHandSourced")):TEXT("RunStop");
         case EVeyrKnightAction::BlinkLeft:return bTwoHanded&&HasVisualClip(TEXT("BlinkLeftTwoHand"))?FName(TEXT("BlinkLeftTwoHand")):FName(TEXT("BlinkLeft"));
         case EVeyrKnightAction::BlinkRight:return bTwoHanded&&HasVisualClip(TEXT("BlinkRightTwoHand"))?FName(TEXT("BlinkRightTwoHand")):FName(TEXT("BlinkRight"));
         case EVeyrKnightAction::Backstep:return TEXT("BackpedalStep");
@@ -831,9 +832,10 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
         return;
     }
     if(Action==EVeyrKnightAction::RunStop&&!MoveIntent.IsNearlyZero())FinishAction();
-    if(Action==EVeyrKnightAction::Ready&&bWasRunning&&MoveIntent.IsNearlyZero()&&HasVisualClip(TEXT("RunStop")))
+    const FName StopClip=ResolveActionClip(EVeyrKnightAction::RunStop);
+    if(Action==EVeyrKnightAction::Ready&&bWasRunning&&MoveIntent.IsNearlyZero()&&HasVisualClip(StopClip))
     {
-        ++RunStops;BeginAction(EVeyrKnightAction::RunStop,VisualClipDuration(TEXT("RunStop"),.6f));
+        ++RunStops;BeginAction(EVeyrKnightAction::RunStop,VisualClipDuration(StopClip,.6f));
     }
     bLateralDodgeBlocked=false;
     const bool bAttack=IsAttackAction();
@@ -1181,7 +1183,7 @@ FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
     // Normal movement uses the sourced walk in the current grip. Shift selects
     // the sourced run; Ctrl remains unbound. Cadence follows measured speed.
     if(!bAllowRun||!bSprintHeld)return bTwoHanded?TEXT("WalkTwoHand"):TEXT("Walk");
-    if(bTwoHanded)return TEXT("RunTwoHand");
+    if(bTwoHanded)return bSourcedSprint?TEXT("RunTwoHandSourced"):TEXT("RunTwoHand");
     return RunAnimationVariant==1?TEXT("RunAlternate"):TEXT("Run");
 }
 
@@ -1307,7 +1309,9 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         }
         PresentationLocomotionTime+=DeltaSeconds*GetPlanarSpeed()/Nominal;Time=PresentationLocomotionTime;
     }
-    bWasRunning=Moving&&!bTwoHanded&&(Clip==FName(TEXT("Run"))||Clip==FName(TEXT("RunAlternate")));
+    const bool RunClip=Clip==FName(TEXT("Run"))||Clip==FName(TEXT("RunAlternate"))||
+        (bSourcedSprint&&(Clip==FName(TEXT("RunTwoHand"))||Clip==FName(TEXT("RunTwoHandSourced"))));
+    bWasRunning=Moving&&(bSourcedSprint||!bTwoHanded)&&RunClip;
     PresentationLowerClip=PresentationTransitionLowerClip=RequestedLowerPresentationClip=NAME_None;
     PresentationLowerWeight=PresentationLowerTime=PresentationJumpPhase=0.f;
     const float DesiredRollYaw=IsRollPrefix()?FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw):0.f;
@@ -1329,7 +1333,8 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         bPresentationTransitionActive=!PreservePrefix&&!PresentationTransitionClip.IsNone()&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
         // The sourced Fab run carries the sword ~50-60 cm from where RunStop starts (RunStop was
         // authored from the earlier Blender run); a 0.10 s blend outran both clips' peak speeds.
-        bTransitionInvolvesRunStop=Clip==FName(TEXT("RunStop"))||PresentationTransitionClip==FName(TEXT("RunStop"));
+        auto IsStop=[](FName Name){return Name==FName(TEXT("RunStop"))||Name==FName(TEXT("RunStopOneHandSourced"))||Name==FName(TEXT("RunStopTwoHandSourced"));};
+        bTransitionInvolvesRunStop=IsStop(Clip)||IsStop(PresentationTransitionClip);
         // Entering or leaving lock-on locomotion changes posture (hips up to 26 cm lower in the strafes): blend longer.
         auto IsLockOnLoco=[](FName N){const FString S=N.ToString();return S.StartsWith(TEXT("Strafe"))||S.StartsWith(TEXT("Backpedal"));};
         bTransitionLockOnEdge=!PresentationTransitionClip.IsNone()&&IsLockOnLoco(Clip)!=IsLockOnLoco(PresentationTransitionClip);

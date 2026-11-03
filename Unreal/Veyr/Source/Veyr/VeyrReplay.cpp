@@ -135,7 +135,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         EnvironmentCamera=GetWorld()->SpawnActor<ACameraActor>();
         if(!EnvironmentCamera)return false;
         EnvironmentCamera->GetCameraComponent()->FieldOfView=60.f;
-        EnvironmentCamera->SetActorLocationAndRotation(FVector(-3300,-1500,350),(FVector(2500,800,1200)-FVector(-3300,-1500,350)).Rotation());
+        EnvironmentCamera->SetActorLocationAndRotation(FVector(-4000,-2600,500),(FVector(1400,2000,1100)-FVector(-4000,-2600,500)).Rotation());
         if(APlayerController* PC=Cast<APlayerController>(Knight->GetController()))PC->SetViewTarget(EnvironmentCamera);
     }
     if(Knight->CameraBoom)AddTickPrerequisiteComponent(Knight->CameraBoom);
@@ -312,6 +312,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("rolls"),Knight->Rolls); O->SetNumberField(TEXT("dodgedHits"),Knight->DodgedHits);
     O->SetNumberField(TEXT("hitsTaken"),Knight->HitsTaken); O->SetNumberField(TEXT("guardedHits"),Knight->GuardedHits);
     O->SetNumberField(TEXT("guardBreaks"),Knight->GuardBreaks); O->SetNumberField(TEXT("healsCompleted"),Knight->SuccessfulHeals);
+    O->SetBoolField(TEXT("sourcedSprintEnabled"),Knight->UsesSourcedSprint());
     O->SetBoolField(TEXT("approvedKnightDefinition"),Knight->bApprovedNativeDefinitionActive);
     O->SetBoolField(TEXT("knightRuntimePolishReady"),Knight->bUsingPolishDefinition);
     O->SetBoolField(TEXT("dragonRuntimePolishReady"),Dragon->bUsingPolishDefinition);

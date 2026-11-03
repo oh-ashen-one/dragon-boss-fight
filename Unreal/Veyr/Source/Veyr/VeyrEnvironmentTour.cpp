@@ -4,6 +4,7 @@
 #include "VeyrDragon.h"
 #include "VeyrGameMode.h"
 #include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 
@@ -32,12 +33,12 @@ void AVeyrReplay::TickEnvironmentTour()
     }
     struct FShot{const TCHAR* Name;FVector Camera,Focus;};
     static const FShot Shots[]={
-        {TEXT("court_player_height"),FVector(-3300,-1500,350),FVector(2500,800,1200)},
-        {TEXT("court_overview"),FVector(-2000,-2000,4500),FVector(600,0,100)},
-        {TEXT("southwest_mural"),FVector(-1200,-3000,900),FVector(-1200,-4740,900)},
-        {TEXT("southeast_mural"),FVector(1200,-3000,900),FVector(1200,-4740,900)},
-        {TEXT("northwest_mural"),FVector(-1200,3000,900),FVector(-1200,4740,900)},
-        {TEXT("northeast_mural"),FVector(1200,3000,900),FVector(1200,4740,900)},
+        {TEXT("court_player_height"),FVector(-4000,-2600,500),FVector(1400,2000,1100)},
+        {TEXT("court_overview"),FVector(-9000,-11000,10500),FVector(2300,800,1800)},
+        {TEXT("southwest_mural"),FVector(-2600,-2800,850),FVector(-3100,-4700,700)},
+        {TEXT("southeast_mural"),FVector(2600,-2800,850),FVector(3100,-4700,700)},
+        {TEXT("northwest_mural"),FVector(-3600,2800,850),FVector(-3100,4700,700)},
+        {TEXT("northeast_mural"),FVector(3600,2800,850),FVector(3100,4700,700)},
         {TEXT("military_gate"),FVector(2700,0,450),FVector(5300,0,1800)},
         {TEXT("court_reverse"),FVector(-1000,1500,550),FVector(-5100,-700,1200)}};
     const int32 Index=FMath::FloorToInt(Elapsed/4.f);
@@ -49,6 +50,7 @@ void AVeyrReplay::TickEnvironmentTour()
             FString::Printf(TEXT("Architectural inspection: 8 camera views, %d clearance failures, %d floor failures; no combat victory claim"),EnvironmentSweepFailures,EnvironmentFloorFailures));return;
     }
     const FShot& Shot=Shots[Index];
+    EnvironmentCamera->GetCameraComponent()->FieldOfView=Index==1?75.f:60.f;
     if(EnvironmentShot!=Index){EnvironmentShot=Index;Event(Shot.Name,false);}
     const float U=FMath::Clamp(FMath::Fmod(Elapsed,4.f)/4.f,0.f,1.f);
     const FVector Position=Shot.Camera+FVector(100.f*(U-.5f),0,0);

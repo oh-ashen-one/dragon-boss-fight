@@ -83,11 +83,12 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     }
     if(bSprintProof)
     {
+        const TCHAR* TwoHandRun=Knight.IsValid()&&Knight->UsesSourcedSprint()?TEXT("RunTwoHandSourced"):TEXT("RunTwoHand");
         static const FDef SprintDefs[]={
             {TEXT("SprintStop_1H"),EKind::Strafe,0,true,false,2.2f,1276.f,TEXT("Run"),90.f},
-            {TEXT("SprintStop_2H"),EKind::Strafe,0,true,true,2.2f,1276.f,TEXT("RunTwoHand"),90.f},
+            {TEXT("SprintStop_2H"),EKind::Strafe,0,true,true,2.2f,1276.f,TwoHandRun,90.f},
             {TEXT("WalkSprintWalk_1H"),EKind::SpeedTransition,0,true,false,3.6f,1408.f,TEXT("Run"),90.f},
-            {TEXT("WalkSprintWalk_2H"),EKind::SpeedTransition,0,true,true,3.6f,1408.f,TEXT("RunTwoHand"),90.f},
+            {TEXT("WalkSprintWalk_2H"),EKind::SpeedTransition,0,true,true,3.6f,1408.f,TwoHandRun,90.f},
         };
         return SprintDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(SprintDefs)-1)];
     }

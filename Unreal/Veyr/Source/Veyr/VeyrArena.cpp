@@ -96,7 +96,15 @@ void AVeyrArena::BeginPlay()
     bUsingAuthoredFloor=CathedralFloorParent!=nullptr;bUsingImportedBraziers=CathedralBrazierMesh!=nullptr;
     bFortressCandidate=FParse::Param(FCommandLine::Get(),TEXT("VeyrFortress"));
     LoadPolishKit();
-    if(bFortressCandidate)LoadFortressKit();
+    if(bFortressCandidate)
+    {
+        LoadFortressKit();
+        UMaterialInterface* FortressFloor=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/FortressMaterials/v001/M_FortressFloor.M_FortressFloor"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        if(FortressFloor)CathedralFloorParent=FortressFloor;
+        else{bFortressAssetsReady=false;ConnectedCourtDiagnostic+=TEXT("; dry fortress floor missing");}
+        bUsingAuthoredFloor=FortressFloor!=nullptr;
+        CathedralBrazierMesh=PolishMeshes.FindRef(TEXT("FortressBrazier"));bUsingImportedBraziers=CathedralBrazierMesh!=nullptr;
+    }
     if(UMaterialInterface* Authored=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),nullptr,LOAD_Quiet|LOAD_NoWarn))StoneParent=Authored;
     if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !ConeMesh || !StoneParent || !PlainParent) return;
     bBuilt = true;
@@ -105,7 +113,7 @@ void AVeyrArena::BeginPlay()
     auto* Flagstone = MakeMaterial(TEXT("OriginalDampFlagstone"), FLinearColor(.095f, .112f, .125f), .60f);
     auto* FlagstoneLight = MakeMaterial(TEXT("OriginalWornFlagstone"), FLinearColor(.13f, .14f, .145f), .72f);
     auto* WetStone = MakeMaterial(TEXT("OriginalBroadWetStone"), FLinearColor(.060f, .075f, .090f), .32f);
-    auto* OldBronze = MakeMaterial(TEXT("PrototypeAncientBronze"), FLinearColor(.23f, .145f, .055f), .64f,true,.72f);
+    auto* OldBronze = MakeMaterial(TEXT("PrototypeAncientBronze"), bFortressCandidate?FLinearColor(.028f,.032f,.035f):FLinearColor(.23f,.145f,.055f), bFortressCandidate?.80f:.64f,true,bFortressCandidate?.85f:.72f);
     // Background masses stay broad, dark and fogged, without close-view stone
     // grain that would emphasize their engine-primitive shape and false scale.
     auto* Basalt = MakeMaterial(TEXT("PrototypeDarkBasalt"), FLinearColor(.028f, .039f, .055f), .94f,false);
@@ -346,10 +354,14 @@ void AVeyrArena::BuildFloor()
     RaisedWalkableBounds.Reset();
     // The court and the ground beneath its side aisles are one connected mass.
     // Generated paving is the close surface; there is no empty 320m blue disk.
-    Box(Floor,FVector(0,0,-20),FVector(CourtHalfX*2+100,CourtHalfY*2+100,40));
-    Cylinder(FloorSurface,FVector(0,0,-4.7f),CombatRadius+60.f,10.f);
-    Box(Foundations,FVector(0,0,-200),FVector(CourtHalfX*2+900,CourtHalfY*2+900,380));
-    // Raised galleries leave a generous margin beyond the 72m combat centre.
+    const float FloorHalfX=bFortressCandidate?5500.f:CourtHalfX,FloorHalfY=bFortressCandidate?5500.f:CourtHalfY;
+    Box(Floor,FVector(0,0,-20),FVector(FloorHalfX*2+100,FloorHalfY*2+100,40));
+    if(!bFortressCandidate)Cylinder(FloorSurface,FVector(0,0,-4.7f),CombatRadius+60.f,10.f);
+    Box(Foundations,FVector(0,0,-200),FVector(FloorHalfX*2+900,FloorHalfY*2+900,380));
+    // The fortress is one level continuous with its walls. Legacy galleries
+    // remain available only in the historical cathedral comparison.
+    if(!bFortressCandidate)
+    {
     for(float Side:{-1.f,1.f})
     {
         Box(Foundations,FVector(0,Side*4250.f,AisleHeight*.5f),FVector(2.f*CourtHalfX,300.f,AisleHeight));
@@ -363,7 +375,10 @@ void AVeyrArena::BuildFloor()
             const float A=(I+.5f)*2.f*PI/96.f;
             Box(FloorCarvings,Radial(A,Radius,.45f),FVector(2.f,Radius*2.f*PI/96.f+1.f,.3f),FRotator(0,FMath::RadiansToDegrees(A),0));
         }
-    if(!bConnectedCourtAssetsReady)return;
+    }
+    // The new paving is continuous. The legacy sub-centimetre patch/disc
+    // overlaps produced bright grazing artifacts despite the dry material.
+    if(!bConnectedCourtAssetsReady||bFortressCandidate)return;
     for(int32 X=-2;X<=2;++X)for(int32 Y=-2;Y<=2;++Y)
     {
         if(FVector2D(X*1350.f,Y*1350.f).Size()>3300.f)continue;
@@ -591,6 +606,12 @@ void AVeyrArena::BuildCourtTerrain()
     // inhabited-scale ruins behind the lower cloister, rather than blue cubes.
     Box(Foundations,FVector(0,12000,400),FVector(22000,6000,1200));
     Box(Foundations,FVector(12500,0,850),FVector(6000,20000,1500));
+    if(bFortressCandidate)
+    {
+        // Real textured terrace tops replace the visible grey support slabs.
+        Box(Floor,FVector(0,12000,1002),FVector(22000,6000,4));
+        Box(Floor,FVector(12500,0,1602),FVector(6000,20000,4));
+    }
     KitWallRun(TEXT("RockRetainingWall"),FVector(-11000,9000,0),FVector(11000,9000,0),FVector(0,-1,0),1400,-400,false);
     KitWallRun(TEXT("RockRetainingWall"),FVector(9500,-10000,0),FVector(9500,10000,0),FVector(-1,0,0),2000,-400,false);
     if(!bFortressCandidate)
@@ -633,28 +654,35 @@ void AVeyrArena::BuildDistance()
     auto Brazier=[&](const FVector& P)
     {
         const int32 I=Index++;
-        if(CathedralBrazierMesh)
+        if(bFortressCandidate&&PolishMeshes.Contains(TEXT("FortressBrazier")))
+            KitPiece(TEXT("FortressBrazier"),P,130.f,0.f,true);
+        else if(CathedralBrazierMesh)
             ImportedPiece(CathedralBrazierMesh,FName(*FString::Printf(TEXT("CourtBrazier%02d"),I)),P,180.f,0.f,false);
+        const float FlameZ=bFortressCandidate?105.f:198.f;
         if(FlameCards)
             for(int32 Cross=0;Cross<3;++Cross)
             {
-                const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,198),FVector(.72f,.38f,1)));
+                const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,FlameZ),bFortressCandidate?FVector(.65f,.55f,1):FVector(.72f,.38f,1)));
                 FlameCards->SetCustomDataValue(Instance,0,.45f,false);FlameCards->SetCustomDataValue(Instance,1,FMath::Frac(I*.618f+Cross*.23f),false);
                 FlameCards->SetCustomDataValue(Instance,2,.25f,false);FlameCards->SetCustomDataValue(Instance,3,1.f,false);
             }
         else Box(Embers,P+FVector(0,0,165),FVector(55,55,8));
         auto* Light=NewObject<UPointLightComponent>(this,*FString::Printf(TEXT("CourtAmberBrazier%02d"),I));
         AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
-        Light->SetRelativeLocation(P+FVector(0,0,210));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(190.f);
-        Light->SetLightColor(FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(1000.f);Light->SetSourceRadius(45.f);
+        Light->SetRelativeLocation(P+FVector(0,0,bFortressCandidate?110.f:210.f));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(bFortressCandidate?240.f:190.f);
+        Light->SetLightColor(bFortressCandidate?FLinearColor(1.f,.60f,.27f):FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(bFortressCandidate?1600.f:1000.f);Light->SetSourceRadius(45.f);
         Light->SetCastShadows(false);Light->SetSpecularScale(.7f);Light->RegisterComponent();
     };
     for(float Side:{-1.f,1.f})
     {
-        for(float X:{-3300.f,0.f,3300.f})Brazier(FVector(X,Side*3980.f,0));
-        if(bFortressCandidate)for(float X:{-1200.f,1200.f})Brazier(FVector(X,Side*3900.f,0));
+        if(bFortressCandidate)
+        {
+            for(float X:{-3100.f,3100.f})Brazier(FVector(X,Side*3900.f,0));
+            Brazier(FVector(0,Side*4050.f,0));
+        }
+        else for(float X:{-3300.f,0.f,3300.f})Brazier(FVector(X,Side*3980.f,0));
         for(float Y:{-2400.f,2400.f})Brazier(FVector(Side*4300.f,Y,0));
-        Brazier(FVector(-4550,Side*750.f,AisleHeight));
+        Brazier(FVector(-4550,Side*750.f,bFortressCandidate?0.f:AisleHeight));
     }
     if(FlameCards)FlameCards->MarkRenderStateDirty();
 }
@@ -669,7 +697,7 @@ void AVeyrArena::BuildLighting()
     // Only the moon drives forward/translucent lighting. Keeping priorities
     // distinct avoids the competing-directional-lights warning seen in PIE001.
     Moon->SetForwardShadingPriority(1);
-    Moon->SetIntensity(bFortressCandidate?3.6f:2.7f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
+    Moon->SetIntensity(bFortressCandidate?3.6f:2.7f); Moon->SetLightColor(bFortressCandidate?FLinearColor(.72f,.80f,.90f):FLinearColor(.63f,.76f,1.f), false);
     Moon->SetCastShadows(true); Moon->SetLightSourceAngle(8.f); Moon->SetSpecularScale(.65f); Moon->RegisterComponent();
     auto* Fill = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeNeutralFrontFill"));
     AddInstanceComponent(Fill); Fill->SetupAttachment(GetRootComponent()); Fill->SetMobility(EComponentMobility::Movable);

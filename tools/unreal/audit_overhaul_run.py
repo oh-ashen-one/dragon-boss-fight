@@ -21,7 +21,7 @@ for s in samples:
  if s.get('stamina',0)<-.01 or s.get('stamina',100)>100.01:issues.append('Stamina outside valid range');break
 latest=d.get('latest',{})
 if latest.get('fortressCandidate'):
- if not latest.get('fortressAssetsReady') or latest.get('fortressMeshCount')!=4 or latest.get('fortressMuralCount')!=4 or latest.get('fortressTowerCount')!=12 or latest.get('breakablePropCount')!=8:
+ if not latest.get('fortressAssetsReady') or latest.get('fortressMeshCount')!=5 or latest.get('fortressMuralCount')!=4 or latest.get('fortressTowerCount')!=12 or latest.get('breakablePropCount')!=8:
   issues.append('Fortress modules, four murals, towers or perimeter destructibles missing')
 elif not latest.get('overhaulAssetsReady'):issues.append('Generated architecture, destructibles or sky dragons missing')
 if latest.get('recordedCuesLoaded',0)!=13 or not latest.get('musicLoaded') or not latest.get('ambienceLoaded'):issues.append('Recorded audio payload incomplete')

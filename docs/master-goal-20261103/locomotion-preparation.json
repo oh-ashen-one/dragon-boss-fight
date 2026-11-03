@@ -1,0 +1,57 @@
+{
+  "version": "v040locomotion",
+  "nativeImported": false,
+  "runtimeFlag": "VeyrSourcedSprint",
+  "defaultEnabled": false,
+  "accepted": false,
+  "clips": [
+    {
+      "clip": "RunStopTwoHandSourced",
+      "nominalSpeedCmS": 0.0,
+      "sourcePoseReconstructionMaxError": 1.115227220016557e-07,
+      "canonicalGeometryPreserved": true,
+      "graft": {
+        "canonicalSHA256": "b833da3b73640bfd3384767b828d238d4d101451157995c694c589e3c5774690",
+        "blenderExportSHA256": "701fca138d4d3e1134fb334ce23a7d3e99861d101a8334707600fbce89c423c4",
+        "outputSHA256": "48320e51fb927e88017946cf3bced122515ef0916bacf8a04f7f0629432f2cfc",
+        "sampleCount": 413,
+        "maximumJointMatrixError": 0.0,
+        "canonicalGeometrySkinMaterialsPreserved": true,
+        "durationSeconds": 1.7166666984558105,
+        "scope": "Representation equivalence, not native import or visual quality"
+      }
+    },
+    {
+      "clip": "RunTwoHandSourced",
+      "nominalSpeedCmS": 562.0693110465752,
+      "sourcePoseReconstructionMaxError": 9.622333885239698e-08,
+      "canonicalGeometryPreserved": true,
+      "graft": {
+        "canonicalSHA256": "b833da3b73640bfd3384767b828d238d4d101451157995c694c589e3c5774690",
+        "blenderExportSHA256": "62d3c5c1e175fa909ca85f2bd275d28a2832064b2b6c98bdc988247a91ee369e",
+        "outputSHA256": "a49459639a31082cdca3d57a2f19d89cd9df28e57216cdd200f024223c494211",
+        "sampleCount": 145,
+        "maximumJointMatrixError": 0.0,
+        "canonicalGeometrySkinMaterialsPreserved": true,
+        "durationSeconds": 0.6000000238418579,
+        "scope": "Representation equivalence, not native import or visual quality"
+      }
+    },
+    {
+      "clip": "RunStopOneHandSourced",
+      "nominalSpeedCmS": 0.0,
+      "sourcePoseReconstructionMaxError": 1.3235871910988184e-07,
+      "canonicalGeometryPreserved": true,
+      "graft": {
+        "canonicalSHA256": "b833da3b73640bfd3384767b828d238d4d101451157995c694c589e3c5774690",
+        "blenderExportSHA256": "baa83cd4cf46b9a29d0a990e1a4e65e00fb59b33b2ef7ddd08053a9b2cb8de30",
+        "outputSHA256": "d07ed5b974f58407ac1403fb9fd040f72c3983b39a465f8ab0c5e33fdd3a0be6",
+        "sampleCount": 413,
+        "maximumJointMatrixError": 0.0,
+        "canonicalGeometrySkinMaterialsPreserved": true,
+        "durationSeconds": 1.7166666984558105,
+        "scope": "Representation equivalence, not native import or visual quality"
+      }
+    }
+  ]
+}

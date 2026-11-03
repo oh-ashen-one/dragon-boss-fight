@@ -1,0 +1,7 @@
+{
+  "rimBasisHypothesis": "Rejected by measurement: exported static-mesh-local to Blender socket-local transform is identity within floating point error. The original rim coordinates were correct.",
+  "confirmedOldFitIssue": "fit_sourced_heal.py mixed the active source wrist orientation toward approved_hands at full rim contact, replacing the source sip rotation.",
+  "newCandidate": "Quaternius_Heal_v5geometry",
+  "status": "Exported, not visually/native accepted",
+  "remaining": "Inspect actual cup/helmet contact and tipping amplitude; current measured peak is113.25 degrees, so visual review is necessary before import."
+}

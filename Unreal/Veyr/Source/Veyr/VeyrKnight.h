@@ -51,6 +51,7 @@ public:
     bool UsesSourcedHeavy() const { return bSourcedTwoHandHeavy; }
     bool UsesSourcedHeal() const { return bSourcedHeal; }
     bool UsesSourcedMoves() const { return bSourcedMoves; }
+    bool UsesSourcedSprint() const { return bSourcedSprint; }
     void TryRunningAttack();
     void TryLeapAttack();
     int32 RunningAttacks=0,LeapingAttacks=0;
@@ -248,6 +249,7 @@ private:
     bool bSourcedTwoHandHeavy=false;
     bool bSourcedHeal=false;
     bool bSourcedMoves=false;
+    bool bSourcedSprint=false;
     void LeapPressed();
     bool bPrimaryAttackHeld=false,bPrimaryAttackBuffered=false,bPrimaryChainActive=false,bStartingPrimaryStep=false;
     int32 PrimaryChainStep=0,PrimarySwingBase=0;

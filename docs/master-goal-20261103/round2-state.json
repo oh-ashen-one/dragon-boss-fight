@@ -1,0 +1,16 @@
+{
+  "candidateApp": "/private/tmp/veyr-verified-bundle-duvmbwpe/Veyr-Mac-Shipping.app",
+  "packageReceipt": "Local/package-20261103T113610Z/receipt.json",
+  "afterTour": "native-environment-20261103T115426Z",
+  "beforeTour": "native-environment-20261103T120151Z",
+  "afterClearanceFailures": 0,
+  "beforeClearanceFailures": 6,
+  "floorFailures": 0,
+  "latestTwentyMoveCoverage": "R1 build895jzvyq only; final R2 showcase still required",
+  "qualityAccepted": false,
+  "floorAblation": "Removing patch/disc overlap did not remove white floor shapes. Do not claim their cause is proven. Inspect actual material/render binding next.",
+  "locomotionNativeImported": false,
+  "healNativeImported": false,
+  "criticCostEstimateUSD": 1.6188414,
+  "criticCostIsInvoice": false
+}
