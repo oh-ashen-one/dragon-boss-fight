@@ -116,7 +116,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
             StartNativeValidation(ReplayMode,EvidenceDirectory);
         }
     }
-    if(Knight&&Dragon&&Knight->HasEnteredEncounter()&&!(Replay&&Replay->IsShowcase()))
+    if(Knight&&Dragon&&Knight->HasEnteredEncounter()&&!(Replay&&Replay->IsPresentationOnly()))
     {
         SampleFightClock();
         if(!MixCaptureDirectory.IsEmpty()&&MixCaptureStarted==0&&!bMixCaptureFinished)
@@ -137,7 +137,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
 
 void AVeyrGameMode::SampleFightClock()
 {
-    if(Replay&&Replay->IsShowcase())return;
+    if(Replay&&Replay->IsPresentationOnly())return;
     FightClock.Sample(FPlatformTime::Seconds(),Knight&&Knight->HasEnteredEncounter(),UGameplayStatics::IsGamePaused(this));
 }
 

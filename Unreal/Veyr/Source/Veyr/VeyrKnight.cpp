@@ -1012,7 +1012,7 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
     if (!Player || !Player->IsLocalController() || !IsValid(Boss)) { RestoreCameraOcclusion(); return; }
     OcclusionController = Player;
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
-        if(Mode->Replay&&Mode->Replay->IsShowcase()&&Player->GetViewTarget()!=this)
+        if(Mode->Replay&&Mode->Replay->IsPresentationOnly()&&Player->GetViewTarget()!=this)
         {
             // The observer is not the hidden knight's camera. Do not punch
             // visibility holes in the dragon or arena from that unused view.

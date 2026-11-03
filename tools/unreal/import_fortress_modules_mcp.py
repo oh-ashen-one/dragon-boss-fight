@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Import only the two fixed fortress module plans through the owned native MCP."""
-import hashlib,json,re,sys
+import argparse,hashlib,json,re,sys
 from pathlib import Path
 from native_mcp import NativeMCP
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'Local/FortressModulesEditor20261103'
 def main():
+    parser=argparse.ArgumentParser();parser.add_argument('--asset',action='append',choices=['FortressMuralWall','FortressWatchtower','FortressCurtainWall']);args=parser.parse_args()
     OUT.mkdir(exist_ok=True);c=NativeMCP(timeout=900);c.initialize()
     def meta(name,args):
         r=c.request('tools/call',{'name':name,'arguments':args})
@@ -22,7 +23,7 @@ def main():
     (OUT/'project-check.json').write_text(json.dumps(project,indent=2)+'\n')
     protected=json.loads((ROOT/'Local/FortressEditor20261103/protected-before.json').read_text())
     assert all(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==v for p,v in protected.items()),'Protected assets changed before import'
-    for name in ['FortressMuralWall','FortressWatchtower']:
+    for name in args.asset or ['FortressMuralWall','FortressWatchtower']:
         receipt=OUT/(name+'-import.json')
         if receipt.exists():
             previous=json.loads(receipt.read_text())

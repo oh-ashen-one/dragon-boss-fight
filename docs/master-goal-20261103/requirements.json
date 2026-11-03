@@ -107,8 +107,9 @@
     "flag": "VeyrFortress",
     "editorCompile": true,
     "shippingPackage": true,
-    "candidateApp": "/private/tmp/veyr-verified-bundle-35_s9gj0/Veyr-Mac-Shipping.app",
-    "nativeGameplayVerified": false,
-    "blindQualityAccepted": false
+    "candidateApp": "/private/tmp/veyr-verified-bundle-895jzvyq/Veyr-Mac-Shipping.app",
+    "nativeGameplayVerified": "Non-combat showcase20/20 and architecture tour8/8 only; no final combat victory claim",
+    "blindQualityAccepted": false,
+    "blindVerdict": "Clear winner B, DO NOT SHIP, BOTH FAIL; revisions required"
   }
 }

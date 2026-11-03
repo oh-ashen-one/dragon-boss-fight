@@ -164,7 +164,7 @@ void AVeyrHUD::DrawHUD()
     if(!bShowHUD||!Canvas||!GEngine||Canvas->SizeX<1||Canvas->SizeY<1)return;
     const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!Mode||!Mode->Knight||!Mode->Dragon)return;
-    if(Mode->Replay&&Mode->Replay->IsShowcase())return; // No combat/victory HUD in a non-combat rehearsal.
+    if(Mode->Replay&&Mode->Replay->IsPresentationOnly())return; // No combat/victory HUD in a non-combat rehearsal.
     const AVeyrKnight* Knight=Mode->Knight;const AVeyrDragon* Dragon=Mode->Dragon;
     // Uniform scaling preserves icon shapes on 4:3 and ultrawide displays;
     // anchors use the actual viewport, with a legible minimum on small windows.

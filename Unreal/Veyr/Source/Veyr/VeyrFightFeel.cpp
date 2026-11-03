@@ -151,7 +151,7 @@ void AVeyrFightFeel::Impact(const FVector& Position,float Weight,FName Kind)
     const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(bDisabled||!Mode||!Mode->bUserCameraShake||!Mode->Knight)return;
     FVector Listener=Mode->Knight->CombatCamera?Mode->Knight->CombatCamera->GetComponentLocation():Mode->Knight->GetActorLocation();
-    if(Mode->Replay&&Mode->Replay->IsShowcase())
+    if(Mode->Replay&&Mode->Replay->IsPresentationOnly())
         if(auto* PC=Cast<APlayerController>(Mode->Knight->GetController())){FRotator Rotation;PC->GetPlayerViewPoint(Listener,Rotation);}
     LastShakeDistance=FVector::Distance(Listener,Position);
     const float Falloff=FMath::Square(FMath::Clamp(1.f-LastShakeDistance/5000.f,0.f,1.f));

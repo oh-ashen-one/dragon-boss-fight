@@ -37,6 +37,15 @@
       "metadataKeys": []
     },
     {
+      "file": "ArtSource/Fortress20261103/References/curtain-wall-v1.png",
+      "sha256": "c62dc8bd6ae1f18612a94335944860fc66d91e04d908bfd5b09d444f0626b1ba",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "metadataKeys": []
+    },
+    {
       "file": "ArtSource/Fortress20261103/References/fortress-overview-v1.png",
       "sha256": "e5616026f346a28b8823a6046b070ca31e77831a0addbf5b6b4df66445dc0800",
       "dimensions": [
@@ -73,6 +82,15 @@
       "metadataKeys": []
     },
     {
+      "file": "ArtSource/Fortress20261103/References/iron-brazier-v1.png",
+      "sha256": "1a7f31552bf27af3e2d856d7453ad7d1f63777a6bd48c8d252beb89200a5f68c",
+      "dimensions": [
+        1173,
+        1341
+      ],
+      "metadataKeys": []
+    },
+    {
       "file": "ArtSource/Fortress20261103/References/mural-wall-bay-v1.png",
       "sha256": "65bfd0ee02c094e08e8356155ad81d38e9eff329a9f45a27531e2dfa482f0116",
       "dimensions": [
@@ -89,7 +107,17 @@
         1536
       ],
       "metadataKeys": []
+    },
+    {
+      "file": "ArtSource/Fortress20261103/Textures/dry-paving-v1.png",
+      "sha256": "e3268bf887a3fd868d1f3993f74f6638bb44f8ac455df1482e6647dd66d3630f",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "metadataKeys": []
     }
   ],
-  "metadataAudit": "All PNG metadata keys enumerated; no personal metadata found."
+  "metadataAudit": "13 PNGs inspected; no personal metadata found.",
+  "builtInImageCost": "Not surfaced by the tool; not asserted to be zero."
 }

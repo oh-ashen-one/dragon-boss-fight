@@ -1,0 +1,22 @@
+{
+  "blindOpusReviewCompleted": false,
+  "passes": [
+    {
+      "candidate": "35_s9gj0",
+      "capture": "native-showcase-20261103T092948Z",
+      "nativeCoverage": "20/20; explicit fortress state/count audit passed",
+      "visualDecision": "Reject: blank plaster panels too flat and murals too dark",
+      "requestedFPS": 20,
+      "matchedComparison": false
+    },
+    {
+      "candidate": "s62ewxqd",
+      "capture": "native-showcase-20261103T093827Z",
+      "nativeCoverage": "20/20; explicit fortress state/count audit passed",
+      "visualDecision": "Reject: mural lighting clearer, but flat blue replacement wall finish visibly inferior to textured stone",
+      "requestedFPS": 15,
+      "matchedComparison": true
+    }
+  ],
+  "approachChange": "Use a dedicated textured stone curtain-wall mesh. Keep the mural-frame mesh only for four artworks. Do not keep tuning the rejected blank-panel tint."
+}

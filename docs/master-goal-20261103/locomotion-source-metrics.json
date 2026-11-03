@@ -1,0 +1,116 @@
+[
+  {
+    "file": "Local/AttackSources20261103/ForwardRun/Exports/Mixamo_ForwardRun_v1.glb",
+    "sha256": "e0c330068073a6dc0681b917d9ec3eec1fc2267f9107e7bc019085abfa28a0c6",
+    "durationSeconds": 0.6000000238418579,
+    "heightScaleCm": 244.1191150319655,
+    "planarHipTravelCm": [
+      -5.685857063225946e-06,
+      0.0,
+      337.2415043792115
+    ],
+    "feet": [
+      {
+        "side": "Left",
+        "sourceOnlyLowFootWindowMaxCmS": 60.13071462214647,
+        "nearFloorSamples": 4,
+        "ankleHorizontalSpeedP95CmS": 283.14251364227624,
+        "soleRangeCm": [
+          0.0,
+          63.784318978858565
+        ]
+      },
+      {
+        "side": "Right",
+        "sourceOnlyLowFootWindowMaxCmS": 63.73195865605273,
+        "nearFloorSamples": 0,
+        "ankleHorizontalSpeedP95CmS": null,
+        "soleRangeCm": [
+          5.96639521364596,
+          56.58138498249893
+        ]
+      }
+    ],
+    "endpointGapAfterPlanarTravelCm": {
+      "max": 0.0008404115838484788,
+      "mean": 0.00034527090430569907
+    },
+    "scope": "Source-only diagnostic; ankle speed includes legitimate pivots. Native foot gates and visible transitions remain required."
+  },
+  {
+    "file": "Local/AttackSources20261102/MixamoGreatSword/Retarget/Exports/Mixamo_RunStopOneHand_v1.glb",
+    "sha256": "77ee4ec66f79ab43ef5c5bb9e93f510cfab844bfe52459fa0c1a95e5a88b3cad",
+    "durationSeconds": 1.7166666984558105,
+    "heightScaleCm": 244.1191150319655,
+    "planarHipTravelCm": [
+      0.016772847173184453,
+      0.0,
+      368.20719964168427
+    ],
+    "feet": [
+      {
+        "side": "Left",
+        "sourceOnlyLowFootWindowMaxCmS": 74.26144908888166,
+        "nearFloorSamples": 6,
+        "ankleHorizontalSpeedP95CmS": 312.6497422892902,
+        "soleRangeCm": [
+          0.0,
+          16.111465261357818
+        ]
+      },
+      {
+        "side": "Right",
+        "sourceOnlyLowFootWindowMaxCmS": 64.66632242733863,
+        "nearFloorSamples": 1,
+        "ankleHorizontalSpeedP95CmS": 34.90483651612291,
+        "soleRangeCm": [
+          2.2006482426523464,
+          33.33945186867556
+        ]
+      }
+    ],
+    "endpointGapAfterPlanarTravelCm": {
+      "max": 74.78950626004124,
+      "mean": 36.704031099481846
+    },
+    "scope": "Source-only diagnostic; ankle speed includes legitimate pivots. Native foot gates and visible transitions remain required."
+  },
+  {
+    "file": "Local/AttackSources20261102/MixamoGreatSword/Retarget/Exports/Mixamo_RunStopTwoHand_v1.glb",
+    "sha256": "accb6cf98052609395aba6de041dd84339a5259242c453ae63f441d31d63ac0b",
+    "durationSeconds": 1.4666666984558105,
+    "heightScaleCm": 244.1191150319655,
+    "planarHipTravelCm": [
+      0.13067681258447586,
+      0.0,
+      378.2742607437157
+    ],
+    "feet": [
+      {
+        "side": "Left",
+        "sourceOnlyLowFootWindowMaxCmS": 55.66608925138546,
+        "nearFloorSamples": 6,
+        "ankleHorizontalSpeedP95CmS": 293.396404260644,
+        "soleRangeCm": [
+          0.0,
+          18.633739360907466
+        ]
+      },
+      {
+        "side": "Right",
+        "sourceOnlyLowFootWindowMaxCmS": 272.51391881855267,
+        "nearFloorSamples": 16,
+        "ankleHorizontalSpeedP95CmS": 286.90527124165703,
+        "soleRangeCm": [
+          0.2253390674951401,
+          16.67090748230696
+        ]
+      }
+    ],
+    "endpointGapAfterPlanarTravelCm": {
+      "max": 52.92736594174296,
+      "mean": 37.546345203919934
+    },
+    "scope": "Source-only diagnostic; ankle speed includes legitimate pivots. Native foot gates and visible transitions remain required."
+  }
+]

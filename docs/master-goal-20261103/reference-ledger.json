@@ -59,6 +59,36 @@
       "promptFile": "docs/master-goal-20261103/prompts/reference-watchtower.txt",
       "purpose": "Reusable military tower input for a later Tripo generation",
       "visualReview": "Square military tower with slight battlement damage, no sacred architecture; model not generated yet."
+    },
+    {
+      "provider": "built-in image_gen",
+      "requestedModel": "GPT Image 2.5",
+      "actualModel": "not exposed by tool",
+      "canonicalSource": "ArtSource/Fortress20261103/References/mural-wall-bay-v1.png",
+      "sha256": "65bfd0ee02c094e08e8356155ad81d38e9eff329a9f45a27531e2dfa482f0116",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-mural-wall-bay.txt",
+      "purpose": "Four framed fresco bays",
+      "visualReview": "Inspected and accepted as image-to-3D input only; native scene quality requires separate review."
+    },
+    {
+      "provider": "built-in image_gen",
+      "requestedModel": "GPT Image 2.5",
+      "actualModel": "not exposed by tool",
+      "canonicalSource": "ArtSource/Fortress20261103/References/watchtower-v1.png",
+      "sha256": "1d8767c24742b7c5abe5b3c768cd560685bf838f396ab19854896be2883fccf1",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-watchtower.txt",
+      "purpose": "Secular square defensive tower",
+      "visualReview": "Inspected and accepted as image-to-3D input only; native scene quality requires separate review."
+    },
+    {
+      "provider": "built-in image_gen",
+      "requestedModel": "GPT Image 2.5",
+      "actualModel": "not exposed by tool",
+      "canonicalSource": "ArtSource/Fortress20261103/References/curtain-wall-v1.png",
+      "sha256": "c62dc8bd6ae1f18612a94335944860fc66d91e04d908bfd5b09d444f0626b1ba",
+      "promptFile": "docs/master-goal-20261103/prompts/reference-curtain-wall.txt",
+      "purpose": "Dedicated solid masonry; replaces rejected blank-wall repetition",
+      "visualReview": "Inspected and accepted as image-to-3D input only; native scene quality requires separate review."
     }
   ]
 }

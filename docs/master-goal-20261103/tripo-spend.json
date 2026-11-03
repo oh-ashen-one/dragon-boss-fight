@@ -101,7 +101,50 @@
         60000,
         15000
       ]
+    },
+    {
+      "asset": "FortressCurtainWall_v001",
+      "status": "native_imported_pending_full_map_review",
+      "quotedCredits": 55,
+      "balanceBefore": 72765,
+      "uiModel": "H3.1 \u2013 Best Quality",
+      "privacy": "Private",
+      "texture8K": false,
+      "reference": "ArtSource/Fortress20261103/References/curtain-wall-v1.png",
+      "utc": "2026-11-03T09:46:32.924423+00:00",
+      "purpose": "Replace visibly flat blank mural modules in unpainted curtain walls; retain four dedicated fresco bays.",
+      "jobId": "5c6df4b4-3cd8-4b29-8fea-429fbdd657b9",
+      "balanceAfter": 72710,
+      "observedCreditDeduction": 55,
+      "exportFormat": "GLB",
+      "exportTextureResolution": "2k",
+      "rawFile": "Local/Fortress20261103/Tripo/FortressCurtainWall_raw_v001.glb",
+      "rawSHA256": "92c24371e189b7034321b0a623458b7a18064d5c244942bf37981a55f568795e",
+      "uiFaces": 1947064,
+      "uiVertices": 1018289,
+      "visualReview": "Browser preview has continuous masonry and coherent battlements; native shading/placement still pending.",
+      "downloadNote": "Browser event wait timed out; the expected file completed and its GLB declared byte length matches. No duplicate export request.",
+      "nativeLodTriangles": [
+        150000,
+        60000,
+        15000
+      ]
+    },
+    {
+      "asset": "FortressBrazier_v001",
+      "status": "generating",
+      "quotedCredits": 55,
+      "balanceBefore": 72710,
+      "uiModel": "H3.1 \u2013 Best Quality",
+      "privacy": "Private",
+      "texture8K": false,
+      "reference": "ArtSource/Fortress20261103/References/iron-brazier-v1.png",
+      "utc": "2026-11-03T10:26:24.121603+00:00",
+      "purpose": "Blind critic identified existing white chalice braziers as church furniture; replace with a functional military iron fire basket.",
+      "jobId": "43d0356a-e8bc-482d-bfa6-4afdbc02112d",
+      "balanceAfter": 72655,
+      "observedCreditDeduction": 55
     }
   ],
-  "totalObservedCredits": 165
+  "totalObservedCredits": 275
 }

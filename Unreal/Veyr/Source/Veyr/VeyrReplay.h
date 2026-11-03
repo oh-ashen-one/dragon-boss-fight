@@ -33,6 +33,7 @@ public:
     AVeyrReplay();
     bool Initialize(const FString& Mode, const FString& EvidenceDirectory);
     bool IsShowcase() const { return ReplayMode==TEXT("showcase"); }
+    bool IsPresentationOnly() const { return IsShowcase()||ReplayMode==TEXT("environment"); }
     static bool GetPendingRestartRequest(FString& OutMode, FString& OutEvidenceDirectory);
     virtual void Tick(float DeltaSeconds) override;
 protected:
@@ -41,6 +42,10 @@ private:
     UPROPERTY() TObjectPtr<AVeyrKnight> Knight;
     UPROPERTY() TObjectPtr<AVeyrDragon> Dragon;
     UPROPERTY() TObjectPtr<ACameraActor> HealInspectionCamera;
+    UPROPERTY() TObjectPtr<ACameraActor> EnvironmentCamera;
+    int32 EnvironmentShot=INDEX_NONE,EnvironmentSweepFailures=0,EnvironmentFloorFailures=0;
+    bool bEnvironmentProbed=false;
+    void TickEnvironmentTour();
     FString ReplayMode, RunDirectory, OutcomeReason;
     bool bInitialized=false, bFinished=false, bFinalSaved=false, bPassed=false, bQuit=false;
     bool bPerformanceMode=false;

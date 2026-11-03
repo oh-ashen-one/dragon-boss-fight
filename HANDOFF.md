@@ -1,3 +1,30 @@
+# Blind map review round 1 — 2026-11-03
+
+**Goal active; not shippable.** Independent blind Claude Opus5.5 high opened all19 requested images. A=legacy, B=fortress. **Clear winner B; DO NOT SHIP; BOTH FAIL.** Estimated CLI cost $0.8079124 (not invoice). Exact report/mapping/receipt in docs/master-goal-20261103. No motion or audio verdict claimed from these stills.
+
+R1 Shipping app `/private/tmp/veyr-verified-bundle-895jzvyq/Veyr-Mac-Shipping.app` (package100043Z, source1582597d...) passed all20 showcase segments and an eight-view architecture tour with0 clearance/0 floor failures. Same-build legacy tour found6 clearance failures,0 floor failures; preserved as a failed baseline, not reinterpreted as a pass. Full films are encoded or finishing under outputs/fortress-master-20261103; review page8813 update pending.
+
+Required R2: murals currently look like framed displays with grey strips and excessive illumination; move the paint onto actual stone faces with an aged blend into masonry. Improve iron portcullis, replace white chalice braziers with military fire baskets, remove flat dais/unsupported gallery appearance, improve wide framing/depth and dry paving. Preserve clear combat floor and native characters. Do not call style compliance a quality pass.
+
+Brazier Tripo job43d0356a-e8bc-482d-bfa6-4afdbc02112d is generating (55 credits; total275 observed). Two additional built-in references generated: iron-brazier-v1.png and dry-paving-v1.png. Existing four mural paintings remain good source art; integration is the defect. No new animation/native motion acceptance. Continue remaining combat scope after this map revision, never mark whole goal complete for map-only work.
+
+---
+
+# Fortress integration continuation — 2026-11-03, 10:00 UTC checkpoint
+
+**Full goal still active and incomplete.** No blind Opus verdict yet for this map. Two internal map pilots passed all 20 showcase segments but were visually rejected: first had flat blank panels/dark murals; second improved mural lighting but blue untextured curtain-wall finish looked worse. Changed approach to a fourth, dedicated textured masonry module; do not revive the flat tint experiment.
+
+- Four browser Tripo jobs now downloaded and native-imported, 55 credits each, **220 credits total**. Gate, mural-frame bay, square watchtower, solid curtain wall. All use native 150k/60k/15k LODs. Character definitions and source map hashes preserved. No top-up/subscription.
+- Eleven built-in images retained (3 scene references, 4 modular references, 4 distinct murals). Actual image model unreported; never claim verified GPT Image 2.5.
+- New -VeyrFortress remains opt-in. Complete court has four mural bays and twelve towers, no old church facades/nave ribs/shrines/chandeliers/roof blocks. Fourth wall replaces the failed blank-panel reuse. Camera/clearance/visual acceptance on this version is pending.
+- New `environment` replay compiles: eight architecture views including four mural closeups, read-only pawn sweeps/floor traces, no combat/victory claim or HUD. Latest editor compile passes; Shipping packaging Local/package-20261103T100043Z is in progress. Check its receipt and current jobs before launching.
+- Current comparison page port8813 still shows baseline/gate probe; full map films `fortress-pilot.mp4` and `fortress-lit-pilot.mp4` are encoded privately. Do not label these rejected pilots final. LatestShipping still points to accepted slmpyfnq audio build.
+- Forward Mixamo run retargeted from the correct explicit source. Three source-trajectory/no-stretch contact corrections prepared in Local/AttackSources20261103/LocomotionContacts. Source-only diagnostic improves one-hand stop; two-hand stop still has a large foot-speed issue. Nothing imported/promoted. Upper/lower source composition or a different stop approach remains to evaluate. Native transitions and blind quality still required.
+- New movement diagnostics are read-only CPU analysis, not native acceptance. Remaining running/leap, sprint/stop, heal, light attack and both-grip balance scope is unchanged.
+- Source checkpoints 4599e57 and cadd052 pushed to authorized knight branch; wiki checkpoint673c249 pushed to its task branch. Subsequent curtain/lighting/tour work pending the next checkpoint. No main push/merge. Cleanup removed gate probe app and redundant package copies; retain accepted build and current candidate only after new receipt/source verification.
+
+---
+
 # Active master goal — 2026-11-03, fortress checkpoint
 
 **Goal active; full brief incomplete, no deadline.** The owner activated MASTER_GOAL.md. Current work is the fortress overhaul; remaining combat work is still running/leap contacts, sprint/stop, healing, light attacks and balance. Do not confuse this checkpoint with final acceptance.

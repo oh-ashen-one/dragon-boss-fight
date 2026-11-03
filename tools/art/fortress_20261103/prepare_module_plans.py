@@ -4,7 +4,7 @@ import hashlib,json,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3];sys.path.insert(0,str(ROOT/'tools/unreal'))
 from import_tripo_static import validate_plan
-JOBS={'FortressMuralWall':'dae875fb-0070-4d01-81ee-d507fad80753','FortressWatchtower':'caa99309-020d-44fe-8271-c1d036d62c0b'}
+JOBS={'FortressMuralWall':'dae875fb-0070-4d01-81ee-d507fad80753','FortressWatchtower':'caa99309-020d-44fe-8271-c1d036d62c0b','FortressCurtainWall':'5c6df4b4-3cd8-4b29-8fea-429fbdd657b9'}
 def main():
     plan_path=ROOT/'Local/ArtPass20261025/Tripo/import-plan.json';plan=json.loads(plan_path.read_text())
     for name,job in JOBS.items():

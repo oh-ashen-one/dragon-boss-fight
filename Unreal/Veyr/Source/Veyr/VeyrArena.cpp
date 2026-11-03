@@ -593,6 +593,8 @@ void AVeyrArena::BuildCourtTerrain()
     Box(Foundations,FVector(12500,0,850),FVector(6000,20000,1500));
     KitWallRun(TEXT("RockRetainingWall"),FVector(-11000,9000,0),FVector(11000,9000,0),FVector(0,-1,0),1400,-400,false);
     KitWallRun(TEXT("RockRetainingWall"),FVector(9500,-10000,0),FVector(9500,10000,0),FVector(-1,0,0),2000,-400,false);
+    if(!bFortressCandidate)
+    {
     for(int32 Row=0;Row<2;++Row)for(int32 I=-3;I<=3;++I)
     {
         const float Height=1600.f+((I+Row+8)%3)*200.f;
@@ -606,12 +608,13 @@ void AVeyrArena::BuildCourtTerrain()
         KitPiece(TEXT("RuinedGatehouse"),FVector(12500,4500,1600),3200,-90,false);
         ImportedPiece(CathedralFacadeMesh,TEXT("FarCityCathedralSpire"),FVector(1500,13600,1000),4200,180,true);
     }
+    }
     for(float Side:{-1.f,1.f})
     {
         for(int32 I=0;I<5;++I)
             KitPiece(TEXT("CollapsedVaultRubble"),FVector(-5500+I*2500.f,Side*5800.f,-100.f),250.f+(I%2)*65.f,I*57.f,false);
         KitPiece(TEXT("AncientDeadTree"),FVector(6100,Side*5800,-100),1100,Side*80,false);
-        KitPiece(TEXT("RuinedCityRoofBlock"),FVector(-6500,Side*4800,-100),1800,Side*90,false);
+        if(!bFortressCandidate)KitPiece(TEXT("RuinedCityRoofBlock"),FVector(-6500,Side*4800,-100),1800,Side*90,false);
     }
 }
 
@@ -649,6 +652,7 @@ void AVeyrArena::BuildDistance()
     for(float Side:{-1.f,1.f})
     {
         for(float X:{-3300.f,0.f,3300.f})Brazier(FVector(X,Side*3980.f,0));
+        if(bFortressCandidate)for(float X:{-1200.f,1200.f})Brazier(FVector(X,Side*3900.f,0));
         for(float Y:{-2400.f,2400.f})Brazier(FVector(Side*4300.f,Y,0));
         Brazier(FVector(-4550,Side*750.f,AisleHeight));
     }
@@ -665,12 +669,12 @@ void AVeyrArena::BuildLighting()
     // Only the moon drives forward/translucent lighting. Keeping priorities
     // distinct avoids the competing-directional-lights warning seen in PIE001.
     Moon->SetForwardShadingPriority(1);
-    Moon->SetIntensity(2.7f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
+    Moon->SetIntensity(bFortressCandidate?3.6f:2.7f); Moon->SetLightColor(FLinearColor(.63f, .76f, 1.f), false);
     Moon->SetCastShadows(true); Moon->SetLightSourceAngle(8.f); Moon->SetSpecularScale(.65f); Moon->RegisterComponent();
     auto* Fill = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeNeutralFrontFill"));
     AddInstanceComponent(Fill); Fill->SetupAttachment(GetRootComponent()); Fill->SetMobility(EComponentMobility::Movable);
     Fill->SetForwardShadingPriority(0);
-    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(1.35f);
+    Fill->SetRelativeRotation(FRotator(-20, 0, 0)); Fill->SetIntensity(bFortressCandidate?1.8f:1.35f);
     Fill->SetLightColor(FLinearColor(.86f, .90f, 1.f), false); Fill->SetCastShadows(false); Fill->SetSpecularScale(.45f); Fill->RegisterComponent();
 
     auto* DragonRim=NewObject<UDirectionalLightComponent>(this,TEXT("DragonSilverEdge"));
@@ -716,7 +720,7 @@ void AVeyrArena::BuildLighting()
     Ambient->SourceType=SLS_CapturedScene;
     Ambient->SetRealTimeCapture(false);
     Ambient->SkyDistanceThreshold=50000.f;
-    Ambient->SetIntensity(1.15f);Ambient->SetLightColor(FLinearColor(.92f,.96f,1.f));
+    Ambient->SetIntensity(bFortressCandidate?2.3f:1.15f);Ambient->SetLightColor(FLinearColor(.92f,.96f,1.f));
     Ambient->SetLowerHemisphereColor(FLinearColor(.025f,.035f,.05f));Ambient->RegisterComponent();
 
     auto* Fog = NewObject<UExponentialHeightFogComponent>(this, TEXT("PrototypeDrownedCathedralMist"));
@@ -739,7 +743,7 @@ void AVeyrArena::BuildLighting()
     Grade->Settings.bOverride_AutoExposureApplyPhysicalCameraExposure = true; Grade->Settings.AutoExposureApplyPhysicalCameraExposure = false;
     // Restrained fixed exposure preserves the night palette without pumping
     // when fire or the giant fills the frame. Verify this balance in native PIE.
-    Grade->Settings.bOverride_AutoExposureBias = true; Grade->Settings.AutoExposureBias = -.25f;
+    Grade->Settings.bOverride_AutoExposureBias = true; Grade->Settings.AutoExposureBias = bFortressCandidate?0.f:-.25f;
     Grade->Settings.bOverride_BloomIntensity = true; Grade->Settings.BloomIntensity = .18f;
     Grade->Settings.bOverride_VignetteIntensity = true; Grade->Settings.VignetteIntensity = .12f;
     Grade->RegisterComponent();

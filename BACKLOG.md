@@ -7,7 +7,7 @@ BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called d
 
 ## New map requirement — 2026-11-03 (active; incomplete)
 
-Owner wants the map substantially improved using built-in image generation (requested GPT Image 2.5) for references and wall murals, plus Tripo **via browser control** for 3D assets. Target: gothic fortress/war-court, **not a church**. Build toward the selected references in the actual playable arena. Full scope, execution and acceptance criteria are in MASTER_GOAL.md; short activation is in GOAL_PROMPT.md. References and four mural textures now exist; gate native import and a scoped showcase probe pass. Full fortress assembly, mural placement, blind review and gameplay regression remain unfinished. See the active checkpoint at the top of HANDOFF.md.
+Owner wants the map substantially improved using built-in image generation (requested GPT Image 2.5) for references and wall murals, plus Tripo **via browser control** for 3D assets. Target: gothic fortress/war-court, **not a church**. Build toward the selected references in the actual playable arena. Full scope, execution and acceptance criteria are in MASTER_GOAL.md; short activation is in GOAL_PROMPT.md. The full opt-in fortress and four murals are implemented; 20/20 showcase coverage and a clear-floor inspection pass. First blind Opus review clearly preferred the fortress but returned DO NOT SHIP: poster-like mural integration, gate/brazier finish and composition need revision. Combat regression and the remaining animation backlog remain unfinished. See the active checkpoint at the top of HANDOFF.md.
 
 ## Audio scope update — 2026-11-03
 

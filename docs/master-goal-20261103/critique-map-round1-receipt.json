@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "estimatedCostUSD": 0.8079124000000001,
+  "estimateNotInvoice": true,
+  "readToolsVerified": 19,
+  "scope": "Independent blind still-image environment review. No motion or audio listening claim."
+}

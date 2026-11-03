@@ -1,6 +1,7 @@
 #include "VeyrArena.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SpotLightComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
 
@@ -13,7 +14,7 @@ namespace
 bool AVeyrArena::LoadFortressKit()
 {
     FortressMeshCount=0;FortressMuralMaterials.Reset();
-    for(const TCHAR* Name:{TEXT("FortressGatehouse"),TEXT("FortressMuralWall"),TEXT("FortressWatchtower")})
+    for(const TCHAR* Name:{TEXT("FortressGatehouse"),TEXT("FortressMuralWall"),TEXT("FortressWatchtower"),TEXT("FortressCurtainWall")})
     {
         const FString Path=FString::Printf(TEXT("/Game/ArtPass/Tripo/%s_v001/SM_%s_v001.SM_%s_v001"),Name,Name,Name);
         UStaticMesh* Mesh=LoadObject<UStaticMesh>(nullptr,*Path,nullptr,LOAD_Quiet|LOAD_NoWarn);
@@ -29,8 +30,8 @@ bool AVeyrArena::LoadFortressKit()
         UMaterialInterface* Material=LoadObject<UMaterialInterface>(nullptr,*Path,nullptr,LOAD_Quiet|LOAD_NoWarn);
         if(Material)FortressMuralMaterials.Add(Material);
     }
-    bFortressAssetsReady=FortressMeshCount==3&&FortressMuralMaterials.Num()==4;
-    if(!bFortressAssetsReady)UE_LOG(LogTemp,Error,TEXT("VEYR_FORTRESS_MISSING meshes=%d/3 muralMaterials=%d/4"),FortressMeshCount,FortressMuralMaterials.Num());
+    bFortressAssetsReady=FortressMeshCount==4&&FortressMuralMaterials.Num()==4;
+    if(!bFortressAssetsReady)UE_LOG(LogTemp,Error,TEXT("VEYR_FORTRESS_MISSING meshes=%d/4 muralMaterials=%d/4"),FortressMeshCount,FortressMuralMaterials.Num());
     return bFortressAssetsReady;
 }
 
@@ -48,6 +49,17 @@ void AVeyrArena::FortressMuralBay(const FVector& Anchor,float Height,float Yaw,i
     Piece->SetCollisionProfileName(TEXT("BlockAll"));Piece->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     Piece->SetGenerateOverlapEvents(false);Piece->SetCanEverAffectNavigation(false);
     Piece->SetWalkableSlopeOverride(FWalkableSlopeOverride(WalkableSlope_Unwalkable,0.f));Piece->RegisterComponent();
+    // Light originates at the visible brazier added by BuildDistance. Matte
+    // pigments respond to actual illumination; there is no emissive mural boost.
+    const FVector Inward=Rotation.RotateVector(FVector(0,1,0));
+    const FVector Lamp=Anchor+Inward*600.f+FVector(0,0,190.f-FortressFloorZ);
+    const FVector Aim=Anchor+Inward*100.f+FVector(0,0,Height*.43f);
+    auto* Light=NewObject<USpotLightComponent>(this,FName(*FString::Printf(TEXT("FrescoBrazierLight%02d"),MuralIndex+1)));
+    AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
+    Light->SetRelativeLocation(Lamp);Light->SetRelativeRotation((Aim-Lamp).Rotation());
+    Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(1200.f);
+    Light->SetLightColor(FLinearColor(1.f,.70f,.40f));Light->SetAttenuationRadius(2100.f);
+    Light->SetInnerConeAngle(35.f);Light->SetOuterConeAngle(55.f);Light->SetSourceRadius(30.f);Light->SetCastShadows(false);Light->RegisterComponent();
     ++FortressMuralCount;++ConnectedCourtInstanceCount;++ImportedArchitecturePieces;
 }
 
@@ -66,7 +78,7 @@ bool AVeyrArena::BuildFortressCourt()
         {
             const FVector Anchor(-3600.f+Bay*2400.f,Side*FortressHalfY,FortressFloorZ);
             if(Bay==1||Bay==2)FortressMuralBay(Anchor,WallHeight,Yaw,SideIndex*2+Bay-1);
-            else KitPiece(TEXT("FortressMuralWall"),Anchor,WallHeight,Yaw,true,true);
+            else KitPiece(TEXT("FortressCurtainWall"),Anchor,WallHeight,Yaw,true,true);
         }
         // The existing measured stairs still meet the original 144.2cm gallery.
         const float StairHeight=PolishMeshes.FindChecked(TEXT("ProcessionalStair"))->GetBoundingBox().GetSize().Z;
@@ -88,7 +100,7 @@ bool AVeyrArena::BuildFortressCourt()
         const float GateHalf=GateSize.X*.5f-70.f;
         KitPiece(TEXT("FortressGatehouse"),FVector(Side*FortressHalfX,0,FortressFloorZ),Height,Yaw,true,true);
         for(float End:{-1.f,1.f})
-            KitWallRun(TEXT("FortressMuralWall"),FVector(Side*FortressHalfX,End*GateHalf,0),
+            KitWallRun(TEXT("FortressCurtainWall"),FVector(Side*FortressHalfX,End*GateHalf,0),
                 FVector(Side*FortressHalfX,End*FortressHalfY,0),FVector(-Side,0,0),WallHeight,FortressFloorZ);
         Box(Foundations,FVector(Side*(FortressHalfX+GateSize.Y*.5f),0,FortressFloorZ*.5f-60.f),
             FVector(GateSize.Y+120.f,GateSize.X+120.f,FortressFloorZ+120.f));
@@ -121,7 +133,7 @@ void AVeyrArena::BuildFortressSkyline()
     {
         const float Y=Side*6500.f;
         KitWallRun(TEXT("RockRetainingWall"),FVector(-7200,Y,0),FVector(7200,Y,0),FVector(0,-Side,0),2000,-200,false);
-        KitWallRun(TEXT("FortressMuralWall"),FVector(-6500,Y,0),FVector(6500,Y,0),FVector(0,-Side,0),1800,1700,false);
+        KitWallRun(TEXT("FortressCurtainWall"),FVector(-6500,Y,0),FVector(6500,Y,0),FVector(0,-Side,0),1800,1700,false);
         for(int32 I=0;I<3;++I)
         {
             KitPiece(TEXT("FortressWatchtower"),FVector(-5800.f+I*5800.f,Y+Side*350.f,0),4100.f+(I%2)*900.f,Side*90.f,false);
