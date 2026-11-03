@@ -1,0 +1,18 @@
+{
+  "measurements": [
+    {
+      "file": "VeyrMix-639292782714670000.wav",
+      "peak": 0.1009521484375,
+      "rms": 0.003721071407198906,
+      "samplesAtOrAboveFullScale": 0
+    },
+    {
+      "file": "VeyrMix-639292783519940000.wav",
+      "peak": 0.0,
+      "rms": 0.0,
+      "samplesAtOrAboveFullScale": 0
+    }
+  ],
+  "audioCaptureAccepted": false,
+  "failure": "Most of capture is silent due background mute. Do not use as sound quality acceptance."
+}

@@ -45,6 +45,15 @@ void AVeyrGameMode::StartPlay()
         FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioCaptureSeconds="),MixCaptureDuration);
         MixCaptureDuration=FMath::Clamp(MixCaptureDuration,10.f,120.f);
         MixCaptureName=FString::Printf(TEXT("VeyrMix-%lld"),FDateTime::UtcNow().GetTicks());
+        if(!MixCaptureDirectory.IsEmpty())
+        {
+            // Shipping ignores command-line ini overrides. A background QA
+            // recording must not silently inherit the normal unfocused mute.
+            PreviousUnfocusedVolume=FApp::GetUnfocusedVolumeMultiplier();
+            FApp::SetUnfocusedVolumeMultiplier(1.f);
+            FApp::SetVolumeMultiplier(1.f);
+            bCaptureBackgroundOverride=true;
+        }
     }
     if(GConfig)
     {
@@ -226,5 +235,11 @@ void AVeyrGameMode::FinishMixCapture()
 }
 void AVeyrGameMode::EndPlay(const EEndPlayReason::Type Reason)
 {
-    FinishMixCapture();Super::EndPlay(Reason);
+    FinishMixCapture();
+    if(bCaptureBackgroundOverride)
+    {
+        FApp::SetUnfocusedVolumeMultiplier(PreviousUnfocusedVolume);
+        bCaptureBackgroundOverride=false;
+    }
+    Super::EndPlay(Reason);
 }

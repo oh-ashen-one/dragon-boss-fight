@@ -33,12 +33,17 @@ public:
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 RecordedCuesLoaded=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") bool bMusicLoaded=false;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") bool bAmbienceLoaded=false;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") bool bOwnerScoreLoaded=false;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 MusicStarts=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") float MusicStartWorldSeconds=-1.f;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 PlayerPainCues=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 DragonVocalCues=0;
 
 protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Roll, Blink, Footstep, Wing, Roar, Break, Count };
+    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Roll, Blink, Footstep, Wing, Roar, Break, PlayerPain, DragonGrowl, Count };
     static constexpr int32 VoiceCount = 12;
     static constexpr int32 CueCount = static_cast<int32>(ECue::Count);
     static constexpr int32 SampleRate = 24000;
@@ -52,11 +57,13 @@ private:
     UPROPERTY(Transient) TArray<TObjectPtr<USoundWaveProcedural>> BedWaves;
     TArray<uint8> BedPCM[2];
     int32 BedOffsets[2]={};
+    int32 BedSampleRates[2]={24000,24000},BedChannels[2]={1,1};
     float VoiceLevels[VoiceCount]={};
     bool VoiceFollowsDragon[VoiceCount]={};
     int32 LastRolls=0,LastBlinks=0;
     float FootstepClock=0.f,WingClock=0.f,RoarClock=8.f;
     bool bAudioPolish=false,bFootNearFloor[2]={false,false},bRoarCuePlayed=false,bDrinkCuePlayed=false;
+    bool bFishVocalsLoaded=false;
     FVector LastPlayerPosition=FVector::ZeroVector;
     float PreviousWingHeight=0.f,PreviousWingVelocity=0.f,MusicDuckGain=1.f,MusicEnvelope=0.f;
     double MusicDuckUntil=-1.;

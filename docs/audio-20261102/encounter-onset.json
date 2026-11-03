@@ -1,0 +1,16 @@
+{
+  "run": "native-stance-20261103T050829Z",
+  "sourceId": "bed9cdcb1257484cd6063bd6dfa9d23e31ef09b3fde00109b157dda2a7b5b50d",
+  "preEntrySamples": 34,
+  "preEntryMusicStarts": [
+    0
+  ],
+  "postEntrySamples": 33,
+  "postEntryMusicStarts": [
+    1
+  ],
+  "onsetPassed": true,
+  "fullStancePassed": false,
+  "fullStanceReason": "stance comparison requires exactly one actual leg contact; head/extra contact invalidates trial",
+  "scope": "Audio entry gate only. The broader stance combat test fails its leg-only contact requirement and is not claimed passed."
+}

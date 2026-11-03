@@ -1,0 +1,41 @@
+{
+  "checkedFiles": [
+    {
+      "path": "tools/audio/fish_cue.py",
+      "sha256": "e987f5efe1cd115bd22e5f1ceb19aed6a5ba005ee98953d1df5e63cea3580248",
+      "credentialBytesAbsent": true
+    },
+    {
+      "path": "tools/audio/prepare_score.py",
+      "sha256": "f9837ff32238bb30bbaf383c6ee7b3748e199d48ee47a1ec28c0710e2f03dc8a",
+      "credentialBytesAbsent": true
+    },
+    {
+      "path": "tools/audio/prepare_fish_cues.py",
+      "sha256": "64ed9ff698b7ffa04e46e4552c934c54d103af80d433f9bc40424d501b19dcd0",
+      "credentialBytesAbsent": true
+    },
+    {
+      "path": "Unreal/Veyr/Content/Audio/OwnerScore20261102/Music.pcm",
+      "sha256": "a0cd4b6e1bd5017f1d7a41b4e19069d9b15d11146a66ad3b6ea96601543c1e30",
+      "credentialBytesAbsent": true
+    },
+    {
+      "path": "Unreal/Veyr/Content/Audio/Fish20261102/PlayerPain.pcm",
+      "sha256": "fbd67d017ed13a517ffac0f5c49d251066c7fa7162ba0159bf8e5727fade5c50",
+      "credentialBytesAbsent": true
+    },
+    {
+      "path": "Unreal/Veyr/Content/Audio/Fish20261102/DragonGrowl.pcm",
+      "sha256": "f7f14e577cd85f42658c7707ba45a05aabf1f320eae5c7a39f67eb2cb330858b",
+      "credentialBytesAbsent": true
+    },
+    {
+      "path": "Unreal/Veyr/Content/Audio/Fish20261102/Roar.pcm",
+      "sha256": "1330071ab126b6258f03756613d388126a14603e3d21384bcc5d3718b019d52d",
+      "credentialBytesAbsent": true
+    }
+  ],
+  "sourceMetadata": "PCM has no metadata; input MP3 is excluded from Git.",
+  "scope": "Exact runtime credential bytes in changed scripts and prepared audio plus staged/history Gitleaks custom-rule scan recorded separately."
+}

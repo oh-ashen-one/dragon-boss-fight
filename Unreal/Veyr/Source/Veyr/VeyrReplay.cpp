@@ -316,6 +316,12 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     {
         O->SetNumberField(TEXT("recordedCuesLoaded"),SnapshotMode->Audio->RecordedCuesLoaded);
         O->SetBoolField(TEXT("musicLoaded"),SnapshotMode->Audio->bMusicLoaded);
+        O->SetBoolField(TEXT("ownerScoreLoaded"),SnapshotMode->Audio->bOwnerScoreLoaded);
+        O->SetNumberField(TEXT("musicStarts"),SnapshotMode->Audio->MusicStarts);
+        O->SetNumberField(TEXT("musicStartWorldSeconds"),SnapshotMode->Audio->MusicStartWorldSeconds);
+        O->SetBoolField(TEXT("encounterEntered"),Knight->HasEnteredEncounter());
+        O->SetNumberField(TEXT("playerPainCues"),SnapshotMode->Audio->PlayerPainCues);
+        O->SetNumberField(TEXT("dragonVocalCues"),SnapshotMode->Audio->DragonVocalCues);
         O->SetBoolField(TEXT("ambienceLoaded"),SnapshotMode->Audio->bAmbienceLoaded);
     }
     O->SetStringField(TEXT("connectedCourtDiagnostic"),SnapshotArena?SnapshotArena->ConnectedCourtDiagnostic:TEXT("Arena missing"));

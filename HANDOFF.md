@@ -1,3 +1,20 @@
+# Current audio delivery — 2026-11-03, Codex
+
+Owner narrowed audio to **one supplied boss OST, dragon vocal sounds and one player hit moan**, then explicitly required the existing local Fish API instead of browser automation. This audio task does not resume the cleared overnight goal.
+
+- `Untitled.mp3` (149.6 s) decoded to stereo 48 kHz PCM16 with timing/arrangement/gain unchanged. Music begins from sample zero on encounter entry, stops at death and restarts fresh. Existing volume controls remain.
+- Direct Fish Drama 3 API generated one licensed deep-bass roar/growl take and one pain take. Prepared **2.5 s roar**, **3.36 s growl**, **one 0.53 s pain grunt** (first utterance only). No player dialogue or extra soundtrack generated. Dragon fire/takeoff calls and bite/stagger growls are event-driven; player uses the same pain clip on unblocked hits.
+- API/ASR estimates total **$0.00623** at documented promotion pricing; not an invoice. No top-up/subscription. Prompts, public voice IDs, source hashes, trim recipe, level checks and spend: `docs/audio-20261102/`. Credential stays private/runtime-only; no key in source or build.
+- Latest Shipping: `/private/tmp/veyr-verified-bundle-gqdp02we/Veyr-Mac-Shipping.app`; receipt `Local/package-20261103T045805Z/receipt.json`; source `bed9cdcb1257484cd6063bd6dfa9d23e31ef09b3fde00109b157dda2a7b5b50d`. `Local/LatestShipping.json` points to this tested build. Mac launcher `tools/unreal/play_shipping.sh` passes its signature check; gameplay was tested by the existing CLI native runner. No Windows claim.
+- Same-build native before/after victory **74.830 / 74.861 s**, restart checks passed. Full game-mix recording has signal in every 5-second combat window and **zero clipped samples**. Owner-selected score loaded; four dragon vocal cues and one player pain cue observed, one music start per world. `final-mix-{before,after}.json` records exact scope.
+- Onset probe: **34 pre-entry samples with zero music starts; 33 post-entry samples with exactly one start**. Broader stance replay failed its unrelated leg-only contact requirement; do not claim all stance tests passed. Exact `encounter-onset.json`.
+- Found and fixed test-only background muting: Shipping ignored the ini command-line override. Explicit capture mode now temporarily overrides background gain and restores it on EndPlay. Ordinary play behavior unchanged. Earlier mostly-silent recordings are rejected and retained separately.
+- Watch/listen: **http://localhost:8812/**, files under chat `outputs/veyr-audio-20261102/`. Before/after videos include the game master mix; no microphone/system audio. Sound quality remains owner listening acceptance; ASR/levels are not an Opus listening verdict.
+- Source and derived raw music/vocals remain ignored/private; source repo contains reproducible tools, provenance and hashes. Preserve the original supplied MP3 and local masters. Pending final push/cleanup receipts will supersede historical build paths below.
+- Pre-existing deletion `Local/knight-review-20261028/critique-round2.md` belongs to other work; left unstaged and untouched.
+
+---
+
 # Final cutoff state — 2026-11-02 09:00 America/New_York
 
 **Full goal incomplete.** Only retained task-owned app: `/private/tmp/veyr-verified-bundle-1qepc1gn/Veyr-Mac-Shipping.app`. Latest package `Local/package-20261102T134559Z/receipt.json`; victory **71.879 s**, restart checks pass. Core passed on preceding package (only subsequent code change is opt-in observer camera). Filmed default victories 78.793 s / 25.145 s remain available.

@@ -1,0 +1,58 @@
+{
+  "calls": [
+    {
+      "model": "drama-3",
+      "voice": "f09bb6b7e2404b39849082708a3d0b75",
+      "text": "[An enormous ancient dragon, purely animal vocalization, no words. A deep gravelly inhalation, then a terrifying resonant guttural roar that swells for three seconds and falls into a rough low growl. Dry isolated recording, no music, no background sounds.] [roaring] Rrrraaaaarrrgh! [low rumbling growl] Grrrrrrr.",
+      "utf8Bytes": 313,
+      "estimatedUSDAtPublishedListPrice": 0.01565,
+      "estimatedUSDAtLaunchPromotion": 0.00313,
+      "submittedUTC": "2026-11-03T04:42:20.601296+00:00",
+      "status": "completed",
+      "billingNote": "Estimate from published byte pricing, not an invoice.",
+      "bytes": 655404,
+      "sha256": "8831e283a51daea5819e9aeb450477d9ff74633a9f0013378d35293298363f20"
+    },
+    {
+      "model": "drama-3",
+      "voice": "bf322df2096a46f18c579d0baa36f41d",
+      "text": "[A single short, involuntary grunt of pain from an adult male knight struck hard in the ribs. Dry, rough, restrained, no words, no pleasure, no theatrical scream, no background sound.] [groaning] Ugh!",
+      "utf8Bytes": 200,
+      "estimatedUSDAtPublishedListPrice": 0.01,
+      "estimatedUSDAtLaunchPromotion": 0.002,
+      "submittedUTC": "2026-11-03T04:44:25.118005+00:00",
+      "status": "completed",
+      "billingNote": "Estimate from published byte pricing, not an invoice.",
+      "bytes": 192556,
+      "sha256": "049011961f17c2bb7a05a09f6f1d487d6e252333020b392921e53eb0b1254f24"
+    },
+    {
+      "kind": "speech-content check",
+      "text": "<|speaker:0|> [a powerful roar echoes through the air] [groan]",
+      "duration": 7.4304375,
+      "segments": [],
+      "estimatedUSD": 0.0007999999999999999,
+      "scope": "Speech-content screening only, not subjective sound quality."
+    },
+    {
+      "kind": "speech-content check",
+      "text": "<|speaker:0|> [painful] Ah! Ah!",
+      "duration": 2.1826875,
+      "segments": [
+        {
+          "end": 1.28,
+          "start": 1.28,
+          "text": "Ah"
+        },
+        {
+          "end": 1.84,
+          "start": 1.28,
+          "text": "Ah"
+        }
+      ],
+      "estimatedUSD": 0.00030000000000000003
+    }
+  ],
+  "billing": "Published byte/duration estimates, not verified invoice charges. No subscriptions or top-ups.",
+  "totalEstimatedUSD": 0.00623
+}

@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "victorySeconds": 71.33815002441406,
+  "sourceId": "31c78c24708922fe0a97787988b6bf952f422ef7effc001a7845efdb6053e3d9",
+  "ownerScoreLoaded": true,
+  "maximumDragonVocalCues": 3,
+  "maximumPlayerPainCues": 1,
+  "maximumMusicStartsPerWorld": 1,
+  "scoreStartLagSeconds": 0.0,
+  "mixPeakFirst12Seconds": 0.1357647329568863,
+  "reviewScope": "Content match, onset and cue execution verified; no subjective listening approval claimed.",
+  "scoreMatchCorrelationFirst10Seconds": 0.37035417556762695,
+  "audioOnsetScope": "Negative lag means the music began slightly before master-recording capture; bounded full correlation permits either offset.",
+  "audioCaptureAccepted": false,
+  "failure": "Background app mute made audio silent after 10.45 seconds; gameplay/cue counters passed but sustained audio is unverified. Capture-only runtime override added; recapture required."
+}

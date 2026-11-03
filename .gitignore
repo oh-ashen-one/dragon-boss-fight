@@ -52,3 +52,7 @@ Unreal/Veyr/Content/UI/MoonlitB/
 
 # Reproducible licensed audio, retained in private asset release.
 Unreal/Veyr/Content/Audio/Overhaul/*.pcm
+
+# Owner-supplied music and generated vocal masters use acquisition receipts.
+Unreal/Veyr/Content/Audio/OwnerScore20261102/
+Unreal/Veyr/Content/Audio/Fish20261102/

@@ -1,0 +1,11 @@
+{
+  "sourceName": "Untitled.mp3",
+  "sourceSHA256": "0b827c319b325f015c9dc58ee0e7a0f4f70c2a97ea50b9a2c2103464d16a97ed",
+  "outputSHA256": "a0cd4b6e1bd5017f1d7a41b4e19069d9b15d11146a66ad3b6ea96601543c1e30",
+  "sampleRate": 48000,
+  "channels": 2,
+  "format": "signed 16-bit little-endian PCM",
+  "durationSeconds": 149.6,
+  "processing": "Decode/resample only; no trim, tempo, gain, loop crossfade or arrangement changes. Source metadata and cover image omitted.",
+  "provenance": "Owner supplied soundtrack and explicitly selected it for Veyr. Raw/distributable music is not published in the public source repository."
+}

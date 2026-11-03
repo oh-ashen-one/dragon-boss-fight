@@ -59,5 +59,7 @@ private:
     double MixCaptureStarted=0;
     float MixCaptureDuration=30.f;
     bool bMixCaptureFinished=false;
+    bool bCaptureBackgroundOverride=false;
+    float PreviousUnfocusedVolume=0.f;
     void FinishMixCapture();
 };

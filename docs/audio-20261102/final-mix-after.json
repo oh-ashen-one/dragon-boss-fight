@@ -1,0 +1,87 @@
+{
+  "run": "native-victory-20261103T050123Z",
+  "sourceId": "bed9cdcb1257484cd6063bd6dfa9d23e31ef09b3fde00109b157dda2a7b5b50d",
+  "gameplayPassed": true,
+  "victorySeconds": 74.86135864257812,
+  "mixDuration": 78.4,
+  "windows": [
+    {
+      "start": 0,
+      "rms": 0.014912956394255161,
+      "peak": 0.13487814366817474
+    },
+    {
+      "start": 5,
+      "rms": 0.01245043147355318,
+      "peak": 0.10310906171798706
+    },
+    {
+      "start": 10,
+      "rms": 0.009258969686925411,
+      "peak": 0.09380649775266647
+    },
+    {
+      "start": 15,
+      "rms": 0.010999064892530441,
+      "peak": 0.12223827093839645
+    },
+    {
+      "start": 20,
+      "rms": 0.0317518524825573,
+      "peak": 0.19748400151729584
+    },
+    {
+      "start": 25,
+      "rms": 0.017253657802939415,
+      "peak": 0.1279161274433136
+    },
+    {
+      "start": 30,
+      "rms": 0.009956234134733677,
+      "peak": 0.09497278928756714
+    },
+    {
+      "start": 35,
+      "rms": 0.01178942620754242,
+      "peak": 0.12225435674190521
+    },
+    {
+      "start": 40,
+      "rms": 0.024214433506131172,
+      "peak": 0.14278699457645416
+    },
+    {
+      "start": 45,
+      "rms": 0.012067790143191814,
+      "peak": 0.12940992414951324
+    },
+    {
+      "start": 50,
+      "rms": 0.00814163126051426,
+      "peak": 0.0565311461687088
+    },
+    {
+      "start": 55,
+      "rms": 0.02679794654250145,
+      "peak": 0.14640875160694122
+    },
+    {
+      "start": 60,
+      "rms": 0.011885285377502441,
+      "peak": 0.13030356168746948
+    },
+    {
+      "start": 65,
+      "rms": 0.011720027774572372,
+      "peak": 0.12915697693824768
+    }
+  ],
+  "sustainedAudioPassed": true,
+  "clippedSamples": 0,
+  "maximumMusicStartsPerWorld": 1,
+  "maximumDragonVocalCues": 4,
+  "maximumPlayerPainCues": 1,
+  "ownerScoreLoaded": true,
+  "scope": "Technical output continuity and runtime behavior; not subjective listening approval.",
+  "passed": true
+}

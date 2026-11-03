@@ -1,0 +1,38 @@
+[
+  {
+    "cue": "Roar",
+    "sourceName": "DragonRoar.wav",
+    "sourceSHA256": "8831e283a51daea5819e9aeb450477d9ff74633a9f0013378d35293298363f20",
+    "outputSHA256": "1330071ab126b6258f03756613d388126a14603e3d21384bcc5d3718b019d52d",
+    "trimStartSeconds": 0.0,
+    "trimDurationSeconds": 2.5,
+    "sampleRate": 24000,
+    "channels": 1,
+    "processing": "Natural silence split, 8ms/40ms edge fades, peak limiter; no pitch shifting.",
+    "qualityScope": "ASR identified a roar/groan in source; technical checks do not replace owner listening."
+  },
+  {
+    "cue": "DragonGrowl",
+    "sourceName": "DragonRoar.wav",
+    "sourceSHA256": "8831e283a51daea5819e9aeb450477d9ff74633a9f0013378d35293298363f20",
+    "outputSHA256": "f7f14e577cd85f42658c7707ba45a05aabf1f320eae5c7a39f67eb2cb330858b",
+    "trimStartSeconds": 3.77,
+    "trimDurationSeconds": 3.36,
+    "sampleRate": 24000,
+    "channels": 1,
+    "processing": "Natural silence split, 8ms/40ms edge fades, peak limiter; no pitch shifting.",
+    "qualityScope": "ASR identified a roar/groan in source; technical checks do not replace owner listening."
+  },
+  {
+    "cue": "PlayerPain",
+    "sourceName": "PlayerPain.wav",
+    "sourceSHA256": "049011961f17c2bb7a05a09f6f1d487d6e252333020b392921e53eb0b1254f24",
+    "outputSHA256": "fbd67d017ed13a517ffac0f5c49d251066c7fa7162ba0159bf8e5727fade5c50",
+    "trimStartSeconds": 0.0,
+    "trimDurationSeconds": 0.53,
+    "sampleRate": 24000,
+    "channels": 1,
+    "processing": "Natural silence split, 8ms/40ms edge fades, peak limiter; no pitch shifting.",
+    "qualityScope": "ASR identified a roar/groan in source; technical checks do not replace owner listening."
+  }
+]
