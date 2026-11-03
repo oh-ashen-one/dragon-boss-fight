@@ -1,0 +1,57 @@
+{
+  "asset": "Coastal Cliff 01",
+  "sourceURL": "https://polyhaven.com/a/coastal_cliff_01",
+  "licenseURL": "https://polyhaven.com/license",
+  "apiTermsURL": "https://github.com/Poly-Haven/Public-API/blob/master/ToS.md",
+  "license": "CC0",
+  "authors": [
+    "Rob Tuytel",
+    "Rico Cilliers"
+  ],
+  "priceUSD": 0,
+  "files": [
+    {
+      "file": "coastal_cliff_01_4k.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/coastal_cliff_01/coastal_cliff_01_4k.gltf",
+      "bytes": 2825,
+      "md5": "25bc1756f311d07e321aafe07f8c03f7",
+      "sha256": "ee4e85571511dcfc5190633b01e5dae1d0e0d47b92dd7e047d24ff963e995b96"
+    },
+    {
+      "file": "coastal_cliff_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/coastal_cliff_01/coastal_cliff_01.bin",
+      "bytes": 13179840,
+      "md5": "d9f1e368b18c018e158d06ab9d924646",
+      "sha256": "6833dfaf75e0d039e64bc09ad642c4be3361739f20048af32ad50fd8e6471a65"
+    },
+    {
+      "file": "textures/coastal_cliff_01_diff_4k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/4k/coastal_cliff_01/coastal_cliff_01_diff_4k.jpg",
+      "bytes": 7803431,
+      "md5": "14298d23d36e717111e2f6a208f61565",
+      "sha256": "1e293dc27f85e6c02dfe5a3bc70c2c40ec8ae2b65f8b785549269b9b2e3aa856"
+    },
+    {
+      "file": "textures/coastal_cliff_01_arm_4k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/4k/coastal_cliff_01/coastal_cliff_01_arm_4k.jpg",
+      "bytes": 7590209,
+      "md5": "b92548e874e430a44cf9dc0c40c941a8",
+      "sha256": "a9f3bec30dc9c235d5688a6c23c70e680fbad9b14794776367e1455d3669f08c"
+    },
+    {
+      "file": "textures/coastal_cliff_01_nor_gl_4k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/4k/coastal_cliff_01/coastal_cliff_01_nor_gl_4k.jpg",
+      "bytes": 9866914,
+      "md5": "e962b55e2917e36969889f6d265ec688",
+      "sha256": "7ebc705a0ebd7e04e6f4e43a9091c1b0799f17fb8caf83db0e1f5c1ca7bb8e22"
+    }
+  ],
+  "nativeImported": true,
+  "nativeAsset": "/Game/ArtPass/Tripo/PolyHavenCoastalCliff_v001/SM_PolyHavenCoastalCliff_v001",
+  "actualInputTriangles": 461824,
+  "nativeLODTargets": [
+    150000,
+    60000,
+    15000
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "nativePropertiesVerified": true,
+  "sourcePixelsEdited": false,
+  "textures": [
+    {
+      "asset": "/Game/ArtPass/FortressMaterials/v001/T_FortressFloor.T_FortressFloor",
+      "before": {
+        "CompressionSettings": "TC_EditorIcon",
+        "MipGenSettings": "TMGS_NoMipmaps",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      },
+      "after": {
+        "CompressionSettings": "TC_Default",
+        "MipGenSettings": "TMGS_FromTextureGroup",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      }
+    },
+    {
+      "asset": "/Game/ArtPass/FortressMurals/v001/T_Mural01.T_Mural01",
+      "before": {
+        "CompressionSettings": "TC_EditorIcon",
+        "MipGenSettings": "TMGS_NoMipmaps",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      },
+      "after": {
+        "CompressionSettings": "TC_Default",
+        "MipGenSettings": "TMGS_FromTextureGroup",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      }
+    },
+    {
+      "asset": "/Game/ArtPass/FortressMurals/v001/T_Mural02.T_Mural02",
+      "before": {
+        "CompressionSettings": "TC_EditorIcon",
+        "MipGenSettings": "TMGS_NoMipmaps",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      },
+      "after": {
+        "CompressionSettings": "TC_Default",
+        "MipGenSettings": "TMGS_FromTextureGroup",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      }
+    },
+    {
+      "asset": "/Game/ArtPass/FortressMurals/v001/T_Mural03.T_Mural03",
+      "before": {
+        "CompressionSettings": "TC_EditorIcon",
+        "MipGenSettings": "TMGS_NoMipmaps",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      },
+      "after": {
+        "CompressionSettings": "TC_Default",
+        "MipGenSettings": "TMGS_FromTextureGroup",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      }
+    },
+    {
+      "asset": "/Game/ArtPass/FortressMurals/v001/T_Mural04.T_Mural04",
+      "before": {
+        "CompressionSettings": "TC_EditorIcon",
+        "MipGenSettings": "TMGS_NoMipmaps",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      },
+      "after": {
+        "CompressionSettings": "TC_Default",
+        "MipGenSettings": "TMGS_FromTextureGroup",
+        "SRGB": true,
+        "MaxTextureSize": 2048,
+        "LODGroup": "TEXTUREGROUP_World"
+      }
+    }
+  ],
+  "renderedImprovementVerified": false,
+  "scope": "Mipmapped world-texture configuration; next Shipping capture must determine visual effect.",
+  "runtimeVerified": {
+    "capture": "native-environment-20261103T134517Z",
+    "floorMaterial": "/Game/ArtPass/FortressMaterials/v001/M_FortressFloor",
+    "floorTexture": "/Game/ArtPass/FortressMaterials/v001/T_FortressFloor",
+    "mipCount": 12,
+    "whiteShapesStillPresent": true
+  },
+  "diagnosticChecker": {
+    "capture": "native-environment-20261103T135756Z",
+    "boundToExpectedFloorComponent": true,
+    "visibleChecker": true,
+    "whiteShapesAbsentWithCheckerAndBumpZero": true,
+    "scope": "Checker and bump-zero were changed together; no single-variable root-cause claim."
+  }
+}

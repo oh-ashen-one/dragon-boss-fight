@@ -87,7 +87,7 @@ private:
     FVector Focus=FVector::ZeroVector; bool bFocusValid=false;
 
     int32 SeqIndex=0; EPhase Phase=EPhase::Setup;
-    double SeqPhaseStart=0, SeqSetupStart=-1, ActionStart=0;
+    double SeqPhaseStart=0, SeqSetupStart=-1, ActionStart=0, PostReadyStarted=-1;
     int32 ActionSub=0, ActionTries=0; double ActionSubStart=0;
     float SetupStable=0.f; bool bSetupTimedOut=false, bActionIssued=false, bActionTimedOut=false, bRollUpgradeIssued=false, bRollUpgradeSeen=false;
     bool bExpectedActionSeen=false;

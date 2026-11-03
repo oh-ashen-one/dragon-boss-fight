@@ -14,7 +14,7 @@ namespace
 bool AVeyrArena::LoadFortressKit()
 {
     FortressMeshCount=0;FortressMuralMaterials.Reset();
-    for(const TCHAR* Name:{TEXT("FortressGatehouse"),TEXT("FortressPaintedWall"),TEXT("FortressWatchtower"),TEXT("FortressCurtainWall"),TEXT("FortressBrazier")})
+    for(const TCHAR* Name:{TEXT("FortressGatehouse"),TEXT("FortressPaintedWall"),TEXT("FortressWatchtower"),TEXT("FortressCurtainWall"),TEXT("FortressBrazier"),TEXT("PolyHavenCoastalCliff")})
     {
         const FString Path=FString::Printf(TEXT("/Game/ArtPass/Tripo/%s_v001/SM_%s_v001.SM_%s_v001"),Name,Name,Name);
         UStaticMesh* Mesh=LoadObject<UStaticMesh>(nullptr,*Path,nullptr,LOAD_Quiet|LOAD_NoWarn);
@@ -30,8 +30,8 @@ bool AVeyrArena::LoadFortressKit()
         UMaterialInterface* Material=LoadObject<UMaterialInterface>(nullptr,*Path,nullptr,LOAD_Quiet|LOAD_NoWarn);
         if(Material)FortressMuralMaterials.Add(Material);
     }
-    bFortressAssetsReady=FortressMeshCount==5&&FortressMuralMaterials.Num()==4;
-    if(!bFortressAssetsReady)UE_LOG(LogTemp,Error,TEXT("VEYR_FORTRESS_MISSING meshes=%d/5 muralMaterials=%d/4"),FortressMeshCount,FortressMuralMaterials.Num());
+    bFortressAssetsReady=FortressMeshCount==6&&FortressMuralMaterials.Num()==4;
+    if(!bFortressAssetsReady)UE_LOG(LogTemp,Error,TEXT("VEYR_FORTRESS_MISSING meshes=%d/6 muralMaterials=%d/4"),FortressMeshCount,FortressMuralMaterials.Num());
     return bFortressAssetsReady;
 }
 
@@ -113,29 +113,15 @@ bool AVeyrArena::BuildFortressCourt()
 void AVeyrArena::BuildFortressSkyline()
 {
     if(!bFortressAssetsReady)return;
-    // Grounded stepped curtain walls and offset watchtowers make an inhabited
-    // fortified skyline. The entire overhead combat/flight corridor stays open.
-    for(float Side:{-1.f,1.f})
+    // A single northern defensive gallery connects its towers to real supports.
+    // The lower masonry encloses the support; the upper walkway is paved.
+    Box(Foundations,FVector(0,7100,500),FVector(8400,1800,1000));
+    KitWallRun(TEXT("FortressCurtainWall"),FVector(-4200,6200,0),FVector(4200,6200,0),FVector(0,-1,0),1200,0,false);
+    Box(Floor,FVector(0,6500,1002),FVector(8400,800,4));
+    KitWallRun(TEXT("FortressCurtainWall"),FVector(-4200,6700,0),FVector(4200,6700,0),FVector(0,-1,0),1800,1000,false);
+    for(float X:{-3800.f,3800.f})
     {
-        const float Y=Side*6500.f;
-        KitWallRun(TEXT("RockRetainingWall"),FVector(-7200,Y,0),FVector(7200,Y,0),FVector(0,-Side,0),2000,-200,false);
-        KitWallRun(TEXT("FortressCurtainWall"),FVector(-6500,Y,0),FVector(6500,Y,0),FVector(0,-Side,0),1800,1700,false);
-        for(int32 I=0;I<3;++I)
-        {
-            KitPiece(TEXT("FortressWatchtower"),FVector(-5800.f+I*5800.f,Y+Side*350.f,0),4100.f+(I%2)*900.f,Side*90.f,false);
-            ++FortressTowerCount;
-        }
-    }
-    KitPiece(TEXT("FortressGatehouse"),FVector(14500,700,1550),4200,90,false,true);
-    for(float Side:{-1.f,1.f})
-    {
-        KitPiece(TEXT("FortressWatchtower"),FVector(15000,Side*5200.f,1300),5200.f+(Side>0?700.f:0.f),90,false);
+        KitPiece(TEXT("FortressWatchtower"),FVector(X,7200,0),X>0?4800.f:4200.f,180,false);
         ++FortressTowerCount;
     }
-    // Iron gallery detail belongs behind the northern mural wall, not above
-    // the player's camera. Existing approved stone and iron materials reused.
-    Box(Foundations,FVector(-1200,4900,1450),FVector(7800,600,80));
-    for(float X=-5000.f;X<=2600.f;X+=240.f)
-        Box(Bronze,FVector(X,4820,1760),FVector(14,14,240));
-    for(float Z:{1660.f,1880.f})Box(Bronze,FVector(-1200,4820,Z),FVector(7800,18,18));
 }

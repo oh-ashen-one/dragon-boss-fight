@@ -14,25 +14,30 @@
     {
       "id": "tripo",
       "requirement": "Browser-generated modular 3D assets downloaded, verified, imported and used",
-      "status": "in_progress",
+      "status": "five_browser_jobs_native_imported_quality_pending",
       "evidence": [
-        "tripo-spend.json"
+        "tripo-spend.json",
+        "native-modules.json"
       ]
     },
     {
       "id": "murals",
       "requirement": "At least four distinct generated secular wall murals integrated and viewed",
-      "status": "native_materials_created_placement_and_visual_review_pending",
+      "status": "four_integrated_native_viewed_two_blind_rounds_rejected",
       "evidence": [
         "native-murals.json",
-        "image-files.json"
+        "native-finish-materials.json",
+        "blind-map-round2-mapping.json"
       ]
     },
     {
       "id": "arena",
       "requirement": "Playable gothic fortress; no church/cathedral reading; readable combat/camera",
-      "status": "unverified",
-      "evidence": []
+      "status": "R3_collision_pass_visual_self_review_rejected_floor_lighting",
+      "evidence": [
+        "round2-state.json",
+        "pbr-floor-native.json"
+      ]
     },
     {
       "id": "running_leap",
@@ -43,14 +48,19 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "unverified",
-      "evidence": []
+      "status": "v040_imported_phase_matched_pilot_all_four_sequences_fail_disabled",
+      "evidence": [
+        "locomotion-native.json",
+        "sprint-phase-pilot.json"
+      ]
     },
     {
       "id": "healing",
       "requirement": "Sourced drink with convincing cup tilt/contact and transitions",
-      "status": "unverified",
-      "evidence": []
+      "status": "v041_native_imported_before_after_mechanics_capture_in_progress_disabled",
+      "evidence": [
+        "heal-native.json"
+      ]
     },
     {
       "id": "attack_polish",
@@ -107,10 +117,10 @@
     "flag": "VeyrFortress",
     "editorCompile": true,
     "shippingPackage": true,
-    "candidateApp": "/private/tmp/veyr-verified-bundle-duvmbwpe/Veyr-Mac-Shipping.app",
-    "nativeGameplayVerified": "Non-combat showcase20/20 and architecture tour8/8 only; no final combat victory claim",
+    "candidateApp": "/private/tmp/veyr-verified-bundle-kt6q0wmk/Veyr-Mac-Shipping.app",
+    "nativeGameplayVerified": "R3 architecture tour8/8; zero clearance/floor failures. No final combat victory claim.",
     "blindQualityAccepted": false,
-    "blindVerdict": "Round2: clear winner B, DO NOT SHIP, BOTH FAIL; floor/backdrop are high-priority defects"
+    "blindVerdict": "R1/R2 preferred fortress but DO NOT SHIP. R3 internally rejected for still-flat floor; no R3 critic yet."
   },
   "mapApproachChange": "After two rejected blind rounds: inspect runtime floor binding, use licensed scanned support assets where useful, replace disconnected backdrop with a connected foundation."
 }

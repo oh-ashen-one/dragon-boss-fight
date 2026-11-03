@@ -247,6 +247,7 @@ void AVeyrKnight::BeginPlay()
     bSourcedHeal=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedHeal"));
     bSourcedMoves=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedMoves"));
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
+    bLocomotionPhaseMatch=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrLocomotionPhaseMatch"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
@@ -295,6 +296,9 @@ float AVeyrKnight::VisualClipDuration(FName Name,float Fallback) const
 }
 float AVeyrKnight::VisualClipSpeed(FName Name) const
 {
+    if(bLocomotionPhaseMatch)
+        if(const FLocomotionPhaseCache* Cached=LocomotionPhaseCache.Find(Name))
+            if(Cached->NominalSpeed>1.f)return Cached->NominalSpeed*VisualClipPlayRate(Name);
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
     if(C&&FMath::IsFinite(C->NominalSpeedCmPerSecond)&&C->NominalSpeedCmPerSecond>1.f)return C->NominalSpeedCmPerSecond;
     const float* Legacy=PresentationNominalSpeeds.Find(Name);
@@ -1124,6 +1128,8 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         return false;
     }
     bImportedPresentationActive = true;
+    if(bLocomotionPhaseMatch&&!BuildLocomotionPhaseCache())
+    {SetPresentationDiagnostic(TEXT("Native locomotion phase cache failed"));return false;}
     UpdateImportedPresentation();
     if (!bImportedPresentationActive || !ImportedPresentation->bPoseEvaluated) return false;
     ImportedPresentation->SetVisibility(true,true);
@@ -1301,10 +1307,15 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     {
         const float Nominal=VisualClipSpeed(Clip);
         if(Nominal<=0.f){bRequestedPresentationClipSampled=false;bPresentationUsingFallback=true;SetPresentationDiagnostic(TEXT("Missing locomotion speed: ")+Clip.ToString());return;}
-        if(LastLocomotionClip!=Clip)
+        if(LastLocomotionClip!=Clip||PresentationTransitionClip!=Clip)
         {
-            const float OldDuration=VisualClipDuration(LastLocomotionClip,1.f),NewDuration=VisualClipDuration(Clip,1.f);
-            PresentationLocomotionTime=FMath::Fmod(PresentationLocomotionTime,OldDuration)/OldDuration*NewDuration;
+            if(bLocomotionPhaseMatch&&LocomotionPhaseCache.Contains(Clip))
+                PresentationLocomotionTime=ClosestLocomotionPhase(Clip)/VisualClipPlayRate(Clip);
+            else if(LastLocomotionClip!=Clip)
+            {
+                const float OldDuration=VisualClipDuration(LastLocomotionClip,1.f),NewDuration=VisualClipDuration(Clip,1.f);
+                PresentationLocomotionTime=FMath::Fmod(PresentationLocomotionTime,OldDuration)/OldDuration*NewDuration;
+            }
             LastLocomotionClip=Clip;
         }
         PresentationLocomotionTime+=DeltaSeconds*GetPlanarSpeed()/Nominal;Time=PresentationLocomotionTime;

@@ -42,7 +42,7 @@ def main():
             else:refs=call('texture','import_file',{'folder_path':FOLDER,'asset_name':name,'source_file':str(source)})
             assert len(refs)==1 and refs[0]['refPath']==path+'.'+name
             state['textures'][key]=refs[0];save()
-        ref=state['textures'][key];props(ref,{'SRGB':True,'AddressX':'TA_Clamp','AddressY':'TA_Clamp','PowerOfTwoMode':'StretchToPowerOfTwo','MaxTextureSize':2048})
+        ref=state['textures'][key];props(ref,{'SRGB':True,'AddressX':'TA_Clamp','AddressY':'TA_Clamp','PowerOfTwoMode':'StretchToPowerOfTwo','MaxTextureSize':2048,'CompressionSettings':'TC_Default','MipGenSettings':'TMGS_FromTextureGroup'})
         tag(ref,hashes[i-1]);state.setdefault('textureSizes',{})[key]=call('texture','get_size',{'texture':ref});save()
     if 'material' not in state:
         name='M_FortressMural';path=FOLDER+'/'+name

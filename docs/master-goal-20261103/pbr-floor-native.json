@@ -1,0 +1,23 @@
+{
+  "completed": true,
+  "material": {
+    "refPath": "/Game/ArtPass/FortressMaterials/v002/M_FortressFloor.M_FortressFloor"
+  },
+  "textures": {
+    "albedo": {
+      "refPath": "/Game/ArtPass/FortressMaterials/v002/T_FloorAlbedo.T_FloorAlbedo"
+    },
+    "normal": {
+      "refPath": "/Game/ArtPass/FortressMaterials/v002/T_FloorNormal.T_FloorNormal"
+    },
+    "roughness": {
+      "refPath": "/Game/ArtPass/FortressMaterials/v002/T_FloorRoughness.T_FloorRoughness"
+    }
+  },
+  "sourceHashes": {
+    "albedo": "8442da3364bf1884a19830d6689e8b5fd1cde00aab33f03d999d762a3c4930f0",
+    "normal": "a66fb67afb6436c8c72f85eee6466a55d6707c0dd9dce86cf48daaa94feebbc5",
+    "roughness": "f9da62eeffb7841951444245d67674953778d1ea8efdab0a3904c2f094f56d06"
+  },
+  "visualQualityAccepted": false
+}

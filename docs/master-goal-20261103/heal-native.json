@@ -1,0 +1,13 @@
+{
+  "version": "v041heal",
+  "nativePoseVerification": {
+    "definition": "/Game/Characters/Customuse/KnightB/v041heal/DA_KnightB",
+    "report": "Local/CustomuseImports/native-pose-proof-KnightB-v041heal.json",
+    "passed": true,
+    "samples": 336
+  },
+  "runtimeDefinitionActivated": true,
+  "featureDefaultEnabled": false,
+  "runtimeFlag": "VeyrSourcedHeal",
+  "qualityAccepted": false
+}

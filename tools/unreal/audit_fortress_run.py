@@ -7,7 +7,7 @@ d=json.loads(a.evidence.read_text());s=d.get('latest',{});issues=[]
 if not all(d.get(k) for k in ['finished','passed','finalWrite']):issues.append('Native scenario incomplete or failed')
 for k in ['fortressCandidate','fortressAssetsReady','connectedCourtAssetsReady']:
  if s.get(k) is not True:issues.append(k+' absent or false')
-for k,n in [('fortressMeshCount',5),('fortressMuralCount',4),('fortressTowerCount',12),('breakablePropCount',8)]:
+for k,n in [('fortressMeshCount',6),('fortressMuralCount',4),('fortressTowerCount',6),('breakablePropCount',8)]:
  if s.get(k)!=n:issues.append(k+' count mismatch')
 if d.get('presentationAssets',{}).get('importedCathedral'):issues.append('Legacy cathedral unexpectedly active')
 if s.get('overhaulAssetsReady'):issues.append('Legacy overhaul readiness incorrectly claimed')

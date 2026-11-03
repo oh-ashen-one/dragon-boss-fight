@@ -83,7 +83,7 @@ def main():
  if 'floorTexture' not in state:
   assert not call('asset','exists',{'path':FLOOR+'/T_FortressFloor'})
   refs=call('texture','import_file',{'folder_path':FLOOR,'asset_name':'T_FortressFloor','source_file':str(source)});assert len(refs)==1;state['floorTexture']=refs[0];save()
- props(state['floorTexture'],{'SRGB':True,'AddressX':'TA_Wrap','AddressY':'TA_Wrap','PowerOfTwoMode':'StretchToPowerOfTwo','MaxTextureSize':2048});tag(state['floorTexture'])
+ props(state['floorTexture'],{'SRGB':True,'AddressX':'TA_Wrap','AddressY':'TA_Wrap','PowerOfTwoMode':'StretchToPowerOfTwo','MaxTextureSize':2048,'CompressionSettings':'TC_Default','MipGenSettings':'TMGS_FromTextureGroup'});tag(state['floorTexture'])
  if 'floorMaterial' not in state:
   assert not call('asset','exists',{'path':FLOOR+'/M_FortressFloor'})
   assert call('asset','duplicate',{'path':'/Game/ArtPass/Floor/M_CathedralFloor_v001','new_path':FLOOR+'/M_FortressFloor'}) is True

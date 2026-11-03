@@ -45,6 +45,7 @@ private:
     UPROPERTY() TObjectPtr<ACameraActor> EnvironmentCamera;
     int32 EnvironmentShot=INDEX_NONE,EnvironmentSweepFailures=0,EnvironmentFloorFailures=0;
     bool bEnvironmentProbed=false;
+    FString EnvironmentFloorProbeSummary;
     void TickEnvironmentTour();
     FString ReplayMode, RunDirectory, OutcomeReason;
     bool bInitialized=false, bFinished=false, bFinalSaved=false, bPassed=false, bQuit=false;

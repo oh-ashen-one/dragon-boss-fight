@@ -6,6 +6,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/World.h"
 
 void AVeyrReplay::TickEnvironmentTour()
@@ -26,7 +27,15 @@ void AVeyrReplay::TickEnvironmentTour()
             const FVector Q(FMath::Cos(B)*3500.f,FMath::Sin(B)*3500.f,Half+10.f);
             FHitResult Hit;
             if(GetWorld()->SweepSingleByChannel(Hit,P,Q,FQuat::Identity,ECC_Pawn,Capsule,Query))++EnvironmentSweepFailures;
-            if(!GetWorld()->LineTraceSingleByChannel(Hit,P+FVector(0,0,300),P-FVector(0,0,500),ECC_Visibility,Query)||Hit.ImpactPoint.Z<-.5f||Hit.ImpactPoint.Z>20.f)++EnvironmentFloorFailures;
+            const bool FloorHit=GetWorld()->LineTraceSingleByChannel(Hit,P+FVector(0,0,300),P-FVector(0,0,500),ECC_Visibility,Query);
+            if(!FloorHit||Hit.ImpactPoint.Z<-.5f||Hit.ImpactPoint.Z>20.f)++EnvironmentFloorFailures;
+            if(I%12==0&&FloorHit&&Hit.GetComponent())
+            {
+                UMaterialInterface* Surface=Hit.GetComponent()->GetMaterial(0);
+                EnvironmentFloorProbeSummary+=FString::Printf(TEXT("%d:%s/%s z=%.3f material=%s; "),I,
+                    Hit.GetActor()?*Hit.GetActor()->GetName():TEXT("none"),*Hit.GetComponent()->GetName(),Hit.ImpactPoint.Z,
+                    Surface?*Surface->GetPathName():TEXT("none"));
+            }
             if(I%6==0&&GetWorld()->SweepSingleByChannel(Hit,P,FVector(-P.X,-P.Y,P.Z),FQuat::Identity,ECC_Pawn,Capsule,Query))++EnvironmentSweepFailures;
         }
         Event(TEXT("architecture_clearance_probed"),false);

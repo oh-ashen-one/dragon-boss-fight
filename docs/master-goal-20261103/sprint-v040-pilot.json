@@ -1,0 +1,85 @@
+{
+  "accepted": false,
+  "thresholdsUnchanged": true,
+  "runs": [
+    {
+      "label": "before",
+      "evidence": "Evidence/native-blendproof-20261103T140137Z/unreal-blendproof-20261103T140152Z-2744AF42/evidence.json",
+      "passed": false,
+      "sequences": [
+        {
+          "name": "SprintStop_1H",
+          "passed": false,
+          "reason": "planted_foot_slide_773cm_per_s_transition",
+          "steadySlideCmS": 206.9156036376953,
+          "transitionSlideCmS": 772.635986328125,
+          "worst": "t=4.95 L foot 27.1cm in 0.035s transition Ready clip=Run from=Idle a=0.35"
+        },
+        {
+          "name": "SprintStop_2H",
+          "passed": false,
+          "reason": "sword_hand_space_error_2.02cm,planted_foot_slide_798cm_per_s_steady",
+          "steadySlideCmS": 798.1655883789062,
+          "transitionSlideCmS": 414.13397216796875,
+          "worst": "t=17.30 R foot 28.4cm in 0.036s steady Ready clip=RunTwoHand a=1.00"
+        },
+        {
+          "name": "WalkSprintWalk_1H",
+          "passed": false,
+          "reason": "planted_foot_slide_630cm_per_s_transition",
+          "steadySlideCmS": 288.8709716796875,
+          "transitionSlideCmS": 629.5780639648438,
+          "worst": "t=29.10 R foot 21.7cm in 0.035s transition Ready clip=Walk from=Idle a=0.17"
+        },
+        {
+          "name": "WalkSprintWalk_2H",
+          "passed": false,
+          "reason": "planted_foot_slide_1130cm_per_s_transition",
+          "steadySlideCmS": 197.27481079101562,
+          "transitionSlideCmS": 1129.60205078125,
+          "worst": "t=42.89 L foot 39.9cm in 0.035s transition Ready clip=WalkTwoHand from=IdleTwoHand a=0.90"
+        }
+      ]
+    },
+    {
+      "label": "after",
+      "evidence": "Evidence/native-blendproof-20261103T140839Z/unreal-blendproof-20261103T140853Z-E48CF65D/evidence.json",
+      "passed": false,
+      "sequences": [
+        {
+          "name": "SprintStop_1H",
+          "passed": false,
+          "reason": "planted_foot_slide_800cm_per_s_transition",
+          "steadySlideCmS": 199.7360382080078,
+          "transitionSlideCmS": 800.1629638671875,
+          "worst": "t=4.96 L foot 28.0cm in 0.035s transition Ready clip=Run from=Idle a=0.35"
+        },
+        {
+          "name": "SprintStop_2H",
+          "passed": false,
+          "reason": "planted_foot_slide_1264cm_per_s_transition",
+          "steadySlideCmS": 74.55609893798828,
+          "transitionSlideCmS": 1264.3271484375,
+          "worst": "t=19.86 L foot 44.0cm in 0.035s transition Ready clip=RunTwoHandSourced from=IdleTwoHand a=0.85"
+        },
+        {
+          "name": "WalkSprintWalk_1H",
+          "passed": false,
+          "reason": "planted_foot_slide_1222cm_per_s_transition",
+          "steadySlideCmS": 207.4386444091797,
+          "transitionSlideCmS": 1221.7213134765625,
+          "worst": "t=34.99 R foot 51.5cm in 0.042s transition Ready clip=Walk from=Idle a=0.94"
+        },
+        {
+          "name": "WalkSprintWalk_2H",
+          "passed": false,
+          "reason": "planted_foot_slide_532cm_per_s_transition",
+          "steadySlideCmS": 177.90328979492188,
+          "transitionSlideCmS": 532.075927734375,
+          "worst": "t=48.72 R foot 18.7cm in 0.035s transition Ready clip=WalkTwoHand from=IdleTwoHand a=0.70"
+        }
+      ]
+    }
+  ],
+  "nextApproach": "Native pose-based entry phase matching and measured stance speeds. Prior frozen-stride foot correction remains disabled."
+}

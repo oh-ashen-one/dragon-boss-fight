@@ -250,6 +250,14 @@ private:
     bool bSourcedHeal=false;
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
+    bool bLocomotionPhaseMatch=false;
+    UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> LocomotionPoseProbe;
+    struct FLocomotionPhasePose { float Time=0.f; FVector Points[4]; };
+    struct FLocomotionPhaseCache { TArray<FLocomotionPhasePose> Poses; float NominalSpeed=0.f; };
+    TMap<FName,FLocomotionPhaseCache> LocomotionPhaseCache;
+    bool BuildLocomotionPhaseCache();
+    float ClosestLocomotionPhase(FName Clip) const;
+
     void LeapPressed();
     bool bPrimaryAttackHeld=false,bPrimaryAttackBuffered=false,bPrimaryChainActive=false,bStartingPrimaryStep=false;
     int32 PrimaryChainStep=0,PrimarySwingBase=0;

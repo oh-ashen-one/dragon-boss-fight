@@ -325,7 +325,11 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         O->SetNumberField(TEXT("environmentShot"),EnvironmentShot);
         O->SetNumberField(TEXT("environmentSweepFailures"),EnvironmentSweepFailures);
         O->SetNumberField(TEXT("environmentFloorFailures"),EnvironmentFloorFailures);
+        O->SetStringField(TEXT("environmentFloorProbeSummary"),EnvironmentFloorProbeSummary);
     }
+    O->SetStringField(TEXT("floorMaterialPath"),SnapshotArena?SnapshotArena->FloorMaterialPath:TEXT("Arena missing"));
+    O->SetStringField(TEXT("floorAlbedoPath"),SnapshotArena?SnapshotArena->FloorAlbedoPath:TEXT("Arena missing"));
+    O->SetNumberField(TEXT("floorAlbedoMipCount"),SnapshotArena?SnapshotArena->FloorAlbedoMipCount:0);
     O->SetBoolField(TEXT("fortressCandidate"),SnapshotArena&&SnapshotArena->bFortressCandidate);
     O->SetBoolField(TEXT("fortressAssetsReady"),SnapshotArena&&SnapshotArena->bFortressAssetsReady);
     O->SetNumberField(TEXT("fortressMeshCount"),SnapshotArena?SnapshotArena->FortressMeshCount:0);

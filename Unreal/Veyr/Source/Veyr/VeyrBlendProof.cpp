@@ -432,8 +432,15 @@ void FVeyrBlendProof::Drive(double Elapsed,float Dt)
     case EPhase::Action:DriveAction(Elapsed,Dt);break;
     case EPhase::PostIdle:
         Neutral();
-        if(K->Action==EVeyrKnightAction::Ready&&Elapsed-SeqPhaseStart>=GPostIdleSeconds){FinalizeSequence(Elapsed);}
-        else if(Elapsed-SeqPhaseStart>12.0)FinalizeSequence(Elapsed);
+        // Count settled idle time after the stop/action actually finishes.
+        // A longer sourced stop must not end the trial before its idle join.
+        if(K->Action==EVeyrKnightAction::Ready)
+        {
+            if(PostReadyStarted<0.)PostReadyStarted=Elapsed;
+            if(Elapsed-PostReadyStarted>=GPostIdleSeconds){PostReadyStarted=-1.;FinalizeSequence(Elapsed);}
+        }
+        else PostReadyStarted=-1.;
+        if(Phase==EPhase::PostIdle&&Elapsed-SeqPhaseStart>12.0){bActionTimedOut=true;PostReadyStarted=-1.;FinalizeSequence(Elapsed);}
         break;
     }
 }

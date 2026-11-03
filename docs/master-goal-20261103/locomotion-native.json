@@ -1,0 +1,15 @@
+{
+  "version": "v040locomotion",
+  "nativeImported": true,
+  "nativePoseVerification": {
+    "definition": "/Game/Characters/Customuse/KnightB/v040locomotion/DA_KnightB",
+    "report": "Local/CustomuseImports/native-pose-proof-KnightB-v040locomotion.json",
+    "passed": true,
+    "samples": 336
+  },
+  "runtimeDefinitionActivated": true,
+  "featureDefaultEnabled": false,
+  "runtimeFlag": "VeyrSourcedSprint",
+  "qualityAccepted": false,
+  "scope": "New clips available; default pre-existing clips/meshes retained. Native gameplay/foot and blind tests still required."
+}

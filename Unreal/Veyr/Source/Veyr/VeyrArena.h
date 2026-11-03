@@ -8,6 +8,7 @@ class UInstancedStaticMeshComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UStaticMesh;
+class UTexture2D;
 class UStaticMeshComponent;
 class APlayerController;
 class UVeyrSkeletalPresentation;
@@ -34,6 +35,9 @@ public:
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 FortressMeshCount=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 FortressMuralCount=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 FortressTowerCount=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") FString FloorMaterialPath;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") FString FloorAlbedoPath;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 FloorAlbedoMipCount=0;
     static constexpr float CombatRadius = 3600.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingBasaltCliff=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingImportedCathedral=false;
@@ -57,6 +61,7 @@ protected:
 
 private:
     UPROPERTY() TObjectPtr<UStaticMesh> CubeMesh;
+    UPROPERTY() TObjectPtr<UTexture2D> FloorUVProbeTexture;
     UPROPERTY() TObjectPtr<UStaticMesh> BasaltCliffMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> CylinderMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> SphereMesh;

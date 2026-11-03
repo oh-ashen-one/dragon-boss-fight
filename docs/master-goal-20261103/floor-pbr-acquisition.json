@@ -1,0 +1,40 @@
+{
+  "asset": "Slate Floor02",
+  "sourceURL": "https://polyhaven.com/a/slate_floor_02",
+  "licenseURL": "https://polyhaven.com/license",
+  "license": "CC0",
+  "author": "Dimitrios Savva",
+  "sourceTileWidthMetres": 2,
+  "priceUSD": 0,
+  "files": [
+    {
+      "kind": "Diffuse",
+      "file": "slate_floor_02_diff_2k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/slate_floor_02/slate_floor_02_diff_2k.jpg",
+      "bytes": 2358310,
+      "sha256": "8442da3364bf1884a19830d6689e8b5fd1cde00aab33f03d999d762a3c4930f0"
+    },
+    {
+      "kind": "nor_gl",
+      "file": "slate_floor_02_nor_gl_2k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/slate_floor_02/slate_floor_02_nor_gl_2k.jpg",
+      "bytes": 1224783,
+      "sha256": "3dc0ab6c01f0cfb5a174306140240fdd4b11fdce0e9a33e722fdf827e973ed22"
+    },
+    {
+      "kind": "Rough",
+      "file": "slate_floor_02_rough_2k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/slate_floor_02/slate_floor_02_rough_2k.jpg",
+      "bytes": 1960490,
+      "sha256": "f9da62eeffb7841951444245d67674953778d1ea8efdab0a3904c2f094f56d06"
+    },
+    {
+      "kind": "nor_dx",
+      "file": "slate_floor_02_nor_dx_2k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/slate_floor_02/slate_floor_02_nor_dx_2k.jpg",
+      "bytes": 1225477,
+      "sha256": "a66fb67afb6436c8c72f85eee6466a55d6707c0dd9dce86cf48daaa94feebbc5"
+    }
+  ],
+  "nativeImported": false
+}

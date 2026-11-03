@@ -18,6 +18,7 @@
 #include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Misc/CommandLine.h"
@@ -99,7 +100,7 @@ void AVeyrArena::BeginPlay()
     if(bFortressCandidate)
     {
         LoadFortressKit();
-        UMaterialInterface* FortressFloor=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/FortressMaterials/v001/M_FortressFloor.M_FortressFloor"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        UMaterialInterface* FortressFloor=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/FortressMaterials/v002/M_FortressFloor.M_FortressFloor"),nullptr,LOAD_Quiet|LOAD_NoWarn);
         if(FortressFloor)CathedralFloorParent=FortressFloor;
         else{bFortressAssetsReady=false;ConnectedCourtDiagnostic+=TEXT("; dry fortress floor missing");}
         bUsingAuthoredFloor=FortressFloor!=nullptr;
@@ -127,7 +128,29 @@ void AVeyrArena::BeginPlay()
     FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
     // Continue the same world-space paving through the rectangular court's
     // perimeter instead of exposing a different smooth material past the disc.
+    FString ProbeReplay;
+    if(bFortressCandidate&&FParse::Param(FCommandLine::Get(),TEXT("VeyrFloorUVProbe"))&&
+        FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ProbeReplay)&&ProbeReplay==TEXT("environment"))
+    {
+        // Diagnostic only: a known eight-cell texture distinguishes UV density
+        // from hidden geometry or material-binding problems. Never normal play.
+        FloorUVProbeTexture=UTexture2D::CreateTransient(64,64,PF_B8G8R8A8);
+        FloorUVProbeTexture->SRGB=true;
+        FColor* Pixels=static_cast<FColor*>(FloorUVProbeTexture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+        for(int32 Y=0;Y<64;++Y)for(int32 X=0;X<64;++X)Pixels[Y*64+X]=((X/8+Y/8)%2)?FColor(230,25,25):FColor(240,240,240);
+        FloorUVProbeTexture->GetPlatformData()->Mips[0].BulkData.Unlock();FloorUVProbeTexture->UpdateResource();
+        auto* Probe=UMaterialInstanceDynamic::Create(FloorMaterial,this);
+        Probe->SetTextureParameterValue(TEXT("FloorAlbedo"),FloorUVProbeTexture);
+        Probe->SetScalarParameterValue(TEXT("BumpCm"),0.f);Materials.Add(Probe);FloorMaterial=Probe;
+    }
     Floor->SetMaterial(0,FloorMaterial);
+    FloorMaterialPath=Floor->GetMaterial(0)?Floor->GetMaterial(0)->GetPathName():TEXT("missing");
+    UTexture* FloorAlbedo=nullptr;
+    if(Floor->GetMaterial(0)&&Floor->GetMaterial(0)->GetTextureParameterValue(FHashedMaterialParameterInfo(TEXT("FloorAlbedo")),FloorAlbedo)&&FloorAlbedo)
+    {
+        FloorAlbedoPath=FloorAlbedo->GetPathName();
+        if(UTexture2D* Texture=Cast<UTexture2D>(FloorAlbedo))FloorAlbedoMipCount=Texture->GetNumMips();
+    }
     auto* FoundationStone=MakeMaterial(TEXT("RecessedCourtFoundationStone"),FLinearColor(.075f,.080f,.085f),.92f);
     Foundations=MakeBatch(TEXT("ConnectedCathedralFoundations"),CubeMesh,FoundationStone);
     auto* CutStone=MakeMaterial(TEXT("RestrainedFloorCarving"),FLinearColor(.045f,.050f,.054f),.9f,false);
@@ -354,7 +377,7 @@ void AVeyrArena::BuildFloor()
     RaisedWalkableBounds.Reset();
     // The court and the ground beneath its side aisles are one connected mass.
     // Generated paving is the close surface; there is no empty 320m blue disk.
-    const float FloorHalfX=bFortressCandidate?5500.f:CourtHalfX,FloorHalfY=bFortressCandidate?5500.f:CourtHalfY;
+    const float FloorHalfX=bFortressCandidate?5100.f:CourtHalfX,FloorHalfY=bFortressCandidate?4500.f:CourtHalfY;
     Box(Floor,FVector(0,0,-20),FVector(FloorHalfX*2+100,FloorHalfY*2+100,40));
     if(!bFortressCandidate)Cylinder(FloorSurface,FVector(0,0,-4.7f),CombatRadius+60.f,10.f);
     Box(Foundations,FVector(0,0,-200),FVector(FloorHalfX*2+900,FloorHalfY*2+900,380));
@@ -376,8 +399,8 @@ void AVeyrArena::BuildFloor()
             Box(FloorCarvings,Radial(A,Radius,.45f),FVector(2.f,Radius*2.f*PI/96.f+1.f,.3f),FRotator(0,FMath::RadiansToDegrees(A),0));
         }
     }
-    // The new paving is continuous. The legacy sub-centimetre patch/disc
-    // overlaps produced bright grazing artifacts despite the dry material.
+    // Keep one continuous fortress surface. Removing the legacy overlaps
+    // did not eliminate the bright shapes; runtime material evidence is separate.
     if(!bConnectedCourtAssetsReady||bFortressCandidate)return;
     for(int32 X=-2;X<=2;++X)for(int32 Y=-2;Y<=2;++Y)
     {
@@ -595,6 +618,19 @@ void AVeyrArena::BuildCathedral()
 void AVeyrArena::BuildCourtTerrain()
 {
     if(!bConnectedCourtAssetsReady)return;
+    if(bFortressCandidate)
+    {
+        // One connected court and northern gallery sit on a continuous scanned
+        // cliff perimeter. No spare gatehouse or isolated city slabs remain.
+        if(!PolishMeshes.Contains(TEXT("PolyHavenCoastalCliff")))return;
+        Box(Foundations,FVector(0,6000,-200),FVector(11100,3900,380));
+        Box(Floor,FVector(0,6000,-20),FVector(10400,3000,40));
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,7500,-1420),1400,0,false);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,-5000,-1420),1400,180,false);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(5600,1200,-1420),1400,-90,false);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(-5600,1200,-1420),1400,90,false);
+        return;
+    }
     // Connected lower terrace and retaining cliffs replace the empty flat
     // exterior. Every city block sits on a terrain platform with a real edge.
     Box(Foundations,FVector(0,0,-310.f),FVector(15200,14000,420));
@@ -691,9 +727,11 @@ void AVeyrArena::BuildLighting()
 {
     auto* Moon = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeSoftMoonKey"));
     AddInstanceComponent(Moon); Moon->SetupAttachment(GetRootComponent()); Moon->SetMobility(EComponentMobility::Movable);
-    // The visible disc and lighting share this direction. A low moon remains
-    // in the playable camera's upper sky without violating floor framing.
-    Moon->SetRelativeRotation(FRotator(-14, -155, 0));
+    // The fortress's 18m curtain walls blocked almost the entire court with
+    // the legacy 14-degree key. A higher moon lights the playable paving and
+    // leaves perimeter shadows instead of isolated bright crenellation slits.
+    // The visible sky disc uses this same direction below.
+    Moon->SetRelativeRotation(FRotator(bFortressCandidate?-42.f:-14.f, -155, 0));
     // Only the moon drives forward/translucent lighting. Keeping priorities
     // distinct avoids the competing-directional-lights warning seen in PIE001.
     Moon->SetForwardShadingPriority(1);

@@ -5,7 +5,7 @@ from pathlib import Path
 from native_mcp import NativeMCP
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'Local/FortressModulesEditor20261103'
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--asset',action='append',choices=['FortressMuralWall','FortressWatchtower','FortressCurtainWall','FortressPaintedWall','FortressBrazier']);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--asset',action='append',choices=['FortressMuralWall','FortressWatchtower','FortressCurtainWall','FortressPaintedWall','FortressBrazier','PolyHavenCoastalCliff']);parser.add_argument('--protected-baseline',type=Path,default=ROOT/'Local/FortressEditor20261103/protected-before.json');args=parser.parse_args()
     OUT.mkdir(exist_ok=True);c=NativeMCP(timeout=900);c.initialize()
     def meta(name,args):
         r=c.request('tools/call',{'name':name,'arguments':args})
@@ -21,7 +21,9 @@ def main():
         return result
     project=call('inspect_project',{});assert Path(project['project_directory']).resolve()==ROOT/'Unreal/Veyr'
     (OUT/'project-check.json').write_text(json.dumps(project,indent=2)+'\n')
-    protected=json.loads((ROOT/'Local/FortressEditor20261103/protected-before.json').read_text())
+    assert args.protected_baseline.resolve().is_relative_to(ROOT/'Local')
+    protected=json.loads(args.protected_baseline.read_text())
+    assert set(protected)==set(json.loads((ROOT/'Local/FortressEditor20261103/protected-before.json').read_text()))
     assert all(hashlib.sha256((ROOT/p).read_bytes()).hexdigest()==v for p,v in protected.items()),'Protected assets changed before import'
     for name in args.asset or ['FortressMuralWall','FortressWatchtower']:
         receipt=OUT/(name+'-import.json')
