@@ -1,0 +1,11 @@
+{
+  "modelUsageIds": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "imageReadsVerified": 36,
+  "estimatedCostUSD": 1.1061869999999998,
+  "invoice": false,
+  "scope": "Matched front/side native pose/progression review; continuous playback not consumed",
+  "successfulImageToolResultsVerified": 36
+}

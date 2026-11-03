@@ -1,0 +1,22 @@
+{
+  "app": "/private/tmp/veyr-verified-bundle-hx1ltot0/Veyr-Mac-Shipping.app",
+  "receipt": "Local/package-20261103T155644Z/receipt.json",
+  "sourceId": "e153bd1fb86698b7964f489ceae4ca46f04801434f5e9775520d50f5c1d75afc",
+  "visualAccepted": false,
+  "runtimeVerified": false,
+  "queueLog": "Local/Fortress20261103/fortress-r4-normal-heal.log",
+  "waitingFor": "shared STREAMING flag to clear, then ordinary launch budget and GPU gate",
+  "scenarios": [
+    "environment",
+    "healing normal camera"
+  ],
+  "changes": [
+    "source paving geometry/material restored",
+    "larger cliff base and distant cliffs",
+    "larger fire baskets/perimeter rubble",
+    "soft flickering firelight and volumetric fog",
+    "recessed round iron bars with CC0 rust surface",
+    "v042 heal default with explicit baseline switch",
+    "opt-in primary-recovery candidate, default off"
+  ]
+}

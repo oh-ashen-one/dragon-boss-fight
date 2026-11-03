@@ -1,0 +1,11 @@
+{
+  "modelUsageIds": [
+    "claude-opus-5-5"
+  ],
+  "effort": "high",
+  "imageReadsVerified": 19,
+  "estimatedCostUSD": 0.7820838,
+  "invoice": false,
+  "scope": "Blind native still environment comparison and target-reference assessment, not motion/gameplay acceptance",
+  "successfulImageToolResultsVerified": 19
+}

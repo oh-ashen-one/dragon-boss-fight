@@ -9,6 +9,7 @@ class UMaterialInterface;
 class UMaterialInstanceDynamic;
 class UStaticMesh;
 class UTexture2D;
+class UPointLightComponent;
 class UStaticMeshComponent;
 class APlayerController;
 class UVeyrSkeletalPresentation;
@@ -77,6 +78,8 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInterface> PlainParent;
     UPROPERTY() TObjectPtr<UMaterialInterface> SkyParent;
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
+    UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> FortressFireLights;
+    TArray<float> FortressFireIntensities;
     UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Batches;
     UPROPERTY() TMap<FName,TObjectPtr<UStaticMesh>> PolishMeshes;
     UPROPERTY() TMap<FName,TObjectPtr<UInstancedStaticMeshComponent>> PolishBatches;

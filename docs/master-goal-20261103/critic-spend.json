@@ -11,9 +11,17 @@
     {
       "receipt": "blind-heal-v041-receipt.json",
       "estimatedCostUSD": 0.946893
+    },
+    {
+      "receipt": "critique-map-round3-receipt.json",
+      "estimatedCostUSD": 0.7820838
+    },
+    {
+      "receipt": "blind-heal-v042-receipt.json",
+      "estimatedCostUSD": 1.1061869999999998
     }
   ],
-  "totalEstimatedUSD": 2.5657344,
+  "totalEstimatedUSD": 4.4540052,
   "invoice": false,
   "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported"
 }

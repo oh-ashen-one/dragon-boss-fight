@@ -1,0 +1,122 @@
+{
+  "mapping": {
+    "A": "fortress",
+    "B": "legacy"
+  },
+  "frames": [
+    {
+      "label": "A",
+      "view": 1,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000054.png",
+      "requestedGameSeconds": 1.9933494329452515,
+      "sha256": "4b25283ba1cb72aa322290958a5c72771632de168b52e94101a62771160821a3"
+    },
+    {
+      "label": "A",
+      "view": 2,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000174.png",
+      "requestedGameSeconds": 6.00606107711792,
+      "sha256": "95c2569921c5365b11dbbaedb268079061bbcea35093adc76fda01c8d8985be4"
+    },
+    {
+      "label": "A",
+      "view": 3,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000294.png",
+      "requestedGameSeconds": 10.0026273727417,
+      "sha256": "90f206ce9bde8a42b48a2b457dadbc2e3be5a9ed84b2b120558427cec794fec2"
+    },
+    {
+      "label": "A",
+      "view": 4,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000414.png",
+      "requestedGameSeconds": 13.999907493591309,
+      "sha256": "b4357551953faa38c23b0a9032eeedbe507aa0ec386e45e033c13e7d2d335e69"
+    },
+    {
+      "label": "A",
+      "view": 5,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000534.png",
+      "requestedGameSeconds": 18.00307846069336,
+      "sha256": "6c656549c6a5cd8b9b67f15e7ce1d52bd615339a15d9801f9d3607f2358a4937"
+    },
+    {
+      "label": "A",
+      "view": 6,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000654.png",
+      "requestedGameSeconds": 22.00041389465332,
+      "sha256": "db5d58974e0cb56ad136d59821658ac1482acca2bfa7f24d7dc291fbd9add339"
+    },
+    {
+      "label": "A",
+      "view": 7,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000774.png",
+      "requestedGameSeconds": 26.002592086791992,
+      "sha256": "15553431c41bfb4a28da2f127546a3a502211845b03387b07224b5e172e25fd0"
+    },
+    {
+      "label": "A",
+      "view": 8,
+      "sourceFrame": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/native-video/frame-000894.png",
+      "requestedGameSeconds": 30.00531005859375,
+      "sha256": "70c283488fa6c32a9f7941e7b7f23430d582377bd3be6559f6dcca29d8bae38c"
+    },
+    {
+      "label": "B",
+      "view": 1,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000028.png",
+      "requestedGameSeconds": 1.9666802883148193,
+      "sha256": "ed29948e0fc7df28888875692b91c7a45e393268da3dc681d92a4a45cf7fff4a"
+    },
+    {
+      "label": "B",
+      "view": 2,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000088.png",
+      "requestedGameSeconds": 5.967474460601807,
+      "sha256": "9dd82218816077ed8b579705bb16bec2756237ccb50c30b44060b19404f983dd"
+    },
+    {
+      "label": "B",
+      "view": 3,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000148.png",
+      "requestedGameSeconds": 9.968254089355469,
+      "sha256": "73178eb70bbb952331c3d56b2c9db17dd6ac1deae79a326299f0847d92c8aca6"
+    },
+    {
+      "label": "B",
+      "view": 4,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000208.png",
+      "requestedGameSeconds": 13.96892261505127,
+      "sha256": "e834a285e86e949f20c6498beed032bfb9dad0352b57a8aec3200d3f4f934783"
+    },
+    {
+      "label": "B",
+      "view": 5,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000268.png",
+      "requestedGameSeconds": 17.96962547302246,
+      "sha256": "77ac2db5a0f3c7bfa2fef3444686b2e1a41391e21e24751327bf2e18c531cdfd"
+    },
+    {
+      "label": "B",
+      "view": 6,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000328.png",
+      "requestedGameSeconds": 21.970359802246094,
+      "sha256": "9dd1319065749e418d355bf5e34c9341c5d38259616b1719fa2100bc6e6c0cb5"
+    },
+    {
+      "label": "B",
+      "view": 7,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000388.png",
+      "requestedGameSeconds": 25.971193313598633,
+      "sha256": "da6d59c443ed000a2c4de59c3bab9c20ccee08a95362f04a3e33d0b9536dfbe7"
+    },
+    {
+      "label": "B",
+      "view": 8,
+      "sourceFrame": "Evidence/native-environment-20261103T120151Z/unreal-environment-20261103T120206Z-1DF07D61/native-video/frame-000449.png",
+      "requestedGameSeconds": 30.02192497253418,
+      "sha256": "29c071bccf5afb841c7a699feb34e4115a134a88a0e0d7bf5e076282c6e2ffd6"
+    }
+  ],
+  "afterEvidence": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/evidence.json",
+  "scope": "Same eight camera recipes as R2 legacy; unchanged baseline is hash-verified. No motion verdict."
+}

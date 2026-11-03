@@ -245,9 +245,12 @@ void AVeyrKnight::BeginPlay()
     // Mixamo downward heavy won the independent blind comparison. Keep an
     // explicit legacy switch for reproducible before/after captures.
     bSourcedTwoHandHeavy=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyTwoHandHeavy"));
-    bSourcedHeal=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedHeal"));
+    // v042 won the matched front/side visual review. Keep an explicit
+    // baseline switch for comparisons; ordinary play uses the fitted drink.
+    bSourcedHeal=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoSourcedHeal"));
     bSourcedMoves=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedMoves"));
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
+    bPrimaryRecovery=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryRecovery"));
     bLocomotionPhaseMatch=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrLocomotionPhaseMatch"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
@@ -412,7 +415,7 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
     ActionRootTravelCm=0.f;bActionRootBlocked=false;
     if(NewAction!=EVeyrKnightAction::Ready)bWasRunning=false;
     if(IsAttackAction()||IsBlinkAction()||NewAction==EVeyrKnightAction::Guard||NewAction==EVeyrKnightAction::Heal||
-       NewAction==EVeyrKnightAction::RunStop||NewAction==EVeyrKnightAction::GuardBreak||NewAction==EVeyrKnightAction::Backstep||IsChangingGrip())
+       NewAction==EVeyrKnightAction::RunStop||NewAction==EVeyrKnightAction::AttackRecovery||NewAction==EVeyrKnightAction::GuardBreak||NewAction==EVeyrKnightAction::Backstep||IsChangingGrip())
     {
         ConsumeMovementInputVector();GetCharacterMovement()->StopMovementImmediately();
     }
@@ -548,7 +551,10 @@ float AVeyrKnight::GetPrimaryStepCost(int32 Step) const
 }
 float AVeyrKnight::GetPrimaryFirstStepDuration() const
 {
-    return bTwoHanded?PrimarySegmentSourceStart(1)/VisualClipPlayRate(TEXT("LightCombo")):GetAttackDuration(false);
+    const float Strike=bTwoHanded?PrimarySegmentSourceStart(1)/VisualClipPlayRate(TEXT("LightCombo")):GetAttackDuration(false);
+    // A released combo segment is not a complete single attack. Its remaining
+    // return-to-idle time must be included when assessing a safe punish window.
+    return Strike+(bPrimaryRecovery&&bTwoHanded?FMath::Clamp(GetAttackDuration(false)-Strike,.28f,.60f):0.f);
 }
 float AVeyrKnight::GetPrimaryChainDuration() const
 {
@@ -811,10 +817,20 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
     if (ActionDuration > 0.f && ActionElapsed >= ActionDuration)
     {
         const bool ContinuePrimary=bPrimaryChainActive&&bPrimaryAttackBuffered&&PrimaryChainStep<2;
+        const bool NeedsExit=bPrimaryRecovery&&bTwoHanded&&bPrimaryChainActive&&PrimaryChainStep<2;
+        const bool Held=bPrimaryAttackHeld;
+        const float ExitSeconds=FMath::Clamp(GetAttackDuration(false)-ActionDuration,.28f,.60f);
         const int32 NextStep=PrimaryChainStep+1;
         FinishAction();
-        if(ContinuePrimary)StartPrimaryStep(NextStep);
-        else if(BufferedAttackRemaining>0.f) { if(bBufferedHeavy)TryHeavyAttack();else TryLightAttack(); }
+        const bool Continued=ContinuePrimary&&StartPrimaryStep(NextStep);
+        if(!Continued&&NeedsExit)
+        {
+            // Keep contiguous held swings intact. A release or insufficient
+            // stamina instead returns from the actual last pose into the
+            // authored idle, with no damage window or new attack during it.
+            ++PrimaryRecoveries;BeginAction(EVeyrKnightAction::AttackRecovery,ExitSeconds);bPrimaryAttackHeld=Held;
+        }
+        else if(!ContinuePrimary&&BufferedAttackRemaining>0.f) { if(bBufferedHeavy)TryHeavyAttack();else TryLightAttack(); }
     }
     const bool PassiveRecovery=Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::GripToOneHand||Action==EVeyrKnightAction::GripToTwoHand;
     if(PassiveRecovery&&RegenDelay<=0.f)Stamina=FMath::Min(100.f,Stamina+30.f*DeltaSeconds);
@@ -1388,7 +1404,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionLockOnEdge?LockOnBlendSeconds:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float BlendSeconds=Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionLockOnEdge?LockOnBlendSeconds:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float SampleTime=Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset);
     ProofBlendAlpha=Alpha;bProofBlendActive=bPresentationTransitionActive&&Alpha<1.f;
@@ -1612,7 +1628,7 @@ FVector AVeyrKnight::AuthoredRootDisplacementWorld(const FVector& Delta) const
 
 void AVeyrKnight::ApplyAuthoredRootMotion(float PreviousSeconds,float NewSeconds)
 {
-    if(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal||
+    if(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal||Action==EVeyrKnightAction::AttackRecovery||
        Action==EVeyrKnightAction::Dead||Action==EVeyrKnightAction::Stagger)return;
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
     if(!C||!C->bRootMotionRemoved||C->RootTranslationSamplesCm.Num()<2||C->RootSampleRate<=0.f)return;

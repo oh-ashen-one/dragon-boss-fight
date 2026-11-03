@@ -8,6 +8,7 @@ import os
 import plistlib
 from pathlib import Path
 import subprocess
+import time
 
 ROOT = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser(description=__doc__)
@@ -18,6 +19,7 @@ p.add_argument('--gpu-slot', type=Path, required=True)
 p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment'], required=True)
 p.add_argument('--next-mode',choices=['environment','showcase','healing'],help='One additional scenario in a fresh world, using the same owned renderer process')
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
+p.add_argument('--wait-for-stream-end',action='store_true',help='Keep this single owned request waiting while the shared streaming flag exists; still acquire the normal GPU gate afterward')
 p.add_argument('--video-fps', type=int, choices=range(1,61), help='Optional native capture cadence; adds measurable overhead')
 p.add_argument('--launch-services',action='store_true',help='Use the normal macOS app launch path; success still requires native final evidence')
 p.add_argument('--performance',action='store_true',help='Exclusive GPU lease; no screenshots/video, sparse diagnostics; audio remains enabled')
@@ -82,6 +84,14 @@ if a.start_two_handed:
     if a.mode not in ('core','victory'):p.error('--start-two-handed applies only to core/victory validation')
     cmd.append('-VeyrReplayStartTwoHanded')
 print('Native run:', run, flush=True)
+if a.wait_for_stream_end:
+    streaming=Path.home()/'.cache/gpu-slot/STREAMING'
+    if streaming.exists():print('Waiting for the shared streaming guard to clear; no renderer launched',flush=True)
+    while streaming.exists():time.sleep(30.)
+    # An unattended wait must not turn an earlier preflight into permission to
+    # launch a changed binary. GPU headroom/cap checks still happen below.
+    if not executable.is_file() or hashlib.sha256(executable.read_bytes()).hexdigest()!=json.loads((run/'launch.json').read_text())['executableSHA256']:
+        raise SystemExit('Runtime changed during the guarded wait; preserve evidence and revalidate')
 from owned_launch_budget import wait_for_budget
 wait_for_budget(ROOT)
 with (run/'launcher.log').open('w') as output:

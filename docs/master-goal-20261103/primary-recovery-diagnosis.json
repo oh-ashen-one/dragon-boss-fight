@@ -1,0 +1,137 @@
+{
+  "scope": "Historical replay diagnosis; no HP/damage change and no runtime acceptance for recovery candidate",
+  "sourceEvidence": {
+    "oneHand": "Evidence/native-victory-20261102T133800Z/unreal-victory-20261102T133820Z-59B5C5B3/evidence.json",
+    "twoHand": "Evidence/native-victory-20261102T134013Z/unreal-victory-20261102T134027Z-443395E5/evidence.json"
+  },
+  "observations": [
+    {
+      "grip": "oneHand",
+      "terminalWallSeconds": 79.44373762235045,
+      "contacts": [
+        {
+          "t": 16.074352264404297,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 605
+        },
+        {
+          "t": 20.689796447753906,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 560
+        },
+        {
+          "t": 36.24168014526367,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 515
+        },
+        {
+          "t": 40.82544708251953,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 470
+        },
+        {
+          "t": 44.39595413208008,
+          "damage": 65,
+          "clip": "LightAttack",
+          "hp": 405
+        },
+        {
+          "t": 45.475807189941406,
+          "damage": 65,
+          "clip": "LightAttack",
+          "hp": 340
+        },
+        {
+          "t": 46.912689208984375,
+          "damage": 120,
+          "clip": "HeavyAttack",
+          "hp": 220
+        },
+        {
+          "t": 54.638397216796875,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 175
+        },
+        {
+          "t": 63.55937194824219,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 130
+        },
+        {
+          "t": 68.17059326171875,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 85
+        },
+        {
+          "t": 75.22216796875,
+          "damage": 45,
+          "clip": "LightAttack",
+          "hp": 40
+        },
+        {
+          "t": 78.79264068603516,
+          "damage": 65,
+          "clip": "LightAttack",
+          "hp": 0
+        }
+      ]
+    },
+    {
+      "grip": "twoHand",
+      "terminalWallSeconds": 25.455482959747314,
+      "contacts": [
+        {
+          "t": 15.61765193939209,
+          "damage": 69.75,
+          "clip": "LightCombo",
+          "hp": 580.25
+        },
+        {
+          "t": 16.25440216064453,
+          "damage": 69.75,
+          "clip": "LightCombo",
+          "hp": 510.5
+        },
+        {
+          "t": 16.900163650512695,
+          "damage": 69.75,
+          "clip": "LightCombo",
+          "hp": 440.75
+        },
+        {
+          "t": 20.392431259155273,
+          "damage": 69.75,
+          "clip": "LightCombo",
+          "hp": 371
+        },
+        {
+          "t": 23.1627140045166,
+          "damage": 100.75,
+          "clip": "LightCombo",
+          "hp": 270.25
+        },
+        {
+          "t": 23.616100311279297,
+          "damage": 100.75,
+          "clip": "LightCombo",
+          "hp": 169.5
+        },
+        {
+          "t": 25.145305633544922,
+          "damage": 186,
+          "clip": "HeavyFinisherTwoHandSourced",
+          "hp": 0
+        }
+      ]
+    }
+  ],
+  "diagnosis": "Two-hand replay repeatedly released and restarted LightCombo step0 at approximately0.637s intervals. The first segment was only the link to swing2, with no return recovery when released. One-hand LightAttack is approximately1.44s; standalone two-hand LightAttack approximately1.20s. The1.55 damage multiplier then compounds the omitted recovery. No duplicate swing ID evidence.",
+  "candidate": "Opt-in VeyrPrimaryRecovery: a released/failed-to-chain first or second two-hand segment returns from its captured pose into authored idle for standalone attack duration minus segment duration, bounded0.28..0.60s. Held contiguous chain unchanged. Recovery has no attack windows/root motion/stamina regen. Safe-window estimate includes recovery. No numerical gate changes."
+}

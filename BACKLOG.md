@@ -5,6 +5,13 @@ better now". These are his notes for the next session, in his order, with the fa
 Start with `HANDOFF.md`, then pick items here. Each item needs a before/after the owner can watch (bare page: video plus
 BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called done.
 
+## Latest checkpoint — 2026-11-03
+
+- Healing v042 won the matched front/side blind pose review and passed actual resource mechanics. It is enabled in the next source build; normal gameplay-camera/continuous-motion scope remains pending. Do not call the entire animation backlog done.
+- Map R3 is a clear relative improvement but its third blind review still says DO NOT SHIP. R4 geometry/terrain/iron/lighting candidate is packaged and awaits the stream guard.
+- Both paired replay modes and refreshed20-move coverage pass. New2H tap-recovery fix addresses a concrete missing-recovery balance defect; it compiles but is opt-in and untested at runtime. HP remains650.
+- Sprint/stop, running/leap contacts, remaining light-foot transitions, final balance and whole-build regressions remain open. HANDOFF.md top names the single queued test and exact current builds.
+
 ## New map requirement — 2026-11-03 (active; incomplete)
 
 Owner wants the map substantially improved using built-in image generation (requested GPT Image 2.5) for references and wall murals, plus Tripo **via browser control** for 3D assets. Target: gothic fortress/war-court, **not a church**. Build toward the selected references in the actual playable arena. Full scope, execution and acceptance criteria are in MASTER_GOAL.md; short activation is in GOAL_PROMPT.md. The full opt-in fortress and four murals are implemented; 20/20 showcase coverage and a clear-floor inspection pass. Two blind Opus rounds clearly preferred the fortress but returned DO NOT SHIP. Murals improved; floor binding/finish, connected foundation/backdrop and grounded wall/gate details still need work. Combat regression and the remaining animation backlog remain unfinished. See the active checkpoint at the top of HANDOFF.md.

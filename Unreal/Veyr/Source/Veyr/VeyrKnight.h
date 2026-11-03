@@ -53,6 +53,8 @@ public:
     bool UsesSourcedHeal() const { return bSourcedHeal; }
     bool UsesSourcedMoves() const { return bSourcedMoves; }
     bool UsesSourcedSprint() const { return bSourcedSprint; }
+    bool UsesPrimaryRecovery() const { return bPrimaryRecovery; }
+    int32 PrimaryRecoveries=0;
     FString VariantTextureResidency() const;
     void TryRunningAttack();
     void TryLeapAttack();
@@ -253,6 +255,7 @@ private:
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
     bool bLocomotionPhaseMatch=false;
+    bool bPrimaryRecovery=false;
     UPROPERTY() TArray<TObjectPtr<UTexture2D>> WarmedVariantTextures;
     UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> LocomotionPoseProbe;
     struct FLocomotionPhasePose { float Time=0.f; FVector Points[4]; };

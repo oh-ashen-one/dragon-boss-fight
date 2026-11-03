@@ -1,0 +1,297 @@
+{
+  "mapping": {
+    "A": "native-healing-20261103T151836Z",
+    "B": "native-healing-20261103T152753Z"
+  },
+  "frames": [
+    {
+      "label": "A",
+      "index": 1,
+      "heal": 0,
+      "relativeSeconds": -0.1345357894897461,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000201.png",
+      "sha256": "cdac6a9102b41fd760bded4355015f9b9303510d462cc958f7108e7c83888ca2"
+    },
+    {
+      "label": "A",
+      "index": 2,
+      "heal": 0,
+      "relativeSeconds": 0.10957193374633789,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000208.png",
+      "sha256": "bb0fb0bef53dd32bee88227ae82791f25822b1dcf4a72f2ead6e7d83e69115b2"
+    },
+    {
+      "label": "A",
+      "index": 3,
+      "heal": 0,
+      "relativeSeconds": 0.3289785385131836,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000215.png",
+      "sha256": "bffbb15c364c034f4a9dccc33c4e2c867fcf23646180862922001352be90605c"
+    },
+    {
+      "label": "A",
+      "index": 4,
+      "heal": 0,
+      "relativeSeconds": 0.5961427688598633,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000223.png",
+      "sha256": "3febe4c682199a15e9d9857200248f634932cfb4f8ec53d5f889ee1cd9a9f48c"
+    },
+    {
+      "label": "A",
+      "index": 5,
+      "heal": 0,
+      "relativeSeconds": 0.8447737693786621,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000230.png",
+      "sha256": "3b295ebd2c7944571696686e7c19651268932e3facc9a110208f9c0d4a5ddb78"
+    },
+    {
+      "label": "A",
+      "index": 6,
+      "heal": 0,
+      "relativeSeconds": 1.0962324142456055,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000238.png",
+      "sha256": "ec42cc2ba9ab6c61afc46cf412035797e71060e84a81ba371ceb9b8017e62e2a"
+    },
+    {
+      "label": "A",
+      "index": 7,
+      "heal": 0,
+      "relativeSeconds": 1.3635401725769043,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000246.png",
+      "sha256": "0aab4c5a75704cdf38dad75336c2489e46260133ad73aa711803b752c6b99939"
+    },
+    {
+      "label": "A",
+      "index": 8,
+      "heal": 0,
+      "relativeSeconds": 1.598860263824463,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000253.png",
+      "sha256": "78db75eb5d151cd0fc1672157751e33dedd7f5d7ef7af8934f053c5a3d7b4263"
+    },
+    {
+      "label": "A",
+      "index": 9,
+      "heal": 0,
+      "relativeSeconds": 1.844245433807373,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000260.png",
+      "sha256": "76deb81899795fc569bd1a8311ebeb947eae9835a0ebd8fbbb24d9bdd335768a"
+    },
+    {
+      "label": "A",
+      "index": 10,
+      "heal": 0,
+      "relativeSeconds": 2.1002211570739746,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000267.png",
+      "sha256": "4f18cc851892fa55b218283e23f2c00e564bd93f48225f409fe3a5a2d71f6c2b"
+    },
+    {
+      "label": "A",
+      "index": 11,
+      "heal": 0,
+      "relativeSeconds": 2.3442025184631348,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000274.png",
+      "sha256": "07ec412f82c6c98294ed0ae1dccc346a5014fbe8067b82fe8679028ce6076799"
+    },
+    {
+      "label": "A",
+      "index": 12,
+      "heal": 0,
+      "relativeSeconds": 2.5999464988708496,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000282.png",
+      "sha256": "3c172c70c2bb7d3a464cb37c98b1221f34a78b1ad208520c2985a67d9287aab0"
+    },
+    {
+      "label": "A",
+      "index": 13,
+      "heal": 1,
+      "relativeSeconds": 0.36508846282958984,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000401.png",
+      "sha256": "1cb5b11acb99ad40077a546b411a923774147dc0960f1ad7578b11b25b7cdab4"
+    },
+    {
+      "label": "A",
+      "index": 14,
+      "heal": 1,
+      "relativeSeconds": 0.5868453979492188,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000408.png",
+      "sha256": "70f5e1f1d67fa070b8383009726e01b415f163ae96f96a7cc7188de5f21a3e41"
+    },
+    {
+      "label": "A",
+      "index": 15,
+      "heal": 1,
+      "relativeSeconds": 1.0865468978881836,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000423.png",
+      "sha256": "a4c9b39581729ef8983f06524eee5b20b11c022d1a2481355619550c96cea444"
+    },
+    {
+      "label": "A",
+      "index": 16,
+      "heal": 1,
+      "relativeSeconds": 1.5840415954589844,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000438.png",
+      "sha256": "c008331558e5ee6c0adcc49528f1df28176e31779649a8ef840fd6ee289473e4"
+    },
+    {
+      "label": "A",
+      "index": 17,
+      "heal": 1,
+      "relativeSeconds": 2.0917749404907227,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000453.png",
+      "sha256": "5db36955a5dfd935d80f758781b4ce2dec50b2e1eb1d17e173c8991329992a30"
+    },
+    {
+      "label": "A",
+      "index": 18,
+      "heal": 1,
+      "relativeSeconds": 2.365187644958496,
+      "source": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/native-video/frame-000461.png",
+      "sha256": "eca78020485f38b5cb12dabaff2a9a56ae456048b78d10abfeb176e922092e1d"
+    },
+    {
+      "label": "B",
+      "index": 1,
+      "heal": 0,
+      "relativeSeconds": -0.1478104591369629,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000200.png",
+      "sha256": "03c3778277b5956ac404ae7beeb3b8cf2b3f06f746c18f7f89dedad741826046"
+    },
+    {
+      "label": "B",
+      "index": 2,
+      "heal": 0,
+      "relativeSeconds": 0.11445474624633789,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000208.png",
+      "sha256": "f8c7e7d135b635c9d03cdd57bc5119c696baafcd287a8efb8bbcbb6e6a18e8f2"
+    },
+    {
+      "label": "B",
+      "index": 3,
+      "heal": 0,
+      "relativeSeconds": 0.3464179039001465,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000215.png",
+      "sha256": "f3c7cf7af943000c393d6b0e3e82c1b44d196930de2c900dd6dde566df8c11bd"
+    },
+    {
+      "label": "B",
+      "index": 4,
+      "heal": 0,
+      "relativeSeconds": 0.5827479362487793,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000222.png",
+      "sha256": "07d013ae85eb35bd70f7f11b30cf678b50ee678ac9c3128fbe109ea42266ab13"
+    },
+    {
+      "label": "B",
+      "index": 5,
+      "heal": 0,
+      "relativeSeconds": 0.8533473014831543,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000230.png",
+      "sha256": "e2f40efcd77a6acf4cd8a2a566d75553eb1ca800c87549704fe7d953a70feee9"
+    },
+    {
+      "label": "B",
+      "index": 6,
+      "heal": 0,
+      "relativeSeconds": 1.1144380569458008,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000238.png",
+      "sha256": "bc9878f4086ccb83ce915d2ab6d416e3c9df13d082259403d1e7e31290d9e831"
+    },
+    {
+      "label": "B",
+      "index": 7,
+      "heal": 0,
+      "relativeSeconds": 1.3520498275756836,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000245.png",
+      "sha256": "ae12dc438486d17fd08d17ede96ffab59c802c7d5dade266062f33cfba84983d"
+    },
+    {
+      "label": "B",
+      "index": 8,
+      "heal": 0,
+      "relativeSeconds": 1.5827264785766602,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000252.png",
+      "sha256": "a2efe8cc98a7645d4a9ac197bb28e5701e6f7146a6cf74122fb1f9a0710aaa05"
+    },
+    {
+      "label": "B",
+      "index": 9,
+      "heal": 0,
+      "relativeSeconds": 1.8531808853149414,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000260.png",
+      "sha256": "9d4ec44c644d6569651be3abdd1eaf9d7e8ae712f79d6ad8c1051840c72c9b02"
+    },
+    {
+      "label": "B",
+      "index": 10,
+      "heal": 0,
+      "relativeSeconds": 2.117166519165039,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000268.png",
+      "sha256": "c683a3f8fbe54043f170dbe595ca0e1c43c10c5ab39133a6738786301f4c0e28"
+    },
+    {
+      "label": "B",
+      "index": 11,
+      "heal": 0,
+      "relativeSeconds": 2.338594436645508,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000275.png",
+      "sha256": "5077fc69dbdef12da458e623ab103fe41b360a858a86dffbccff8c380f354289"
+    },
+    {
+      "label": "B",
+      "index": 12,
+      "heal": 0,
+      "relativeSeconds": 2.6087465286254883,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000283.png",
+      "sha256": "3d0f2fd60884d772134291aa98ea0f5308d5f372155cb0ba97aca6ac4f51cc50"
+    },
+    {
+      "label": "B",
+      "index": 13,
+      "heal": 1,
+      "relativeSeconds": 0.3385009765625,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000401.png",
+      "sha256": "9807dc3315db7b0bfa02f0e101720a27bef59ef895465caa82742bedbc55b863"
+    },
+    {
+      "label": "B",
+      "index": 14,
+      "heal": 1,
+      "relativeSeconds": 0.600041389465332,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000409.png",
+      "sha256": "79a2f0c60f88220eab64cb657eb79b7f8798d93acd67d8dca3e1e35cbedb20e3"
+    },
+    {
+      "label": "B",
+      "index": 15,
+      "heal": 1,
+      "relativeSeconds": 1.1108226776123047,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000424.png",
+      "sha256": "ad89853583412928e50a06022d97aa1eb547924d3b6ca7c9dfa07f7bd7c454ed"
+    },
+    {
+      "label": "B",
+      "index": 16,
+      "heal": 1,
+      "relativeSeconds": 1.5971832275390625,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000439.png",
+      "sha256": "1c4ed420e9cdad5be2e96674d97fef89675b8e4f6eb4b64ba0dc5ffd0e21a7ba"
+    },
+    {
+      "label": "B",
+      "index": 17,
+      "heal": 1,
+      "relativeSeconds": 2.1102237701416016,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000454.png",
+      "sha256": "361c84d112ecff68a6616b603c07d2a14f1173e5ca41d69cf2ef3789a6f21420"
+    },
+    {
+      "label": "B",
+      "index": 18,
+      "heal": 1,
+      "relativeSeconds": 2.33840274810791,
+      "source": "Evidence/native-healing-20261103T152753Z/unreal-healing-20261103T152808Z-BBC129D8/native-video/frame-000461.png",
+      "sha256": "579ce91f9372a51c7ce19d685d0f2b115270d32f310f682523db35e71a6ae41f"
+    }
+  ],
+  "sameSourceId": "75a2acc85011042be721a895df758719ae4ef18d779827efe57412a082834f6a"
+}

@@ -309,7 +309,7 @@ void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Ya
     FVector Scale(Uniform*WidthScale,Uniform,Uniform);
     // Preserve the full eight-metre paving footprint while burying its skirt.
     // Uniform height normalization would shrink the footprint with its depth.
-    if(Name==FName(TEXT("WornPavingPatch")))Scale.Z*=.075f;
+    if(Name==FName(TEXT("WornPavingPatch"))&&!bFortressCandidate)Scale.Z*=.075f;
     const FRotator Rotation(0,Yaw,0);
     const FVector LocalAnchor(Bounds.GetCenter().X,bFrontAnchor?Bounds.Max.Y:Bounds.GetCenter().Y,Bounds.Min.Z);
     const FTransform Transform(Rotation,Anchor-Rotation.RotateVector(LocalAnchor*Scale),Scale);
@@ -335,7 +335,7 @@ void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Ya
         // The court material uses world-position UVs. Share it across the
         // shallow generated paving so the surface continues through its edge
         // instead of looking like a differently textured rectangular rug.
-        if(Name==FName(TEXT("WornPavingPatch"))&&FloorSurface&&FloorSurface->GetMaterial(0))
+        if(Name==FName(TEXT("WornPavingPatch"))&&!bFortressCandidate&&FloorSurface&&FloorSurface->GetMaterial(0))
             for(int32 Slot=0;Slot<Mesh->GetStaticMaterials().Num();++Slot)
                 Batch->SetMaterial(Slot,FloorSurface->GetMaterial(0));
         // Other modules keep their imported PBR slots. The collision LOD uses
@@ -345,7 +345,7 @@ void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Ya
         Batch->SetGenerateOverlapEvents(false);Batch->SetCanEverAffectNavigation(false);
         if(Name!=FName(TEXT("WornPavingPatch"))&&Name!=FName(TEXT("ProcessionalStair")))
             Batch->SetWalkableSlopeOverride(FWalkableSlopeOverride(WalkableSlope_Unwalkable,0.f));
-        if(!bBlocking){Batch->SetCullDistances(26000,42000);Batch->SetCastShadow(false);}
+        if(!bBlocking){Batch->SetCullDistances(Name==FName(TEXT("PolyHavenCoastalCliff"))?80000:26000,Name==FName(TEXT("PolyHavenCoastalCliff"))?120000:42000);Batch->SetCastShadow(false);}
         Batch->RegisterComponent();Batches.Add(Batch);PolishBatches.Add(BatchName,Batch);
     }
     Batch->AddInstance(Transform);++ConnectedCourtInstanceCount;++ImportedArchitecturePieces;
@@ -390,6 +390,14 @@ void AVeyrArena::BuildFloor()
     Box(Floor,FVector(0,0,-20),FVector(FloorHalfX*2+100,FloorHalfY*2+100,40));
     if(!bFortressCandidate)Cylinder(FloorSurface,FVector(0,0,-4.7f),CombatRadius+60.f,10.f);
     Box(Foundations,FVector(0,0,-200),FVector(FloorHalfX*2+900,FloorHalfY*2+900,380));
+    if(bFortressCandidate&&bConnectedCourtAssetsReady)
+    {
+        // Reuse the sourced eight-metre stone patch with its own aligned PBR
+        // material and real joints. Its skirt is buried; at most4cm of relief
+        // remains above the continuous collision/fallback floor.
+        for(int32 X=-6;X<=6;++X)for(int32 Y=-5;Y<=5;++Y)
+            KitPiece(TEXT("WornPavingPatch"),FVector(X*800.f,Y*800.f,-4.f),8.f,((X+Y+12)%4)*90.f,true);
+    }
     // The fortress is one level continuous with its walls. Legacy galleries
     // remain available only in the historical cathedral comparison.
     if(!bFortressCandidate)
@@ -634,10 +642,15 @@ void AVeyrArena::BuildCourtTerrain()
         if(!PolishMeshes.Contains(TEXT("PolyHavenCoastalCliff")))return;
         Box(Foundations,FVector(0,6000,-200),FVector(11100,3900,380));
         Box(Floor,FVector(0,6000,-20),FVector(10400,3000,40));
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,7500,-1420),1400,0,false);
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,-5000,-1420),1400,180,false);
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(5600,1200,-1420),1400,-90,false);
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(-5600,1200,-1420),1400,90,false);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,7500,-3450),3400,0,false);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,-5000,-3450),3400,180,false);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(5600,1200,-3450),3400,-90,false);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(-5600,1200,-3450),3400,90,false);
+        // Distant, irregular cliff faces supply a landscape beyond the court.
+        // Their full nearest bounds stay outside the playable fortress.
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(-22000,42000,-10000),22000,12,false,false,.32f);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(24000,46000,-11000),27000,-20,false,false,.25f);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(42000,-12000,-9000),19000,-105,false,false,.38f);
         return;
     }
     // Connected lower terrace and retaining cliffs replace the empty flat
@@ -700,23 +713,24 @@ void AVeyrArena::BuildDistance()
     {
         const int32 I=Index++;
         if(bFortressCandidate&&PolishMeshes.Contains(TEXT("FortressBrazier")))
-            KitPiece(TEXT("FortressBrazier"),P,130.f,0.f,true);
+            KitPiece(TEXT("FortressBrazier"),P,220.f,0.f,true);
         else if(CathedralBrazierMesh)
             ImportedPiece(CathedralBrazierMesh,FName(*FString::Printf(TEXT("CourtBrazier%02d"),I)),P,180.f,0.f,false);
-        const float FlameZ=bFortressCandidate?105.f:198.f;
+        const float FlameZ=bFortressCandidate?178.f:198.f;
         if(FlameCards)
             for(int32 Cross=0;Cross<3;++Cross)
             {
-                const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,FlameZ),bFortressCandidate?FVector(.65f,.55f,1):FVector(.72f,.38f,1)));
+                const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,FlameZ),bFortressCandidate?FVector(1.1f,.9f,1):FVector(.72f,.38f,1)));
                 FlameCards->SetCustomDataValue(Instance,0,.45f,false);FlameCards->SetCustomDataValue(Instance,1,FMath::Frac(I*.618f+Cross*.23f),false);
                 FlameCards->SetCustomDataValue(Instance,2,.25f,false);FlameCards->SetCustomDataValue(Instance,3,1.f,false);
             }
         else Box(Embers,P+FVector(0,0,165),FVector(55,55,8));
         auto* Light=NewObject<UPointLightComponent>(this,*FString::Printf(TEXT("CourtAmberBrazier%02d"),I));
         AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
-        Light->SetRelativeLocation(P+FVector(0,0,bFortressCandidate?110.f:210.f));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(bFortressCandidate?240.f:190.f);
-        Light->SetLightColor(bFortressCandidate?FLinearColor(1.f,.60f,.27f):FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(bFortressCandidate?1600.f:1000.f);Light->SetSourceRadius(45.f);
+        Light->SetRelativeLocation(P+FVector(0,0,bFortressCandidate?185.f:210.f));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(bFortressCandidate?320.f:190.f);
+        Light->SetLightColor(bFortressCandidate?FLinearColor(1.f,.70f,.40f):FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(bFortressCandidate?2200.f:1000.f);Light->SetSourceRadius(bFortressCandidate?80.f:45.f);
         Light->SetCastShadows(false);Light->SetSpecularScale(.7f);Light->RegisterComponent();
+        if(bFortressCandidate){FortressFireLights.Add(Light);FortressFireIntensities.Add(320.f);}
     };
     for(float Side:{-1.f,1.f})
     {
@@ -809,7 +823,8 @@ void AVeyrArena::BuildLighting()
     Fog->SetSecondFogDensity(.015f);
     Fog->SetSecondFogHeightOffset(240.f);
     Fog->SetSecondFogHeightFalloff(1.2f);
-    Fog->SetVolumetricFog(false); // native layout baseline; no unmeasured volume cost
+    Fog->SetVolumetricFog(bFortressCandidate);
+    if(bFortressCandidate){Fog->SetVolumetricFogDistance(18000.f);Fog->SetVolumetricFogExtinctionScale(.65f);}
     Fog->RegisterComponent();
 
     auto* Grade = NewObject<UPostProcessComponent>(this, TEXT("PrototypeReadableMoonlitExposure"));
@@ -990,6 +1005,8 @@ void AVeyrArena::DamagePropsAlongSweep(const FVector& PreviousBase,const FVector
 void AVeyrArena::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);AtmosphereClock+=DeltaSeconds;
+    for(int32 I=0;I<FortressFireLights.Num();++I)if(FortressFireLights[I])
+        FortressFireLights[I]->SetIntensity(FortressFireIntensities[I]*(.94f+.04f*FMath::Sin(AtmosphereClock*2.7f+I*1.9f)+.02f*FMath::Sin(AtmosphereClock*7.3f+I)));
     auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(Mode&&Mode->Dragon&&!Mode->Dragon->IsDead())
     {

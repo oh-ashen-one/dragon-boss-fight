@@ -52,20 +52,26 @@ void AVeyrArena::FortressMuralBay(const FVector& Anchor,float Height,float Yaw,i
     // Light originates at the visible brazier added by BuildDistance. Matte
     // pigments respond to actual illumination; there is no emissive mural boost.
     const FVector Inward=Rotation.RotateVector(FVector(0,1,0));
-    const FVector Lamp=Anchor+Inward*600.f+FVector(0,0,110.f-FortressFloorZ);
+    const FVector Lamp=Anchor+Inward*600.f+FVector(0,0,185.f-FortressFloorZ);
     const FVector Aim=Anchor+Inward*100.f+FVector(0,0,Height*.43f);
     auto* Light=NewObject<USpotLightComponent>(this,FName(*FString::Printf(TEXT("FrescoBrazierLight%02d"),MuralIndex+1)));
     AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
     Light->SetRelativeLocation(Lamp);Light->SetRelativeRotation((Aim-Lamp).Rotation());
-    Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(450.f);
+    Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(180.f);
     Light->SetLightColor(FLinearColor(1.f,.70f,.40f));Light->SetAttenuationRadius(2100.f);
-    Light->SetInnerConeAngle(35.f);Light->SetOuterConeAngle(55.f);Light->SetSourceRadius(30.f);Light->SetCastShadows(false);Light->RegisterComponent();
+    Light->SetInnerConeAngle(15.f);Light->SetOuterConeAngle(80.f);Light->SetSourceRadius(80.f);Light->SetCastShadows(false);Light->RegisterComponent();
+    FortressFireLights.Add(Light);FortressFireIntensities.Add(180.f);
     ++FortressMuralCount;++ConnectedCourtInstanceCount;++ImportedArchitecturePieces;
 }
 
 bool AVeyrArena::BuildFortressCourt()
 {
     if(!bConnectedCourtAssetsReady||!bFortressAssetsReady)return false;
+    auto* Iron=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/FortressMaterials/v003/M_FortressIron.M_FortressIron"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!Iron){bFortressAssetsReady=false;ConnectedCourtDiagnostic+=TEXT("; rusted iron material missing");return false;}
+    auto* GateBars=MakeBatch(TEXT("FortressRoundedIronBars"),CylinderMesh,Iron);
+    auto* GateRails=MakeBatch(TEXT("FortressIronGateRails"),CubeMesh,Iron);
+    for(auto* Batch:{GateBars,GateRails}){Batch->SetCollisionProfileName(TEXT("BlockAll"));Batch->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);}
     Tags.Remove(TEXT("VeyrConnectedCathedralCourt"));Tags.Add(TEXT("VeyrSecularFortressCourt"));
     // Broad military walls, four fresco bays and square defensive towers replace
     // the shrine/apse/nave composition. Every permanent mass is outside the
@@ -98,14 +104,15 @@ bool AVeyrArena::BuildFortressCourt()
         // Rendered iron bars close the real generated gateway. No invisible
         // blocking slab or doorway that appears traversable but is not.
         const float DoorWidth=GateSize.X*.36f,DoorHeight=Height*.54f;
+        const float GateRecess=FMath::Clamp(static_cast<float>(GateSize.Y)*.3f,100.f,260.f);
         for(float Y=-DoorWidth*.5f;Y<=DoorWidth*.5f;Y+=65.f)
-            Box(Bronze,FVector(Side*(FortressHalfX+35.f),Y,FortressFloorZ+DoorHeight*.5f),FVector(32,32,DoorHeight));
+            Cylinder(GateBars,FVector(Side*(FortressHalfX+GateRecess),Y,FortressFloorZ+DoorHeight*.5f),12.f,DoorHeight);
         for(int32 Rail=0;Rail<4;++Rail)
-            Box(Bronze,FVector(Side*(FortressHalfX+35.f),0,FortressFloorZ+120.f+Rail*DoorHeight*.23f),FVector(38,DoorWidth+30.f,38));
+            Box(GateRails,FVector(Side*(FortressHalfX+GateRecess),0,FortressFloorZ+120.f+Rail*DoorHeight*.23f),FVector(30,DoorWidth+30.f,30));
     }
     // Limited collapsed masonry along the perimeter; no funerary statues or bell.
     for(float Side:{-1.f,1.f})for(int32 I=0;I<4;++I)
-        KitPiece(TEXT("CollapsedVaultRubble"),FVector(-3400+I*2200.f,Side*4210.f,0),120.f+(I%3)*35.f,I*61.f,true);
+        KitPiece(TEXT("CollapsedVaultRubble"),FVector(-3400+I*2200.f,Side*4210.f,0),200.f+(I%3)*45.f,I*61.f,true);
     UE_LOG(LogTemp,Display,TEXT("VEYR_FORTRESS_COURT meshes=%d murals=%d towers=%d clearDiameterCm=7200"),FortressMeshCount,FortressMuralCount,FortressTowerCount);
     return FortressMuralCount==4;
 }

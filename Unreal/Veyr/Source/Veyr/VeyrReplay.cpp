@@ -403,6 +403,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("sourcedTwoHandHeavy"),Knight->UsesSourcedHeavy());
     O->SetNumberField(TEXT("preferredHeavyStandOffCm"),Knight->PreferredHeavyStandOffCm());
     O->SetBoolField(TEXT("sourcedHeal"),Knight->UsesSourcedHeal());
+    O->SetBoolField(TEXT("primaryRecoveryEnabled"),Knight->UsesPrimaryRecovery());
+    O->SetNumberField(TEXT("primaryRecoveries"),Knight->PrimaryRecoveries);
     O->SetStringField(TEXT("variantTextureResidency"),Knight->VariantTextureResidency());
     O->SetBoolField(TEXT("sourcedMoves"),Knight->UsesSourcedMoves());
     O->SetNumberField(TEXT("runningAttacks"),Knight->RunningAttacks);

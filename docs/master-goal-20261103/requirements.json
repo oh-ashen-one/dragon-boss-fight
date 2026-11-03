@@ -33,10 +33,11 @@
     {
       "id": "arena",
       "requirement": "Playable gothic fortress; no church/cathedral reading; readable combat/camera",
-      "status": "R3_collision_pass_visual_self_review_rejected_floor_lighting",
+      "status": "R3_blind_rejected_R4_geometry_landscape_lighting_iron_packaging",
       "evidence": [
-        "round2-state.json",
-        "pbr-floor-native.json"
+        "critique-map-round3.md",
+        "round3-fortress-audit.json",
+        "iron-native.json"
       ]
     },
     {
@@ -57,12 +58,11 @@
     {
       "id": "healing",
       "requirement": "Sourced drink with convincing cup tilt/contact and transitions",
-      "status": "v042_mechanics_and_first_use_texture_capture_pass_blind_pending_disabled",
+      "status": "v042_blind_pose_pass_default_enabled_in_source_normal_view_validation_pending",
       "evidence": [
-        "heal-native.json",
-        "blind-heal-v041-review.md",
-        "blind-heal-v041-receipt.json",
-        "heal-v042-native.json"
+        "heal-v042-native.json",
+        "blind-heal-v042-review.md",
+        "blind-heal-v042-receipt.json"
       ]
     },
     {
@@ -74,8 +74,10 @@
     {
       "id": "balance",
       "requirement": "Both-grip risk/reward and measured <=150s victories",
-      "status": "unverified",
-      "evidence": []
+      "status": "diagnosed_two_hand_tap_missing_recovery_opt_in_fix_compiles_runtime_pending",
+      "evidence": [
+        "primary-recovery-diagnosis.json"
+      ]
     },
     {
       "id": "regression",
@@ -123,7 +125,7 @@
     "candidateApp": "/private/tmp/veyr-verified-bundle-61jsfhdp/Veyr-Mac-Shipping.app",
     "nativeGameplayVerified": "R3 architecture tour8/8; zero clearance/floor failures. No final combat victory claim.",
     "blindQualityAccepted": false,
-    "blindVerdict": "R1/R2 preferred fortress but DO NOT SHIP. R3 internally rejected for still-flat floor; no R3 critic yet."
+    "blindVerdict": "R3 clear fortress winner, DO NOT SHIP/BOTH FAIL. R4 in progress."
   },
   "mapApproachChange": "After two rejected blind rounds: inspect runtime floor binding, use licensed scanned support assets where useful, replace disconnected backdrop with a connected foundation."
 }

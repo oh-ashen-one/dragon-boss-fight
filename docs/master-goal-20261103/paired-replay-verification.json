@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "singleOwnedProcessGPUReceipt": "Evidence/native-healing-20261103T151836Z/gpu.json",
+  "scenarios": [
+    {
+      "mode": "environment",
+      "evidence": "Evidence/native-healing-20261103T151836Z/unreal-environment-20261103T152618Z-1AB2DE63/evidence.json",
+      "passed": true,
+      "finalWrite": true,
+      "sourceId": "75a2acc85011042be721a895df758719ae4ef18d779827efe57412a082834f6a",
+      "startPlayerHealth": 100,
+      "startHealsRemaining": 4,
+      "startBossHealth": 650
+    },
+    {
+      "mode": "healing",
+      "evidence": "Evidence/native-healing-20261103T151836Z/unreal-healing-20261103T152533Z-8770509A/evidence.json",
+      "passed": true,
+      "finalWrite": true,
+      "sourceId": "75a2acc85011042be721a895df758719ae4ef18d779827efe57412a082834f6a",
+      "startPlayerHealth": 100,
+      "startHealsRemaining": 4,
+      "startBossHealth": 650
+    }
+  ],
+  "scope": "One guarded renderer; fresh full-health/resource worlds; separate final evidence; both scenario gates passed. No visual acceptance claim."
+}

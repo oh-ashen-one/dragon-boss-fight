@@ -1,0 +1,14 @@
+{
+  "nativeImported": true,
+  "material": {
+    "refPath": "/Game/ArtPass/FortressMaterials/v003/M_FortressIron.M_FortressIron"
+  },
+  "sourceHashes": {
+    "albedo": "5b8801674fa53ff1b6f7853300f50aa7a1b31e69278554803bd957fe9fa7e392",
+    "arm": "22f10597662e8d5268f79960d23c4a03790a2083f9f05d0680c3535152b26843"
+  },
+  "license": "CC0 Poly Haven Rust Coarse01",
+  "mapping": "World Y/Z at150cm; albedo plus original AO/roughness/metallic channels; no normal-map claim",
+  "renderedVerified": false,
+  "scope": "Native project verified and all new mutations restricted to owned v003 folder by script guards"
+}
