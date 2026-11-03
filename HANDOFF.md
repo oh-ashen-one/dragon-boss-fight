@@ -6,7 +6,7 @@ Replacement uses SFXMint's dedicated CC0 creature library: **Deep Rasping Dragon
 
 Newest Shipping: `/private/tmp/veyr-verified-bundle-slmpyfnq/Veyr-Mac-Shipping.app`; package `Local/package-20261103T052934Z/receipt.json`, source `c2b4956eb6b6d2c647790feabd0b44f20cd784fc10fe7932791b567f77054524`. Native victory/restart passed **74.851 s**, sustained captured audio and zero clipping, four creature cue submissions and one player hit grunt. Rendered screenshot inspected. Technical runtime checks do not claim an independent audio listening verdict.
 
-Auditions and before/after with sound: **http://localhost:8812/dragon-replacement/**. LatestShipping.json and Mac launcher point to the replacement. The owner's previously opened gqdp02we play session is a separate live play lease; do not terminate it or delete its app while referenced. A restart into the newest build is required to hear the new source. QA instance exited cleanly; no other session processes touched.
+Auditions and before/after with sound: **http://localhost:8812/dragon-replacement/**. LatestShipping.json and Mac launcher point to the replacement. The owner's previous gqdp02we session had exited by cleanup (no process/open-file references remained); it was not terminated by this correction. Only slmpyfnq remains. Removed three obsolete app/archive/stage directories (~6.00 GiB) and redundant encoded capture frames after verification; retained movies/audio/stills/source evidence. QA exited cleanly; no other session process was touched.
 
 ---
 
