@@ -1,0 +1,20 @@
+[
+  {
+    "cue": "DragonGrowl",
+    "seconds": 3.1239583333333334,
+    "peak": 0.52032470703125,
+    "clippedSamples": 0
+  },
+  {
+    "cue": "Roar",
+    "seconds": 3.9381666666666666,
+    "peak": 0.5816650390625,
+    "clippedSamples": 0
+  },
+  {
+    "cue": "DragonPain",
+    "seconds": 2.254958333333333,
+    "peak": 0.655120849609375,
+    "clippedSamples": 0
+  }
+]

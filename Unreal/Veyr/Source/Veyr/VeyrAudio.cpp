@@ -142,7 +142,7 @@ void AVeyrAudio::Tick(float DeltaSeconds)
     }
     if(!bAudioPolish&&Speed>60.f&&K->Action==EVeyrKnightAction::Ready&&FootstepClock<=0.f)
     {PlayCue(ECue::Footstep,.48f);FootstepClock=FMath::Clamp(220.f/Speed,.32f,.62f);}
-    if((bAudioPolish||bFishVocalsLoaded)&&D->ImportedPresentation)
+    if((bAudioPolish||bDragonLibraryLoaded)&&D->ImportedPresentation)
     {
         const auto* Pose=D->ImportedPresentation.Get();
         const float Height=(Pose->GetBoneLocation(TEXT("VeyrWingNegZWrist")).Z+Pose->GetBoneLocation(TEXT("VeyrWingPosZWrist")).Z)*.5f-Pose->GetBoneLocation(TEXT("bone_2")).Z;
@@ -163,7 +163,7 @@ void AVeyrAudio::Tick(float DeltaSeconds)
     {const int32 FireIndex=static_cast<int32>(ECue::Fire);if(GetWorld()->GetTimeSeconds()-LastCueTimes[FireIndex]>3.f)PlayCue(ECue::Fire);}
     // Combat uses fire/takeoff threat calls; the dedicated showcase roar above
     // retains its authored jaw cue. Do not trigger a roar on every windup.
-    if(bFishVocalsLoaded&&D->State==EVeyrDragonState::Windup&&RoarClock<=0.f&&
+    if(bDragonLibraryLoaded&&D->State==EVeyrDragonState::Windup&&RoarClock<=0.f&&
        (D->Move==EVeyrDragonMove::Fire||D->Move==EVeyrDragonMove::FlyAway))
     {PlayCue(ECue::Roar,.85f);RoarClock=14.f;}
     const bool SwordAction=K->Action==EVeyrKnightAction::LightAttack||K->Action==EVeyrKnightAction::HeavyAttack||
@@ -200,13 +200,13 @@ void AVeyrAudio::Tick(float DeltaSeconds)
     if (K->GuardedHits > LastGuardedHits) PlayCue(ECue::Guard);
     else if (K->HitsTaken > LastHitsTaken) PlayCue(Samples[static_cast<int32>(ECue::PlayerPain)].IsEmpty()?ECue::Contact:ECue::PlayerPain, .9f);
     if (!bAudioPolish&&K->SuccessfulHeals > LastHeals) PlayCue(ECue::Heal);
-    if (D->GetCollapseCount() > LastCollapses) { PlayCue(ECue::Impact, .7f); PlayCue(ECue::DragonGrowl,.9f); }
+    if (D->GetCollapseCount() > LastCollapses) { PlayCue(ECue::Impact, .7f); PlayCue(ECue::DragonPain,.9f); }
     if (D->GetAttackCount(EVeyrDragonMove::Fire) > LastFireAttacks) PlayCue(ECue::Breath);
     if (bWasAirborne && !D->IsAirborne()) PlayCue(ECue::Impact);
     if (D->State != LastDragonState)
     {
         if (D->State == EVeyrDragonState::Exposed) { PlayCue(ECue::Impact); PlayCue(ECue::Exposed); }
-        else if(D->State==EVeyrDragonState::Buckle)PlayCue(ECue::DragonGrowl,.8f);
+        else if(D->State==EVeyrDragonState::Buckle)PlayCue(ECue::DragonPain,.8f);
         else if (D->State == EVeyrDragonState::Active)
         {
             if (D->Move == EVeyrDragonMove::Fire) PlayCue(ECue::Fire);
@@ -224,7 +224,7 @@ void AVeyrAudio::PlayCue(ECue Cue, float Volume)
     const int32 Index = static_cast<int32>(Cue);
     const double Now = GetWorld()->GetTimeSeconds();
     if(Cue==ECue::PlayerPain&&Now-LastCueTimes[Index]<.8)return;
-    if(Cue==ECue::DragonGrowl&&Now-LastCueTimes[Index]<2.f)return;
+    if((Cue==ECue::DragonGrowl||Cue==ECue::DragonPain)&&Now-LastCueTimes[Index]<2.f)return;
     if(bAudioPolish&&(Cue==ECue::Contact||Cue==ECue::Impact||Cue==ECue::Roar||Cue==ECue::Guard))MusicDuckUntil=Now+.35;
     if (Now - LastCueTimes[Index] < .06 || Samples[Index].IsEmpty()) return;
     int32 Slot = INDEX_NONE;
@@ -253,7 +253,7 @@ void AVeyrAudio::PlayCue(ECue Cue, float Volume)
     Voice->SetSound(Wave);
     VoiceLevels[Slot]=.65f*FMath::Clamp(Volume,0.f,1.f);
     Voice->SetVolumeMultiplier(VoiceLevels[Slot]*MasterVolume*EffectsVolume);
-    const bool BossCue=Cue==ECue::Roar||Cue==ECue::DragonGrowl||Cue==ECue::Breath||Cue==ECue::Fire||Cue==ECue::Wing||Cue==ECue::Impact;
+    const bool BossCue=Cue==ECue::Roar||Cue==ECue::DragonGrowl||Cue==ECue::DragonPain||Cue==ECue::Breath||Cue==ECue::Fire||Cue==ECue::Wing||Cue==ECue::Impact;
     VoiceFollowsDragon[Slot]=BossCue&&!(bAudioPolish&&(Cue==ECue::Impact||Cue==ECue::Wing));
     Voice->bAllowSpatialization=BossCue||Cue==ECue::Break;Voice->bOverrideAttenuation=Voice->bAllowSpatialization;
     if((BossCue&&Dragon.IsValid())||Cue==ECue::Break)
@@ -271,7 +271,7 @@ void AVeyrAudio::PlayCue(ECue Cue, float Volume)
     LastCueTimes[Index] = Now;
     ++CuesStarted; ++ActiveVoices;
     if(Cue==ECue::PlayerPain)++PlayerPainCues;
-    if(Cue==ECue::Roar||Cue==ECue::DragonGrowl)++DragonVocalCues;
+    if(Cue==ECue::Roar||Cue==ECue::DragonGrowl||Cue==ECue::DragonPain)++DragonVocalCues;
 }
 
 void AVeyrAudio::ExpireVoices()
@@ -389,7 +389,7 @@ void AVeyrAudio::BuildSamples()
 
 void AVeyrAudio::LoadRecordedSamples()
 {
-    static const TCHAR* Names[]={TEXT("Swing"),TEXT("HeavySwing"),TEXT("Contact"),TEXT("Guard"),TEXT("Impact"),TEXT("Breath"),TEXT("Fire"),TEXT("Heal"),TEXT("Exposed"),TEXT("Death"),TEXT("Victory"),TEXT("Roll"),TEXT("Blink"),TEXT("Footstep"),TEXT("Wing"),TEXT("Roar"),TEXT("Break"),TEXT("PlayerPain"),TEXT("DragonGrowl")};
+    static const TCHAR* Names[]={TEXT("Swing"),TEXT("HeavySwing"),TEXT("Contact"),TEXT("Guard"),TEXT("Impact"),TEXT("Breath"),TEXT("Fire"),TEXT("Heal"),TEXT("Exposed"),TEXT("Death"),TEXT("Victory"),TEXT("Roll"),TEXT("Blink"),TEXT("Footstep"),TEXT("Wing"),TEXT("Roar"),TEXT("Break"),TEXT("PlayerPain"),TEXT("DragonGrowl"),TEXT("DragonPain")};
     int32 Loaded=0;
     for(int32 I=0;I<CueCount;++I)
     {
@@ -411,14 +411,26 @@ void AVeyrAudio::LoadRecordedSamples()
         TArray<uint8> Score;
         if(FFileHelper::LoadFileToArray(Score,*(FPaths::ProjectContentDir()/TEXT("Audio/OwnerScore20261102/Music.pcm")))&&Score.Num()>4&&Score.Num()%4==0)
         {BedPCM[0]=MoveTemp(Score);BedSampleRates[0]=48000;BedChannels[0]=2;bOwnerScoreLoaded=true;}
-        for(ECue Cue:{ECue::Roar,ECue::DragonGrowl,ECue::PlayerPain})
+        // Fish is used for the single human pain cue only. The rejected
+        // human-voice dragon recordings must never be loaded again.
+        for(ECue Cue:{ECue::PlayerPain})
         {
             TArray<uint8> Bytes;const int32 I=static_cast<int32>(Cue);
             if(FFileHelper::LoadFileToArray(Bytes,*(FPaths::ProjectContentDir()/TEXT("Audio/Fish20261102")/(FString(Names[I])+TEXT(".pcm"))))&&Bytes.Num()>2&&Bytes.Num()%2==0)
             {Samples[I].SetNumUninitialized(Bytes.Num()/2);FMemory::Memcpy(Samples[I].GetData(),Bytes.GetData(),Bytes.Num());Durations[I]=float(Samples[I].Num())/SampleRate;++Loaded;}
         }
     }
-    bFishVocalsLoaded=!Samples[static_cast<int32>(ECue::PlayerPain)].IsEmpty();
+    if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyAudio")))
+    {
+        int32 CreatureCues=0;
+        for(ECue Cue:{ECue::Roar,ECue::DragonGrowl,ECue::DragonPain})
+        {
+            TArray<uint8> Bytes;const int32 I=static_cast<int32>(Cue);
+            if(FFileHelper::LoadFileToArray(Bytes,*(FPaths::ProjectContentDir()/TEXT("Audio/DragonLibrary20261103")/(FString(Names[I])+TEXT(".pcm"))))&&Bytes.Num()>2&&Bytes.Num()%2==0)
+            {Samples[I].SetNumUninitialized(Bytes.Num()/2);FMemory::Memcpy(Samples[I].GetData(),Bytes.GetData(),Bytes.Num());Durations[I]=float(Samples[I].Num())/SampleRate;++Loaded;++CreatureCues;}
+        }
+        bDragonLibraryLoaded=CreatureCues==3;
+    }
     RecordedCuesLoaded=Loaded;bMusicLoaded=!BedPCM[0].IsEmpty();bAmbienceLoaded=!BedPCM[1].IsEmpty();
     UE_LOG(LogTemp,Display,TEXT("VEYR_RECORDED_AUDIO cues=%d musicBytes=%d ambienceBytes=%d"),Loaded,BedPCM[0].Num(),BedPCM[1].Num());
 }

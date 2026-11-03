@@ -7,7 +7,7 @@ BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called d
 
 ## Audio scope update — 2026-11-03
 
-Owner selected one supplied OST plus dragon vocals and one player pain moan. These are now integrated and native audio continuity/onset checks pass; clips and before/after with sound are on port 8812. Direct local Fish API used. Subjective listening remains owner acceptance. The earlier request for a full newly generated music/SFX suite is superseded by this narrower audio direction. Animation backlog is unchanged.
+Owner selected one supplied OST plus dragon vocals and one player pain moan. The human-voice Fish dragon source was rejected on 2026-11-03 and replaced with dedicated CC0 creature-library effects. Fish remains only for the single human hit grunt. Runtime audio checks pass; actual replacement auditions and before/after are on port 8812 /dragon-replacement/. Subjective listening remains owner acceptance. The earlier request for a full newly generated music/SFX suite is superseded by this narrower audio direction. Animation backlog is unchanged.
 
 ## Continuation status — 2026-11-02
 

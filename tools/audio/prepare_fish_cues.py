@@ -3,8 +3,8 @@
 import argparse,hashlib,json,subprocess
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('sources',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--receipt',type=Path,required=True);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
-# Natural silence between the roar and growl measured at 2.465–3.792 seconds.
-clips=[('Roar','DragonRoar.wav',0.,2.50),('DragonGrowl','DragonRoar.wav',3.77,3.36),('PlayerPain','PlayerPain.wav',0.,.53)]
+# Owner rejected voice-TTS creature sounds. Fish is only for the human hit cue.
+clips=[('PlayerPain','PlayerPain.wav',0.,.53)]
 rows=[]
 for cue,name,start,duration in clips:
  source=a.sources/name;target=a.output/(cue+'.pcm')

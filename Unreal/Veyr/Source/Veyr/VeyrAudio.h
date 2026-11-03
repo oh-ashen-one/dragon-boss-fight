@@ -43,7 +43,7 @@ protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Roll, Blink, Footstep, Wing, Roar, Break, PlayerPain, DragonGrowl, Count };
+    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Roll, Blink, Footstep, Wing, Roar, Break, PlayerPain, DragonGrowl, DragonPain, Count };
     static constexpr int32 VoiceCount = 12;
     static constexpr int32 CueCount = static_cast<int32>(ECue::Count);
     static constexpr int32 SampleRate = 24000;
@@ -63,7 +63,7 @@ private:
     int32 LastRolls=0,LastBlinks=0;
     float FootstepClock=0.f,WingClock=0.f,RoarClock=8.f;
     bool bAudioPolish=false,bFootNearFloor[2]={false,false},bRoarCuePlayed=false,bDrinkCuePlayed=false;
-    bool bFishVocalsLoaded=false;
+    bool bDragonLibraryLoaded=false;
     FVector LastPlayerPosition=FVector::ZeroVector;
     float PreviousWingHeight=0.f,PreviousWingVelocity=0.f,MusicDuckGain=1.f,MusicEnvelope=0.f;
     double MusicDuckUntil=-1.;

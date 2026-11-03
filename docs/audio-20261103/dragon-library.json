@@ -1,0 +1,35 @@
+[
+  {
+    "cue": "Roar",
+    "sourceURL": "https://sfxmint.com/sounds/dragon-roar-03",
+    "license": "CC0-1.0",
+    "licenseURL": "https://sfxmint.com/license",
+    "sourceSHA256": "09cea80d50d8a97d0e4a05fd2ea11756095b35302f8db1e37debb8860f45b0c4",
+    "pcmSHA256": "bd4a685e29ec570dccfcebed052abb7b10c2d6bb673ccf82430d3c4a0bd9a47c",
+    "durationSeconds": 3.9381666666666666,
+    "processing": "24 kHz mono PCM conversion only; no human TTS, pitch shifting, trimming or effects",
+    "sourceKind": "Pre-existing dedicated creature SFX library; provider identifies AI sound generation."
+  },
+  {
+    "cue": "DragonGrowl",
+    "sourceURL": "https://sfxmint.com/sounds/dragon-roar-08",
+    "license": "CC0-1.0",
+    "licenseURL": "https://sfxmint.com/license",
+    "sourceSHA256": "5bc9c62b9c0a354c9dd79e32e419529fcc357f31644b7d26915c79bdf9a1f737",
+    "pcmSHA256": "20ac5d92dbbff68ed246fbd0ff13e77187edf3a8ca450dc89e13d06656637929",
+    "durationSeconds": 3.1239583333333334,
+    "processing": "24 kHz mono PCM conversion only; no human TTS, pitch shifting, trimming or effects",
+    "sourceKind": "Pre-existing dedicated creature SFX library; provider identifies AI sound generation."
+  },
+  {
+    "cue": "DragonPain",
+    "sourceURL": "https://sfxmint.com/sounds/dragon-roar-10",
+    "license": "CC0-1.0",
+    "licenseURL": "https://sfxmint.com/license",
+    "sourceSHA256": "29498d669dd3767846a4c9c643784077d2018e61c59f4cd3a6f0205a83b1efb5",
+    "pcmSHA256": "9060a6cb727efb099096765a970c2265e243fbdaa0b905d0abd120f6a9b9bed8",
+    "durationSeconds": 2.254958333333333,
+    "processing": "24 kHz mono PCM conversion only; no human TTS, pitch shifting, trimming or effects",
+    "sourceKind": "Pre-existing dedicated creature SFX library; provider identifies AI sound generation."
+  }
+]

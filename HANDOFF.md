@@ -1,3 +1,15 @@
+# Dragon sound correction — 2026-11-03, Codex
+
+**Owner rejected the Fish human-voice dragon roar/growl.** Those two files are removed from staged game content and the runtime Fish loader now permits only PlayerPain. Original rejected take remains private evidence. Never use human TTS to impersonate the creature again; ASR/levels/counters are not listening approval.
+
+Replacement uses SFXMint's dedicated CC0 creature library: **Deep Rasping Dragon Roar 03** (3.938 s), **Territorial Dragon Roar 08** (3.124 s), **Wounded Dragon Roar 10** (2.255 s). Source site identifies AI-generated sound effects, not animal field recordings. Actual WAV audition was shown before replacement. Source/license/hash/recipe in `docs/audio-20261103/`; no spend or new generation. Supplied OST and one player grunt hashes/timing preserved.
+
+Newest Shipping: `/private/tmp/veyr-verified-bundle-slmpyfnq/Veyr-Mac-Shipping.app`; package `Local/package-20261103T052934Z/receipt.json`, source `c2b4956eb6b6d2c647790feabd0b44f20cd784fc10fe7932791b567f77054524`. Native victory/restart passed **74.851 s**, sustained captured audio and zero clipping, four creature cue submissions and one player hit grunt. Rendered screenshot inspected. Technical runtime checks do not claim an independent audio listening verdict.
+
+Auditions and before/after with sound: **http://localhost:8812/dragon-replacement/**. LatestShipping.json and Mac launcher point to the replacement. The owner's previously opened gqdp02we play session is a separate live play lease; do not terminate it or delete its app while referenced. A restart into the newest build is required to hear the new source. QA instance exited cleanly; no other session processes touched.
+
+---
+
 # Current audio delivery — 2026-11-03, Codex
 
 Owner narrowed audio to **one supplied boss OST, dragon vocal sounds and one player hit moan**, then explicitly required the existing local Fish API instead of browser automation. This audio task does not resume the cleared overnight goal.

@@ -1,0 +1,87 @@
+{
+  "run": "native-victory-20261103T053229Z",
+  "sourceId": "c2b4956eb6b6d2c647790feabd0b44f20cd784fc10fe7932791b567f77054524",
+  "gameplayPassed": true,
+  "victorySeconds": 74.85135650634766,
+  "mixDuration": 78.25066666666666,
+  "windows": [
+    {
+      "start": 0,
+      "rms": 0.014782404527068138,
+      "peak": 0.1309272199869156
+    },
+    {
+      "start": 5,
+      "rms": 0.012536142021417618,
+      "peak": 0.10752838104963303
+    },
+    {
+      "start": 10,
+      "rms": 0.009259083308279514,
+      "peak": 0.09323398768901825
+    },
+    {
+      "start": 15,
+      "rms": 0.01094595156610012,
+      "peak": 0.11926326900720596
+    },
+    {
+      "start": 20,
+      "rms": 0.02524208091199398,
+      "peak": 0.16579382121562958
+    },
+    {
+      "start": 25,
+      "rms": 0.01746675930917263,
+      "peak": 0.11737845093011856
+    },
+    {
+      "start": 30,
+      "rms": 0.009921196848154068,
+      "peak": 0.08949548751115799
+    },
+    {
+      "start": 35,
+      "rms": 0.011801796965301037,
+      "peak": 0.1327338069677353
+    },
+    {
+      "start": 40,
+      "rms": 0.017511002719402313,
+      "peak": 0.1271955817937851
+    },
+    {
+      "start": 45,
+      "rms": 0.01211468130350113,
+      "peak": 0.1238265112042427
+    },
+    {
+      "start": 50,
+      "rms": 0.008307657204568386,
+      "peak": 0.05651575326919556
+    },
+    {
+      "start": 55,
+      "rms": 0.019026122987270355,
+      "peak": 0.12216102331876755
+    },
+    {
+      "start": 60,
+      "rms": 0.011786866933107376,
+      "peak": 0.11910665035247803
+    },
+    {
+      "start": 65,
+      "rms": 0.01163244154304266,
+      "peak": 0.12360364198684692
+    }
+  ],
+  "sustainedAudioPassed": true,
+  "clippedSamples": 0,
+  "maximumMusicStartsPerWorld": 1,
+  "maximumDragonVocalCues": 4,
+  "maximumPlayerPainCues": 1,
+  "ownerScoreLoaded": true,
+  "scope": "Technical output continuity and runtime behavior; not subjective listening approval.",
+  "passed": true
+}

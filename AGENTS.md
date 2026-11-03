@@ -35,3 +35,7 @@ more time searching free 3D model catalogues. Reuse the already generated cathed
 kit. Animation remains source-first. Download through direct/API paths into the
 owned project without Finder or Save dialogs; do not change browser security or
 permission settings. Generated-provider credits are authorized by the owner.
+
+## Dragon audio correction — owner, 2026-11-03
+
+The owner rejected a human TTS voice prompted to impersonate a dragon. Use dedicated creature/dragon sound effects from licensed libraries or a true sound-effects generator. Never present ASR labels, waveform checks, source descriptions or playback counters as listening/quality approval. Present the actual audio audition before another replacement. Keep the owner-selected single OST and the separate single human hit grunt outside a dragon-source replacement.
