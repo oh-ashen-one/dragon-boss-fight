@@ -5,6 +5,10 @@ better now". These are his notes for the next session, in his order, with the fa
 Start with `HANDOFF.md`, then pick items here. Each item needs a before/after the owner can watch (bare page: video plus
 BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called done.
 
+## New map requirement — 2026-11-03 (not started)
+
+Owner wants the map substantially improved using built-in image generation (requested GPT Image 2.5) for references and wall murals, plus Tripo **via browser control** for 3D assets. Target: gothic fortress/war-court, **not a church**. Build toward the selected references in the actual playable arena. Full scope, execution and acceptance criteria are in MASTER_GOAL.md; short activation is in GOAL_PROMPT.md. Writing the brief is not implementation or quality acceptance.
+
 ## Audio scope update — 2026-11-03
 
 Owner selected one supplied OST plus dragon vocals and one player pain moan. The human-voice Fish dragon source was rejected on 2026-11-03 and replaced with dedicated CC0 creature-library effects. Fish remains only for the single human hit grunt. Runtime audio checks pass; actual replacement auditions and before/after are on port 8812 /dragon-replacement/. Subjective listening remains owner acceptance. The earlier request for a full newly generated music/SFX suite is superseded by this narrower audio direction. Animation backlog is unchanged.

@@ -1,3 +1,13 @@
+# New master-goal brief — 2026-11-03
+
+Owner requested a reusable goal brief covering the remaining combat backlog plus a substantial map overhaul. **MASTER_GOAL.md** is the complete execution brief; **GOAL_PROMPT.md** contains the short activation prompt. This turn wrote the brief only; the new map/reference/mural work has not started.
+
+New environment direction: a ruined secular **gothic fortress / war-court, explicitly not a church or cathedral**. Use built-in image generation for coherent reference views and at least four distinct wall murals; requested model GPT Image 2.5 must be verified against actual tool availability, never falsely claimed. Use **Tripo through browser control** for task-scoped 3D assets. Integrate in the playable map and preserve camera/combat clearance. The owner-selected OST and current dedicated creature SFX remain outside this art overhaul.
+
+No arbitrary 9:00 cutoff. Autonomous routine decisions, complete-scope evidence gates, authorized branches only, GPU controls and continuing receipt-based build cleanup are explicit. Unfinished combat work remains running/leap contacts, sprint/stop, healing, light-attack/transition polish and balance. Read MASTER_GOAL.md alongside current shared rules and the factual handoff below when the owner activates it.
+
+---
+
 # Dragon sound correction — 2026-11-03, Codex
 
 **Owner rejected the Fish human-voice dragon roar/growl.** Those two files are removed from staged game content and the runtime Fish loader now permits only PlayerPain. Original rejected take remains private evidence. Never use human TTS to impersonate the creature again; ASR/levels/counters are not listening approval.
