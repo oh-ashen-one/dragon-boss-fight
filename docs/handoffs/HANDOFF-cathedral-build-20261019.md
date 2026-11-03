@@ -1,5 +1,7 @@
 # Veyr presentation rebuild handoff
 
+Privacy note: Machine-specific home-directory prefixes are shown as `$HOME`; use the appropriate configured paths on other machines.
+
 Repository: https://github.com/oh-ashen-one/veyr-cinder-warden
 Branch: `feat/unreal-migration`. Historical Unity branch: `checkpoint/unity-native-009`.
 
@@ -17,7 +19,7 @@ Active assets are Knight v015 (18 clips) and Dragon v007 (40 clips), retaining b
 
 Tripo used 310 credits in this pass: weapon 55 plus retopology 35, then facade, wall, arch and brazier at 55 each. Boat v004 is 2.8 m tall with unit world scale. Eleven major cathedral placements retain their imported PBR materials. Built-in image generation supplied 10 references/textures and saved prompts. Floor material is v001; night sky is v004. Ambient light captures the actual night sky instead of the old daylight cubemap. The meteor starts at u=0.47, polar UV=0.39, with vertical travel 0.018 and a 37-second period. Natural visibility was verified around 23 seconds without a time override. The earlier high-sky version remains preserved privately.
 
-Owner delivery is `/Users/midir/Documents/Codex/2026-10-18/go/outputs/veyr-art-pass`. It contains `Veyr-Mac-9b185634.zip`, validation, physical-input notes, instructions, native videos and reference art. The ZIP is 638637929 bytes; SHA256 is `25bb280fe123d68a8d6a16b9c835b0bd4659b5be2c8f566653c1e6c41acd5747`. Studio Downloads contains the same ZIP and the verified extracted app at `/Users/midir/Downloads/Veyr-Cathedral-Pass-9b185634/Veyr.app`. No laptop installation is claimed.
+Owner delivery is `$HOME/Documents/Codex/2026-10-18/go/outputs/veyr-art-pass`. It contains `Veyr-Mac-9b185634.zip`, validation, physical-input notes, instructions, native videos and reference art. The ZIP is 638637929 bytes; SHA256 is `25bb280fe123d68a8d6a16b9c835b0bd4659b5be2c8f566653c1e6c41acd5747`. Studio Downloads contains the same ZIP and the verified extracted app at `$HOME/Downloads/Veyr-Cathedral-Pass-9b185634/Veyr.app`. No laptop installation is claimed.
 
 The private editable archive `Veyr-EditableAssets-Knight15-Dragon7-Sky4.zip` contains 105 active packages. Its SHA256 is `f63b336cc63eb7f314daf8d143bfd29444fd70657d23905385dae313994afa25`. Restore its Content directory under Unreal/Veyr. Provider originals and rejected candidates remain private; raw assets were not published to GitHub. Source stays on `feat/unreal-migration`; no main merge was performed. Preserve the unrelated `Assets/Resources/SourceManifest 2.txt`.
 

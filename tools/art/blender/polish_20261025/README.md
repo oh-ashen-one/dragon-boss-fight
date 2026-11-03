@@ -1,7 +1,9 @@
 # Veyr owner-requested animation corrections, 2026-10-25
 
+Privacy note: Machine-specific home-directory prefixes are shown as `$HOME`; use the appropriate configured paths on other machines.
+
 This package authors new candidates inside an isolated Blender 5.2 MCP session.
-Approved source scenes and exports under `/Users/midir/veyr-review-fable-20261021`
+Approved source scenes and exports under `$HOME/veyr-review-fable-20261021`
 are read-only. Outputs are private and ignored by Git under
 `Local/Blender/polish-20261025`; do not commit character binaries to the public repo.
 The root integration owner handles backup, import, native validation and branch publication.

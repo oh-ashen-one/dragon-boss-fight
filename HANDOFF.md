@@ -1,5 +1,7 @@
 # October28 Settings restart — latest playable build
 
+Privacy note: Machine-specific home-directory prefixes are shown as `$HOME`; use the appropriate configured paths on other machines.
+
 Branch `codex/veyr-settings-restart-20261028`; app:
 `~/Downloads/Veyr-Settings-Restart-v030/Veyr.app`. Source ID
 `8d51bcdcadb7aeb9945ae7c4d9de99cf6fbdacff367c3657aeb89aeb86bcb421`.
@@ -119,7 +121,7 @@ original v026 guard sequence and weapon remain unchanged. Separate heavy styles
 and the two-hand combo are retained; this was the selected comparison scope.
 
 The verified unpacked app is open at its fresh start screen:
-`/Users/midir/Downloads/Veyr-Sourced-Animations-v027/Veyr.app`.
+`$HOME/Downloads/Veyr-Sourced-Animations-v027/Veyr.app`.
 Observed process97300; do not take over or close the owner's play session. Its
 slot/log are `Local/FabRigTesting/owner-review-gpu.json` and `owner-review.log`.
 No auto-relaunch or automatic review-session cutoff is enabled.
@@ -771,7 +773,7 @@ also retain their exact hashes. No dragon work has begun.
   Verify the PID command before operating it. No launch agent or OS permission
   change remains from the abandoned listener attempt.
 - Public branch `codex/veyr-asset-review-20261019`; implementation commit `03dcbc4`.
-  Current checkout: `/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
+  Current checkout: `$HOME/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
 - Native gameplay source no longer binds or executes jump, and inherited jump
   eligibility is false. Guard always readies two-handed grip. Native Mac
   VeyrEditor compile succeeded; receipt is in the feedback reports. The installed
@@ -790,7 +792,7 @@ also retain their exact hashes. No dragon work has begun.
 - Archive `Veyr-Knight-Feedback-v2.zip`: 706,380,872 bytes, 26 manifest assets verified;
   SHA256 `5468d1e4b24158de45d4b128db48f50bd0c457d233bba142a99ba938d7bbbf66`
   matches GitHub's asset digest. This is a delta on the previous review bundles.
-- Owner-facing outputs: `/Users/midir/Documents/Codex/2026-10-18/go/outputs/knight-feedback-v2`.
+- Owner-facing outputs: `$HOME/Documents/Codex/2026-10-18/go/outputs/knight-feedback-v2`.
   Private film page: `http://100.95.131.102:8775/.asset-cache/feedback-media/index.html`.
 
 Detailed methods, limits and editing instructions: `tools/art/blender/feedback/README.md`.
@@ -807,14 +809,14 @@ All six previously approved Blender motions retain their recorded hashes; the
 original roll is preserved. Dragon work has not begun. No Unreal integration.
 
 - Public branch: `codex/veyr-asset-review-20261019`; implementation commit `036a16e`.
-- Active Studio checkout: `/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
+- Active Studio checkout: `$HOME/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
 - Instructions, provenance, controls and checks: `tools/art/blender/remainder/README.md`.
 - Review inventory: `tools/asset-review/remainder-catalog.json` (13 new clips).
 - Local server: port **8775**, 27 total entries. New clips appear first.
 - Cross-network laptop access: `http://100.95.131.102:8775/` (also `http://studio.tail791b0f.ts.net:8775/`). Tailscale Serve TCP 8775 forwards to the existing loopback viewer at 127.0.0.1:8775. Owner requested command-free laptop access from Chicago. Verified the remote address returns all 27 catalog entries; laptop was online on Tailscale. Private tailnet only, no public Funnel, existing Serve routes preserved. No laptop SSH tunnel is required.
 - Chrome was opened locally and verified with textured playback. It is left on the new one-hand walk at 1x. Death holds at 4.4 s with Loop off; jump scrubbing at 0.5 s shows the airborne pose; the healing flask and palm were inspected close up.
 - All 13 independent 120 Hz export audits pass. All 13 native FK action ranges match their playback endpoints. All 13 three-view films decode and match their intended durations.
-- Outputs: `/Users/midir/Documents/Codex/2026-10-18/go/outputs/knight-remainder-review`.
+- Outputs: `$HOME/Documents/Codex/2026-10-18/go/outputs/knight-remainder-review`.
 - Private branch: `oh-ashen-one/veyr-animation-sources:codex/knight-remainder-blender-20261021`, commit `4bc33ce`.
 - Private release: `knight-remainder-blender-v1-20261021`; both archives and checksum asset are uploaded, release is not a draft, and GitHub SHA256 digests match locally verified files.
 - Blender 5.2.0 LTS ran on verified Studio Mac15,14 through the shared GPU slot, owner `codex-veyr-remainder-20261021`, port 9882. It exited cleanly after saving; PID 79350 is gone and the slot is released. Start a new owned instance for future authoring; do not reuse the old PID.
@@ -839,7 +841,7 @@ is running for this pass. Start a fresh owned Blender session under the GPU
 protocol for further authoring. The old PID/port notes below are historical.
 
 - Public source branch: `codex/veyr-asset-review-20261019`; implementation commit `df2a422`.
-- Active Studio checkout: `/Users/midir/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
+- Active Studio checkout: `$HOME/Documents/Codex/2026-10-18/go/work/veyr-asset-review`.
 - Detailed authoring, controls, tests and limitations: `tools/art/blender/rebuild/README.md`.
 - Private branch: `oh-ashen-one/veyr-animation-sources`, `codex/knight-approved-blender-rebuild-20261021`, commit `85fa979`.
 - Private release: `knight-approved-blender-v1-20261021`; GitHub reports both assets uploaded.
@@ -984,7 +986,7 @@ full-body playback at intended speed before requesting owner approval. See
 
 At verification: Studio `studio` is `Mac` / `Mac15,14`. This task's Blender PID
 28574, owner tag `codex-veyr-walk-20261021`, loopback MCP port 9881, work folder
-`/Users/midir/veyr-blender-walk-20261021`. Its editable scene and v3 export hashes
+`$HOME/veyr-blender-walk-20261021`. Its editable scene and v3 export hashes
 were rechecked this turn. Hari's requested handoff authorizes the receiving
 Veyr session to continue this task-owned instance after verifying its owner tag
 and live PID. Never assume recorded PIDs are still current.
