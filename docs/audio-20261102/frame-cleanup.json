@@ -1,0 +1,35 @@
+{
+  "records": [
+    {
+      "run": "native-victory-20261103T045048Z",
+      "movieSHA256": "cf7fa47a9ff798e4b172d7a4585adbcc90ff23ac89b1ac790b0f2704c834f04b",
+      "removedFrames": 1582,
+      "logicalBytes": 2398746906,
+      "preserved": "Final movies, four selected stills, native event screenshots, audio, manifests and all small receipts."
+    },
+    {
+      "run": "native-victory-20261103T045315Z",
+      "movieSHA256": "92f7b9032f68c3b39a7e9f37c393bea2bc721ca8f7c2507529d24a53cd9103de",
+      "removedFrames": 1629,
+      "logicalBytes": 2467405492,
+      "preserved": "Final movies, four selected stills, native event screenshots, audio, manifests and all small receipts."
+    },
+    {
+      "run": "native-victory-20261103T050123Z",
+      "movieSHA256": "186bcc7218589ea4506f30d6ee5aee38cea5c93c2ede875540cc4974cb8f6db8",
+      "removedFrames": 1631,
+      "logicalBytes": 2470114425,
+      "preserved": "Final movies, four selected stills, native event screenshots, audio, manifests and all small receipts."
+    },
+    {
+      "run": "native-victory-20261103T050331Z",
+      "movieSHA256": "9eb563deaecd551e6536d82ba60c68b67684df0def6f7085da40c61ae83e41ac",
+      "removedFrames": 1626,
+      "logicalBytes": 2465248329,
+      "preserved": "Final movies, four selected stills, native event screenshots, audio, manifests and all small receipts."
+    }
+  ],
+  "freeBytesBefore": 697211326464,
+  "freeBytesAfter": 707022000128,
+  "scope": "Only these four completed task-owned initial-world raw PNG captures. No sources, editable assets, audio masters or unrelated evidence deleted."
+}

@@ -2,7 +2,7 @@
   "checkedFiles": [
     {
       "path": "tools/audio/fish_cue.py",
-      "sha256": "e987f5efe1cd115bd22e5f1ceb19aed6a5ba005ee98953d1df5e63cea3580248",
+      "sha256": "6a47451e9a6cfa7a38d82cc6e7c1a540c837e107168a0b5f590f2c8508f69271",
       "credentialBytesAbsent": true
     },
     {
@@ -36,6 +36,11 @@
       "credentialBytesAbsent": true
     }
   ],
-  "sourceMetadata": "PCM has no metadata; input MP3 is excluded from Git.",
-  "scope": "Exact runtime credential bytes in changed scripts and prepared audio plus staged/history Gitleaks custom-rule scan recorded separately."
+  "sourceMetadata": "Prepared PCM contains no metadata; user MP3/cover stays outside public source.",
+  "scope": "Exact runtime credential bytes in changed scripts and prepared audio plus staged/history Gitleaks custom-rule scan recorded separately.",
+  "gitleaksVersion": "8.30.1",
+  "customRuleSHA256": "6ba35a6dd52ae2ff33fdce433331309bd6229c91e458679eaff09ccbfe448c71",
+  "stagedScanPassed": true,
+  "allLocalRefsHistoryScanPassed": true,
+  "finalPackagedAppScanPassed": true
 }
