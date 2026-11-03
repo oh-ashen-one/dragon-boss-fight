@@ -1,0 +1,26 @@
+{
+  "status": "not_integrated",
+  "findings": [
+    "The old Mixamo_GreatSwordRun_v1 export points to the backward unsuffixed source; do not reuse it.",
+    "Explicit ForwardRun.fbx is available and hash-verified. New isolated retarget script prepared; not executed yet.",
+    "RunStopOneHand and RunStopTwoHand already have v1 retarget exports. They need actual contact/transition inspection and integration; do not repeat acquisition.",
+    "Running and leap attacks remain opt-in. Native footing failures are preserved; no thresholds relaxed."
+  ],
+  "sources": [
+    {
+      "name": "ForwardRun",
+      "sha256": "ee48df1f77c89f5251e4e769dbd9fe26ba9c56415a0f08e2047fbf94d141b57f",
+      "privatePath": "Local/AttackSources20261102/MixamoGreatSword/selected/ForwardRun.fbx"
+    },
+    {
+      "name": "RunStopOneHand",
+      "sha256": "d547df39aa6f746d54c56e6d7a5b89ded93992f79d2c24740d48c2620913b092",
+      "privatePath": "Local/AttackSources20261102/MixamoGreatSword/selected/RunStopOneHand.fbx"
+    },
+    {
+      "name": "RunStopTwoHand",
+      "sha256": "efbf547e6c8aa0212332170d1f660996749628310567e3fb373ac1db15ccb45c",
+      "privatePath": "Local/AttackSources20261102/MixamoGreatSword/selected/RunStopTwoHand.fbx"
+    }
+  ]
+}

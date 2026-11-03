@@ -310,6 +310,11 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     const AVeyrArena* SnapshotArena=SnapshotMode?SnapshotMode->Arena.Get():nullptr;
     O->SetBoolField(TEXT("connectedCourtAssetsReady"),SnapshotArena&&SnapshotArena->bConnectedCourtAssetsReady);
     O->SetBoolField(TEXT("fortressGateProbeReady"),SnapshotArena&&SnapshotArena->bFortressGateProbeReady);
+    O->SetBoolField(TEXT("fortressCandidate"),SnapshotArena&&SnapshotArena->bFortressCandidate);
+    O->SetBoolField(TEXT("fortressAssetsReady"),SnapshotArena&&SnapshotArena->bFortressAssetsReady);
+    O->SetNumberField(TEXT("fortressMeshCount"),SnapshotArena?SnapshotArena->FortressMeshCount:0);
+    O->SetNumberField(TEXT("fortressMuralCount"),SnapshotArena?SnapshotArena->FortressMuralCount:0);
+    O->SetNumberField(TEXT("fortressTowerCount"),SnapshotArena?SnapshotArena->FortressTowerCount:0);
     O->SetBoolField(TEXT("overhaulAssetsReady"),SnapshotArena&&SnapshotArena->bOverhaulAssetsReady);
     O->SetNumberField(TEXT("breakablePropCount"),SnapshotArena?SnapshotArena->BreakablePropCount:0);
     O->SetNumberField(TEXT("brokenProps"),SnapshotArena?SnapshotArena->BrokenProps:0);
@@ -2668,6 +2673,8 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Presentation->SetBoolField(TEXT("dragonRuntimePolishReady"),Dragon&&Dragon->bUsingPolishDefinition);
     Presentation->SetBoolField(TEXT("connectedCourtAssetsReady"),Arena&&Arena->bConnectedCourtAssetsReady);
     Presentation->SetBoolField(TEXT("importedCathedral"),Arena&&Arena->bUsingImportedCathedral);
+    Presentation->SetBoolField(TEXT("fortressAssetsReady"),Arena&&Arena->bFortressAssetsReady);
+    Presentation->SetNumberField(TEXT("fortressMuralCount"),Arena?Arena->FortressMuralCount:0);
     Presentation->SetNumberField(TEXT("majorArchitecturePieces"),Arena?Arena->ImportedArchitecturePieces:0);
     Presentation->SetBoolField(TEXT("generatedNightSky"),Arena&&Arena->bUsingAuthoredNightSky);
     Presentation->SetBoolField(TEXT("generatedStoneFloor"),Arena&&Arena->bUsingAuthoredFloor);

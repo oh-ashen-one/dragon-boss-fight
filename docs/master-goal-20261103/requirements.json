@@ -102,5 +102,13 @@
     "scope": "Single gate replaces only far apse in a test branch; full fortress overhaul remains unimplemented.",
     "candidateApp": "/private/tmp/veyr-verified-bundle-q75xu5vf/Veyr-Mac-Shipping.app",
     "evidence": "gate-probe-result.json"
+  },
+  "fortressCandidate": {
+    "flag": "VeyrFortress",
+    "editorCompile": true,
+    "shippingPackage": true,
+    "candidateApp": "/private/tmp/veyr-verified-bundle-35_s9gj0/Veyr-Mac-Shipping.app",
+    "nativeGameplayVerified": false,
+    "blindQualityAccepted": false
   }
 }

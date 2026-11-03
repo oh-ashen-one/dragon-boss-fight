@@ -94,7 +94,9 @@ void AVeyrArena::BeginPlay()
     if(!CathedralBrazierMesh)CathedralBrazierMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralBrazier_v001/SM_CathedralBrazier_v001.SM_CathedralBrazier_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralFloorParent)CathedralFloorParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Floor/M_CathedralFloor_v001.M_CathedralFloor_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     bUsingAuthoredFloor=CathedralFloorParent!=nullptr;bUsingImportedBraziers=CathedralBrazierMesh!=nullptr;
+    bFortressCandidate=FParse::Param(FCommandLine::Get(),TEXT("VeyrFortress"));
     LoadPolishKit();
+    if(bFortressCandidate)LoadFortressKit();
     if(UMaterialInterface* Authored=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/Materials/M_CathedralStone_v3.M_CathedralStone_v3"),nullptr,LOAD_Quiet|LOAD_NoWarn))StoneParent=Authored;
     if (bBuilt || !CubeMesh || !CylinderMesh || !SphereMesh || !ConeMesh || !StoneParent || !PlainParent) return;
     bBuilt = true;
@@ -135,7 +137,8 @@ void AVeyrArena::BeginPlay()
     Rocks->SetCastShadow(false);RockSpurs->SetCastShadow(false);
     Embers = MakeBatch(TEXT("PROTO_BrazierEmberBeds"), SphereMesh, Coal);
     BuildFloor();
-    bUsingImportedCathedral=BuildImportedCathedral();
+    if(bFortressCandidate)BuildFortressCourt();
+    else bUsingImportedCathedral=BuildImportedCathedral();
     // Missing kit assets remain an explicit validation failure. Do not silently
     // dress an old primitive facade as the new reference-matched environment.
     BuildDistance();
@@ -597,9 +600,12 @@ void AVeyrArena::BuildCourtTerrain()
     }
     for(int32 I=-3;I<=3;++I)
         KitPiece(TEXT("RuinedCityRoofBlock"),FVector(11900.f+(I%2)*1100.f,I*2600.f,1600.f),1800.f+(I%2)*220.f,-90.f,false);
-    KitPiece(TEXT("RuinedGatehouse"),FVector(-6000,13000,1000),3000,180,false);
-    KitPiece(TEXT("RuinedGatehouse"),FVector(12500,4500,1600),3200,-90,false);
-    ImportedPiece(CathedralFacadeMesh,TEXT("FarCityCathedralSpire"),FVector(1500,13600,1000),4200,180,true);
+    if(!bFortressCandidate)
+    {
+        KitPiece(TEXT("RuinedGatehouse"),FVector(-6000,13000,1000),3000,180,false);
+        KitPiece(TEXT("RuinedGatehouse"),FVector(12500,4500,1600),3200,-90,false);
+        ImportedPiece(CathedralFacadeMesh,TEXT("FarCityCathedralSpire"),FVector(1500,13600,1000),4200,180,true);
+    }
     for(float Side:{-1.f,1.f})
     {
         for(int32 I=0;I<5;++I)
@@ -756,6 +762,7 @@ void AVeyrArena::BuildCollision()
 
 void AVeyrArena::BuildOverarchingArchitecture()
 {
+    if(bFortressCandidate){BuildFortressSkyline();return;}
     if(!bConnectedCourtAssetsReady)return;
     // Each terrace has a load-bearing retaining mass, an arcade, and buttress
     // supports. Their increasing height and recession create depth from the
@@ -823,6 +830,8 @@ void AVeyrArena::SpawnBreakable(UStaticMesh* Mesh,const FVector& Position,float 
 void AVeyrArena::BuildInteractiveDetails()
 {
     if(!bConnectedCourtAssetsReady)return;
+    if(!bFortressCandidate)
+    {
     for(int32 I=0;I<10;++I)
     {
         const float A=I*2.f*PI/10.f+.18f;
@@ -840,6 +849,14 @@ void AVeyrArena::BuildInteractiveDetails()
         Glow->SetLightColor(FLinearColor(1.f,.48f,.17f));Glow->SetIntensityUnits(ELightUnits::Candelas);Glow->SetIntensity(500.f);
         Glow->SetAttenuationRadius(1800.f);Glow->SetCastShadows(false);Glow->RegisterComponent();
     }
+    }
+    else if(bFortressAssetsReady)
+    {
+        // Breakable remnants stay outside the 36m combat radius.
+        for(int32 I=0;I<8;++I)
+            SpawnBreakable(PolishMeshes.FindChecked(TEXT("CollapsedVaultRubble")),
+                FVector(-3000.f+(I%4)*2000.f,I<4?-3950.f:3950.f,0),100.f+(I%3)*22.f,I*47.f);
+    }
     UVeyrVisualDefinition* Dragon=LoadObject<UVeyrVisualDefinition>(nullptr,TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Dragon.DA_Dragon"));
     for(int32 I=0;I<2&&Dragon;++I)
     {
@@ -853,7 +870,7 @@ void AVeyrArena::BuildInteractiveDetails()
         }
     }
     BreakablePropCount=BreakableProps.Num();BackgroundDragonCount=SkyDragons.Num();
-    bOverhaulAssetsReady=GeneratedArchitectureMeshCount==3&&BreakablePropCount==14&&BackgroundDragonCount==2;
+    bOverhaulAssetsReady=!bFortressCandidate&&GeneratedArchitectureMeshCount==3&&BreakablePropCount==14&&BackgroundDragonCount==2;
     UE_LOG(LogTemp,Display,TEXT("VEYR_OVERHAUL_ASSETS ready=%d generated=%d breakables=%d skyDragons=%d"),bOverhaulAssetsReady,GeneratedArchitectureMeshCount,BreakablePropCount,BackgroundDragonCount);
 }
 void AVeyrArena::BreakProp(int32 Index)

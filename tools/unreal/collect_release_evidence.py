@@ -47,7 +47,9 @@ def run(path, expected):
     assert value['sourceId']==expected and value['finished'] and value['finalWrite'] and value['passed']
     assert value['bothCustomuseCharactersActive'] and value['warningContainmentFailures']==0
     art=value['presentationAssets']
-    assert all(art[key] for key in ('importedCathedral','generatedNightSky','generatedStoneFloor','importedBraziers','equippedWeaponVisible'))
+    fortress=art.get('fortressAssetsReady') is True and art.get('fortressMuralCount')==4
+    assert fortress or art.get('importedCathedral'), 'Neither complete fortress nor legacy architecture is ready'
+    assert all(art[key] for key in ('generatedNightSky','generatedStoneFloor','importedBraziers','equippedWeaponVisible'))
     assert art['majorArchitecturePieces']==11 and '/BoatGreatsword_v004/SM_BoatGreatsword_v004' in art['equippedWeaponMesh']
     assert launch['runtimeKind']=='packaged-app' and gpu['exit_code']==0
     assert preflight['staticDependencyAuditPassed'] and preflight['signatureVerified'] and preflight['cookedPayloadPresent']

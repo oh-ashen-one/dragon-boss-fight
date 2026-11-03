@@ -1,0 +1,104 @@
+{
+  "completed": true,
+  "assets": {
+    "FortressMuralWall": {
+      "success": true,
+      "assets": [
+        {
+          "mesh": "/Game/ArtPass/Tripo/FortressMuralWall_v001/SM_FortressMuralWall_v001",
+          "lods": [
+            {
+              "lod": 0,
+              "targetTriangles": 150000,
+              "triangles": 150000,
+              "vertices": 223591,
+              "uvChannels": 1,
+              "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+              "sectionMaterialSlots": [
+                0,
+                1
+              ],
+              "screenSize": 1.0
+            },
+            {
+              "lod": 1,
+              "targetTriangles": 60000,
+              "triangles": 60000,
+              "vertices": 93860,
+              "uvChannels": 1,
+              "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+              "sectionMaterialSlots": [
+                0,
+                1
+              ],
+              "screenSize": 0.45
+            },
+            {
+              "lod": 2,
+              "targetTriangles": 15000,
+              "triangles": 15000,
+              "vertices": 25033,
+              "uvChannels": 1,
+              "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+              "sectionMaterialSlots": [
+                0,
+                1
+              ],
+              "screenSize": 0.18
+            }
+          ],
+          "status": "IMPORTED_REDUCED_SAVED_NATIVE_VISUAL_REVIEW_PENDING"
+        }
+      ]
+    },
+    "FortressWatchtower": {
+      "success": true,
+      "assets": [
+        {
+          "mesh": "/Game/ArtPass/Tripo/FortressWatchtower_v001/SM_FortressWatchtower_v001",
+          "lods": [
+            {
+              "lod": 0,
+              "targetTriangles": 150000,
+              "triangles": 150000,
+              "vertices": 246701,
+              "uvChannels": 1,
+              "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+              "sectionMaterialSlots": [
+                0
+              ],
+              "screenSize": 1.0
+            },
+            {
+              "lod": 1,
+              "targetTriangles": 60000,
+              "triangles": 60000,
+              "vertices": 99257,
+              "uvChannels": 1,
+              "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+              "sectionMaterialSlots": [
+                0
+              ],
+              "screenSize": 0.45
+            },
+            {
+              "lod": 2,
+              "targetTriangles": 15000,
+              "triangles": 15000,
+              "vertices": 23590,
+              "uvChannels": 1,
+              "uvValidationSource": "StaticMeshVertexBuffer via get_num_tex_coords",
+              "sectionMaterialSlots": [
+                0
+              ],
+              "screenSize": 0.18
+            }
+          ],
+          "status": "IMPORTED_REDUCED_SAVED_NATIVE_VISUAL_REVIEW_PENDING"
+        }
+      ]
+    }
+  },
+  "protectedCharacterDefinitionsAndMapUnchanged": true,
+  "visualQualityAccepted": false
+}

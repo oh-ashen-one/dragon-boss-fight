@@ -52,7 +52,7 @@
     },
     {
       "asset": "FortressMuralWall_v001",
-      "status": "downloaded_pending_bake_and_import",
+      "status": "native_imported_pending_full_map_review",
       "quotedCredits": 55,
       "balanceBefore": 72875,
       "uiModel": "H3.1 \u2013 Best Quality",
@@ -69,11 +69,16 @@
       "rawSHA256": "721d1ce0f385bd4ff30fdc7913dcbad9269a5f3d5c47751bb8ed85c5188a9de0",
       "uiFaces": 1929251,
       "uiVertices": 1017854,
-      "visualReview": "Browser preview has coherent crenellated frame and a broad blank inset; native/placement validation still pending."
+      "visualReview": "Browser preview has coherent crenellated frame and a broad blank inset; native/placement validation still pending.",
+      "nativeLodTriangles": [
+        150000,
+        60000,
+        15000
+      ]
     },
     {
       "asset": "FortressWatchtower_v001",
-      "status": "downloaded_pending_bake_and_import",
+      "status": "native_imported_pending_full_map_review",
       "quotedCredits": 55,
       "balanceBefore": 72820,
       "uiModel": "H3.1 \u2013 Best Quality",
@@ -90,7 +95,12 @@
       "rawSHA256": "0a84f2a3db7fcc7b5f31a46566d7ea78be0c109216789f97a250c537a06274b6",
       "uiFaces": 1897320,
       "uiVertices": 987606,
-      "visualReview": "Browser preview inspected: square crenellated tower, arrow slits, iron bands; no religious forms. Native visual acceptance pending."
+      "visualReview": "Browser preview inspected: square crenellated tower, arrow slits, iron bands; no religious forms. Native visual acceptance pending.",
+      "nativeLodTriangles": [
+        150000,
+        60000,
+        15000
+      ]
     }
   ],
   "totalObservedCredits": 165

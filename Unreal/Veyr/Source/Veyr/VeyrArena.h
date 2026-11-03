@@ -29,6 +29,11 @@ public:
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 GeneratedArchitectureMeshCount=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 BreakablePropCount=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 BackgroundDragonCount=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") bool bFortressCandidate=false;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") bool bFortressAssetsReady=false;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 FortressMeshCount=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 FortressMuralCount=0;
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 FortressTowerCount=0;
     static constexpr float CombatRadius = 3600.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingBasaltCliff=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bUsingImportedCathedral=false;
@@ -99,6 +104,11 @@ private:
     TMap<TWeakObjectPtr<UStaticMeshComponent>,float> HiddenPropTimers;
     TArray<FTransform> SkyDragonBasis;
     float AtmosphereClock=0.f;
+    UPROPERTY() TArray<TObjectPtr<UMaterialInterface>> FortressMuralMaterials;
+    bool LoadFortressKit();
+    bool BuildFortressCourt();
+    void BuildFortressSkyline();
+    void FortressMuralBay(const FVector& Anchor,float Height,float Yaw,int32 MuralIndex);
     void BuildOverarchingArchitecture();
     void BuildInteractiveDetails();
     void BreakProp(int32 Index);

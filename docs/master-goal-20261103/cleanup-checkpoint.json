@@ -1,0 +1,21 @@
+{
+  "applied": true,
+  "removed": {
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261103T080556Z": {
+      "receipt": "Local/package-20261103T080556Z/receipt.json",
+      "reason": "redundant completed archive"
+    },
+    "/private/tmp/veyr-stage-lw5l2lnd": {
+      "receipt": "Local/package-20261103T080556Z/receipt.json",
+      "reason": "redundant completed owned stage"
+    }
+  },
+  "retained": [
+    "/private/tmp/veyr-verified-bundle-slmpyfnq/Veyr-Mac-Shipping.app",
+    "/private/tmp/veyr-verified-bundle-q75xu5vf/Veyr-Mac-Shipping.app"
+  ],
+  "skipped": {},
+  "freeBytesBefore": 747195523072,
+  "freeBytesAfter": 752510668800,
+  "utc": "2026-11-03T09:16:34.933741+00:00"
+}
