@@ -1,3 +1,15 @@
+# Runtime validation blocked by shared GPU capacity — 2026-11-04
+
+Full MASTER_GOAL scope is **unfinished**. Shared capacity/headroom blocked runtime work across three consecutive goal turns; independent CPU source corrections, compilation, queue repair and disk cleanup are now checkpointed. Remaining meaningful acceptance work requires rendering/native playback. Do not call the goal complete or enable the unreviewed candidates.
+
+The newest request `Evidence/native-intro-20261104T055902Z` / tool session42266 is TERMINAL: gate exit75, outcome skipped-busy,512.9s total queue+gate wait,180.32s gate phase, no started_at and zero native frames. Gate PID12975 is absent. Earlier outside-FIFO observer PID56598 was already cancelled before launch. **No owned QA capture is queued or running.** No engine crash/first-frame wedge occurred and no foreign job was touched. A later resume must verify changed GPU state and use ordinary gpu_slot FIFO; do not restore the removed --wait-for-capacity observer or repeatedly retry unchanged busy conditions.
+
+Pending: warm-intro visual retest and blind integration review; source-preview/import the prepared v043 run/direct-entry candidates; sprint/start/stop/turn, running/leap/light contacts and transitions; normal-camera healing/readability; recovery contact/balance review; final both-grip<=150s victories and all-move/settings/collision/performance regressions. The owner-approved R5 intro/look and accepted heavy/wings/fight-feel/audio stay preserved. Current accepted play pointer remains the older verified build; do not promote the untested warm/candidate assets.
+
+Latest CPU source/code checkpoint62d0224 and queue/film cleanup7d46607; this blocked-state record is being pushed next. Wiki tracks the same evidence. Cleanup this continuation reclaimed7.23GiB from redundant PNGs while keeping3 verified full films and361 original stills; prior build cleanup round6 reclaimed20.47GiB. No new generation or critic spend. Task-owned review server8813 remains available intentionally.
+
+---
+
 # CPU animation checkpoint — 2026-11-04, full goal active
 
 Previous goal turn made concrete progress: approved-tour media/cleanup were pushed. This continuation exported new CPU-only motion derivatives and compiled their opt-in comparison routes; no renderer or new paid job was launched. **Full objective remains incomplete.** Preserve the approved R5 intro/look and all earlier accepted combat/audio features.

@@ -114,7 +114,7 @@
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Progress: CPU corrected source runs, one-hand composition and direct running entry exported/prepared; opt-in code compiled. No new runtime or quality acceptance.",
+  "priorTurnClassification": "Progress: fixed queue starvation by removing the outside-FIFO observer; verified normal gate still returns skipped-busy; pruned verified encoded frames and prepared blind integration review tooling. Further required runtime work blocked by external GPU capacity.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -122,13 +122,17 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "normal_shared_FIFO_queue",
+    "status": "terminal_skipped_busy",
     "run": "Evidence/native-intro-20261104T055902Z",
-    "gatePid": 12975,
-    "toolSession": 42266,
+    "exitCode": 75,
+    "waitSeconds": 512.9,
+    "gateWaitSeconds": 180.32,
     "rendererLaunched": false,
-    "priorObserver": "PID56598 cancelled before launch; removed redundant outside-FIFO free-slot observer",
-    "scope": "Check the live handle. Normal gpu_slot remains authoritative with unchanged safety thresholds."
+    "nativeFrames": 0,
+    "gateProcessAbsent": true,
+    "ownedCaptureQueued": false,
+    "sameBlockerAcrossConsecutiveGoalTurns": 3,
+    "nextAction": "Resume only after verifying changed shared GPU capacity/headroom; normal gpu_slot FIFO with unchanged controls."
   },
   "gateProbeCode": {
     "flag": "VeyrFortressGateTest",

@@ -1,0 +1,31 @@
+{
+  "utc": "2026-11-04T06:09:11.372289+00:00",
+  "fullGoalAchieved": false,
+  "blocker": "Shared GPU capacity/headroom prevents required renderer launches",
+  "consecutiveGoalTurnsObserved": 3,
+  "observations": [
+    {
+      "run": "Evidence/native-intro-20261104T052718Z",
+      "process": 56598,
+      "verifiedAliveOnPriorTwoGoalTurns": true,
+      "finalState": "Cancelled before launch to replace starvation-prone observer with normal FIFO"
+    },
+    {
+      "run": "Evidence/native-intro-20261104T055902Z",
+      "process": 12975,
+      "finalState": "Terminal skipped-busy exit75; process absent; no started_at; zero native frames"
+    }
+  ],
+  "independentWorkCompleted": [
+    "CPU run-contact derivatives and one-hand composition",
+    "Direct running-entry source correction",
+    "Opt-in code compilation",
+    "Normal FIFO queue restoration",
+    "Verified-film raw-frame cleanup",
+    "Blind intro review packet builder"
+  ],
+  "requiredWorkStillNeedsRenderer": true,
+  "ownedCaptureQueuedOrRunning": false,
+  "foreignProcessesChanged": false,
+  "safetyGateOverridden": false
+}
