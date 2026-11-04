@@ -2,6 +2,32 @@
 
 Owner brief: 2026-11-03. Activate this work when the owner starts a goal referencing this file. Writing this brief alone does not start generation, purchases or engine work.
 
+## Resume checkpoint — 2026-11-03
+
+The previous goal was paused and then cleared by the owner. **A new goal explicitly referencing this brief authorizes resuming the remaining work.** Merely rewriting the prompt does not start it. Historical “active” or “queued” paragraphs are not live process evidence: the old stream-waiting capture was cancelled. Inspect actual processes, receipts, Git state and the newest HANDOFF section before launching anything.
+
+Resume the existing implementation; do not repeat the completed sourcing/generation pass. Thirteen built-in reference/mural/module images, five imported Tripo assets and four distinct integrated murals already exist. Reuse the accepted heavy attacks, wider idle wings, fight feedback, supplied single OST, dedicated dragon effects and single player hit grunt. New generation needs a specific recorded visual gap, not another general concept pass.
+
+Current starting facts, to verify live:
+
+- Fortress round 3 was visibly preferred in blind review but received **DO NOT SHIP**. Round 4 is packaged with source paving geometry, a larger cliff foundation/backdrop, softer firelight/fog, larger braziers and rusted recessed gate bars. It has not passed runtime/visual/collision/performance checks. Locate it through `Local/package-20261103T155644Z/receipt.json`; never assume a historical temporary app path still exists.
+- Knight v042 healing won the matched front/side blind review for visible poses/progression and passed four real heal charges, the health cap and empty-flask rejection. Normal gameplay-camera and continuous transition checks remain. The critic did not watch continuous video. The next source build enables this heal; `-VeyrNoSourcedHeal` preserves the comparison baseline. Resolve outstanding grip, hold, contact or disappearance concerns from actual playback before final acceptance.
+- The newest continuous locomotion crossfade edits are saved locally but **uncompiled and untested**. Review their diff and ownership, preserve it, then compile and validate it. Do not reset or silently discard it, and do not treat it as an improvement before evidence. Prior sprint/contact experiments failed and remain unaccepted.
+- Two-handed tap attacks could restart the first combo segment without its exit recovery. `-VeyrPrimaryRecovery` implements a candidate correction and compiles, but is disabled by default and needs gameplay, contact, timing and blind review. Boss HP remains 650. Investigate the recovery/chain behavior before changing damage or HP.
+- Running/leaping contacts, remaining light-foot/transition polish, final balance and full-build regressions are still unfinished. The completed 20-move film is a useful baseline; refresh it after final changes.
+
+Execution order on resumption:
+
+1. Verify ownership and saved state. Review/compile the unfinished crossfade edits, retain the existing packaged map candidate as an isolated comparison, and validate the round-4 map plus ordinary-camera healing. Recreate the bare review page if its server is stopped. Show only a compact startup audit/status.
+2. Close the fortress's actual remaining visual defects using fresh captures and blind critique. Judge paving, terrain connection, gate finish, mural lighting, repetition, readable combat and performance. Keep combat work advancing during build/generation waits rather than spending the entire run on map variants.
+3. Finish sourced sprint/start/stop/turn behavior, running and jumping attacks, and light-attack transitions. Keep source-first sourcing, Blender refinement and real contacts/collision. Rejected frozen-stride locking stays excluded. Use clearly different sources/approaches when a revision fails repeatedly.
+4. Test the two-handed recovery correction and balance risk/reward. Film ordinary-input victories in **both grips, each at most 150 seconds**, including readable death and working restart. Fix no-damage stretches and camera problems through real behavior; never bypass damage, reduce assertions or merely lower HP to pass.
+5. Perform final normal-camera combat, all dragon moves, settings, healing, soundtrack onset/SFX, collision and frame-pacing checks on the actual newest Shipping build. Promote only verified improvements, update the launcher/current-build pointer, remove obsolete owned builds, and publish the scoped evidence, handoff and wiki.
+
+Use one guarded process with fresh worlds for compatible paired QA scenarios when the existing tested runner supports it. This reduces cold starts without relaxing GPU/launch/streaming limits. A live queued job must be observed and continued, not duplicated because its log is quiet. During an active stream guard, keep renderer work queued and use permitted background/source work; never remove the flag or override the gate.
+
+Keep the complete requirement ledger current. A packaged build, a fidelity check, a relative winner that still fails quality, or a scoped still-image pass does not close the whole requirement. A first blind tie must be reported and the tied candidate left unshipped; continue independent authorised work. Do not claim the full goal is finished while any section remains unbuilt, failed, uninspected or unverified.
+
 ## Objective and autonomy
 
 Finish the remaining Veyr boss-fight work and substantially improve the playable arena. The environment must become a distinctive **gothic fortress / ruined war-court**, with generated wall murals and integrated 3D assets. **It must not look like a church or cathedral.** Deliver the actual updated Shipping game, not just concepts, downloads or an asset gallery.
@@ -37,7 +63,7 @@ Verify these in the current checkout/build before relying on them:
 - The owner supplied **one** OST, `Untitled.mp3` (149.6 seconds). It starts at encounter entry. Preserve it, its stereo arrangement and volume controls. Do not create a multi-track soundtrack package.
 - Dragon audio now uses dedicated CC0 creature effects. The owner rejected the human-bass Fish TTS dragon impersonation. Never restore it or use human TTS for creature roars. Fish remains only for the single player hit grunt.
 
-Previous approximately 75-second one-handed victories and approximately 25-second two-handed victories are historical measurements, not proof of final balance. Foot-contact failures, rejected healing and disabled running/leaping/sprint experiments remain unfinished. Do not relabel them as accepted.
+Previous approximately 75-second one-handed victories and approximately 25-second two-handed victories are historical measurements, not proof of final balance. Foot-contact failures and disabled running/leaping/sprint experiments remain unfinished. Healing has a newer scoped pose-review pass described in the resume section; earlier rejected versions remain rejected.
 
 ## Map art direction: gothic, explicitly not a church
 
