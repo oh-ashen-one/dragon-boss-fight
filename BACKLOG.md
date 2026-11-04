@@ -5,16 +5,18 @@ better now". These are his notes for the next session, in his order, with the fa
 Start with `HANDOFF.md`, then pick items here. Each item needs a before/after the owner can watch (bare page: video plus
 BEFORE/AFTER label, no text walls) and a blind Opus critic before it is called done.
 
-## Latest checkpoint — 2026-11-03
+## Latest checkpoint — 2026-11-04
 
-- Healing v042 won the matched front/side blind pose review and passed actual resource mechanics. It is enabled in the next source build; normal gameplay-camera/continuous-motion scope remains pending. Do not call the entire animation backlog done.
-- Map R3 is a clear relative improvement but its third blind review still says DO NOT SHIP. R4 geometry/terrain/iron/lighting candidate is packaged and awaits the stream guard.
-- Both paired replay modes and refreshed20-move coverage pass. New2H tap-recovery fix addresses a concrete missing-recovery balance defect; it compiles but is opt-in and untested at runtime. HP remains650.
-- Sprint/stop, running/leap contacts, remaining light-foot transitions, final balance and whole-build regressions remain open. HANDOFF.md top names the single queued test and exact current builds.
+- **Owner approved the R5 fortress/mural tour and requested it as the pre-fight loading presentation. Preserve its exact eight shots.** Production full playback and skip/death/retry tests pass. The first-walk texture fix is packaged but its capture is waiting for GPU capacity; integration review remains open.
+- Healing v042 won matched front/side blind pose review and is enabled. Four-charge resource checks pass on the fortress. Normal-camera framing and continuous-motion acceptance remain open.
+- Released two-hand attack recovery now has real victory evidence: 45.923s two-handed and75.623s one-handed on the same candidate build, unchanged650HP/damage. Recovery remains opt-in pending contact and blind review; these are not final balance measurements.
+- New CPU run derivatives improve source low-foot-window drift to20.55/7.95cm/s and preserve the original geometry. The one-hand derivative retains its existing upper-body motion and grip. Version v043 is prepared, not imported or accepted. Runtime starts/stops/turns remain unfinished.
+- Running-attack candidate removes an added0.30s standing join while preserving the sourced strike, travel, grip and recovery; source replay equivalence and comparison-code compile pass. Native contacts, visual review and interrupts remain open. Leap landing/contact work remains unfinished.
+- Remaining light-foot transitions, final both-grip<=150s wins, settings/camera/collision/performance and whole-build regressions remain open. Exact active job, evidence and retained builds: HANDOFF.md top. No additional paid generation in this pass.
 
-## New map requirement — 2026-11-03 (active; incomplete)
+## New map requirement — owner-approved presentation, final regression pending
 
-Owner wants the map substantially improved using built-in image generation (requested GPT Image 2.5) for references and wall murals, plus Tripo **via browser control** for 3D assets. Target: gothic fortress/war-court, **not a church**. Build toward the selected references in the actual playable arena. Full scope, execution and acceptance criteria are in MASTER_GOAL.md; short activation is in GOAL_PROMPT.md. The full opt-in fortress and four murals are implemented; 20/20 showcase coverage and a clear-floor inspection pass. Two blind Opus rounds clearly preferred the fortress but returned DO NOT SHIP. Murals improved; floor binding/finish, connected foundation/backdrop and grounded wall/gate details still need work. Combat regression and the remaining animation backlog remain unfinished. See the active checkpoint at the top of HANDOFF.md.
+Built-in image references, five browser-generated Tripo assets and four distinct secular murals are integrated into the gothic fortress/war-court. The owner explicitly approved the R5 tour on2026-11-03 and asked to retain it before combat. Earlier rejected map rounds are historical evidence, not a direction to redesign the approved R5 scene. The exact tour is now the skippable production intro. Remaining scope: handoff rendering, independent integration review, readable combat cameras, collision and performance on the final Shipping build. MASTER_GOAL.md retains the complete map and combat scope.
 
 ## Audio scope update — 2026-11-03
 

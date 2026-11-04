@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Transfer a Blender-exported action onto unchanged canonical GLB geometry.
+"""Transfer a sourced action onto unchanged canonical GLB geometry.
 
 Copies skeletal TRS animation only. Checks every joint at all keys and interval
-midpoints against the Blender export. This is representation validation, not QA.
+midpoints against the source export. This is representation validation, not QA.
 """
 import argparse
 import copy
@@ -72,7 +72,7 @@ def graft(canonical_path, exported_path, output):
     output.parent.mkdir(parents=True,exist_ok=True)
     output.write_bytes(result.bytes())
     receipt = {'canonicalSHA256': hashlib.sha256(canonical.bytes()).hexdigest(),
-               'blenderExportSHA256': hashlib.sha256(exported_path.read_bytes()).hexdigest(),
+               'animationSourceSHA256': hashlib.sha256(exported_path.read_bytes()).hexdigest(),
                'outputSHA256': hashlib.sha256(output.read_bytes()).hexdigest(),
                'sampleCount': len(samples), 'maximumJointMatrixError': error,
                'canonicalGeometrySkinMaterialsPreserved': True,

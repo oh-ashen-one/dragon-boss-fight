@@ -249,7 +249,9 @@ void AVeyrKnight::BeginPlay()
     // baseline switch for comparisons; ordinary play uses the fitted drink.
     bSourcedHeal=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoSourcedHeal"));
     bSourcedMoves=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedMoves"));
+    bDirectRunningAttack=bSourcedMoves&&FParse::Param(FCommandLine::Get(),TEXT("VeyrDirectRunningAttack"));
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
+    bPlantedSprint=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrPlantedSprint"));
     bPrimaryRecovery=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryRecovery"));
     bReadableAutoLockCamera=FParse::Param(FCommandLine::Get(),TEXT("VeyrReadableAutoLock"));
     bLocomotionPhaseMatch=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrLocomotionPhaseMatch"));
@@ -377,7 +379,7 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
     {
         case EVeyrKnightAction::LightAttack:return ChooseAttackClip(false);
         case EVeyrKnightAction::HeavyAttack:return ChooseAttackClip(true);
-        case EVeyrKnightAction::RunningAttack:return TEXT("RunningAttackSourced");
+        case EVeyrKnightAction::RunningAttack:return bDirectRunningAttack?TEXT("RunningAttackDirect"):TEXT("RunningAttackSourced");
         case EVeyrKnightAction::LeapAttack:return TEXT("LeapAttackSourced");
         case EVeyrKnightAction::Combo:return TEXT("LightCombo");
         case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
@@ -618,9 +620,10 @@ void AVeyrKnight::ReleasePrimaryAttack(){bPrimaryAttackHeld=false;}
 
 void AVeyrKnight::TryRunningAttack()
 {
-    if(!bSourcedMoves||!CanStartGroundedAction()||Stamina<28.f||!HasVisualClip(TEXT("RunningAttackSourced")))return;
+    const FName Clip=ResolveActionClip(EVeyrKnightAction::RunningAttack);
+    if(!bSourcedMoves||!CanStartGroundedAction()||Stamina<28.f||!HasVisualClip(Clip))return;
     Stamina-=28.f;RegenDelay=.8f;ActionSwingBase=++SwingId;++RunningAttacks;++LightAttacks;bSwingTwoHanded=bTwoHanded;
-    BeginAction(EVeyrKnightAction::RunningAttack,VisualClipDuration(TEXT("RunningAttackSourced"),2.f));
+    BeginAction(EVeyrKnightAction::RunningAttack,VisualClipDuration(Clip,2.f));
 }
 
 void AVeyrKnight::TryLeapAttack()
@@ -1252,6 +1255,7 @@ FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
     // Normal movement uses the sourced walk in the current grip. Shift selects
     // the sourced run; Ctrl remains unbound. Cadence follows measured speed.
     if(!bAllowRun||!bSprintHeld)return bTwoHanded?TEXT("WalkTwoHand"):TEXT("Walk");
+    if(bPlantedSprint)return bTwoHanded?TEXT("RunTwoHandPlanted"):TEXT("RunOneHandPlanted");
     if(bTwoHanded)return bSourcedSprint?TEXT("RunTwoHandSourced"):TEXT("RunTwoHand");
     return RunAnimationVariant==1?TEXT("RunAlternate"):TEXT("Run");
 }
@@ -1384,6 +1388,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         PresentationLocomotionTime+=DeltaSeconds*GetPlanarSpeed()/Nominal;Time=PresentationLocomotionTime;
     }
     const bool RunClip=Clip==FName(TEXT("Run"))||Clip==FName(TEXT("RunAlternate"))||
+        (bPlantedSprint&&(Clip==FName(TEXT("RunOneHandPlanted"))||Clip==FName(TEXT("RunTwoHandPlanted"))))||
         (bSourcedSprint&&(Clip==FName(TEXT("RunTwoHand"))||Clip==FName(TEXT("RunTwoHandSourced"))));
     bWasRunning=Moving&&(bSourcedSprint||!bTwoHanded)&&RunClip;
     PresentationLowerClip=PresentationTransitionLowerClip=RequestedLowerPresentationClip=NAME_None;
@@ -1398,7 +1403,9 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         ContinuousTransitionSource=NAME_None;
         const FVeyrVisualClip* Previous=CustomuseVisualDefinition->Clips.Find(ImportedPresentation->CurrentClip);
         const FString PreviousName=ImportedPresentation->CurrentClip.ToString();
-        if(bContinuousLocomotionBlend&&(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::RunStop)&&
+        const bool MovingSourceBlend=(bContinuousLocomotionBlend&&(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::RunStop))||
+            (bDirectRunningAttack&&Action==EVeyrKnightAction::RunningAttack);
+        if(MovingSourceBlend&&
            ImportedPresentation->CurrentTransitionAlpha>=1.f&&Previous&&Previous->bLoop&&
            (PreviousName.StartsWith(TEXT("Walk"))||PreviousName.StartsWith(TEXT("Run")))&&VisualClipSpeed(ImportedPresentation->CurrentClip)>1.f)
         {
@@ -1422,7 +1429,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         // Entering or leaving lock-on locomotion changes posture (hips up to 26 cm lower in the strafes): blend longer.
         auto IsLockOnLoco=[](FName N){const FString S=N.ToString();return S.StartsWith(TEXT("Strafe"))||S.StartsWith(TEXT("Backpedal"));};
         bTransitionLockOnEdge=!PresentationTransitionClip.IsNone()&&IsLockOnLoco(Clip)!=IsLockOnLoco(PresentationTransitionClip);
-        auto IsMobility=[](FName N){return N==FName(TEXT("RunningAttackSourced"))||N==FName(TEXT("LeapAttackSourced"));};
+        auto IsMobility=[](FName N){return N==FName(TEXT("RunningAttackSourced"))||N==FName(TEXT("RunningAttackDirect"))||N==FName(TEXT("LeapAttackSourced"));};
         bTransitionInvolvesMobility=IsMobility(Clip)||(IsMobility(PresentationTransitionClip)&&Action==EVeyrKnightAction::Ready);
         ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
@@ -1444,7 +1451,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     if(Alpha<1.f&&!ContinuousTransitionSource.IsNone())
     {
         float PhysicalSpeed=GetPlanarSpeed();
-        if(Action==EVeyrKnightAction::RunStop&&DeltaSeconds>0.f)
+        if((Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::RunningAttack)&&DeltaSeconds>0.f)
             PhysicalSpeed=AuthoredRootDisplacementWorld(RootTranslationAt(ActionElapsed)-RootTranslationAt(FMath::Max(0.f,ActionElapsed-DeltaSeconds))).Size2D()/DeltaSeconds;
         ContinuousTransitionSeconds+=DeltaSeconds*PhysicalSpeed/VisualClipSpeed(ContinuousTransitionSource)*VisualClipPlayRate(ContinuousTransitionSource);
         Sampled=ImportedPresentation->SampleClipTimeCrossfaded(Clip,SampleTime,Alpha,ContinuousTransitionSource,ContinuousTransitionSeconds);

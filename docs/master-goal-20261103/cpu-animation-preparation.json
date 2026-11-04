@@ -1,0 +1,65 @@
+{
+  "status": "CPU derivatives prepared; native import, rendered playback, blind review and gameplay acceptance pending",
+  "activeNativeDefinition": "v042heal unchanged",
+  "preparedVersion": "v043plants",
+  "plan": "Local/CustomuseAssets/Polish20261025/knight-v043plants/import-plan-KnightB.json",
+  "clips": [
+    {
+      "name": "RunOneHandPlanted",
+      "sha256": "3a49590d3f5651dac30d6b370dbbbd0aa39b3186d7d4c7d5f28d2136e486fcd0",
+      "durationSeconds": 0.6000000238418579,
+      "nominalSpeedCmS": 562.0693595531386,
+      "damageWindows": [],
+      "canonicalGeometryPreserved": true,
+      "equivalenceSamples": 145,
+      "maxCanonicalMatrixError": 0.0
+    },
+    {
+      "name": "RunTwoHandPlanted",
+      "sha256": "1dcc9f4c28cfeedf38bcd1d8f61c2186fb4bf9f39dfa8b09966629e758c8b0e1",
+      "durationSeconds": 0.6000000238418579,
+      "nominalSpeedCmS": 562.069359553138,
+      "damageWindows": [],
+      "canonicalGeometryPreserved": true,
+      "equivalenceSamples": 145,
+      "maxCanonicalMatrixError": 0.0
+    },
+    {
+      "name": "RunningAttackDirect",
+      "sha256": "16b95aba0fa657d8155f474f2d793ea640fc1f630b9127be3aec789642fef829",
+      "durationSeconds": 2.4666666984558105,
+      "nominalSpeedCmS": 0.0,
+      "damageWindows": [
+        [
+          1.0333333466504073,
+          1.666666688145818
+        ]
+      ],
+      "canonicalGeometryPreserved": true,
+      "equivalenceSamples": 593,
+      "maxCanonicalMatrixError": 0.0
+    }
+  ],
+  "paidGeneration": false,
+  "sourceRunContactMetrics": "forward-cpu-plants-metrics.json",
+  "oneHandRunContactMetrics": "onehand-cpu-plants-metrics.json",
+  "runningEntryCorrection": {
+    "removedAddedIdleSeconds": 0.3,
+    "retainedPoseMaximumMatrixError": 1.3937248325435192e-06,
+    "sourceStrikeRecoveryTravelAndGripPreserved": true,
+    "remainingRisk": "Source steady foot contacts and runtime start/stop/turn joins remain unreviewed."
+  },
+  "editorCompile": {
+    "sourceId": "e25d5b81f432974862f1ce6799f1b6fc47375c4d2b639420e977df3ac7b61684",
+    "success": true,
+    "sourceUnchangedDuringBuild": true,
+    "nativeGameplayVerified": false,
+    "receipt": "Local/unreal-build-20261104T054833652409Z/receipt.json"
+  },
+  "provenanceReferences": [
+    "docs/attack-sources-20261101/mixamo-greatsword-acquisition.json",
+    "docs/knight-complete-20261028/local-assets-provenance.json",
+    "docs/overnight-20261102/knight-locomotion-native-sources.json"
+  ],
+  "rawAssetPublication": "Private local derivatives only; commit scripts, hashes and provenance, not restricted animation files."
+}

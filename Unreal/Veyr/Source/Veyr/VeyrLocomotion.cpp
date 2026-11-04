@@ -17,7 +17,7 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
     if(!LocomotionPoseProbe->SetVisualDefinition(CustomuseVisualDefinition,false))return false;
     static const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
     constexpr int32 Count=96;
-    for(FName Clip:{FName(TEXT("Walk")),FName(TEXT("WalkTwoHand")),FName(TEXT("Run")),FName(TEXT("RunAlternate")),FName(TEXT("RunTwoHandSourced"))})
+    for(FName Clip:{FName(TEXT("Walk")),FName(TEXT("WalkTwoHand")),FName(TEXT("Run")),FName(TEXT("RunAlternate")),FName(TEXT("RunTwoHandSourced")),FName(TEXT("RunOneHandPlanted")),FName(TEXT("RunTwoHandPlanted"))})
     {
         if(!HasVisualClip(Clip))continue;
         const float Duration=VisualClipDuration(Clip,1.f)*VisualClipPlayRate(Clip),Dt=Duration/Count;
@@ -47,7 +47,9 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
         UE_LOG(LogTemp,Display,TEXT("VEYR_LOCOMOTION_CACHE clip=%s measuredNominal=%.2f samples=%d"),*Clip.ToString(),Cache.NominalSpeed,Speeds.Num());
         LocomotionPhaseCache.Add(Clip,MoveTemp(Cache));
     }
-    return LocomotionPhaseCache.Contains(TEXT("RunTwoHandSourced"));
+    return bPlantedSprint?
+        LocomotionPhaseCache.Contains(TEXT("RunOneHandPlanted"))&&LocomotionPhaseCache.Contains(TEXT("RunTwoHandPlanted")):
+        LocomotionPhaseCache.Contains(TEXT("RunTwoHandSourced"));
 }
 
 float AVeyrKnight::ClosestLocomotionPhase(FName Clip) const

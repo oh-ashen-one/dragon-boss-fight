@@ -1,0 +1,40 @@
+[
+  {
+    "file": "Local/AttackSources20261104/CPUBootPlants/FabMixamo_OneHandRun_v1composed.glb",
+    "sha256": "a3fd948219e735c39f6527cb8c5b572cacb972d318313841f32d3555414da907",
+    "durationSeconds": 0.6000000238418579,
+    "heightScaleCm": 244.11907505960158,
+    "planarHipTravelCm": [
+      -6.495801646553421e-06,
+      0.0,
+      337.2414782627991
+    ],
+    "feet": [
+      {
+        "side": "Left",
+        "sourceOnlyLowFootWindowMaxCmS": 20.547082357966545,
+        "nearFloorSamples": 11,
+        "ankleHorizontalSpeedP95CmS": 326.05202538218555,
+        "soleRangeCm": [
+          0.0,
+          67.93040657932525
+        ]
+      },
+      {
+        "side": "Right",
+        "sourceOnlyLowFootWindowMaxCmS": 7.948456383696618,
+        "nearFloorSamples": 7,
+        "ankleHorizontalSpeedP95CmS": 29.735165593549418,
+        "soleRangeCm": [
+          0.8382805552848351,
+          61.62988345866355
+        ]
+      }
+    ],
+    "endpointGapAfterPlanarTravelCm": {
+      "max": 9.6330290900642e-05,
+      "mean": 4.686882995557666e-05
+    },
+    "scope": "Source-only diagnostic; ankle speed includes legitimate pivots. Native foot gates and visible transitions remain required."
+  }
+]

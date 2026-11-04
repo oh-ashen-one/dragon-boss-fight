@@ -52,7 +52,9 @@ public:
     bool UsesSourcedHeavy() const { return bSourcedTwoHandHeavy; }
     bool UsesSourcedHeal() const { return bSourcedHeal; }
     bool UsesSourcedMoves() const { return bSourcedMoves; }
+    bool UsesDirectRunningAttack() const { return bDirectRunningAttack; }
     bool UsesSourcedSprint() const { return bSourcedSprint; }
+    bool UsesPlantedSprint() const { return bPlantedSprint; }
     bool UsesPrimaryRecovery() const { return bPrimaryRecovery; }
     bool UsesReadableAutoLockCamera() const { return bReadableAutoLockCamera; }
     int32 PrimaryRecoveries=0;
@@ -259,6 +261,8 @@ private:
     bool bSourcedHeal=false;
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
+    bool bPlantedSprint=false;
+    bool bDirectRunningAttack=false;
     bool bLocomotionPhaseMatch=false;
     bool bContinuousLocomotionBlend=false;
     FName ContinuousTransitionSource=NAME_None;

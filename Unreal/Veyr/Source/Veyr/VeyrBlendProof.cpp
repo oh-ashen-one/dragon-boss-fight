@@ -70,9 +70,10 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     if(bMobilityProof)
     {
         const bool New=Knight.IsValid()&&Knight->UsesSourcedMoves();
+        const TCHAR* Running=Knight.IsValid()&&Knight->UsesDirectRunningAttack()?TEXT("RunningAttackDirect"):New?TEXT("RunningAttackSourced"):TEXT("LightCombo");
         static const FDef Mobility[]={
-            {TEXT("Running_attack_side"),EKind::RunningAttack,0,false,true,.7f,0.f,New?TEXT("RunningAttackSourced"):TEXT("LightCombo"),90.f},
-            {TEXT("Running_attack_threequarter"),EKind::RunningAttack,0,false,true,.7f,0.f,New?TEXT("RunningAttackSourced"):TEXT("LightCombo"),35.f},
+            {TEXT("Running_attack_side"),EKind::RunningAttack,0,false,true,.7f,0.f,Running,90.f},
+            {TEXT("Running_attack_threequarter"),EKind::RunningAttack,0,false,true,.7f,0.f,Running,35.f},
             {TEXT("Leap_attack_side"),EKind::LeapAttack,0,false,true,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttackTwoHand"),90.f},
             {TEXT("Leap_attack_threequarter"),EKind::LeapAttack,0,false,true,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttackTwoHand"),35.f},
         };
@@ -93,11 +94,13 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     }
     if(bSprintProof)
     {
-        const TCHAR* TwoHandRun=Knight.IsValid()&&Knight->UsesSourcedSprint()?TEXT("RunTwoHandSourced"):TEXT("RunTwoHand");
+        const bool Planted=Knight.IsValid()&&Knight->UsesPlantedSprint();
+        const TCHAR* OneHandRun=Planted?TEXT("RunOneHandPlanted"):TEXT("Run");
+        const TCHAR* TwoHandRun=Planted?TEXT("RunTwoHandPlanted"):Knight.IsValid()&&Knight->UsesSourcedSprint()?TEXT("RunTwoHandSourced"):TEXT("RunTwoHand");
         static const FDef SprintDefs[]={
-            {TEXT("SprintStop_1H"),EKind::Strafe,0,true,false,2.2f,1276.f,TEXT("Run"),90.f},
+            {TEXT("SprintStop_1H"),EKind::Strafe,0,true,false,2.2f,1276.f,OneHandRun,90.f},
             {TEXT("SprintStop_2H"),EKind::Strafe,0,true,true,2.2f,1276.f,TwoHandRun,90.f},
-            {TEXT("WalkSprintWalk_1H"),EKind::SpeedTransition,0,true,false,3.6f,1408.f,TEXT("Run"),90.f},
+            {TEXT("WalkSprintWalk_1H"),EKind::SpeedTransition,0,true,false,3.6f,1408.f,OneHandRun,90.f},
             {TEXT("WalkSprintWalk_2H"),EKind::SpeedTransition,0,true,true,3.6f,1408.f,TwoHandRun,90.f},
         };
         return SprintDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(SprintDefs)-1)];

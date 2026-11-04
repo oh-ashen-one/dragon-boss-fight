@@ -327,6 +327,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("hitsTaken"),Knight->HitsTaken); O->SetNumberField(TEXT("guardedHits"),Knight->GuardedHits);
     O->SetNumberField(TEXT("guardBreaks"),Knight->GuardBreaks); O->SetNumberField(TEXT("healsCompleted"),Knight->SuccessfulHeals);
     O->SetBoolField(TEXT("sourcedSprintEnabled"),Knight->UsesSourcedSprint());
+    O->SetBoolField(TEXT("plantedSprintEnabled"),Knight->UsesPlantedSprint());
+    O->SetBoolField(TEXT("directRunningAttackEnabled"),Knight->UsesDirectRunningAttack());
     O->SetBoolField(TEXT("approvedKnightDefinition"),Knight->bApprovedNativeDefinitionActive);
     O->SetBoolField(TEXT("knightRuntimePolishReady"),Knight->bUsingPolishDefinition);
     O->SetBoolField(TEXT("dragonRuntimePolishReady"),Dragon->bUsingPolishDefinition);
