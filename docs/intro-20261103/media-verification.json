@@ -1,0 +1,23 @@
+{
+  "ownerApprovedTour": {
+    "file": "owner-approved-fortress-tour.mp4",
+    "durationSeconds": 34.850846,
+    "codec": "h264",
+    "resolution": [
+      1280,
+      720
+    ],
+    "timingVerified": true,
+    "failedFrames": 0,
+    "sha256": "94193e1020b14ce699a7dc04adba438c99cfcf8fad06667c773572719af3d007"
+  },
+  "firstProductionIntro": {
+    "file": "prefight-intro-v1.mp4",
+    "durationSeconds": 36.108647,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "knownDefect": "First walk texture flash; candidate fix remains runtime-unverified"
+  },
+  "page": "http://localhost:8813/",
+  "scope": "The map tab shows the explicitly owner-approved R5 tour. No final intro quality verdict."
+}
