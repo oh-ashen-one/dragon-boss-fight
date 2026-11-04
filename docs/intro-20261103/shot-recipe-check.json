@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "shots": 8,
+  "orderedNamesPositionsFocusExact": true,
+  "durationPerShot": 4,
+  "fov": "75 for overview,60 for all other shots",
+  "pan": "100cm*(phase-0.5) on X",
+  "scope": "Recipe fidelity to owner-approved source; runtime playback still required"
+}

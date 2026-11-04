@@ -1,0 +1,19 @@
+{
+  "evidence": "Evidence/native-intro-20261104T042627Z/unreal-intro-20261104T042739Z-F784C167/evidence.json",
+  "wav": "Evidence/native-intro-20261104T042627Z/master-audio/VeyrMix-639293632592790000.wav",
+  "sampleRate": 48000,
+  "channels": 2,
+  "durationSeconds": 36.138666666666666,
+  "firstSignalWindowSeconds": 0.0,
+  "maxRMSFirst31Seconds": 0.0059016975574195385,
+  "peak": 0.08856201171875,
+  "clippedSamples": 0,
+  "musicStarts": 1,
+  "musicStartWorldSeconds": 32.782310485839844,
+  "introHandoffReplaySeconds": 32.76546859741211,
+  "scope": "Actual game-master mix contains existing ambience before combat. Owner-score template correlation establishes the score onset separately; first signal is not music onset. No clipping. This is timing evidence, not subjective listening approval.",
+  "ownerScoreTemplateSeconds": 2,
+  "ownerScoreCorrelationPeakSeconds": 32.53333333333333,
+  "ownerScoreCorrelationPeak": 0.5053049278727624,
+  "maximumOwnerScoreCorrelationBefore30Seconds": 0.08716566585404822
+}

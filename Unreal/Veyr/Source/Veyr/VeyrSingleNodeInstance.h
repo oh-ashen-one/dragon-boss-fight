@@ -18,6 +18,7 @@ public:
     bool SetExplicitTransitionAlpha(float Alpha);
     void ClearTransitionSource();
     bool HasTransitionSource() const;
+    bool SetExplicitTransitionSequence(UAnimSequence* Sequence,float SequenceSeconds);
     FString GetExplicitEvaluationError() const;
     uint64 GetExplicitEvaluationSerial() const;
     bool SetExplicitLowerBody(UAnimSequence* Sequence, float SequenceSeconds, float Weight);
@@ -34,4 +35,5 @@ protected:
 private:
     /** Keep the proxy's explicitly sampled asset alive without a second instance. */
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> ExplicitLowerSequence;
+    UPROPERTY(Transient) TObjectPtr<UAnimSequence> ExplicitTransitionSequence;
 };

@@ -95,12 +95,14 @@ void AVeyrArena::BeginPlay()
     if(!CathedralBrazierMesh)CathedralBrazierMesh=LoadObject<UStaticMesh>(nullptr,TEXT("/Game/ArtPass/Tripo/CathedralBrazier_v001/SM_CathedralBrazier_v001.SM_CathedralBrazier_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!CathedralFloorParent)CathedralFloorParent=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Floor/M_CathedralFloor_v001.M_CathedralFloor_v001"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     bUsingAuthoredFloor=CathedralFloorParent!=nullptr;bUsingImportedBraziers=CathedralBrazierMesh!=nullptr;
-    bFortressCandidate=FParse::Param(FCommandLine::Get(),TEXT("VeyrFortress"));
+    // Owner approved the R5 fortress/mural tour. Ordinary play uses it;
+    // the legacy arena remains an explicit comparison-only route.
+    bFortressCandidate=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyArena"));
     LoadPolishKit();
     if(bFortressCandidate)
     {
         LoadFortressKit();
-        UMaterialInterface* FortressFloor=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/FortressMaterials/v002/M_FortressFloor.M_FortressFloor"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+        UMaterialInterface* FortressFloor=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/FortressMaterials/v004/M_FortressFloor.M_FortressFloor"),nullptr,LOAD_Quiet|LOAD_NoWarn);
         if(FortressFloor)CathedralFloorParent=FortressFloor;
         else{bFortressAssetsReady=false;ConnectedCourtDiagnostic+=TEXT("; dry fortress floor missing");}
         bUsingAuthoredFloor=FortressFloor!=nullptr;
@@ -130,8 +132,8 @@ void AVeyrArena::BeginPlay()
         // Large courtyard flags must remain legible at the combat camera's
         // distance. Preserve the scan's warm stone variation beneath moonlight.
         auto* CourtPaving=UMaterialInstanceDynamic::Create(CathedralFloorParent,this,TEXT("FortressCourtPaving"));
-        CourtPaving->SetScalarParameterValue(TEXT("FloorTileCm"),1000.f);
-        CourtPaving->SetScalarParameterValue(TEXT("FloorDesaturation"),.60f);
+        CourtPaving->SetScalarParameterValue(TEXT("FloorTileCm"),400.f);
+        CourtPaving->SetScalarParameterValue(TEXT("FloorDesaturation"),.35f);
         Materials.Add(CourtPaving);FloorMaterial=CourtPaving;
     }
     FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
@@ -335,7 +337,7 @@ void AVeyrArena::KitPiece(FName Name,const FVector& Anchor,float Height,float Ya
         // The court material uses world-position UVs. Share it across the
         // shallow generated paving so the surface continues through its edge
         // instead of looking like a differently textured rectangular rug.
-        if(Name==FName(TEXT("WornPavingPatch"))&&!bFortressCandidate&&FloorSurface&&FloorSurface->GetMaterial(0))
+        if(Name==FName(TEXT("WornPavingPatch"))&&FloorSurface&&FloorSurface->GetMaterial(0))
             for(int32 Slot=0;Slot<Mesh->GetStaticMaterials().Num();++Slot)
                 Batch->SetMaterial(Slot,FloorSurface->GetMaterial(0));
         // Other modules keep their imported PBR slots. The collision LOD uses
@@ -390,7 +392,7 @@ void AVeyrArena::BuildFloor()
     Box(Floor,FVector(0,0,-20),FVector(FloorHalfX*2+100,FloorHalfY*2+100,40));
     if(!bFortressCandidate)Cylinder(FloorSurface,FVector(0,0,-4.7f),CombatRadius+60.f,10.f);
     Box(Foundations,FVector(0,0,-200),FVector(FloorHalfX*2+900,FloorHalfY*2+900,380));
-    if(bFortressCandidate&&bConnectedCourtAssetsReady)
+    if(bFortressCandidate&&bConnectedCourtAssetsReady&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrProofFloor")))
     {
         // Reuse the sourced eight-metre stone patch with its own aligned PBR
         // material and real joints. Its skirt is buried; at most4cm of relief
@@ -642,10 +644,12 @@ void AVeyrArena::BuildCourtTerrain()
         if(!PolishMeshes.Contains(TEXT("PolyHavenCoastalCliff")))return;
         Box(Foundations,FVector(0,6000,-200),FVector(11100,3900,380));
         Box(Floor,FVector(0,6000,-20),FVector(10400,3000,40));
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,7500,-3450),3400,0,false);
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,-5000,-3450),3400,180,false);
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(5600,1200,-3450),3400,-90,false);
-        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(-5600,1200,-3450),3400,90,false);
+        // Height and footprint are independent: uniform scaling made300m
+        // strips protrude from a100m court as floating bridge-like arms.
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,7500,-3450),3400,0,false,false,.35f);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(0,-5000,-3450),3400,180,false,false,.35f);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(5600,1200,-3450),3400,-90,false,false,.35f);
+        KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(-5600,1200,-3450),3400,90,false,false,.35f);
         // Distant, irregular cliff faces supply a landscape beyond the court.
         // Their full nearest bounds stay outside the playable fortress.
         KitPiece(TEXT("PolyHavenCoastalCliff"),FVector(-22000,42000,-10000),22000,12,false,false,.32f);
@@ -817,7 +821,7 @@ void AVeyrArena::BuildLighting()
     Fog->SetRelativeLocation(FVector(0, 0, -150));
     Fog->SetFogDensity(.024f); Fog->SetFogHeightFalloff(.35f);
     Fog->SetFogInscatteringColor(FLinearColor(.070f, .090f, .12f));
-    Fog->SetStartDistance(4500); Fog->SetFogMaxOpacity(.82f);
+    Fog->SetStartDistance(4500); Fog->SetFogMaxOpacity(bFortressCandidate?.99f:.82f);
     // A restrained low layer on the existing fog component softens the distant
     // platform/ridge join. The inner fight stays ahead of the fog start plane.
     Fog->SetSecondFogDensity(.015f);

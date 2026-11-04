@@ -251,7 +251,9 @@ void AVeyrKnight::BeginPlay()
     bSourcedMoves=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedMoves"));
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
     bPrimaryRecovery=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryRecovery"));
+    bReadableAutoLockCamera=FParse::Param(FCommandLine::Get(),TEXT("VeyrReadableAutoLock"));
     bLocomotionPhaseMatch=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrLocomotionPhaseMatch"));
+    bContinuousLocomotionBlend=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrContinuousLocomotionBlend"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
@@ -365,6 +367,7 @@ float AVeyrKnight::GetSwordContactTime() const
 bool AVeyrKnight::IsTerminal() const { return IsDead()||(IsValid(Boss)&&Boss->IsDead()); }
 bool AVeyrKnight::CanStartGroundedAction() const
 {
+    if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->IsArenaIntroActive())return false;
     return GripTransitionRemaining<=0.f&&!IsTerminal()&&IsGrounded()&&!bPressedJump&&
         (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::RunStop);
 }
@@ -846,6 +849,8 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
 {
     if (IsTerminal()) return;
     UCharacterMovementComponent* Movement = GetCharacterMovement();
+    if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->IsArenaIntroActive())
+    {ConsumeMovementInputVector();Movement->StopMovementImmediately();MoveIntent=FVector::ZeroVector;return;}
     if (!bReplayControlled && !bMouseCaptured)
     {
         ConsumeMovementInputVector();
@@ -986,7 +991,19 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             else bContactCameraFocusInitialized=false;
             const FVector Delta=Focus-CameraBoom->GetComponentLocation();
             FRotator Desired=Delta.Rotation();
-            Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,25.f);
+            AutoLockPitchCeiling=25.f;
+            if(bReadableAutoLockCamera)
+            {
+                FVector2D ViewSize(16.f,9.f);
+                if(GetWorld()->GetGameViewport())GetWorld()->GetGameViewport()->GetViewportSize(ViewSize);
+                const float Aspect=ViewSize.Y>1.f?static_cast<float>(ViewSize.X/ViewSize.Y):16.f/9.f;
+                const float VerticalHalf=FMath::RadiansToDegrees(FMath::Atan(FMath::Tan(FMath::DegreesToRadians(CombatCamera->FieldOfView*.5f))/FMath::Max(.5f,Aspect)));
+                const float FeetAngle=FMath::RadiansToDegrees(FMath::Atan2(90.f,Arm));
+                AutoLockPitchCeiling=FMath::Clamp(VerticalHalf-FeetAngle-3.5f,-5.f,25.f);
+            }
+            // Only automatic aim is constrained. Manual upward look retains
+            // its full range, and neither lens nor arm length changes.
+            Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,AutoLockPitchCeiling);
             // Avoid spinning underneath a target whose head crosses overhead.
             if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;
             Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
@@ -1110,6 +1127,11 @@ void AVeyrKnight::SetPresentationDiagnostic(const FString& Diagnostic)
     if (!Diagnostic.IsEmpty()) UE_LOG(LogTemp, Warning, TEXT("VEYR_KNIGHT_PRESENTATION %s"), *Diagnostic);
 }
 
+void AVeyrKnight::KeepGameplayTexturesResident()
+{
+    for(UTexture2D* Texture:WarmedVariantTextures)if(Texture)Texture->SetForceMipLevelsToBeResident(45.f);
+}
+
 FString AVeyrKnight::VariantTextureResidency() const
 {
     FString Result;
@@ -1131,6 +1153,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     FailedPresentationReason.Reset();
     bIdleFallbackRejected=false;
     PresentationTransitionClip=NAME_None;
+    ContinuousTransitionSource=NAME_None;ContinuousTransitionSeconds=0.f;
     PresentationPreviousActionElapsed=-1.f;
     bPresentationTransitionActive=false;
     PresentationLowerClip=PresentationTransitionLowerClip=RequestedLowerPresentationClip=NAME_None;
@@ -1148,30 +1171,20 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported component or definition missing"));
         return false;
     }
-    if(bSourcedHeal||bSourcedSprint)
-    {
-        // Experimental variants are first drawn mid-action. Request their
-        // texture mips during encounter setup, not after the first heal/run
-        // frame is drawn. This tests the streaming hypothesis for a flat first
-        // frame; native capture must still establish the cause/fix. Only enabled variants
-        // participate; the rest of the library is not forced resident.
-        TSet<UTexture2D*> Textures;
-        for(const auto& Entry:Definition->Clips)
+    // The intro displays the idle skin, but the first walk/attack can use
+    // another approved mesh variant with distinct texture objects. Warm all
+    // five current variants, deduplicating shared meshes and texture objects.
+    TSet<USkeletalMesh*> Meshes;Meshes.Add(Definition->SkeletalMesh.Get());
+    for(const auto& Entry:Definition->Clips)if(Entry.Value.MeshOverride)Meshes.Add(Entry.Value.MeshOverride.Get());
+    TSet<UTexture2D*> Textures;
+    for(USkeletalMesh* Mesh:Meshes)if(Mesh)
+        for(const FSkeletalMaterial& Slot:Mesh->GetMaterials())if(Slot.MaterialInterface)
         {
-            const bool Selected=(bSourcedHeal&&Entry.Key==FName(TEXT("HealSourced")))||
-                (bSourcedSprint&&(Entry.Key==FName(TEXT("RunTwoHandSourced"))||
-                 Entry.Key==FName(TEXT("RunStopOneHandSourced"))||Entry.Key==FName(TEXT("RunStopTwoHandSourced"))));
-            if(!Selected)continue;
-            USkeletalMesh* Mesh=Entry.Value.MeshOverride?Entry.Value.MeshOverride.Get():Definition->SkeletalMesh.Get();
-            if(!Mesh)continue;
-            for(const FSkeletalMaterial& Slot:Mesh->GetMaterials())if(Slot.MaterialInterface)
-            {
-                TArray<UTexture*> Used;Slot.MaterialInterface->GetUsedTextures(Used);
-                for(UTexture* Texture:Used)if(UTexture2D* T=Cast<UTexture2D>(Texture))Textures.Add(T);
-            }
+            TArray<UTexture*> Used;Slot.MaterialInterface->GetUsedTextures(Used);
+            for(UTexture* Texture:Used)if(UTexture2D* T=Cast<UTexture2D>(Texture))Textures.Add(T);
         }
-        for(UTexture2D* Texture:Textures){Texture->SetForceMipLevelsToBeResident(180.f);WarmedVariantTextures.Add(Texture);}
-    }
+    for(UTexture2D* Texture:Textures)WarmedVariantTextures.Add(Texture);
+    KeepGameplayTexturesResident();
     if (!ImportedPresentation->SetVisualDefinition(Definition,false))
     {
         SetPresentationDiagnostic(TEXT("Imported definition rejected; temporary primitives retained: ")+ImportedPresentation->LastError);
@@ -1382,6 +1395,16 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     const bool Restarted=Action!=EVeyrKnightAction::Ready&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
     if(Clip!=PresentationTransitionClip||Restarted)
     {
+        ContinuousTransitionSource=NAME_None;
+        const FVeyrVisualClip* Previous=CustomuseVisualDefinition->Clips.Find(ImportedPresentation->CurrentClip);
+        const FString PreviousName=ImportedPresentation->CurrentClip.ToString();
+        if(bContinuousLocomotionBlend&&(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::RunStop)&&
+           ImportedPresentation->CurrentTransitionAlpha>=1.f&&Previous&&Previous->bLoop&&
+           (PreviousName.StartsWith(TEXT("Walk"))||PreviousName.StartsWith(TEXT("Run")))&&VisualClipSpeed(ImportedPresentation->CurrentClip)>1.f)
+        {
+            ContinuousTransitionSource=ImportedPresentation->CurrentClip;
+            ContinuousTransitionSeconds=ImportedPresentation->CurrentTrimmedSeconds;
+        }
         const bool ContiguousPrimary=bSourcedTwoHandHeavy&&bPrimaryChainActive&&PrimaryChainStep==1&&
             Clip==FName(TEXT("LightCombo"))&&PresentationTransitionClip==Clip;
         const bool PreservePrefix=ContiguousPrimary||(bPreserveRollPrefix&&PresentationTransitionClip==FName(TEXT("Roll"))&&Clip==FName(TEXT("RollAttack")));
@@ -1417,7 +1440,16 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
            ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),W))
         {WeaponGripTarget=W.GetRelativeTransform(H);bWeaponGripBlendActive=true;WeaponGripAlpha=Alpha;}
     }
-    bool Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,SampleTime,Alpha);
+    bool Sampled=false;
+    if(Alpha<1.f&&!ContinuousTransitionSource.IsNone())
+    {
+        float PhysicalSpeed=GetPlanarSpeed();
+        if(Action==EVeyrKnightAction::RunStop&&DeltaSeconds>0.f)
+            PhysicalSpeed=AuthoredRootDisplacementWorld(RootTranslationAt(ActionElapsed)-RootTranslationAt(FMath::Max(0.f,ActionElapsed-DeltaSeconds))).Size2D()/DeltaSeconds;
+        ContinuousTransitionSeconds+=DeltaSeconds*PhysicalSpeed/VisualClipSpeed(ContinuousTransitionSource)*VisualClipPlayRate(ContinuousTransitionSource);
+        Sampled=ImportedPresentation->SampleClipTimeCrossfaded(Clip,SampleTime,Alpha,ContinuousTransitionSource,ContinuousTransitionSeconds);
+    }
+    else Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,SampleTime,Alpha);
     if(Sampled)Sampled=UpdateLocomotionFootContacts(DeltaSeconds);
     if(Alpha>=1.f)bPresentationTransitionActive=false;
     bRequestedPresentationClipSampled=Sampled;bPresentationUsingFallback=!Sampled;
@@ -1876,7 +1908,8 @@ void AVeyrKnight::UpdateMouseCapture()
             else if (bMouseCaptureConfirmationPending && bFocused && Viewport->Viewport->HasMouseCapture())
             {
                 bMouseCaptureConfirmationPending = false;
-                bHasEverCapturedMouse = true;
+                const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+                if(!Mode||!Mode->IsArenaIntroActive())bHasEverCapturedMouse = true;
                 // macOS can deliver cursor recenter/high-precision transition
                 // deltas around capture. Ignore look until confirmation settles.
                 MouseLookEnableAfterTime=FPlatformTime::Seconds()+.10;
@@ -1926,6 +1959,7 @@ void AVeyrKnight::CaptureMouseOrAttack()
 
 void AVeyrKnight::BeginControlFromKeyboard()
 {
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->SkipArenaIntro()){CaptureMouseOrAttack();return;}
     if(IsTerminal()){RestartIfTerminal();return;}
     // Enter begins controls at the opening screen and restarts only at terminal.
     if (bMouseCaptured) return;
@@ -1990,14 +2024,33 @@ void AVeyrKnight::RightPressed() { bRightHeld = HumanInputEnabled(); } void AVey
 
 bool AVeyrKnight::HumanInputEnabled() const
 {
+    if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->IsArenaIntroActive())return false;
     if(!bMouseCaptured||bMouseCaptureConfirmationPending||bResumeCapturePending||bReplayControlled||UGameplayStatics::IsGamePaused(this))return false;
     const UGameViewportClient* Viewport=GetWorld()->GetGameViewport();
     return Viewport&&Viewport->Viewport&&Viewport->Viewport->HasFocus()&&
         Viewport->Viewport->IsForegroundWindow()&&Viewport->Viewport->HasMouseCapture();
 }
-void AVeyrKnight::BlinkPressed(){if(HumanInputEnabled())TryDirectionalBlink();}
+bool AVeyrKnight::HasEnteredEncounter() const
+{
+    if(const auto* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr)if(Mode->IsArenaIntroActive())return false;
+    return bHasEverCapturedMouse||bReplayControlled;
+}
+void AVeyrKnight::OnArenaIntroCompleted()
+{
+    // Arming capture during the tour does not start combat in the background.
+    // Only an already-confirmed, still-focused owner window enters immediately.
+    if(bReplayControlled||!bMouseCaptured||bMouseCaptureConfirmationPending)return;
+    const UGameViewportClient* Viewport=GetWorld()?GetWorld()->GetGameViewport():nullptr;
+    if(Viewport&&Viewport->Viewport&&Viewport->Viewport->HasFocus()&&Viewport->Viewport->IsForegroundWindow()&&Viewport->Viewport->HasMouseCapture())bHasEverCapturedMouse=true;
+}
+void AVeyrKnight::BlinkPressed()
+{
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->SkipArenaIntro())return;
+    if(HumanInputEnabled())TryDirectionalBlink();
+}
 void AVeyrKnight::PausePressed()
 {
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->SkipArenaIntro())return;
     if(APlayerController* Player=Cast<APlayerController>(Controller))
         if(AVeyrHUD* HUD=Cast<AVeyrHUD>(Player->GetHUD()))HUD->TogglePauseMenu();
 }

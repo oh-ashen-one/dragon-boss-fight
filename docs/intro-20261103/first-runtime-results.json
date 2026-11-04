@@ -1,0 +1,39 @@
+{
+  "runs": [
+    {
+      "label": "full",
+      "mode": "intro",
+      "evidence": "Evidence/native-intro-20261104T042627Z/unreal-intro-20261104T042739Z-F784C167/evidence.json",
+      "passed": true,
+      "finalWrite": true,
+      "sourceId": "5468cd61094d40a34597e5b763397b80590720ffc362d4642bb4b7ed0d965951",
+      "introShotsSeen": 8,
+      "introSkipped": false,
+      "introPreviouslySeen": false
+    },
+    {
+      "label": "skip_retry",
+      "mode": "death",
+      "evidence": "Evidence/native-intro-20261104T043102Z/unreal-death-20261104T043142Z-B81372D0/evidence.json",
+      "passed": true,
+      "finalWrite": true,
+      "sourceId": "5468cd61094d40a34597e5b763397b80590720ffc362d4642bb4b7ed0d965951",
+      "introShotsSeen": 0,
+      "introSkipped": false,
+      "introPreviouslySeen": true
+    },
+    {
+      "label": "skip_retry",
+      "mode": "intro",
+      "evidence": "Evidence/native-intro-20261104T043102Z/unreal-intro-20261104T043137Z-4DAED948/evidence.json",
+      "passed": true,
+      "finalWrite": true,
+      "sourceId": "5468cd61094d40a34597e5b763397b80590720ffc362d4642bb4b7ed0d965951",
+      "introShotsSeen": 1,
+      "introSkipped": true,
+      "introPreviouslySeen": false
+    }
+  ],
+  "qualityAccepted": false,
+  "openDefect": "First movement switched to an unprimed walk material and showed a texture flash. Full variant prewarm retest pending."
+}

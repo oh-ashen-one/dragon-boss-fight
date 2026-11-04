@@ -16,13 +16,14 @@ runtime = p.add_mutually_exclusive_group(required=True)
 runtime.add_argument('--engine', type=Path)
 runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
-p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment'], required=True)
-p.add_argument('--next-mode',choices=['environment','showcase','healing'],help='One additional scenario in a fresh world, using the same owned renderer process')
+p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment','intro'], required=True)
+p.add_argument('--next-mode',choices=['environment','showcase','healing','death'],help='One additional scenario in a fresh world, using the same owned renderer process')
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--wait-for-stream-end',action='store_true',help='Keep this single owned request waiting while the shared streaming flag exists; still acquire the normal GPU gate afterward')
 p.add_argument('--video-fps', type=int, choices=range(1,61), help='Optional native capture cadence; adds measurable overhead')
 p.add_argument('--launch-services',action='store_true',help='Use the normal macOS app launch path; success still requires native final evidence')
 p.add_argument('--performance',action='store_true',help='Exclusive GPU lease; no screenshots/video, sparse diagnostics; audio remains enabled')
+p.add_argument('--with-sound',action='store_true',help='Enable the game audio device without recording; intro proof requires this or audio capture')
 p.add_argument('--audio-capture-seconds',type=int,choices=range(1,121),help='Record only the game master submix; enables sound and is incompatible with performance mode')
 p.add_argument('--start-two-handed', action='store_true', help='Core/victory QA uses the ordinary authored grip input before combat')
 p.add_argument('--extra-arg', action='append', default=[], help='Extra game command-line flag (repeatable), e.g. -VeyrNoWeaponGripLock for the blendproof before-run')
@@ -30,6 +31,7 @@ p.add_argument('--no-proof-floor', action='store_true', help='blendproof only: d
 p.add_argument('--width', type=int, default=1280)
 p.add_argument('--height', type=int, default=720)
 a = p.parse_args()
+if a.mode=='intro' and not(a.with_sound or a.audio_capture_seconds):p.error('Intro proof requires --with-sound or --audio-capture-seconds; NoSound playback counters are not valid audio evidence')
 if not 30 <= a.slot_wait_seconds <= 3600:
     p.error('--slot-wait-seconds must be between 30 and 3600')
 if (ROOT / 'Local/ENGINE_LAUNCH_HOLD.json').exists():
@@ -60,7 +62,7 @@ else:
     launch = [str(executable), str(project), '/Game/Maps/VeyrArena', '-game']
 if not executable.is_file():
     p.error('Runtime executable is missing')
-(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds),'performanceMode':a.performance,'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
+(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds or a.with_sound),'performanceMode':a.performance,'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
 cmd = [str(a.gpu_slot), 'perf' if a.performance else 'capture', '--label', 'veyr-' + a.mode, '--timeout', str(a.slot_wait_seconds), '--json', str(run/'gpu.json'), '--', *launch, '-windowed', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
 if a.performance:
     if a.video_fps or a.audio_capture_seconds:p.error('Performance and media capture are mutually exclusive')
@@ -69,6 +71,7 @@ if a.audio_capture_seconds:
     cmd.remove('-NoSound')
     audio_dir=run/'master-audio';audio_dir.mkdir()
     cmd.extend(['-ini:Engine:[Audio]:UnfocusedVolumeMultiplier=1.0','-VeyrAudioCapture='+str(audio_dir),'-VeyrAudioCaptureSeconds='+str(a.audio_capture_seconds)])
+if a.with_sound and '-NoSound' in cmd:cmd.remove('-NoSound')
 if a.video_fps:
     cmd.append('-VeyrVideoFPS='+str(a.video_fps))
 if a.next_mode:

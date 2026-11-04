@@ -33,7 +33,7 @@
     {
       "id": "arena",
       "requirement": "Playable gothic fortress; no church/cathedral reading; readable combat/camera",
-      "status": "R3_blind_rejected_R4_geometry_landscape_lighting_iron_packaging",
+      "status": "R5_tour_owner_approved_runtime_clearance_pass_final_performance_and_regression_pending",
       "evidence": [
         "critique-map-round3.md",
         "round3-fortress-audit.json",
@@ -74,9 +74,10 @@
     {
       "id": "balance",
       "requirement": "Both-grip risk/reward and measured <=150s victories",
-      "status": "diagnosed_two_hand_tap_missing_recovery_opt_in_fix_compiles_runtime_pending",
+      "status": "recovery_candidate_both_grips_under150_HP_damage_unchanged_contact_and_blind_gates_pending",
       "evidence": [
-        "primary-recovery-diagnosis.json"
+        "primary-recovery-diagnosis.json",
+        "recovery-pilot-victories.json"
       ]
     },
     {
@@ -90,6 +91,17 @@
       "requirement": "Shipping build, launcher, evidence, source/provenance/spend, pushes/wiki/security/cleanup",
       "status": "unverified",
       "evidence": []
+    },
+    {
+      "id": "prefight_intro",
+      "requirement": "Preserve owner-approved R5 tour as skippable production pre-fight intro; input/music/clock isolation, handoff and retries verified",
+      "status": "full_and_skip_retry_runtime_pass_texture_flash_fix_packaged_retest_waits_for_GPU",
+      "evidence": [
+        "../intro-20261103/owner-approval.json",
+        "../intro-20261103/shot-recipe-check.json",
+        "../intro-20261103/first-runtime-results.json",
+        "../intro-20261103/audio-onset-first-run.json"
+      ]
     }
   ],
   "imageProvider": "built-in image_gen",

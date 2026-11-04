@@ -1,0 +1,13 @@
+{
+  "dateEastern": "2026-11-03",
+  "scope": "Owner approved the currently watched fortress/mural camera tour and requested it as the loading/pre-fight presentation. Preserve its eight shots, order, four-second durations, camera positions, focus, pan and FOV. This does not close the remaining combat/animation backlog.",
+  "approvedCapture": "Evidence/native-environment-20261104T033704Z/unreal-environment-20261104T033726Z-203D8F65/evidence.json",
+  "approvedSourceId": "8ca43a155974b624c7905009d6f54545c677f2aafd76617f901059b9371baaea",
+  "approvedShippingReceipt": "Local/package-20261104T032301Z/receipt.json",
+  "preservedRecipeHashes": {
+    "Unreal/Veyr/Source/Veyr/VeyrArenaTour.cpp": "fcc738fcf3cb427c67392a77d6f5ade2b9953622908c5adabdc3b27166f4e4eb",
+    "Unreal/Veyr/Source/Veyr/VeyrArenaFortress.cpp": "2ed33bf6e110c12ebd1068e4bbe37f1d8e1ff3cee8d24bd2512069b1f6c93d98"
+  },
+  "runtimeImplementation": "Shared camera recipe; first session opening, skippable, retries bypass; no combat/HUD/OST until handoff. Existing deliberate mouse capture remains required in an unfocused launch.",
+  "verified": false
+}

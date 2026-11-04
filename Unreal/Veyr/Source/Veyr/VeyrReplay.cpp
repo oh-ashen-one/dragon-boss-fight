@@ -113,15 +113,15 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrReplayNext="),NextReplay))
     {
         NextReplay=NextReplay.ToLower();
-        if(NextReplay!=TEXT("environment")&&NextReplay!=TEXT("showcase")&&NextReplay!=TEXT("healing"))return false;
+        if(NextReplay!=TEXT("environment")&&NextReplay!=TEXT("showcase")&&NextReplay!=TEXT("healing")&&NextReplay!=TEXT("death"))return false;
         if(bNextReplayWorldStarted)ReplayMode=NextReplay;
     }
     bPerformanceMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrPerformance"));
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -129,6 +129,10 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED initialize only after knight and dragon are ready")); return false;
     }
     Knight=ModeActor->Knight; Dragon=ModeActor->Dragon;
+    if(ReplayMode==TEXT("intro"))
+    {
+        if(FParse::Value(FCommandLine::Get(),TEXT("VeyrIntroSkipAfter="),IntroSkipAfter))IntroSkipAfter=FMath::Clamp(IntroSkipAfter,.25f,30.f);
+    }
     if(ReplayMode==TEXT("healing")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrHealInspection")))
     {
         // Observation only: ordinary combat still supplies damage and heal inputs.
@@ -217,7 +221,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
-    DurationLimit=ReplayMode==TEXT("blendproof")?420.f:ReplayMode==TEXT("lockon")?180.f:ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
+    DurationLimit=ReplayMode==TEXT("intro")?50.f:ReplayMode==TEXT("blendproof")?420.f:ReplayMode==TEXT("lockon")?180.f:ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
     InitializeVideo();
     if(IsShowcase())
     {
@@ -237,7 +241,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         if(!BlendProof->Begin(GetWorld(),Knight,Dragon,RunDirectory,FParse::Param(FCommandLine::Get(),TEXT("VeyrProofFloor")),Hooks))
         {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED blendproof could not begin"));return false;}
     }
-    if(ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&
+    if(ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&
        !(ReplayMode==TEXT("blendproof")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof")))&&!Knight->bLockedOn)Knight->ToggleLockOn();
     if(ReplayMode==TEXT("stance"))Event(TEXT("stance_idle_before_input"));
     Event(bResume?TEXT("restart_world_loaded"):TEXT("start")); SaveEvidence(false);
@@ -350,6 +354,13 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("brokenProps"),SnapshotArena?SnapshotArena->BrokenProps:0);
     if(SnapshotMode&&SnapshotMode->Audio)
     {
+        O->SetBoolField(TEXT("introActive"),SnapshotMode->IsArenaIntroActive());
+        O->SetBoolField(TEXT("introCompleted"),SnapshotMode->bArenaIntroCompleted);
+        O->SetBoolField(TEXT("introSkipped"),SnapshotMode->bArenaIntroSkipped);
+        O->SetBoolField(TEXT("introPreviouslySeen"),SnapshotMode->bArenaIntroPreviouslySeen);
+        O->SetNumberField(TEXT("introSeconds"),SnapshotMode->ArenaIntroSeconds);
+        O->SetNumberField(TEXT("introShot"),SnapshotMode->ArenaIntroShot);
+        O->SetNumberField(TEXT("introShotsSeen"),SnapshotMode->ArenaIntroShotsSeen);
         O->SetNumberField(TEXT("recordedCuesLoaded"),SnapshotMode->Audio->RecordedCuesLoaded);
         O->SetBoolField(TEXT("musicLoaded"),SnapshotMode->Audio->bMusicLoaded);
         O->SetBoolField(TEXT("ownerScoreLoaded"),SnapshotMode->Audio->bOwnerScoreLoaded);
@@ -406,6 +417,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("primaryRecoveryEnabled"),Knight->UsesPrimaryRecovery());
     O->SetNumberField(TEXT("primaryRecoveries"),Knight->PrimaryRecoveries);
     O->SetStringField(TEXT("variantTextureResidency"),Knight->VariantTextureResidency());
+    O->SetNumberField(TEXT("warmedVariantTextureCount"),Knight->WarmedVariantTextureCount());
     O->SetBoolField(TEXT("sourcedMoves"),Knight->UsesSourcedMoves());
     O->SetNumberField(TEXT("runningAttacks"),Knight->RunningAttacks);
     O->SetNumberField(TEXT("leapingAttacks"),Knight->LeapingAttacks);
@@ -465,6 +477,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         Metrics->SetBoolField(TEXT("resolvedFloorTraceHit"),FloorFound);
         Metrics->SetStringField(TEXT("samplingScope"),TEXT("same-frame resolved spring arm; replay tick depends on CameraBoom; floor traced beneath Knight excluding Knight and Dragon"));
         Metrics->SetNumberField(TEXT("upwardPitchCeilingDegrees"),Knight->CameraPitchCeiling);
+        Metrics->SetBoolField(TEXT("readableAutoLockEnabled"),Knight->UsesReadableAutoLockCamera());
+        Metrics->SetNumberField(TEXT("autoLockPitchCeilingDegrees"),Knight->AutoLockPitchCeiling);
         Metrics->SetNumberField(TEXT("framingArmCm"),Knight->CameraFramingArm);
         FHitResult Hit;
         FCollisionQueryParams Query(SCENE_QUERY_STAT(VeyrReplayCamera),false,Knight);
@@ -2723,7 +2737,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Presentation->SetStringField(TEXT("equippedWeaponMesh"),WeaponPath);
     Presentation->SetBoolField(TEXT("equippedWeaponVisible"),bWeaponVisible);
     Root->SetObjectField(TEXT("presentationAssets"),Presentation);
-    Root->SetStringField(TEXT("policy"),ReplayMode==TEXT("environment")?TEXT("non-combat architectural inspection with read-only clearance probes; no victory or input-response claim"):IsShowcase()?TEXT("explicit non-combat production-animation rehearsal; scripted state selection, no combat victory claim"):TEXT("input-only provisional navigation; runtime tuning required"));
+    Root->SetStringField(TEXT("policy"),ReplayMode==TEXT("intro")?TEXT("production intro, skip/input/music isolation and ordinary movement/attack handoff; no combat victory claim"):ReplayMode==TEXT("environment")?TEXT("non-combat architectural inspection with read-only clearance probes; no victory or input-response claim"):IsShowcase()?TEXT("explicit non-combat production-animation rehearsal; scripted state selection, no combat victory claim"):TEXT("input-only provisional navigation; runtime tuning required"));
     if(IsShowcase()&&Showcase.IsValid())Root->SetObjectField(TEXT("showcase"),Showcase->Evidence());
     if(ReplayMode==TEXT("integration"))Root->SetObjectField(TEXT("integration"),IntegrationEvidence(true));
     if(ReplayMode==TEXT("collision"))Root->SetObjectField(TEXT("collision"),CollisionEvidence(true));
@@ -2875,6 +2889,12 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     if(ReplayMode==TEXT("environment"))
     {
         TickEnvironmentTour();ServiceCapture();
+        if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+    }
+    if(ReplayMode==TEXT("intro"))
+    {
+        TickArenaIntroProof();ServiceCapture();
+        if(Elapsed>DurationLimit&&!bFinished)Finish(false,TEXT("Intro/handoff proof timeout"));
         if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
     }
     if(IsShowcase()&&Showcase.IsValid())

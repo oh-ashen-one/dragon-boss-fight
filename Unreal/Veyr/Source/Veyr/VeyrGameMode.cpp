@@ -8,6 +8,11 @@
 #include "VeyrDragonEffects.h"
 #include "VeyrFightFeel.h"
 #include "VeyrIdentity.h"
+#include "VeyrArenaTour.h"
+#include "VeyrSessionState.h"
+#include "Camera/CameraActor.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Engine/GameInstance.h"
 #include "AudioMixerBlueprintLibrary.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
@@ -34,6 +39,12 @@ AVeyrGameMode::AVeyrGameMode()
 void AVeyrGameMode::StartPlay()
 {
     Super::StartPlay();
+    UVeyrSessionState* Session=GetGameInstance()?GetGameInstance()->GetSubsystem<UVeyrSessionState>():nullptr;
+    bArenaIntroPreviouslySeen=Session&&Session->bArenaIntroSeen;
+    FString RequestedReplay;
+    const bool HasReplay=FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),RequestedReplay);
+    bArenaIntroActive=!bArenaIntroPreviouslySeen&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoArenaIntro"))&&
+        !FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyArena"))&&(!HasReplay||RequestedReplay.Equals(TEXT("intro"),ESearchCase::IgnoreCase));
     // Shipping ignores startup console execution; enforce the delivered frame cap directly.
     const FString SlotCap=FPlatformMisc::GetEnvironmentVariable(TEXT("GPU_SLOT_FPS_CAP"));
     if(GEngine)GEngine->SetMaxFPS(SlotCap==TEXT("30")?30.f:60.f);
@@ -87,6 +98,9 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     SampleFightClock();
+    const double WarmNow=FPlatformTime::Seconds();
+    if(Knight&&(LastVariantTextureWarmWall==0.||WarmNow-LastVariantTextureWarmWall>=15.))
+    {Knight->KeepGameplayTexturesResident();LastVariantTextureWarmWall=WarmNow;}
     if(MixCaptureStarted>0&&!bMixCaptureFinished&&FPlatformTime::Seconds()-MixCaptureStarted>=MixCaptureDuration)FinishMixCapture();
     // Wall-clock bookkeeping and the optional recording timer also tick while paused.
     if(UGameplayStatics::IsGamePaused(this))return;
@@ -105,6 +119,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         Knight->MouseSensitivity=UserMouseSensitivity;
         if(FightFeel)Knight->AddTickPrerequisiteActor(FightFeel);
         bPawnPositioned=true;
+        if(bArenaIntroActive)StartArenaIntro();
         FString ReplayMode,EvidenceDirectory;
         if(FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayMode))
         {
@@ -116,15 +131,16 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
             StartNativeValidation(ReplayMode,EvidenceDirectory);
         }
     }
+    if(bArenaIntroActive)
+    {
+        if(FParse::Param(FCommandLine::Get(),TEXT("VeyrCaptureIntroAudio")))StartMixCapture();
+        TickArenaIntro(DeltaSeconds);
+        if(bArenaIntroActive)return;
+    }
     if(Knight&&Dragon&&Knight->HasEnteredEncounter()&&!(Replay&&Replay->IsPresentationOnly()))
     {
         SampleFightClock();
-        if(!MixCaptureDirectory.IsEmpty()&&MixCaptureStarted==0&&!bMixCaptureFinished)
-        {
-            UAudioMixerBlueprintLibrary::StartRecordingOutput(this,MixCaptureDuration+1.f);
-            MixCaptureStarted=FPlatformTime::Seconds();
-            UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_CAPTURE_START wall=%.6f world=%.6f"),MixCaptureStarted,GetWorld()->GetTimeSeconds());
-        }
+        StartMixCapture();
         EncounterSeconds+=DeltaSeconds;
         if(Dragon->IsDead()&&VictorySeconds<0)
         {
@@ -137,8 +153,60 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
 
 void AVeyrGameMode::SampleFightClock()
 {
-    if(Replay&&Replay->IsPresentationOnly())return;
+    if(bArenaIntroActive||(Replay&&Replay->IsPresentationOnly()))return;
     FightClock.Sample(FPlatformTime::Seconds(),Knight&&Knight->HasEnteredEncounter(),UGameplayStatics::IsGamePaused(this));
+}
+
+void AVeyrGameMode::StartArenaIntro()
+{
+    APlayerController* PC=GetWorld()->GetFirstPlayerController();
+    ArenaIntroCamera=GetWorld()->SpawnActor<ACameraActor>();
+    if(!PC||!ArenaIntroCamera){bArenaIntroActive=false;return;}
+    ArenaIntroShot=VeyrArenaTour::Apply(ArenaIntroCamera,0.f);ArenaIntroShotsSeen=1;
+    PC->SetViewTarget(ArenaIntroCamera);
+}
+
+void AVeyrGameMode::FinishArenaIntro(bool bSkipped)
+{
+    if(!bArenaIntroActive||bArenaIntroBlending)return;
+    bArenaIntroSkipped=bSkipped;bArenaIntroBlending=true;
+    ArenaIntroBlendRemaining=bSkipped?.35f:.75f;
+    if(APlayerController* PC=GetWorld()->GetFirstPlayerController())
+        PC->SetViewTargetWithBlend(Knight,ArenaIntroBlendRemaining,VTBlend_Cubic,0.f,true);
+}
+
+bool AVeyrGameMode::SkipArenaIntro()
+{
+    if(!bArenaIntroActive)return false;
+    FinishArenaIntro(true);return true;
+}
+
+void AVeyrGameMode::TickArenaIntro(float DeltaSeconds)
+{
+    if(!Knight||!ArenaIntroCamera)return;
+    if(bArenaIntroBlending)
+    {
+        ArenaIntroBlendRemaining-=DeltaSeconds;
+        if(ArenaIntroBlendRemaining>0.f)return;
+        if(APlayerController* PC=GetWorld()->GetFirstPlayerController())PC->SetViewTarget(Knight);
+        ArenaIntroCamera->Destroy();ArenaIntroCamera=nullptr;
+        bArenaIntroActive=false;bArenaIntroCompleted=true;
+        Knight->OnArenaIntroCompleted();
+        if(UVeyrSessionState* Session=GetGameInstance()?GetGameInstance()->GetSubsystem<UVeyrSessionState>():nullptr)Session->bArenaIntroSeen=true;
+        return;
+    }
+    ArenaIntroSeconds+=DeltaSeconds;
+    const int32 Shot=VeyrArenaTour::Apply(ArenaIntroCamera,ArenaIntroSeconds);
+    if(Shot!=ArenaIntroShot){ArenaIntroShot=Shot;++ArenaIntroShotsSeen;}
+    if(ArenaIntroSeconds>=VeyrArenaTour::Duration())FinishArenaIntro(false);
+}
+
+void AVeyrGameMode::StartMixCapture()
+{
+    if(MixCaptureDirectory.IsEmpty()||MixCaptureStarted!=0||bMixCaptureFinished)return;
+    UAudioMixerBlueprintLibrary::StartRecordingOutput(this,MixCaptureDuration+1.f);
+    MixCaptureStarted=FPlatformTime::Seconds();
+    UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_CAPTURE_START wall=%.6f world=%.6f intro=%d"),MixCaptureStarted,GetWorld()->GetTimeSeconds(),bArenaIntroActive);
 }
 
 double AVeyrGameMode::GetFightWallSeconds() const

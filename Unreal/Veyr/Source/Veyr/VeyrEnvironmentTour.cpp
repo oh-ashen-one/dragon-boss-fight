@@ -1,4 +1,5 @@
 #include "VeyrReplay.h"
+#include "VeyrArenaTour.h"
 #include "VeyrArena.h"
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
@@ -40,28 +41,14 @@ void AVeyrReplay::TickEnvironmentTour()
         }
         Event(TEXT("architecture_clearance_probed"),false);
     }
-    struct FShot{const TCHAR* Name;FVector Camera,Focus;};
-    static const FShot Shots[]={
-        {TEXT("court_player_height"),FVector(-4000,-2600,500),FVector(1400,2000,1100)},
-        {TEXT("court_overview"),FVector(-9000,-11000,10500),FVector(2300,800,1800)},
-        {TEXT("southwest_mural"),FVector(-2600,-2800,850),FVector(-3100,-4700,700)},
-        {TEXT("southeast_mural"),FVector(2600,-2800,850),FVector(3100,-4700,700)},
-        {TEXT("northwest_mural"),FVector(-3600,2800,850),FVector(-3100,4700,700)},
-        {TEXT("northeast_mural"),FVector(3600,2800,850),FVector(3100,4700,700)},
-        {TEXT("military_gate"),FVector(2700,0,450),FVector(5300,0,1800)},
-        {TEXT("court_reverse"),FVector(-1000,1500,550),FVector(-5100,-700,1200)}};
-    const int32 Index=FMath::FloorToInt(Elapsed/4.f);
-    if(Index>=UE_ARRAY_COUNT(Shots))
+    const int32 Index=FMath::FloorToInt(Elapsed/VeyrArenaTour::ShotSeconds());
+    if(Index>=VeyrArenaTour::ShotCount())
     {
         const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();const AVeyrArena* Arena=Mode?Mode->Arena.Get():nullptr;
         const bool Assets=Arena&&(!Arena->bFortressCandidate||(Arena->bFortressAssetsReady&&Arena->FortressMuralCount==4));
         Finish(Assets&&EnvironmentSweepFailures==0&&EnvironmentFloorFailures==0,
             FString::Printf(TEXT("Architectural inspection: 8 camera views, %d clearance failures, %d floor failures; no combat victory claim"),EnvironmentSweepFailures,EnvironmentFloorFailures));return;
     }
-    const FShot& Shot=Shots[Index];
-    EnvironmentCamera->GetCameraComponent()->FieldOfView=Index==1?75.f:60.f;
-    if(EnvironmentShot!=Index){EnvironmentShot=Index;Event(Shot.Name,false);}
-    const float U=FMath::Clamp(FMath::Fmod(Elapsed,4.f)/4.f,0.f,1.f);
-    const FVector Position=Shot.Camera+FVector(100.f*(U-.5f),0,0);
-    EnvironmentCamera->SetActorLocationAndRotation(Position,(Shot.Focus-Position).Rotation());
+    if(EnvironmentShot!=Index){EnvironmentShot=Index;Event(VeyrArenaTour::ShotName(Index),false);}
+    VeyrArenaTour::Apply(EnvironmentCamera,Elapsed);
 }

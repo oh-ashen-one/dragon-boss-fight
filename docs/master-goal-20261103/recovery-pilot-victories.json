@@ -1,0 +1,36 @@
+{
+  "runs": [
+    {
+      "label": "two_hand_before",
+      "evidence": "/Users/midir/veyr-knight-20261028/Evidence/native-victory-20261104T024358Z/unreal-victory-20261104T024414Z-2FC1BAA2/evidence.json",
+      "passed": true,
+      "terminalWallSeconds": 25.24910408630967,
+      "sourceId": "e153bd1fb86698b7964f489ceae4ca46f04801434f5e9775520d50f5c1d75afc",
+      "bossHP": 650,
+      "recoveryFlag": false,
+      "maximumRecoveryCount": 0
+    },
+    {
+      "label": "two_hand_after",
+      "evidence": "/Users/midir/veyr-knight-20261028/Evidence/native-victory-20261104T025132Z/unreal-victory-20261104T025147Z-9C13DE60/evidence.json",
+      "passed": true,
+      "terminalWallSeconds": 45.923399332910776,
+      "sourceId": "e153bd1fb86698b7964f489ceae4ca46f04801434f5e9775520d50f5c1d75afc",
+      "bossHP": 650,
+      "recoveryFlag": true,
+      "maximumRecoveryCount": 5
+    },
+    {
+      "label": "one_hand_regression",
+      "evidence": "/Users/midir/veyr-knight-20261028/Evidence/native-victory-20261104T025535Z/unreal-victory-20261104T025550Z-E21024CA/evidence.json",
+      "passed": true,
+      "terminalWallSeconds": 75.6228118725121,
+      "sourceId": "e153bd1fb86698b7964f489ceae4ca46f04801434f5e9775520d50f5c1d75afc",
+      "bossHP": 650,
+      "recoveryFlag": true,
+      "maximumRecoveryCount": 0
+    }
+  ],
+  "qualityAccepted": false,
+  "scope": "Ordinary-input victory/death/restart timing. Before25.25s versus recovery45.92s; one-hand75.62s; unchanged650HP and damage. Tap contact and blind visual review pending."
+}

@@ -1,0 +1,34 @@
+{
+  "asset": "cobblestone_floor_05",
+  "license": "CC0",
+  "licenseURL": "https://polyhaven.com/license",
+  "sourceURL": "https://polyhaven.com/a/cobblestone_floor_05",
+  "priceUSD": 0,
+  "files": [
+    {
+      "file": "cobblestone_floor_05_diff_2k.jpg",
+      "bytes": 1902487,
+      "sha256": "1cad4662445b6c3699c96c0e4e61efd1f287b441b44ca7047989ae57b281f4d1",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/cobblestone_floor_05/cobblestone_floor_05_diff_2k.jpg"
+    },
+    {
+      "file": "cobblestone_floor_05_nor_dx_2k.jpg",
+      "bytes": 898234,
+      "sha256": "10d3388516340b93bbfcfc0520e2b9ae4c3ff24412ee2a99d35628f4032225bb",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/cobblestone_floor_05/cobblestone_floor_05_nor_dx_2k.jpg"
+    },
+    {
+      "file": "cobblestone_floor_05_rough_2k.jpg",
+      "bytes": 1278811,
+      "sha256": "ba74fe719559b39698899bd3a5d294b460627550796fed4732d43dd6bf2c2e62",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/cobblestone_floor_05/cobblestone_floor_05_rough_2k.jpg"
+    },
+    {
+      "file": "cobblestone_floor_05_ao_2k.jpg",
+      "bytes": 924228,
+      "sha256": "83d60e6755e53dae21c25e09bcbde43fca483f429a38ebec772809d753d8824b",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/cobblestone_floor_05/cobblestone_floor_05_ao_2k.jpg"
+    }
+  ],
+  "selectionReason": "Finished stone surface with strong visible joints; the prior slate and Tripo patch finish lacked coherent paving at combat distance"
+}

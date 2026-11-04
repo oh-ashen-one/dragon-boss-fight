@@ -48,6 +48,12 @@ private:
     bool bEnvironmentProbed=false;
     FString EnvironmentFloorProbeSummary;
     void TickEnvironmentTour();
+    void TickArenaIntroProof();
+    bool bIntroObserved=false,bIntroSkipIssued=false,bIntroInputProbeIssued=false,bIntroAttackIssued=false;
+    int32 IntroObservedShot=INDEX_NONE;
+    float IntroHandoffAt=-1.f,IntroSkipAfter=-1.f;
+    FVector IntroHandoffOrigin=FVector::ZeroVector;
+    FVector IntroInitialOrigin=FVector::ZeroVector;
     FString ReplayMode, RunDirectory, OutcomeReason;
     bool bInitialized=false, bFinished=false, bFinalSaved=false, bPassed=false, bQuit=false;
     bool bPerformanceMode=false;

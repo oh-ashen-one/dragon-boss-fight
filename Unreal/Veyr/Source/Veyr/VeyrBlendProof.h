@@ -51,7 +51,7 @@ public:
     TSharedPtr<FJsonObject> CurrentState() const;
 
 private:
-    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack, RunningAttack, LeapAttack };
+    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack, RunningAttack, LeapAttack, PrimaryTap };
     enum class EPhase : uint8 { Setup, PreIdle, Action, PostIdle };
     struct FDef
     {
@@ -79,6 +79,8 @@ private:
     bool bHeavyProof=false;
     bool bPrimaryHeavyProof=false;
     bool bMobilityProof=false;
+    bool bPrimaryTapProof=false;
+    int32 LightCountAtInput=0;
     int32 HeavyCountAtInput=0;
     float HeavyReviewSlowMo=1.f;
     int32 CheckerInstances=0;

@@ -57,6 +57,16 @@ namespace
 
 const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
 {
+    if(bPrimaryTapProof)
+    {
+        static const FDef Taps[]={
+            {TEXT("Primary_tap_1H_side"),EKind::PrimaryTap,0,false,false,0.f,0.f,TEXT("LightAttack"),90.f},
+            {TEXT("Primary_tap_2H_side"),EKind::PrimaryTap,0,false,true,0.f,0.f,TEXT("LightCombo"),90.f},
+            {TEXT("Primary_tap_2H_threequarter"),EKind::PrimaryTap,0,false,true,0.f,0.f,TEXT("LightCombo"),35.f},
+            {TEXT("Primary_tap_2H_front"),EKind::PrimaryTap,0,false,true,0.f,0.f,TEXT("LightCombo"),0.f},
+        };
+        return Taps[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Taps)-1)];
+    }
     if(bMobilityProof)
     {
         const bool New=Knight.IsValid()&&Knight->UsesSourcedMoves();
@@ -106,7 +116,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount() const{return bMobilityProof?4:bHeavyProof?4:bSprintProof?4:9;}
+int32 FVeyrBlendProof::DefCount() const{return bPrimaryTapProof?4:bMobilityProof?4:bHeavyProof?4:bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {
@@ -129,10 +139,11 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     if(bBegan||!InWorld||!InKnight||!InDragon)return false;
     World=InWorld;Knight=InKnight;Dragon=InDragon;Hooks=MoveTemp(InHooks);RunDirectory=InRunDirectory;
     bSprintProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof"));
+    bPrimaryTapProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryTapProof"));
     bMobilityProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrMobilityAttackProof"));
     bPrimaryHeavyProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryHeavyProof"));
     bHeavyProof=bPrimaryHeavyProof||FParse::Param(FCommandLine::Get(),TEXT("VeyrHeavyProof"));
-    if(int32(bSprintProof)+int32(bHeavyProof)+int32(bMobilityProof)>1)return false;
+    if(int32(bSprintProof)+int32(bHeavyProof)+int32(bMobilityProof)+int32(bPrimaryTapProof)>1)return false;
     if(bHeavyProof&&FParse::Value(FCommandLine::Get(),TEXT("VeyrHeavyReviewSlowMo="),HeavyReviewSlowMo)&&FMath::IsFinite(HeavyReviewSlowMo))
         HeavyReviewSlowMo=FMath::Clamp(HeavyReviewSlowMo,.1f,1.f);
     else HeavyReviewSlowMo=1.f;
@@ -150,7 +161,7 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     if(Cam&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintGameplayCamera"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrProofGameplayCamera")))
     {
         Cam->GetCameraComponent()->bConstrainAspectRatio=false;
-        Cam->GetCameraComponent()->SetFieldOfView(bHeavyProof?55.f:45.f);
+        Cam->GetCameraComponent()->SetFieldOfView((bHeavyProof||bPrimaryTapProof)?55.f:45.f);
         Camera=Cam;
         if(APlayerController* PC=Cast<APlayerController>(Knight->GetController())){PC->SetViewTarget(Cam);bCameraApplied=true;}
     }
@@ -332,6 +343,20 @@ void FVeyrBlendProof::DriveAction(double Elapsed,float Dt)
     {
         bMidActionShot=true;
         Hooks.Shot(FString::Printf(TEXT("bp_%02d_%s_cycle"),SeqIndex+1,D.Name));
+    }
+    if(D.Kind==EKind::PrimaryTap)
+    {
+        Neutral();
+        if(!bActionIssued&&K->Action==EVeyrKnightAction::Ready)
+        {
+            LightCountAtInput=K->LightAttacks;
+            K->PressPrimaryAttack();K->ReleasePrimaryAttack();
+            bActionIssued=true;return;
+        }
+        if(K->LightAttacks>LightCountAtInput)bExpectedActionSeen=true;
+        if(bExpectedActionSeen&&K->Action==EVeyrKnightAction::Ready){EnterPhase(EPhase::PostIdle,Elapsed);return;}
+        if(InAction>8.){bActionTimedOut=true;EnterPhase(EPhase::PostIdle,Elapsed);}
+        return;
     }
     if(D.Kind==EKind::RunningAttack||D.Kind==EKind::LeapAttack)
     {
@@ -797,13 +822,14 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     O->SetBoolField(TEXT("heavyProof"),bHeavyProof);
     O->SetBoolField(TEXT("primaryHeavyProof"),bPrimaryHeavyProof);
     O->SetBoolField(TEXT("mobilityAttackProof"),bMobilityProof);
+    O->SetBoolField(TEXT("primaryTapProof"),bPrimaryTapProof);
     O->SetNumberField(TEXT("heavyReviewTimeDilation"),HeavyReviewSlowMo);
     O->SetBoolField(TEXT("allPassed"),bDone&&PassedCount==DefCount());
     O->SetStringField(TEXT("framesFile"),TEXT("blendproof-frames.jsonl"));
     TSharedPtr<FJsonObject> Setup=MakeShared<FJsonObject>();
     Setup->SetBoolField(TEXT("bossPassive"),Dragon.IsValid()&&Dragon->bProofPassive);Setup->SetBoolField(TEXT("proofCameraApplied"),bCameraApplied);
     Setup->SetBoolField(TEXT("proofFloorApplied"),bProofFloorApplied);Setup->SetNumberField(TEXT("checkerCellCm"),25);Setup->SetNumberField(TEXT("checkerInstances"),CheckerInstances);
-    Setup->SetArrayField(TEXT("home"),Vec(Home));Setup->SetArrayField(TEXT("forwardToBoss"),Vec(Fwd0));Setup->SetNumberField(TEXT("cameraDistanceCm"),bHeavyProof?900:580);Setup->SetNumberField(TEXT("cameraFovDegrees"),bHeavyProof?55:45);
+    Setup->SetArrayField(TEXT("home"),Vec(Home));Setup->SetArrayField(TEXT("forwardToBoss"),Vec(Fwd0));Setup->SetNumberField(TEXT("cameraDistanceCm"),bHeavyProof?900:580);Setup->SetNumberField(TEXT("cameraFovDegrees"),(bHeavyProof||bPrimaryTapProof)?55:45);
     Setup->SetBoolField(TEXT("weaponGripLockEnabled"),Knight.IsValid()&&Knight->bWeaponGripLockEnabled);
     O->SetObjectField(TEXT("setup"),Setup);
     TSharedPtr<FJsonObject> G=MakeShared<FJsonObject>();

@@ -54,8 +54,11 @@ public:
     bool UsesSourcedMoves() const { return bSourcedMoves; }
     bool UsesSourcedSprint() const { return bSourcedSprint; }
     bool UsesPrimaryRecovery() const { return bPrimaryRecovery; }
+    bool UsesReadableAutoLockCamera() const { return bReadableAutoLockCamera; }
     int32 PrimaryRecoveries=0;
     FString VariantTextureResidency() const;
+    void KeepGameplayTexturesResident();
+    int32 WarmedVariantTextureCount() const { return WarmedVariantTextures.Num(); }
     void TryRunningAttack();
     void TryLeapAttack();
     int32 RunningAttacks=0,LeapingAttacks=0;
@@ -85,6 +88,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") int32 CameraHiddenProxyParts = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraFloorClearance=220.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraPitchCeiling=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float AutoLockPitchCeiling=25.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Evidence") float CameraFramingArm=720.f;
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return Health <= 0.f; }
@@ -108,7 +112,8 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetRollDirection() const { return RollDirection; }
     UFUNCTION(BlueprintPure, Category="Input") bool IsMouseCaptured() const { return bMouseCaptured; }
     UFUNCTION(BlueprintPure, Category="Input") bool IsReplayControlled() const { return bReplayControlled; }
-    UFUNCTION(BlueprintPure, Category="Input") bool HasEnteredEncounter() const { return bHasEverCapturedMouse || bReplayControlled; }
+    UFUNCTION(BlueprintPure, Category="Input") bool HasEnteredEncounter() const;
+    void OnArenaIntroCompleted();
     UFUNCTION(BlueprintCallable, Category="Combat") void ApplyBossDamage(float Amount, const FVector& Source, bool bUnblockable = false);
     UFUNCTION(BlueprintCallable, Category="Combat") void TryLightAttack();
     UFUNCTION(BlueprintCallable, Category="Combat") void TryHeavyAttack();
@@ -255,7 +260,11 @@ private:
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
     bool bLocomotionPhaseMatch=false;
+    bool bContinuousLocomotionBlend=false;
+    FName ContinuousTransitionSource=NAME_None;
+    float ContinuousTransitionSeconds=0.f;
     bool bPrimaryRecovery=false;
+    bool bReadableAutoLockCamera=false;
     UPROPERTY() TArray<TObjectPtr<UTexture2D>> WarmedVariantTextures;
     UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> LocomotionPoseProbe;
     struct FLocomotionPhasePose { float Time=0.f; FVector Points[4]; };

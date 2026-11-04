@@ -28,6 +28,12 @@ Use one guarded process with fresh worlds for compatible paired QA scenarios whe
 
 Keep the complete requirement ledger current. A packaged build, a fidelity check, a relative winner that still fails quality, or a scoped still-image pass does not close the whole requirement. A first blind tie must be reported and the tied candidate left unshipped; continue independent authorised work. Do not claim the full goal is finished while any section remains unbuilt, failed, uninspected or unverified.
 
+## Owner-approved pre-fight intro — added 2026-11-03
+
+The owner watched the current R5 fortress/mural camera tour, explicitly approved its appearance, and requested it as the loading presentation before the boss fight. Preserve that exact eight-shot sequence and the approved scene; do not keep redesigning it based on older rejected map rounds. Scope of approval: the tour/map presentation, not unfinished combat animations or final performance.
+
+Integrate the tour into ordinary Shipping startup, with a skippable transition back to the player. Keep combat inputs, boss attacks, damage, the fight timer and the supplied OST inactive during it. Start the OST with actual encounter entry after control is available. Preserve normal mouse-focus safety, avoid repeating the full tour on retries, and test full playback, skip, handoff, music onset and restart behavior. Keep the approved shot recipe shared with the inspection replay so those views cannot silently drift. Film and independently review the integration; no new reference/asset generation is needed for this request.
+
 ## Objective and autonomy
 
 Finish the remaining Veyr boss-fight work and substantially improve the playable arena. The environment must become a distinctive **gothic fortress / ruined war-court**, with generated wall murals and integrated 3D assets. **It must not look like a church or cathedral.** Deliver the actual updated Shipping game, not just concepts, downloads or an asset gallery.

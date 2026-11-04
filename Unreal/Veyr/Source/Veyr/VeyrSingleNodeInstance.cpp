@@ -64,6 +64,8 @@ namespace
         explicit FVeyrSingleNodeProxy(UAnimInstance* Instance):FAnimSingleNodeInstanceProxy(Instance){}
         FVeyrPoseSnapshot LastPublished,TransitionSource;
         float Alpha=1.f;
+        UAnimSequence* TransitionSequence=nullptr;
+        float TransitionSeconds=0.f;
         FString EvaluationError;
         uint64 EvaluationSerial=0;
         UAnimSequence* LowerSequence=nullptr; // Owned by UVeyrSingleNodeInstance UPROPERTY.
@@ -234,6 +236,7 @@ namespace
             LastPublished.bValid=TransitionSource.bValid=false;Alpha=1.f;
             EvaluationError.Reset();EvaluationSerial=0;
             LowerSequence=nullptr;LowerSeconds=LowerWeight=0.f;BoneRotations.Reset();
+            TransitionSequence=nullptr;TransitionSeconds=0.f;
             FootTargets.Reset();FootWeights.Reset();
             MaskAsset.Reset();MaskBoneMap.Reset();LowerMask.Reset();LowerWeights.Reset();
         }
@@ -259,6 +262,15 @@ namespace
                 Source.Pose.CopyBonesFrom(TransitionSource.LocalTransforms);
                 Source.Curve.CopyFrom(TransitionSource.Curve);
                 Source.CustomAttributes.CopyFrom(TransitionSource.Attributes);
+                if(TransitionSequence)
+                {
+                    // Caller supplies both clocks. Evaluating the outgoing
+                    // locomotion avoids carrying a frozen planted foot with
+                    // the moving capsule during a run/stop crossfade.
+                    FAnimationPoseData SourceData(Source);
+                    TransitionSequence->GetAnimationPose(SourceData,FAnimExtractContext(static_cast<double>(TransitionSeconds),false));
+                    if(Source.ContainsNaN()){EvaluationError=TEXT("Continuous transition source produced a non-finite pose");LastPublished.bValid=false;return true;}
+                }
                 if(Alpha<=0.f)
                 {
                     // Exact endpoint, including curves/attributes: no weighted
@@ -311,6 +323,16 @@ bool UVeyrSingleNodeInstance::CaptureTransitionSource()
     auto& Proxy=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
     if(!Proxy.LastPublished.bValid)return false;
     Proxy.TransitionSource.CopyFrom(Proxy.LastPublished);
+    Proxy.TransitionSequence=nullptr;Proxy.TransitionSeconds=0.f;ExplicitTransitionSequence=nullptr;
+    return true;
+}
+
+bool UVeyrSingleNodeInstance::SetExplicitTransitionSequence(UAnimSequence* Sequence,float SequenceSeconds)
+{
+    if(!IsInGameThread()||!Sequence||!FMath::IsFinite(SequenceSeconds)||SequenceSeconds<0.f||SequenceSeconds>Sequence->GetPlayLength())return false;
+    auto& Proxy=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    if(!Proxy.TransitionSource.bValid)return false;
+    ExplicitTransitionSequence=Sequence;Proxy.TransitionSequence=Sequence;Proxy.TransitionSeconds=SequenceSeconds;
     return true;
 }
 
@@ -328,6 +350,7 @@ void UVeyrSingleNodeInstance::ClearTransitionSource()
     check(IsInGameThread());
     auto& Proxy=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
     Proxy.TransitionSource.bValid=false;Proxy.Alpha=1.f;
+    Proxy.TransitionSequence=nullptr;Proxy.TransitionSeconds=0.f;ExplicitTransitionSequence=nullptr;
 }
 
 bool UVeyrSingleNodeInstance::HasTransitionSource() const

@@ -1,0 +1,15 @@
+{
+  "material": {
+    "refPath": "/Game/ArtPass/FortressMaterials/v004/M_FortressFloor.M_FortressFloor"
+  },
+  "sourceHashes": {
+    "albedo": "1cad4662445b6c3699c96c0e4e61efd1f287b441b44ca7047989ae57b281f4d1",
+    "normal": "10d3388516340b93bbfcfc0520e2b9ae4c3ff24412ee2a99d35628f4032225bb",
+    "roughness": "ba74fe719559b39698899bd3a5d294b460627550796fed4732d43dd6bf2c2e62",
+    "ao": "83d60e6755e53dae21c25e09bcbde43fca483f429a38ebec772809d753d8824b"
+  },
+  "source": "Poly Haven Cobblestone Floor05 CC0",
+  "nativeImported": true,
+  "renderedVerified": false,
+  "scope": "Native project checked; fresh v004 material with world compression/mips, color, DX normal, roughness and AO"
+}

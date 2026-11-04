@@ -6,8 +6,9 @@ import numpy as np
 ROOT=Path(__file__).resolve().parents[3];sys.path.insert(0,str(ROOT/'tools/unreal'))
 from normalize_customuse_glb import GLB
 sources=[ROOT/'Local/AttackSources20261103/ForwardRun/Exports/Mixamo_ForwardRun_v1.glb']+[ROOT/'Local/AttackSources20261102/MixamoGreatSword/Retarget/Exports'/('Mixamo_'+n+'_v1.glb') for n in ['RunStopOneHand','RunStopTwoHand']]
-parser=argparse.ArgumentParser();parser.add_argument('--contacts',action='store_true');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--contacts',action='store_true');parser.add_argument('--file',type=Path,action='append');parser.add_argument('--output',type=Path);args=parser.parse_args()
 if args.contacts:sources=[ROOT/'Local/AttackSources20261103/LocomotionContacts'/(p.stem.replace('_v1','_v2contacts')+'.glb') for p in sources]
+if args.file:sources=[p.resolve() for p in args.file]
 rows=[]
 for p in sources:
  g=GLB(p);names={n.get('name'):i for i,n in enumerate(g.json['nodes'])};node=g.json['nodes'][g.mesh_node()];skin=g.json['skins'][node['skin']];parts=g.json['meshes'][node['mesh']]['primitives'];indices=[]
@@ -27,4 +28,4 @@ for p in sources:
   feet.append({'side':side,'sourceOnlyLowFootWindowMaxCmS':max(windows) if windows else None,'nearFloorSamples':int(mask.sum()),'ankleHorizontalSpeedP95CmS':float(np.percentile(v,95)) if len(v) else None,'soleRangeCm':[float(soles[:,i].min()-floor),float(soles[:,i].max()-floor)]})
  loop_nodes=[names[s+n] for s in ['Left','Right'] for n in ['Foot','ToeBase','Hand']];gaps=np.linalg.norm(points[-1,loop_nodes]-points[0,loop_nodes]-net,axis=1)
  rows.append({'file':str(p.relative_to(ROOT)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'durationSeconds':end,'heightScaleCm':float(factor),'planarHipTravelCm':net.tolist(),'feet':feet,'endpointGapAfterPlanarTravelCm':{'max':float(gaps.max()),'mean':float(gaps.mean())},'scope':'Source-only diagnostic; ankle speed includes legitimate pivots. Native foot gates and visible transitions remain required.'})
-out=ROOT/'docs/master-goal-20261103'/('locomotion-contact-metrics.json' if args.contacts else 'locomotion-source-metrics.json');out.write_text(json.dumps(rows,indent=2)+'\n');print(json.dumps(rows,indent=2))
+out=args.output or ROOT/'docs/master-goal-20261103'/('locomotion-contact-metrics.json' if args.contacts else 'locomotion-source-metrics.json');out.write_text(json.dumps(rows,indent=2)+'\n');print(json.dumps(rows,indent=2))

@@ -74,6 +74,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     bool SampleClipTimeBlended(FName ClipName, float ElapsedSeconds, float Alpha);
 
+    /** Optional explicit moving source for a locomotion crossfade. Both clips
+     * are sampled at caller-supplied times; no autonomous clock or notifies. */
+    bool SampleClipTimeCrossfaded(FName ClipName,float ElapsedSeconds,float Alpha,FName SourceClip,float SourceElapsedSeconds);
+
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     bool SampleClipPhaseBlended(FName ClipName, float Phase, float Alpha);
 

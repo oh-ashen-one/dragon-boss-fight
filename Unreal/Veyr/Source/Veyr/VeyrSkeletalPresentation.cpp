@@ -256,6 +256,26 @@ bool UVeyrSkeletalPresentation::SampleClipTimeBlended(FName ClipName, float Elap
     return SampleClipTimeInternal(ClipName,ElapsedSeconds,Alpha,true);
 }
 
+bool UVeyrSkeletalPresentation::SampleClipTimeCrossfaded(FName ClipName,float ElapsedSeconds,float Alpha,FName SourceClip,float SourceElapsedSeconds)
+{
+    if(!IsInGameThread()||!FMath::IsFinite(SourceElapsedSeconds)||SourceElapsedSeconds<0.f)return false;
+    // Resolve the destination mesh first, so a compatible skin-variant change
+    // cannot discard the newly supplied outgoing sequence state.
+    const FVeyrVisualClip* Destination=nullptr;float DestinationEnd=0.f;
+    if(!ResolveClip(ClipName,Destination,DestinationEnd))return false;
+    const FVeyrVisualClip* Source=VisualDefinition->Clips.Find(SourceClip);
+    if(!Source||!Source->Sequence||Source->Sequence->GetSkeleton()!=GetSkeletalMeshAsset()->GetSkeleton()||
+       Source->Sequence->IsValidAdditive()||!Source->Sequence->IsCompressedDataValid())
+        return Fail(TEXT("Invalid continuous transition source clip"));
+    const float End=Source->EndSeconds<0.f?Source->Sequence->GetPlayLength():Source->EndSeconds;
+    const float Duration=End-Source->StartSeconds;
+    if(!FMath::IsFinite(Duration)||Duration<=0.f||Source->StartSeconds<0.f||End>Source->Sequence->GetPlayLength())return Fail(TEXT("Invalid continuous source trim"));
+    const float Seconds=Source->StartSeconds+(Source->bLoop?FMath::Fmod(SourceElapsedSeconds,Duration):FMath::Min(SourceElapsedSeconds,Duration));
+    HandleExistingParallelEvaluationTask(true,true);
+    if(!CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance())->SetExplicitTransitionSequence(Source->Sequence,Seconds))return Fail(TEXT("Continuous source requires a captured transition"));
+    return SampleClipTimeInternal(ClipName,ElapsedSeconds,Alpha,true);
+}
+
 bool UVeyrSkeletalPresentation::BeginTransition()
 {
     if(!IsInGameThread())return false;

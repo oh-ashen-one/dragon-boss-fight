@@ -10,6 +10,7 @@ class AVeyrReplay;
 class AVeyrAudio;
 class AVeyrDragonEffects;
 class AVeyrFightFeel;
+class ACameraActor;
 
 UCLASS()
 class VEYR_API AVeyrGameMode : public AGameModeBase
@@ -51,7 +52,23 @@ public:
     UPROPERTY(BlueprintReadOnly) float VictorySeconds=-1;
     UPROPERTY(BlueprintReadOnly) double VictoryWallSeconds=-1.;
     double GetFightWallSeconds() const;
+    bool IsArenaIntroActive() const { return bArenaIntroActive; }
+    UFUNCTION(BlueprintCallable,Category="Veyr|Intro") bool SkipArenaIntro();
+    UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") bool bArenaIntroActive=false;
+    UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") bool bArenaIntroCompleted=false;
+    UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") bool bArenaIntroSkipped=false;
+    UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") bool bArenaIntroPreviouslySeen=false;
+    UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") float ArenaIntroSeconds=0.f;
+    UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") int32 ArenaIntroShot=INDEX_NONE;
+    UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") int32 ArenaIntroShotsSeen=0;
 private:
+    UPROPERTY() TObjectPtr<ACameraActor> ArenaIntroCamera;
+    bool bArenaIntroBlending=false;
+    float ArenaIntroBlendRemaining=0.f;
+    double LastVariantTextureWarmWall=0.;
+    void StartArenaIntro();
+    void TickArenaIntro(float DeltaSeconds);
+    void FinishArenaIntro(bool bSkipped);
     FVeyrFightClock FightClock;
     void SampleFightClock();
     bool bPawnPositioned=false;
@@ -62,4 +79,5 @@ private:
     bool bCaptureBackgroundOverride=false;
     float PreviousUnfocusedVolume=0.f;
     void FinishMixCapture();
+    void StartMixCapture();
 };
