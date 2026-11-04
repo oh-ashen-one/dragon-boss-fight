@@ -50,6 +50,8 @@ private:
     void TickEnvironmentTour();
     void TickArenaIntroProof();
     bool bIntroObserved=false,bIntroSkipIssued=false,bIntroInputProbeIssued=false,bIntroAttackIssued=false;
+    bool bIntroWindowShortcutsIsolated=false;
+    bool bIntroPostControlHitObserved=false;
     int32 IntroObservedShot=INDEX_NONE;
     float IntroHandoffAt=-1.f,IntroSkipAfter=-1.f;
     FVector IntroHandoffOrigin=FVector::ZeroVector;

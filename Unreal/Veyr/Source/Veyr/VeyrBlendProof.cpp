@@ -71,11 +71,17 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     {
         const bool New=Knight.IsValid()&&Knight->UsesSourcedMoves();
         const TCHAR* Running=Knight.IsValid()&&Knight->UsesDirectRunningAttack()?TEXT("RunningAttackDirect"):New?TEXT("RunningAttackSourced"):TEXT("LightCombo");
+        const TCHAR* RunningOneHand=New?Running:TEXT("LightAttack");
+        const TCHAR* LeapTwoHand=New?TEXT("LeapAttackSourced"):Knight.IsValid()&&Knight->UsesSourcedHeavy()?TEXT("HeavyAttackTwoHandSourced"):TEXT("HeavyAttackTwoHand");
         static const FDef Mobility[]={
             {TEXT("Running_attack_side"),EKind::RunningAttack,0,false,true,.7f,0.f,Running,90.f},
             {TEXT("Running_attack_threequarter"),EKind::RunningAttack,0,false,true,.7f,0.f,Running,35.f},
-            {TEXT("Leap_attack_side"),EKind::LeapAttack,0,false,true,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttackTwoHand"),90.f},
-            {TEXT("Leap_attack_threequarter"),EKind::LeapAttack,0,false,true,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttackTwoHand"),35.f},
+            {TEXT("Leap_attack_side"),EKind::LeapAttack,0,false,true,0.f,0.f,LeapTwoHand,90.f},
+            {TEXT("Leap_attack_threequarter"),EKind::LeapAttack,0,false,true,0.f,0.f,LeapTwoHand,35.f},
+            {TEXT("Running_attack_1H_side"),EKind::RunningAttack,0,false,false,.7f,0.f,RunningOneHand,90.f},
+            {TEXT("Running_attack_1H_threequarter"),EKind::RunningAttack,0,false,false,.7f,0.f,RunningOneHand,35.f},
+            {TEXT("Leap_attack_1H_side"),EKind::LeapAttack,0,false,false,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttack"),90.f},
+            {TEXT("Leap_attack_1H_threequarter"),EKind::LeapAttack,0,false,false,0.f,0.f,New?TEXT("LeapAttackSourced"):TEXT("HeavyAttack"),35.f},
         };
         return Mobility[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Mobility)-1)];
     }
@@ -119,7 +125,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount() const{return bPrimaryTapProof?4:bMobilityProof?4:bHeavyProof?4:bSprintProof?4:9;}
+int32 FVeyrBlendProof::DefCount() const{return bPrimaryTapProof?4:bMobilityProof?8:bHeavyProof?4:bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {

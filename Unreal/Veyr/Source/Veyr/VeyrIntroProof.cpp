@@ -11,6 +11,7 @@ void AVeyrReplay::TickArenaIntroProof()
 {
     AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!Mode||!Mode->Audio){Finish(false,TEXT("Intro proof requires the production mode and audio"));return;}
+    if(!bIntroWindowShortcutsIsolated){Finish(false,TEXT("Window shortcut callbacks affected the replay intro"));return;}
     if(Mode->IsArenaIntroActive())
     {
         if(!bIntroObserved)IntroInitialOrigin=Knight->GetFootLocation();
@@ -43,11 +44,17 @@ void AVeyrReplay::TickArenaIntroProof()
         IntroHandoffAt=Elapsed;IntroHandoffOrigin=Knight->GetFootLocation();Event(TEXT("intro_handoff_complete"));
     }
     if(Mode->Audio->MusicStarts>1){Finish(false,TEXT("Soundtrack restarted during intro handoff"));return;}
-    if(Elapsed-IntroHandoffAt>8.f){Finish(false,TEXT("Player movement/attack or soundtrack did not start after intro"));return;}
+    if(Elapsed-IntroHandoffAt>8.f){Finish(false,TEXT("Player movement/attack, soundtrack or real damage recovery did not complete after intro"));return;}
     const bool Moved=FVector::Dist2D(IntroHandoffOrigin,Knight->GetFootLocation())>=90.f;
     Knight->SetReplayInput(Moved?FVector::ZeroVector:FVector::ForwardVector,false,false,false,false,false,false);
     if(Moved&&!bIntroAttackIssued&&Knight->Action==EVeyrKnightAction::Ready&&Knight->GetPlanarSpeed()<10.f)
     {Knight->PressPrimaryAttack();Knight->ReleasePrimaryAttack();bIntroAttackIssued=true;Event(TEXT("intro_handoff_primary_requested"),false);}
-    if(Moved&&bIntroAttackIssued&&Knight->LightAttacks>0&&Knight->HasEnteredEncounter()&&Mode->Audio->MusicStarts==1&&Mode->Audio->bOwnerScoreLoaded)
-        Finish(true,TEXT("Production intro/skip isolated combat and music; player view,90cm ordinary movement,primary input and one soundtrack start verified"));
+    if(Knight->HitsTaken>0&&!bIntroPostControlHitObserved)
+    {bIntroPostControlHitObserved=true;Event(TEXT("intro_post_control_hit"),false);}
+    if(Moved&&bIntroAttackIssued&&Knight->LightAttacks>0&&Knight->HasEnteredEncounter()&&Mode->Audio->MusicStarts==1&&Mode->Audio->bOwnerScoreLoaded&&
+       bIntroPostControlHitObserved&&Knight->Action==EVeyrKnightAction::Ready)
+    {
+        Event(TEXT("intro_post_control_recovery"),false);
+        Finish(true,TEXT("Production intro/skip isolated combat and music; player view,90cm movement,primary input,one soundtrack start and real enemy-hit recovery verified"));
+    }
 }

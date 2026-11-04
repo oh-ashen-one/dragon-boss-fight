@@ -14,6 +14,7 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
         LocomotionPoseProbe->SetHiddenInGame(true);LocomotionPoseProbe->SetCastShadow(false);LocomotionPoseProbe->SetRenderInMainPass(false);
         LocomotionPoseProbe->RegisterComponent();
     }
+    LocomotionPoseProbe->bPreferCanonicalMesh=ImportedPresentation->bPreferCanonicalMesh;
     if(!LocomotionPoseProbe->SetVisualDefinition(CustomuseVisualDefinition,false))return false;
     static const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
     constexpr int32 Count=96;

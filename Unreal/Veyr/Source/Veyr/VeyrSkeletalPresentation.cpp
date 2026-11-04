@@ -211,7 +211,7 @@ bool UVeyrSkeletalPresentation::ResolveClip(FName ClipName, const FVeyrVisualCli
     if(!CheckReady())return false;
     OutClip=VisualDefinition->Clips.Find(ClipName);
     if(!OutClip||!OutClip->Sequence)return Fail(TEXT("Requested clip is missing: ")+ClipName.ToString());
-    USkeletalMesh* DesiredMesh=OutClip->MeshOverride?OutClip->MeshOverride.Get():VisualDefinition->SkeletalMesh.Get();
+    USkeletalMesh* DesiredMesh=!bPreferCanonicalMesh&&OutClip->MeshOverride?OutClip->MeshOverride.Get():VisualDefinition->SkeletalMesh.Get();
     if(DesiredMesh!=GetSkeletalMeshAsset())
     {
         const FReferenceSkeleton& Old=GetSkeletalMeshAsset()->GetRefSkeleton();
@@ -227,6 +227,9 @@ bool UVeyrSkeletalPresentation::ResolveClip(FName ClipName, const FVeyrVisualCli
         // Compatible skin variants retain the native instance and frozen transition pose.
         if(!ApplyMeshRenderPolicy(DesiredMesh))return false;
         SetSkeletalMesh(DesiredMesh,false);
+        ++MeshVariantSwitchCount;
+        UE_LOG(LogTemp,Display,TEXT("VEYR_MESH_VARIANT_SWITCH clip=%s frame=%llu mesh=%s psoPending=%d sceneProxy=%d"),
+            *ClipName.ToString(),GFrameCounter,*DesiredMesh->GetName(),IsPSOPrecaching(),GetSceneProxy()!=nullptr);
         if(!RefreshRenderPolicyEvidence())return false;
         if(!CheckReady())return false;
     }

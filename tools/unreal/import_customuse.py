@@ -243,12 +243,45 @@ def finalize_existing(plan):
     if errors:raise RuntimeError('Incomplete import: '+'; '.join(errors))
     clip_entries=dict(definition.clips)
     specifications={str(c['name']).lower():c for c in plan.get('clips',[])}
+    compression=[]
+    encoded_sequences=set()
+    component_scale=definition.get_editor_property('mesh_relative_transform').scale3d
+    compression_scale=max(1.,abs(float(component_scale.x)),abs(float(component_scale.y)),abs(float(component_scale.z)))
+    precise_settings=None
+    if plan.get('rotation_precision_codec')=='least_destructive':
+        codec_class=unreal.load_class(None,'/Script/Engine.AnimCompress_LeastDestructive')
+        if not codec_class:raise RuntimeError('Native least-destructive codec is unavailable')
+        settings_path=f'/Game/Characters/Customuse/{character}/{version}/Precision/BC_ContactPrecisionRaw'
+        precise_settings=unreal.load_asset(settings_path)
+        if precise_settings:
+            if unreal.EditorAssetLibrary.get_metadata_tag(precise_settings,'VeyrPrecisionOwner')!=path:
+                raise RuntimeError('Unowned precision settings asset; preserved')
+        else:
+            precise_settings=unreal.AssetToolsHelpers.get_asset_tools().create_asset('BC_ContactPrecisionRaw',settings_path.rsplit('/',1)[0],unreal.AnimBoneCompressionSettings,unreal.AnimBoneCompressionSettingsFactory())
+            if not precise_settings:raise RuntimeError('Could not create candidate compression settings')
+            unreal.EditorAssetLibrary.set_metadata_tag(precise_settings,'VeyrPrecisionOwner',path)
+            codec=unreal.new_object(codec_class,outer=precise_settings)
+            precise_settings.set_editor_property('codecs',[codec])
+            if not unreal.EditorAssetLibrary.save_loaded_asset(precise_settings,False):raise RuntimeError('Precision settings save failed')
     for key,clip in clip_entries.items():
         specification=specifications.get(str(key).lower())
         if specification and 'gameplay_play_rate' in specification:
             rate=float(specification['gameplay_play_rate'])
             if not math.isfinite(rate) or not .1<=rate<=4.:raise ValueError('Invalid explicit gameplay play rate')
             clip.set_editor_property('gameplay_play_rate',rate)
+        if specification and plan.get('scale_aware_compression') and clip.sequence.get_path_name() not in encoded_sequences:
+            sequence=clip.sequence
+            if not sequence.get_path_name().startswith(f'/Game/Characters/Customuse/{character}/{version}/'):
+                raise RuntimeError('Compression refinement cannot alter an inherited sequence')
+            previous=float(sequence.get_editor_property('compression_error_threshold_scale'))
+            if precise_settings:sequence.set_editor_property('bone_compression_settings',precise_settings)
+            # Engine documentation defines this as playback/component scale:
+            # larger characters require a correspondingly stricter encoding.
+            sequence.set_editor_property('compression_error_threshold_scale',compression_scale)
+            if not unreal.EditorAssetLibrary.save_loaded_asset(sequence,False):raise RuntimeError('Compression settings save failed')
+            compression.append({'sequence':sequence.get_path_name(),'previousThresholdScale':previous,'componentThresholdScale':compression_scale,
+                'boneCompressionSettings':sequence.get_editor_property('bone_compression_settings').get_path_name()})
+            encoded_sequences.add(sequence.get_path_name())
     definition.set_editor_property('clips',clip_entries)
     runtime_name='Knight' if character=='KnightB' else 'Dragon'
     runtime_folder=plan.get('runtime_folder','RuntimeApproved')
@@ -256,10 +289,11 @@ def finalize_existing(plan):
         raise ValueError('Unexpected runtime definition namespace')
     runtime=unreal.load_asset('/Game/Characters/Customuse/'+runtime_folder+'/DA_'+runtime_name)
     owns_runtime=runtime and (runtime_folder=='RuntimeApproved' or unreal.EditorAssetLibrary.get_metadata_tag(runtime,'VeyrPolishSourceDefinition')==path)
-    if owns_runtime and runtime.source_sha256==definition.source_sha256:
+    if owns_runtime and runtime.source_sha256==definition.source_sha256 and not plan.get('defer_runtime_updates'):
         runtime.set_editor_property('clips',clip_entries)
         unreal.EditorAssetLibrary.save_loaded_asset(runtime,False)
     record={'character':character,'definition':path,'completeClips':len(definition.clips),'materials':[],'sourcedVerification':verify_sourced_definition(plan,definition)}
+    record['scaleAwareCompression']=compression
     if character=='KnightB':
         props={mesh.get_path_name():mesh for mesh in definition.props.values() if mesh}
         for clip in definition.clips.values():
@@ -331,6 +365,42 @@ def finalize_existing(plan):
     receipt.write_text(json.dumps(record,indent=2)+'\n')
     return record
 
+
+
+def activate_polish_plan(plan):
+    """Activate a checked revision without changing the preserved source assets."""
+    import unreal
+    if plan.get('diagnostic_only'):raise ValueError('Diagnostic-only motion cannot be activated')
+    if Path(unreal.Paths.project_dir()).resolve()!=PROJECT.resolve():raise RuntimeError('Wrong native project')
+    if unreal.EditorLevelLibrary.get_game_world() is not None:raise RuntimeError('Stop PIE before activation')
+    character=plan['character']
+    if character not in ('KnightB','DragonV3B'):raise ValueError('Unknown character')
+    source_path=f"/Game/Characters/Customuse/{character}/{plan['version']}/DA_{character}"
+    source=unreal.load_asset(source_path)
+    if not source:raise RuntimeError('Import and finalize the revision first')
+    verify_sourced_definition(plan,source)
+    errors=list(source.validate_definition(True))
+    if errors:raise RuntimeError('; '.join(errors))
+    label='Knight' if character=='KnightB' else 'Dragon';destination='/Game/Characters/Customuse/RuntimePolish/DA_'+label
+    existing=unreal.load_asset(destination)
+    if existing:
+        previous=unreal.EditorAssetLibrary.get_metadata_tag(existing,'VeyrPolishSourceDefinition')
+        if previous!=source_path:
+            if not plan.get('replace_runtime_source') or previous!=plan['replace_runtime_source']:
+                raise RuntimeError('Different existing runtime revision; preserved')
+            # Explicit version-to-version promotion, with the old source DA
+            # and every inherited sequence retained as recovery points.
+            for field in ('skeletal_mesh','camera_occlusion_material','mesh_relative_transform','clips','props','bone_targets','required_clips','required_bone_targets','source_sha256','native_presentation_verified'):
+                existing.set_editor_property(field,source.get_editor_property(field))
+            unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPreviousSourceDefinition',previous)
+            unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPolishSourceDefinition',source_path)
+            if not unreal.EditorAssetLibrary.save_loaded_asset(existing,False):raise RuntimeError('Runtime promotion save failed')
+        return existing
+    result=unreal.EditorAssetLibrary.duplicate_asset(source_path,destination)
+    if not result:raise RuntimeError('Definition copy failed')
+    unreal.EditorAssetLibrary.set_metadata_tag(result,'VeyrPolishSourceDefinition',source_path)
+    if not unreal.EditorAssetLibrary.save_loaded_asset(result,False):raise RuntimeError('Runtime definition save failed')
+    return result
 
 def run(plan_file):
     import unreal

@@ -60,6 +60,8 @@ public:
     int32 PrimaryRecoveries=0;
     FString VariantTextureResidency() const;
     void KeepGameplayTexturesResident();
+    bool VerifyIntroShortcutIsolationForReplay();
+    int32 RejectedWindowShortcutInputs=0;
     int32 WarmedVariantTextureCount() const { return WarmedVariantTextures.Num(); }
     void TryRunningAttack();
     void TryLeapAttack();
@@ -409,6 +411,7 @@ private:
     void LeftPressed(); void LeftReleased();
     void RightPressed(); void RightReleased();
     bool HumanInputEnabled() const;
+    bool AcceptWindowShortcut(const TCHAR* Key);
     void UpdateMouseCapture();
     void CaptureMouseOrAttack();
     void BeginControlFromKeyboard();

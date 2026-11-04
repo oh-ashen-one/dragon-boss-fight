@@ -1,0 +1,15 @@
+{
+  "failureReceipt": "Local/package-20261104T180906Z/receipt.json",
+  "failure": "6875 global shader compilation failures because the Metal compiler component was uninstalled",
+  "selectedXcode": "27.2",
+  "selectedXcodeBuild": "27B52",
+  "repair": "Official xcodebuild -downloadComponent MetalToolchain",
+  "componentBuild": "27B47",
+  "downloadReportedMB": 838.9,
+  "compilerAndMetallibLinkerProbePassed": true,
+  "probeReceipt": "Local/Fortress20261103/metal-repair-preflight/metal-preflight.json",
+  "repairedPackageReceipt": "Local/package-20261104T190722Z/receipt.json",
+  "repairedCookPassed": true,
+  "globalXcodeSelectionChanged": false,
+  "newPackagePreflight": true
+}

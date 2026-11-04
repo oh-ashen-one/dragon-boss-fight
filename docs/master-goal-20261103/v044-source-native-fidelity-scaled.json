@@ -1,0 +1,85 @@
+{
+  "passed": false,
+  "scope": "Native import/compression fidelity at six sampled times per new clip; not visual/gameplay acceptance",
+  "planSHA256": "dab6de115b81fc6504cd445ad79beab4777fd9ad359f1def75e7b35407dfffa1",
+  "nativeProofSHA256": "d5fae78791cb1f69d70bb37359a0f9e3bb183869a031b16f23fdd33b8b27f272",
+  "limits": {
+    "translationCm": 0.1,
+    "rotationDegrees": 0.1,
+    "scale": 0.001
+  },
+  "clips": [
+    {
+      "clip": "RunOneHandPlanted",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 0.0069393240293277696,
+        "rotationDegrees": 0.10566599590806945,
+        "scale": 4.276512482803696e-06
+      },
+      "worstLocations": {
+        "translationCm": {
+          "bone": "WeaponSocket",
+          "timeSeconds": 0.599400023818016
+        },
+        "rotationDegrees": {
+          "bone": "Head",
+          "timeSeconds": 0.599400023818016
+        },
+        "scale": {
+          "bone": "RightHand",
+          "timeSeconds": 0.0
+        }
+      }
+    },
+    {
+      "clip": "RunTwoHandPlanted",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 0.0038895389710556505,
+        "rotationDegrees": 0.12613204927746763,
+        "scale": 1.152969870577003e-06
+      },
+      "worstLocations": {
+        "translationCm": {
+          "bone": "VeyrRoot",
+          "timeSeconds": 0.3780000150203705
+        },
+        "rotationDegrees": {
+          "bone": "Head",
+          "timeSeconds": 0.599400023818016
+        },
+        "scale": {
+          "bone": "RightFoot",
+          "timeSeconds": 0.0
+        }
+      }
+    },
+    {
+      "clip": "RunningAttackDirect",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 0.0035278498984452475,
+        "rotationDegrees": 0.10629704831292085,
+        "scale": 0.00020666792866003614
+      },
+      "worstLocations": {
+        "translationCm": {
+          "bone": "WeaponSocket",
+          "timeSeconds": 2.0473333597183228
+        },
+        "rotationDegrees": {
+          "bone": "LeftToeBase",
+          "timeSeconds": 0.0
+        },
+        "scale": {
+          "bone": "CupSocket",
+          "timeSeconds": 2.464200031757355
+        }
+      }
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 from audit_bundle import repair_copy
+from metal_preflight import verify_metal_toolchain
 
 ROOT = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser(description=__doc__)
@@ -26,6 +27,12 @@ archive = ROOT / 'Builds' / ('Unreal-Mac-' + stamp)
 receipt_dir = ROOT / 'Local' / ('package-' + stamp)
 receipt_dir.mkdir(parents=True, mode=0o700)
 print('Archive:', archive, 'Log:', receipt_dir/'package.log', flush=True)
+metal = verify_metal_toolchain(receipt_dir)
+if not metal['success']:
+    (receipt_dir/'receipt.json').write_text(json.dumps({'configuration':a.configuration,
+        'packagingSucceeded':False,'exitCode':1,'stage':'metal-toolchain-preflight','apps':[],
+        'nativePackagedGameplayVerified':False},indent=2)+'\n')
+    raise SystemExit('Metal compiler/linker preflight failed; inspect the package metal-preflight.log before retrying')
 # Embed and verify the exact source identity in the native target first.
 build = subprocess.run([sys.executable, str(ROOT/'tools/unreal/build.py'), '--engine', str(engine), '--target', 'Veyr','--configuration',a.configuration], cwd=ROOT)
 if build.returncode:

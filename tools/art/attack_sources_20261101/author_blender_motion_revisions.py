@@ -8,6 +8,7 @@ import bpy
 import hashlib
 import json
 import math
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -172,6 +173,9 @@ def trim_running_entry():
 
 
 OUT.mkdir(parents=True, exist_ok=True)
-compose_run()
-trim_running_entry()
+assert not ('--only-running-attack' in sys.argv and '--only-onehand-run' in sys.argv)
+if '--only-running-attack' not in sys.argv:
+    compose_run()
+if '--only-onehand-run' not in sys.argv:
+    trim_running_entry()
 print('BLENDER_MOTION_REVISIONS_AUTHORED', flush=True)

@@ -1,0 +1,85 @@
+{
+  "passed": true,
+  "scope": "Native import/compression fidelity at six sampled times per new clip; not visual/gameplay acceptance",
+  "planSHA256": "90bc68fd8016616977fe779077afb484c117dbe2b80233dfff986a332359553b",
+  "nativeProofSHA256": "9a48c5331adaf423353dbcd54c5dfed91a7b3f3e6c8c53e263141aef05eb4f63",
+  "limits": {
+    "translationCm": 0.1,
+    "rotationDegrees": 0.1,
+    "scale": 0.001
+  },
+  "clips": [
+    {
+      "clip": "RunOneHandPlanted",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 5.997205840195584e-05,
+        "rotationDegrees": 0.002532539313470781,
+        "scale": 4.276512482803696e-06
+      },
+      "worstLocations": {
+        "rotationDegrees": {
+          "bone": "LeftUpLeg",
+          "timeSeconds": 0.49800001978874203
+        },
+        "translationCm": {
+          "bone": "Spine2",
+          "timeSeconds": 0.3780000150203705
+        },
+        "scale": {
+          "bone": "RightHand",
+          "timeSeconds": 0.0
+        }
+      }
+    },
+    {
+      "clip": "RunTwoHandPlanted",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 0.00010250498881349012,
+        "rotationDegrees": 0.0011997661568804556,
+        "scale": 1.1529698703549585e-06
+      },
+      "worstLocations": {
+        "rotationDegrees": {
+          "bone": "LeftUpLeg",
+          "timeSeconds": 0.49800001978874203
+        },
+        "translationCm": {
+          "bone": "RightForeArm",
+          "timeSeconds": 0.49800001978874203
+        },
+        "scale": {
+          "bone": "RightFoot",
+          "timeSeconds": 0.0
+        }
+      }
+    },
+    {
+      "clip": "RunningAttackDirect",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 9.793490050491929e-05,
+        "rotationDegrees": 0.007401520286070259,
+        "scale": 2.039910775075704e-06
+      },
+      "worstLocations": {
+        "rotationDegrees": {
+          "bone": "RightUpLeg",
+          "timeSeconds": 0.41933333873748785
+        },
+        "translationCm": {
+          "bone": "RightToeBase",
+          "timeSeconds": 2.0473333597183228
+        },
+        "scale": {
+          "bone": "RightHand",
+          "timeSeconds": 2.464200031757355
+        }
+      }
+    }
+  ]
+}

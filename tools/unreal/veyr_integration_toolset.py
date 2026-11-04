@@ -168,34 +168,9 @@ class VeyrIntegrationTools(unreal.ToolsetDefinition):
         require_project()
         if unreal.EditorLevelLibrary.get_game_world() is not None:raise RuntimeError('Stop PIE before activation')
         plan=json.loads(polish_plan_for(character).read_text())
-        source_path=f"/Game/Characters/Customuse/{character}/{plan['version']}/DA_{character}"
-        source=unreal.load_asset(source_path)
-        if not source:raise RuntimeError('Import and finalize the revision first')
         import import_customuse
         importlib.reload(import_customuse)
-        import_customuse.verify_sourced_definition(plan,source)
-        errors=list(source.validate_definition(True))
-        if errors:raise RuntimeError('; '.join(errors))
-        label='Knight' if character=='KnightB' else 'Dragon';destination='/Game/Characters/Customuse/RuntimePolish/DA_'+label
-        existing=unreal.load_asset(destination)
-        if existing:
-            previous=unreal.EditorAssetLibrary.get_metadata_tag(existing,'VeyrPolishSourceDefinition')
-            if previous!=source_path:
-                if not plan.get('replace_runtime_source') or previous!=plan['replace_runtime_source']:
-                    raise RuntimeError('Different existing runtime revision; preserved')
-                # Explicit version-to-version promotion, with the old source DA
-                # and every inherited sequence retained as recovery points.
-                for field in ('skeletal_mesh','camera_occlusion_material','mesh_relative_transform','clips','props','bone_targets','required_clips','required_bone_targets','source_sha256','native_presentation_verified'):
-                    existing.set_editor_property(field,source.get_editor_property(field))
-                unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPreviousSourceDefinition',previous)
-                unreal.EditorAssetLibrary.set_metadata_tag(existing,'VeyrPolishSourceDefinition',source_path)
-                if not unreal.EditorAssetLibrary.save_loaded_asset(existing,False):raise RuntimeError('Runtime promotion save failed')
-            return existing
-        result=unreal.EditorAssetLibrary.duplicate_asset(source_path,destination)
-        if not result:raise RuntimeError('Definition copy failed')
-        unreal.EditorAssetLibrary.set_metadata_tag(result,'VeyrPolishSourceDefinition',source_path)
-        if not unreal.EditorAssetLibrary.save_loaded_asset(result,False):raise RuntimeError('Runtime definition save failed')
-        return result
+        return import_customuse.activate_polish_plan(plan)
 
     @toolset_registry.tool_call
     @staticmethod

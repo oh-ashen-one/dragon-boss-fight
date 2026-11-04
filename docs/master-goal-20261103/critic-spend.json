@@ -19,9 +19,31 @@
     {
       "receipt": "blind-heal-v042-receipt.json",
       "estimatedCostUSD": 1.1061869999999998
+    },
+    {
+      "id": "intro-integration-aborted-20261104",
+      "status": "aborted_before_verdict",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": null,
+      "costStatus": "Unknown; CLI was stopped before a terminal cost receipt. Usage may have been incurred.",
+      "reason": "A shell precondition failure did not prevent the CLI start. Stopped the owned process, then independently verified approved rules through authenticated GitHub before any replacement review.",
+      "rawReceipt": "Local/Fortress20261103/blind-intro-opus-stream.jsonl"
+    },
+    {
+      "id": "intro-integration-complete-20261104",
+      "status": "complete",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 1.6486878,
+      "verdict": "New A rejected; old B narrow preference; neither acceptable",
+      "receipt": "../intro-20261103/blind-integration-receipt.json"
     }
   ],
-  "totalEstimatedUSD": 4.4540052,
+  "totalEstimatedUSD": 6.102693,
   "invoice": false,
-  "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported"
+  "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported",
+  "unpricedAbortedCalls": 1
 }

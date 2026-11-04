@@ -1,0 +1,40 @@
+[
+  {
+    "file": "Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRun_v4rigid.glb",
+    "sha256": "2f3e46f940080b5fd0bc6c09d919166b49ea7b0e9354ae1d8788a2d17441cb96",
+    "durationSeconds": 0.6000000238418579,
+    "heightScaleCm": 244.1191150319655,
+    "planarHipTravelCm": [
+      -6.6165840067271194e-06,
+      0.0,
+      337.24156372739316
+    ],
+    "feet": [
+      {
+        "side": "Left",
+        "sourceOnlyLowFootWindowMaxCmS": 20.547535426548055,
+        "nearFloorSamples": 11,
+        "ankleHorizontalSpeedP95CmS": 326.0515399418896,
+        "soleRangeCm": [
+          0.0,
+          67.93038265167073
+        ]
+      },
+      {
+        "side": "Right",
+        "sourceOnlyLowFootWindowMaxCmS": 7.951916494319653,
+        "nearFloorSamples": 7,
+        "ankleHorizontalSpeedP95CmS": 29.73708412956936,
+        "soleRangeCm": [
+          0.8382310082704008,
+          61.62982248732559
+        ]
+      }
+    ],
+    "endpointGapAfterPlanarTravelCm": {
+      "max": 0.0008632228155551473,
+      "mean": 0.0002850463879693202
+    },
+    "scope": "Source-only diagnostic; ankle speed includes legitimate pivots. Native foot gates and visible transitions remain required."
+  }
+]

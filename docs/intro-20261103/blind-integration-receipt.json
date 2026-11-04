@@ -1,0 +1,234 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "toolCalls": {
+    "Read": 36,
+    "Bash": 5
+  },
+  "readResults": [
+    {
+      "file": "sequence.json",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 0
+    },
+    {
+      "file": "A-tour-01.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-tour-01.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-01.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-02.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-03.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-04.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-05.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-06.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-07.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-08.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-09.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-01.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-02.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-03.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-04.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-05.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-06.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-07.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-08.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-09.jpg",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-detail-1.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-detail-2.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-detail-3.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-detail-4.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A-handoff-detail-5.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-detail-1.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-detail-2.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-detail-3.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-detail-4.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B-handoff-detail-5.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "fire.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "details.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "A_first.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "B_first.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    },
+    {
+      "file": "verify.png",
+      "error": false,
+      "resultPresent": true,
+      "imageBlocks": 1
+    }
+  ],
+  "estimatedUSD": 1.6486878,
+  "invoice": false,
+  "completed": true,
+  "verdict": "B narrowly; neither visually better overall nor acceptable",
+  "newVariant": "A",
+  "qualityAccepted": false,
+  "scope": "Ordered native frame review; not continuous video/audio/gameplay feel"
+}

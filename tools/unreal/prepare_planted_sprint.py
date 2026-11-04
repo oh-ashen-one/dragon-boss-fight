@@ -34,7 +34,8 @@ def main():
                ('RunTwoHandPlanted', ROOT/'Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRun_v4rigid.glb')]
     plan = {k: v for k, v in base.items() if k != 'clips'}
     plan.update(version='v044blender', replace_runtime_source='/Game/Characters/Customuse/KnightB/v042heal/DA_KnightB',
-                owner_approved=False, purpose='Blender-authored sourced run candidates; native contacts and blind review pending', clips=[])
+                owner_approved=False, scale_aware_compression=True,rotation_precision_codec='least_destructive',
+                purpose='Blender-authored sourced run candidates; native contacts and blind review pending', clips=[])
     for key, source in sources:
         filename = source.name
         fit = json.loads(source.with_suffix('.json').read_text())

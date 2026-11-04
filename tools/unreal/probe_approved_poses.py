@@ -21,10 +21,12 @@ def run(plan):
  actor=unreal.EditorLevelLibrary.spawn_actor_from_class(cls,unreal.Vector(0,0,0),unreal.Rotator(),True)
  if not actor:raise RuntimeError('Could not create transient native sampling actor')
  receipt={'character':character,'definition':definition_path,'samples':[],'transitions':[],'failures':[]}
- out=ROOT/'Local/CustomuseImports'/('native-pose-proof-'+character+'-'+plan['version']+'.json')
+ canonical=bool(plan.get('prefer_canonical_skin',False));receipt['canonicalSkin']=canonical
+ out=ROOT/'Local/CustomuseImports'/('native-pose-proof-'+character+'-'+plan['version']+('-canonical' if canonical else '')+'.json')
  try:
   actor.set_actor_tick_enabled(False);actor.set_is_temporarily_hidden_in_editor(True)
   presentation=actor.get_editor_property('imported_presentation')
+  presentation.set_editor_property('prefer_canonical_mesh',canonical)
   if not presentation.set_visual_definition(definition,False):raise RuntimeError(str(presentation.get_editor_property('last_error')))
   clips=definition.get_editor_property('clips');names=list(clips)
   all_morphs=[str(x) for x in definition.get_imported_morph_target_names()]

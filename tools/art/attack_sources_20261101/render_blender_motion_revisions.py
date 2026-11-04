@@ -9,7 +9,7 @@ from pathlib import Path
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[3]
-OUT = ROOT/'Local/AttackSources20261104/BlenderReview'
+OUT = ROOT/'Local/AttackSources20261104/BlenderReviewFramed'
 SOURCES = [ROOT/'Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRun_v4rigid.blend',
            ROOT/'Local/AttackSources20261104/BlenderMotion/FabMixamo_OneHandRun_v2blender.blend',
            ROOT/'Local/AttackSources20261104/BlenderMotion/Mixamo_SlideAttack_v4blender.blend']
@@ -60,8 +60,8 @@ for source in SOURCES:
             scene.collection.objects.link(obj)
     fps=scene.render.fps/scene.render.fps_base
     frames = sorted({round(i*fps/30) for i in range(round(scene.frame_end/fps*30)+1)})
-    ns['render'](source.stem, frames)
+    scales=ns['render'](source.stem, frames, resolution=960, auto_frame=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/(source.stem+'.blend')), compress=True)
     (OUT/(source.stem+'.json')).write_text(json.dumps({'source': str(source.relative_to(ROOT)), 'frames': frames,
-        'sourceFPS': fps, 'reviewFPS': 30, 'groundHeightSourceUnits': floor, 'reviewed': False, 'accepted': False}, indent=2)+'\n')
+        'sourceFPS': fps, 'reviewFPS': 30, 'viewOrthoScales':scales,'groundHeightSourceUnits': floor, 'reviewed': False, 'accepted': False}, indent=2)+'\n')
 print('BLENDER_AUTHORED_MOTION_REVIEW_RENDERED', flush=True)

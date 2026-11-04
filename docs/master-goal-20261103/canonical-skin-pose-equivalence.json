@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "scope": "Native evaluated bone poses, canonical mesh vs legacy skin variants; geometry/weight and visual differences remain separately reviewed",
+  "poseSamples": 354,
+  "boneComparisons": 19470,
+  "maximumLocalMatrixError": 0,
+  "worst": null
+}

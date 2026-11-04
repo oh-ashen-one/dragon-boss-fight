@@ -1,0 +1,12 @@
+{
+  "run": "Evidence/native-intro-20261104T202201Z/unreal-intro-20261104T202221Z-BC78D2A9/evidence.json",
+  "sourceId": "08484704056120d85f8b95253df3c39452e49445b7d84e1ba8c9fda5e04fc620",
+  "passed": true,
+  "scope": "Full eight-shot production intro, isolated keyboard probes,90cm movement,primary attack and one soundtrack start",
+  "shots": 8,
+  "keyboardIsolation": true,
+  "rejectedShortcutInputs": 3,
+  "warmedTextures": 20,
+  "visualVerdict": "Texture flash removed in inspected frames; blind critic rejected two player dropouts and stance continuity",
+  "qualityAccepted": false
+}

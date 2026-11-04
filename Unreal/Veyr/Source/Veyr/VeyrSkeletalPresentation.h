@@ -25,6 +25,8 @@ public:
      */
     bool ConfigureRenderPolicy(bool bInCPUPoseOnly, bool bInRequestSkinCache);
     virtual bool ShouldCreateRenderState() const override;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation") bool bPreferCanonicalMesh=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") int32 MeshVariantSwitchCount=0;
 
     UFUNCTION(BlueprintPure, Category="Veyr|Presentation|RenderEvidence")
     bool HasPresentationRenderState() const { return IsRenderStateCreated(); }

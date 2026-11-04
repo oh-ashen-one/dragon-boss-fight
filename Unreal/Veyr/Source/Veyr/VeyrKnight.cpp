@@ -1177,6 +1177,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     // The intro displays the idle skin, but the first walk/attack can use
     // another approved mesh variant with distinct texture objects. Warm all
     // five current variants, deduplicating shared meshes and texture objects.
+    ImportedPresentation->bPreferCanonicalMesh=FParse::Param(FCommandLine::Get(),TEXT("VeyrCanonicalKnightSkin"));
     TSet<USkeletalMesh*> Meshes;Meshes.Add(Definition->SkeletalMesh.Get());
     for(const auto& Entry:Definition->Clips)if(Entry.Value.MeshOverride)Meshes.Add(Entry.Value.MeshOverride.Get());
     TSet<UTexture2D*> Textures;
@@ -1966,6 +1967,7 @@ void AVeyrKnight::CaptureMouseOrAttack()
 
 void AVeyrKnight::BeginControlFromKeyboard()
 {
+    if(!AcceptWindowShortcut(TEXT("Enter")))return;
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->SkipArenaIntro()){CaptureMouseOrAttack();return;}
     if(IsTerminal()){RestartIfTerminal();return;}
     // Enter begins controls at the opening screen and restarts only at terminal.
@@ -2037,6 +2039,33 @@ bool AVeyrKnight::HumanInputEnabled() const
     return Viewport&&Viewport->Viewport&&Viewport->Viewport->HasFocus()&&
         Viewport->Viewport->IsForegroundWindow()&&Viewport->Viewport->HasMouseCapture();
 }
+bool AVeyrKnight::AcceptWindowShortcut(const TCHAR* Key)
+{
+    const auto* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+    FString RequestedReplay;
+    const bool ReplayInput=bReplayControlled||(Mode&&Mode->Replay)||FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),RequestedReplay);
+    const APlayerController* PC=Cast<APlayerController>(Controller);
+    const UGameViewportClient* Viewport=GetWorld()?GetWorld()->GetGameViewport():nullptr;
+    const bool Local=PC&&PC->IsLocalController();
+    const bool Foreground=Viewport&&Viewport->Viewport&&Viewport->Viewport->IsForegroundWindow();
+    const bool Active=FSlateApplication::IsInitialized()&&FSlateApplication::Get().IsActive();
+    if(!ReplayInput&&Local&&Foreground&&Active)return true;
+    ++RejectedWindowShortcutInputs;
+    UE_LOG(LogTemp,Display,TEXT("VEYR_WINDOW_SHORTCUT_REJECTED key=%s replay=%d local=%d foreground=%d active=%d"),Key,ReplayInput,Local,Foreground,Active);
+    return false;
+}
+bool AVeyrKnight::VerifyIntroShortcutIsolationForReplay()
+{
+    const auto* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+    if(!Mode||!Mode->Replay||!Mode->IsArenaIntroActive())return false;
+    const int32 Before=RejectedWindowShortcutInputs;
+    // Exercise the actual callbacks before SetReplayInput establishes its
+    // per-frame flag. The replay request/world ownership must already isolate
+    // input; keyboard events must never control a background replay window.
+    BeginControlFromKeyboard();BlinkPressed();PausePressed();
+    return RejectedWindowShortcutInputs==Before+3&&Mode->IsArenaIntroActive()&&!Mode->bArenaIntroSkipped&&
+        !UGameplayStatics::IsGamePaused(this);
+}
 bool AVeyrKnight::HasEnteredEncounter() const
 {
     if(const auto* Mode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr)if(Mode->IsArenaIntroActive())return false;
@@ -2052,11 +2081,13 @@ void AVeyrKnight::OnArenaIntroCompleted()
 }
 void AVeyrKnight::BlinkPressed()
 {
+    if(!AcceptWindowShortcut(TEXT("Space")))return;
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->SkipArenaIntro())return;
     if(HumanInputEnabled())TryDirectionalBlink();
 }
 void AVeyrKnight::PausePressed()
 {
+    if(!AcceptWindowShortcut(TEXT("Escape")))return;
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->SkipArenaIntro())return;
     if(APlayerController* Player=Cast<APlayerController>(Controller))
         if(AVeyrHUD* HUD=Cast<AVeyrHUD>(Player->GetHUD()))HUD->TogglePauseMenu();

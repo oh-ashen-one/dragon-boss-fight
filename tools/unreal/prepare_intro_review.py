@@ -25,7 +25,8 @@ def load(path):
     manifest = path.parent/'native-video/frames.jsonl'
     _, frames, _, tail, _ = read_capture(manifest, world_index=0)
     assert tail and frames
-    return path, manifest, frames, handoff[0]
+    damage = next((e['seconds'] for e in data['events'] if e.get('event') == 'intro_post_control_hit'), None)
+    return path, manifest, frames, handoff[0], damage
 
 
 def main():
@@ -45,7 +46,7 @@ def main():
               'Assess handoff material consistency, character visibility and pose continuity in these samples. '
               'This is not proof of continuous playback, audio quality or the unfinished combat backlog.', 'variants': {}}
     mapping = {}
-    for label, (path, manifest, frames, handoff) in zip(['A', 'B'], versions):
+    for label, (path, manifest, frames, handoff, damage) in zip(['A', 'B'], versions):
         origin = frames[0]['wallSeconds']
         overview = [min(frames, key=lambda f: abs(f['requestedGameSeconds']-(2+4*i))) for i in range(8)]
         handback = [f for f in frames if handoff-1 <= f['requestedGameSeconds'] <= handoff+3]
@@ -60,6 +61,8 @@ def main():
             'tourSheets': make_sheets(manifest.parent, overview, origin, args.out, label+'-tour'),
             'handoffEveryCapturedFrame': make_sheets(manifest.parent, handback, origin, args.out, label+'-handoff'),
             'fullResolutionDetails': detail}
+        late = [f for f in frames if damage-.25 <= f['requestedGameSeconds'] <= damage+1.] if damage is not None else frames[-20:]
+        packet['variants'][label]['lateEncounterFrames'] = make_sheets(manifest.parent,late,origin,args.out,label+'-late')
         mapping[label] = {'evidence': str(path), 'handoffReplaySeconds': handoff}
     (args.out/'sequence.json').write_text(json.dumps(packet, indent=2)+'\n')
     args.mapping.parent.mkdir(parents=True, exist_ok=True)

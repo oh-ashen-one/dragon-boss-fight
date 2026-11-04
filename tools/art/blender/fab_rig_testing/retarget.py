@@ -24,7 +24,7 @@ def reset():
  s=bpy.context.scene;s.render.fps=30;s.render.fps_base=1
  return s
 
-def render(label,frames,ortho_scale=2.1):
+def render(label,frames,ortho_scale=2.1,resolution=640,auto_frame=False):
  s=bpy.context.scene
  # Attach the intact boat sword only for review; GLB retains the same socket.
  before=set(s.objects);bpy.ops.import_scene.gltf(filepath=str(ROOT/'Local/polish-review-20261025/BoatGreatsword_OneHand_v4.glb'))
@@ -38,14 +38,31 @@ def render(label,frames,ortho_scale=2.1):
  s.render.engine='BLENDER_WORKBENCH';sh=s.display.shading;sh.light='STUDIO';sh.color_type='TEXTURE';sh.show_shadows=True;sh.show_cavity=True;sh.background_type='WORLD'
  if not s.world:s.world=bpy.data.worlds.new('ReviewWorld')
  s.world.color=(.065,.07,.08);s.view_settings.view_transform='Standard';s.view_settings.exposure=.8
- s.render.resolution_x=640;s.render.resolution_y=640;s.render.resolution_percentage=100;s.render.image_settings.file_format='PNG'
+ s.render.resolution_x=resolution;s.render.resolution_y=resolution;s.render.resolution_percentage=100;s.render.image_settings.file_format='PNG'
  center=Vector((0,0,.5));folder=OUT/'Evidence'/label;folder.mkdir(parents=True,exist_ok=True)
- for v,off in {'front':(0,-3,.4),'side':(3,0,.4),'threequarter':(2,-3,.5)}.items():
-  cam.location=center+Vector(off);cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=ortho_scale
+ views={'front':(0,-3,.4),'side':(3,0,.4),'threequarter':(2,-3,.5)}
+ scales={v:ortho_scale for v in views}
+ if auto_frame:
+  rig=bpy.data.objects['Knight_Comparison']
+  bodies=[o for o in s.objects if o.type=='MESH' and (o in imported or any(m.type=='ARMATURE' and m.object==rig for m in o.modifiers))]
+  axes={}
+  for v,off in views.items():
+   forward=-Vector(off).normalized();right=forward.cross(Vector((0,0,1))).normalized();axes[v]=(right,right.cross(forward).normalized())
+  for f in frames:
+   s.frame_set(f);bpy.context.view_layer.update();deps=bpy.context.evaluated_depsgraph_get()
+   hip=rig.pose.bones['Hips'].head;focus=Vector((hip.x,hip.y,.5))
+   for obj in bodies:
+    evaluated=obj.evaluated_get(deps)
+    for corner in evaluated.bound_box:
+     delta=evaluated.matrix_world@Vector(corner)-focus
+     for v,(right,up) in axes.items():scales[v]=max(scales[v],2.16*max(abs(delta.dot(right)),abs(delta.dot(up))))
+ for v,off in views.items():
+  cam.location=center+Vector(off);cam.rotation_euler=(center-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=scales[v]
   for f in frames:
    s.frame_set(f)
    hip=bpy.data.objects['Knight_Comparison'].pose.bones['Hips'].head;focus=Vector((hip.x,hip.y,.5));cam.location=focus+Vector(off);cam.rotation_euler=(focus-cam.location).to_track_quat('-Z','Y').to_euler()
    s.render.filepath=str(folder/f'{v}_{f:04d}.png');bpy.ops.render.render(write_still=True)
+ return scales
 
 def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None,source_action=None):
  s=reset();bpy.ops.import_scene.gltf(filepath=str(TARGET));t=next(o for o in s.objects if o.type=='ARMATURE');t.name='Knight_Comparison'

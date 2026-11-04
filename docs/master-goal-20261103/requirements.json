@@ -45,7 +45,7 @@
     {
       "id": "running_leap",
       "requirement": "Sourced attacks with contacts, root/capsule motion, interrupts and blind improvement",
-      "status": "CPU_entry_diagnosis_only_Blender_curve_trim_prepared_not_executed_leap_unfinished",
+      "status": "Blender_direct_running_entry_native_imported_disabled_eight_trial_gameplay_checks_pending_leap_unfinished",
       "evidence": [
         "cpu-animation-preparation.json"
       ]
@@ -53,13 +53,15 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "CPU_study_diagnostic_only_import_blocked_Blender_authoring_required_unexecuted",
+      "status": "Blender_authored_v044_native_imported_source_pose_fidelity_pass_gameplay_quality_unverified",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
         "cpu-animation-preparation.json",
         "forward-cpu-plants-metrics.json",
-        "onehand-cpu-plants-metrics.json"
+        "onehand-cpu-plants-metrics.json",
+        "v044-native-checkpoint.json",
+        "v044-source-native-fidelity-raw.json"
       ]
     },
     {
@@ -102,19 +104,22 @@
     {
       "id": "prefight_intro",
       "requirement": "Preserve owner-approved R5 tour as skippable production pre-fight intro; input/music/clock isolation, handoff and retries verified",
-      "status": "full_and_skip_retry_prior_runtime_pass_warm_build_missing_repackaging_retest_pending",
+      "status": "full_runtime_pass_blind_visual_rejected_player_dropouts_canonical_skin_candidate_packaging",
       "evidence": [
         "../intro-20261103/owner-approval.json",
         "../intro-20261103/shot-recipe-check.json",
         "../intro-20261103/first-runtime-results.json",
-        "../intro-20261103/audio-onset-first-run.json"
+        "../intro-20261103/audio-onset-first-run.json",
+        "../intro-20261103/guarded-runtime-results.json",
+        "../intro-20261103/blind-integration-review.md",
+        "canonical-skin-pose-equivalence.json"
       ]
     }
   ],
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Resumed progress: missing temporary apps discovered; CPU-only Shipping rebuild active; restored review server; quarantined CPU-only animation diagnostics and prepared compliant Blender authoring workflow.",
+  "priorTurnClassification": "Progress: restored Metal compiler, native Shipping and full intro validation; Blender-authored/native-imported three clips; strict fidelity passed; independent visual review rejected dropouts; canonical-renderer candidate packaging.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -122,13 +127,10 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "streaming_guard_set",
-    "effectiveSlots": 0,
-    "watchdogCap": 2,
-    "foreignGameCount": 1,
-    "ownedCaptureQueued": false,
-    "resumedBlockedAuditCount": 0,
-    "nextAction": "Finish CPU-only package; queue one intro through stream wait then ordinary gpu_slot."
+    "status": "normal_gate_mandatory_no_owned_renderer_queued",
+    "lastEditorRequest": "terminal cap-full-timeout901seconds, no renderer launched",
+    "lastFullIntro": "rendered and mechanics passed; visual quality rejected",
+    "gpuSafetyControlsChanged": false
   },
   "gateProbeCode": {
     "flag": "VeyrFortressGateTest",
@@ -153,7 +155,9 @@
     "projectRule": "AGENTS.md requires actual Blender authoring/refinement and editable scenes",
     "v043": "Diagnostic-only; not imported; import guard rejects it",
     "nextVersion": "v044blender",
-    "blenderRecipesExecuted": false,
-    "activeNativeVersion": "v042heal"
+    "blenderRecipesExecuted": true,
+    "activeNativeVersion": "v044blender",
+    "nativeImported": true,
+    "qualityAccepted": false
   }
 }

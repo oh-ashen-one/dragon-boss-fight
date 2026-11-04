@@ -1,0 +1,75 @@
+{
+  "utc": "2026-11-04T21:54:39.657514+00:00",
+  "version": "v044blender",
+  "nativeRoute": "Unreal PythonScriptCommandlet with NullRHI; native saved assets and actor pose evaluation, no renderer",
+  "nativeImported": true,
+  "runtimeDefinition": "/Game/Characters/Customuse/RuntimePolish/DA_Knight.DA_Knight",
+  "runtimeSourceDefinition": "/Game/Characters/Customuse/KnightB/v044blender/DA_KnightB",
+  "poseVerification": {
+    "definition": "/Game/Characters/Customuse/KnightB/v044blender/DA_KnightB",
+    "report": "/Users/midir/veyr-knight-20261028/Local/CustomuseImports/native-pose-proof-KnightB-v044blender.json",
+    "passed": true,
+    "samples": 354
+  },
+  "canonicalPoseVerification": {
+    "definition": "/Game/Characters/Customuse/KnightB/v044blender/DA_KnightB",
+    "report": "/Users/midir/veyr-knight-20261028/Local/CustomuseImports/native-pose-proof-KnightB-v044blender-canonical.json",
+    "passed": true,
+    "samples": 354
+  },
+  "renderedQualityAccepted": false,
+  "newMovesDefaultEnabled": false,
+  "clips": [
+    {
+      "name": "RunOneHandPlanted",
+      "file": "Local/CustomuseAssets/Polish20261025/knight-v044blender/knight/FabMixamo_OneHandRun_v2blender.glb",
+      "sha256": "094fd46b59299e873e11636dc5434d5050e65e9c50b46274f5d98f37da0c90cc",
+      "duration": 0.6000000238418579,
+      "nominalSpeedCmS": 562.0694099602358,
+      "damageWindows": [],
+      "canonicalGeometryPreserved": true
+    },
+    {
+      "name": "RunTwoHandPlanted",
+      "file": "Local/CustomuseAssets/Polish20261025/knight-v044blender/knight/Mixamo_ForwardRun_v4rigid.glb",
+      "sha256": "176900f19a0c672e4de9f2964b6fd11e5b7073b1704fa93f2b8f6f6a28627f7c",
+      "duration": 0.6000000238418579,
+      "nominalSpeedCmS": 562.0694099602358,
+      "damageWindows": [],
+      "canonicalGeometryPreserved": true
+    },
+    {
+      "name": "RunningAttackDirect",
+      "file": "Local/CustomuseAssets/Polish20261025/knight-v044blender/knight/Mixamo_SlideAttack_v4blender.glb",
+      "sha256": "0a74339f8ee17244016dc3413969c317a0ef534e2433307f5c8847e0d3cfd9f1",
+      "duration": 2.4666666984558105,
+      "nominalSpeedCmS": 0.0,
+      "damageWindows": [
+        [
+          1.0333333466504073,
+          1.666666688145818
+        ]
+      ],
+      "canonicalGeometryPreserved": true
+    }
+  ],
+  "precision": {
+    "failedDiagnostic": "v044-source-native-fidelity.json",
+    "scaleAwareDiagnosticStillFailed": "v044-source-native-fidelity-scaled.json",
+    "optionalACLCodecUnavailable": true,
+    "nativeLeastDestructiveCodecPassed": "v044-source-native-fidelity-raw.json",
+    "limitsUnchanged": true
+  },
+  "sourceReviews": {
+    "directory": "Local/AttackSources20261104/BlenderReviewFramed",
+    "movies": 9,
+    "fps": 30,
+    "frontSideThreequarter": true,
+    "framingChecked": true,
+    "browserPlaybackVerifiedViews": [
+      "Two-handed run - front"
+    ],
+    "browserTabDisappearedBeforeRemainingPlaybackChecks": true,
+    "nativeGameplayReviewPending": true
+  }
+}

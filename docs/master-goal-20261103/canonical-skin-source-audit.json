@@ -1,0 +1,62 @@
+{
+  "scope": "Source geometry/UV/material/skin audit for an opt-in existing-mesh binding change; not rendered acceptance",
+  "variants": [
+    {
+      "variant": "knight_571e0abbfde2720e",
+      "maxPositionUnits": 5.364418029785156e-07,
+      "maxUV": 0.0,
+      "maxNormal": 0.0005012135952711105,
+      "maxSkinWeight": 0.722650408744812,
+      "imagePixelHashes": [
+        "41397b1b63b85e571ec222f1ec4f1b321c9df417d30a2afe046abc43d6df81e3",
+        "a262eed21511f035736617e3a42a3d4ab2987f35035c03ffbff1fcb7d74a056a",
+        "f933707e9ca6fa56783a837aac9cbee39f1c24ff749032e71a960c6a7b4c6061"
+      ],
+      "usedMaterialMatchesCanonical": true
+    },
+    {
+      "variant": "knight_6d3b4c55bd8c3fa0",
+      "maxPositionUnits": 5.960464477539062e-07,
+      "maxUV": 0.0,
+      "maxNormal": 0.0004026740789413452,
+      "maxSkinWeight": 0.722650408744812,
+      "imagePixelHashes": [
+        "41397b1b63b85e571ec222f1ec4f1b321c9df417d30a2afe046abc43d6df81e3",
+        "a262eed21511f035736617e3a42a3d4ab2987f35035c03ffbff1fcb7d74a056a",
+        "f933707e9ca6fa56783a837aac9cbee39f1c24ff749032e71a960c6a7b4c6061"
+      ],
+      "usedMaterialMatchesCanonical": true
+    },
+    {
+      "variant": "knight_2bb061d3dbf92c62",
+      "maxPositionUnits": 0.0,
+      "maxUV": 0.0,
+      "maxNormal": 0.00029999983962625265,
+      "maxSkinWeight": 0.0,
+      "imagePixelHashes": [
+        "41397b1b63b85e571ec222f1ec4f1b321c9df417d30a2afe046abc43d6df81e3",
+        "a262eed21511f035736617e3a42a3d4ab2987f35035c03ffbff1fcb7d74a056a",
+        "f933707e9ca6fa56783a837aac9cbee39f1c24ff749032e71a960c6a7b4c6061"
+      ],
+      "usedMaterialMatchesCanonical": true
+    },
+    {
+      "variant": "knight_9eeb95137c66d34d",
+      "maxPositionUnits": 0.0,
+      "maxUV": 0.0,
+      "maxNormal": 0.00029999983962625265,
+      "maxSkinWeight": 0.722650408744812,
+      "imagePixelHashes": [
+        "41397b1b63b85e571ec222f1ec4f1b321c9df417d30a2afe046abc43d6df81e3",
+        "a262eed21511f035736617e3a42a3d4ab2987f35035c03ffbff1fcb7d74a056a",
+        "f933707e9ca6fa56783a837aac9cbee39f1c24ff749032e71a960c6a7b4c6061"
+      ],
+      "usedMaterialMatchesCanonical": true
+    }
+  ],
+  "walkVariantChangedWeightVertices": 85,
+  "walkVariantVertexCount": 33886,
+  "weightDifference": "A small strap cluster uses mainly hips in the existing canonical mesh and forearm/hand in legacy variants; do not claim identical skin weights.",
+  "nativeBonePoseEquivalence": "canonical-skin-pose-equivalence.json",
+  "qualityAccepted": false
+}

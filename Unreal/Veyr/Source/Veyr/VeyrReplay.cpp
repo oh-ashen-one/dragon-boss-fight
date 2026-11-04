@@ -132,6 +132,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(ReplayMode==TEXT("intro"))
     {
         if(FParse::Value(FCommandLine::Get(),TEXT("VeyrIntroSkipAfter="),IntroSkipAfter))IntroSkipAfter=FMath::Clamp(IntroSkipAfter,.25f,30.f);
+        bIntroWindowShortcutsIsolated=Knight->VerifyIntroShortcutIsolationForReplay();
     }
     if(ReplayMode==TEXT("healing")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrHealInspection")))
     {
@@ -360,6 +361,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         O->SetBoolField(TEXT("introCompleted"),SnapshotMode->bArenaIntroCompleted);
         O->SetBoolField(TEXT("introSkipped"),SnapshotMode->bArenaIntroSkipped);
         O->SetBoolField(TEXT("introPreviouslySeen"),SnapshotMode->bArenaIntroPreviouslySeen);
+        O->SetBoolField(TEXT("introWindowShortcutsIsolated"),bIntroWindowShortcutsIsolated);
+        O->SetNumberField(TEXT("rejectedWindowShortcutInputs"),Knight->RejectedWindowShortcutInputs);
         O->SetNumberField(TEXT("introSeconds"),SnapshotMode->ArenaIntroSeconds);
         O->SetNumberField(TEXT("introShot"),SnapshotMode->ArenaIntroShot);
         O->SetNumberField(TEXT("introShotsSeen"),SnapshotMode->ArenaIntroShotsSeen);
@@ -381,6 +384,13 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetStringField(TEXT("headApproachBlocker"),ApproachBlocker.ToString());
     O->SetNumberField(TEXT("headApproachSweepDistanceCm"),ApproachSweepDistance);
     O->SetStringField(TEXT("knightClip"),Knight->RequestedPresentationClip.ToString());
+    if(Knight->ImportedPresentation)
+    {
+        O->SetBoolField(TEXT("knightCanonicalSkin"),Knight->ImportedPresentation->bPreferCanonicalMesh);
+        O->SetNumberField(TEXT("knightMeshSwitches"),Knight->ImportedPresentation->MeshVariantSwitchCount);
+        O->SetBoolField(TEXT("knightPSOPrecaching"),Knight->ImportedPresentation->IsPSOPrecaching());
+        O->SetBoolField(TEXT("knightSceneProxyPresent"),Knight->ImportedPresentation->GetSceneProxy()!=nullptr);
+    }
     O->SetStringField(TEXT("knightPresentationDiagnostic"),Knight->PresentationDiagnostic);
     O->SetBoolField(TEXT("knightFallback"),Knight->bPresentationUsingFallback);
     O->SetStringField(TEXT("dragonClip"),Dragon->ImportedPresentation?Dragon->ImportedPresentation->CurrentClip.ToString():FString());
