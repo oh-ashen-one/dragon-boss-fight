@@ -1,0 +1,22 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "readCalls": 27,
+  "successfulImageBlocks": 26,
+  "winner": "A",
+  "mapping": {
+    "A": "stable prop and walk-entry candidate native-intro-20261104T224547Z",
+    "B": "canonical skin baseline native-intro-20261104T220529Z"
+  },
+  "visiblyBetter": "slightly, in inspected handoff details",
+  "scopedAcceptance": "conditional",
+  "overallQualityAccepted": false,
+  "estimatedUSD": 1.1466528,
+  "remaining": [
+    "Continuous primary attack and recovery transition review",
+    "Feet and grip through attack not resolved at tile scale",
+    "Remaining combat backlog and global regressions"
+  ],
+  "independentContext": "The weapon arc follows an actual primary attack requested by the native intro replay; this explains the action trigger but does not prove grip/recovery quality."
+}

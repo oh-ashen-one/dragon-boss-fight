@@ -1,0 +1,11 @@
+{
+  "id": "intro-stable-round3-aborted-20261104",
+  "status": "interrupted_repeated_image_reads",
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "estimatedUSD": 10.2979246,
+  "verdict": null,
+  "reason": "Reviewer repeatedly reopened the same 52 images without finishing; interrupted with SIGINT. Terminal CLI result was error_during_execution, not a review verdict. Compact replacement will use a hard USD3 budget cap.",
+  "receipt": "../intro-20261103/blind-stable-aborted-receipt.json"
+}

@@ -13,11 +13,13 @@ from PIL import Image
 from encode_video import read_capture
 
 
-def make_sheets(source, selected, origin, directory, label):
+def make_sheets(source, selected, origin, directory, label, rows=4):
+    assert rows in (4,8)
     pages=[]
-    for page,start in enumerate(range(0,len(selected),16),1):
-        tile_frames=selected[start:start+16]
-        sheet=Image.new('RGB',(1920,1080))
+    count=4*rows
+    for page,start in enumerate(range(0,len(selected),count),1):
+        tile_frames=selected[start:start+count]
+        sheet=Image.new('RGB',(1920,270*rows))
         for index,frame in enumerate(tile_frames):
             with Image.open(source/frame['file']) as im:
                 sheet.paste(im.convert('RGB').resize((480,270),Image.Resampling.LANCZOS),

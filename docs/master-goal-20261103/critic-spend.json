@@ -50,9 +50,30 @@
       "estimatedUSD": 1.3961174,
       "verdict": "A canonical visibly better; integration still rejected for weapon dropout and stance snap",
       "receipt": "../intro-20261103/blind-canonical-receipt.json"
+    },
+    {
+      "id": "intro-stable-round3-aborted-20261104",
+      "status": "interrupted_repeated_image_reads",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 10.2979246,
+      "verdict": null,
+      "reason": "Reviewer repeatedly reopened the same 52 images without finishing; interrupted with SIGINT. Terminal CLI result was error_during_execution, not a review verdict. Compact replacement will use a hard USD3 budget cap.",
+      "receipt": "../intro-20261103/blind-stable-aborted-receipt.json"
+    },
+    {
+      "id": "intro-stable-compact-complete-20261104",
+      "status": "complete",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 1.1466528,
+      "verdict": "A new slightly preferred; scoped conditional acceptance, full quality still open",
+      "receipt": "../intro-20261103/blind-stable-receipt.json"
     }
   ],
-  "totalEstimatedUSD": 7.4988104,
+  "totalEstimatedUSD": 18.9433878,
   "invoice": false,
   "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported",
   "unpricedAbortedCalls": 1

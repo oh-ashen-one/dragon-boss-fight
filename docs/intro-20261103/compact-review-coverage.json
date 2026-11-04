@@ -1,0 +1,41 @@
+{
+  "everyOriginalSheetFrameRetained": true,
+  "tileResolution": [
+    480,
+    270
+  ],
+  "rowsPerSheet": 8,
+  "images": 26,
+  "counts": [
+    {
+      "variant": "A",
+      "section": "tourSheets",
+      "unchangedFrameCount": 8
+    },
+    {
+      "variant": "A",
+      "section": "handoffEveryCapturedFrame",
+      "unchangedFrameCount": 120
+    },
+    {
+      "variant": "A",
+      "section": "lateEncounterFrames",
+      "unchangedFrameCount": 123
+    },
+    {
+      "variant": "B",
+      "section": "tourSheets",
+      "unchangedFrameCount": 8
+    },
+    {
+      "variant": "B",
+      "section": "handoffEveryCapturedFrame",
+      "unchangedFrameCount": 120
+    },
+    {
+      "variant": "B",
+      "section": "lateEncounterFrames",
+      "unchangedFrameCount": 124
+    }
+  ]
+}

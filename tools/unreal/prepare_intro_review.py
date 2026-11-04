@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import secrets
 import shutil
+from functools import partial
 
 from encode_video import read_capture
 from prepare_pacing_review import make_sheets
@@ -35,7 +36,9 @@ def main():
     parser.add_argument('after', type=Path)
     parser.add_argument('out', type=Path)
     parser.add_argument('--mapping', type=Path, required=True)
+    parser.add_argument('--compact', action='store_true', help='Keep every frame and tile resolution, using taller sheets and fewer redundant full-frame details')
     args = parser.parse_args()
+    sheets=partial(make_sheets,rows=8 if args.compact else 4)
     assert not args.out.exists() and not args.mapping.exists()
     assert not args.mapping.resolve().is_relative_to(args.out.resolve())
     versions = [load(args.before.resolve()), load(args.after.resolve())]
@@ -52,21 +55,21 @@ def main():
         handback = [f for f in frames if handoff-1 <= f['requestedGameSeconds'] <= handoff+3]
         assert handback and len(handback) >= 30
         detail = []
-        for i, offset in enumerate([0., .10, .20, .40, .75]):
+        for i, offset in enumerate([0., .10, .20] if args.compact else [0., .10, .20, .40, .75]):
             frame = min(frames, key=lambda f: abs(f['requestedGameSeconds']-handoff-offset))
             name = f'{label}-handoff-detail-{i+1}.png'
             shutil.copyfile(manifest.parent/frame['file'], args.out/name)
             detail.append({'file': name, 'secondsFromHandoff': frame['requestedGameSeconds']-handoff})
         packet['variants'][label] = {
-            'tourSheets': make_sheets(manifest.parent, overview, origin, args.out, label+'-tour'),
-            'handoffEveryCapturedFrame': make_sheets(manifest.parent, handback, origin, args.out, label+'-handoff'),
+            'tourSheets': sheets(manifest.parent, overview, origin, args.out, label+'-tour'),
+            'handoffEveryCapturedFrame': sheets(manifest.parent, handback, origin, args.out, label+'-handoff'),
             'fullResolutionDetails': detail}
         # Join the handoff window without an uninspected interval, and retain
         # the complete breath/recovery tail. A tight damage-only crop omitted
         # the head motion immediately before the fire in the previous review.
         late = [f for f in frames if f['requestedGameSeconds'] >= handoff+3.] if damage is not None else frames[-20:]
-        packet['variants'][label]['lateEncounterFrames'] = make_sheets(manifest.parent,late,origin,args.out,label+'-late')
-        late_details = [min(frames,key=lambda f:abs(f['requestedGameSeconds']-damage-offset)) for offset in [-.03,0.,.04,.12]] if damage is not None else frames[-4:]
+        packet['variants'][label]['lateEncounterFrames'] = sheets(manifest.parent,late,origin,args.out,label+'-late')
+        late_details = [min(frames,key=lambda f:abs(f['requestedGameSeconds']-damage-offset)) for offset in ([0.] if args.compact else [-.03,0.,.04,.12])] if damage is not None else frames[-4:]
         packet['variants'][label]['lateFullResolutionDetails']=[]
         for i,frame in enumerate(late_details):
             name=f'{label}-late-detail-{i+1}.png'

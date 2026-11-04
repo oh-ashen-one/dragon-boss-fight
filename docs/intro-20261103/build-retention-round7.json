@@ -1,0 +1,12 @@
+{
+  "applied": true,
+  "removedDirectories": 10,
+  "retainedBuilds": [
+    "canonical comparison 2a8hm0cb",
+    "stable handoff candidate a6sof9x4"
+  ],
+  "reclaimedGiB": 24.862,
+  "method": "Receipt-owned completed archives/stages and superseded apps only; live processes/open files/retained symlinks protected",
+  "sourceCheckpoint": "bdf2c69641d9",
+  "removedEvidence": false
+}
