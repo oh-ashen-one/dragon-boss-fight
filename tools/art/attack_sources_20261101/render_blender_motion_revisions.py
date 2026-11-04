@@ -4,7 +4,9 @@ Run through gpu_slot only, after the owned intro request has finished. Creates
 private editable review copies and unannotated source frames. Not an acceptance.
 """
 import bpy
+import argparse
 import json
+import sys
 from pathlib import Path
 from mathutils import Vector
 
@@ -13,6 +15,18 @@ OUT = ROOT/'Local/AttackSources20261104/BlenderReviewFramed'
 SOURCES = [ROOT/'Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRun_v4rigid.blend',
            ROOT/'Local/AttackSources20261104/BlenderMotion/FabMixamo_OneHandRun_v2blender.blend',
            ROOT/'Local/AttackSources20261104/BlenderMotion/Mixamo_SlideAttack_v4blender.blend']
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--source-directory',type=Path)
+parser.add_argument('--output',type=Path)
+args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+if args.source_directory:
+    source_directory=args.source_directory.resolve(strict=True)
+    assert source_directory.is_relative_to(ROOT/'Local')
+    SOURCES=sorted(source_directory.glob('*.blend'))
+    assert SOURCES and args.output
+if args.output:
+    OUT=args.output.resolve()
+    assert OUT.is_relative_to(ROOT/'Local')
 helper = ROOT/'tools/art/blender/fab_rig_testing/retarget.py'
 ns = {'__file__': str(helper)}
 exec(compile(helper.read_text(), str(helper), 'exec'), ns)

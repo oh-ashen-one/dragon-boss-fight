@@ -1,3 +1,9 @@
+## Latest healing and sprint evidence — 2026-11-04 late evening
+
+- Normal-camera heal comparison passes four real charges/cap/empty rejection in both builds. The new auto-aim ceiling keeps boots visible in38/38 Heal samples vs0/38 before. Blind Opus clearly prefers the new framing; continuous weapon entry/exit and airborne/rearing threat visibility remain open. Camera flag stays opt-in.
+- v044 run source improves steady sliding, but all four sprint/contact trials still fail, chiefly startup/pivot transitions. Do not call sprint done or weaken the60cm/s contact gate. Four licensed turns are now retargeted inside Blender; grounded playback review is queued behind the launch budget. No turn is imported.
+- New camera and sprint comparison movies are on the existing bare review page. Exact active job and source/report paths are in HANDOFF.md. The approved eight-shot fortress intro is unchanged.
+
 ## Latest intro integration checkpoint — 2026-11-04 evening
 
 The exact owner-approved R5 eight-shot fortress/mural tour stays as the pre-fight loading intro. Full playback, earliest skip and death/retry mechanics passed with canonical skin opt-in. Blind Opus round2 preferred it visibly but rejected the remaining weapon frame loss and stance snap. A prepared-prop/phase-matched walk-entry candidate passed full and early-skip/retry native checks; its matched-priority film is available. Completed blind review slightly prefers the new handoff and confirms the exact tour is preserved; acceptance remains conditional on continuous attack/recovery and grip review. No combat backlog item is closed by these scoped checks. See HANDOFF.md for current jobs; old pending state below is historical.

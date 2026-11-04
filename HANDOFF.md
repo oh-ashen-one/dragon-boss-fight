@@ -1,4 +1,25 @@
-# Active intro handoff repair — 2026-11-04 late evening
+# Active normal-camera heal and locomotion pass — 2026-11-04 late evening
+
+**Full goal remains active and incomplete.** Prior turn was progress: stable intro props/walk entry tested and blind-preferred conditionally; exact approved eight-shot R5 tour preserved;24.862GiB obsolete builds cleaned; knight a1cee0ba3711 and wiki1d906f0596d1 pushed. Preserve the tour and all accepted attacks/wings/audio/fight feel.
+
+## Current verified results
+
+- Both normal-gameplay-camera healing captures on current Shipping a6sof9x4 passed all four real heals,100HP cap and injured-empty-flask rejection. Before native-healing-20261104T230131Z; after native-healing-20261104T230254Z. Same code/assets and canonical/stable-prop/walk-entry flags; after additionally enables -VeyrReadableAutoLock. Before feet were below viewport in38/38 Heal samples (Y1.355); after0/38 (Y.917). Films include game-only audio. No inspection camera was used.
+- Actual Opus5.5 read32 images once: **new B clearly visibly better across all four trials, scoped still presentation acceptable**. Continuous entry/exit and rearing/airborne threat framing remain open; do not claim whole camera/heal acceptance. Critical observation: late third-trial dragon head leaves the new view. Reports blind-heal-camera-* and heal-normal-camera-metrics.json. This call1.4608046USD; cumulative known critic estimates20.4041924USD plus1 older unpriced abort. No new art/video generation.
+- v044 sprint native before/after both FAIL0/4 contact trials; do not weaken the gate or promote them. Before native-blendproof-20261104T230536Z; after native-blendproof-20261104T230745Z. New uses SourcedSprint+PlantedSprint+LocomotionPhaseMatch+ContinuousLocomotionBlend. Steady maximum drops from201–207cm/s to44–63cm/s, but transition peaks remain597–1333cm/s. Native gate is60cm/s. The initial movement follows a setup walk that leaves the actor facing180degrees away; the correction must solve real turning, not reorient the test. One-hand residual also occurs at late left-foot stance (~phase.566). Detailed v044-sprint-native-comparison.json preserves all failures.
+
+## Live jobs and next action
+
+- All healing/sprint native processes are terminal. Heal-camera critic is terminal and spend recorded. Current Shipping remains /private/tmp/veyr-verified-bundle-a6sof9x4/Veyr-Mac-Shipping.app; canonical comparison2a8hm0cb retained. No new package this turn.
+- Blender turn authoring tool48820 completed0. Four licensed Mixamo turns are saved as editable .blend/GLB plus all front/side/threequarter source frames in Local/AttackSources20261104/SourcedTurns. Durations/final hip twist:180_A .783s/-188.06deg;180_B .55s/-181.95deg;Turn_A .717s/-98.23deg;Turn_B .817s/+90.47deg. Source-only diagnostics favor180_A for lower low-foot drift (95/78cm/s vs180_B162/508), but no turn is imported or accepted. Groundless initial previews are not foot-contact approval.
+- **One live queued grounded-review job: tool76034.** Confirmed live by wait_stdin; it is waiting on the10-starts/hour budget (initial next slot1589s), then normal gpu_slot. Log Local/Fortress20261103/blender-turn-grounded.log; receipt blender-turn-grounded-gpu.json is written after gate acquisition. It will render the four saved scenes with real ground/grid into SourcedTurns/GroundedReview. Do not duplicate, cancel as idle, or override the launch budget. No owned renderer is currently active.
+- The first turn authoring attempt ended cleanly with Python assertion before outputs: missing ownership marker required by the shared retarget helper. New owned factory-startup scene now sets its own marker before reset; no foreign scene/process touched. Prior failed receipt blender-sourced-turn-gpu.json remains. This was a script failure, not an engine crash.
+- All four new movie encoders are terminal0 with timing/hash/probe receipts. Bare page8813 now has Gameplay camera and Running · in progress pairs; HTTP200 and all four video range206 responses verified. Source films and native failed trials remain reviewable. Server tool65959; PID in master-review-server.json.
+- Next: inspect/measure sourced turns, address real pivot/entry and remaining contact residual; run native source comparison. Continue normal-camera primary/recovery review and threat readability checks. Keep mobility/leap/light and final both-grip<=150s wins/regressions in scope. No coding delegation; actual Opus was used only for the requested blind critique. All new flags remain opt-in.
+
+Foreign deletion Local/knight-review-20261028/critique-round2.md remains untouched/unstaged. Dragon worktree is untouched. This pass is being published with scoped security checks and wiki updates. Keep the complete objective active; queued render and all unaccepted combat work remain.
+
+# Historical intro handoff checkpoint — 2026-11-04 late evening
 
 **Full goal active, incomplete. Owner approval is locked to the exact R5 eight-shot fortress/mural tour as pre-fight loading.** Tour recipe files are byte-identical to pushed checkpoint491d37d; see docs/intro-20261103/approved-tour-preservation.json. Do not redesign the approved scene.
 

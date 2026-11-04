@@ -71,9 +71,19 @@
       "estimatedUSD": 1.1466528,
       "verdict": "A new slightly preferred; scoped conditional acceptance, full quality still open",
       "receipt": "../intro-20261103/blind-stable-receipt.json"
+    },
+    {
+      "id": "heal-normal-camera-20261104",
+      "status": "complete",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 1.4608046000000001,
+      "receipt": "blind-heal-camera-receipt.json",
+      "verdict": "B clearly visibly better, scoped stills accepted; continuous motion and threat framing remain"
     }
   ],
-  "totalEstimatedUSD": 18.9433878,
+  "totalEstimatedUSD": 20.4041924,
   "invoice": false,
   "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported",
   "unpricedAbortedCalls": 1

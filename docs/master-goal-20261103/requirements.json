@@ -53,7 +53,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "Blender_authored_v044_native_imported_source_pose_fidelity_pass_gameplay_quality_unverified",
+      "status": "v044_steady_drift_reduced_all4_trials_fail_sourced_turns_Blender_retargeted_grounded_review_queued",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -61,17 +61,22 @@
         "forward-cpu-plants-metrics.json",
         "onehand-cpu-plants-metrics.json",
         "v044-native-checkpoint.json",
-        "v044-source-native-fidelity-raw.json"
+        "v044-source-native-fidelity-raw.json",
+        "v044-sprint-native-comparison.json",
+        "sourced-turn-diagnostics.json"
       ]
     },
     {
       "id": "healing",
       "requirement": "Sourced drink with convincing cup tilt/contact and transitions",
-      "status": "v042_blind_pose_pass_default_enabled_in_source_normal_view_validation_pending",
+      "status": "v042_default_four_heal_mechanics_and_normal_camera_blind_visible_pass_continuous_transition_and_threat_readability_pending",
       "evidence": [
         "heal-v042-native.json",
         "blind-heal-v042-review.md",
-        "blind-heal-v042-receipt.json"
+        "blind-heal-v042-receipt.json",
+        "heal-normal-camera-metrics.json",
+        "blind-heal-camera-review.md",
+        "blind-heal-camera-receipt.json"
       ]
     },
     {
@@ -104,7 +109,7 @@
     {
       "id": "prefight_intro",
       "requirement": "Preserve owner-approved R5 tour as skippable production pre-fight intro; input/music/clock isolation, handoff and retries verified",
-      "status": "full_runtime_pass_blind_visual_rejected_player_dropouts_canonical_skin_candidate_packaging",
+      "status": "exact_owner_approved_tour_preserved_full_skip_retry_pass_handoff_visibly_preferred_conditional_attack_recovery_review_open",
       "evidence": [
         "../intro-20261103/owner-approval.json",
         "../intro-20261103/shot-recipe-check.json",
@@ -112,14 +117,18 @@
         "../intro-20261103/audio-onset-first-run.json",
         "../intro-20261103/guarded-runtime-results.json",
         "../intro-20261103/blind-integration-review.md",
-        "canonical-skin-pose-equivalence.json"
+        "canonical-skin-pose-equivalence.json",
+        "../intro-20261103/approved-tour-preservation.json",
+        "../intro-20261103/handoff-candidate-diagnosis.json",
+        "../intro-20261103/blind-stable-review.md",
+        "../intro-20261103/blind-stable-receipt.json"
       ]
     }
   ],
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Progress: restored Metal compiler, native Shipping and full intro validation; Blender-authored/native-imported three clips; strict fidelity passed; independent visual review rejected dropouts; canonical-renderer candidate packaging.",
+  "priorTurnClassification": "Progress: exact tour preserved; stable-prop and phase-matched walking handoff implemented and filmed; full and earliest-skip/retry checks passed; compact blind Opus preferred new handoff with conditional acceptance; 24.862GiB obsolete builds cleaned; scoped source and wiki pushed.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -127,9 +136,9 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "normal_gate_mandatory_no_owned_renderer_queued",
+    "status": "one_live_grounded_turn_review_waiting_launch_budget_then_normal_gpu_slot",
     "lastEditorRequest": "terminal cap-full-timeout901seconds, no renderer launched",
-    "lastFullIntro": "rendered and mechanics passed; visual quality rejected",
+    "lastFullIntro": "native-intro-20261104T224547Z mechanics passed; blind handoff slightly preferred, conditional acceptance",
     "gpuSafetyControlsChanged": false
   },
   "gateProbeCode": {
@@ -145,10 +154,15 @@
     "defaultInSource": true,
     "tourOwnerApproved": true,
     "approvedCapture": "Evidence/native-environment-20261104T033704Z",
-    "activeWarmFixApp": "/private/tmp/veyr-verified-bundle-k5fx2on8/Veyr-Mac-Shipping.app",
+    "activeWarmFixApp": "/private/tmp/veyr-verified-bundle-a6sof9x4/Veyr-Mac-Shipping.app",
     "fullIntroAndSkipRetryPass": true,
-    "textureFixRuntimeVerified": false,
-    "finalGameplayAndPerformanceVerified": false
+    "textureFixRuntimeVerified": true,
+    "finalGameplayAndPerformanceVerified": false,
+    "requiredCandidateFlags": [
+      "VeyrCanonicalKnightSkin",
+      "VeyrStableWeaponPresentation",
+      "VeyrWalkEntryBlend"
+    ]
   },
   "mapApproachChange": "After two rejected blind rounds: inspect runtime floor binding, use licensed scanned support assets where useful, replace disconnected backdrop with a connected foundation.",
   "authoringWorkflowCorrection": {

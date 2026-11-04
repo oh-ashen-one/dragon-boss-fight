@@ -1,0 +1,24 @@
+{
+  "A": {
+    "healSamples": 38,
+    "feetOutsideVerticalViewport": 38,
+    "feetViewportYRange": [
+      1.3552249670028687,
+      1.355226993560791
+    ],
+    "verifiedCharges": 4,
+    "readableAutoLock": false,
+    "scope": "Same-frame geometric projection only; inspect rendered frames."
+  },
+  "B": {
+    "healSamples": 38,
+    "feetOutsideVerticalViewport": 0,
+    "feetViewportYRange": [
+      0.9170457124710083,
+      0.9170457124710083
+    ],
+    "verifiedCharges": 4,
+    "readableAutoLock": true,
+    "scope": "Same-frame geometric projection only; inspect rendered frames."
+  }
+}

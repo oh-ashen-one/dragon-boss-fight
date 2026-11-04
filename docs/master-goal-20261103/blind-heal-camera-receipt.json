@@ -1,0 +1,21 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "readCalls": 33,
+  "successfulImageBlocks": 32,
+  "winner": "B",
+  "visiblyBetter": true,
+  "mapping": {
+    "A": "native-healing-20261104T230131Z baseline camera",
+    "B": "native-healing-20261104T230254Z readable auto-lock candidate"
+  },
+  "scopedStillsAccepted": true,
+  "finalAcceptance": false,
+  "remaining": [
+    "Continuous healing entry/exit and weapon transition review",
+    "Threat readability when rearing dragon head leaves frame",
+    "Manual-look and normal-combat camera regression"
+  ],
+  "estimatedUSD": 1.4608046000000001
+}

@@ -1,0 +1,97 @@
+{
+  "sourceOnly": true,
+  "nativeImported": false,
+  "accepted": false,
+  "scaleCmPerSourceUnit": 244.11917667589785,
+  "scope": "Low toe-and-ankle windows sampled at120Hz, 1/30s motion window; no gameplay turning/transition claim.",
+  "candidates": [
+    {
+      "name": "Mixamo_Turn180_A_v1",
+      "sourceSHA256": "5eea78f8540db0c3148dedcdd42af925feeced14bfb093436a1b8d0d12ad5f9b",
+      "durationSeconds": 0.7833333333333333,
+      "observedTurnDegrees": -188.0634051586337,
+      "feet": [
+        {
+          "side": "left",
+          "measuredWindows": 29,
+          "peakLowFootMotionCmPerSecond": 95.29303354722559,
+          "peakTimeSeconds": 0.6
+        },
+        {
+          "side": "right",
+          "measuredWindows": 42,
+          "peakLowFootMotionCmPerSecond": 78.20371475457138,
+          "peakTimeSeconds": 0.175
+        }
+      ],
+      "editableBlenderScene": "Local/AttackSources20261104/SourcedTurns/Exports/Mixamo_Turn180_A_v1.blend",
+      "editableSceneSHA256": "12d8a96195c903ae81e38e01d44af0fc055ac95c5f958c65662df89f9b01290a"
+    },
+    {
+      "name": "Mixamo_Turn180_B_v1",
+      "sourceSHA256": "f39d0bd805f82a4157a7233ab3156bddde7c17a5854438f4b0f629487f1dbcbd",
+      "durationSeconds": 0.55,
+      "observedTurnDegrees": -181.95287643390478,
+      "feet": [
+        {
+          "side": "left",
+          "measuredWindows": 21,
+          "peakLowFootMotionCmPerSecond": 161.90369795026237,
+          "peakTimeSeconds": 0.19166666666666665
+        },
+        {
+          "side": "right",
+          "measuredWindows": 27,
+          "peakLowFootMotionCmPerSecond": 507.76602601813136,
+          "peakTimeSeconds": 0.14166666666666666
+        }
+      ],
+      "editableBlenderScene": "Local/AttackSources20261104/SourcedTurns/Exports/Mixamo_Turn180_B_v1.blend",
+      "editableSceneSHA256": "a72d2f79c6befb3215f1fc2a745f8396a344ff7ceaabfb9ccfa1ea4a47225e26"
+    },
+    {
+      "name": "Mixamo_Turn_A_v1",
+      "sourceSHA256": "fd171c6cbb39a236043d746408ea286575b6e0ddb6a431632d2ab00a3dc6f679",
+      "durationSeconds": 0.7166666666666667,
+      "observedTurnDegrees": -98.228995213801,
+      "feet": [
+        {
+          "side": "left",
+          "measuredWindows": 58,
+          "peakLowFootMotionCmPerSecond": 63.30681295088371,
+          "peakTimeSeconds": 0.45
+        },
+        {
+          "side": "right",
+          "measuredWindows": 57,
+          "peakLowFootMotionCmPerSecond": 250.91627617008115,
+          "peakTimeSeconds": 0.175
+        }
+      ],
+      "editableBlenderScene": "Local/AttackSources20261104/SourcedTurns/Exports/Mixamo_Turn_A_v1.blend",
+      "editableSceneSHA256": "dacd0287d89c68b878ec79a299830a9c0eac732b91dcb7300bd8339bf65bbb2d"
+    },
+    {
+      "name": "Mixamo_Turn_B_v1",
+      "sourceSHA256": "98c88e71d58272c11ba08659efbd0f724815a993bd4b6493c3b846119d4261b0",
+      "durationSeconds": 0.8166666666666667,
+      "observedTurnDegrees": 90.47416413267804,
+      "feet": [
+        {
+          "side": "left",
+          "measuredWindows": 70,
+          "peakLowFootMotionCmPerSecond": 184.8049094289133,
+          "peakTimeSeconds": 0.075
+        },
+        {
+          "side": "right",
+          "measuredWindows": 63,
+          "peakLowFootMotionCmPerSecond": 248.9588625792457,
+          "peakTimeSeconds": 0.6
+        }
+      ],
+      "editableBlenderScene": "Local/AttackSources20261104/SourcedTurns/Exports/Mixamo_Turn_B_v1.blend",
+      "editableSceneSHA256": "0a734428b55c2408a3356a49e941040522222ce34ebf2d14410c08525ca00381"
+    }
+  ]
+}
