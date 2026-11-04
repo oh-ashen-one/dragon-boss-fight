@@ -21,6 +21,9 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
     for(FName Clip:{FName(TEXT("Walk")),FName(TEXT("WalkTwoHand")),FName(TEXT("Run")),FName(TEXT("RunAlternate")),FName(TEXT("RunTwoHandSourced")),FName(TEXT("RunOneHandPlanted")),FName(TEXT("RunTwoHandPlanted"))})
     {
         if(!HasVisualClip(Clip))continue;
+        // The walk-entry candidate only needs phase samples. It never changes
+        // nominal stride speed or enables the separate sprint experiment.
+        if(!bLocomotionPhaseMatch&&Clip!=TEXT("Walk")&&Clip!=TEXT("WalkTwoHand"))continue;
         const float Duration=VisualClipDuration(Clip,1.f)*VisualClipPlayRate(Clip),Dt=Duration/Count;
         FLocomotionPhaseCache Cache;TArray<float> Heights[4];
         for(int32 I=0;I<Count;++I)
@@ -48,6 +51,7 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
         UE_LOG(LogTemp,Display,TEXT("VEYR_LOCOMOTION_CACHE clip=%s measuredNominal=%.2f samples=%d"),*Clip.ToString(),Cache.NominalSpeed,Speeds.Num());
         LocomotionPhaseCache.Add(Clip,MoveTemp(Cache));
     }
+    if(!bLocomotionPhaseMatch)return LocomotionPhaseCache.Contains(TEXT("Walk"))&&LocomotionPhaseCache.Contains(TEXT("WalkTwoHand"));
     return bPlantedSprint?
         LocomotionPhaseCache.Contains(TEXT("RunOneHandPlanted"))&&LocomotionPhaseCache.Contains(TEXT("RunTwoHandPlanted")):
         LocomotionPhaseCache.Contains(TEXT("RunTwoHandSourced"));

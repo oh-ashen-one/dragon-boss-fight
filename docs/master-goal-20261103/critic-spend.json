@@ -40,9 +40,19 @@
       "estimatedUSD": 1.6486878,
       "verdict": "New A rejected; old B narrow preference; neither acceptable",
       "receipt": "../intro-20261103/blind-integration-receipt.json"
+    },
+    {
+      "id": "intro-canonical-complete-20261104",
+      "status": "complete",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 1.3961174,
+      "verdict": "A canonical visibly better; integration still rejected for weapon dropout and stance snap",
+      "receipt": "../intro-20261103/blind-canonical-receipt.json"
     }
   ],
-  "totalEstimatedUSD": 6.102693,
+  "totalEstimatedUSD": 7.4988104,
   "invoice": false,
   "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported",
   "unpricedAbortedCalls": 1

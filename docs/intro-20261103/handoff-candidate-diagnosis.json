@@ -1,0 +1,54 @@
+{
+  "verified": "2026-11-04",
+  "ownerApproved": "Exact R5 eight-shot fortress and mural tour remains unchanged",
+  "nativeInventory": {
+    "readOnly": true,
+    "weaponVariants": 5,
+    "idleVersion": "v026",
+    "walkVersion": "v027",
+    "staggerFrontVersion": "v029"
+  },
+  "observed": "Canonical body stayed visible but one weapon frame disappeared when idle changed to walk; shared idle/walk posture change remains abrupt",
+  "hypothesis": "Replacing a registered weapon static mesh recreates its render proxy, as with the earlier skeletal variant change. Native rendered validation must verify the fix.",
+  "candidateFlags": [
+    "VeyrCanonicalKnightSkin",
+    "VeyrStableWeaponPresentation",
+    "VeyrWalkEntryBlend"
+  ],
+  "changes": [
+    "Prepare one component per distinct approved prop before combat; select visibility and update transform without replacing meshes",
+    "Use nearest measured foot phase on idle-to-walk entry with a 0.20-second smooth blend; preserve nominal walking speed and source curves",
+    "Review every captured frame continuously from handoff through breath and recovery"
+  ],
+  "accepted": false,
+  "baseline": "native-intro-20261104T220529Z",
+  "sourceClipsOrTourChanged": false,
+  "firstCapture": {
+    "run": "native-intro-20261104T224335Z",
+    "mechanicsPassed": true,
+    "savedFrames": 391,
+    "skippedCaptureSlots": 800,
+    "qualityReviewEligible": false,
+    "reason": "The capture driver was launched with taskpolicy -b, unlike the matched baseline. PNG worker time rose roughly fourfold. Repeat at baseline scheduling priority; keep the same shared GPU gate and background/windowed launch. Scheduling effect is a hypothesis, not a proved code/performance regression."
+  },
+  "matchedPriorityCapture": {
+    "run": "native-intro-20261104T224547Z",
+    "mechanicsPassed": true,
+    "savedFrames": 1191,
+    "failedFrames": 0,
+    "skippedCaptureSlots": 1,
+    "skippedSlotAtWallSeconds": 36.7757387496531,
+    "scope": "Native input and frame-sample evidence only; blind acceptance pending",
+    "sourceId": "d772aed2eff6e35957a12fc94ade366cbba266547ce2b0e673a4d1bf1df34b7b"
+  },
+  "earliestSkipAndRetry": {
+    "run": "native-intro-20261104T224845Z",
+    "introPassed": true,
+    "deathRestartPassed": true,
+    "skipSeconds": 0.25322458148002625
+  },
+  "abortedDiagnostic": {
+    "run": "native-intro-20261104T224759Z",
+    "reason": "Mistyped skip parameter was ignored; stopped owned driver then owned engine with SIGTERM. Their exit was verified before launching with VeyrIntroSkipAfter. No crash/relaunch bypass."
+  }
+}

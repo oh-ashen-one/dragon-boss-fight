@@ -61,8 +61,17 @@ def main():
             'tourSheets': make_sheets(manifest.parent, overview, origin, args.out, label+'-tour'),
             'handoffEveryCapturedFrame': make_sheets(manifest.parent, handback, origin, args.out, label+'-handoff'),
             'fullResolutionDetails': detail}
-        late = [f for f in frames if damage-.25 <= f['requestedGameSeconds'] <= damage+1.] if damage is not None else frames[-20:]
+        # Join the handoff window without an uninspected interval, and retain
+        # the complete breath/recovery tail. A tight damage-only crop omitted
+        # the head motion immediately before the fire in the previous review.
+        late = [f for f in frames if f['requestedGameSeconds'] >= handoff+3.] if damage is not None else frames[-20:]
         packet['variants'][label]['lateEncounterFrames'] = make_sheets(manifest.parent,late,origin,args.out,label+'-late')
+        late_details = [min(frames,key=lambda f:abs(f['requestedGameSeconds']-damage-offset)) for offset in [-.03,0.,.04,.12]] if damage is not None else frames[-4:]
+        packet['variants'][label]['lateFullResolutionDetails']=[]
+        for i,frame in enumerate(late_details):
+            name=f'{label}-late-detail-{i+1}.png'
+            shutil.copyfile(manifest.parent/frame['file'],args.out/name)
+            packet['variants'][label]['lateFullResolutionDetails'].append({'file':name,'elapsedSeconds':frame['wallSeconds']-origin})
         mapping[label] = {'evidence': str(path), 'handoffReplaySeconds': handoff}
     (args.out/'sequence.json').write_text(json.dumps(packet, indent=2)+'\n')
     args.mapping.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,9 @@
+{
+  "comparisonCommit": "491d37d",
+  "exactRecipeUnchanged": true,
+  "files": {
+    "Unreal/Veyr/Source/Veyr/VeyrArenaTour.cpp": "fcc738fcf3cb427c67392a77d6f5ade2b9953622908c5adabdc3b27166f4e4eb",
+    "Unreal/Veyr/Source/Veyr/VeyrArenaTour.h": "08dde9c35152c5c3a3c396822e89ff448eff49185cfcb54eb4455e38d93509a1"
+  },
+  "scope": "Owner-approved eight-shot recipe preserved; integration fixes only"
+}

@@ -255,6 +255,8 @@ void AVeyrKnight::BeginPlay()
     bPrimaryRecovery=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryRecovery"));
     bReadableAutoLockCamera=FParse::Param(FCommandLine::Get(),TEXT("VeyrReadableAutoLock"));
     bLocomotionPhaseMatch=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrLocomotionPhaseMatch"));
+    bWalkEntryBlend=FParse::Param(FCommandLine::Get(),TEXT("VeyrWalkEntryBlend"));
+    bStableWeaponPresentation=FParse::Param(FCommandLine::Get(),TEXT("VeyrStableWeaponPresentation"));
     bContinuousLocomotionBlend=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrContinuousLocomotionBlend"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
@@ -1195,8 +1197,9 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         return false;
     }
     bImportedPresentationActive = true;
-    if(bLocomotionPhaseMatch&&!BuildLocomotionPhaseCache())
+    if((bLocomotionPhaseMatch||bWalkEntryBlend)&&!BuildLocomotionPhaseCache())
     {SetPresentationDiagnostic(TEXT("Native locomotion phase cache failed"));return false;}
+    if(bStableWeaponPresentation)PrepareWeaponComponents();
     UpdateImportedPresentation();
     if (!bImportedPresentationActive || !ImportedPresentation->bPoseEvaluated) return false;
     ImportedPresentation->SetVisibility(true,true);
@@ -1312,6 +1315,33 @@ bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
     Base=A.GetLocation();Tip=B.GetLocation();return true;
 }
 
+void AVeyrKnight::PrepareWeaponComponents()
+{
+    // Each approved prop keeps its own registered render proxy. Changing clips
+    // must not destroy/recreate the visible weapon's proxy on its first frame.
+    // Keep distinct authored meshes and grips; do not assume they are duplicates.
+    for(const auto& Pair:PreparedWeaponComponents)if(Pair.Value)Pair.Value->SetVisibility(false);
+    for(const auto& Entry:CustomuseVisualDefinition->Clips)
+    {
+        UStaticMesh* Mesh=Entry.Value.WeaponMesh.Get();
+        if(!Mesh||PreparedWeaponComponents.Contains(Mesh))continue;
+        UStaticMeshComponent* Part=nullptr;
+        if(PreparedWeaponComponents.IsEmpty())Part=BoatWeapon;
+        else
+        {
+            Part=NewObject<UStaticMeshComponent>(this);
+            AddInstanceComponent(Part);Part->SetupAttachment(GetCapsuleComponent());
+            Part->SetMobility(EComponentMobility::Movable);
+            Part->LightingChannels.bChannel1=true;
+            Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            Part->SetGenerateOverlapEvents(false);Part->SetCanEverAffectNavigation(false);
+        }
+        Part->SetVisibility(false);Part->SetStaticMesh(Mesh);
+        if(!Part->IsRegistered())Part->RegisterComponent();
+        PreparedWeaponComponents.Add(Mesh,Part);
+    }
+}
+
 void AVeyrKnight::UpdateEquippedWeapon()
 {
     if(!BoatWeapon)return;
@@ -1320,7 +1350,18 @@ void AVeyrKnight::UpdateEquippedWeapon()
         FTransform Authored;const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(RequestedPresentationClip);
         const bool Valid=bImportedPresentationActive&&bRequestedPresentationClipSampled&&C&&C->WeaponMesh&&
             GetWeaponSocketWorld(Authored);
-        if(Valid){BoatWeapon->SetStaticMesh(C->WeaponMesh);BoatWeapon->SetWorldTransform(Authored);}
+        if(Valid)
+        {
+            if(bStableWeaponPresentation)
+            {
+                const auto* Prepared=PreparedWeaponComponents.Find(C->WeaponMesh);
+                if(!Prepared||!Prepared->Get())
+                {BoatWeapon->SetVisibility(false);SetPresentationDiagnostic(TEXT("Approved weapon has no prepared component"));return;}
+                if(BoatWeapon!=*Prepared){BoatWeapon->SetVisibility(false);BoatWeapon=*Prepared;}
+            }
+            else BoatWeapon->SetStaticMesh(C->WeaponMesh);
+            BoatWeapon->SetWorldTransform(Authored);
+        }
         BoatWeapon->SetVisibility(Valid&&!bBlinkHidden);bBoatReleased=false;return;
     }
     if(!BoatWeapon->GetStaticMesh())BoatWeapon->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,
@@ -1377,7 +1418,8 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         if(Nominal<=0.f){bRequestedPresentationClipSampled=false;bPresentationUsingFallback=true;SetPresentationDiagnostic(TEXT("Missing locomotion speed: ")+Clip.ToString());return;}
         if(LastLocomotionClip!=Clip||PresentationTransitionClip!=Clip)
         {
-            if(bLocomotionPhaseMatch&&LocomotionPhaseCache.Contains(Clip))
+            const bool IdleToWalk=bWalkEntryBlend&&PresentationTransitionClip.ToString().StartsWith(TEXT("Idle"))&&Clip.ToString().StartsWith(TEXT("Walk"));
+            if((bLocomotionPhaseMatch||IdleToWalk)&&LocomotionPhaseCache.Contains(Clip))
                 PresentationLocomotionTime=ClosestLocomotionPhase(Clip)/VisualClipPlayRate(Clip);
             else if(LastLocomotionClip!=Clip)
             {
@@ -1430,13 +1472,18 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         // Entering or leaving lock-on locomotion changes posture (hips up to 26 cm lower in the strafes): blend longer.
         auto IsLockOnLoco=[](FName N){const FString S=N.ToString();return S.StartsWith(TEXT("Strafe"))||S.StartsWith(TEXT("Backpedal"));};
         bTransitionLockOnEdge=!PresentationTransitionClip.IsNone()&&IsLockOnLoco(Clip)!=IsLockOnLoco(PresentationTransitionClip);
+        const FString FromName=PresentationTransitionClip.ToString(),ToName=Clip.ToString();
+        bTransitionIdleWalkEdge=bWalkEntryBlend&&
+            ((FromName.StartsWith(TEXT("Idle"))&&ToName.StartsWith(TEXT("Walk")))||
+             (FromName.StartsWith(TEXT("Walk"))&&ToName.StartsWith(TEXT("Idle"))));
         auto IsMobility=[](FName N){return N==FName(TEXT("RunningAttackSourced"))||N==FName(TEXT("RunningAttackDirect"))||N==FName(TEXT("LeapAttackSourced"));};
         bTransitionInvolvesMobility=IsMobility(Clip)||(IsMobility(PresentationTransitionClip)&&Action==EVeyrKnightAction::Ready);
         ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionLockOnEdge?LockOnBlendSeconds:Action==EVeyrKnightAction::Guard?.06f:.10f;
-    const float Alpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
+    const float BlendSeconds=Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
+    const float Alpha=bTransitionIdleWalkEdge?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;
     const float SampleTime=Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset);
     ProofBlendAlpha=Alpha;bProofBlendActive=bPresentationTransitionActive&&Alpha<1.f;
     bWeaponGripBlendActive=false;

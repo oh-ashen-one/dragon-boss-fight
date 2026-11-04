@@ -211,6 +211,8 @@ public:
     /** Read-only blade geometry and authored contact-window state for combat presentation. */
     bool GetWeaponSweep(FVector& Base,FVector& Tip);
     bool IsWeaponTrailActive() const;
+    bool UsesStableWeaponPresentation() const { return bStableWeaponPresentation; }
+    bool UsesWalkEntryBlend() const { return bWalkEntryBlend; }
 
 protected:
     virtual void BeginPlay() override;
@@ -220,6 +222,9 @@ private:
     UPROPERTY() TObjectPtr<UPointLightComponent> ReadabilityFill;
     UPROPERTY() TObjectPtr<USceneComponent> SwordPivot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> BoatWeapon;
+    UPROPERTY() TMap<TObjectPtr<UStaticMesh>,TObjectPtr<UStaticMeshComponent>> PreparedWeaponComponents;
+    bool bStableWeaponPresentation=false;
+    void PrepareWeaponComponents();
     bool bBoatReleased=false;
     float BoatReleaseTime=0.f;
     FTransform BoatReleaseStart,BoatReleaseRest;
@@ -266,6 +271,7 @@ private:
     bool bPlantedSprint=false;
     bool bDirectRunningAttack=false;
     bool bLocomotionPhaseMatch=false;
+    bool bWalkEntryBlend=false;
     bool bContinuousLocomotionBlend=false;
     FName ContinuousTransitionSource=NAME_None;
     float ContinuousTransitionSeconds=0.f;
@@ -292,6 +298,7 @@ private:
     bool bTransitionInvolvesMobility=false;
     bool bLockOnStrafingLastFrame=false;
     bool bTransitionLockOnEdge=false;
+    bool bTransitionIdleWalkEdge=false;
     bool bBlinkHiddenStartRecorded=false,bBlinkHiddenEndRecorded=false;
     bool bWeaponGripBlendActive=false;
     float WeaponGripAlpha=1.f;

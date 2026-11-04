@@ -1,0 +1,19 @@
+{
+  "model": "claude-opus-5-5",
+  "readCalls": 48,
+  "successfulImageBlocks": 47,
+  "winner": "A",
+  "mapping": {
+    "A": "canonical opt-in capture native-intro-20261104T220529Z",
+    "B": "legacy variant capture native-intro-20261104T202201Z"
+  },
+  "visiblyBetter": true,
+  "accepted": false,
+  "remaining": [
+    "One-frame weapon disappearance",
+    "Idle-to-walk stance snap",
+    "Continuous breath-window visibility review"
+  ],
+  "estimatedUSD": 1.3961174,
+  "scope": "Frame inspection; no continuous-playback/audio acceptance"
+}
