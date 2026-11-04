@@ -9,7 +9,6 @@ import plistlib
 from pathlib import Path
 import subprocess
 import time
-import re
 
 ROOT = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser(description=__doc__)
@@ -21,7 +20,6 @@ p.add_argument('--mode', choices=['core','death','victory','leg0','leg1','leg2',
 p.add_argument('--next-mode',choices=['environment','showcase','healing','death'],help='One additional scenario in a fresh world, using the same owned renderer process')
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--wait-for-stream-end',action='store_true',help='Keep this single owned request waiting while the shared streaming flag exists; still acquire the normal GPU gate afterward')
-p.add_argument('--wait-for-capacity',action='store_true',help='Wait without a slot until shared status shows spare capacity; the normal GPU gate still makes the launch decision')
 p.add_argument('--video-fps', type=int, choices=range(1,61), help='Optional native capture cadence; adds measurable overhead')
 p.add_argument('--launch-services',action='store_true',help='Use the normal macOS app launch path; success still requires native final evidence')
 p.add_argument('--performance',action='store_true',help='Exclusive GPU lease; no screenshots/video, sparse diagnostics; audio remains enabled')
@@ -89,31 +87,10 @@ if a.start_two_handed:
     if a.mode not in ('core','victory'):p.error('--start-two-handed applies only to core/victory validation')
     cmd.append('-VeyrReplayStartTwoHanded')
 print('Native run:', run, flush=True)
-if a.wait_for_capacity:
-    print('Waiting outside the GPU lease for spare capacity; no renderer launched',flush=True)
-    calm_since=None
-    while True:
-        status=subprocess.run([str(a.gpu_slot),'status'],stdin=subprocess.DEVNULL,capture_output=True,text=True)
-        utilization=re.search(r'GPU Device Utilization now:\s*([0-9.]+)\s*%',status.stdout)
-        slots=re.search(r'Capture slots:\s*(\d+)/(\d+)',status.stdout)
-        watchdog=re.search(r'Watchdog cap:\s*(\d+)',status.stdout)
-        capacity=min(int(slots[2]),int(watchdog[1])) if slots and watchdog else 0
-        available=bool(status.returncode==0 and utilization and slots and
-            re.search(r'PAUSED:\s*no',status.stdout) and re.search(r'Perf lock:\s*free',status.stdout) and
-            not (Path.home()/'.cache/gpu-slot/STREAMING').exists() and int(slots[1])<capacity and float(utilization[1])<75.)
-        now=time.monotonic()
-        calm_since=(now if calm_since is None else calm_since) if available else None
-        (run/'queue-state.json').write_text(json.dumps({'pid':os.getpid(),'state':'waiting_capacity','rendererLaunched':False,
-            'checkedUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'capacityObserved':available})+'\n')
-        if calm_since is not None and now-calm_since>=20.:break
-        time.sleep(10.)
-    (run/'queue-state.json').write_text(json.dumps({'pid':os.getpid(),'state':'requesting_normal_gate','rendererLaunched':False})+'\n')
-    print('Spare capacity observed; requesting the ordinary launch-budget and GPU gates',flush=True)
 if a.wait_for_stream_end:
     streaming=Path.home()/'.cache/gpu-slot/STREAMING'
     if streaming.exists():print('Waiting for the shared streaming guard to clear; no renderer launched',flush=True)
     while streaming.exists():time.sleep(30.)
-if a.wait_for_stream_end or a.wait_for_capacity:
     # An unattended wait must not turn an earlier preflight into permission to
     # launch a changed binary. GPU headroom/cap checks still happen below.
     if not executable.is_file() or hashlib.sha256(executable.read_bytes()).hexdigest()!=json.loads((run/'launch.json').read_text())['executableSHA256']:

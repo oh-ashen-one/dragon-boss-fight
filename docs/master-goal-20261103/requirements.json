@@ -122,11 +122,13 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "single_owned_request_waiting_for_capacity",
-    "run": "Evidence/native-intro-20261104T052718Z",
-    "pid": 56598,
+    "status": "normal_shared_FIFO_queue",
+    "run": "Evidence/native-intro-20261104T055902Z",
+    "gatePid": 12975,
+    "toolSession": 42266,
     "rendererLaunched": false,
-    "scope": "Observed live process; revalidate before acting. Normal gpu_slot remains authoritative."
+    "priorObserver": "PID56598 cancelled before launch; removed redundant outside-FIFO free-slot observer",
+    "scope": "Check the live handle. Normal gpu_slot remains authoritative with unchanged safety thresholds."
   },
   "gateProbeCode": {
     "flag": "VeyrFortressGateTest",
