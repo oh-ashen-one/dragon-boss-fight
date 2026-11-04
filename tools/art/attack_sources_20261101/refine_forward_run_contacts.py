@@ -129,6 +129,7 @@ bpy.context.view_layer.objects.active=r
 bpy.ops.export_scene.gltf(filepath=str(DEST.with_suffix('.glb')),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='ACTIVE_ACTIONS',export_frame_range=True,export_force_sampling=True,export_optimize_animation_size=False,export_cameras=False,export_lights=False)
 bpy.ops.wm.save_as_mainfile(filepath=str(DEST.with_suffix('.blend')),compress=True)
 report={'source':str(SOURCE.relative_to(ROOT)),'sourceSHA256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),'sha256':hashlib.sha256(DEST.with_suffix('.glb').read_bytes()).hexdigest(),'duration':duration,'fps':fps,'sourcePlanarTravel':list(net),'soleBiasSourceUnits':bias,'stanceFrames':groups_report,'maxPelvisShiftSourceUnits':max_shift,'maxTargetErrorSourceUnits':max_error,'maxLimbLengthErrorSourceUnits':max_length_error,'sourceUpperLocalMotionAndTimingPreserved':True,'handRelativeSocketPreserved':True,'stanceCorrection':'Full boot orientation and ankle anchor during measured plant, with free sourced swing' if RIGID else 'Toe anchor only','nativeImported':False,'accepted':False}
+report.update(authoringApplication='Blender',editableScene=str(DEST.with_suffix('.blend').relative_to(ROOT)),editableSceneSHA256=hashlib.sha256(DEST.with_suffix('.blend').read_bytes()).hexdigest())
 DEST.with_suffix('.json').write_text(json.dumps(report,indent=2)+'\n')
 # A real reference ground exposes floating/sliding in review; added after export.
 if RIGID:

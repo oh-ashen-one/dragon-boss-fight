@@ -29,6 +29,8 @@ def polish_plan_for(character):
     path=Path(active['path']).resolve()
     if not path.is_relative_to(folder.resolve()):raise ValueError('Plan outside owned polish folder')
     if hashlib.sha256(path.read_bytes()).hexdigest()!=active['sha256']:raise ValueError('Active plan hash differs from reviewed plan')
+    if json.loads(path.read_text()).get('diagnostic_only'):
+        raise ValueError('Diagnostic-only motion cannot enter the native workflow; use Blender-authored/refined actions')
     return path
 
 

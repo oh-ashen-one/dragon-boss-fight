@@ -1,0 +1,16 @@
+{
+  "utc": "2026-11-04T18:19:56.159179+00:00",
+  "projectRule": "Character animation must be authored/refined in Blender; importing externally generated poses alone is insufficient",
+  "cpuDiagnosticPlan": "Local/CustomuseAssets/Polish20261025/knight-v043plants/diagnostic-plan-KnightB.json",
+  "cpuNativeImportEligible": false,
+  "cpuNativeImported": false,
+  "activeNativeVersion": "v042heal",
+  "importGuardRejectionVerified": true,
+  "replacementScripts": [
+    "tools/art/attack_sources_20261101/refine_forward_run_contacts.py --rigid-stance",
+    "tools/art/attack_sources_20261101/author_blender_motion_revisions.py",
+    "tools/art/attack_sources_20261101/render_blender_motion_revisions.py"
+  ],
+  "replacementExecuted": false,
+  "newAssetQualityAccepted": false
+}

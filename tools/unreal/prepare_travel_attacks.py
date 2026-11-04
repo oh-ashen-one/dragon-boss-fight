@@ -15,6 +15,8 @@ weapon=GLB(ROOT/'Local/polish-review-20261025/BoatGreatsword_OneHand_v4.glb');wv
 for source_key,key,vertical in ([('JumpAttack','LeapAttackSourced',True)] if not a.only_running else [])+[('SlideAttack',a.running_key,False)]:
     assert all(c['name']!=key for c in plan['clips'])
     source=a.running_source.resolve() if source_key=='SlideAttack' and a.running_source else ROOT/f'Local/AttackSources20261102/MixamoGreatSword/Retarget/Exports/Mixamo_{source_key}_v2.glb';fit=json.loads(source.with_suffix('.json').read_text());assert hashlib.sha256(source.read_bytes()).hexdigest()==fit['sha256']
+    assert source.with_suffix('.blend').is_file(),'Project requires an editable Blender-authored action; CPU diagnostics cannot be imported'
+    if fit.get('editableSceneSHA256'):assert hashlib.sha256(source.with_suffix('.blend').read_bytes()).hexdigest()==fit['editableSceneSHA256']
     normalized=folder/'intermediate'/source.name;normal=normalize_file(source,SourceGLB(canonical),normalized,120,fit['duration'],vertical)
     target=folder/'knight'/source.name;proof=graft(canonical,normalized,target);g=GLB(target);socket=next(i for i,n in enumerate(g.json['nodes']) if n.get('name')=='WeaponSocket');duration=proof['durationSeconds'];times=np.linspace(0,duration,round(duration*120)+1)
     points=np.array([(g.world_matrices(0,float(t))[socket]@np.r_[tip,1])[:3] for t in times]);velocity=np.gradient(points,times,axis=0);speed=np.linalg.norm(velocity,axis=1)

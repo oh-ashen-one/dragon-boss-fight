@@ -335,6 +335,8 @@ def finalize_existing(plan):
 def run(plan_file):
     import unreal
     plan = json.loads(Path(plan_file).read_text())
+    if plan.get('diagnostic_only'):
+        raise ValueError('Diagnostic-only motion is not eligible for native import; project rules require Blender authoring')
     character, version = plan["character"], plan["version"]
     if plan.get("verify_render_policy_only"):
         import importlib, probe_render_policy

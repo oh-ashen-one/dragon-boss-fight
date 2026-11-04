@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare opt-in planted-run derivatives on the unchanged canonical mesh.
+"""Prepare Blender-authored planted-run derivatives on the canonical mesh.
 
 CPU preparation only; never modifies the active native definition. Original
 run clips remain inherited so one Shipping build can film a matched comparison.
@@ -19,7 +19,7 @@ from graft_canonical_animation import graft
 from import_customuse import inspect_glb, compatible
 
 BASE = ROOT/'Local/CustomuseAssets/Polish20261025/knight-v042heal/import-plan-KnightB.json'
-OUT = ROOT/'Local/CustomuseAssets/Polish20261025/knight-v043plants'
+OUT = ROOT/'Local/CustomuseAssets/Polish20261025/knight-v044blender'
 
 
 def main():
@@ -30,15 +30,18 @@ def main():
     body = GLB(canonical)
     vertices = np.concatenate([body.accessor(p['attributes']['POSITION']) for m in body.json['meshes'] for p in m['primitives']])
     native_scale = base['target_height_cm']/(float(np.ptp(vertices[:, 1]))*100)
-    sources = [('RunOneHandPlanted', 'FabMixamo_OneHandRun_v1composed.glb'),
-               ('RunTwoHandPlanted', 'Mixamo_ForwardRun_v4cpu.glb')]
+    sources = [('RunOneHandPlanted', ROOT/'Local/AttackSources20261104/BlenderMotion/FabMixamo_OneHandRun_v2blender.glb'),
+               ('RunTwoHandPlanted', ROOT/'Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRun_v4rigid.glb')]
     plan = {k: v for k, v in base.items() if k != 'clips'}
-    plan.update(version='v043plants', replace_runtime_source='/Game/Characters/Customuse/KnightB/v042heal/DA_KnightB',
-                owner_approved=False, purpose='CPU corrected planted run candidates; source visuals, native contacts and blind review pending', clips=[])
-    for key, filename in sources:
-        source = ROOT/'Local/AttackSources20261104/CPUBootPlants'/filename
+    plan.update(version='v044blender', replace_runtime_source='/Game/Characters/Customuse/KnightB/v042heal/DA_KnightB',
+                owner_approved=False, purpose='Blender-authored sourced run candidates; native contacts and blind review pending', clips=[])
+    for key, source in sources:
+        filename = source.name
         fit = json.loads(source.with_suffix('.json').read_text())
         assert hashlib.sha256(source.read_bytes()).hexdigest() == fit['sha256']
+        assert fit.get('authoringApplication') == 'Blender', 'CPU diagnostics are not importable animation sources'
+        scene = ROOT/fit['editableScene']
+        assert scene.is_file() and hashlib.sha256(scene.read_bytes()).hexdigest() == fit['editableSceneSHA256']
         duration = SourceGLB(source).duration()
         normal = normalize_file(source, SourceGLB(canonical), OUT/'intermediate'/filename, 120, duration, False, True)
         target = OUT/'knight'/filename

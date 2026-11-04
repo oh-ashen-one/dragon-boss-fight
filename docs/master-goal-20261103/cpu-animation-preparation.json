@@ -1,8 +1,8 @@
 {
-  "status": "CPU derivatives prepared; native import, rendered playback, blind review and gameplay acceptance pending",
+  "status": "Diagnostic-only CPU study; not eligible for native import under project Blender-authoring rule",
   "activeNativeDefinition": "v042heal unchanged",
   "preparedVersion": "v043plants",
-  "plan": "Local/CustomuseAssets/Polish20261025/knight-v043plants/import-plan-KnightB.json",
+  "plan": "Local/CustomuseAssets/Polish20261025/knight-v043plants/diagnostic-plan-KnightB.json",
   "clips": [
     {
       "name": "RunOneHandPlanted",
@@ -61,5 +61,7 @@
     "docs/knight-complete-20261028/local-assets-provenance.json",
     "docs/overnight-20261102/knight-locomotion-native-sources.json"
   ],
-  "rawAssetPublication": "Private local derivatives only; commit scripts, hashes and provenance, not restricted animation files."
+  "rawAssetPublication": "Private local derivatives only; commit scripts, hashes and provenance, not restricted animation files.",
+  "importEligible": false,
+  "requiredReplacement": "Blender-authored/refined actions from the original licensed sources, saved editable scenes and inspected full-motion playback"
 }
