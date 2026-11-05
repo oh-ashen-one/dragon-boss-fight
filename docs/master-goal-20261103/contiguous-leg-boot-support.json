@@ -1,0 +1,45 @@
+{
+  "scope": "Actual exported boot support during running at420cm/s; same adjacent-frame near-floor criterion and75th-percentile vertex tangential speed as earlier screen. Not native/gameplay/quality acceptance.",
+  "variants": [
+    {
+      "variant": "before",
+      "source": "ContiguousPairV9a",
+      "footSupport": [
+        {
+          "side": "Left",
+          "minimumBootCm": 0.04996707038520469,
+          "contactIntervals": 9,
+          "medianTangentialCmS": 57.15038271942924,
+          "peakTangentialCmS": 69.20595665125353
+        },
+        {
+          "side": "Right",
+          "minimumBootCm": 2.5461523025566253,
+          "contactIntervals": 0,
+          "medianTangentialCmS": null,
+          "peakTangentialCmS": null
+        }
+      ]
+    },
+    {
+      "variant": "after",
+      "source": "ContiguousPairV14",
+      "footSupport": [
+        {
+          "side": "Left",
+          "minimumBootCm": 0.8009323975725849,
+          "contactIntervals": 0,
+          "medianTangentialCmS": null,
+          "peakTangentialCmS": null
+        },
+        {
+          "side": "Right",
+          "minimumBootCm": 3.3497896395052447,
+          "contactIntervals": 0,
+          "medianTangentialCmS": null,
+          "peakTangentialCmS": null
+        }
+      ]
+    }
+  ]
+}

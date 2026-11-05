@@ -1,0 +1,45 @@
+{
+  "scope": "Independent exported source/pair diagnostic; no native contact, gameplay or visual acceptance",
+  "contactReference": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV8/ACCAD_RunToStand_v8support.glb",
+  "contactReferenceSHA256": "96603c28b0672e515d811b6e2019fd50e2acaad2c75b2eaaef10089cfee5763b",
+  "fidelityChecksPassed": true,
+  "checks": {
+    "prefixPoseMaxError": 0.0,
+    "loopSeamPositionErrorCm": 0.00033711994608535257,
+    "loopSeamRotationMaxError": 1.7832303198517252e-06,
+    "unmodifiedPosePositionErrorCm": 0.000923596951706588,
+    "handRelativeSocketMaxError": 5.809570493620075e-06,
+    "minimumSourceBootHeightDuringSeamCm": 6.4995990816022635
+  },
+  "sourceContactScreen": [
+    {
+      "side": "Left",
+      "fixedBaselineReferenceCm": [
+        16.710487704485388,
+        3.6035525358018305
+      ],
+      "windows": 128,
+      "windowsOver60": 0,
+      "worst": {
+        "seconds": 2.1,
+        "cmS": 45.80406729671504
+      }
+    },
+    {
+      "side": "Right",
+      "fixedBaselineReferenceCm": [
+        19.493200890869247,
+        4.611362834408786
+      ],
+      "windows": 111,
+      "windowsOver60": 0,
+      "worst": {
+        "seconds": 1.8166666666666667,
+        "cmS": 50.369048321299374
+      }
+    }
+  ],
+  "sourceContactScreenPassed": true,
+  "nativeImported": false,
+  "qualityAccepted": false
+}

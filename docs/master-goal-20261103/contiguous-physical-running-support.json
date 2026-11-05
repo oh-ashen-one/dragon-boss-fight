@@ -1,0 +1,25 @@
+{
+  "scope": "Read-only actual exported skinned-boot support during running at420cm/s; fixed eight-vertex/1.05cm criterion and1/30second rolling windows. No native acceptance.",
+  "rows": [
+    {
+      "side": "Left",
+      "minimumBootCm": 0.04992387176572453,
+      "supportIntervals": 12,
+      "supportWindowsAtLeast1over30Seconds": 9,
+      "medianTangentialCmS": 40.242297402483715,
+      "peakIntervalCmS": 62.6220392894929,
+      "peakWindowCmS": 46.30185036558352,
+      "windowsOver60": 0
+    },
+    {
+      "side": "Right",
+      "minimumBootCm": 0.0499057539408462,
+      "supportIntervals": 10,
+      "supportWindowsAtLeast1over30Seconds": 7,
+      "medianTangentialCmS": 20.099790702584375,
+      "peakIntervalCmS": 58.14617372456834,
+      "peakWindowCmS": 32.65660238372158,
+      "windowsOver60": 0
+    }
+  ]
+}

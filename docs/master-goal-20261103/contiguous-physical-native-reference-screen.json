@@ -1,0 +1,45 @@
+{
+  "scope": "Independent exported source/pair diagnostic; no native contact, gameplay or visual acceptance",
+  "contactReference": "Local/AttackSources20261105/ACCADMale1/LegSupportV15/ACCAD_RunToStandTwoHand_v15soles.glb",
+  "contactReferenceSHA256": "c3e9a07ac07cd68944663a9b66521c0840296883d0897096a4b8dc557d7eca67",
+  "fidelityChecksPassed": true,
+  "checks": {
+    "prefixPoseMaxError": 0.0,
+    "loopSeamPositionErrorCm": 0.00033711994608535257,
+    "loopSeamRotationMaxError": 1.7832303198517252e-06,
+    "unmodifiedPosePositionErrorCm": 0.000923596951706588,
+    "handRelativeSocketMaxError": 5.809570493620075e-06,
+    "minimumSourceBootHeightDuringSeamCm": 6.499624058894623
+  },
+  "sourceContactScreen": [
+    {
+      "side": "Left",
+      "fixedBaselineReferenceCm": [
+        16.460409066177593,
+        3.5888818517609167
+      ],
+      "windows": 129,
+      "windowsOver60": 0,
+      "worst": {
+        "seconds": 2.1,
+        "cmS": 45.807372662816896
+      }
+    },
+    {
+      "side": "Right",
+      "fixedBaselineReferenceCm": [
+        18.476172388700068,
+        3.544458397794626
+      ],
+      "windows": 63,
+      "windowsOver60": 1,
+      "worst": {
+        "seconds": 2.375,
+        "cmS": 77.82640338045869
+      }
+    }
+  ],
+  "sourceContactScreenPassed": false,
+  "nativeImported": false,
+  "qualityAccepted": false
+}

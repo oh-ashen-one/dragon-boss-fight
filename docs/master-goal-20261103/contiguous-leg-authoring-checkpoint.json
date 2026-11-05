@@ -1,0 +1,12 @@
+{
+  "source": "Local/AttackSources20261105/ACCADMale1/LegSupportV17/ACCAD_RunToStandTwoHand_v17placement.blend",
+  "sha256": "7023b16383fb28c6392d45c4b156f4c55969802e6afdef862dfec3f5a76bb613",
+  "editableSceneSHA256": "8214126de5b0b1a56b870f619d210cfac2f2b0edc736255e5ebf434751f333c4",
+  "maximumPelvisShiftCm": 4.080640540356849,
+  "minimumBootCm": 0.04975766100587695,
+  "maximumLimbLengthErrorCm": 0.00017602308387280337,
+  "maximumUpperPoseMatrixError": 1.1920928955078125e-06,
+  "sourceContactQualityAccepted": false,
+  "nativeImported": false,
+  "remaining": "Late-stop marker window still fails; runtime controller/floor/contacts and actual Opus review remain required"
+}

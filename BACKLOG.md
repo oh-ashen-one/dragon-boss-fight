@@ -1,3 +1,9 @@
+# Current source/native-preparation checkpoint — 2026-11-05
+
+The latest two-hand source pair is V17/PairV18. Actual running boot support now exists on both feet, with measured support windows below60cm/s; late-stop marker checks still fail. Current/earlier source movies are watchable at `#placement` and history links. V13's marker-only false pass is import-blocked. No new gameplay animation is active.
+
+A shared-prefix native representation is prepared as v047, but remains diagnostic-only and unimported. Next is a properly isolated native-trial route/controller and real gameplay comparison, preserving all import/activation safeguards. Do not keep mistaking source fidelity for completion. One-hand/start/turn/running/leap/light, camera and final full-build gates remain open; exact current state is HANDOFF.md and the requirement ledger.
+
 # Source footage and weapon adaptation — 2026-11-05
 
 Matched run/stop source movies are available at `#contiguous`; the two-handed full-source adaptation is saved and independently checked. Neither is enabled in gameplay. Two whole-body support corrections failed their unchanged bounds and are stopped; next use supporting-leg contact correction. Final source/native contacts, weapon playback and blind quality review remain open. See HANDOFF.md for exact artifacts; all previous queued jobs are now terminal.

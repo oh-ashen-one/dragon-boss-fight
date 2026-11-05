@@ -1,0 +1,23 @@
+{
+  "scope": "Actual exported running boot support at420cm/s, unchanged eight-vertex/1.05cm/1over30second screen; not native acceptance",
+  "rows": [
+    {
+      "side": "Left",
+      "minimumBootCm": 0.04992121589584359,
+      "supportIntervals": 12,
+      "supportWindowsAtLeast1over30Seconds": 9,
+      "peakIntervalCmS": 62.62157643693538,
+      "peakWindowCmS": 46.30235039619498,
+      "windowsOver60": 0
+    },
+    {
+      "side": "Right",
+      "minimumBootCm": 0.049927857485718534,
+      "supportIntervals": 10,
+      "supportWindowsAtLeast1over30Seconds": 7,
+      "peakIntervalCmS": 58.143150104065995,
+      "peakWindowCmS": 33.27926580386809,
+      "windowsOver60": 0
+    }
+  ]
+}

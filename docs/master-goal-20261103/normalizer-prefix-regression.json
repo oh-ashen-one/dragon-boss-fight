@@ -1,0 +1,7 @@
+{
+  "defaultLinearNormalizationBytesUnchanged": true,
+  "rootSamplesUnchanged": true,
+  "comparison": "Current helper default options versus exact prior committed implementation",
+  "sourceSHA256": "d71d759a08dc393a60b1fcb619d585d05f49c3b1d51ca1d344326e93c5885228",
+  "outputSHA256": "d8c67b4f9ff02e53cdfd0c551fe487cd5af9a66adb7af7c418ef26d4c8dfb040"
+}

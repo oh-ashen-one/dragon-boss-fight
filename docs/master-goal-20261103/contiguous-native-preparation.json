@@ -1,0 +1,27 @@
+{
+  "diagnosticOnly": true,
+  "nativeImported": false,
+  "qualityAccepted": false,
+  "sourceContactScreenPassed": false,
+  "sharedNormalizedPrefixMaxMatrixError": 3.162177623292073e-07,
+  "sharedActorPrefixMaxErrorCm": 4.800659951342823e-06,
+  "loopDurationSeconds": 0.6666666666666666,
+  "loopNominalCmS": 498.0790719039185,
+  "clips": [
+    {
+      "clip": "RunTwoHandContiguous",
+      "samples": 161,
+      "maximumWorldMatrixError": 2.815226055608022e-07,
+      "rootMode": "linear_cycle_travel",
+      "outputSHA256": "1dfad615f3b3a74ef8efa4d0d63b4f1674eb4c89c85e8d346d2fca657540a601"
+    },
+    {
+      "clip": "RunStopTwoHandContiguous",
+      "samples": 753,
+      "maximumWorldMatrixError": 1.3015509067182407e-06,
+      "rootMode": "linear_shared_prefix_then_authored_profile",
+      "outputSHA256": "4fc84c23d609ab7a592aa783af5c2a75ceb8b913b3ac9e7d766a9d7633f1f752"
+    }
+  ],
+  "scope": "CPU-only representation preparation; diagnostic-only import guard remains in force; not native import, activation, gameplay or quality acceptance"
+}

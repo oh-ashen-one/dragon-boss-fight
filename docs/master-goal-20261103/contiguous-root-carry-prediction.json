@@ -31,5 +31,6 @@
       "maxCmS": null,
       "over60": 0
     }
-  ]
+  ],
+  "limitationDiscovered": "The constant-capsule prediction assumed the entire authored root profile was removed. Actual linear-cycle normalization retains the nonlinear residual in the pose. This old model must not be treated as a native gait prediction or a reason to replace the movement component."
 }
