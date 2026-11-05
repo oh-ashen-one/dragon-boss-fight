@@ -1,0 +1,41 @@
+{
+  "applied": true,
+  "removed": {
+    "/private/tmp/veyr-verified-bundle-a6sof9x4": {
+      "receipt": "Local/package-20261104T224057Z/receipt.json",
+      "reason": "superseded app; videos and receipts preserved"
+    },
+    "/private/tmp/veyr-verified-bundle-d29qtpgk": {
+      "receipt": "Local/package-20261105T000601Z/receipt.json",
+      "reason": "superseded app; videos and receipts preserved"
+    },
+    "/private/tmp/veyr-verified-bundle-ffgb336b": {
+      "receipt": "Local/package-20261105T005641Z/receipt.json",
+      "reason": "superseded app; videos and receipts preserved"
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261105T021537Z": {
+      "receipt": "Local/package-20261105T021537Z/receipt.json",
+      "reason": "redundant completed archive"
+    },
+    "/private/tmp/veyr-stage-srvayoq3": {
+      "receipt": "Local/package-20261105T021537Z/receipt.json",
+      "reason": "redundant completed owned stage"
+    },
+    "/Users/midir/veyr-knight-20261028/Builds/Unreal-Mac-20261105T030744Z": {
+      "receipt": "Local/package-20261105T030744Z/receipt.json",
+      "reason": "redundant completed archive"
+    },
+    "/private/tmp/veyr-stage-o7v3cayh": {
+      "receipt": "Local/package-20261105T030744Z/receipt.json",
+      "reason": "redundant completed owned stage"
+    }
+  },
+  "retained": [
+    "/private/tmp/veyr-verified-bundle-zio8vgsq/Veyr-Mac-Shipping.app",
+    "/private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app"
+  ],
+  "skipped": {},
+  "freeBytesBefore": 304350711808,
+  "freeBytesAfter": 320322048000,
+  "utc": "2026-11-05T03:38:39.980103+00:00"
+}

@@ -1,0 +1,13 @@
+{
+  "run": "Evidence/native-controls-20261105T031820Z",
+  "toolSession": 95062,
+  "exitCode": 75,
+  "outcome": "cap-full-timeout",
+  "waitSeconds": 901.2,
+  "renderStarted": false,
+  "nativeFrames": 0,
+  "gatePIDAbsent": true,
+  "defaultControlsVerified": false,
+  "sameConditionRetried": false,
+  "safetyControlsChanged": false
+}

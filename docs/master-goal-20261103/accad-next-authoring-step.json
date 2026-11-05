@@ -1,0 +1,27 @@
+{
+  "status": "prepared_not_executed",
+  "reason": "Read-only v3 skinned-mesh diagnostics found up to10.41cm source-floor penetration. Fit captured ankle paths before weapon adaptation or native import.",
+  "blenderScript": "tools/art/attack_sources_20261101/fit_sourced_locomotion.py",
+  "arguments": [
+    "--provider",
+    "accad",
+    "--source-directory",
+    "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports",
+    "--output",
+    "Local/AttackSources20261105/ACCADMale1/ContactFitV4",
+    "--suffix",
+    "_v4contacts",
+    "--trim-plan",
+    "docs/master-goal-20261103/accad-transition-diagnostics.json"
+  ],
+  "requires": "Normal gpu_slot request after verified capacity change; one owned Blender; no gate override. Current controls request is terminal.",
+  "validation": [
+    "Actual Blender execution and editable scenes",
+    "Retained-key trim equality, bounded pelvis correction, no limb stretch",
+    "Skinned-sole checks at native floor0 and full three-view playback",
+    "Weapon-hold adaptation, native gameplay and blind Opus quality review"
+  ],
+  "stoppedGround4Unaffected": true,
+  "nativeImported": false,
+  "accepted": false
+}

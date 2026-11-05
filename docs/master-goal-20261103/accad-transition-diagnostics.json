@@ -1,0 +1,512 @@
+{
+  "scope": "Read-only inspection of the actual v3 Blender exports; no acceptance or new animation",
+  "scaleCmPerSourceUnit": 244.11917667589785,
+  "clips": [
+    {
+      "clip": "ACCAD_RunToStand_v3reference",
+      "source": "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports/ACCAD_RunToStand_v3reference.glb",
+      "sha256": "f4c15177d94a27c9be7e8c94a0d862b05893fb1c862ec320c83a5ccfbbb12c9e",
+      "durationSeconds": 3.266669988632202,
+      "sampleRate": 60,
+      "floorCm": 0,
+      "maximumRootSpeedCmS": 583.5767783025503,
+      "feet": {
+        "Left": {
+          "minimumSoleCm": -3.5842757576438875,
+          "maximumSoleCm": 44.966534455195834,
+          "samplesBelowMinusOneCm": 22,
+          "nearFloorIntervals": 110,
+          "maximumNearFloorAnkleSpeedCmS": 403.0144338958446,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        },
+        "Right": {
+          "minimumSoleCm": 0.11925460494826284,
+          "maximumSoleCm": 45.139533037784645,
+          "samplesBelowMinusOneCm": 0,
+          "nearFloorIntervals": 23,
+          "maximumNearFloorAnkleSpeedCmS": 206.4832322847895,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        }
+      },
+      "proposedSourceFrameRange": [
+        20,
+        98
+      ],
+      "sourceFPS": 30.000030398399637,
+      "proposedDurationSeconds": 2.599997365474701,
+      "speedSamples": [
+        {
+          "seconds": 0.0,
+          "cmS": 533.4419425853913
+        },
+        {
+          "seconds": 0.16666683615470418,
+          "cmS": 475.16859651945737
+        },
+        {
+          "seconds": 0.33333367230940836,
+          "cmS": 583.5767783025503
+        },
+        {
+          "seconds": 0.5000005084641126,
+          "cmS": 507.43421369000146
+        },
+        {
+          "seconds": 0.6666673446188167,
+          "cmS": 551.1810989921305
+        },
+        {
+          "seconds": 0.833334180773521,
+          "cmS": 438.23285116275906
+        },
+        {
+          "seconds": 1.0000010169282252,
+          "cmS": 412.1559839558131
+        },
+        {
+          "seconds": 1.1666678530829293,
+          "cmS": 404.93699640511755
+        },
+        {
+          "seconds": 1.3333346892376334,
+          "cmS": 320.02498649205984
+        },
+        {
+          "seconds": 1.5000015253923378,
+          "cmS": 289.87822645053427
+        },
+        {
+          "seconds": 1.666668361547042,
+          "cmS": 221.55142134885722
+        },
+        {
+          "seconds": 1.833335197701746,
+          "cmS": 214.12307467649697
+        },
+        {
+          "seconds": 2.0000020338564504,
+          "cmS": 137.93906341823546
+        },
+        {
+          "seconds": 2.1666688700111547,
+          "cmS": 131.59439293313238
+        },
+        {
+          "seconds": 2.3333357061658586,
+          "cmS": 72.71728544631571
+        },
+        {
+          "seconds": 2.500002542320563,
+          "cmS": 53.96876101538402
+        },
+        {
+          "seconds": 2.666669378475267,
+          "cmS": 34.89099915742338
+        },
+        {
+          "seconds": 2.833336214629971,
+          "cmS": 15.533074302817615
+        },
+        {
+          "seconds": 3.0000030507846756,
+          "cmS": 13.85522130236438
+        },
+        {
+          "seconds": 3.1666698869393795,
+          "cmS": 7.995036324557319
+        }
+      ],
+      "sourceModified": false,
+      "nativeImported": false,
+      "accepted": false
+    },
+    {
+      "clip": "ACCAD_StandToRun_v3reference",
+      "source": "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports/ACCAD_StandToRun_v3reference.glb",
+      "sha256": "82227396c2b913df90b034e102afc063183c486a5e097ebb9223a0c4d649f2e5",
+      "durationSeconds": 3.5000035762786865,
+      "sampleRate": 60,
+      "floorCm": 0,
+      "maximumRootSpeedCmS": 553.4125874182398,
+      "feet": {
+        "Left": {
+          "minimumSoleCm": -10.412641806783313,
+          "maximumSoleCm": 55.25153682626893,
+          "samplesBelowMinusOneCm": 57,
+          "nearFloorIntervals": 145,
+          "maximumNearFloorAnkleSpeedCmS": 375.03250289205,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        },
+        "Right": {
+          "minimumSoleCm": -8.37605811318527,
+          "maximumSoleCm": 57.20568431837496,
+          "samplesBelowMinusOneCm": 51,
+          "nearFloorIntervals": 131,
+          "maximumNearFloorAnkleSpeedCmS": 545.0048319678092,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        }
+      },
+      "proposedSourceFrameRange": [
+        24,
+        90
+      ],
+      "sourceFPS": 30.000030398399637,
+      "proposedDurationSeconds": 2.1999977707862852,
+      "speedSamples": [
+        {
+          "seconds": 0.0,
+          "cmS": 0.2110142058503133
+        },
+        {
+          "seconds": 0.16666683696565177,
+          "cmS": 2.334879829189054
+        },
+        {
+          "seconds": 0.33333367393130353,
+          "cmS": 2.0002602196031676
+        },
+        {
+          "seconds": 0.5000005108969553,
+          "cmS": 1.5666486183978467
+        },
+        {
+          "seconds": 0.6666673478626071,
+          "cmS": 5.664358036362364
+        },
+        {
+          "seconds": 0.8333341848282587,
+          "cmS": 12.930944913559642
+        },
+        {
+          "seconds": 1.0000010217939106,
+          "cmS": 21.759949208376224
+        },
+        {
+          "seconds": 1.1666678587595622,
+          "cmS": 34.69640192271194
+        },
+        {
+          "seconds": 1.3333346957252141,
+          "cmS": 48.3174806937636
+        },
+        {
+          "seconds": 1.5000015326908658,
+          "cmS": 99.6568988973899
+        },
+        {
+          "seconds": 1.6666683696565174,
+          "cmS": 187.28767378885698
+        },
+        {
+          "seconds": 1.8333352066221693,
+          "cmS": 214.10252251101494
+        },
+        {
+          "seconds": 2.000002043587821,
+          "cmS": 390.86810318233626
+        },
+        {
+          "seconds": 2.166668880553473,
+          "cmS": 367.1726048588012
+        },
+        {
+          "seconds": 2.3333357175191245,
+          "cmS": 492.451766053419
+        },
+        {
+          "seconds": 2.500002554484776,
+          "cmS": 405.1006685489374
+        },
+        {
+          "seconds": 2.6666693914504283,
+          "cmS": 494.0506234597584
+        },
+        {
+          "seconds": 2.83333622841608,
+          "cmS": 454.1702015701388
+        },
+        {
+          "seconds": 3.0000030653817316,
+          "cmS": 423.37274327541485
+        },
+        {
+          "seconds": 3.166669902347383,
+          "cmS": 437.54592450546454
+        },
+        {
+          "seconds": 3.333336739313035,
+          "cmS": 433.9221361551488
+        }
+      ],
+      "sourceModified": false,
+      "nativeImported": false,
+      "accepted": false
+    },
+    {
+      "clip": "ACCAD_StandToWalk_v3reference",
+      "source": "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports/ACCAD_StandToWalk_v3reference.glb",
+      "sha256": "9d2e13800dcbaed325edbef51adf0ce2d51fddcbd8219d868023119298671841",
+      "durationSeconds": 9.500009536743164,
+      "sampleRate": 60,
+      "floorCm": 0,
+      "maximumRootSpeedCmS": 169.0309828919477,
+      "feet": {
+        "Left": {
+          "minimumSoleCm": -6.858394744081762,
+          "maximumSoleCm": 8.44843134334584,
+          "samplesBelowMinusOneCm": 282,
+          "nearFloorIntervals": 426,
+          "maximumNearFloorAnkleSpeedCmS": 451.2219817906612,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        },
+        "Right": {
+          "minimumSoleCm": -2.0356190706075674,
+          "maximumSoleCm": 14.285429588739895,
+          "samplesBelowMinusOneCm": 5,
+          "nearFloorIntervals": 71,
+          "maximumNearFloorAnkleSpeedCmS": 297.9882051459969,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        }
+      },
+      "proposedSourceFrameRange": [
+        73,
+        145
+      ],
+      "sourceFPS": 30.000030398399637,
+      "proposedDurationSeconds": 2.3999975681304933,
+      "speedSamples": [
+        {
+          "seconds": 0.0,
+          "cmS": 2.6930028388060894
+        },
+        {
+          "seconds": 0.16666683397795024,
+          "cmS": 0.2985048025059166
+        },
+        {
+          "seconds": 0.33333366795590047,
+          "cmS": 0.8935173158678963
+        },
+        {
+          "seconds": 0.5000005019338507,
+          "cmS": 0.9713731069196061
+        },
+        {
+          "seconds": 0.6666673359118009,
+          "cmS": 0.711025862798281
+        },
+        {
+          "seconds": 0.8333341698897512,
+          "cmS": 0.7971518563641996
+        },
+        {
+          "seconds": 1.0000010038677014,
+          "cmS": 0.9153052877354501
+        },
+        {
+          "seconds": 1.1666678378456516,
+          "cmS": 0.9092037611861158
+        },
+        {
+          "seconds": 1.3333346718236019,
+          "cmS": 1.0969724965424203
+        },
+        {
+          "seconds": 1.5000015058015521,
+          "cmS": 1.0352091323944341
+        },
+        {
+          "seconds": 1.6666683397795024,
+          "cmS": 1.6068484633196327
+        },
+        {
+          "seconds": 1.8333351737574526,
+          "cmS": 1.8453425090179527
+        },
+        {
+          "seconds": 2.000002007735403,
+          "cmS": 4.479776566242309
+        },
+        {
+          "seconds": 2.1666688417133533,
+          "cmS": 6.9265341192474885
+        },
+        {
+          "seconds": 2.3333356756913033,
+          "cmS": 9.040068643867269
+        },
+        {
+          "seconds": 2.5000025096692537,
+          "cmS": 16.568010549849333
+        },
+        {
+          "seconds": 2.6666693436472038,
+          "cmS": 25.590288036208076
+        },
+        {
+          "seconds": 2.833336177625154,
+          "cmS": 28.965085234266102
+        },
+        {
+          "seconds": 3.0000030116031042,
+          "cmS": 52.82014770808611
+        },
+        {
+          "seconds": 3.1666698455810547,
+          "cmS": 70.4495109278718
+        },
+        {
+          "seconds": 3.3333366795590047,
+          "cmS": 118.00495253030161
+        },
+        {
+          "seconds": 3.500003513536955,
+          "cmS": 119.58250350226737
+        },
+        {
+          "seconds": 3.666670347514905,
+          "cmS": 110.70938797871997
+        },
+        {
+          "seconds": 3.8333371814928556,
+          "cmS": 123.09771423236991
+        },
+        {
+          "seconds": 4.000004015470806,
+          "cmS": 148.77549472045175
+        },
+        {
+          "seconds": 4.166670849448756,
+          "cmS": 137.88072286976958
+        },
+        {
+          "seconds": 4.3333376834267066,
+          "cmS": 134.6656501361673
+        },
+        {
+          "seconds": 4.500004517404657,
+          "cmS": 138.3992346148424
+        },
+        {
+          "seconds": 4.666671351382607,
+          "cmS": 151.4068640663474
+        },
+        {
+          "seconds": 4.833338185360557,
+          "cmS": 143.93811582400517
+        },
+        {
+          "seconds": 5.0000050193385075,
+          "cmS": 141.7908032885005
+        },
+        {
+          "seconds": 5.1666718533164575,
+          "cmS": 163.6535000971467
+        },
+        {
+          "seconds": 5.3333386872944075,
+          "cmS": 147.62136412195179
+        },
+        {
+          "seconds": 5.500005521272358,
+          "cmS": 140.98352204469543
+        },
+        {
+          "seconds": 5.666672355250308,
+          "cmS": 137.50514747903188
+        },
+        {
+          "seconds": 5.8333391892282584,
+          "cmS": 157.32521412214035
+        },
+        {
+          "seconds": 6.0000060232062085,
+          "cmS": 145.8779455092377
+        },
+        {
+          "seconds": 6.166672857184159,
+          "cmS": 147.97313108470325
+        },
+        {
+          "seconds": 6.333339691162109,
+          "cmS": 157.62038412354627
+        },
+        {
+          "seconds": 6.500006525140059,
+          "cmS": 150.380428700525
+        },
+        {
+          "seconds": 6.666673359118009,
+          "cmS": 142.21692088872948
+        },
+        {
+          "seconds": 6.83334019309596,
+          "cmS": 142.8490845188041
+        },
+        {
+          "seconds": 7.00000702707391,
+          "cmS": 148.49718980156652
+        },
+        {
+          "seconds": 7.16667386105186,
+          "cmS": 139.88209399700565
+        },
+        {
+          "seconds": 7.33334069502981,
+          "cmS": 141.8305998219813
+        },
+        {
+          "seconds": 7.500007529007761,
+          "cmS": 161.22755091241802
+        },
+        {
+          "seconds": 7.666674362985711,
+          "cmS": 147.73190246506138
+        },
+        {
+          "seconds": 7.833341196963661,
+          "cmS": 145.69564869904494
+        },
+        {
+          "seconds": 8.000008030941611,
+          "cmS": 148.10354111312768
+        },
+        {
+          "seconds": 8.166674864919562,
+          "cmS": 155.64182827517234
+        },
+        {
+          "seconds": 8.333341698897511,
+          "cmS": 142.37353121492058
+        },
+        {
+          "seconds": 8.500008532875462,
+          "cmS": 136.72232556357372
+        },
+        {
+          "seconds": 8.666675366853413,
+          "cmS": 157.4153738369607
+        },
+        {
+          "seconds": 8.833342200831362,
+          "cmS": 142.8578156993665
+        },
+        {
+          "seconds": 9.000009034809313,
+          "cmS": 142.0175171326587
+        },
+        {
+          "seconds": 9.166675868787264,
+          "cmS": 140.64125149502885
+        },
+        {
+          "seconds": 9.333342702765213,
+          "cmS": 135.38187652299004
+        }
+      ],
+      "sourceModified": false,
+      "nativeImported": false,
+      "accepted": false
+    }
+  ]
+}

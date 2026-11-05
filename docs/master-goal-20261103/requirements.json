@@ -53,7 +53,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "ground4_first_blind_tie_stopped_ACCAd_professional_starts_acquired_Blender_retargeted_not_imported_locomotion_unfinished",
+      "status": "ground4_first_blind_tie_stopped_ACCAD_v3_floor_penetration_measured_Blender_contact_fit_prepared_not_executed_native_gates_open",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -75,7 +75,9 @@
         "turn-support-point-diagnostics-v2.json",
         "blind-ground4-receipt.json",
         "accad-locomotion-source-ledger.json",
-        "accad-reference-retarget-checkpoint.json"
+        "accad-reference-retarget-checkpoint.json",
+        "accad-transition-diagnostics.json",
+        "accad-next-authoring-step.json"
       ]
     },
     {
@@ -107,7 +109,8 @@
         "primary-recovery-contact-comparison.json",
         "blind-primary-recovery-review.md",
         "blind-primary-recovery-receipt.json",
-        "recovery-current-victories.json"
+        "recovery-current-victories.json",
+        "default-recovery-controls-gate.json"
       ]
     },
     {
@@ -120,7 +123,9 @@
       "id": "delivery",
       "requirement": "Shipping build, launcher, evidence, source/provenance/spend, pushes/wiki/security/cleanup",
       "status": "unverified",
-      "evidence": []
+      "evidence": [
+        "package-cleanup-round9.json"
+      ]
     },
     {
       "id": "prefight_intro",
@@ -144,7 +149,7 @@
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Progress: imported/fidelity-checked sourced turns, implemented opt-in root turning and root-space blending, filmed three failed gameplay candidates, fixed a grip-fixture false positive with independent native references, and authored foot-frame/ankle-path corrections in Blender. All locomotion contact trials remain failed; full scope incomplete.",
+  "priorTurnClassification": "Previous approval-only reply was no progress. This continuation completed owned-build cleanup, verified the pending controls request terminated without launching, measured ACCAD source-floor defects and prepared guarded Blender correction; full objective remains incomplete.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -152,10 +157,11 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "one_live_default_controls_request_waiting_launch_budget_then_normal_gpu_slot",
+    "status": "terminal_default_controls_cap_full_timeout_no_owned_renderer_queued",
     "lastEditorRequest": "terminal cap-full-timeout901seconds, no renderer launched",
     "lastFullIntro": "native-intro-20261104T224547Z mechanics passed; blind handoff slightly preferred, conditional acceptance",
-    "gpuSafetyControlsChanged": false
+    "gpuSafetyControlsChanged": false,
+    "latestControlsEvidence": "default-recovery-controls-gate.json"
   },
   "gateProbeCode": {
     "flag": "VeyrFortressGateTest",
@@ -170,7 +176,7 @@
     "defaultInSource": true,
     "tourOwnerApproved": true,
     "approvedCapture": "Evidence/native-environment-20261104T033704Z",
-    "activeWarmFixApp": "/private/tmp/veyr-verified-bundle-a6sof9x4/Veyr-Mac-Shipping.app",
+    "activeWarmFixApp": "/private/tmp/veyr-verified-bundle-zio8vgsq/Veyr-Mac-Shipping.app",
     "fullIntroAndSkipRetryPass": true,
     "textureFixRuntimeVerified": true,
     "finalGameplayAndPerformanceVerified": false,
@@ -178,7 +184,9 @@
       "VeyrCanonicalKnightSkin",
       "VeyrStableWeaponPresentation",
       "VeyrWalkEntryBlend"
-    ]
+    ],
+    "newestDefaultCandidateApp": "/private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app",
+    "newestDefaultControlsVerified": false
   },
   "mapApproachChange": "After two rejected blind rounds: inspect runtime floor binding, use licensed scanned support assets where useful, replace disconnected backdrop with a connected foundation.",
   "authoringWorkflowCorrection": {

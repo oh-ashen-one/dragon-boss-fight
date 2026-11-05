@@ -1,3 +1,7 @@
+## Latest source/contact checkpoint — November5 UTC
+
+Default-recovery controls smoke terminated at the GPU gate without launching; it remains unrun. ACCADv3 source inspection found up to10.41cm boot penetration, so native import is blocked on actual Blender contact correction and visual review. The prepared correction/trim recipe is not yet executed. Scoped recovery acceptance and41.24/74.99second wins remain; all final combat/motion/regression work stays open. Another14.87GiB of obsolete owned builds was reclaimed. See HANDOFF.md.
+
 ## Latest recovery and sourcing state — November5 UTC
 
 - Primary tap recovery now passes4/4 native contact trials and won full-body blind Opus review. Current normal-camera wins:41.24s two-handed and74.99s one-handed at unchanged650HP, with restart checks passed. Recovery is default in the newest source/Shipping candidate; default-controls smoke remains queued.

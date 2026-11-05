@@ -1,0 +1,15 @@
+Day-one boss audit over 47 source files in Unreal/Veyr/Source
+  [x] Camera shake (landings, stomps, heavy hits, damage): found (7 files, e.g. VeyrGameMode.h)
+  [x] Hit-stop 50-120 ms on connects: found (6 files, e.g. VeyrGameMode.h)
+  [x] Boss flinch / hit reaction: found (4 files, e.g. VeyrReplay.cpp)
+  [x] Hit flash on damage: found (6 files, e.g. VeyrGameMode.h)
+  [x] Weapon trail: found (4 files, e.g. VeyrKnight.cpp)
+  [x] Contact dust / debris: found (3 files, e.g. VeyrArena.cpp)
+  [x] Music (intro / loop / final phase / victory): found (4 files, e.g. VeyrReplay.cpp)
+  [x] Per-action sound effects: found (2 files, e.g. VeyrAudio.cpp)
+  [?] Fight length: competent player wins in <= 150 s (measure a victory replay, put the seconds in the handoff): manual check
+  [?] Every-move playthrough mode: one replay that shows each boss move and state in order, filmed for the owner: manual check
+  [?] Settings toggle for shake and flashes: manual check
+All code-checkable day-one systems present
+
+Scope: source presence only. Current recovery victories are documented separately; final all-move/settings/performance regressions remain open.
