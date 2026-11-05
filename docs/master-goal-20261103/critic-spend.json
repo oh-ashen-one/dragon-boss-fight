@@ -123,9 +123,20 @@
       ],
       "estimatedUSD": 0.9489286,
       "verdict": "B visibly better; native trial allowed only, not final quality"
+    },
+    {
+      "id": "threat-camera-first-round-20261105",
+      "status": "complete",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 0.7301996,
+      "maximumBudgetUSD": 3,
+      "receipt": "blind-threat-camera-receipt.json",
+      "verdict": "B visibly better; further integration allowed, final quality unaccepted"
     }
   ],
-  "totalEstimatedUSD": 23.566352,
+  "totalEstimatedUSD": 24.2965516,
   "invoice": false,
   "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported",
   "unpricedAbortedCalls": 1

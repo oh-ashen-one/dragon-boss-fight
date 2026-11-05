@@ -1,0 +1,601 @@
+{
+  "scope": "Offline projection from actual recorded camera/point samples; visibility geometry only, not an occlusion or visual-quality pass",
+  "runs": [
+    {
+      "run": "Evidence/native-victory-20261105T025323Z",
+      "projectionFeetErrorMax": 0.0003000126539998149,
+      "projectionFeetErrorMedian": 3.008932214498827e-08,
+      "groups": {
+        "ClawSwipe/Idle": {
+          "samples": 17,
+          "headInViewport": 10,
+          "feetInViewport": 17,
+          "headYMin": -0.7770734020227983,
+          "headYMax": 0.34011965298542246
+        },
+        "Fire/Windup": {
+          "samples": 10,
+          "headInViewport": 5,
+          "feetInViewport": 10,
+          "headYMin": -0.342469426745895,
+          "headYMax": 0.3272275767720526
+        },
+        "Fire/Active": {
+          "samples": 13,
+          "headInViewport": 7,
+          "feetInViewport": 13,
+          "headYMin": -0.27572029636041495,
+          "headYMax": 0.5173713679004036
+        },
+        "Fire/Recovery": {
+          "samples": 5,
+          "headInViewport": 2,
+          "feetInViewport": 5,
+          "headYMin": -0.6227891381066004,
+          "headYMax": 0.46501418398958844
+        },
+        "Fire/Idle": {
+          "samples": 11,
+          "headInViewport": 5,
+          "feetInViewport": 11,
+          "headYMin": -0.5579205739948843,
+          "headYMax": 0.4634553611408336
+        },
+        "Fire/Reposition": {
+          "samples": 18,
+          "headInViewport": 14,
+          "feetInViewport": 18,
+          "headYMin": -0.483233764098455,
+          "headYMax": 0.4585378131102846
+        },
+        "ClawSwipe/Windup": {
+          "samples": 9,
+          "headInViewport": 0,
+          "feetInViewport": 9,
+          "headYMin": -0.3774153673309435,
+          "headYMax": -0.18170585771903058
+        },
+        "ClawSwipe/Active": {
+          "samples": 4,
+          "headInViewport": 1,
+          "feetInViewport": 4,
+          "headYMin": -0.10444847201558172,
+          "headYMax": 0.08629864475854415
+        },
+        "ClawSwipe/Recovery": {
+          "samples": 13,
+          "headInViewport": 3,
+          "feetInViewport": 13,
+          "headYMin": -0.4818457120050561,
+          "headYMax": 0.12773955205079218
+        },
+        "FlyAway/Windup": {
+          "samples": 5,
+          "headInViewport": 0,
+          "feetInViewport": 5,
+          "headYMin": -0.7608649817935438,
+          "headYMax": -0.573817584962296
+        },
+        "FlyAway/Active": {
+          "samples": 16,
+          "headInViewport": 6,
+          "feetInViewport": 10,
+          "headYMin": -0.6285839630364736,
+          "headYMax": 0.5276879403268911
+        },
+        "FlyAway/Recovery": {
+          "samples": 6,
+          "headInViewport": 6,
+          "feetInViewport": 5,
+          "headYMin": 0.040496050777249604,
+          "headYMax": 0.46393913130473485
+        },
+        "FlyAway/Idle": {
+          "samples": 6,
+          "headInViewport": 5,
+          "feetInViewport": 1,
+          "headYMin": -0.15312619277390305,
+          "headYMax": 0.4565389422113628
+        },
+        "FlyAway/Reposition": {
+          "samples": 10,
+          "headInViewport": 1,
+          "feetInViewport": 4,
+          "headYMin": -0.15544826188487626,
+          "headYMax": 0.1531479482101359
+        },
+        "ClawSwipe/Buckle": {
+          "samples": 2,
+          "headInViewport": 0,
+          "feetInViewport": 2,
+          "headYMin": -0.8332019868238381,
+          "headYMax": -0.7612330479439202
+        },
+        "ClawSwipe/Collapse": {
+          "samples": 4,
+          "headInViewport": 2,
+          "feetInViewport": 4,
+          "headYMin": -0.7201065110925517,
+          "headYMax": 0.3240087138296991
+        },
+        "ClawSwipe/Exposed": {
+          "samples": 14,
+          "headInViewport": 14,
+          "feetInViewport": 14,
+          "headYMin": 0.3850956513826264,
+          "headYMax": 0.5158216134003213
+        },
+        "ClawSwipe/Dead": {
+          "samples": 24,
+          "headInViewport": 24,
+          "feetInViewport": 24,
+          "headYMin": 0.4907805429606152,
+          "headYMax": 0.523000080815324
+        }
+      },
+      "flightMissExamples": [
+        {
+          "seconds": 21.46271514892578,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            -0.015918586375370802,
+            -0.7233479684516331
+          ],
+          "feetViewport": [
+            0.4527196611080194,
+            0.848352809165211
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 21.714338302612305,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            -0.01824788573230407,
+            -0.573817584962296
+          ],
+          "feetViewport": [
+            0.452807118672643,
+            0.8469828956179926
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 21.97687530517578,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            0.23361111872365986,
+            -0.7608649817935438
+          ],
+          "feetViewport": [
+            0.4496908168395574,
+            0.8862427400325594
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 22.243755340576172,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            0.4045939919748586,
+            -0.7443217262098298
+          ],
+          "feetViewport": [
+            0.44724848524255256,
+            0.9054237272278425
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 22.4960994720459,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            0.4265498090641566,
+            -0.728048892977849
+          ],
+          "feetViewport": [
+            0.4462914559629754,
+            0.9105533840800808
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 22.75499725341797,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.4463123974128401,
+            -0.6285839630364736
+          ],
+          "feetViewport": [
+            0.44589276853001114,
+            0.9123157751183557
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 24.28171157836914,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.45815744825769744,
+            -0.272945327273875
+          ],
+          "feetViewport": [
+            0.4431010713704131,
+            1.029551686007387
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 24.539461135864258,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.4933657673671825,
+            -0.4812156323972385
+          ],
+          "feetViewport": [
+            0.44472587248845186,
+            0.9603151245838979
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 24.803585052490234,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.5199971684593158,
+            -0.5845371000346309
+          ],
+          "feetViewport": [
+            0.4452853501507533,
+            0.9334629840883539
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 25.074317932128906,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.5296183043102454,
+            -0.6044308891467287
+          ],
+          "feetViewport": [
+            0.4454894995920025,
+            0.9231495863360772
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 25.34214973449707,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.5274426428653036,
+            -0.5682189663212163
+          ],
+          "feetViewport": [
+            0.4455630367466389,
+            0.9193582336387047
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 25.595314025878906,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.49994275461460985,
+            -0.4923264206669352
+          ],
+          "feetViewport": [
+            0.44558964542571106,
+            0.9179759655312892
+          ],
+          "lockedOn": true
+        }
+      ]
+    },
+    {
+      "run": "Evidence/native-victory-20261105T030339Z",
+      "projectionFeetErrorMax": 0.00023129830012602604,
+      "projectionFeetErrorMedian": 3.1718436654948334e-08,
+      "groups": {
+        "ClawSwipe/Idle": {
+          "samples": 45,
+          "headInViewport": 12,
+          "feetInViewport": 45,
+          "headYMin": -0.9291146895794116,
+          "headYMax": 0.34006002831097626
+        },
+        "Fire/Windup": {
+          "samples": 9,
+          "headInViewport": 4,
+          "feetInViewport": 9,
+          "headYMin": -0.9240752676182928,
+          "headYMax": 0.29175589182796896
+        },
+        "Fire/Active": {
+          "samples": 13,
+          "headInViewport": 7,
+          "feetInViewport": 13,
+          "headYMin": -0.4545480206896829,
+          "headYMax": 0.516388652222408
+        },
+        "Fire/Recovery": {
+          "samples": 5,
+          "headInViewport": 2,
+          "feetInViewport": 5,
+          "headYMin": -1.132428427927744,
+          "headYMax": 0.4636906634085947
+        },
+        "Fire/Idle": {
+          "samples": 11,
+          "headInViewport": 5,
+          "feetInViewport": 11,
+          "headYMin": -1.0512497700238044,
+          "headYMax": 0.4624562550014479
+        },
+        "Fire/Reposition": {
+          "samples": 18,
+          "headInViewport": 14,
+          "feetInViewport": 18,
+          "headYMin": -0.46296830238296294,
+          "headYMax": 0.4563786443939498
+        },
+        "ClawSwipe/Windup": {
+          "samples": 27,
+          "headInViewport": 0,
+          "feetInViewport": 27,
+          "headYMin": -0.9243715070005785,
+          "headYMax": -0.15237234445464753
+        },
+        "ClawSwipe/Active": {
+          "samples": 11,
+          "headInViewport": 2,
+          "feetInViewport": 11,
+          "headYMin": -0.545511812910505,
+          "headYMax": 0.07560454792163768
+        },
+        "ClawSwipe/Recovery": {
+          "samples": 39,
+          "headInViewport": 1,
+          "feetInViewport": 39,
+          "headYMin": -0.8528415028110459,
+          "headYMax": 0.07335730721811562
+        },
+        "FlyAway/Windup": {
+          "samples": 5,
+          "headInViewport": 0,
+          "feetInViewport": 5,
+          "headYMin": -0.733558726663406,
+          "headYMax": -0.5888560914247403
+        },
+        "FlyAway/Active": {
+          "samples": 16,
+          "headInViewport": 6,
+          "feetInViewport": 9,
+          "headYMin": -0.6096499318383122,
+          "headYMax": 0.531535569155684
+        },
+        "FlyAway/Recovery": {
+          "samples": 6,
+          "headInViewport": 6,
+          "feetInViewport": 5,
+          "headYMin": 0.036309602721342205,
+          "headYMax": 0.46632405330771276
+        },
+        "FlyAway/Idle": {
+          "samples": 6,
+          "headInViewport": 5,
+          "feetInViewport": 1,
+          "headYMin": -0.24746412966799336,
+          "headYMax": 0.457562349429645
+        },
+        "FlyAway/Reposition": {
+          "samples": 10,
+          "headInViewport": 1,
+          "feetInViewport": 4,
+          "headYMin": -0.1556335511216531,
+          "headYMax": 0.15354848018396644
+        },
+        "ClawSwipe/Buckle": {
+          "samples": 6,
+          "headInViewport": 0,
+          "feetInViewport": 6,
+          "headYMin": -0.8365007131456699,
+          "headYMax": -0.6707286582701646
+        },
+        "ClawSwipe/Collapse": {
+          "samples": 8,
+          "headInViewport": 4,
+          "feetInViewport": 8,
+          "headYMin": -0.6468157586515322,
+          "headYMax": 0.36058068572090646
+        },
+        "ClawSwipe/Exposed": {
+          "samples": 34,
+          "headInViewport": 34,
+          "feetInViewport": 34,
+          "headYMin": 0.368613332996203,
+          "headYMax": 0.5175363599662747
+        },
+        "ClawSwipe/Rise": {
+          "samples": 8,
+          "headInViewport": 5,
+          "feetInViewport": 8,
+          "headYMin": -0.18571942335115543,
+          "headYMax": 0.5032532351060814
+        },
+        "ClawSwipe/Reposition": {
+          "samples": 17,
+          "headInViewport": 0,
+          "feetInViewport": 17,
+          "headYMin": -1.8220578599888997,
+          "headYMax": -0.41160910775349024
+        },
+        "ClawSwipe/Dead": {
+          "samples": 24,
+          "headInViewport": 24,
+          "feetInViewport": 24,
+          "headYMin": 0.48784616692499805,
+          "headYMax": 0.5242387388255676
+        }
+      },
+      "flightMissExamples": [
+        {
+          "seconds": 21.244983673095703,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            -0.015078349727399631,
+            -0.6969216560351357
+          ],
+          "feetViewport": [
+            0.45284623259609974,
+            0.8463645451383929
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 21.49712562561035,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            -0.013384575875927673,
+            -0.5888560914247403
+          ],
+          "feetViewport": [
+            0.4528547614045588,
+            0.8462292443898485
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 21.760986328125,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            0.26332783191711556,
+            -0.7327356133129985
+          ],
+          "feetViewport": [
+            0.44937904395694234,
+            0.889206999239636
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 22.027507781982422,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            0.4131648462808647,
+            -0.733558726663406
+          ],
+          "feetViewport": [
+            0.44712022663019674,
+            0.906185966302115
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 22.278894424438477,
+          "state": "FlyAway/Windup",
+          "headViewport": [
+            0.4294766524861616,
+            -0.7096562089947256
+          ],
+          "feetViewport": [
+            0.44624056031860526,
+            0.910790493340998
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 22.53541374206543,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.45086382384413465,
+            -0.43030952378519405
+          ],
+          "feetViewport": [
+            0.4432574245728849,
+            1.0233375548483048
+          ],
+          "lockedOn": false
+        },
+        {
+          "seconds": 24.063024520874023,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.46283236227192975,
+            -0.2403423307952416
+          ],
+          "feetViewport": [
+            0.4382551189372585,
+            1.0808331095132013
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 24.316909790039062,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.4967641314494758,
+            -0.4715838570126001
+          ],
+          "feetViewport": [
+            0.44428476699655717,
+            0.9802473215026537
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 24.575557708740234,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.521353139819036,
+            -0.5847055206281209
+          ],
+          "feetViewport": [
+            0.4451216591189847,
+            0.9415221943590968
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 24.829631805419922,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.5301227378167237,
+            -0.6096499318383122
+          ],
+          "feetViewport": [
+            0.4454185280848131,
+            0.926769530201017
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 25.080373764038086,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.5282502373321876,
+            -0.5806102103561102
+          ],
+          "feetViewport": [
+            0.4455321290461079,
+            0.9209568670529057
+          ],
+          "lockedOn": true
+        },
+        {
+          "seconds": 25.334365844726562,
+          "state": "FlyAway/Active",
+          "headViewport": [
+            0.5013552446156572,
+            -0.5077426604815034
+          ],
+          "feetViewport": [
+            0.4455774522703119,
+            0.9186100693816539
+          ],
+          "lockedOn": true
+        }
+      ]
+    }
+  ]
+}

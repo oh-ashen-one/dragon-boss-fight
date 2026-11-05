@@ -500,6 +500,9 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         Metrics->SetStringField(TEXT("samplingScope"),TEXT("same-frame resolved spring arm; replay tick depends on CameraBoom; floor traced beneath Knight excluding Knight and Dragon"));
         Metrics->SetNumberField(TEXT("upwardPitchCeilingDegrees"),Knight->CameraPitchCeiling);
         Metrics->SetBoolField(TEXT("readableAutoLockEnabled"),Knight->UsesReadableAutoLockCamera());
+        Metrics->SetBoolField(TEXT("threatCameraFramingEnabled"),Knight->UsesThreatCameraFraming());
+        Metrics->SetBoolField(TEXT("threatCameraFramingActive"),Knight->IsThreatCameraFramingActive());
+        Metrics->SetBoolField(TEXT("threatCameraFitFound"),Knight->HasThreatCameraFit());
         Metrics->SetNumberField(TEXT("autoLockPitchCeilingDegrees"),Knight->AutoLockPitchCeiling);
         Metrics->SetNumberField(TEXT("framingArmCm"),Knight->CameraFramingArm);
         FHitResult Hit;
@@ -511,6 +514,11 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         if(const APlayerController* PC=Cast<APlayerController>(Knight->GetController()))
         {
             int32 Width=0,Height=0;PC->GetViewportSize(Width,Height);
+            FVector2D HeadScreen;
+            const bool HeadProjected=PC->ProjectWorldLocationToScreen(Dragon->GetHeadLocation(),HeadScreen);
+            Metrics->SetBoolField(TEXT("bossHeadWithinViewport"),HeadProjected&&Width>0&&Height>0&&HeadScreen.X>=0&&HeadScreen.Y>=0&&HeadScreen.X<Width&&HeadScreen.Y<Height);
+            Metrics->SetNumberField(TEXT("bossHeadViewportX"),HeadProjected&&Width>0?HeadScreen.X/Width:-100.f);
+            Metrics->SetNumberField(TEXT("bossHeadViewportY"),HeadProjected&&Height>0?HeadScreen.Y/Height:-100.f);
             const bool bProjected=PC->ProjectWorldLocationToScreen(Knight->GetActorLocation(),Screen);
             Metrics->SetBoolField(TEXT("playerCenterWithinViewport"),bProjected&&Width>0&&Height>0&&Screen.X>=0&&Screen.Y>=0&&Screen.X<Width&&Screen.Y<Height);
             FVector2D FeetScreen;

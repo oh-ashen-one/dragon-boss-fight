@@ -1,0 +1,108 @@
+{
+  "sourceId": "2f616b0df40e389008252a6aa13db64a1f054d5503d7476ee166cd8cbd9621f7",
+  "candidateDefaultEnabled": false,
+  "finalQualityAccepted": false,
+  "fullGoalComplete": false,
+  "captureScope": "Same Shipping binary; camera flag varied; ordinary replay inputs and unchanged650HP/damage. Sparse projections use player-camera manager; videos preserve actual native pixel timestamps.",
+  "comparison": {
+    "before": {
+      "passed": true,
+      "victoryGameSeconds": 74.93164825439453,
+      "victoryWallSeconds": 75.57369454205036,
+      "flightLockedSamples": {
+        "Windup": {
+          "samples": 6,
+          "headVisible": 0,
+          "feetVisible": 6,
+          "fitFound": 0
+        },
+        "Active": {
+          "samples": 12,
+          "headVisible": 3,
+          "feetVisible": 9,
+          "fitFound": 0
+        },
+        "Recovery": {
+          "samples": 4,
+          "headVisible": 4,
+          "feetVisible": 4,
+          "fitFound": 0
+        }
+      },
+      "manifestSHA256": "f81c55ce8e53a3d49b41d0b3cf37426f53c82064a9bdadbd7bf19906091cd891",
+      "evidence": "Evidence/native-victory-20261105T110745Z/unreal-victory-20261105T110806Z-E2FFC2A2/evidence.json",
+      "movie": {
+        "name": "threat-camera-before.mp4",
+        "sha256": "0f8e8e725ac55905a3c9a522768ab78901292121a199e30cb10990000e38e198",
+        "nativeFrames": 2441,
+        "timingVerified": true,
+        "durationSeconds": 81.91281670704484,
+        "audio": "silent; game-master WAVs retained separately, synchronization not established"
+      }
+    },
+    "after": {
+      "passed": true,
+      "victoryGameSeconds": 74.92613983154297,
+      "victoryWallSeconds": 75.54898054152727,
+      "flightLockedSamples": {
+        "Windup": {
+          "samples": 6,
+          "headVisible": 5,
+          "feetVisible": 6,
+          "fitFound": 6
+        },
+        "Active": {
+          "samples": 11,
+          "headVisible": 11,
+          "feetVisible": 9,
+          "fitFound": 11
+        },
+        "Recovery": {
+          "samples": 5,
+          "headVisible": 5,
+          "feetVisible": 5,
+          "fitFound": 5
+        }
+      },
+      "manifestSHA256": "539892918c531c47b74c37fe73c0fb5f195d918a5278ebf18edad2bce23302b4",
+      "evidence": "Evidence/native-victory-20261105T111019Z/unreal-victory-20261105T111032Z-110AE5FE/evidence.json",
+      "movie": {
+        "name": "threat-camera-after.mp4",
+        "sha256": "8f89197b87114d8b149af7f6cc78f9d3196465f8281b44a78fd48abf0758b416",
+        "nativeFrames": 2438,
+        "timingVerified": true,
+        "durationSeconds": 81.8724353723228,
+        "audio": "silent; game-master WAVs retained separately, synchronization not established"
+      }
+    }
+  },
+  "regressions": [
+    {
+      "mode": "healing",
+      "evidence": "Evidence/native-healing-20261105T113217Z/unreal-healing-20261105T113231Z-EF142E4C/evidence.json",
+      "passed": true,
+      "reason": "four real heal completions consumed four charges; 100 HP cap and injured empty-flask rejection verified",
+      "frameCount": 2298,
+      "verifiedHealCharges": 4,
+      "visualInspection": "12 representative native frames inspected across heal and player death; not full continuous acceptance"
+    },
+    {
+      "mode": "death",
+      "evidence": "Evidence/native-healing-20261105T113217Z/unreal-death-20261105T113316Z-068182D0/evidence.json",
+      "passed": true,
+      "reason": "death terminal pose, resource reset, movement and primary attack after restart verified",
+      "frameCount": 878,
+      "verifiedHealCharges": 0,
+      "visualInspection": "12 representative native frames inspected across heal and player death; not full continuous acceptance"
+    }
+  ],
+  "review": "blind-threat-camera-receipt.json",
+  "remaining": [
+    "Player/weapon size and ground-warning clarity at flight distance",
+    "Full-frame takeoff head clearance and HUD overlap",
+    "Continuous-motion comfort and physical manual-input tests",
+    "Solid-world camera checks and final performance",
+    "All remaining MASTER_GOAL requirements including failed locomotion contacts"
+  ],
+  "approvedIntroRecipeUnchanged": true
+}

@@ -1,0 +1,25 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "readCalls": 27,
+  "successfulImageBlocks": 26,
+  "winner": "B",
+  "mapping": {
+    "A": "before",
+    "B": "after"
+  },
+  "visiblyBetter": true,
+  "finalQualityAccepted": false,
+  "furtherIntegrationAllowed": true,
+  "estimatedUSD": 0.7301996,
+  "maximumBudgetUSD": 3,
+  "remaining": [
+    "player and weapon size",
+    "ground warning clarity",
+    "sky-pitch player loss in both versions",
+    "head/HUD overlap",
+    "continuous-motion and manual/collision/performance validation"
+  ],
+  "scope": "26 images; dense complete captured sequence 20-30 seconds and sparse full-fight context; critic did not view continuous video"
+}

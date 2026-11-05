@@ -101,14 +101,16 @@
     {
       "id": "healing",
       "requirement": "Sourced drink with convincing cup tilt/contact and transitions",
-      "status": "v042_default_four_heal_mechanics_and_normal_camera_blind_visible_pass_continuous_transition_and_threat_readability_pending",
+      "status": "v042_four_charge_regression_passed_camera_flight_candidate_blind_visible_win_final_scale_hazards_continuity_manual_collision_pending",
       "evidence": [
         "heal-v042-native.json",
         "blind-heal-v042-review.md",
         "blind-heal-v042-receipt.json",
         "heal-normal-camera-metrics.json",
         "blind-heal-camera-review.md",
-        "blind-heal-camera-receipt.json"
+        "blind-heal-camera-receipt.json",
+        "threat-camera-gameplay.json",
+        "blind-threat-camera-receipt.json"
       ]
     },
     {

@@ -61,6 +61,9 @@ public:
     int32 RunStarts=0;
     bool UsesPrimaryRecovery() const { return bPrimaryRecovery; }
     bool UsesReadableAutoLockCamera() const { return bReadableAutoLockCamera; }
+    bool UsesThreatCameraFraming() const { return bThreatCameraFraming; }
+    bool IsThreatCameraFramingActive() const { return bThreatFramingActive; }
+    bool HasThreatCameraFit() const { return bThreatFitFound; }
     int32 PrimaryRecoveries=0;
     FString VariantTextureResidency() const;
     void KeepGameplayTexturesResident();
@@ -276,6 +279,9 @@ private:
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
     bool bSourcedRunStart=false;
+    bool bThreatCameraFraming=false,bThreatFramingActive=false,bThreatFitFound=false;
+    float ThreatCameraArm=560.f,ThreatCameraFOV=72.f,ThreatTargetArm=560.f,ThreatTargetFOV=72.f,ThreatFitCooldown=0.f;
+    void UpdateThreatCameraOptics(float DeltaSeconds,const FRotator& Look);
     bool bMatchedRunStops=false;
     float RunStopSourceOffset=0.f;
     bool bDeferRunStopAdvance=false;

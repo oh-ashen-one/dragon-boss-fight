@@ -1,3 +1,9 @@
+# Camera follow-up — 2026-11-05
+
+- Flight camera candidate wins its first blind Opus comparison for visible roar/flame/descent. It remains opt-in: player/weapon scale, ground warnings, sky-pitch player loss and final continuous/manual/collision/performance checks are open.
+- Same-build one-hand victories74.932s before /74.926s after, unchanged650HP/damage. Four-charge heal and player-death/restart regressions pass; representative stills inspected. Final both-grip balance/full-game acceptance remains open.
+- Approved eight-shot fortress intro unchanged. Complete silent before/after camera films are on the bare review page at `#threat`. Handoff and `threat-camera-gameplay.json` hold exact evidence.
+
 # Current backlog status — 2026-11-05
 
 Full MASTER_GOAL remains active and incomplete. These current facts supersede historical implementation plans below; preserve the eight original playtest notes as context.

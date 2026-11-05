@@ -258,6 +258,7 @@ void AVeyrKnight::BeginPlay()
     // released two-hand recovery; preserve a deliberate comparison baseline.
     bPrimaryRecovery=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoPrimaryRecovery"));
     bReadableAutoLockCamera=FParse::Param(FCommandLine::Get(),TEXT("VeyrReadableAutoLock"));
+    bThreatCameraFraming=bReadableAutoLockCamera&&FParse::Param(FCommandLine::Get(),TEXT("VeyrThreatCameraFraming"));
     bLocomotionPhaseMatch=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrLocomotionPhaseMatch"));
     bWalkEntryBlend=FParse::Param(FCommandLine::Get(),TEXT("VeyrWalkEntryBlend"));
     bStableWeaponPresentation=FParse::Param(FCommandLine::Get(),TEXT("VeyrStableWeaponPresentation"));
@@ -1001,16 +1002,17 @@ FVector AVeyrKnight::CombatAimPoint() const
 void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 {
     const float PreviousShoulder=CameraBoom->SocketOffset.Y;
-    // A player camera, including during flight. Only world collision may
-    // shorten this arm; combat state never widens the lens or pulls it back.
-    constexpr float Arm=560.f;
+    ManualCameraRemaining=FMath::Max(0.f,ManualCameraRemaining-DeltaSeconds);
+    UpdateThreatCameraOptics(DeltaSeconds,Controller?Controller->GetControlRotation():FRotator::ZeroRotator);
+    // The default stays close. The isolated threat-framing trial changes
+    // optics only for flight/rise; manual look and solid-world collision win.
+    const float Arm=bThreatCameraFraming?ThreatCameraArm:560.f;
     CameraDistance=Arm;FlightCameraBlend=0.f;CameraPitchCeiling=68.f;
     CameraBoom->TargetArmLength=Arm;
     CameraBoom->SetRelativeLocation(FVector(0,0,170.f-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
     CameraBoom->SocketOffset=FVector(0,42.f,12.f);
     CameraBoom->bEnableCameraLag=false;CameraBoom->bEnableCameraRotationLag=false;
-    CombatCamera->SetFieldOfView(72.f);
-    ManualCameraRemaining=FMath::Max(0.f,ManualCameraRemaining-DeltaSeconds);
+    CombatCamera->SetFieldOfView(bThreatCameraFraming?ThreatCameraFOV:72.f);
     if(Controller)
     {
         FRotator Look=Controller->GetControlRotation().GetNormalized();
@@ -1068,6 +1070,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             }
             // Only automatic aim is constrained. Manual upward look retains
             // its full range, and neither lens nor arm length changes.
+            if(bThreatFramingActive&&bThreatFitFound)Desired.Pitch=AutoLockPitchCeiling;
             Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,AutoLockPitchCeiling);
             // Avoid spinning underneath a target whose head crosses overhead.
             if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;

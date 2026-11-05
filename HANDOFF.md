@@ -1,3 +1,16 @@
+# Latest camera checkpoint — 2026-11-05
+
+**Full goal remains active and incomplete.** The approved R5 eight-shot intro is still byte-identical to491d37d. This checkpoint supersedes the older newest-build and job paragraphs below.
+
+- Shipping candidate **hf6ltuyy** is packaged successfully: `Local/package-20261105T105716Z/receipt.json`, source `2f616b0df40e389008252a6aa13db64a1f054d5503d7476ee166cd8cbd9621f7`. Its opt-in `-VeyrThreatCameraFraming` requires `-VeyrReadableAutoLock`; default remains OFF. It fits head/player with bounded arm/FOV changes during locked flight/rise and rejects world-obstructed candidate booms. Physical manual camera and broad collision/performance acceptance are still open.
+- Same-app one-handed before/after victories `native-victory-20261105T110745Z` / `111019Z` passed at74.932s /74.926s game time (75.574s /75.549s active wall), unchanged650HP/damage. After locked flight samples: head21/22 visible; windup5/6 versus before0/6. These are sparse projections, not full-frame or continuous quality proof.
+- **Actual blind Opus5.5 high chose B=new, visibly better; further integration only, NOT final quality.**27 unique reads/26 images, every captured flight frame20–30s plus whole-fight context. Roar/flame source/descent improved; player/weapon scale, flat faint ground warnings, head/HUD overlap remain. Both versions lose the player during replay-driven unlocked upward look. Do not silently remove that behavior from acceptance footage or constrain human look merely to improve metrics. Critic did not view continuous video.
+- Both complete initial-world films encoded with verified native timestamps, no editorial overlays, served on review port8813 at `#threat`. They are silent visual studies; raw game-master WAVs are retained but A/V synchronization is unverified. Audio assets/behavior unchanged. New review server receipt remains `Local/Fortress20261103/master-review-server.json`.
+- Same-build follow-up `native-healing-20261105T113217Z` passed four real heals,100HP cap, injured empty-flask rejection, then player death/resource reset/movement/primary after restart in a fresh world. Twelve native heal/death stills inspected. These scoped checks do not prove final continuous presentation.
+- Encoder, critic and healing/death jobs are terminal. Main review server intentionally remains running. New critic cost0.7301996USD; known total24.2965516USD plus one older unpriced abort. No generation spend.
+
+Next: improve flight player/hazard framing and inspect continuous transitions/manual behavior; preserve the clear threat-readability win. Movement remains unfinished: two stop-matcher revisions failed and need a different transition approach/source, not more weight tuning. Keep both-grip<=150s, all-move/settings/collision/performance, final launcher/Shipping promotion and cleanup in scope. Current launch pointer remains stale; do not launch through it.
+
 # Latest handoff/stop checkpoint — 2026-11-05
 
 **Full goal remains active and incomplete.** Source/initial native implementation checkpoint f8b80cba2065 and wiki961cb28e5b6e were pushed and remote-verified. Follow-up work below supersedes the older build/job paragraphs.
