@@ -3,7 +3,20 @@
  "dir": "/Game/Veyr/Audio/Dragon",
  "moves": {
   "idle": [],
-  "roar": []
+  "roar": [],
+  "collapse": [],
+  "death": [],
+  "bite": [],
+  "claw_swipe": [],
+  "stagger": [],
+  "land": [],
+  "rise": [],
+  "idle_look": [],
+  "idle_layered": [],
+  "air_hover": [],
+  "air_land": [],
+  "air_takeoff": [],
+  "air_fire_down": []
  },
  "steps": []
 }

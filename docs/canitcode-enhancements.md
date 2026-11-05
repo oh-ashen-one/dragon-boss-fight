@@ -116,6 +116,17 @@ being added to the fork instead of renaming bones (renaming would break the Unre
 | 2026-10-28 | roar2 (size-constrained prompt) | Higgsfield, MiniMax H3 Max | same as roar | 12.5 | wings still drawn about 2x the model's span and off the front panel edges; motion blur on the side panel in the fast frames despite the no-blur sentence | OK: body 1.16%, limbs 0.67%. Fit: miss 3.69 px, outline 0.61 / 0.72, twist 68.8 deg on a wing root; no better than roar |
 | 2026-10-28 | roar_sd (Seedance 2.5 control run, owner-approved) | Higgsfield, Seedance 2.5, omni_reference | 720p (1280x720), 16:9, 5 s, 24 fps, audio on, size-constraint prompt | 35 | wings still drawn wider than the model's span in the front panel; side panel clean and sharp; panels drift apart (the side panel's body and tail do not match the front at the peak) | FAIL: panels disagree on the body by 2.2% of height (fail line 1.5%); frame 0 match 0.90 / 0.96. Fit anyway: miss 4.24 px, outline 0.64 / 0.82, max twist 8.0 deg (MiniMax: 25.8 and 68.8) |
 | 2026-10-28 | roar_sd2 (Seedance, half-open wings no wider than body length) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s, 24 fps, audio on | 35 | wings stay at the model's span, both panels in step, sharp, no effects | OK: body 1.13%, limbs 0.65%. Fit: miss 3.30 px, outline 0.76 / 0.85, max twist 5.5 deg, no warnings. Best roar fit so far |
+| 2026-10-28 | collapse | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 6 s (145 frames at 24 fps), audio on, size-constraint prompt | 48.4 derived (see the cost note) | pass (coordinator): wings at span, drops flat, chin on floor, panels agree; side panel crops the tail at the right edge once it lies flat | OK: body 1.17% (p90 1.35%), limbs 0.77% (p90 3.96%); frame 0 match 0.94 / 0.90. Fit: median miss 4.72 px, outline 0.75 / 0.83, max twist 21.4 deg (VeyrWingNegZRoot), warnings: body under the floor in 74 frames, hind knees at joint limit 60 frames |
+| 2026-10-28 | death | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 7 s (169 frames at 24 fps), audio on, size-constraint prompt | 56.5 derived (see the cost note) | pass (coordinator): falls, rolls partly onto its right flank, head stretched out, wings at span, panels agree | OK: body 0.93%, limbs 1.36% (close to the 1.5% line), frame 0 match 0.89 / 0.96. Fit: median miss 7.07 px, outline 0.71 / 0.82, max twist 51.7 deg (front upper leg; neck 48.9, shoulder 42.2), warning: body under the floor in 24 frames. Weakest fit of the set |
+| 2026-10-28 | bite | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on, size-constraint prompt | 35 | pass (coordinator) with caveats: wind-up front panel wings maybe 1.3x, side panel a touch larger than start.png, tail tip near the edge | OK: body 0.92% (p90 1.71%), limbs 1.22% (p90 1.54%), frame 0 match 0.93 / 0.94. Fit: median miss 3.76 px, outline 0.78 / 0.80, max twist 24.9 deg (bone_7), no warnings |
+| 2026-10-28 | claw_swipe | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; two earlier submissions failed before rendering) | pass (coordinator): right foreleg lifts to chest height, draws back, swipes, returns; some motion blur on the fastest side-panel frames around frame 70 | OK: body 0.81% (p90 1.18%), limbs 0.74% (p90 1.32%), frame 0 match 0.89 / 0.95. Fit (reader-78, kept): median miss 2.63 px, outline 0.77 / 0.88, max twist 41.8 deg (bone_11), body under floor 10 frames. Reader-64: miss 2.48 px, outline 0.80 / 0.85, twist 65.8 deg, under floor 41 frames, hind feet lifted 2.6 cm |
+| 2026-10-28 | stagger | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames at 24 fps), audio on | 35 | pass (coordinator): right shoulder drops, front lurches down and right, head low, recovers | OK: body 0.85%, limbs 1.17%, frame 0 match 0.94 / 0.93. Fit: median miss 4.49 px, outline 0.77 / 0.82, max twist 13.5 deg (bone_7), no warnings |
+| 2026-10-28 | land (hop and hard landing) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | pass (coordinator): crouch, hop to about half a body height, wing flare, hard four-foot landing | FAIL: panels disagree on the body by 1.76% of height (fail line 1.5%); limbs 1.16%; frame 0 match 0.91 / 0.96. Not fitted (rule: a FAIL is regenerated, not fitted) |
+| 2026-10-28 | takeoff | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on | 35 | coordinator: crouch, spring, rises about one body height and hovers; wings open to full span, past the rig 1.27x limit | FAIL: panels disagree on the body by 2.14% of height (fail line 1.5%); limbs 1.54% (also over the line); frame 0 match 0.93 / 0.96. Not fitted |
+| 2026-10-28 | rise (recovery) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames; content 30 fps with every 5th frame dropped, resampled to 24), audio on | 35 (1 render; one earlier attempt failed provider-side) | coordinator: crouches low, rears up onto the hind legs with both forelegs off the floor and wings raised (about frame 90), drops back; went further than the prompt | OK: body 1.17%, limbs 0.99%, frame 0 match 0.92 / 0.89. Fit: median miss 3.07 px, outline 0.81 / 0.84, max twist 62.2 deg (bone_7), warning: body under the floor in 15 frames |
+| 2026-10-28 | idle_look (8 s head-intent idle) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 8 s (193 frames at 24 fps), audio on | 64.6 derived (see the cost note) | coordinator: slow breathing, head turns, wings at span, feet planted, returns to stance | OK: body 1.02%, limbs 0.91%, frame 0 match 0.92 / 0.95. Fit: median miss 2.00 px (best of the set), outline 0.84 / 0.92, max twist 8.5 deg (bone_3), no warnings |
+| 2026-10-29 | land2 (small hop, regenerated; replaces land) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on, prompt pins the hop low | 35 | coordinator: lower hop, panels level | OK: body 0.86% (land: 1.76%), limbs 0.88%, frame 0 match 0.90 / 0.95. Fit: median miss 2.83 px, outline 0.79 / 0.87, max twist 40.3 deg (bone_7), warning: body under the floor in 29 frames |
+| 2026-10-29 | takeoff2 (low rise, regenerated) | Higgsfield, Seedance 2.5, omni_reference | 720p, 16:9, 5 s (121 frames), audio on, prompt pins the rise low | 35 | coordinator: still rises about a body height; side panel sits higher than the front | FAIL: panels disagree on the body by 2.41% of height (fail line 1.5%; first takeoff 2.14%), limbs 2.27% (WARN), frame 0 match 0.89 / 0.95. Not fitted |
 
 Prompts live beside the clips in `Local/video2rig/dragon/clips/<clip>.prompt.txt`; per-clip provenance in `<clip>.json`.
 Clips and prompts are not committed (Local/ is gitignored); the ledger here is the record.
@@ -407,3 +418,546 @@ Hari reviewed the before/after page on the laptop: refined video2rig idle vs han
 and the Seedance roar. Approved outright: "the dragon looks much better", the roar "so, so good". He asked that the
 shared brain and every future session always use this method; agents-md PR #32 promotes the creature exception to
 the default. Remaining clips proceed on Seedance 2.5, one at a time, owner sees each.
+
+## Remaining clips (2026-10-28/29)
+
+Studio worker notes per clip: check numbers, fit numbers, scripted refinement (before/after), render paths. Scripts in
+`Local/video2rig/dragon/refine/{collapse,death,bite}/` (gitignored); clips and Actions are not committed.
+
+### collapse (6 s, 145 frames) - fit and refinement
+
+`Dragon_Collapse_sd_v2r_v2.blend`, Action `collapse_v2`, 145 frames at 24 fps, no trim, no loop (ends lying). Script `refine/collapse/refine_fall.py`
+(report `refine/collapse/refine_report.json`); renders `clip_CO1_{front,left,threequarter}.mp4` in the A/B video folder.
+Phases: standing sway to frame 60, drop 60 to 84, lying from 100 (Spine_0 height 20.7 to 12.7 cm).
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| Feet excursion standing (frames 0 to 62), four feet, cm | 2.4 / 3.1 / 3.9 / 2.1 | 0 / 0 / 0 / 0 |
+| Feet excursion lying (frames 100 to 144), cm | 0.27 / 1.10 / 0.02 / 0.74 | 0 / 0 / 0 / 0 |
+| Lowest mesh point lying (cm, floor = 0), body+head / feet | -0.89 / -0.71 | +0.14 / +0.20 |
+| -Y wing (PosZ) lowest point lying | -4.97 (45 frames under) | +1.27 |
+| Wing root lift to clear the floor | | 9.0 deg (PosZ), 2.0 deg (NegZ) |
+| Body lift (Spine_0 world Z, fall frames) | | max 1.79 cm over 84 frames |
+| Tail tip lying (x, y, z cm) | (-8.9, 27.2, 13.9): curled sideways and up | (-53.4, 3.6, 1.3): flat behind, on the floor |
+| Tail tip peak speed (cm per frame) | 19.2 at frame 72 | 4.9 (the fall keeps its whip; the ratio to the median, 108x to 54x, is meaningless in a mostly still clip) |
+| Bones outside tail, wing roots, legs changed | | 0.000004 deg |
+
+Findings: the side panel crops the tail once the dragon lies flat (the clip draws it past the panel edge), so the fit
+curled it; replaced by the rest pose blended in over the fall and pitched 22 deg to lie on the floor. The fit put the
+-Y wing 5 cm under the floor; fixed by rotating the wing root about the long axis, not by moving the body. Feet are
+planted by temporary IK at the frame-0 pose until the drop starts (released over 10 frames) and at the settled pose
+from frame 100 (ramped over 8 frames before).
+
+### death (7 s, 169 frames) - fit and refinement
+
+`Dragon_Death_sd_v2r_v2.blend`, Action `death_v2`, 169 frames, no trim, no loop (ends on the floor, rolled onto the right flank, Spine_0 at y -8.6 cm).
+Script `refine/death/refine_fall.py` (same as collapse, `tail_flat=0`: the fit tail already hangs limp, tip z 6.3 cm lying), report
+`refine/death/refine_report.json`, renders `clip_DE1_*`. Phases: stagger to frame 36, fall 36 to 87, lying from 87.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| Feet excursion standing (frames 0 to 38), four feet, cm | 2.5 / 3.2 / 0.8 / 6.2 | 0 on all four |
+| Feet excursion lying (frames 87 to 168), cm | 1.12 / 0.58 / 0.57 / 1.46 | 0 on all four |
+| Lowest non-wing point lying (cm, floor = 0) | -2.42 (82 frames under) | +0.02 |
+| Wing lowest point lying, -Y / +Y | -2.39 / -3.50 | +2.23 / +2.34 |
+| Wing root lift to clear the floor | | 22.0 deg (PosZ), 12.0 deg (NegZ) |
+| Body lift (Spine_0 world Z) | | max 2.57 cm over 133 frames |
+| Tail tip peak speed (cm per frame) | 3.48 | 2.58 |
+| Bones outside tail, wing roots, legs changed | | 0.000003 deg |
+
+Remaining defects: while the planted feet fade out during the fall, a leg segment goes up to 1.85 cm under the floor in
+transit (lying frames are clean); the hind +Y foot reaches its lying plant target within 0.64 cm, not exactly. Max leg-chain
+rotation change from planting 22 deg. The fit itself is the weakest of the set (median miss 7.07 px), so the stagger and the
+roll are the reader best read, not exact; treat the death as a candidate for a re-generate or a hand pass if it ships.
+
+### bite (5 s, 121 frames) - fit and refinement
+
+`Dragon_Bite_sd_v2r_v2.blend`, Action `bite_v2`, 121 frames, not trimmed (the fit is still moving at frame 120). Script `refine/bite/refine_bite.py`
+(report `refine/bite/refine_report.json`), renders `clip_BI1_*`. Steps: end pose blended onto frame 0 over the last 24 frames, wing
+clamp to 1.27x of the frame-0 lateral extent, tail spike smoothing, four feet planted at the frame-0 pose for the whole clip.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| End pose vs frame 0 (summed bone angle) | 8.02 rad (the fit does not return to stance) | 0 (identical frame) |
+| Blend region peak step vs median step | | 2.27x (12-frame blend gave 3.0x, so 24 was kept); whole-clip peak 5.4x is the strike itself |
+| Wing lateral extent, -Y / +Y, max over frame 0 | 1.236x (at frame 120) / 1.04x | 1.18x / 1.04x: under the 1.27x cap, no clamp needed |
+| Head: nose ahead of chest front, max / min (cm) | 24.2 / 11.5 | same; the strike reaches 24.2 against 24.4 cm of straight neck |
+| Feet excursion, four feet (cm) | 1.11 / 5.74 / 0.04 / 0.14 (the -Y front foot) | 0 on all four |
+| Tail tip peak speed (cm per frame) | 6.04 (15.0x median) | 3.02 (7.5x), 8 passes touching 72 frames |
+| Bones outside tail, wings, legs changed | | 0.000003 deg |
+
+The wing worry did not appear in the fit: the raw peak is 1.236x of the frame-0 extent, at the last frame where the fit has not
+returned, and closing the pose brings it to 1.18x.
+
+### claw_swipe (5 s, 121 frames) - fit and refinement
+
+`Dragon_ClawSwipe_sd_v2r_v2.blend`, Action `claw_swipe_v2`, 121 frames at 24 fps, not trimmed. Script `refine/move/refine_move.py`
+(`ground=auto floor_lift=1`, report `refine/claw/refine_report.json`), renders `clip_CS1_*` refined and `clip_CS0_*` raw fit.
+Reader comparison on this fast move (the idle comparison had favoured reader-64): reader-78 kept. Both readers give the same
+mean outline (0.826 / 0.824); reader-78 has lower twist (41.8 vs 65.8 deg) and keeps the hind feet and body down (reader-64 shows
+both hind feet lifting 2.6 cm for frames 77 to 101 and needs a 2.6 cm body lift; reader-78 needs none).
+
+| Measure | raw fit (reader-78) | refined |
+| --- | --- | --- |
+| Foreleg peak reach, shoulder to claw tip (right foreleg) | 25.1 cm at frame 69 (rest 24.5) | unchanged; 83% of the 30.1 cm extended-leg limit, never past its own length |
+| Swinging foot (front -Y): lift / travel from its frame-0 spot | 32.3 cm / 35.0 cm | free for frames 31 to 105, planted 0 to 30 and 106 to 120 |
+| Feet excursion while planted (three planted feet, whole clip; swinging foot on its grounded frames) | 0.58 / 0.29 / 1.58 cm (front +Y, hind -Y, hind +Y) | 0.00 / 0.01 / 0.00 / 0.00 cm |
+| End vs frame 0 (summed bone angle) | 6.13 rad | 0 (last 24 frames blended; blend peak step 2.46x median, whole-clip peak 4.1x) |
+| Wing lateral extent over frame 0, -Y / +Y | 1.00x / 1.08x | same, no clamp needed (cap 1.27x) |
+| Spine_0 height | min 19.6 (frame 17), end 21.0 | same, no lift needed |
+| Tail tip peak speed (cm per frame) | 4.15 | 4.10 (nothing above 3x the median) |
+
+Caveat: the nose reaches 32.2 cm ahead of the chest front at frame 71, 7.8 cm past the 24.4 cm straight-neck figure; the lean
+and head dip carry it. Not corrected.
+
+### stagger (5 s, 121 frames) - fit and refinement
+
+`Dragon_Stagger_sd_v2r_v2.blend`, Action `stagger_v2`, 121 frames, same script (`ground=auto floor_lift=1`, report
+`refine/stagger/refine_report.json`), renders `clip_ST1_*` refined, `clip_ST0_*` raw.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| End vs frame 0 (summed bone angle) | 7.85 rad | 0 (24-frame blend, peak step 2.23x median; whole-clip 3.8x) |
+| Left forefoot (front +Y) catch-step | 7.75 cm travel, 2.6 cm lift | free for frames 24 to 101, planted before (0 to 23) and after (102 to 120) |
+| Other three feet | 3.30 / 1.02 / 0.82 cm | 0 / 0 / 0 |
+| Wing lateral extent over frame 0, -Y / +Y | 1.14x / 1.11x | same, under the 1.27x cap |
+| Body lift (Spine_0) | | max 0.82 cm over 102 frames |
+| Tail tip peak speed (cm per frame) | 2.51 | 1.07 (8 passes, 37 frames) |
+
+### land (5 s) - check FAIL, not fitted
+
+`check` body 0.0176 (1.76% of height, fail line 1.5%, clean clips up to about 1.2%), limbs 0.0116, frame 0 0.91 / 0.96. The tool: the
+panels draw the hop differently (the two views disagree on how high the body is). Not fitted, no Action; needs a new generation.
+
+### takeoff (5 s) - check FAIL, not fitted
+
+`check` body 0.0214 (2.14% of height, fail line 1.5%), limbs 0.0154 (also over), frame 0 0.93 / 0.96. The tool: the panels draw the move
+differently in each panel. Not fitted, no Action. Both airborne moves (land, takeoff) fail the same way: when the body leaves the floor
+the two panels disagree on its height, which the reader cannot reconcile; a regenerate with a smaller rise, or a flying-specific start
+picture (side-over-top stack, see the tool framing options), is the lead.
+
+### rise (recovery, 5 s, 121 frames) - fit and refinement
+
+`Dragon_Rise_sd_v2r_v2.blend`, Action `rise_v2`, 121 frames, same script (`ground=auto floor_lift=1 W=36`, report `refine/rise/refine_report.json`),
+renders `clip_RI1_*` refined, `clip_RI0_*` raw. A 24-frame close put the clip drop and the blend together (peak step 5.8x median); 36 frames gave 3.4x
+(whole-clip 4.5x), so 36 was kept.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| End vs frame 0 (summed bone angle) | 7.17 rad | 0 (36-frame blend) |
+| Hind feet (planted the whole clip) | 0.77 / 0.26 cm drift | 0.00 / 0.00 cm |
+| Forefeet: lifted frames 66 to 105 (+Y) and 66 to 110 (-Y), max lift 23.5 / 22.2 cm, 6.0 / 4.6 cm sideways | free | planted 0 to 65 and 106 to 120: 0.003 / 0.006 cm drift |
+| Spine_0 height | 20.9 start, 16.2 at the crouch (frame 53), peak 24.3 at frame 87 (rise +3.3 cm over frame 0), 20.9 end | same  |
+| Wing lateral extent over frame 0, -Y / +Y | 1.07x / 1.16x | same, under the 1.27x cap |
+| Body lift | | max 0.36 cm over 18 frames |
+| Tail tip peak speed (cm per frame) | 2.54 | 1.44 |
+| Foreleg reach, shoulder to claw tip | 26.4 / 26.4 cm | unchanged, 88% of the 30.1 cm limit |
+
+Distance from the collapse end to the rise start (for the blend in game): collapse `collapse_v2` last frame vs `rise_v2` frame 0:
+vertex shift mean 21.0 cm, p95 38.9, max 46.1 (rig scale; x21.56 in game); summed bone angle 26.7 rad; mean height difference 17.2 cm
+(lying vs standing); largest bone differences are the wing chain (VeyrWingPosZElbow 112 deg, Wrist 107 deg, VeyrWingNegZRoot 99 deg) and the
+forelegs (tripo::1_Left_Limb_0 101 deg, tripo::0_Left_Limb_0 80 deg). The rise starts standing, so the engine blend from the collapse end has to
+do the get-up itself: it is a 17 cm lift plus folding the wings and legs, not a small pose blend. The rise clip is the stand-up from frame 53
+(crouch) onward, but the clip begins already standing; a better source for a post-collapse recovery is a clip whose first frame is the lying pose.
+
+### idle_look (8 s, 193 frames) and the idle comparison
+
+`Dragon_IdleLook_sd_v2r_v2.blend`, Action `idle_look_v2` (refine_move `ground=all W=24`, report `refine/idle_look/refine_report.json`): end blended onto
+frame 0 over the last 24 frames (the fit ended 5.67 rad of summed bone angle from the start; blend peak step 4.0x median), feet planted the whole clip
+(0.75 / 2.55 / 0.02 / 0.05 cm to 0), wings 1.03x / 1.01x of frame 0, tail tip peak 1.68 to 1.05 cm per frame. Renders `clip_IL1_*` (refined), `clip_IL0_*` (raw).
+`Dragon_IdleLayered_sd_v2r_v2.blend`, Action `idle_layered_v2` (script `refine/idle_look/layer_idle.py`): idle_v2 for the whole body, played 6.7% slower so two
+cycles fill the 192 steps and the loop closes exactly, plus the look clips neck and jaw motion added on top in bone-local space (bone_3, bone_4, bone_5,
+VeyrJaw, relative to the look clips frame 0). Replacing the head chain outright gave a 6.4 cm nose bob (the idle_v2 head compensates its own chest
+tilt); the additive version has 2.1 cm. Renders `clip_IL2_*`. All three Actions are kept.
+
+Measured (`refine/move/idle_metrics.py`, JSON in `refine/idle_look/metrics_*.json`; yaw = nose direction from bone_3 in plan view minus the body direction,
+relative to frame 0; positive = toward +Y, the dragons left; breathing = height of the mean torso vertex):
+
+| Measure | idle_v2 (3.75 s) | idle_look_v2 (8 s) | idle_layered_v2 (8 s) |
+| --- | --- | --- | --- |
+| Head yaw range, min / max (deg) | -4.3 / 6.5, range 10.8 | -37.8 / 0.4, range 38.2 | -38.9 / 6.9, range 45.8 |
+| Head pitch range (deg) | 2.7 | 2.5 | 5.5 |
+| Nose travel y / z (cm) | 3.3 / 0.9 | 15.5 / 0.4 | 15.1 / 2.1 |
+| Breathing, torso height peak to peak (cm), period | 1.53, 3.75 s | 0.30, 8 s (does not breathe at the clips own rate in the fit) | 1.53, 4.0 s |
+| Tail tip y / z range (cm) | 4.9 / 11.9 | 6.0 / 1.2 | 4.9 / 11.9 |
+| Wing lateral range, +Y / -Y (cm) | 1.19 / 1.76 | 0.82 / 1.41 | 1.19 / 1.75 |
+| Loop seam (step across the join over the median step) | 0.95 | 0.98 (last frame is a copy of frame 0, step from frame 191) | 0.93 |
+| Feet excursion | 0 | 0 | 0 (idle_v2 legs) |
+
+Findings: (1) the clip turns the head toward the dragons right (-38 deg; the source frames show the head swinging to screen-left in the front panel), not
+to the left as the prompt asked, and returns without the slight turn the other way (max +0.4 deg); the fit is right, the generator mirrored the instruction.
+(2) idle_look has the head intent but almost no breathing (0.3 cm) and little tail sway (z 1.2 cm); idle_v2 has breathing and tail but only 10.8 deg of head
+motion. The layered Action has both: 45.8 deg of head yaw and idle_v2 breathing, tail and wing motion, a clean seam, same planted feet. Candidate for the
+final idle; the owner decides on the renders (the 1.5 cm breathing figure is the idle_v2 fits and may be larger than a dragon this size would breathe).
+
+### land2 (small hop and hard landing, 5 s) - fit and refinement
+
+`Dragon_Land2_sd_v2r_v2.blend`, Action `land2_v2`, 118 frames (3 still frames trimmed from the end), `ground=auto floor_lift=1 W=24 dz=2 dxy=8` (report `refine/land2/refine_report.json`),
+renders `clip_LA1_*` refined, `clip_LA0_*` raw. The panels now agree (the first land failed at 1.76%), but the hop is still not low: Spine_0 rises 28.9 cm (0.59 body
+heights, peak 49.8 cm at frame 61) and the feet leave the floor by up to 28 cm (hind) and 41 cm (fore), against the prompts knee height of about 10 cm.
+
+| Measure | raw fit | refined |
+| --- | --- | --- |
+| Takeoff frame (all four feet off the floor) | | 39 (hind feet leave at 38 to 39, fore at 37 to 38) |
+| Touchdown frame, per foot | | front +Y 84, hind 85, front -Y 86: all four down from frame 86 |
+| Airtime | | 46 frames, 1.9 s |
+| Crouch before the hop (Spine_0) | 17.8 cm at frame 33 (standing 20.9) | same |
+| Peak descent speed of Spine_0 | 0.71 m/s at frames 71-72 (x21.56 = 15.2 m/s in game) | same |
+| Landing deceleration of Spine_0 | peak 5.6 m/s2 at frame 78 (122 m/s2 in game) | same; the movedata run records the shock windows |
+| Landing crouch (Spine_0 minimum after touchdown) | 18.9 cm at frame 90 (2.0 cm below standing) | same; the prompt asked for the chest almost on the floor |
+| Planted feet, planted frames (0 to 37 and from touchdown) | the feet spread up to 15.7 cm on the landing (front -Y) | 0.006 / 0.019 / 0.005 / 0.003 cm |
+| Free feet (airborne) | | not planted |
+| End vs frame 0 (summed bone angle) | 8.31 rad | 0 (24-frame blend, peak step 1.4x median; whole-clip 5.9x is the hop) |
+| Wing lateral extent over frame 0, -Y / +Y | 1.07x / 1.02x | same (cap 1.27x, no clamp needed) |
+| Body lift (Spine_0) | | max 5.6 cm over 50 frames (the crouch and landing sank the fit under the floor) |
+| Tail tip peak speed (cm per frame) | 12.7 | 8.7 (the landing whip) |
+
+The spine stops falling at frame 78, six frames before the feet register as grounded (84 to 86): the legs reach down and the body is already
+decelerated when they touch; the shock for gameplay is better read from the foot contacts (frames 84 to 86) than from the spine.
+
+### takeoff2 (5 s) - check FAIL, not fitted; airborne moves
+
+`check` body 0.0241 (2.41%), limbs 0.0227, frame 0 0.89 / 0.95, same message as takeoff: the two panels draw the body at different heights. A lower
+rise in the prompt did not help (2.14% then 2.41%). Not fitted, no Action. Land2 passed once the hop was pinned low in the prompt (1.76% then 0.86%), but
+takeoff, where the body stays up, did not.
+
+Finding: airborne moves need a flying start picture and a reader trained on it. Likely cause (not tested tonight): the start picture and the reader both
+assume feet on a floor, and a hovering body has no floor reference to keep the two panels at the same height. Out of scope tonight; the takeoff and
+fly-hover stay on the hand-keyed Blender versions until then.
+
+### Summary, cost and review page (2026-10-29)
+
+| Clip | Result | Action | Credits |
+| --- | --- | --- | --- |
+| collapse (6 s) | fitted, refined | `collapse_v2` | 48.4 derived |
+| death (7 s) | fitted, refined (weakest fit) | `death_v2` | 56.5 derived |
+| bite | fitted, refined | `bite_v2` | 35 |
+| claw_swipe | fitted (reader-78), refined | `claw_swipe_v2` | 35 |
+| stagger | fitted, refined | `stagger_v2` | 35 |
+| land (first take) | check FAIL 1.76%, not fitted | none | 35 |
+| land2 | fitted, refined | `land2_v2` | 35 |
+| takeoff (first take) | check FAIL 2.14%, not fitted | none | 35 |
+| takeoff2 | check FAIL 2.41%, not fitted | none | 35 |
+| rise | fitted, refined | `rise_v2` | 35 |
+| idle_look (8 s) | fitted, refined; layered with idle_v2 | `idle_look_v2`, `idle_layered_v2` | 64.6 derived |
+
+Cost note: Higgsfield balance 1241.64 at the start of the session, 792.14 at the end: 449.5 credits on 11 renders (9 first takes = 379.5, plus land2
+and takeoff2 at 35 each). The 5 s clips cost 35; the 6, 7 and 8 s clips (collapse, death, idle_look) share 169.5 credits over 21 s, about 8.07 per second, so
+the per-clip figures above are derived and should be checked against the transaction list. Branch total with the earlier 107.5 credits (3 MiniMax at 12.5, 2
+Seedance at 35): 557.0. The failed first land and takeoff stay in the ledger as failed takes.
+
+Review page: `Local/dragon-review-20261029/serve/index.html` (`rangeserver.py` beside it, no server started). Per move: Seedance source clip, hand-keyed
+before where one exists (idle, bite, claw swipe, land, takeoff, from the review checkout, opened read-only), raw fit and refined renders from three angles; the
+idle row compares idle_v2, idle_look_v2 and idle_layered_v2. Move data rebuilt for every Action by `tools/movedata/run_veyr.sh` (Data/dragon/*.json).
+
+### Fix round 1 (2026-10-29): v3 Actions from the blind critique
+
+Source of the list: `Local/dragon-review-20261029/critique.md` (blind critic, 0 of 11 rows meet the bar). Refinements on the existing Actions, saved as new
+`Dragon_<Move>_sd_v2r_v3.blend` / `<move>_v3` (v2 untouched). Script `Local/video2rig/dragon/refine/v3/refine_v3.py` (and `refine_fall_v3.py` for collapse and death),
+starting from the raw import, never from v2. Review page `Local/dragon-review-20261029/serve/index.html` has a "round 1" cell beside the round 0 "after" on every
+touched row (lazy-loaded videos); renders `clip_<RS|CO|DE|BI|CS|ST|LA|RI>3_*`.
+
+| Fix | Before | After |
+| --- | --- | --- |
+| 1 Shared stance (stance = idle_v2 frame 0, velocity-matched offset blend over 12 frames at the start and 12 at the end, 24 for roar and bite) | frame 0 / last front overlap with the stance: roar 0.82 / 0.80, bite 0.82, claw 0.82, stagger 0.81, land2 0.82, rise 0.82; feet 15 to 18 mm (9 to 11 px) off the stance | 1.000 / 1.000 (front and side) on all six; feet 0.0 mm. Over the first and last 6 frames the minimum is 0.76 to 0.97 (roar 0.95 / 0.97, bite 0.86 / 0.91, claw 0.89 / 0.84, stagger 0.76 / 0.83, land2 0.91 / 0.83, rise 0.88 / 0.85): the moves start and finish moving inside those frames, so 95% holds on frames 0 and last only. The layered idle was already 1.000. Roar ends on the stance (seam 7.62x to 0.00x of a step) |
+| 2 4-frame stutter (cause: the importer keys at content time, the tool read the clips as 30 fps with every 5th frame dropped; the fits step uniformly per container frame, ratios 0.97 to 1.04) | critic-style mod-4 phase ratios, range: claw 0.24, rise 0.25 (bite 0.24 on this measure) | keys at container time i/24: claw 0.08, rise 0.07 (bite 0.08); stagger and land2 are native 24 fps, stagger 0.04 to 0.06 |
+| 3 land2 | touchdown frames 84 to 86 (hover 75 to 81), body lift 5.6 cm, hop leaves the frame | take-off 39, touchdown 73, all four feet planted by IK on the floor at 74 to 75; parabola on Spine_0 through the take-off and touchdown heights (apex 23.2 cm above the line, peak 49.4 cm); body lift 0.8 cm (feet and wings excluded); tall review camera (3.1 m back, aimed 0.40 m up) keeps the whole hop in shot |
+| 4 stagger | 12 dead frames, catch-step drag, 40 px | first 12 frames trimmed (clip 109 frames), recoil starts at frame 2; the catch-step foot lifts 3.0 cm over frames 15 to 27 (and again 92 to 104 on the return). Head minimum height above the floor 5.68 cm in v2 and v3: the chin does not clip |
+| 5 roar | front span 502 px at the peak (idle 505), tremor 0 | flare on the stance wings (OPEN pose, scale 0.85, Root offset per side for the body roll) over frames 44 to 84: front span 604 px, 1.20x idle (one wing 1.255x, the other 1.157x). The 1.25x target (640 px) is not reached: the rig peaks near 1.24x per wing at this pose family and tears the membrane beyond (a 1.47x pose tears about 1000 edges per wing; this one 249 and 225); head/chest tremor 0.35 cm (2 px) over frames 46 to 85 |
+| 6 bite | jaw shut through the strike, 32-frame frozen hold | VeyrJaw opens to 38 deg by frame 36, held to 43, shut by 46; hold frames 58 to 90 compressed to 58 to 70, recovery 90 to 120 stretched to 70 to 110 (111 frames, 4.6 s) |
+| 7a death | frames 120 to 168 keep moving (mean frame change 1.87), drift 100 to 168 of 18.9 | all channels damped to a hold from frame 110: change 0.0 after frame 120, drift 100 to 168 of 6.7 (all inside the 100 to 110 damping), upper wing frozen |
+| 7b collapse | -Y wing a stiff strip out to x 154 at frame 144 (9 deg root lift) | root lift capped at 3 deg, the wing swept back 24 deg about the vertical axis over frames 85 to 110 and folded at the elbow (up to 24.6 deg) so it clears the floor by 1.2 cm: leftmost front silhouette x 264 (target 250), width 554 to 444 px |
+| 8 rise | listed as a recovery | marked "recovery-from-stance": it starts and ends standing; the lying-start get-up comes with a new clip |
+
+Findings from the work: the critic's 4-frame stutter was in the importer's timing assumption, not in the fit; the jaw is not moved by the fit at all (it is authored
+now); the roar's two wings cannot both reach 1.25x because of the body roll in the clip.
+
+## Airborne pipeline (2026-10-29): hover start picture and reader
+
+Why: land and takeoff failed the check three times (1.76, 2.14 and 2.41% of height) because a body off the floor has no floor reference in the ground start picture.
+Project `Local/video2rig/dragon-air/` (sibling of `dragon/`; rig exported from the hover pose so the tool treats it as the start pose; reader trained fresh).
+- Hover pose: new Action `hover_pose_v1` (script `dragon-air/hover/author_hover.py`, parameters `hover_params.json`, report `hover_report.json`): Spine_0 raised so the lowest foot is
+  48.7 cm above the floor (one body height; the trailing tail tip is at 34.6 cm), body levelled (the rest pose stands 18 deg nose-up), wings 1.22x the rest span (96.9 cm tip to tip), legs tucked,
+  tail trailing down and back, head level, jaws closed. No existing Action touched.
+- Pictures: `start/start.png` (hover) and `start-ground/start.png` (standing), the same two cameras and floor. Flags: `render_start.py --facing +X --widths 840,1080 --margin-wide 1.25
+  --hover 0.58935 --lens 50 --engine CYCLES --samples 64` (frame height widened to 1.557 m by the hover; the ground picture reuses the cameras through `render_start_air.py --cameras-from`).
+  A perspective camera replaced the orthographic one: a level orthographic camera sees the floor edge-on, so the first hover picture showed no floor and no height cue at all.
+- Reader: 64 keypoints, 9000 steps, MPS bf16, normal priority; fork branch `air-reader` (`poses.py` opt-in `air` key: 55% of the poses lifted up to 1.3 body heights, 35% starting from the
+  standing stance, lifts lowered until the body is inside both panels; `--copies 1` because a perspective camera cannot share a frame with copies). Poses 297 s, pictures 852 s, training 10,295 s (172 min total).
+  Held-out median error: front 7.31 px, side 6.68 px (p90 44.7 / 35.7); the 18 off-bone points 8.48 / 8.97 px. The ground reader got 4.23 / 4.05. The airborne reader is less exact:
+  a wider pose range, a taller frame (the dragon is smaller in it) and a perspective camera. Expect fits near 3 to 5 px median rather than 2 to 3.
+- Prompts (`dragon-air/clips/*.prompt.txt`, notes in `README-air-prompts.txt`): `air_fire_down`, `air_land`, `air_hover`, `takeoff3` (start = ground picture, end = hover picture).
+  Higgsfield media ids: hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1.
+
+### Airborne clips (2026-10-29): air_hover, air_land, takeoff3, air_fire_down
+
+Four Seedance 2.5 clips from the hover and ground start pictures (media ids hover 3d674b17-e4f8-4a0b-b90c-a6edb3f55476, ground 2e796531-c58c-4f75-b7c0-762510fb5bc1; air_land has the
+ground picture as end image, takeoff3 starts on it and ends on the hover picture). Credits recorded 35 each (5 s rate; the 6 s air_land and 8 s air_fire_down to verify). Provenance json
+beside the clips in `Local/video2rig/dragon-air/clips/`; jobs 119fc989 (air_land), ca748e9a (air_hover), 32d41f49 (takeoff3), 0929c03a (air_fire_down).
+
+| Clip | Check | Fit (airborne reader) | Action |
+| --- | --- | --- | --- |
+| air_hover (5 s, 121 frames) | WARN: no panel check with perspective cameras; centroid proxy 0.14% of height median | median miss 2.57 px, outline 0.74 / 0.88, max twist 26.4 deg, no warnings | `air_hover_v3`, loop, ends blended onto `hover_pose_v1` (fit ends 7.2 rad away) |
+| air_land (6 s, 145 frames) | WARN: start pose covers frame 0 only 0.83; proxy 3.6% median | median miss 4.84 px, outline 0.66 / 0.71, twist 77 deg, a 297 deg bone flip at frame 106, outline down to 0.30 in the landing | `air_land_v3`: legs held from frame 84, feet IK-planted from frame 90 (authored touchdown), last 40 frames crossfaded onto the standing stance |
+| takeoff3 (5 s, 121 frames) | WARN: start pose covers frame 0 only 0.55 / 0.46 (the project start pose is the hover, the clip starts standing); proxy 2.9% | median miss 5.53 px, outline 0.61 / 0.70, twist 69 deg, 112 spikes smoothed | `takeoff3_v3`: stance start standing, end hover; wings clamped to the 1.27x limit (19 and 7 frames); the fit rises to 115 cm and settles at 63.8 cm (overshoots the hover by 50 cm) |
+| air_fire_down (8 s, 193 frames) | WARN: no panel check; proxy not a height test (the body pitches) | median miss 4.31 px, outline 0.81 / 0.83, twist 31 deg, no warnings | `air_fire_down_v3`: body pitch kept (hip-to-chest line +21 to -8 deg over frames 72 to 160), root height pinned to the hover height (the fit sank by 7.4 cm), jaw authored 40 deg open frames 80 to 160 (the fit does not move the jaw), ends on the hover pose |
+
+`video2rig check` only compares orthographic panels, so none of the four got the panel-disagreement test that failed land and takeoff; the verdict is WARN, not OK, and the fits are
+the evidence (the three lower-quality fits are the ones with landing and take-off motion). The panel proxy (`panel_agree.py`: vertical centroid of the dragon mask in each panel against
+frame 0) gives 0.14% for the hover and 2.8 to 3.6% for the three others (the failing ground clips were 1.8 to 2.4% on the real check); it is not equivalent.
+Refinement script: `refine_v3.py` with new options `stance_end`, `floor_feet_npz`, `masks_after_stance`, `end_mode=crossfade`, `touch`, `legs_hold_from`, `plant_ramp`, `pin_root_z`, `limit_abs_cm`, `plant=none`.
+Move data: `air_hover` (loop), `air_land`, `air_takeoff`, `air_fire_down` in `Data/dragon/moves.json` with `airborne` and `floor_metrics_valid: false` (the generator infers the floor from the lowest foot, so
+the shocks, contacts and stances of the air moves are artifacts); annotations: `fire_down_hold` 3.333 to 6.667 s (jaws open, head down: the Niagara window) on `air_fire_down`, `touchdown` at 3.75 s on `air_land`.
+Review page: section "Airborne" (renders `AH`, `AL`, `TK`, `FD`, 0 = raw fit, 1 = refined; takeoff3 on an extra-tall camera because the fit rises to 1.15 m).
+
+### Fix round 2 (2026-10-29): v4 Actions from the round-2 critique
+
+Spec: the ranked fix list in `Local/dragon-review-20261029/critique-round2.md`. Nine new Actions `<move>_v4` in
+`Local/video2rig/dragon/Dragon_<Move>_sd_v2r_v4.blend` (v2/v3 untouched; claw swipe, stagger, death, idle unchanged).
+Scripts: `tools/dragon_refine/v4/` (`refine_v4.py` recipes, `lib_v4.py`, `measure_v4.py`, `run_queue_v4.sh`).
+No Higgsfield clip was generated and no reader was trained.
+
+**How it was measured.** The GPU was held by another session (STREAMING window, then a foreign MPS trainer at 100 %,
+`gpu_slot capture` exit 75), so no EEVEE render was made. Every number below comes from a CPU raster of the evaluated
+mesh through the review cameras (`raster.py`, z-buffered, the critic's plates), scored with the critic's own
+definitions (`critic.py` is a port of its `met.py` / `air.py`). Calibration against the critic's cached v3 render masks
+(`refine/v4/calibration.json`): silhouette IoU 0.79 to 0.88, lowest row within 1 to 8 px, frame-step correlation 0.93
+to 0.996. Per-frame-change (hold) numbers are raster values times that clip's own critic/raster ratio. Airborne v4 clips
+use the extra-tall K camera (the T frame cuts off the wing tips on the upstroke), so their pixel limits scale by
+158/227 against T. Full numbers: `Local/dragon-review-20261029/measure_v4.json` (v3 and v4 side by side).
+
+**Sourced vs authored.** The source videos have **no wing beats** (hover top row moves 12 px on a 40-frame sway; the
+generator made a glide), so every wing beat is procedural: one beat function (26-frame period, not a multiple of 4,
+or the beat aliases into the critic's 4-frame saw) on the wing root, elbow and wrist over the hover pose, with the
+fit's own high-pass wing detail kept. Body bob is a table measured from the visible wing-tip height (`bob_table.py`).
+Everything else keeps the fitted motion and adds authored layers; each report JSON (`refine/v4/*.report.json`)
+lists `sourced` and `authored` per move.
+
+| # | Item, target | v3 (round 1) | v4 (round 2) | Result |
+| --- | --- | --- | --- | --- |
+| 1 | Takeoff: feet down until ≥ 36 | liftoff frame 2 | 53 | PASS |
+| 1 | crouch ≥ 0.08 BH | 0.00 | 0.101 | PASS |
+| 1 | span +30 % in 6 frames before liftoff | −1 % | +56 % (liftoff on the first downstroke) | PASS |
+| 1 | peak / end height ≤ 1.2 | 2.20 | 1.06 | PASS |
+| 1 | centroid change last 24 frames ≤ 0.1 BH | 0.84 | 0.14 (one beat of bob; mean-height change vs the previous 24 frames 0.14) | FAIL |
+| 5 | takeoff foot jump ≤ 8 px T | 21 px | 3 px K | PASS |
+| 2 | Wing-tip p2p ≥ 0.5 BH (hover / land / takeoff / fire) | 0.04 / 0.35 / 1.09 / 0.14 | 0.65 / 0.76 / 1.11 / 0.87 | PASS |
+| 2 | period 18 to 30 | 40 / 78 / 109 / 193 | 26.2 / 26.0 / 29.0 / 27.6 | PASS |
+| 2 | body bob ≥ 0.06 BH | 0.027 / 0.40 / 0.99 / 0.25 | 0.14 / 0.38 / 0.75 / 0.36 (land, takeoff, fire include the descent, rise or pitch) | PASS (hover is the clean case) |
+| 2 | corr(wing-tip velocity, body accel) ≥ 0.6 at lag 0 to 4 | 0.12 / 0.13 / 0.24 / 0.08 | −0.37 / −0.33 / −0.45 / −0.29 (best −0.47 to −0.59 at lag −1 to −5) | FAIL |
+| 2 | span drift ≤ 5 % (beat-averaged) | 0.16 / 0.03 / 0.24 / 0.11 | 0.009 / 0.011 / 0.007 / 0.073 | PASS 3 of 4 (fire: the sourced nose-down pitch narrows the front span) |
+| 3 | Hover seam ≤ 1.2 steps | 0.0 | 0.0 | PASS |
+| 3 | span change last 8 frames ≤ 3 % | 5.4 % | raw 44 % (mid-beat); against the same beat phase one beat earlier 1.1 % | FAIL raw / PASS phase-matched |
+| 3 | saw ≤ 0.07 both views | 0.26 / 0.30 | 0.020 / 0.026 | PASS |
+| 4 | Roar hold change ≥ 1.2 | 0.94 (critic 0.77) | 3.5 (est.) | PASS |
+| 4 | Fire-down hold ≥ 1.0 | 0.80 / 0.50 | 4.7 / 2.2 (est.) | PASS |
+| 4 | Collapse lying breathing ≥ 0.4 | 0.33 | 0.64 (est.) | PASS |
+| 4 | Roar snout / wing-tip tremor 1.5 to 3 px | 0.33 / 0.49, 0.30 | 1.72 / 1.52, 2.89 | PASS |
+| 5 | air_land foot jump at contact | 21 px T | 6 px K (8.6 px T-equivalent) | PASS in K px, marginal in T scale |
+| 5 | foot ≤ 1.2x body speed at contact (air_land / land2) | 1.07 / 0.62 | 1.14 / 0.55 | PASS |
+| 5 | land2 foot jump ≤ 8 px T (takeoff / touchdown) | 14 / 20 | 7 / 7 | PASS |
+| 6 | air_land descent speed −40 % over 12 frames | +398 % (speeds up) | −50 % | PASS |
+| 6 | span +30 % in that window | +3 % | +37 % | PASS |
+| 6 | compression ≥ 0.08 BH within 4 frames | 0.15 | 0.094 | PASS |
+| 6 | end stance IoU ≥ 0.97 | 0.951 / 0.945 | 0.993 / 0.995 | PASS |
+| 7 | land2 a_down / a_up 0.8 to 1.25 | 2.00 | 0.98 | PASS |
+| 7 | bite full-reach freeze ≤ 10 | 35 | 4 | PASS |
+| 7 | bite reach ≥ 12 cm | 9.3 | 12.7 | PASS |
+| 8 | roar both wings ≥ 1.22x idle half-span, within 5 % | 1.31 / 1.16 (12 %) | 1.29 / 1.29 (0.4 %) | PASS |
+| 8 | roar opens over ≥ 8, closes over ≥ 10 (10-90 %) | 3 / 13 | 10 / 10 | PASS |
+| 8 | rise frame 0 IoU vs collapse end ≥ 0.95 | 0.13 | 1.00 vs collapse_v4 (0.87 / 0.80 vs collapse_v3, which now breathes differently) | PASS |
+
+**What did not reach the target, and why.**
+- Wing-body coupling (item 2, all four airborne clips). The body now rides the wings (bob 0.14 to 0.75 BH on the beat
+  period) but |r| at lag 0 to 4 is 0.29 to 0.45. Two causes measured on the raster: (a) in the front view the beating
+  wing covers and uncovers the body, so the body-only centroid (the critic's `m & ~w`) jumps with the wing, not with the
+  body (rigid-bob grid in `bob_table.py`: up to |r| 0.80 with the whole-mesh centroid, 0.50 with the visible-body
+  centroid); (b) the strongest coupling sits at negative lags (body acceleration after the wing, as in real flight),
+  outside the critic's 0-to-4 window in its own lag convention (`air.py`: `vw[6+l:...]` vs `ab`). Needs the critic to
+  confirm the intended lag sign before more tuning.
+- Hover "span change in the last 8 frames ≤ 3 %" and takeoff "centroid change in the last 24 frames ≤ 0.1 BH" were
+  written for the beat-less v3 clips; a real 26-frame beat changes span 44 % inside 8 frames and moves the centroid
+  0.14 BH inside one beat. Phase-matched span (1.1 %) passes; the takeoff centroid fails raw.
+- Fire-down span drift 7.3 % comes from the sourced nose-down pitch (kept from round 1), not from the wings.
+
+**Per-move changes (authored layers on sourced motion).**
+- air_hover_v4: fit destuttered ([1,2,2,2,1] kernel, cyclic), resampled 121 → 131 frames (5 beats), wings = hover pose x
+  fit high-pass detail, beat + bob + tail follow; frame 130 = frame 0.
+- takeoff3_v4: idle_v2 breathing on the ground, 7 cm crouch (8 to 34), wind-up beat, three 24-frame beats from frame 48,
+  feet planted by IK until the body clears the stance (release at 46 + 5-frame ramp), min-jerk rise 43 → 100 to the
+  hover height (no overshoot); ends on hover frame 0 phase.
+- air_land_v4: beats to the last upstroke top at 78, braking flare to contact (92), descent peak 3.1 cm/frame braked
+  to 30 %, 4.5 cm leg compression, head dip and tail slap, 6-frame IK contact ease, idle_v2 settle; ends on the stance.
+- air_fire_down_v4: beats continue through the fire hold (7 beats of 27.4 frames), sourced pitch and jaw kept.
+- roar_v4: flare rebuilt per wing (scale searched to 1.25x lateral, capped at 1.15x of the round-1 open pose), opens over
+  26 and closes over 30 frames, breath heave 0.8 cm, head tremor 3.4 deg, wing tremor 3.9 deg, tail lash 7 deg, feet planted.
+- collapse_v4: breathing while lying from frame 108 (40-frame breaths: spine, chest, folded wings, tail, 0.35 cm body).
+- bite_v4: hold compressed by time warp (121 → 93 frames), 4 cm lean and 8 deg neck into the strike, 4 deg worry shake.
+- land2_v4: centroid moved onto one parabola (same acceleration up and down) in two raster passes (`land2_corr.py`),
+  apex lowered to 0.38 BH (the clip's prompt asked for a knee-high hop; 0.52 BH lands at 16 px/frame); foot vertical
+  speed capped at 1.4 cm/frame near the floor (front-foot IK misses up to 9 cm in the air, feet are not on the floor then).
+- rise_v4: 44-frame authored get-up from collapse_v4's last frame (head and chest first, feet step under the body one by
+  one with 3.5 cm lifts, wings half-open), then rise_v3 from its frame 14. 151 frames.
+
+**Not verified.** No EEVEE render yet (GPU busy); the critic's own numbers on renders may differ within the calibration
+spread above. One roar wing shows a few more open membrane holes than round 1 in raster close-ups (the mesh is
+tattered in both); check on the render. Review renders are queued in `Local/dragon-review-20261029/queue_v4.txt`;
+run `tools/dragon_refine/v4/run_queue_v4.sh` (gpu_slot capture, one clip at a time, then adds the "Round 2 fix" cards to
+the review page with `build_review_page_v4.py`). Move data rebuilt from the v4 Actions (`Data/dragon/`, tests 3 OK).
+
+## Fix round 3 (2026-10-30): v5 Actions against the round-3 critique
+
+Built by `tools/dragon_refine/v4/refine_v5.py` (helpers `lib_v5.py`, runner `run_v5.sh` through `gpu_slot capture`) on the
+v4 Actions; blends `Local/video2rig/dragon/Dragon_<Move>_sd_v2r_v5.blend`, Actions `<move>_v5`. Measured BEFORE rendering
+with `measure_v5.py` (CPU raster of the evaluated mesh through the review cameras, scored with the critic's own definitions;
+per-frame-change numbers scaled by each clip's critic/raster factor from its v4 render). Full numbers and the per-move ship
+decision: `Local/dragon-review-20261029/measure_v5.json`. Options used: `refine/v5/work/final_opts.txt`.
+
+| Clip | Target (critique) | v4 | v5 |
+| --- | --- | --- | --- |
+| AL | no pop (63→64 root step) / IoU dip ≤2.2x neighbours | 10.5 cm step, dip fails | no pop, dip ≤1.9 |
+| AL | braking flare: span +30 %, descent speed −40 % in the 12 f before contact | pass | span +33 %, descent −52 % |
+| AL | top drop ≥0.3 BH within 6 f of contact, held ≥8 f, tail whip | −0.11 BH, not held | 0.361 BH, held 20 f |
+| AL | breathing 118–144 d≥0.4; end = stance | pass | d 2.3/1.26/1.47, end IoU 0.993/0.995 |
+| RI | no pop at 43/44 (relative IoU dip ≤2.2) | 4.5–8.5 | max 1.35 |
+| RI | ≥2 feet on the floor every frame, no float | 0 feet | 2 feet, lowest vertex 0.02 cm |
+| RI | breathing frames 0–7 d≥0.3 | 0–0.22 | front 0.56–0.81, left 0.81–0.96 |
+| CO | end front height ≤0.50 | 0.723 raster (0.689 render) | 0.531 raster (critic est 0.506): **still fails** |
+| CO | 3/4 leftmost x ≥200 | 68 | 201 (+17 render offset): pass |
+| CO | both wings folded on the flanks | over the back | on the flanks (NegZ root 1.8 cm above the back line) |
+| CO | breathing kept; fall ≥24 f (optional) | breathing pass; 10 f | breathing 0.51–0.57; fall 10 f (not met) |
+| RS | peak span 1.10–1.15x idle | 1.29 | 1.136 |
+| RS | height ≥1.25x | 1.20 | 1.255 |
+| RS | left/right halves within 5 % | 9.3 % | 3.2 % |
+| RS | hold saw <0.15, wing-tip high-pass 1.5–3 px | 0.182; 1.68/2.49 | 0.045; 2.07/2.20 |
+| BI | no twitch (max step ratio) / 3/4 near-wing area ≥0.7 over 44–62 | 1.9 / 0.589 | 1.39 / 0.887 |
+
+Kept on v4:
+- land2: a v5 parabola hit the hop (0.454 BH est), but the left foot jump grew from 7 to 10 px (limit 8), so it was rejected
+  (`refine/v5/work/rejected_land2.json`).
+- air_hover and air_fire_down: the v5 refine could not start because `gpu_slot` returned settle-timeout (exit 75) twice in a
+  row while other sessions' trainers held the GPU at 98–100 %. In raster, v4 already passes hover downstroke
+  (0.508/0.454 BH below the shoulder line) and fire-down wing-top p2p over 33–66 (0.323/0.335 BH). Hover tail lag still
+  fails (0.058 BH p2p). These raster numbers disagree with the critic's render reading, so check them on the render.
+  The hover loop is exported as frames 0–129 (`annotate_air.py`: `loop_frames`).
+- takeoff3: unchanged.
+
+Collapse front height is the one blocker target still open. Tilting the lying body (bone_2 or Spine_0 roll) to lower the
+NegZ shoulder made it worse (0.56, 0.541). The remaining height is the NegZ wing root, which sits 5 cm higher than the
+PosZ root because the lying body is tilted.
+
+Move data: `tools/movedata/run_veyr.sh` now reads the v5 Actions for roar, collapse, bite, rise and air_land. Every Blender
+run goes through `gpu_slot capture --label dragon-r3-movedata`, and a sample whose action and blend md5 already match is
+reused. `annotate_air.py` now takes the touchdown frame from the sampled action (v5 = 100, v4 = 90).
+
+**Not rendered yet (2026-10-30 01:20).** The render queue ran once (`run_queue_v5.sh`), and the AL5 prep step got
+`gpu_slot` settle-timeout twice (GPU at 97–100 %), so the queue stopped by design. All five clips are still queued in
+`Local/dragon-review-20261029/queue_v5.txt` (AL5, RI5, CO5, RS5, BI5); re-running the script resumes it. The move-data
+rebuild hit the same wall on the roar sample (exit 75), so `Data/dragon/` still holds the v4 move data. Only the hover
+`loop_frames` annotation was applied (tests 3 OK). Re-run `BLENDER=... BLENDER_CAP=2 tools/movedata/run_veyr.sh` once
+the GPU is free.
+
+## Fix round 4 (2026-10-30): v6 Actions against the round-4 critique (NOT YET AUTHORED)
+
+Spec: `docs/dragon-critique-round4-20261030.md`. Rise and bite v5 shipped; round 4 covers only what the critic failed:
+air_land (blocker), roar, collapse, and the bite near wing. Every v6 recipe adds a layer on top of the v5 channels
+(`tools/dragon_refine/v4/refine_v6.py`, helpers `lib_v6.py`), so what v5 passed is kept. Blends:
+`Local/video2rig/dragon/Dragon_<Move>_sd_v2r_v6.blend`, Actions `<move>_v6`.
+
+**Status: not yet authored.** At 16:40 ET the coordinator's MPS training pinned the GPU at about 97 % for about 2 h, so
+`gpu_slot capture` would exit 75, and the Blender refine runs were stopped on the coordinator's instruction. One air_land
+trial was authored before that (16:39) into `Local/video2rig/dragon/refine/v6/work/t_air_land.blend`, and it was measured
+on the CPU. Roar, collapse and bite v6 have not been run. `tools/movedata/run_veyr.sh` still reads v5 for all four.
+
+Resume command (authoring and measuring, one Blender at a time through `gpu_slot capture --label dragon-r4-author`; a second
+exit 75 stops it; re-run to resume):
+
+    /Users/midir/dragon-boss-fight/tools/dragon_refine/v4/run_author_v6.sh air_land roar collapse bite
+    # air_land with new knobs (the trial failed the area target): FORCE=1 OPTS_air_land="fold_new_b=116 fold_lin=0.8" ... run_author_v6.sh air_land
+
+It scores v4, v5 and v6 into `Local/dragon-review-20261029/measure_v6.json` (`measure_v6.py`, CPU raster). It promotes each
+v6 that passes every target to `Dragon_<Move>_sd_v2r_v6.blend` and comments the rest out of
+`Local/dragon-review-20261029/queue_v6.txt` (labels AL6, RS6, CO6, BI6; served prefix `_r4_`; "Round 4 fix" column). Run the
+renders afterwards, once the GPU is free:
+
+    /Users/midir/dragon-boss-fight/tools/dragon_refine/v4/run_queue_v6.sh
+
+### What each v6 layer does
+- **air_land:**
+  - Re-times only the wing bones. New frames 96–110 play v5's 96–104 on an eased curve (half linear, half smoothstep), then
+    rejoin v5 at 122. Body, slam and feet timing stay as in v5.
+  - Slam hold (100–132): an 11-frame pant (spine 3.5°, neck 4.5°, jaw 4°, folded-wing heave 3°) plus a 16° sideways tail
+    lash on a 16-frame period, lagging down the tail.
+  - The feet are IK-planted back on v5's positions.
+- **roar:** a searched extra on the screen-left (PosZ) wing (root raise and sweep, elbow unfold) under v5's own flare envelope.
+  The target is equal half-spans about the frame-0 centre, at a raster span of 1.15 (critic about 1.11). v5's tremor, breath,
+  tail and feet are untouched.
+- **collapse:**
+  - A searched lying-pose extra lowers the front silhouette top: hips (Spine_1) pitch with a tail-root counter-pitch, plus
+    the screen-right (NegZ) wing's root, elbow and wrist. It is penalised for going through the floor, for leaving the body,
+    and for lateral spread.
+  - Three non-synchronous breathing layers: a 40-frame breath (spine, neck, folded wings), a 27-frame tail sway and a
+    33-frame head drift. Each is zero at the last frame. The feet are re-planted on v5's.
+- **bite:** a mirrored extra on both wings' root raise and sweep plus elbow unfold, over a 30–70 strike envelope. It is
+  searched to keep the 3/4 upper-left zone area at 0.82 or more of frame 0 at frames 44, 47 and 50.
+
+### Proxies and their calibration
+CPU raster against the round-4 critic's readings of the v4/v5 renders (more detail in the `measure_v6.py` docstring):
+- Roar half-spans about the **frame-0** centre. v5 raster: L 1.075, R 1.157 (gap 0.082). Critic: 1.03 and 1.11 (gap 0.085).
+  v5 used a per-frame centre, which read 3.2 % and missed this; that is why v5 "passed" in raster.
+- Roar span: critic ≈ raster − 0.04.
+- Bite upper-left quadrant about the frame-0 centroid. v4 raster: 0.27, 0.39, 0.54. Critic: 0.27, 0.37, 0.52. For v5,
+  critic ≈ raster − 0.07. v5's wing-mask area (0.887) was the wrong measure.
+- Collapse front end height: raster 0.531 against critic 0.53.
+
+### Numbers vs targets (CPU raster, `Local/dragon-review-20261029/measure_v6.json`)
+d is in the round-3 critic's units; the round-4 critic's d is about 2.5 times larger.
+
+| Move | Target (round-4 critique) | v5 | v6 |
+| --- | --- | --- | --- |
+| AL | front area change ≤12 % per frame (90–120) | 29.5 % at step 99: fail | trial 22 % at step 102: **fail** |
+| AL | no step >2.2x its neighbours | raster max 1.81 (the critic's render found 2.37 at 99) | trial 1.48: pass |
+| AL | front hold d 106–114 ≥0.4 | 0.00 (pixel-identical): fail | trial min 0.67: pass |
+| AL | tail whip (tail-tip sideways p2p after contact) | 14.7 cm | trial 32.2 cm |
+| AL | round-3 checks kept | all pass | trial: top drop within 6 f after contact 0.076 BH (needs 0.3; reaches 0.42 at C+7, held 19 f): **fail by one frame** |
+| RS | half-spans within 5 % (frame-0 centre) | L 1.075, R 1.157; gap 7.1 % mean, 9.0 % max: fail | not authored |
+| RS | hold span 1.10–1.12x (critic estimate, raster − 0.04) | 1.077 mean: fail | not authored |
+| RS | tremor not a 4-frame buzz | period 5.1 f (v4 2.7): pass | not authored |
+| CO | front lying height ≤0.50 | 0.531: fail | not authored |
+| CO | breathing, last-35-frame min d ≥ v4 (front/left/3q) | 0.20/0.16/0.20 against v4 0.36/0.27/0.27: fail | not authored |
+| CO | seam: collapse end IoU with rise_v5 frame 0 | 1.0 | not authored (the v6 lying pose changes it; report it) |
+| BI | 3/4 upper-left area ≥0.7 at 44–50 (critic estimate, raster − 0.07) | raster min 0.54, estimate 0.47: fail | not authored |
+
+The air_land trial was not promoted. `Dragon_AirLand_sd_v2r_v6.blend` does not exist. Two knobs to try next:
+`fold_new_b` (longer fold, e.g. 116) with `fold_lin=0.8`, which flattens the peak area change; and `fold_a` 1–2 frames
+earlier, so the slam silhouette still drops ≥0.3 BH within 6 frames of contact. The critic also allowed the source's choice:
+wings spread flat to the floor at impact. That is not implemented yet.
+
+## Rise from lying: refine of the video2rig fit (2026-10-30, authored on the CPU, Blender run pending)
+
+The Seedance clip `rise_lying` (collapse end pose as start picture, `docs/dragon-lying-start-20261030.md`) was fitted with the lying reader
+(`Local/video2rig/dragon-lying/work/rise_lying/`, outline 0.77 / 0.81). The blind A/B (`docs/dragon-rise-ab-20261030.md`) called the AI clip clearly
+better than the authored rise v5 on two conditions: trim the opening hold to 1-1.5 s, and make the settle land on the idle pose. The scripts below
+turn the fit into Action `rise_lying_v1` on `dragon-lying/model.blend`. No Blender process was started while authoring them (GPU pinned by another
+session's training); every numpy part was run on the CPU, the Blender part (`refine_rise_lying.py`) was only syntax / name checked.
+
+| File (`tools/dragon_refine/v4/`) | Runs in | Does |
+| --- | --- | --- |
+| `lib_rise_lying.py` | numpy (CPU and Blender) | motion npz + rig loader, Euler view (video2rig's `Rx(a) Ry(b) Rz(c)`, b = twist), the stages, CPU linear-blend skinner (matches video2rig's skin to 1e-8 m and Blender's `d_idle_v2` dump to 0.3 mm), `dry` / `dump` / `info` commands |
+| `prep_wings_rl.py` | CPU (needs video2rig's camera class, cv2) | scores the fit's silhouette against the clip's panel masks and re-solves the wing roots / elbows / wrists per frame (window 100-134) with the twist capped; writes `refine_rl/wings_rl.npz` (+ views, + json) |
+| `refine_rise_lying.py` | Blender | import (video2rig `import_motion.py`, Action `rise_lying_fit` kept as raw reference), numpy stages, Action `rise_lying_v1`, IK foot lock, end pinned to idle_v2 frame 0, self-check vs the CPU skinner, mesh dump |
+| `measure_rise_lying.py`, `src_views_rl.py` | CPU | raster measure (pops, floor, hold, twist, steps, last frame vs idle, silhouette vs source), A/B numbers for rise v5 measured the same way |
+| `run_rise_lying.sh`, `run_queue_rl.sh`, `build_review_page_rl.py` | zsh | gated end-to-end run (every Blender through `gpu_slot.sh capture --label dragon-riselying`, exit 75 retry), render queue RL1, "Rise from lying" section on the review page |
+
+Stages (`numpy_pipeline`, same code in the dry run and in Blender): right hind knee relaxed 6 deg off its joint limit (plateau at -53.0 deg for 114 frames) ->
+wing clean over clip frames 100-134 (solved wings, twist soft-capped at 25 deg, 5-frame binomial smoothing, step cap 8 deg per frame) -> trim: keeps
+from raw frame 44 = push-up onset 74 minus 30 frames (`hold_s=1.25`), 6-frame ease from the collapse end pose (the rig's start pose) -> blend into the idle_v2
+frame-0 pose (body 8 frames, wings 16: the fit folds the wings 100-176 deg away from the idle fold) -> floor lift (faded to 0 at the end) -> in Blender: planted
+feet pinned by IK (stretches with the sole under 3 cm and slower than 1.2 cm per frame, cut when the foot creeps over 2 cm, sole snapped to the floor within 2 cm),
+last 5 frames pinned to the idle pose. Result: 101 frames = 4.17 s.
+
+CPU dry run on the real fit (`refine_rl/dry/`, before IK): wing twist 59.9 -> 22.5 deg max, wing step 17.8 -> 8.4 deg (8.0 inside the window; the 8.4 is
+the ease from the collapse end pose), outline match against the clip's masks over the wing window 0.68 / 0.65 raw -> 0.75 / 0.69 (front / side),
+whole clip 0.78 / 0.81 -> 0.79 / 0.82, last frame equals idle_v2 frame 0 to 0.3 mm, hold 1.46 s (body height onset), no pops in any view (raster, factor 1.0, same as rise v5).
+Known and not fixable on the CPU: three frames (96-98) with the hind +Y foot 0.9 cm under the floor before the IK lock; the lock itself; the 8-frame body blend moves
+the wings 19 deg per frame at the elbow (peak) even with the 16-frame wing window.

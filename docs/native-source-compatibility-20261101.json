@@ -1,0 +1,65 @@
+{
+  "status": "read-only inspection; no native import or playback acceptance",
+  "sources": [
+    {
+      "source": "Dragon_Roar_sd_v2r_v2.blend",
+      "sourceSHA256": "73554bb81a18050e48c0eec6f39a2f17ad09a522b06ce95ee2a27554e60a3626",
+      "boneCount": 51,
+      "sharedRestMaxError": 1.9073486328125e-06,
+      "extraCanonicalBones": [
+        "VeyrRoot"
+      ],
+      "fps": 24.0,
+      "sceneRange": [
+        0,
+        120
+      ],
+      "action": "roar_sd_v2"
+    },
+    {
+      "source": "Dragon_Idle_v2r_v2.blend",
+      "sourceSHA256": "876b6b53b709fbf647a9eba79412023bac528353ada1185c71582d68d90b6c59",
+      "boneCount": 51,
+      "sharedRestMaxError": 1.9073486328125e-06,
+      "extraCanonicalBones": [
+        "VeyrRoot"
+      ],
+      "fps": 24.0,
+      "sceneRange": [
+        0,
+        89
+      ],
+      "action": "idle_v2"
+    },
+    {
+      "source": "Dragon_Bite_sd_v2r_v6.blend",
+      "sourceSHA256": "81af047355485569c3e525c6eaa423b871f4697638c260f278163f9bde049b44",
+      "boneCount": 51,
+      "sharedRestMaxError": 1.9073486328125e-06,
+      "extraCanonicalBones": [
+        "VeyrRoot"
+      ],
+      "fps": 24.0,
+      "sceneRange": [
+        0,
+        92
+      ],
+      "action": "bite_v6"
+    },
+    {
+      "source": "Dragon_Rise_sd_v2r_v5.blend",
+      "sourceSHA256": "2f487373b67a62676954da92fa7ded18b6336720c71776e0235becbb9c5f4755",
+      "boneCount": 51,
+      "sharedRestMaxError": 1.9073486328125e-06,
+      "extraCanonicalBones": [
+        "VeyrRoot"
+      ],
+      "fps": 24.0,
+      "sceneRange": [
+        0,
+        149
+      ],
+      "action": "rise_v5"
+    }
+  ]
+}

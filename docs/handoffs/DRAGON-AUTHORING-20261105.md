@@ -1,0 +1,23 @@
+# Dragon authoring checkpoint retained at consolidation
+
+Historical branch restrictions below are superseded by the owner-authorized main consolidation recorded in the root HANDOFF. Failed animation candidates remain unaccepted. The full prior history is retained through merge parent898b4d7.
+
+# Current Veyr idle-wing pass — 2026-11-02, Codex
+
+Task branch `claude-code-enhancements`; game integration remains in `~/veyr-knight-20261028` on `fable/knight-complete-20261028`. No main merge.
+
+`tools/dragon_refine/open_idle_wings.py` adapts the existing approved idle into a relaxed half-spread mantle. Editable source/output and measurements: `Local/idle-wings-20261102/v4/Dragon_Idle_Open_v4.{blend,glb,json}`. Existing source checkout was read-only. Non-wing bone and morph-curve errors are zero; same geometry/skin. First two fold-relaxation prototypes crumpled and were rejected; half-spread approach passed independent blind Opus as B versus original A. Breathing preservation is numerical; sampled dark review frames did not visibly establish breathing.
+
+Native DragonV3B/v033wings imported with 282 pose checks, all passed. Every-move film covers 20 segments and passes. Idle wings now default in game; `-VeyrLegacyIdleWings` restores baseline. Bare review: localhost port 8809 `/overnight/wings/`. Exact review/evidence receipts live in knight `docs/overnight-20261102/`. Broader overnight goal remains incomplete; see knight HANDOFF. No new AI video generation/spend.
+
+---
+
+# Native integration inspection — 2026-11-01 (Codex)
+
+Source inspection and native integration for the knight/game continuation. Original dragon authoring scenes remain preserved. The approved Roar v2 and Idle v2, Bite v6 and Rise v5 all share the same 51-bone rest rig. All 51 shared rest transforms match the v028 canonical GLB within floating-point tolerance; canonical adds only `VeyrRoot`. Canonical geometry remains protected. Report: `docs/native-source-compatibility-20261101.json`; reproduction tool: `tools/dragon_refine/inspect_native_sources.py`. Blender 5.2 LTS ran background through the shared GPU gate; source scenes were opened read-only and never saved.
+
+**Owner resumed on 2026-11-01.** Pacing round 2 reuses death_v3 and adds a late neck contact correction (death_v4_head_contact) for a distinct, grounded terminal pose. `tools/dragon_refine/export_native_action.py` transfers the existing action to the canonical rig and checks every evaluated pose without saving source scenes. The streaming gate opened normally; export, three-view Blender render, canonical graft and native pose sampling are complete. The v3 first runtime attempt exposed a 53 cm head-floor gap at game scale. `settle_death_head.py` changes only late bone_4 rotation (15.165 degrees, eased frames 55–110) and lowers the snout to about 3.2 cm, with zero additional sampled penetration. Editable file `Local/native-pacing-20261101/Dragon_Death_v4_HeadContact.blend`; original scene preserved. Game v030pacing is imported; the final Shipping captures and two scoped blind Opus comparisons now pass. One-hand victory is 75.918 s at unchanged 650 HP; the final death shows the chin on the floor with the knight separated from the head. The overall backlog remains active; every-move replay is now filmed and passed its first scoped blind review. See `docs/death-head-contact-20261101.json`. The original pacing TIE remains preserved in the game handoff.
+
+If resumed: preserve the canonical skin and root wrapper while adapting approved actions; validate sampled poses, native import, runtime playback and before/after blind review before claiming integration. The approved Roar v2 is now present in the game's v031showcase definition. Export `Local/native-showcase-20261101/Dragon_Roar_v2_Canonical.glb` used the existing transfer tool without saving the source; all 51 shared joints match the canonical rig. Native integration passed 276 sampled poses/transitions and both final 20-segment Shipping rehearsals. The roar's measured jaw cue is 2.5833 s; it emits distance-scaled shake, not damage. The final matched camera films and 23 chapter buttons per film are on the task-local review page at port 8806. Fresh blind Opus returned PASS B for the observer camera after reviewing all 40 per-move sheets. Darkness, weaker roar framing and wing-covered stagger heads remain; sampled visual acceptance does not establish continuous motion or owner gameplay feel. The normal fight regression on the same final Shipping source won in 79.939 s at 650 HP. Failed newer roar/collapse/air-land/rise-lying candidates are not implicitly approved. Work stays on `claude-code-enhancements`; no main merge/push.
+
+---

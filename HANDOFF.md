@@ -90,3 +90,7 @@ Complete ledger: `docs/master-goal-20261103/requirements.json`. Prior detailed r
 ## Historical cleanup reconciled
 
 The October29 cleanup recovered28.42GiB and retained the then-current v030 delivery. Its old v027/v029 and October18–19 local build paths were removed; see `docs/storage-cleanup-20261029/README.md` and `result.json`. Those historical paths are not current launch targets.
+
+## Dragon history reconciled
+
+Merged dragon authoring through898b4d7, including the reviewed half-spread idle wings, canonical roar transfer and grounded death-head correction. The playable imported definitions remain selected as before; unsuccessful alternate dragon motions are not promoted. Recent authoring facts are preserved in `docs/handoffs/DRAGON-AUTHORING-20261105.md`, with complete history in the merge parent. Keep the dragon authoring checkout because it contains editable source assets.
