@@ -1,3 +1,7 @@
+# Latest owner feedback — 2026-11-05; documentation only
+
+Six new OPEN / NOT STARTED requirements are recorded at the top of [HANDOFF.md](HANDOFF.md): faster player/dragon movement; much harder aggression; range/position-aware attacks and anti-camping; remove the yellow/red floor attack-radius circle; approximately 30% more dragon HP; and a roughly 30-ft dragon that dwarfs the player. The owner explicitly said **do not fix anything yet**. Earlier delivery/testing results below are historical and do not imply acceptance of the current difficulty or scale.
+
 # Playable wrap-up delivered — 2026-11-05
 
 The owner ended the long-running goal and authorized consolidation into main. The current accepted play profile was compiled and passed controls, full intro, both-grip victory/restart checks. Unfinished movement and camera experiments remain disabled; the items below are future work, not an active autonomous goal. See HANDOFF.md and `docs/wrapup-20261105/verification.json` for the current playable handoff.

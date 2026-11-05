@@ -1,3 +1,23 @@
+# New owner playtest backlog — 2026-11-05 (record only)
+
+**Do not implement yet.** The owner is collecting feedback for a different session. These are requested changes, not completed fixes or authorization to resume the archived goal. Leave the running game, installed build, code and assets unchanged while collecting notes.
+
+1. **Faster overall pace.** Running and dragon movement currently feel like roughly 0.75x speed. Make both noticeably faster and more responsive. This is a subjective description, not a measured time-dilation value or a specified global speed multiplier.
+2. **Much harder, more aggressive boss.** The owner nearly depleted the dragon's health while barely being hit. It currently barely moves, attacks or connects. The desired result is a genuinely very difficult boss fight, with sustained pressure rather than passive stretches. Increasing health alone does not address this complaint.
+3. **Range- and position-aware attack selection.** As soon as the player enters attack range, the dragon should pick a random suitable attack and engage. If the player stays underneath it too long, it should take off and use a fire attack that forces the player to run away. If the player camps the back-right foot/corner, it should select an attack that actually reaches that region. Generalize that spatial response so a safe corner cannot be exploited indefinitely. Preserve the owner's request for randomized selection while making the available choices appropriate to player position and recent camping.
+4. **Remove the floor attack-radius telegraph.** Remove the large yellow/red circle on the ground that reveals the dragon's attack area. This request specifically concerns that floor indicator; it does not request removal of all combat feedback or the HUD.
+5. **More dragon health.** Owner suggests approximately 30% more health. The last verified build has 650 HP, so 845 HP is the corresponding provisional value, not an implemented or final tuned value. The previously requested 150-second target has not been explicitly withdrawn; the future balance pass must assess that target together with greater aggression and health, rather than treating an easy automated victory as proof of sufficient difficulty.
+6. **Much larger dragon.** Owner estimates the current dragon reads roughly 12–15 ft tall against a roughly 6 ft player and wants it to read around 30 ft tall. These are perceived scale estimates, not verified engine measurements. The player should feel tiny beneath its legs. Enlarge the entire creature proportionally; future implementation must also verify attack reach, collision, foot/head hit access, camera occlusion, flight and arena fit at the new scale.
+
+## Continuation instructions
+
+- Start with this section and collect any additional owner notes before implementing. All six items are **OPEN / NOT STARTED**.
+- Preserve the owner-approved eight-shot fortress/mural intro, chosen soundtrack and existing assets. Do not revive rejected motion experiments as part of recording this feedback.
+- When implementation is separately authorized, follow the existing GPU/process ownership rules and before/after film plus blind Opus quality gates. Player difficulty acceptance remains distinct from automated completion tests.
+- Documentation branch: `codex/veyr-playtest-backlog-20261105`. The playable main baseline is `5bb338f7a1ad`; this documentation does not alter the installed Shipping build.
+
+---
+
 # Veyr playable wrap-up — 2026-11-05
 
 The owner cleared the long-running goal and explicitly authorized compiling, merging Veyr branches into main, deleting obsolete builds, and handing over a playable game. This supersedes the older no-main restriction for this consolidation. The research loop is ended; do not resume unfinished animation experiments automatically.
