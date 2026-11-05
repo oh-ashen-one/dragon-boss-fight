@@ -1,3 +1,7 @@
+# Locomotion source follow-up — 2026-11-05
+
+New approach: derive a run/stop pair from the same ACCAD capture. Untrimmed fitted and boot-corrected Blender sources are saved; pair extraction is queued and unverified, weapon adaptation/native gameplay/films/Opus remain open. Source screening still has one62.110cm/s right-foot window over the unchanged60cm/s limit. No new animation is enabled. See HANDOFF.md for the live handle.
+
 # Camera follow-up — 2026-11-05
 
 - Flight camera candidate wins its first blind Opus comparison for visible roar/flame/descent. It remains opt-in: player/weapon scale, ground warnings, sky-pitch player loss and final continuous/manual/collision/performance checks are open.

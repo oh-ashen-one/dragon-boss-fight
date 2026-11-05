@@ -55,7 +55,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "run_start_handoff_speed_dip_fixed_stop_matcher_two_revisions_still0of4_contact_fail_change_transition_approach_or_source",
+      "status": "failed_matcher_stopped_new_contiguous_ACCAD_source_fit_saved_pair_extraction_queued_contact_screen_one_failure_native_and_quality_pending",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -95,7 +95,9 @@
         "start-transition-diagnosis.json",
         "stop-phase-independent-check.json",
         "stop-root-origin-diagnosis.json",
-        "original-twohand-stop-fit-check.json"
+        "original-twohand-stop-fit-check.json",
+        "contiguous-run-stop-checkpoint.json",
+        "accad-contiguous-source-contact-screen.json"
       ]
     },
     {

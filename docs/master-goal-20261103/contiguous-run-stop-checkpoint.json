@@ -1,0 +1,71 @@
+{
+  "status": "source_foundation_saved_pair_extraction_queued_not_integrated",
+  "source": "ACCAD Male1 C02 RunToStand, CC BY3.0; existing acquired source/provenance reused",
+  "approach": "Extract running cycle and full exit from the same source capture. Exit retains the identical loop prefix for phase-continuous entry, unlike the failed unrelated-clip phase matcher. Airborne loop correction is still unverified.",
+  "savedSources": [
+    {
+      "source": "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports/ACCAD_RunToStand_v3reference.blend",
+      "sourceSHA256": "0008630c4bf365f3991bc1c535879d337c70a91c0b3fc0e07d36829aa2cea47c",
+      "sha256": "98420164ee8141fb9bc37a0fd2d18599a00348ad63472e2450c77d9abbe1110b",
+      "maxPelvisShiftSourceUnits": 0.023403141881342442,
+      "sourceFootPathsMatched": true,
+      "maximumFootPathErrorSourceUnits": 7.521766104772069e-07,
+      "maximumLimbLengthErrorSourceUnits": 1.0018442554993179e-06,
+      "trimmedSourceFrames": null,
+      "maximumTrimMatrixError": 0.0,
+      "handRelativeWeaponPreserved": true,
+      "limbStretchAllowed": false,
+      "authoringApplication": "Blender",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV7/ACCAD_RunToStand_v7contiguous.blend",
+      "editableSceneSHA256": "b877c1562bd7f7ac32fad9ed9c095e82f5b687027329f2e2b963a7ad9549fc6a",
+      "provider": "accad",
+      "license": "CC BY 3.0",
+      "sourceURL": "https://accad.ohio-state.edu/research/motion-lab/mocap-system-and-data",
+      "attribution": "Open Motion Project by ACCAD/The Ohio State University. Retargeted for Veyr; modifications not endorsed by the licensor.",
+      "fps": 30.000030398399637,
+      "duration": 3.26666335662206,
+      "nativeIntegrated": false,
+      "accepted": false
+    },
+    {
+      "provider": "accad",
+      "source": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV7/ACCAD_RunToStand_v7contiguous.blend",
+      "sourceSHA256": "b877c1562bd7f7ac32fad9ed9c095e82f5b687027329f2e2b963a7ad9549fc6a",
+      "sha256": "96603c28b0672e515d811b6e2019fd50e2acaad2c75b2eaaef10089cfee5763b",
+      "authoringApplication": "Blender",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV8/ACCAD_RunToStand_v8support.blend",
+      "editableSceneSHA256": "efa79c99c977c20d0378c00f2b21a2124011ea1a73a5e69abbd1226f1ab5037b",
+      "fps": 120,
+      "duration": 3.2666666666666666,
+      "maximumBodyLiftCm": 5.306879075128036,
+      "maximumRelativePoseMatrixError": 9.5367431640625e-07,
+      "method": "Shared upward body offset only where skinned boot support penetrates floor0; no independent limb reshaping or planar locking",
+      "relativePosesAndPlanarPathsPreserved": true,
+      "nativeImported": false,
+      "accepted": false,
+      "license": "CC BY 3.0",
+      "sourceURL": "https://accad.ohio-state.edu/research/motion-lab/mocap-system-and-data",
+      "attribution": "Open Motion Project by ACCAD/The Ohio State University. Retargeted for Veyr; modifications not endorsed by the licensor."
+    }
+  ],
+  "sourceContactScreen": "accad-contiguous-source-contact-screen.json",
+  "sourceContactFinding": "One right-foot source screening window62.110cm/s exceeds unchanged60cm/s. This is not native acceptance.",
+  "pairAuthoring": "tools/art/attack_sources_20261101/extract_contiguous_run_stop.py",
+  "pairArtifactVerified": false,
+  "queuedOutput": "Local/AttackSources20261105/ACCADMale1/ContiguousPairV9a",
+  "queuedLog": "Local/Fortress20261103/accad-contiguous-pair-anatomy.log",
+  "queuedToolHandle": 94130,
+  "queue": "Owned ten-starts-per-hour budget, then ordinary gpu_slot. No duplicate or bypass.",
+  "preflightFailures": [
+    "Local-basis translation was not an anatomical length; switched to parent-relative pose transforms",
+    "Root-parented WeaponSocket is a prop; preserve its verified constant RightHand-relative grip",
+    "Pelvis root travel is not a limb length; separated anatomical links and unskinned helper-root rebase metrics"
+  ],
+  "remaining": [
+    "Verify actual pair artifact/guards after queued job",
+    "Independent export prefix/seam/sole/contact checks",
+    "Matched actual Blender films and inspection",
+    "Weapon-specific upper-body adaptation",
+    "Native import/controller, before/after and blind Opus review"
+  ]
+}

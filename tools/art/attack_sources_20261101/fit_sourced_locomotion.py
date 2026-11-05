@@ -12,7 +12,9 @@ helper=Path(__file__).with_name('fit_paired_grip.py');ns={'__file__':str(helper)
 SOURCES=[ROOT/'Local/AttackSources20261103/ForwardRun/Exports/Mixamo_ForwardRun_v1.blend']+[ROOT/'Local/AttackSources20261102/MixamoGreatSword/Retarget/Exports'/('Mixamo_'+n+'_v1.blend') for n in ['RunStopOneHand','RunStopTwoHand']]
 OUT=ROOT/'Local/AttackSources20261103/LocomotionContacts'
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--source-directory',type=Path)
+selection=parser.add_mutually_exclusive_group()
+selection.add_argument('--source-directory',type=Path)
+selection.add_argument('--source',type=Path,help='One existing licensed Blender source; avoids reprocessing other clips')
 parser.add_argument('--output',type=Path)
 parser.add_argument('--suffix',default='_v2contacts')
 parser.add_argument('--provider',choices=['mixamo','accad'],default='mixamo')
@@ -21,13 +23,16 @@ args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv els
 if args.source_directory:
  directory=args.source_directory.resolve(strict=True);assert directory.is_relative_to(ROOT/'Local') and args.output
  SOURCES=sorted(directory.glob('*.blend'));assert SOURCES
+if args.source:
+ source=args.source.resolve(strict=True);assert source.is_relative_to(ROOT/'Local') and source.suffix=='.blend' and args.output
+ SOURCES=[source]
 if args.output:
  OUT=args.output.resolve();assert OUT.is_relative_to(ROOT/'Local')
 OUT.mkdir(parents=True,exist_ok=True)
 trim_plan={}
 if args.trim_plan:
  plan=json.loads(args.trim_plan.read_text());trim_plan={Path(c['source']).with_suffix('.blend').as_posix():c for c in plan['clips']}
-assert args.provider!='accad' or (args.source_directory and args.output), 'ACCAD needs explicit isolated paths'
+assert args.provider!='accad' or ((args.source_directory or args.source) and args.output), 'ACCAD needs explicit isolated paths'
 prefix='mixamorig:' if args.provider=='mixamo' else ''
 assert args.suffix.startswith('_v') and args.suffix.replace('_','').isalnum()
 def world(rig,name):return (rig.matrix_world@rig.pose.bones[name].matrix).copy()

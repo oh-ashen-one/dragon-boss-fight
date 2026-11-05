@@ -1,3 +1,15 @@
+# Latest locomotion source checkpoint — 2026-11-05
+
+**Full goal active and incomplete.** No new game build or default changes in this pass. Latest Shipping remains hf6ltuyy; fallback t44prgms. Exact approved intro, audio and accepted attacks remain unchanged.
+
+- Camera elevation study found only14/22 feasible locked-flight views with a stronger ground angle/head HUD margin, with a smaller median knight projection. Do not ship this geometric alternative or claim it improves the reviewed candidate. Camera v1 remains opt-in with its existing blind win/caveats.
+- Changed locomotion approach: use the running lead-in and deceleration from the **same licensed ACCAD C02 capture**, retaining a shared run/exit prefix instead of tuning the failed unrelated-clip matcher. Full untrimmed v7 fitted foot paths and limb lengths in actual Blender; v8 corrects boot penetration by at most5.3069cm common upward body lift, preserving relative poses and planar paths. Both editable scenes/exports/hashes are verified; none imported.
+- Read-only source contact screen: left peak40.189cm/s; right62.110cm/s with1 over-limit window. Threshold stays60cm/s. Ending-source stance substitutes for the approved native idle only for this diagnostic; it is not native/contact acceptance.
+- Pair extraction script is **prepared, not verified**. Initial guards caught incorrect local-basis length assumptions, the root-parented weapon socket and pelvis/root travel. It now operates on parent-relative anatomical transforms, preserves the hand-relative prop grip and separates unskinned helper-root re-expression from visible correction. No pair was saved by the failed attempts; they were Python assertion exits, not engine crashes. Future Blender calls use `--python-exit-code 1` and require a real artifact receipt.
+- **LIVE queued tool94130** waits on the owned ten-starts/hour budget, then the normal GPU gate. Output `Local/AttackSources20261105/ACCADMale1/ContiguousPairV9a`; log `Local/Fortress20261103/accad-contiguous-pair-anatomy.log`. At checkpoint the driver is confirmed live but that log does not yet exist: no renderer started for this attempt. Re-poll the same handle, do not duplicate or bypass it. If observations change, inspect live process/receipt before acting.
+
+Next: inspect the queued result, verify exported prefix/seam/contacts, then render matched source footage. The proposed seam correction is confined to the two airborne source frames on each side; verify it rather than assuming. Weapon-specific adaptation and native integration/controller/films/Opus remain pending. Keep sprint/start/stop/turn, running/leap/light, camera/manual/collision/performance and final both-grip victories/launcher in scope. Source study is not shipped animation improvement. No paid calls or new builds this pass.
+
 # Latest camera checkpoint — 2026-11-05
 
 **Full goal remains active and incomplete.** The approved R5 eight-shot intro is still byte-identical to491d37d. This checkpoint supersedes the older newest-build and job paragraphs below.

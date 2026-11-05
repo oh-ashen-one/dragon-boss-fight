@@ -1,0 +1,72 @@
+{
+  "scope": "Read-only exported source screening, dual toe/ankle percentile reference capped by ending stand. No engine blend/capsule or actual approved idle; not native acceptance.",
+  "source": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV8/ACCAD_RunToStand_v8support.glb",
+  "sampleRate": 120,
+  "marginCm": 2.5,
+  "windowSeconds": 0.03333333333333333,
+  "limitCmS": 60,
+  "feet": [
+    {
+      "side": "Left",
+      "referenceCm": [
+        16.710487704485388,
+        3.6035525358018305
+      ],
+      "windows": 126,
+      "over60": 0,
+      "worst": [
+        {
+          "seconds": 1.5916666666666666,
+          "speedCmS": 40.189196944577866
+        },
+        {
+          "seconds": 2.2333333333333334,
+          "speedCmS": 36.560169795009145
+        },
+        {
+          "seconds": 2.2416666666666667,
+          "speedCmS": 30.222892068044374
+        },
+        {
+          "seconds": 2.25,
+          "speedCmS": 23.78894233846063
+        },
+        {
+          "seconds": 2.3666666666666667,
+          "speedCmS": 18.382006757155104
+        }
+      ]
+    },
+    {
+      "side": "Right",
+      "referenceCm": [
+        19.493200890869247,
+        4.611362834408786
+      ],
+      "windows": 115,
+      "over60": 1,
+      "worst": [
+        {
+          "seconds": 1.2833333333333334,
+          "speedCmS": 62.11015249283494
+        },
+        {
+          "seconds": 1.2916666666666667,
+          "speedCmS": 48.03186729800163
+        },
+        {
+          "seconds": 1.95,
+          "speedCmS": 33.0390431152063
+        },
+        {
+          "seconds": 1.9583333333333333,
+          "speedCmS": 23.697640457060935
+        },
+        {
+          "seconds": 2.1666666666666665,
+          "speedCmS": 15.263517655301332
+        }
+      ]
+    }
+  ]
+}

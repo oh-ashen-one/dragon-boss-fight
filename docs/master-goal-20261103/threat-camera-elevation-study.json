@@ -1,0 +1,352 @@
+{
+  "scope": "Offline geometry only; no rendered, collision, motion or quality acceptance",
+  "sourceId": "2f616b0df40e389008252a6aa13db64a1f054d5503d7476ee166cd8cbd9621f7",
+  "samples": [
+    {
+      "seconds": 21.10599344462389,
+      "state": "Windup",
+      "existing": {
+        "heroHeightViewport": 0.34409322437392437,
+        "feetY": 0.7547403634481786,
+        "headPaddedY": -0.31957814592284695
+      },
+      "fit": {
+        "distance": 880.0,
+        "eyeElevation": 300.0,
+        "pitch": 4.0,
+        "fov": 90.0,
+        "heroHeightViewport": 0.25485216903156116,
+        "feetY": 0.8741056564356926,
+        "headPaddedY": 0.14272651734304176,
+        "groundDepressionDegrees": 13.19061071220685
+      }
+    },
+    {
+      "seconds": 21.36076240480179,
+      "state": "Windup",
+      "existing": {
+        "heroHeightViewport": 0.32938109253809417,
+        "feetY": 0.7522678936922496,
+        "headPaddedY": -0.04189215083906739
+      },
+      "fit": {
+        "distance": 880.0,
+        "eyeElevation": 300.0,
+        "pitch": 2.0,
+        "fov": 84.0,
+        "heroHeightViewport": 0.2779802026660727,
+        "feetY": 0.8754935981379819,
+        "headPaddedY": 0.15185511094225307,
+        "groundDepressionDegrees": 13.19061071220685
+      }
+    },
+    {
+      "seconds": 21.612340404244605,
+      "state": "Windup",
+      "existing": {
+        "heroHeightViewport": 0.3316500022198806,
+        "feetY": 0.8456308278462822,
+        "headPaddedY": -0.020765592571377445
+      },
+      "fit": {
+        "distance": 1200.0,
+        "eyeElevation": 350.0,
+        "pitch": 2.0,
+        "fov": 78.0,
+        "heroHeightViewport": 0.2264664763563916,
+        "feetY": 0.8621794534835976,
+        "headPaddedY": 0.14235277701586657,
+        "groundDepressionDegrees": 12.339087278326195
+      }
+    },
+    {
+      "seconds": 21.87222440406913,
+      "state": "Windup",
+      "existing": {
+        "heroHeightViewport": 0.3028353158636966,
+        "feetY": 0.8812181430202694,
+        "headPaddedY": -0.03118825223126409
+      },
+      "fit": {
+        "distance": 1240.0,
+        "eyeElevation": 350.0,
+        "pitch": 6.0,
+        "fov": 90.0,
+        "heroHeightViewport": 0.18390161849708297,
+        "feetY": 0.854849183960316,
+        "headPaddedY": 0.1446397089894491,
+        "groundDepressionDegrees": 12.04703049120517
+      }
+    },
+    {
+      "seconds": 22.123385904880706,
+      "state": "Windup",
+      "existing": {
+        "heroHeightViewport": 0.2707592446344407,
+        "feetY": 0.8869988606069201,
+        "headPaddedY": 0.012424141329106353
+      },
+      "fit": null
+    },
+    {
+      "seconds": 22.377567986550275,
+      "state": "Windup",
+      "existing": {
+        "heroHeightViewport": 0.26665546946927987,
+        "feetY": 0.9129784733093748,
+        "headPaddedY": 0.08232516923728489
+      },
+      "fit": {
+        "distance": 1200.0,
+        "eyeElevation": 350.0,
+        "pitch": 8.0,
+        "fov": 94.0,
+        "heroHeightViewport": 0.18147173620224522,
+        "feetY": 0.8735708633855463,
+        "headPaddedY": 0.14109567298555747,
+        "groundDepressionDegrees": 12.339087278326195
+      }
+    },
+    {
+      "seconds": 23.653525235655252,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.6976945301538087,
+        "feetY": 1.5224673739058925,
+        "headPaddedY": 0.3654850374179442
+      },
+      "fit": {
+        "distance": 1080.0,
+        "eyeElevation": 350.0,
+        "pitch": 6.0,
+        "fov": 94.0,
+        "heroHeightViewport": 0.19805901893632938,
+        "feetY": 0.8682914683095562,
+        "headPaddedY": 0.14452748148252786,
+        "groundDepressionDegrees": 13.305236506091088
+      }
+    },
+    {
+      "seconds": 23.909513736667577,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.41928968123315813,
+        "feetY": 1.0601695948291059,
+        "headPaddedY": 0.1136909368310225
+      },
+      "fit": null
+    },
+    {
+      "seconds": 24.16668498754734,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.316325646303918,
+        "feetY": 0.9497757848492321,
+        "headPaddedY": 0.049206267235701984
+      },
+      "fit": null
+    },
+    {
+      "seconds": 24.437546695175115,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.272237308365202,
+        "feetY": 0.9301852975405,
+        "headPaddedY": 0.04602248853952767
+      },
+      "fit": null
+    },
+    {
+      "seconds": 24.689764818700496,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.2525906195704223,
+        "feetY": 0.9284249702446239,
+        "headPaddedY": 0.06681828632166115
+      },
+      "fit": null
+    },
+    {
+      "seconds": 24.944827946426813,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.2505642703238641,
+        "feetY": 0.9331546598839225,
+        "headPaddedY": 0.08948770414114465
+      },
+      "fit": null
+    },
+    {
+      "seconds": 25.20758515462512,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.26160901480982546,
+        "feetY": 0.9384110003178503,
+        "headPaddedY": 0.11066714235883812
+      },
+      "fit": null
+    },
+    {
+      "seconds": 25.473781986685935,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.283667857025125,
+        "feetY": 0.943951559351731,
+        "headPaddedY": 0.125136557551509
+      },
+      "fit": null
+    },
+    {
+      "seconds": 25.72782673552865,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.298749144782684,
+        "feetY": 0.9507566292866022,
+        "headPaddedY": 0.19278710361917473
+      },
+      "fit": {
+        "distance": 1120.0,
+        "eyeElevation": 350.0,
+        "pitch": 6.0,
+        "fov": 94.0,
+        "heroHeightViewport": 0.19067428103306694,
+        "feetY": 0.8579086464004079,
+        "headPaddedY": 0.14122134502775374,
+        "groundDepressionDegrees": 12.967083983121265
+      }
+    },
+    {
+      "seconds": 25.97931715339655,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.351775837936367,
+        "feetY": 0.9663394521774438,
+        "headPaddedY": 0.23263018530153062
+      },
+      "fit": {
+        "distance": 1000.0,
+        "eyeElevation": 300.0,
+        "pitch": 6.0,
+        "fov": 90.0,
+        "heroHeightViewport": 0.22776487113035992,
+        "feetY": 0.8718165002447041,
+        "headPaddedY": 0.1592203575336646,
+        "groundDepressionDegrees": 12.094757077012101
+      }
+    },
+    {
+      "seconds": 26.238241194339935,
+      "state": "Active",
+      "existing": {
+        "heroHeightViewport": 0.39590999302716134,
+        "feetY": 0.9733071297602314,
+        "headPaddedY": 0.23611246006786257
+      },
+      "fit": {
+        "distance": 760.0,
+        "eyeElevation": 250.0,
+        "pitch": 6.0,
+        "fov": 94.0,
+        "heroHeightViewport": 0.27892811796362094,
+        "feetY": 0.8726710107708229,
+        "headPaddedY": 0.1797488191433977,
+        "groundDepressionDegrees": 12.162203519681835
+      }
+    },
+    {
+      "seconds": 26.493238611670677,
+      "state": "Recovery",
+      "existing": {
+        "heroHeightViewport": 0.4475415487889709,
+        "feetY": 0.9673994931291722,
+        "headPaddedY": 0.19731866657982688
+      },
+      "fit": {
+        "distance": 680.0,
+        "eyeElevation": 250.0,
+        "pitch": 4.0,
+        "fov": 94.0,
+        "heroHeightViewport": 0.3069599792269099,
+        "feetY": 0.8722766186569733,
+        "headPaddedY": 0.15193142195188225,
+        "groundDepressionDegrees": 13.033356325913843
+      }
+    },
+    {
+      "seconds": 26.744365068676416,
+      "state": "Recovery",
+      "existing": {
+        "heroHeightViewport": 0.4741752900961273,
+        "feetY": 0.9536177952340736,
+        "headPaddedY": 0.1465417105760713
+      },
+      "fit": {
+        "distance": 680.0,
+        "eyeElevation": 250.0,
+        "pitch": 4.0,
+        "fov": 94.0,
+        "heroHeightViewport": 0.3069599792269099,
+        "feetY": 0.8722766186569733,
+        "headPaddedY": 0.1444035905897309,
+        "groundDepressionDegrees": 13.033356325913843
+      }
+    },
+    {
+      "seconds": 27.00306344643468,
+      "state": "Recovery",
+      "existing": {
+        "heroHeightViewport": 0.48003235497331265,
+        "feetY": 0.940558466197082,
+        "headPaddedY": 0.1691640042509766
+      },
+      "fit": {
+        "distance": 640.0,
+        "eyeElevation": 250.0,
+        "pitch": 2.0,
+        "fov": 94.0,
+        "heroHeightViewport": 0.3208851637159884,
+        "feetY": 0.8576140532595031,
+        "headPaddedY": 0.1430927303886289,
+        "groundDepressionDegrees": 13.516568108791322
+      }
+    },
+    {
+      "seconds": 27.255733861180488,
+      "state": "Recovery",
+      "existing": {
+        "heroHeightViewport": 0.5026218194663465,
+        "feetY": 0.9462436028759418,
+        "headPaddedY": 0.3361094541679073
+      },
+      "fit": {
+        "distance": 520.0,
+        "eyeElevation": 200.0,
+        "pitch": 0.0,
+        "fov": 84.0,
+        "heroHeightViewport": 0.4632298352449968,
+        "feetY": 0.8796965862663908,
+        "headPaddedY": 0.1836780345292024,
+        "groundDepressionDegrees": 12.264773727892402
+      }
+    },
+    {
+      "seconds": 27.511536026897375,
+      "state": "Recovery",
+      "existing": {
+        "heroHeightViewport": 0.5259187333678971,
+        "feetY": 0.9399884734254422,
+        "headPaddedY": 0.39331523360310705
+      },
+      "fit": {
+        "distance": 480.0,
+        "eyeElevation": 200.0,
+        "pitch": -4.0,
+        "fov": 78.0,
+        "heroHeightViewport": 0.5483592884411317,
+        "feetY": 0.8698360041736993,
+        "headPaddedY": 0.14734250116721787,
+        "groundDepressionDegrees": 12.804266065286752
+      }
+    }
+  ]
+}
