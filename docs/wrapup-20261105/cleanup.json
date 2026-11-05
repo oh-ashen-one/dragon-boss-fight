@@ -1,0 +1,20 @@
+{
+  "removedDirectories": [
+    "veyr-verified-bundle-t44prgms",
+    "veyr-verified-bundle-hf6ltuyy",
+    "veyr-verified-bundle-9rwzo2zj",
+    "Unreal-Mac-20261105T151234Z",
+    "veyr-stage-udzegu0l",
+    "veyr-verified-bundle-2pwg7x12",
+    "Unreal-Mac-20261105T195840Z",
+    "veyr-stage-1yyxknl2",
+    "Veyr-Settings-Restart-v030"
+  ],
+  "removedDirectoryCount": 9,
+  "measuredFreeBytesGained": 17477373952,
+  "measuredFreeGiBGained": 16.277,
+  "retainedPlayableApp": "$HOME/Applications/Veyr/29268e3f217a/Veyr-Mac-Shipping.app",
+  "retainedAuthoringCheckouts": true,
+  "sourceAssetsAndReviewFilmsPreserved": true,
+  "scope": "Receipt-owned superseded package copies, archives and stages, plus verified obsolete v030 delivery. Free-space delta is measured during cleanup."
+}

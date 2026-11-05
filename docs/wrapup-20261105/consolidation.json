@@ -86,5 +86,26 @@
     "knight/game authoring checkout",
     "dragon authoring checkout with private editable assets"
   ],
-  "linkedTemporaryWorktreesFound": 0
+  "linkedTemporaryWorktreesFound": 0,
+  "prunedInactiveBranches": [
+    "Fab-3D-Rig-Testing",
+    "codex/veyr-asset-review-20261019",
+    "codex/veyr-build-cleanup-20261029",
+    "codex/veyr-cathedral-overhaul-20261026",
+    "codex/veyr-combat-arena-polish-20261025",
+    "codex/veyr-dragon-dangling-hover-20261025",
+    "codex/veyr-moonlit-silver-hud-20261025",
+    "codex/veyr-native-animation-integration-20261025",
+    "codex/veyr-settings-restart-20261028",
+    "fable/veyr-knight-v4-20261021",
+    "feat/first-playable",
+    "feat/unreal-migration"
+  ],
+  "retainedBranches": [
+    "checkpoint/unity-native-009",
+    "claude-code-enhancements",
+    "fable/knight-complete-20261028",
+    "main"
+  ],
+  "mainPublicationVerified": "53d82603112d"
 }
