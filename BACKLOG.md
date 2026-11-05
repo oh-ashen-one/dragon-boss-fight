@@ -1,35 +1,15 @@
-## Blocked execution checkpoint — November5 UTC
+# Current backlog status — 2026-11-05
 
-The same shared GPU capacity/headroom blocker has persisted for three goal turns. No owned renderer/request is active. The complete backlog remains open where previously unverified; resume at the exact guarded source-contact/default-controls step in HANDOFF.md after live capacity changes. No speculative implementation or fidelity-only result closes a quality requirement.
+Full MASTER_GOAL remains active and incomplete. These current facts supersede historical implementation plans below; preserve the eight original playtest notes as context.
 
-## Latest native mobility-policy evidence — November5 UTC
+- Accepted/scoped: exact owner-approved R5 opening tour; heavy attacks, wider idle wings, feedback/settings and chosen audio; recovery contact/Opus pass, prior41.24s2H and74.99s1H wins at650HP. Newest prior-default controls smoke passed. Final build regressions remain.
+- Sprint/start/stop/turn: source ACCAD two-hand run-start won its first blind Opus round for a native trial, imported as v046 and now has a real opt-in gameplay state. Start/handoff/release/attack-cancel mechanics work, but same-app contact tests still fail0/4. Entry turns and stopping joins need repair. One-hand start and source-review shoulder/grip/weight/clearance caveats remain.
+- Running/jumping: fresh8-case test fails all foot-contact gates; actual leap capsule lift23–24cm is now observed. Three one-hand capture trials are too sparse for acceptance review. Running-entry and leap contacts remain unfinished.
+- Still open: light transitions, healing/camera continuity and tall/airborne threat readability; final both-grip balance/wins; all-move/settings/collision/performance tests; final verified Shipping installation/launcher/pointer.
+- Grounded Mixamo Turn180_A v4 remains stopped after its first blind tie. Do not revise/import/promote it without new direction.
+- Music scope is ONE supplied OST, dedicated dragon SFX and ONE player hit grunt. Older multi-track/generation suggestions below are superseded. No human TTS dragon imitation.
 
-CPU-only native inspection confirms the current leap asset has its full vertical root path (22.835cm after component scaling); all source/runtime samples and policies match. The historical flat-capsule failure predates the existing code fix. Fresh gameplay, contacts and blind visual review remain required; no running/leap candidate is accepted. GPU rendering remains unavailable; see HANDOFF.md.
-
-## Latest source/contact checkpoint — November5 UTC
-
-Default-recovery controls smoke terminated at the GPU gate without launching; it remains unrun. ACCADv3 source inspection found up to10.41cm boot penetration, so native import is blocked on actual Blender contact correction and visual review. The prepared correction/trim recipe is not yet executed. Scoped recovery acceptance and41.24/74.99second wins remain; all final combat/motion/regression work stays open. Another14.87GiB of obsolete owned builds was reclaimed. See HANDOFF.md.
-
-## Latest recovery and sourcing state — November5 UTC
-
-- Primary tap recovery now passes4/4 native contact trials and won full-body blind Opus review. Current normal-camera wins:41.24s two-handed and74.99s one-handed at unchanged650HP, with restart checks passed. Recovery is default in the newest source/Shipping candidate; default-controls smoke remains queued.
-- The grounded turn v4 first blind round tied. It is stopped, unimported and guarded against promotion; do not continue that candidate.
-- Publisher-direct CC BY3.0 ACCAD starts/stops/turns are acquired. Three captured-key-preserving Blender retargets now have corrected standing references and three-view renders. Weapon adaptation, contacts, trimming and native integration remain open.
-- All original locomotion/mobility/light/camera/full-regression requirements remain. See HANDOFF.md for the single live queued controls request.
-
-## Latest turn diagnostics — November4 local evening / November5 UTC
-
-Root-turn integration and a root-space interpolation correction are implemented as opt-in candidates. Native conversion/endpoint checks pass and the largest turn-exit arc is reduced, but all four sprint/contact trials still fail. A misleading interrupted-blend grip error was corrected using independent native references; the2cm grip and60cm/s foot limits are unchanged. Source-foot frame calibration and ankle-path fits are now saved as four Blender scenes each, but native-floor contacts and entry/exit joins remain unaccepted. No turn candidate has shipped. See HANDOFF.md for exact builds, reports and live encoder status.
-
-## Latest healing and sprint evidence — 2026-11-04 late evening
-
-- Normal-camera heal comparison passes four real charges/cap/empty rejection in both builds. The new auto-aim ceiling keeps boots visible in38/38 Heal samples vs0/38 before. Blind Opus clearly prefers the new framing; continuous weapon entry/exit and airborne/rearing threat visibility remain open. Camera flag stays opt-in.
-- v044 run source improves steady sliding, but all four sprint/contact trials still fail, chiefly startup/pivot transitions. Do not call sprint done or weaken the60cm/s contact gate. Four licensed turns are now retargeted inside Blender; grounded playback review is queued behind the launch budget. No turn is imported.
-- New camera and sprint comparison movies are on the existing bare review page. Exact active job and source/report paths are in HANDOFF.md. The approved eight-shot fortress intro is unchanged.
-
-## Latest intro integration checkpoint — 2026-11-04 evening
-
-The exact owner-approved R5 eight-shot fortress/mural tour stays as the pre-fight loading intro. Full playback, earliest skip and death/retry mechanics passed with canonical skin opt-in. Blind Opus round2 preferred it visibly but rejected the remaining weapon frame loss and stance snap. A prepared-prop/phase-matched walk-entry candidate passed full and early-skip/retry native checks; its matched-priority film is available. Completed blind review slightly prefers the new handoff and confirms the exact tour is preserved; acceptance remains conditional on continuous attack/recovery and grip review. No combat backlog item is closed by these scoped checks. See HANDOFF.md for current jobs; old pending state below is historical.
+See HANDOFF.md for exact builds, films, evidence and next steps. A source/fidelity check or a visibly preferred trial does not close a full requirement.
 
 # Veyr backlog (owner playtest feedback, 2026-10-31)
 

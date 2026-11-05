@@ -1,0 +1,22 @@
+{
+  "movies": [
+    {
+      "movie": "current-mobility-baseline.mp4",
+      "receipt": "current-mobility-baseline.encode.json",
+      "verifiedBy": "tools/unreal/encode_video.py; unchanged viewport frames at recorded wall timestamps"
+    },
+    {
+      "movie": "run-start-native-before.mp4",
+      "receipt": "run-start-native-before.encode.json",
+      "verifiedBy": "tools/unreal/encode_video.py; unchanged viewport frames at recorded wall timestamps"
+    },
+    {
+      "movie": "run-start-native-after.mp4",
+      "receipt": "run-start-native-after.encode.json",
+      "verifiedBy": "tools/unreal/encode_video.py; unchanged viewport frames at recorded wall timestamps"
+    }
+  ],
+  "additionalTextBurnedIn": false,
+  "footContactAcceptance": false,
+  "reviewPage": "http://localhost:8813/#nativestart"
+}

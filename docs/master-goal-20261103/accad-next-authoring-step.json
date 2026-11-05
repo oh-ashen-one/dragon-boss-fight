@@ -1,5 +1,5 @@
 {
-  "status": "prepared_not_executed",
+  "status": "executed_contact_fit_plus_support_and_weapon_study",
   "reason": "Read-only v3 skinned-mesh diagnostics found up to10.41cm source-floor penetration. Fit captured ankle paths before weapon adaptation or native import.",
   "blenderScript": "tools/art/attack_sources_20261101/fit_sourced_locomotion.py",
   "arguments": [
@@ -23,5 +23,7 @@
   ],
   "stoppedGround4Unaffected": true,
   "nativeImported": false,
-  "accepted": false
+  "accepted": false,
+  "contactFitResult": "Actual ankle-path fit passed, but skinned boot penetration remained; see accad-contact-fit-diagnostics.json",
+  "next": "Native trial is allowed for v6. Preserve scoped visual win; address shoulder deformation, stiffness/weight, helmet clearance, exact grip and initial delay before final acceptance. Do not modify stopped MixamoTurnv4."
 }

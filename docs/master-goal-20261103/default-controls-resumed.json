@@ -1,0 +1,15 @@
+{
+  "run": "Evidence/native-controls-20261105T042817Z",
+  "evidence": "Evidence/native-controls-20261105T042817Z/unreal-controls-20261105T042838Z-0AB5D689/evidence.json",
+  "app": "/private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app",
+  "passed": true,
+  "finished": true,
+  "reason": "movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed",
+  "frameCount": 674,
+  "primaryRecoveryDefaultEnabled": true,
+  "explicitRecoveryFlagPassed": false,
+  "screenshotsInspected": 23,
+  "screenshotScope": "All23 event stills inspected in two contact sheets; not a continuous-film or blind-quality review",
+  "gateExitCode": 0,
+  "scope": "Normal input mechanics and new default enabled; remaining final combat/motion regression requirements stay open"
+}

@@ -1,0 +1,76 @@
+{
+  "run": "Evidence/native-blendproof-20261105T050118Z",
+  "passed": false,
+  "sequencesPassed": 0,
+  "sequencesTotal": 8,
+  "trials": [
+    {
+      "name": "Running_attack_side",
+      "passed": false,
+      "reason": "planted_foot_slide_931cm_per_s_transition",
+      "maximumFrameSeconds": 0.03235512599349022,
+      "capsuleVerticalRangeCm": 1.2900000000000063,
+      "temporalQualityPacketEligible": true
+    },
+    {
+      "name": "Running_attack_threequarter",
+      "passed": false,
+      "reason": "planted_foot_slide_682cm_per_s_transition",
+      "maximumFrameSeconds": 0.031001374125480652,
+      "capsuleVerticalRangeCm": 1.0600000000000023,
+      "temporalQualityPacketEligible": true
+    },
+    {
+      "name": "Leap_attack_side",
+      "passed": false,
+      "reason": "planted_foot_slide_217cm_per_s_steady",
+      "maximumFrameSeconds": 0.027559127658605576,
+      "capsuleVerticalRangeCm": 23.769999999999996,
+      "temporalQualityPacketEligible": true
+    },
+    {
+      "name": "Leap_attack_threequarter",
+      "passed": false,
+      "reason": "planted_foot_slide_206cm_per_s_steady",
+      "maximumFrameSeconds": 0.034539833664894104,
+      "capsuleVerticalRangeCm": 24.040000000000006,
+      "temporalQualityPacketEligible": true
+    },
+    {
+      "name": "Running_attack_1H_side",
+      "passed": false,
+      "reason": "planted_foot_slide_602cm_per_s_transition",
+      "maximumFrameSeconds": 0.04325641691684723,
+      "capsuleVerticalRangeCm": 1.5700000000000074,
+      "temporalQualityPacketEligible": true
+    },
+    {
+      "name": "Running_attack_1H_threequarter",
+      "passed": false,
+      "reason": "planted_foot_slide_589cm_per_s_transition",
+      "maximumFrameSeconds": 0.06484399735927582,
+      "capsuleVerticalRangeCm": 1.1800000000000068,
+      "temporalQualityPacketEligible": false
+    },
+    {
+      "name": "Leap_attack_1H_side",
+      "passed": false,
+      "reason": "planted_foot_slide_228cm_per_s_steady",
+      "maximumFrameSeconds": 0.0698414146900177,
+      "capsuleVerticalRangeCm": 24.269999999999996,
+      "temporalQualityPacketEligible": false
+    },
+    {
+      "name": "Leap_attack_1H_threequarter",
+      "passed": false,
+      "reason": "planted_foot_slide_186cm_per_s_steady",
+      "maximumFrameSeconds": 0.07850296050310135,
+      "capsuleVerticalRangeCm": 23.00999999999999,
+      "temporalQualityPacketEligible": false
+    }
+  ],
+  "scope": "Current cooked v045 running/leaping inputs; actual capsule lift now observed, all footing gates fail. Last three one-hand trials exceed50ms intervals and are unsuitable for acceptance packets. No thresholds changed.",
+  "videoSavedFrames": 3426,
+  "videoFailedFrames": 0,
+  "videoSkippedSlots": 12
+}

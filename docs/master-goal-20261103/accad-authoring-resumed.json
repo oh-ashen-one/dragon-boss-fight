@@ -1,0 +1,95 @@
+{
+  "scope": "Executed Blender source-contact and weapon-hold authoring; native integration and quality acceptance separate",
+  "clips": [
+    {
+      "name": "ACCAD_RunToStand_v4contacts",
+      "metadata": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_RunToStand_v4contacts.json",
+      "sha256": "e854aa4e27ec7dd4cbc84e6f7d64214091da8af5f0d97a89837a662d63123da9",
+      "maxPelvisShiftSourceUnits": 0.023403141881342442,
+      "maximumFootPathErrorSourceUnits": 7.521766104772069e-07,
+      "maximumLimbLengthErrorSourceUnits": 1.0018442554993179e-06,
+      "maximumTrimMatrixError": 0.0,
+      "authoringApplication": "Blender",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_RunToStand_v4contacts.blend",
+      "editableSceneSHA256": "449ed8cab260f3240b99455bef24e1eec5714e24fef0ef370885152f04eac851",
+      "fps": 30.000030398399637,
+      "duration": 2.599997365474701,
+      "nativeIntegrated": false,
+      "accepted": false
+    },
+    {
+      "name": "ACCAD_StandToRun_v4contacts",
+      "metadata": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_StandToRun_v4contacts.json",
+      "sha256": "71c0f424a05590dcd285582d1e03979eb12816e6a9c2b8b020e3ce64e1667275",
+      "maxPelvisShiftSourceUnits": 0.004135344788014361,
+      "maximumFootPathErrorSourceUnits": 4.807789863616728e-07,
+      "maximumLimbLengthErrorSourceUnits": 4.823599205616702e-07,
+      "maximumTrimMatrixError": 0.0,
+      "authoringApplication": "Blender",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_StandToRun_v4contacts.blend",
+      "editableSceneSHA256": "b0d21b941cc79f7b04d081f5e5fe2b492121e8a57bb923aa1333702138d44d63",
+      "fps": 30.000030398399637,
+      "duration": 2.1999977707862852,
+      "nativeIntegrated": false,
+      "accepted": false
+    },
+    {
+      "name": "ACCAD_StandToWalk_v4contacts",
+      "metadata": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_StandToWalk_v4contacts.json",
+      "sha256": "331f2abf9f7b7bad19945a9ee374411cb01a15f42bf4ca4d583d931ebac30bd9",
+      "maxPelvisShiftSourceUnits": 0.015944605958663628,
+      "maximumFootPathErrorSourceUnits": 8.070048489601019e-07,
+      "maximumLimbLengthErrorSourceUnits": 5.770630101542551e-07,
+      "maximumTrimMatrixError": 0.0,
+      "authoringApplication": "Blender",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_StandToWalk_v4contacts.blend",
+      "editableSceneSHA256": "f83030754b157bef1e49ce13eb950ca44fcfa4e53ed08930d0f62aa41c672b0e",
+      "fps": 30.000030398399637,
+      "duration": 2.3999975681304933,
+      "nativeIntegrated": false,
+      "accepted": false
+    },
+    {
+      "name": "ACCAD_StandToRun_v5support",
+      "metadata": "Local/AttackSources20261105/ACCADMale1/SupportFitV5/ACCAD_StandToRun_v5support.json",
+      "sha256": "4f8f6f750995fa71afc21545147e160aa11cc8cb271b69cac5e1401119688d94",
+      "authoringApplication": "Blender",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/SupportFitV5/ACCAD_StandToRun_v5support.blend",
+      "editableSceneSHA256": "03ca4767abbdaf99139d1df06b5720f596b26413d12c94aa3fdd95ff9bb1f07e",
+      "fps": 120,
+      "duration": 2.2,
+      "maximumBodyLiftCm": 7.413515725207154,
+      "maximumRelativePoseMatrixError": 8.344650268554688e-07,
+      "nativeImported": false,
+      "accepted": false
+    },
+    {
+      "name": "ACCAD_StandToRunTwoHand_v6weapon",
+      "metadata": "Local/AttackSources20261105/ACCADMale1/WeaponStartV6/ACCAD_StandToRunTwoHand_v6weapon.json",
+      "authoringApplication": "Blender",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/WeaponStartV6/ACCAD_StandToRunTwoHand_v6weapon.blend",
+      "editableSceneSHA256": "a36f14ad042207260064d3a51d8c863bb1a19c2ee66a832970564731f2f10904",
+      "sha256": "750792f7f6c42468f26859d1a79289e5a720c129b80802f4c1adfbc75bb89cd9",
+      "fps": 120.0,
+      "duration": 2.2,
+      "constantRunGripOffsetOnShaft": -0.205,
+      "maximumPairedGripShiftCm": 14.450827338022474,
+      "maximumLeftGripErrorCm": 0.00015889535238872962,
+      "maximumLowerTorsoBasisError": 9.5367431640625e-07,
+      "nativeImported": false,
+      "accepted": false
+    }
+  ],
+  "firstWeaponAttempt": "accad-weapon-hold-first-attempt.json",
+  "beforeAfterFilms": [
+    "accad-start-review-movies.json",
+    "accad-weapon-start-review-movies.json"
+  ],
+  "blindReview": "B new weapon start visibly better; native trial only, final defects remain",
+  "blindReceipt": "blind-accad-weapon-receipt.json",
+  "nativeImportedClips": [
+    "ACCAD_StandToRunTwoHand_v6weapon"
+  ],
+  "nativeCheckpoint": "v046-start-native-checkpoint.json",
+  "nativeGameplayQualityAccepted": false
+}

@@ -1,0 +1,25 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "readCalls": 31,
+  "successfulImageBlocks": 30,
+  "winner": "B",
+  "mapping": {
+    "A": "ACCAD_StandToRun_v5support",
+    "B": "ACCAD_StandToRunTwoHand_v6weapon"
+  },
+  "visiblyBetter": true,
+  "nativeTrialAllowed": true,
+  "finalQualityAccepted": false,
+  "nativeGameplayVerified": false,
+  "fullGoalAccepted": false,
+  "remaining": [
+    "Near-shoulder deformation and dark armor gap",
+    "Stiff arm carriage and insufficient sword weight/counterbalance",
+    "Tight helmet clearance and exact finger contact",
+    "Slightly delayed first0.4seconds",
+    "Actual native blending, sliding, gameplay and continuous feel"
+  ],
+  "estimatedUSD": 0.9489286
+}

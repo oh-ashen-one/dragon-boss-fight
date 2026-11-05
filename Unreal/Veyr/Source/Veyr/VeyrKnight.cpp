@@ -252,6 +252,7 @@ void AVeyrKnight::BeginPlay()
     bDirectRunningAttack=bSourcedMoves&&FParse::Param(FCommandLine::Get(),TEXT("VeyrDirectRunningAttack"));
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
     bPlantedSprint=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrPlantedSprint"));
+    bSourcedRunStart=bPlantedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedRunStart"));
     // Ordinary-input contact trials and blind full-body review accepted the
     // released two-hand recovery; preserve a deliberate comparison baseline.
     bPrimaryRecovery=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoPrimaryRecovery"));
@@ -289,7 +290,7 @@ bool AVeyrKnight::IsBlinkAction() const { return Action==EVeyrKnightAction::Blin
 bool AVeyrKnight::IsRollPrefix() const { return Action==EVeyrKnightAction::Roll||(Action==EVeyrKnightAction::RollAttack&&ActionElapsed<VisualClipDuration(TEXT("Roll"),.78f)); }
 bool AVeyrKnight::IsAttackAction() const { return Action==EVeyrKnightAction::LightAttack||Action==EVeyrKnightAction::HeavyAttack||Action==EVeyrKnightAction::Combo||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::RunningAttack||Action==EVeyrKnightAction::LeapAttack; }
 bool AVeyrKnight::IsRollingInvulnerable() const { return (IsRollPrefix()||IsBlinkAction())&&ActionElapsed>.08f&&ActionElapsed<.44f; }
-float AVeyrKnight::GetPlanarSpeed() const { return GetVelocity().Size2D(); }
+float AVeyrKnight::GetPlanarSpeed() const { return Action==EVeyrKnightAction::RunStart?RunStartVelocity.Size2D():GetVelocity().Size2D(); }
 FVector AVeyrKnight::GetFootLocation() const { return GetActorLocation()-FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight()); }
 bool AVeyrKnight::HasVisualClip(FName Name) const
 {
@@ -377,7 +378,7 @@ bool AVeyrKnight::CanStartGroundedAction() const
 {
     if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->IsArenaIntroActive())return false;
     return GripTransitionRemaining<=0.f&&!IsTerminal()&&IsGrounded()&&!bPressedJump&&
-        (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::MovementTurn);
+        (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::MovementTurn||Action==EVeyrKnightAction::RunStart);
 }
 FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
 {
@@ -388,6 +389,7 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::RunningAttack:return bDirectRunningAttack?TEXT("RunningAttackDirect"):TEXT("RunningAttackSourced");
         case EVeyrKnightAction::LeapAttack:return TEXT("LeapAttackSourced");
         case EVeyrKnightAction::MovementTurn:return MovementTurnClip;
+        case EVeyrKnightAction::RunStart:return TEXT("RunStartTwoHandSourced");
         case EVeyrKnightAction::Combo:return TEXT("LightCombo");
         case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
         case EVeyrKnightAction::Roll:return TEXT("Roll");
@@ -427,7 +429,7 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
     ActionRootTravelCm=0.f;bActionRootBlocked=false;
     if(NewAction!=EVeyrKnightAction::Ready)bWasRunning=false;
     if(IsAttackAction()||IsBlinkAction()||NewAction==EVeyrKnightAction::Guard||NewAction==EVeyrKnightAction::Heal||
-       NewAction==EVeyrKnightAction::RunStop||NewAction==EVeyrKnightAction::MovementTurn||NewAction==EVeyrKnightAction::AttackRecovery||NewAction==EVeyrKnightAction::GuardBreak||NewAction==EVeyrKnightAction::Backstep||IsChangingGrip())
+       NewAction==EVeyrKnightAction::RunStop||NewAction==EVeyrKnightAction::RunStart||NewAction==EVeyrKnightAction::MovementTurn||NewAction==EVeyrKnightAction::AttackRecovery||NewAction==EVeyrKnightAction::GuardBreak||NewAction==EVeyrKnightAction::Backstep||IsChangingGrip())
     {
         ConsumeMovementInputVector();GetCharacterMovement()->StopMovementImmediately();
     }
@@ -436,10 +438,26 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
 
 void AVeyrKnight::FinishAction()
 {
+    const bool WasRunStart=Action==EVeyrKnightAction::RunStart;
+    FVector Carry=RunStartVelocity;
+    if(WasRunStart&&!bActionRootBlocked&&ActionElapsed>=ActionDuration)
+    {
+        // The final tick can extend beyond the clip. Use its endpoint
+        // derivative rather than dividing a clamped displacement by a full dt.
+        const float Span=FMath::Min(.0333333f,ActionDuration);
+        if(Span>0.f)Carry=AuthoredRootDisplacementWorld(RootTranslationAt(ActionDuration)-RootTranslationAt(ActionDuration-Span))/Span;
+    }
     if(Action==EVeyrKnightAction::GripToTwoHand)bTwoHanded=true;
     else if(Action==EVeyrKnightAction::GripToOneHand)bTwoHanded=false;
     bGuardBroken = false;
     BeginAction(bGuardRequested && Stamina > 5.f && IsGrounded() ? EVeyrKnightAction::Guard : EVeyrKnightAction::Ready, 0.f);
+    if(WasRunStart&&Action==EVeyrKnightAction::Ready&&!IsTerminal()&&IsGrounded())
+    {
+        // Keep the measured swept velocity on exit; restarting from zero
+        // inserts an idle frame and an unrelated second acceleration.
+        GetCharacterMovement()->MaxWalkSpeed=bSprintHeld?580.f:240.f;
+        GetCharacterMovement()->Velocity=Carry.GetClampedToMaxSize(GetCharacterMovement()->MaxWalkSpeed);
+    }
 }
 
 void AVeyrKnight::ToggleGrip()
@@ -851,6 +869,7 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
     }
     const bool PassiveRecovery=Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::MovementTurn||Action==EVeyrKnightAction::GripToOneHand||Action==EVeyrKnightAction::GripToTwoHand;
     if(PassiveRecovery&&RegenDelay<=0.f)Stamina=FMath::Min(100.f,Stamina+30.f*DeltaSeconds);
+    if(Action==EVeyrKnightAction::RunStart&&RegenDelay<=0.f)Stamina=FMath::Min(100.f,Stamina+38.f*DeltaSeconds);
     if (Action == EVeyrKnightAction::Ready)
     {
         if (RegenDelay <= 0.f) Stamina = FMath::Min(100.f, Stamina + 38.f * DeltaSeconds);
@@ -872,6 +891,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
         return;
     }
     if(Action==EVeyrKnightAction::RunStop&&!MoveIntent.IsNearlyZero())FinishAction();
+    if(Action==EVeyrKnightAction::RunStart&&(MoveIntent.IsNearlyZero()||!bSprintHeld||bGuardRequested||!IsGrounded()))FinishAction();
     const FName StopClip=ResolveActionClip(EVeyrKnightAction::RunStop);
     if(Action==EVeyrKnightAction::Ready&&bWasRunning&&MoveIntent.IsNearlyZero()&&HasVisualClip(StopClip))
     {
@@ -892,6 +912,9 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     // Sprinting forward or backward while locked runs freely (Souls convention); lateral keeps facing.
     const bool bFaceBoss=bStrafing&&!(bSprintHeld&&LockOnMoveDirection<2);
     if(!bFaceBoss)TryBeginMovementTurn();
+    if(!bFaceBoss)TryBeginRunStart();
+    if(Action==EVeyrKnightAction::RunStart&&!MoveIntent.IsNearlyZero())
+        SetActorRotation(FMath::RInterpConstantTo(GetActorRotation(),MoveIntent.Rotation(),DeltaSeconds,Movement->RotationRate.Yaw));
     Movement->bOrientRotationToMovement=Action==EVeyrKnightAction::Ready&&!MoveIntent.IsNearlyZero()&&!bFaceBoss;
     if(IsRollPrefix())
     {
@@ -1208,7 +1231,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         return false;
     }
     bImportedPresentationActive = true;
-    if((bLocomotionPhaseMatch||bWalkEntryBlend)&&!BuildLocomotionPhaseCache())
+    if((bLocomotionPhaseMatch||bWalkEntryBlend||bSourcedRunStart)&&!BuildLocomotionPhaseCache())
     {SetPresentationDiagnostic(TEXT("Native locomotion phase cache failed"));return false;}
     if(bStableWeaponPresentation)PrepareWeaponComponents();
     UpdateImportedPresentation();
@@ -1423,6 +1446,24 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     const bool Moving=Action==EVeyrKnightAction::Ready&&IsGrounded()&&GetPlanarSpeed()>8.f&&!bLateralDodgeBlocked;
     FName Clip=Action==EVeyrKnightAction::Ready?(Moving?SelectDirectionalLocomotion(true):(bTwoHanded?FName(TEXT("IdleTwoHand")):FName(TEXT("Idle")))):ActionPresentationClip;
     float Time=Action==EVeyrKnightAction::Ready?VisualClock:ActionElapsed;
+    const bool RunStartTail=Action==EVeyrKnightAction::RunStart&&ActionDuration>0.f&&
+        ActionElapsed>=FMath::Max(0.f,ActionDuration-.30f);
+    if(RunStartTail)
+    {
+        if(RunStartLoopClip.IsNone())
+        {
+            RunStartLoopClip=SelectDirectionalLocomotion(true);
+            if(!ImportedPresentation->SampleClipTime(ActionPresentationClip,ActionElapsed*VisualClipPlayRate(ActionPresentationClip)))
+            {bRequestedPresentationClipSampled=false;bPresentationUsingFallback=true;SetPresentationDiagnostic(TEXT("Run-start source could not be sampled"));return;}
+            RunStartLoopTime=ClosestLocomotionPhase(RunStartLoopClip)/VisualClipPlayRate(RunStartLoopClip);
+        }
+        const float Nominal=VisualClipSpeed(RunStartLoopClip);
+        if(Nominal<=0.f){SetPresentationDiagnostic(TEXT("Run-start exit has no locomotion speed"));return;}
+        RunStartLoopTime+=DeltaSeconds*GetPlanarSpeed()/Nominal;
+        Clip=RunStartLoopClip;Time=RunStartLoopTime;
+        // Hand the already-running loop clock to Ready without an idle frame.
+        LastLocomotionClip=Clip;PresentationLocomotionTime=Time;
+    }
     if(Moving)
     {
         const float Nominal=VisualClipSpeed(Clip);
@@ -1430,7 +1471,8 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         if(LastLocomotionClip!=Clip||PresentationTransitionClip!=Clip)
         {
             const bool IdleToWalk=bWalkEntryBlend&&PresentationTransitionClip.ToString().StartsWith(TEXT("Idle"))&&Clip.ToString().StartsWith(TEXT("Walk"));
-            if((bLocomotionPhaseMatch||IdleToWalk)&&LocomotionPhaseCache.Contains(Clip))
+            const bool StartToRun=bSourcedRunStart&&PresentationTransitionClip==FName(TEXT("RunStartTwoHandSourced"));
+            if((bLocomotionPhaseMatch||IdleToWalk||StartToRun)&&LocomotionPhaseCache.Contains(Clip))
                 PresentationLocomotionTime=ClosestLocomotionPhase(Clip)/VisualClipPlayRate(Clip);
             else if(LastLocomotionClip!=Clip)
             {
@@ -1480,6 +1522,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         // authored from the earlier Blender run); a 0.10 s blend outran both clips' peak speeds.
         auto IsStop=[](FName Name){return Name==FName(TEXT("RunStop"))||Name==FName(TEXT("RunStopOneHandSourced"))||Name==FName(TEXT("RunStopTwoHandSourced"));};
         bTransitionInvolvesRunStop=IsStop(Clip)||IsStop(PresentationTransitionClip);
+        bTransitionInvolvesRunStart=Clip==FName(TEXT("RunStartTwoHandSourced"))||PresentationTransitionClip==FName(TEXT("RunStartTwoHandSourced"));
         // Entering or leaving lock-on locomotion changes posture (hips up to 26 cm lower in the strafes): blend longer.
         auto IsLockOnLoco=[](FName N){const FString S=N.ToString();return S.StartsWith(TEXT("Strafe"))||S.StartsWith(TEXT("Backpedal"));};
         bTransitionLockOnEdge=!PresentationTransitionClip.IsNone()&&IsLockOnLoco(Clip)!=IsLockOnLoco(PresentationTransitionClip);
@@ -1492,9 +1535,15 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float BlendSeconds=Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
-    const float Alpha=bTransitionIdleWalkEdge?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;
+    const float Alpha=RunStartTail?FMath::Clamp((ActionElapsed-(ActionDuration-.30f))/.30f,0.f,1.f):
+        bTransitionIdleWalkEdge?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;
+    if(RunStartTail)
+    {
+        ContinuousTransitionSource=ActionPresentationClip;
+        ContinuousTransitionSeconds=ActionElapsed*VisualClipPlayRate(ActionPresentationClip);
+    }
     const float SampleTime=Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset);
     ProofBlendAlpha=Alpha;bProofBlendActive=bPresentationTransitionActive&&Alpha<1.f;
     bWeaponGripBlendActive=false;
@@ -1507,7 +1556,9 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         {WeaponGripTarget=W.GetRelativeTransform(H);bWeaponGripBlendActive=true;WeaponGripAlpha=Alpha;}
     }
     bool Sampled=false;
-    if(Alpha<1.f&&!ContinuousTransitionSource.IsNone())
+    if(RunStartTail)
+        Sampled=ImportedPresentation->SampleClipTimeCrossfaded(Clip,SampleTime,Alpha,ActionPresentationClip,ActionElapsed*VisualClipPlayRate(ActionPresentationClip));
+    else if(Alpha<1.f&&!ContinuousTransitionSource.IsNone())
     {
         float PhysicalSpeed=GetPlanarSpeed();
         if((Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::RunningAttack)&&DeltaSeconds>0.f)
@@ -1741,6 +1792,11 @@ void AVeyrKnight::ApplyAuthoredRootMotion(float PreviousSeconds,float NewSeconds
     GetCharacterMovement()->SafeMoveUpdatedComponent(Delta,GetActorQuat(),true,Hit);
     if(Hit.IsValidBlockingHit()){++RootMotionBlockedCount;bActionRootBlocked=true;}
     ActionRootTravelCm+=(GetActorLocation()-Before).Size2D();
+    if(Action==EVeyrKnightAction::RunStart&&NewSeconds>PreviousSeconds)
+    {
+        RunStartVelocity=(GetActorLocation()-Before)/(NewSeconds-PreviousSeconds);
+        RunStartVelocity.Z=0.f;
+    }
 }
 
 bool AVeyrKnight::IsWeaponTrailActive() const

@@ -1,0 +1,138 @@
+{
+  "scope": "Same Shipping app, same input fixture and flags except sourced run-start. Foot/contact failure remains; not quality acceptance.",
+  "variants": [
+    {
+      "label": "before",
+      "run": "Evidence/native-blendproof-20261105T053952Z",
+      "sourceId": "46174b41b04909422beef8363a802601559e72adef14f6a20b9cf9afcf7bea2e",
+      "sourcedRunStart": false,
+      "sequencesPassed": 0,
+      "sequencesTotal": 4,
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "passed": false,
+          "reason": "planted_foot_slide_1186cm_per_s_transition",
+          "runStartFrames": 0,
+          "readyRunningFrames": 190,
+          "attackAfterStartObserved": false,
+          "maximumFrameSeconds": 0.027069833129644394,
+          "initialActorYawDegrees": 180,
+          "footSlideMaxCmS": 1186.0345458984375,
+          "worst": "t=11.48 L foot 40.7cm in 0.034s transition RunStop clip=RunStopTwoHandSourced from=RunTwoHandPlanted a=0.61"
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "passed": false,
+          "reason": "planted_foot_slide_1312cm_per_s_transition",
+          "runStartFrames": 0,
+          "readyRunningFrames": 35,
+          "attackAfterStartObserved": false,
+          "maximumFrameSeconds": 0.030225083231925964,
+          "initialActorYawDegrees": 179.99960327148438,
+          "footSlideMaxCmS": 1312.2919921875,
+          "worst": "t=27.03 L foot 49.8cm in 0.038s transition Ready clip=RunTwoHandPlanted from=IdleTwoHand a=0.75"
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "passed": false,
+          "reason": "planted_foot_slide_1324cm_per_s_transition",
+          "runStartFrames": 0,
+          "readyRunningFrames": 35,
+          "attackAfterStartObserved": true,
+          "maximumFrameSeconds": 0.02742062509059906,
+          "initialActorYawDegrees": 179.99880981445312,
+          "footSlideMaxCmS": 1324.06298828125,
+          "worst": "t=36.56 L foot 50.7cm in 0.038s transition Ready clip=RunTwoHandPlanted from=IdleTwoHand a=0.76"
+        },
+        {
+          "name": "Start_1H_control_side",
+          "passed": false,
+          "reason": "planted_foot_slide_1381cm_per_s_transition",
+          "runStartFrames": 0,
+          "readyRunningFrames": 189,
+          "attackAfterStartObserved": false,
+          "maximumFrameSeconds": 0.031442251056432724,
+          "initialActorYawDegrees": 179.99984741210938,
+          "footSlideMaxCmS": 1380.6065673828125,
+          "worst": "t=44.60 L foot 48.7cm in 0.035s transition Ready clip=RunOneHandPlanted from=Idle a=0.87"
+        }
+      ],
+      "savedVideoFrames": 1624,
+      "failedVideoFrames": 0,
+      "skippedVideoSlots": 1
+    },
+    {
+      "label": "after",
+      "run": "Evidence/native-blendproof-20261105T054354Z",
+      "sourceId": "46174b41b04909422beef8363a802601559e72adef14f6a20b9cf9afcf7bea2e",
+      "sourcedRunStart": true,
+      "sequencesPassed": 0,
+      "sequencesTotal": 4,
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "passed": false,
+          "reason": "planted_foot_slide_640cm_per_s_transition",
+          "runStartFrames": 121,
+          "readyRunningFrames": 73,
+          "attackAfterStartObserved": false,
+          "maximumFrameSeconds": 0.03759700059890747,
+          "initialActorYawDegrees": 180,
+          "footSlideMaxCmS": 639.6078491210938,
+          "worst": "t=11.46 L foot 23.0cm in 0.036s transition RunStop clip=RunStopTwoHandSourced from=RunTwoHandPlanted a=0.55"
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "passed": false,
+          "reason": "planted_foot_slide_602cm_per_s_transition",
+          "runStartFrames": 43,
+          "readyRunningFrames": 0,
+          "attackAfterStartObserved": false,
+          "maximumFrameSeconds": 0.027629293501377106,
+          "initialActorYawDegrees": 179.83628845214844,
+          "footSlideMaxCmS": 601.78369140625,
+          "worst": "t=24.09 R foot 25.6cm in 0.043s transition RunStart clip=RunStartTwoHandSourced from=IdleTwoHand a=0.20"
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "passed": false,
+          "reason": "planted_foot_slide_586cm_per_s_transition",
+          "runStartFrames": 42,
+          "readyRunningFrames": 0,
+          "attackAfterStartObserved": true,
+          "maximumFrameSeconds": 0.031761497259140015,
+          "initialActorYawDegrees": -106.51171875,
+          "footSlideMaxCmS": 586.1021118164062,
+          "worst": "t=28.92 R foot 19.5cm in 0.033s transition RunStart clip=RunStartTwoHandSourced from=IdleTwoHand a=0.24"
+        },
+        {
+          "name": "Start_1H_control_side",
+          "passed": false,
+          "reason": "planted_foot_slide_1125cm_per_s_transition",
+          "runStartFrames": 0,
+          "readyRunningFrames": 190,
+          "attackAfterStartObserved": false,
+          "maximumFrameSeconds": 0.0371558740735054,
+          "initialActorYawDegrees": -117.61563110351562,
+          "footSlideMaxCmS": 1124.737060546875,
+          "worst": "t=39.13 L foot 39.8cm in 0.035s transition RunStop clip=RunStopOneHandSourced from=RunOneHandPlanted a=0.59"
+        }
+      ],
+      "savedVideoFrames": 1350,
+      "failedVideoFrames": 0,
+      "skippedVideoSlots": 1
+    }
+  ],
+  "thresholdsUnchanged": {
+    "footCmPerSecond": 60,
+    "gripCm": 2
+  },
+  "mechanics": "After: real RunStart entered, moving loop handoff observed, early release settles, primary attack cancels, one-handed control never enters the two-handed start.",
+  "limitations": [
+    "Initial facing and outgoing gait phases vary after normal-input setup; peak reductions are diagnostics, not an isolated causal percentage.",
+    "Worst windows include approximately180degree entry turns and unmatched run-to-stop joins.",
+    "All four trials fail; prototype remains opt-in and no native blind acceptance is claimed."
+  ],
+  "nativeBlindReviewAttempted": false
+}

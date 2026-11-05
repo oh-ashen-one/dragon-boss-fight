@@ -1,0 +1,8 @@
+{
+  "exitCode": 1,
+  "failure": "Unreachable paired grip at frame204 using the heavy-attack contact offset of minus0.245source units",
+  "engineCrash": false,
+  "assetSaved": false,
+  "correction": "Search the actual usable handle for one constant run-hold contact, retaining the same bounded no-stretch IK correction limit",
+  "qualityReviewAttempted": false
+}

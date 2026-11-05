@@ -21,7 +21,14 @@ parser.add_argument('--source',type=Path,action='append')
 parser.add_argument('--output',type=Path)
 parser.add_argument('--floor-source',type=float)
 parser.add_argument('--ortho-scale',type=float)
+parser.add_argument('--reference-review-directory',type=Path,help='Match existing per-view camera scales for before/after playback')
 args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+reference_reviews={}
+if args.reference_review_directory:
+    reference=args.reference_review_directory.resolve(strict=True)
+    assert reference.is_relative_to(ROOT/'Local') and args.ortho_scale is None
+    reference_reviews={p.stem.rsplit('_v',1)[0]:p for p in reference.glob('*.json') if p.with_suffix('.blend').exists()}
+    assert reference_reviews
 assert not (args.source and args.source_directory)
 if args.source:
     SOURCES=[p.resolve(strict=True) for p in args.source]
@@ -86,9 +93,14 @@ for source in SOURCES:
     fps=scene.render.fps/scene.render.fps_base
     frames = sorted({min(scene.frame_end,round(i*fps/30)) for i in range(round(scene.frame_end/fps*30)+1)})
     assert args.ortho_scale is None or args.ortho_scale>0
-    scales=ns['render'](source.stem, frames, ortho_scale=args.ortho_scale or 2.1,resolution=960, auto_frame=args.ortho_scale is None)
+    reference_path=reference_reviews.get(source.stem.rsplit('_v',1)[0])
+    if reference_reviews:assert reference_path, 'Missing matched baseline camera'
+    reference_scales=json.loads(reference_path.read_text())['viewOrthoScales'] if reference_path else None
+    scales=ns['render'](source.stem, frames, ortho_scale=args.ortho_scale or 2.1,resolution=960,
+        auto_frame=args.ortho_scale is None and reference_scales is None,view_ortho_scales=reference_scales)
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/(source.stem+'.blend')), compress=True)
     (OUT/(source.stem+'.json')).write_text(json.dumps({'source': str(source.relative_to(ROOT)), 'frames': frames,
         'sourceFPS': fps, 'reviewFPS': 30, 'viewOrthoScales':scales,'groundHeightSourceUnits': floor,
-        'measuredMinimumBootHeightSourceUnits':measured_floor,'reviewed': False, 'accepted': False}, indent=2)+'\n')
+        'measuredMinimumBootHeightSourceUnits':measured_floor,'referenceCameraMetadata':str(reference_path.relative_to(ROOT)) if reference_path else None,
+        'reviewed': False, 'accepted': False}, indent=2)+'\n')
 print('BLENDER_AUTHORED_MOTION_REVIEW_RENDERED', flush=True)

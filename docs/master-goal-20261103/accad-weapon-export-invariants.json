@@ -1,0 +1,28 @@
+{
+  "sourceSHA256": [
+    "4f8f6f750995fa71afc21545147e160aa11cc8cb271b69cac5e1401119688d94",
+    "750792f7f6c42468f26859d1a79289e5a720c129b80802f4c1adfbc75bb89cd9"
+  ],
+  "samples": 265,
+  "sampleRate": 120,
+  "lowerAndTorsoBones": [
+    "VeyrRoot",
+    "Hips",
+    "Spine",
+    "Spine1",
+    "Spine2",
+    "Neck",
+    "Head",
+    "LeftUpLeg",
+    "LeftLeg",
+    "LeftFoot",
+    "LeftToeBase",
+    "RightUpLeg",
+    "RightLeg",
+    "RightFoot",
+    "RightToeBase"
+  ],
+  "maximumLowerAndTorsoMatrixError": 1.6419186148475262e-06,
+  "maximumArmSegmentLengthErrorSourceUnits": 6.432117856475239e-06,
+  "scope": "Exported representation invariants only; not quality or gameplay acceptance"
+}

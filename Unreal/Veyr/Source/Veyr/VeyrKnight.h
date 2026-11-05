@@ -55,6 +55,8 @@ public:
     bool UsesDirectRunningAttack() const { return bDirectRunningAttack; }
     bool UsesSourcedSprint() const { return bSourcedSprint; }
     bool UsesPlantedSprint() const { return bPlantedSprint; }
+    bool UsesSourcedRunStart() const { return bSourcedRunStart; }
+    int32 RunStarts=0;
     bool UsesPrimaryRecovery() const { return bPrimaryRecovery; }
     bool UsesReadableAutoLockCamera() const { return bReadableAutoLockCamera; }
     int32 PrimaryRecoveries=0;
@@ -271,6 +273,11 @@ private:
     bool bSourcedHeal=false;
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
+    bool bSourcedRunStart=false;
+    FVector RunStartVelocity=FVector::ZeroVector;
+    FName RunStartLoopClip=NAME_None;
+    float RunStartLoopTime=0.f;
+    bool TryBeginRunStart();
     bool bPlantedSprint=false;
     bool bDirectRunningAttack=false;
     bool bLocomotionPhaseMatch=false;
@@ -306,6 +313,7 @@ private:
     FName LastLocomotionClip=NAME_None;
     FName PendingStaggerClip=NAME_None;
     bool bTransitionInvolvesRunStop=false;
+    bool bTransitionInvolvesRunStart=false;
     bool bTransitionInvolvesMobility=false;
     bool bLockOnStrafingLastFrame=false;
     bool bTransitionLockOnEdge=false;

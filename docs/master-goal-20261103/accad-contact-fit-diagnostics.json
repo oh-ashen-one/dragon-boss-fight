@@ -1,0 +1,285 @@
+{
+  "scope": "Read-only inspection of actual Blender exports; no acceptance or new animation",
+  "scaleCmPerSourceUnit": 244.11917667589785,
+  "clips": [
+    {
+      "clip": "ACCAD_RunToStand_v4contacts",
+      "source": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_RunToStand_v4contacts.glb",
+      "sha256": "e854aa4e27ec7dd4cbc84e6f7d64214091da8af5f0d97a89837a662d63123da9",
+      "durationSeconds": 2.6000025272369385,
+      "sampleRate": 60,
+      "floorCm": 0,
+      "maximumRootSpeedCmS": 551.1818648753515,
+      "feet": {
+        "Left": {
+          "minimumSoleCm": -5.256771094158513,
+          "maximumSoleCm": 22.586992694645968,
+          "samplesBelowMinusOneCm": 23,
+          "nearFloorIntervals": 107,
+          "maximumNearFloorAnkleSpeedCmS": 425.8153676996977,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        },
+        "Right": {
+          "minimumSoleCm": -1.4703352720145926,
+          "maximumSoleCm": 41.989024925537606,
+          "samplesBelowMinusOneCm": 3,
+          "nearFloorIntervals": 35,
+          "maximumNearFloorAnkleSpeedCmS": 183.43750792042752,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        }
+      },
+      "sourceFPS": 30.000030398399637,
+      "speedSamples": [
+        {
+          "seconds": 0.0,
+          "cmS": 551.1818648753515
+        },
+        {
+          "seconds": 0.1666668286690345,
+          "cmS": 438.2337142352235
+        },
+        {
+          "seconds": 0.333333657338069,
+          "cmS": 412.1552465703151
+        },
+        {
+          "seconds": 0.5000004860071036,
+          "cmS": 349.01791691237673
+        },
+        {
+          "seconds": 0.666667314676138,
+          "cmS": 320.025575492957
+        },
+        {
+          "seconds": 0.8333341433451725,
+          "cmS": 283.2855828253061
+        },
+        {
+          "seconds": 1.0000009720142071,
+          "cmS": 221.55144077201098
+        },
+        {
+          "seconds": 1.1666678006832416,
+          "cmS": 204.61978943911205
+        },
+        {
+          "seconds": 1.333334629352276,
+          "cmS": 137.94023143510748
+        },
+        {
+          "seconds": 1.5000014580213106,
+          "cmS": 131.5943789419562
+        },
+        {
+          "seconds": 1.666668286690345,
+          "cmS": 72.71611274333284
+        },
+        {
+          "seconds": 1.8333351153593795,
+          "cmS": 55.20727207258886
+        },
+        {
+          "seconds": 2.0000019440284142,
+          "cmS": 34.28492475710993
+        },
+        {
+          "seconds": 2.1666687726974487,
+          "cmS": 15.54037494178506
+        },
+        {
+          "seconds": 2.333335601366483,
+          "cmS": 13.820212039411867
+        },
+        {
+          "seconds": 2.5000024300355177,
+          "cmS": 8.007424936187826
+        }
+      ],
+      "sourceModified": false,
+      "nativeImported": false,
+      "accepted": false
+    },
+    {
+      "clip": "ACCAD_StandToRun_v4contacts",
+      "source": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_StandToRun_v4contacts.glb",
+      "sha256": "71c0f424a05590dcd285582d1e03979eb12816e6a9c2b8b020e3ce64e1667275",
+      "durationSeconds": 2.2000021934509277,
+      "sampleRate": 60,
+      "floorCm": 0,
+      "maximumRootSpeedCmS": 553.4145675382975,
+      "feet": {
+        "Left": {
+          "minimumSoleCm": -7.334712789478836,
+          "maximumSoleCm": 61.03021865526613,
+          "samplesBelowMinusOneCm": 51,
+          "nearFloorIntervals": 84,
+          "maximumNearFloorAnkleSpeedCmS": 381.6057352553286,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        },
+        "Right": {
+          "minimumSoleCm": -2.715392524382794,
+          "maximumSoleCm": 56.10759162274195,
+          "samplesBelowMinusOneCm": 20,
+          "nearFloorIntervals": 75,
+          "maximumNearFloorAnkleSpeedCmS": 355.0654211922754,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        }
+      },
+      "sourceFPS": 30.000030398399637,
+      "speedSamples": [
+        {
+          "seconds": 0.0,
+          "cmS": 11.37667010254467
+        },
+        {
+          "seconds": 0.1666668328371915,
+          "cmS": 16.9960696287955
+        },
+        {
+          "seconds": 0.333333665674383,
+          "cmS": 28.524426489465675
+        },
+        {
+          "seconds": 0.5000004985115745,
+          "cmS": 47.03589394692027
+        },
+        {
+          "seconds": 0.666667331348766,
+          "cmS": 83.05815373017755
+        },
+        {
+          "seconds": 0.8333341641859575,
+          "cmS": 170.92191162655024
+        },
+        {
+          "seconds": 1.000000997023149,
+          "cmS": 203.79868217003292
+        },
+        {
+          "seconds": 1.1666678298603406,
+          "cmS": 342.7773415666928
+        },
+        {
+          "seconds": 1.333334662697532,
+          "cmS": 365.4288027222617
+        },
+        {
+          "seconds": 1.5000014955347236,
+          "cmS": 398.312806629973
+        },
+        {
+          "seconds": 1.666668328371915,
+          "cmS": 406.60801299807207
+        },
+        {
+          "seconds": 1.8333351612091064,
+          "cmS": 402.94364685944896
+        },
+        {
+          "seconds": 2.000001994046298,
+          "cmS": 495.28556907614086
+        },
+        {
+          "seconds": 2.1666688268834897,
+          "cmS": 419.42328746821363
+        }
+      ],
+      "sourceModified": false,
+      "nativeImported": false,
+      "accepted": false
+    },
+    {
+      "clip": "ACCAD_StandToWalk_v4contacts",
+      "source": "Local/AttackSources20261105/ACCADMale1/ContactFitV4/ACCAD_StandToWalk_v4contacts.glb",
+      "sha256": "331f2abf9f7b7bad19945a9ee374411cb01a15f42bf4ca4d583d931ebac30bd9",
+      "durationSeconds": 2.4000024795532227,
+      "sampleRate": 60,
+      "floorCm": 0,
+      "maximumRootSpeedCmS": 162.95420693560135,
+      "feet": {
+        "Left": {
+          "minimumSoleCm": -3.646234247467079,
+          "maximumSoleCm": 6.594113019668449,
+          "samplesBelowMinusOneCm": 42,
+          "nearFloorIntervals": 108,
+          "maximumNearFloorAnkleSpeedCmS": 439.927022236942,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        },
+        "Right": {
+          "minimumSoleCm": -0.4308354802263687,
+          "maximumSoleCm": 7.5382759323397295,
+          "samplesBelowMinusOneCm": 0,
+          "nearFloorIntervals": 68,
+          "maximumNearFloorAnkleSpeedCmS": 269.1049405911718,
+          "note": "Ankle speed is a source diagnostic; toe-off/heel-roll require inspection. Not the native contact gate."
+        }
+      },
+      "sourceFPS": 30.000030398399637,
+      "speedSamples": [
+        {
+          "seconds": 0.0,
+          "cmS": 12.554314404959115
+        },
+        {
+          "seconds": 0.16666683885786268,
+          "cmS": 20.74324107663079
+        },
+        {
+          "seconds": 0.33333367771572536,
+          "cmS": 20.711253901075843
+        },
+        {
+          "seconds": 0.500000516573588,
+          "cmS": 48.2414761895035
+        },
+        {
+          "seconds": 0.6666673554314507,
+          "cmS": 64.44210727157756
+        },
+        {
+          "seconds": 0.8333341942893134,
+          "cmS": 104.55920242057734
+        },
+        {
+          "seconds": 1.000001033147176,
+          "cmS": 111.77731001667732
+        },
+        {
+          "seconds": 1.1666678720050387,
+          "cmS": 115.16173409723606
+        },
+        {
+          "seconds": 1.3333347108629015,
+          "cmS": 123.14755688281382
+        },
+        {
+          "seconds": 1.5000015497207642,
+          "cmS": 131.19341430710847
+        },
+        {
+          "seconds": 1.6666683885786269,
+          "cmS": 127.88636718687542
+        },
+        {
+          "seconds": 1.8333352274364896,
+          "cmS": 131.4311538958905
+        },
+        {
+          "seconds": 2.000002066294352,
+          "cmS": 132.96841870440366
+        },
+        {
+          "seconds": 2.166668905152215,
+          "cmS": 162.95420693560135
+        },
+        {
+          "seconds": 2.3333357440100775,
+          "cmS": 141.9742267231906
+        }
+      ],
+      "sourceModified": false,
+      "nativeImported": false,
+      "accepted": false
+    }
+  ]
+}

@@ -45,16 +45,17 @@
     {
       "id": "running_leap",
       "requirement": "Sourced attacks with contacts, root/capsule motion, interrupts and blind improvement",
-      "status": "current_native_vertical_root_policy_verified_old_flat_capsule_failure_predates_fix_current_eight_trial_gameplay_and_quality_pending",
+      "status": "current_eight_case_gameplay0of8_foot_contacts_fail_actual_leap_lift23to24cm_observed_three_onehand_trials_temporally_unsuitable_for_acceptance",
       "evidence": [
         "cpu-animation-preparation.json",
-        "native-mobility-root-policy.json"
+        "native-mobility-root-policy.json",
+        "current-mobility-gameplay.json"
       ]
     },
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "ground4_first_blind_tie_stopped_ACCAD_v3_floor_penetration_measured_Blender_contact_fit_prepared_not_executed_native_gates_open",
+      "status": "v046_source_blind_win_native_start_state_compiles_packages_and_input_mechanics_work_0of4_contact_trials_final_quality_open",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -78,7 +79,18 @@
         "accad-locomotion-source-ledger.json",
         "accad-reference-retarget-checkpoint.json",
         "accad-transition-diagnostics.json",
-        "accad-next-authoring-step.json"
+        "accad-next-authoring-step.json",
+        "accad-authoring-resumed.json",
+        "accad-contact-fit-diagnostics.json",
+        "accad-support-fit-diagnostics.json",
+        "accad-weapon-start-diagnostics.json",
+        "accad-start-review-movies.json",
+        "accad-weapon-start-review-movies.json",
+        "blind-accad-weapon-receipt.json",
+        "blind-accad-weapon-review.md",
+        "accad-weapon-export-invariants.json",
+        "v046-start-native-checkpoint.json",
+        "native-run-start-comparison.json"
       ]
     },
     {
@@ -103,7 +115,7 @@
     {
       "id": "balance",
       "requirement": "Both-grip risk/reward and measured <=150s victories",
-      "status": "primary_recovery_default_contact4of4_blind_visible_pass_current_both_grips_under150_default_smoke_and_final_balance_remaining",
+      "status": "primary_recovery_default_contact4of4_blind_visible_pass_current_both_grips_under150_default_controls_passed_final_balance_remaining",
       "evidence": [
         "primary-recovery-diagnosis.json",
         "recovery-pilot-victories.json",
@@ -111,7 +123,8 @@
         "blind-primary-recovery-review.md",
         "blind-primary-recovery-receipt.json",
         "recovery-current-victories.json",
-        "default-recovery-controls-gate.json"
+        "default-recovery-controls-gate.json",
+        "default-controls-resumed.json"
       ]
     },
     {
@@ -150,7 +163,7 @@
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "progress: executed read-only native mobility-policy verification",
+  "priorTurnClassification": "Progress: GPU headroom returned, newest default controls passed, actual Blender source corrections and weapon composition executed, matched films rendered/encoded, first blind source review running.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -158,11 +171,11 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "terminal_default_controls_cap_full_timeout_no_owned_renderer_queued",
+    "status": "all_owned_engine_encoder_and_critic_jobs_terminal",
     "lastEditorRequest": "terminal cap-full-timeout901seconds, no renderer launched",
     "lastFullIntro": "native-intro-20261104T224547Z mechanics passed; blind handoff slightly preferred, conditional acceptance",
     "gpuSafetyControlsChanged": false,
-    "latestControlsEvidence": "default-recovery-controls-gate.json"
+    "latestControlsEvidence": "default-controls-resumed.json"
   },
   "gateProbeCode": {
     "flag": "VeyrFortressGateTest",
@@ -186,8 +199,9 @@
       "VeyrStableWeaponPresentation",
       "VeyrWalkEntryBlend"
     ],
-    "newestDefaultCandidateApp": "/private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app",
-    "newestDefaultControlsVerified": false
+    "newestDefaultCandidateApp": "/private/tmp/veyr-verified-bundle-2_gxw0jo/Veyr-Mac-Shipping.app",
+    "newestDefaultControlsVerified": false,
+    "priorDefaultControlsVerifiedApp": "/private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app"
   },
   "mapApproachChange": "After two rejected blind rounds: inspect runtime floor binding, use licensed scanned support assets where useful, replace disconnected backdrop with a connected foundation.",
   "authoringWorkflowCorrection": {
@@ -195,18 +209,16 @@
     "v043": "Diagnostic-only; not imported; import guard rejects it",
     "nextVersion": "v044blender",
     "blenderRecipesExecuted": true,
-    "activeNativeVersion": "v045turns",
+    "activeNativeVersion": "v046start",
     "nativeImported": true,
     "qualityAccepted": false,
     "note": "New world-motion factoring is representation conversion of actual Blender-authored turns; v043 CPU-authoring studies remain quarantined and unimported."
   },
   "renderBlockerAudit": {
-    "consecutiveGoalTurnsObserved": 3,
-    "condition": "Shared GPU at100percent; effective cap2 occupied by foreign clients",
-    "currentTurnMadeIndependentProgress": false,
-    "newRendererRequestQueued": false,
-    "atImpasse": true,
-    "evidence": "render-blocked-audit.json"
+    "consecutiveGoalTurnsObserved": 0,
+    "conditionResolved": true,
+    "onResumeUtilizationPercent": 16,
+    "ownedRendererSerialized": true
   },
-  "goalStatus": "blocked_pending_GPU_capacity"
+  "goalStatus": "active_resumed_GPU_capacity_returned"
 }

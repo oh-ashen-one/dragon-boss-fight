@@ -1,0 +1,30 @@
+{
+  "nativeEngine": "5.8.3-58210709+++UE5+Release-5.8",
+  "commandletExitCode": 0,
+  "nullRHI": true,
+  "runtimeSourceDefinition": "/Game/Characters/Customuse/KnightB/v046start/DA_KnightB",
+  "version": "v046start",
+  "nativePoseSamples": 384,
+  "canonicalPoseSamples": 384,
+  "nativePoseChecksPassed": true,
+  "canonicalPoseChecksPassed": true,
+  "worldReconstructionSamples": 529,
+  "maximumWorldMatrixError": 9.067911437288245e-07,
+  "canonicalMinimumBootHeightCm": 0.04988058179172501,
+  "newClip": "RunStartTwoHandSourced",
+  "gameplayStateImplemented": true,
+  "defaultBehaviorChanged": false,
+  "qualityAccepted": false,
+  "next": "Resolve initial turns and stop-entry phase discontinuities; preserve source-review caveats and all original gates.",
+  "plan": "Local/CustomuseAssets/Polish20261025/knight-v046start/import-plan-KnightB.json",
+  "shippingPackaged": true,
+  "shippingSourceId": "46174b41b04909422beef8363a802601559e72adef14f6a20b9cf9afcf7bea2e",
+  "candidateApp": "/private/tmp/veyr-verified-bundle-2_gxw0jo/Veyr-Mac-Shipping.app",
+  "runtimeTested": true,
+  "runtimeContactPassed": false,
+  "optInFlags": [
+    "VeyrSourcedSprint",
+    "VeyrPlantedSprint",
+    "VeyrSourcedRunStart"
+  ]
+}

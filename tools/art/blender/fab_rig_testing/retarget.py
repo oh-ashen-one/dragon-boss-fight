@@ -27,7 +27,7 @@ def reset():
  s=bpy.context.scene;s.render.fps=30;s.render.fps_base=1
  return s
 
-def render(label,frames,ortho_scale=2.1,resolution=640,auto_frame=False):
+def render(label,frames,ortho_scale=2.1,resolution=640,auto_frame=False,view_ortho_scales=None):
  s=bpy.context.scene
  # Attach the intact boat sword only for review; GLB retains the same socket.
  before=set(s.objects);bpy.ops.import_scene.gltf(filepath=str(ROOT/'Local/polish-review-20261025/BoatGreatsword_OneHand_v4.glb'))
@@ -45,6 +45,10 @@ def render(label,frames,ortho_scale=2.1,resolution=640,auto_frame=False):
  center=Vector((0,0,.5));folder=OUT/'Evidence'/label;folder.mkdir(parents=True,exist_ok=True)
  views={'front':(0,-3,.4),'side':(3,0,.4),'threequarter':(2,-3,.5)}
  scales={v:ortho_scale for v in views}
+ if view_ortho_scales is not None:
+  assert not auto_frame and set(view_ortho_scales)==set(views)
+  assert all(math.isfinite(v) and v>0 for v in view_ortho_scales.values())
+  scales=dict(view_ortho_scales)
  if auto_frame:
   rig=bpy.data.objects['Knight_Comparison']
   bodies=[o for o in s.objects if o.type=='MESH' and (o in imported or any(m.type=='ARMATURE' and m.object==rig for m in o.modifiers))]

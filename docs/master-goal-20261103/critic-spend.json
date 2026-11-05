@@ -111,9 +111,21 @@
       "estimatedUSD": 1.0222302,
       "verdict": "A new visibly better and scoped recovery accepted; live-combat assessment remains",
       "receipt": "blind-primary-recovery-receipt.json"
+    },
+    {
+      "id": "accad-greatsword-start-first-round-20261105",
+      "status": "complete",
+      "maximumBudgetUSD": 3,
+      "scope": "Blind full-source greatsword run-start visual review; native trial remains separate",
+      "receipt": "blind-accad-weapon-receipt.json",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 0.9489286,
+      "verdict": "B visibly better; native trial allowed only, not final quality"
     }
   ],
-  "totalEstimatedUSD": 22.6174234,
+  "totalEstimatedUSD": 23.566352,
   "invoice": false,
   "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported",
   "unpricedAbortedCalls": 1

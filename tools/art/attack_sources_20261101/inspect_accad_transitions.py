@@ -4,6 +4,7 @@
 Native floor is zero. Report source timing/contact defects without shifting the
 review floor or treating source diagnostics as gameplay or quality acceptance.
 """
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -19,7 +20,7 @@ SOURCE = ROOT/'Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/
 OUT = ROOT/'docs/master-goal-20261103/accad-transition-diagnostics.json'
 
 
-def inspect(path, scale):
+def inspect(path, scale, propose_trim=True):
     g = GLB(path)
     meta = json.loads(path.with_suffix('.json').read_text())
     assert hashlib.sha256(path.read_bytes()).hexdigest() == meta['sha256']
@@ -61,28 +62,42 @@ def inspect(path, scale):
     # standing or redundant steady travel. No retiming or pose changes here.
     kind = path.stem.split('_')[1]
     ranges = {'StandToRun': (24, 90), 'RunToStand': (20, 98), 'StandToWalk': (73, 145)}
-    first, last = ranges[kind]
-    return {
+    report = {
         'clip': path.stem, 'source': str(path.relative_to(ROOT)), 'sha256': meta['sha256'],
         'durationSeconds': duration, 'sampleRate': 60, 'floorCm': 0,
         'maximumRootSpeedCmS': float(speed.max()), 'feet': foot_report,
-        'proposedSourceFrameRange': [first, last], 'sourceFPS': meta['fps'],
-        'proposedDurationSeconds': (last-first)/meta['fps'],
+        'sourceFPS': meta['fps'],
         'speedSamples': [{'seconds': float(times[i]), 'cmS': float(speed[i])}
                          for i in range(0, len(speed), 10)],
         'sourceModified': False, 'nativeImported': False, 'accepted': False}
+    if propose_trim:
+        first, last = ranges[kind]
+        assert last <= round(duration*meta['fps'])
+        report.update(proposedSourceFrameRange=[first, last], proposedDurationSeconds=(last-first)/meta['fps'])
+    return report
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source-directory', type=Path, default=SOURCE)
+    parser.add_argument('--output', type=Path, default=OUT)
+    parser.add_argument('--no-trim-proposals', action='store_true')
+    parser.add_argument('--expected-clips', type=int, default=3)
+    args = parser.parse_args()
+    source = args.source_directory.resolve(strict=True)
+    assert source.is_relative_to(ROOT/'Local')
+    output = args.output.resolve()
+    assert output.is_relative_to(ROOT/'Local') or output.is_relative_to(ROOT/'docs')
     scale = json.loads((ROOT/'docs/master-goal-20261103/sourced-turn-diagnostics.json').read_text())['scaleCmPerSourceUnit']
-    report = {'scope': 'Read-only inspection of the actual v3 Blender exports; no acceptance or new animation',
+    report = {'scope': 'Read-only inspection of actual Blender exports; no acceptance or new animation',
               'scaleCmPerSourceUnit': scale,
-              'clips': [inspect(p, scale) for p in sorted(SOURCE.glob('*.glb'))]}
-    assert len(report['clips']) == 3
-    OUT.write_text(json.dumps(report, indent=2)+'\n')
+              'clips': [inspect(p, scale, not args.no_trim_proposals) for p in sorted(source.glob('*.glb'))]}
+    assert args.expected_clips > 0 and len(report['clips']) == args.expected_clips
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2)+'\n')
     for clip in report['clips']:
-        print(clip['clip'], 'trim', clip['proposedSourceFrameRange'],
-              'seconds', round(clip['proposedDurationSeconds'], 3),
+        print(clip['clip'], 'trim', clip.get('proposedSourceFrameRange'),
+              'seconds', round(clip.get('proposedDurationSeconds', clip['durationSeconds']), 3),
               'sole min cm', {s: round(v['minimumSoleCm'], 2) for s, v in clip['feet'].items()})
 
 
