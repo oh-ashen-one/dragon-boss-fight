@@ -1,6 +1,6 @@
 # Current turn/root-blend checkpoint — 2026-11-04 local evening / November5 UTC
 
-**Full goal active and incomplete. Prior turn/continuation was progress, not blocked.** Preserve exact owner-approved R5 fortress tour and accepted attacks/wings/fight feel/audio. The following newer verified facts supersede older running/pending paragraphs. Current source base bafa057b4b00; this continuation is being published as an unaccepted integration checkpoint.
+**Full goal active and incomplete. Prior turn/continuation was progress, not blocked.** Preserve exact owner-approved R5 fortress tour and accepted attacks/wings/fight feel/audio. The following newer verified facts supersede older running/pending paragraphs. Source checkpoint b975d41e3376 and wiki4186c4be972b were pushed and remote-verified. This is an unaccepted integration checkpoint, not completed gameplay.
 
 ## Actual native results and feature state
 
@@ -22,7 +22,7 @@
 
 - All native captures, commandlets, Blender authoring and builds above are terminal. No owned renderer or critic is live.
 - All encoders are terminal0. Native root/weighted comparisons are on the bare page under Turn exits and Turn timing, labeled in progress; page200 and all three movie range206 routes verified. All compute jobs are terminal; only intentional review servers remain. Main review server tool30888, PID in master-review-server.json.
-- Verified packages: a6sof9x4 (normal intro/heal comparison),4wm50v05 (plain authored turns),d29qtpgk (root-space blend),ffgb336b (weighted root plus corrected grip fixture). Latest source flag separation is compile-only. Retain only justified comparison/fallback builds after publication; remove obsolete receipt-owned archives/stages. LatestShipping.json remains stale; final persistent launcher/full-game acceptance is still unfinished.
+- Retained verified packages: a6sof9x4 (normal intro/heal fallback),d29qtpgk (root-space blend baseline),ffgb336b (weighted root plus corrected grip fixture). The obsolete4wm50v05 and2a8hm0cb copies were pruned after publication. Latest source flag separation is compile-only. Cleanup round8 removed8 receipt-owned obsolete app/archive/stage folders and reclaimed19.475GiB; films and receipts remain. LatestShipping.json remains stale; final persistent launcher/full-game acceptance is still unfinished.
 - Bare review page8813 is task-owned, PID receipt Local/Fortress20261103/master-review-server.json. Add final root/turn movies after encoding completes. All existing approved tour/camera/sprint films remain. Source raw assets stay private; no new paid generation or critic call (known critic total20.4041924USD plus one older unpriced abort).
 
 Before task handoff: update BACKLOG/requirements/wiki, run scoped staged/history/privacy checks, push only authorized branches and verify remote hashes. Foreign deletion Local/knight-review-20261028/critique-round2.md remains untouched/unstaged; dragon checkout untouched. Never mark the full goal complete from these partial improvements.

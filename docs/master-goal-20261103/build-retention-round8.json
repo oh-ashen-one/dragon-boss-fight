@@ -1,0 +1,12 @@
+{
+  "applied": true,
+  "removedDirectories": 8,
+  "reclaimedGiB": 19.475,
+  "sourceCheckpoint": "b975d41e3376",
+  "retained": {
+    "a6sof9x4": "normal-flow comparison/fallback",
+    "d29qtpgk": "unweighted root-space baseline",
+    "ffgb336b": "latest tested weighted-root/reference fixture candidate"
+  },
+  "moviesAndReceiptsPreserved": true
+}
