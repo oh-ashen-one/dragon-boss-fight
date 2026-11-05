@@ -13,4 +13,4 @@ gate=Path.home()/'.cache/gpu-slot/bin/gpu_slot.sh';assert gate.is_file(),'Shared
 if (ROOT/'Local/ENGINE_LAUNCH_HOLD.json').exists():raise SystemExit('Task engine-launch hold is active')
 wait_for_budget(ROOT)
 receipt=ROOT/'Local'/('play-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-gpu.json')
-raise SystemExit(subprocess.call([str(gate),'capture','--label','veyr-owner-play','--timeout','180','--json',str(receipt),'--','open','-g','-W','-n',str(app),'--args','/Game/Maps/VeyrArena','-windowed','-ResX=1280','-ResY=720','-ExecCmds=t.MaxFPS 60','-NoCrashReports','-notraceserver']))
+raise SystemExit(subprocess.call([str(gate),'capture','--label','veyr-owner-play','--timeout','180','--json',str(receipt),'--','open','-g','-W','-n',str(app),'--args','/Game/Maps/VeyrArena','-windowed','-ResX=1280','-ResY=720','-ExecCmds=t.MaxFPS 60','-NoCrashReports','-notraceserver','-VeyrCanonicalKnightSkin','-VeyrStableWeaponPresentation','-VeyrWalkEntryBlend','-VeyrReadableAutoLock']))

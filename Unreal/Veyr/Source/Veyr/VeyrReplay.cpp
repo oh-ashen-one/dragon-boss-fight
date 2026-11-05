@@ -331,6 +331,12 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("plantedSprintEnabled"),Knight->UsesPlantedSprint());
     O->SetBoolField(TEXT("directRunningAttackEnabled"),Knight->UsesDirectRunningAttack());
     O->SetBoolField(TEXT("approvedKnightDefinition"),Knight->bApprovedNativeDefinitionActive);
+    O->SetBoolField(TEXT("inactiveKnightTrialReady"),Knight->IsContiguousTrialReady());
+    O->SetBoolField(TEXT("contiguousSprint"),Knight->UsesContiguousSprint());
+    O->SetNumberField(TEXT("contiguousStopEntries"),Knight->ContiguousStopEntries);
+    O->SetNumberField(TEXT("contiguousExactStopEntries"),Knight->ContiguousExactStopEntries);
+    O->SetNumberField(TEXT("contiguousStopRate"),Knight->GetContiguousStopRate());
+    O->SetNumberField(TEXT("contiguousEntryPoseMaxErrorCm"),Knight->ContiguousStopEntryMaxErrorCm);
     O->SetBoolField(TEXT("knightRuntimePolishReady"),Knight->bUsingPolishDefinition);
     O->SetBoolField(TEXT("dragonRuntimePolishReady"),Dragon->bUsingPolishDefinition);
     const AVeyrGameMode* SnapshotMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
@@ -1070,7 +1076,7 @@ bool AVeyrReplay::DriveIntegrationInputs()
     TInlineComponentArray<UVeyrSkeletalPresentation*> DragonPresentations;Dragon->GetComponents(DragonPresentations);
     for(const UVeyrSkeletalPresentation* P:KnightPresentations)if(P)IntegrationMaxKnightFailures=FMath::Max(IntegrationMaxKnightFailures,P->FailedRequests);
     for(const UVeyrSkeletalPresentation* P:DragonPresentations)if(P)IntegrationMaxDragonFailures=FMath::Max(IntegrationMaxDragonFailures,P->FailedRequests);
-    if(Elapsed>.25f&&(!Knight->bApprovedNativeDefinitionActive||!Knight->bImportedPresentationActive||!Dragon->bUsingCustomuseVisual||
+    if(Elapsed>.25f&&((!Knight->bApprovedNativeDefinitionActive&&!Knight->IsContiguousTrialReady())||!Knight->bImportedPresentationActive||!Dragon->bUsingCustomuseVisual||
        bIntegrationFallback||IntegrationMaxKnightFailures||IntegrationMaxDragonFailures||!Dragon->MissingVisualClip.IsNone()||!Knight->BlinkVFXDiagnostic.IsEmpty()))
     {Finish(false,TEXT("integration presentation failed: approved native definition, exact clips and zero fallback/failed requests/VFX diagnostics required"));return true;}
     auto Neutral=[&](){Knight->SetSprintRequested(false);Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);};
@@ -2628,11 +2634,13 @@ void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
     {bSuccess=false;VerifiedReason=FString::Printf(TEXT("victory wall-time gate failed: %.3f seconds; limit 150"),TerminalWallSeconds);}
     const AVeyrGameMode* FinishMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     const AVeyrArena* FinishArena=FinishMode?FinishMode->Arena.Get():nullptr;
-    if(bSuccess&&(!Knight->bUsingPolishDefinition||!Dragon->bUsingPolishDefinition||!FinishArena||!FinishArena->bConnectedCourtAssetsReady))
+    if(bSuccess&&((!Knight->bUsingPolishDefinition&&!Knight->IsContiguousTrialReady())||!Dragon->bUsingPolishDefinition||!FinishArena||!FinishArena->bConnectedCourtAssetsReady))
     {bSuccess=false;VerifiedReason=TEXT("RuntimePolish characters and connected-court assets must be active at completion");}
-    if(bSuccess&&(!Knight->bApprovedNativeDefinitionActive||Knight->bPresentationUsingFallback||
+    if(bSuccess&&((!Knight->bApprovedNativeDefinitionActive&&!Knight->IsContiguousTrialReady())||Knight->bPresentationUsingFallback||
         !Dragon->bAnatomicalLegContactsReady||!Dragon->bBiteGroundAimReady||!Dragon->HasValidImportedCombatPose()))
     {bSuccess=false;VerifiedReason=TEXT("Approved native pose, anatomical legs or grounded bite was not active at completion");}
+    if(bSuccess&&Knight->UsesContiguousSprint()&&(!Knight->IsContiguousTrialReady()||Knight->ContiguousStopEntryMaxErrorCm>.1f))
+    {bSuccess=false;VerifiedReason=TEXT("Inactive contiguous trial missing or native shared-prefix handoff exceeded0.1cm");}
     if(bSuccess)
     {
         for(AActor* Actor:{static_cast<AActor*>(Knight.Get()),static_cast<AActor*>(Dragon.Get())})
@@ -2747,6 +2755,8 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     const AVeyrArena* Arena=Mode?Mode->Arena.Get():nullptr;
     Presentation->SetBoolField(TEXT("knightRuntimePolishReady"),Knight&&Knight->bUsingPolishDefinition);
+    Presentation->SetBoolField(TEXT("inactiveKnightTrialReady"),Knight&&Knight->IsContiguousTrialReady());
+    Presentation->SetBoolField(TEXT("nativeTrialIsQualityAcceptance"),false);
     Presentation->SetBoolField(TEXT("dragonRuntimePolishReady"),Dragon&&Dragon->bUsingPolishDefinition);
     Presentation->SetBoolField(TEXT("connectedCourtAssetsReady"),Arena&&Arena->bConnectedCourtAssetsReady);
     Presentation->SetBoolField(TEXT("importedCathedral"),Arena&&Arena->bUsingImportedCathedral);

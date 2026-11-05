@@ -29,7 +29,12 @@ plan = json.loads(plan_path.read_text())
 assert not plan.get('diagnostic_only')
 plan['runtime_folder'] = 'RuntimePolish'
 stage=job.get('operation','import')
-assert stage in ('import','refine-compression','verify-canonical-skin')
+assert stage in ('import','import-trial','refine-compression','verify-canonical-skin')
+if plan.get('native_trial_only'):
+    assert stage in ('import-trial','verify-canonical-skin') and plan.get('defer_runtime_updates')
+    import_customuse.validate_native_trial_sources(plan)
+else:
+    assert stage!='import-trial', 'Trial operation requires a provenance-checked trial-only plan'
 if stage=='refine-compression':
     plan['scale_aware_compression']=True
     plan['defer_runtime_updates']=True
@@ -58,7 +63,7 @@ try:
     world = unreal.EditorLoadingAndSavingUtils.load_map('/Game/Maps/VeyrArena')
     if not world:
         raise RuntimeError('Native editor world did not load for CPU pose sampling')
-    if stage=='import':
+    if stage in ('import','import-trial'):
         checkpoint('importing')
         report['import'] = import_customuse.run(str(plan_path))
     else:
@@ -75,7 +80,7 @@ try:
         canonical_plan=dict(plan);canonical_plan['prefer_canonical_skin']=True
         report['canonicalPoseVerification']=probe_approved_poses.run(canonical_plan)
         assert report['canonicalPoseVerification']['passed']
-    if stage!='verify-canonical-skin':
+    if stage not in ('verify-canonical-skin','import-trial'):
         # Preserve any intervening session's manifest/runtime edits.
         assert hashlib.sha256(manifest_path.read_bytes()).hexdigest() == job['activeManifestSHA256']
         assert hashlib.sha256(runtime_file.read_bytes()).hexdigest() == job['runtimeAssetSHA256']
@@ -91,6 +96,11 @@ try:
         temporary = manifest_path.with_suffix('.tmp')
         temporary.write_text(json.dumps(manifest, indent=2)+'\n')
         temporary.replace(manifest_path)
+    if plan.get('native_trial_only'):
+        assert hashlib.sha256(manifest_path.read_bytes()).hexdigest()==job['activeManifestSHA256']
+        assert hashlib.sha256(runtime_file.read_bytes()).hexdigest()==job['runtimeAssetSHA256']
+        report['inactiveTrial']=True
+        report['runtimeAssetAndManifestUnchanged']=True
     report['success'] = True
     checkpoint('complete')
     unreal.log('VEYR_HEADLESS_POLISH_COMPLETE')

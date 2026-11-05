@@ -1,0 +1,534 @@
+{
+  "scope": "Read-only source grip diagnostic with actual socket scale included; haft axis inferred from idle palm pair, not a collision mesh or subjective acceptance. Earlier local-space calculation overstated the distance and is superseded.",
+  "source": "Local/AttackSources20261103/LocomotionContacts/Mixamo_RunStopTwoHand_v3composed.glb",
+  "sourceSHA256": "ceda728ea8cfb45558f4f295f9c4e19eeee42ce43a25010898265ecba94fa530",
+  "editableScene": "Local/AttackSources20261103/LocomotionContacts/Mixamo_RunStopTwoHand_v3composed.blend",
+  "editableSceneSHA256": "782ecb6de037292a6cc4ef6befdb1044a8e2aab474404b0419174bf223e815aa",
+  "authoringRecipe": "tools/art/attack_sources_20261101/compose_sourced_stop.py",
+  "minimumAxisDistanceCm": 45.83801607802882,
+  "maximumAxisDistanceCm": 48.02419254619585,
+  "samples": [
+    {
+      "seconds": 0.0,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.63620610298615,
+      "alongShaftCm": -6.080806797439003
+    },
+    {
+      "seconds": 0.016666666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.59890453336393,
+      "alongShaftCm": -6.059417509415969
+    },
+    {
+      "seconds": 0.03333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.58390667403777,
+      "alongShaftCm": -5.796817677652916
+    },
+    {
+      "seconds": 0.05,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.63503787405783,
+      "alongShaftCm": -5.8736764873407745
+    },
+    {
+      "seconds": 0.06666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.667778835033495,
+      "alongShaftCm": -6.080795966205905
+    },
+    {
+      "seconds": 0.08333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.672635543959345,
+      "alongShaftCm": -6.271239088296337
+    },
+    {
+      "seconds": 0.1,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.716590180697125,
+      "alongShaftCm": -6.588780456962474
+    },
+    {
+      "seconds": 0.11666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.73626138019431,
+      "alongShaftCm": -6.803023240355345
+    },
+    {
+      "seconds": 0.13333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.8230227254158,
+      "alongShaftCm": -7.486453217377022
+    },
+    {
+      "seconds": 0.15,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.91085914185129,
+      "alongShaftCm": -8.167760957315194
+    },
+    {
+      "seconds": 0.16666666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.972396079985785,
+      "alongShaftCm": -8.801245553710912
+    },
+    {
+      "seconds": 0.18333333333333332,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.99911096146965,
+      "alongShaftCm": -9.361976867535176
+    },
+    {
+      "seconds": 0.2,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.98841544825134,
+      "alongShaftCm": -9.854578566296984
+    },
+    {
+      "seconds": 0.21666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.95317891159771,
+      "alongShaftCm": -10.285363858024834
+    },
+    {
+      "seconds": 0.23333333333333334,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.880499464324174,
+      "alongShaftCm": -10.578349796039845
+    },
+    {
+      "seconds": 0.25,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.78815356454224,
+      "alongShaftCm": -10.801269982869625
+    },
+    {
+      "seconds": 0.26666666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.667483621937315,
+      "alongShaftCm": -10.976727531945018
+    },
+    {
+      "seconds": 0.2833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.59420762380723,
+      "alongShaftCm": -11.306223593181645
+    },
+    {
+      "seconds": 0.3,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.57519283936829,
+      "alongShaftCm": -11.772566827140224
+    },
+    {
+      "seconds": 0.31666666666666665,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.585015590029286,
+      "alongShaftCm": -12.267309669367101
+    },
+    {
+      "seconds": 0.3333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.608996312377016,
+      "alongShaftCm": -12.701381957872515
+    },
+    {
+      "seconds": 0.35,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.624719521953374,
+      "alongShaftCm": -13.16822705301135
+    },
+    {
+      "seconds": 0.36666666666666664,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.599008526176554,
+      "alongShaftCm": -13.78984382853933
+    },
+    {
+      "seconds": 0.3833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.5518243046151,
+      "alongShaftCm": -14.430143963847751
+    },
+    {
+      "seconds": 0.4,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.48654694858753,
+      "alongShaftCm": -15.021775448641868
+    },
+    {
+      "seconds": 0.4166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.403184915388195,
+      "alongShaftCm": -15.574419936479332
+    },
+    {
+      "seconds": 0.43333333333333335,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.30120300112857,
+      "alongShaftCm": -16.103035049832336
+    },
+    {
+      "seconds": 0.45,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.17625681076137,
+      "alongShaftCm": -16.60667803804676
+    },
+    {
+      "seconds": 0.4666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.01704878087528,
+      "alongShaftCm": -17.076668849277542
+    },
+    {
+      "seconds": 0.48333333333333334,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.844902825568,
+      "alongShaftCm": -17.491302391815285
+    },
+    {
+      "seconds": 0.5,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.25317075677925,
+      "alongShaftCm": -16.925024108333847
+    },
+    {
+      "seconds": 0.5166666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.7859676495775,
+      "alongShaftCm": -16.22020233727738
+    },
+    {
+      "seconds": 0.5333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 48.02419254619585,
+      "alongShaftCm": -15.923948946167698
+    },
+    {
+      "seconds": 0.55,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.936028790809345,
+      "alongShaftCm": -16.03088656870876
+    },
+    {
+      "seconds": 0.5666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.81184736160508,
+      "alongShaftCm": -16.157359036663376
+    },
+    {
+      "seconds": 0.5833333333333334,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.4259778088142,
+      "alongShaftCm": -16.6407752941659
+    },
+    {
+      "seconds": 0.6,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 47.18932771539063,
+      "alongShaftCm": -16.921730145718218
+    },
+    {
+      "seconds": 0.6166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.795026973508016,
+      "alongShaftCm": -17.505523317006585
+    },
+    {
+      "seconds": 0.6333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.54119370704377,
+      "alongShaftCm": -17.93491210019474
+    },
+    {
+      "seconds": 0.65,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.47846864570052,
+      "alongShaftCm": -18.084543844330078
+    },
+    {
+      "seconds": 0.6666666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.45003036891668,
+      "alongShaftCm": -18.183027755361053
+    },
+    {
+      "seconds": 0.6833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.40323032453288,
+      "alongShaftCm": -18.31370745884149
+    },
+    {
+      "seconds": 0.7,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.31322466808492,
+      "alongShaftCm": -18.51028410056583
+    },
+    {
+      "seconds": 0.7166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.155299928907766,
+      "alongShaftCm": -18.807926948925775
+    },
+    {
+      "seconds": 0.7333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 45.980049137458195,
+      "alongShaftCm": -19.107460139865974
+    },
+    {
+      "seconds": 0.75,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 45.861921646772316,
+      "alongShaftCm": -19.29354284488587
+    },
+    {
+      "seconds": 0.7666666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 45.83801607802882,
+      "alongShaftCm": -19.326101058724266
+    },
+    {
+      "seconds": 0.7833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 45.880057693259864,
+      "alongShaftCm": -19.26123999444926
+    },
+    {
+      "seconds": 0.8,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 45.91868916170492,
+      "alongShaftCm": -19.206409595189722
+    },
+    {
+      "seconds": 0.8166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 45.96714624226658,
+      "alongShaftCm": -19.143279581564272
+    },
+    {
+      "seconds": 0.8333333333333334,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.01924197205176,
+      "alongShaftCm": -19.072738254537025
+    },
+    {
+      "seconds": 0.85,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.069730955107445,
+      "alongShaftCm": -18.999063457930603
+    },
+    {
+      "seconds": 0.8666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.11892195354375,
+      "alongShaftCm": -18.919176405522876
+    },
+    {
+      "seconds": 0.8833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.154150920797115,
+      "alongShaftCm": -18.727440853950114
+    },
+    {
+      "seconds": 0.9,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.1801952262499,
+      "alongShaftCm": -18.32736461252607
+    },
+    {
+      "seconds": 0.9166666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.22909538651667,
+      "alongShaftCm": -17.98547984406441
+    },
+    {
+      "seconds": 0.9333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.31746407560111,
+      "alongShaftCm": -17.7727223465744
+    },
+    {
+      "seconds": 0.95,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.49203480069371,
+      "alongShaftCm": -17.791192292128304
+    },
+    {
+      "seconds": 0.9666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.68725963763763,
+      "alongShaftCm": -17.90716049604294
+    },
+    {
+      "seconds": 0.9833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.851755551252666,
+      "alongShaftCm": -18.03439582446907
+    },
+    {
+      "seconds": 1.0,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.950655223682695,
+      "alongShaftCm": -18.116721485074955
+    },
+    {
+      "seconds": 1.0166666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.961866102844624,
+      "alongShaftCm": -18.113967857507877
+    },
+    {
+      "seconds": 1.0333333333333332,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.87172557069285,
+      "alongShaftCm": -17.99972847721011
+    },
+    {
+      "seconds": 1.05,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.669535254722554,
+      "alongShaftCm": -17.917765278305577
+    },
+    {
+      "seconds": 1.0666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.435042387052626,
+      "alongShaftCm": -17.825393529963836
+    },
+    {
+      "seconds": 1.0833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.28254832699382,
+      "alongShaftCm": -17.707473920555437
+    },
+    {
+      "seconds": 1.1,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.328595679669476,
+      "alongShaftCm": -17.48704079334723
+    },
+    {
+      "seconds": 1.1166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.470262435697556,
+      "alongShaftCm": -17.222224189996417
+    },
+    {
+      "seconds": 1.1333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.41280926769002,
+      "alongShaftCm": -17.105294150343767
+    },
+    {
+      "seconds": 1.15,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.284519252161424,
+      "alongShaftCm": -17.062672541024305
+    },
+    {
+      "seconds": 1.1666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.23474678863774,
+      "alongShaftCm": -17.025160615023378
+    },
+    {
+      "seconds": 1.1833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.22342930883251,
+      "alongShaftCm": -16.97803385774704
+    },
+    {
+      "seconds": 1.2,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.22680652580299,
+      "alongShaftCm": -16.924091354723103
+    },
+    {
+      "seconds": 1.2166666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.235013812920535,
+      "alongShaftCm": -16.865792277072305
+    },
+    {
+      "seconds": 1.2333333333333334,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.247901826259664,
+      "alongShaftCm": -16.80304432381239
+    },
+    {
+      "seconds": 1.25,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.267868321252365,
+      "alongShaftCm": -16.7391321908671
+    },
+    {
+      "seconds": 1.2666666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.285822909631854,
+      "alongShaftCm": -16.668091491130557
+    },
+    {
+      "seconds": 1.2833333333333332,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.28020376406507,
+      "alongShaftCm": -16.645169577302237
+    },
+    {
+      "seconds": 1.3,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.277609400543845,
+      "alongShaftCm": -16.6110510668215
+    },
+    {
+      "seconds": 1.3166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.27099195760997,
+      "alongShaftCm": -16.583717510060474
+    },
+    {
+      "seconds": 1.3333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.26981985058138,
+      "alongShaftCm": -16.531477523701614
+    },
+    {
+      "seconds": 1.35,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.28611464847784,
+      "alongShaftCm": -16.42682812586268
+    },
+    {
+      "seconds": 1.3666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.308777940059144,
+      "alongShaftCm": -16.32530831862812
+    },
+    {
+      "seconds": 1.3833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.32061494879222,
+      "alongShaftCm": -16.22647312165197
+    },
+    {
+      "seconds": 1.4,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.33813700405322,
+      "alongShaftCm": -16.09018185788387
+    },
+    {
+      "seconds": 1.4166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.34935953330062,
+      "alongShaftCm": -15.961331169186263
+    },
+    {
+      "seconds": 1.4333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.35430604836389,
+      "alongShaftCm": -15.840107954170255
+    },
+    {
+      "seconds": 1.45,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.35288215128487,
+      "alongShaftCm": -15.7271045527315
+    },
+    {
+      "seconds": 1.4666666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.34451753779855,
+      "alongShaftCm": -15.626261456051944
+    },
+    {
+      "seconds": 1.4833333333333334,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.33129161765297,
+      "alongShaftCm": -15.533154024189376
+    },
+    {
+      "seconds": 1.5,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.3116672202353,
+      "alongShaftCm": -15.454185952587464
+    },
+    {
+      "seconds": 1.5166666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.29418972295936,
+      "alongShaftCm": -15.36842401018267
+    },
+    {
+      "seconds": 1.5333333333333332,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.27457576522745,
+      "alongShaftCm": -15.306965150540924
+    },
+    {
+      "seconds": 1.55,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.26162437424314,
+      "alongShaftCm": -15.248684238897525
+    },
+    {
+      "seconds": 1.5666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.25819166593583,
+      "alongShaftCm": -15.178950071256121
+    },
+    {
+      "seconds": 1.5833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.26025984856526,
+      "alongShaftCm": -15.099525564249209
+    },
+    {
+      "seconds": 1.6,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.266427698475454,
+      "alongShaftCm": -15.009434845708107
+    },
+    {
+      "seconds": 1.6166666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.27973783674711,
+      "alongShaftCm": -14.896716132071939
+    },
+    {
+      "seconds": 1.6333333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.29006871758258,
+      "alongShaftCm": -14.785969598791
+    },
+    {
+      "seconds": 1.65,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.29885487117837,
+      "alongShaftCm": -14.675321052012816
+    },
+    {
+      "seconds": 1.6666666666666667,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.30695638343939,
+      "alongShaftCm": -14.563952361144297
+    },
+    {
+      "seconds": 1.6833333333333333,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.31447192248851,
+      "alongShaftCm": -14.450797445340509
+    },
+    {
+      "seconds": 1.7,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.321730011445645,
+      "alongShaftCm": -14.336270328646805
+    },
+    {
+      "seconds": 1.7166666666666666,
+      "leftPalmDistanceFromIdleDefinedHaftAxisCm": 46.32846252708468,
+      "alongShaftCm": -14.220435811300831
+    }
+  ],
+  "weaponSocketScaleIncluded": true,
+  "sourceUpperBodyProvenance": "Rifle running to standing; selected as a body/leg stop base for sword-carry adaptation. Lower body in the native composed stop comes from the cleaner one-hand stop."
+}

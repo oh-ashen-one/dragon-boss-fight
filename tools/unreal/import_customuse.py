@@ -231,9 +231,40 @@ def verify_sourced_definition(plan,definition,check_replacements=True):
         checked.append(spec['name'])
     return {'guard':actual_guard,'preservedClips':preserved,'replacementMetadataVerified':checked}
 
+def validate_native_trial_sources(plan):
+    """Validate Blender provenance for an inactive trial; never waive CPU guards."""
+    if not plan.get('native_trial_only'):
+        return []
+    if plan.get('diagnostic_only') or not plan.get('defer_runtime_updates'):
+        raise ValueError('Inactive trials require Blender sources and deferred runtime updates')
+    proofs=plan.get('blender_trial_sources',[])
+    clips={clip['name']:clip for clip in plan['clips']}
+    if len(proofs)!=len(clips) or {p['name'] for p in proofs}!=set(clips):
+        raise ValueError('Every trial clip requires one authored-source proof')
+    verified=[]
+    for proof in proofs:
+        path=(ROOT/proof['metadata']).resolve()
+        if not path.is_relative_to((ROOT/'Local/AttackSources20261105').resolve()):
+            raise ValueError('Trial source proof outside the owned source workspace')
+        meta=json.loads(path.read_text())
+        if meta.get('authoringApplication')!='Blender' or meta.get('candidateStopped') or (path.parent/'DO_NOT_IMPORT.md').exists():
+            raise ValueError('Stopped or unauthored motion cannot enter a native trial')
+        scene=(ROOT/meta['editableScene']).resolve()
+        if not scene.is_relative_to((ROOT/'Local').resolve()) or scene.suffix!='.blend':
+            raise ValueError('Invalid editable source path')
+        source=scene.with_suffix('.glb')
+        if hashlib.sha256(scene.read_bytes()).hexdigest()!=meta['editableSceneSHA256'] or hashlib.sha256(source.read_bytes()).hexdigest()!=meta['sha256']:
+            raise ValueError('Authored source digest mismatch')
+        if clips[proof['name']]['approved_source_sha256']!=meta['sha256']:
+            raise ValueError('Prepared clip does not identify the authored source')
+        verified.append({'clip':proof['name'],'sourceSHA256':meta['sha256'],'editableSceneSHA256':meta['editableSceneSHA256']})
+    return verified
+
+
 def finalize_existing(plan):
     """Finish the approved native import without reimporting or changing source assets."""
     import unreal
+    validate_native_trial_sources(plan)
     character,version=plan['character'],plan['version']
     prepare_validation_settings()
     path=f"/Game/Characters/Customuse/{character}/{version}/DA_{character}"
@@ -369,8 +400,9 @@ def finalize_existing(plan):
 
 def activate_polish_plan(plan):
     """Activate a checked revision without changing the preserved source assets."""
-    import unreal
     if plan.get('diagnostic_only'):raise ValueError('Diagnostic-only motion cannot be activated')
+    if plan.get('native_trial_only'):raise ValueError('Inactive native trials cannot replace the default runtime definition')
+    import unreal
     if Path(unreal.Paths.project_dir()).resolve()!=PROJECT.resolve():raise RuntimeError('Wrong native project')
     if unreal.EditorLevelLibrary.get_game_world() is not None:raise RuntimeError('Stop PIE before activation')
     character=plan['character']
@@ -407,6 +439,7 @@ def run(plan_file):
     plan = json.loads(Path(plan_file).read_text())
     if plan.get('diagnostic_only'):
         raise ValueError('Diagnostic-only motion is not eligible for native import; project rules require Blender authoring')
+    validate_native_trial_sources(plan)
     character, version = plan["character"], plan["version"]
     if plan.get("verify_render_policy_only"):
         import importlib, probe_render_policy

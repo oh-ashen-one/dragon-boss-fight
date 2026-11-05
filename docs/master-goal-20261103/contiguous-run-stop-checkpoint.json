@@ -1,5 +1,5 @@
 {
-  "status": "running_boot_support_verified_late_stop_marker_failure_retained_native_representation_prepared_not_imported",
+  "status": "inactive_native_trial_imported_filmed_contact_tests_failed_earlier_brake_wins_blind_review_no_promotion",
   "source": "ACCAD Male1 C02 RunToStand, CC BY3.0; existing acquired source/provenance reused",
   "approach": "Extract running cycle and full exit from the same source capture. Exit retains the identical loop prefix for phase-continuous entry, unlike the failed unrelated-clip phase matcher. Airborne loop correction is still unverified.",
   "savedSources": [
@@ -74,7 +74,7 @@
   "fixedReferenceScreen": "contiguous-placement-export-check.json",
   "ownReferenceScreen": "contiguous-placement-native-reference-screen.json",
   "nativePreparation": "contiguous-native-preparation.json",
-  "nextAction": "Implement a genuinely inactive native trial route and controller phase/rate handling, then import/build/film real gameplay; do not keep treating source fidelity as quality or waive remaining contact failures.",
+  "nextAction": "Retain the preferred new sprint carry but restore the clearer earlier braking source, repair actual sword grip/helmet clearance, and fix native contact/start-turn failures. Do not promote v047 unchanged.",
   "initialPair": {
     "clips": [
       {
@@ -491,5 +491,7 @@
       "baselineSource": "Local/AttackSources20261105/ACCADMale1/ContiguousWeaponV10/ACCAD_RunToStandTwoHand_v10weapon.blend",
       "pair": "Local/AttackSources20261105/ACCADMale1/ContiguousPairV18"
     }
-  ]
+  ],
+  "nativeCheckpoint": "native-contiguous047-checkpoint.json",
+  "blindReview": "blind-contiguous047-receipt.json"
 }

@@ -1,3 +1,7 @@
+# Native trial and blind verdict — 2026-11-05
+
+v047 is now imported as an inactive trial and tested in a Shipping build. Exact run-to-stop entry is continuous, and two transition peaks improved, but all4 full movement cases still fail contacts. Blind Opus prefers the earlier brake's plant/settle and the new trial's sprint carry; neither is shippable. No default promotion. Next retain those strengths while repairing grip/clearance and actual native contact/start-turn failures. Native movies are queued behind STREAMING; see HANDOFF.md for the sole live handle. Source-only/prepared-only descriptions below are historical.
+
 # Current source/native-preparation checkpoint — 2026-11-05
 
 The latest two-hand source pair is V17/PairV18. Actual running boot support now exists on both feet, with measured support windows below60cm/s; late-stop marker checks still fail. Current/earlier source movies are watchable at `#placement` and history links. V13's marker-only false pass is import-blocked. No new gameplay animation is active.

@@ -57,6 +57,11 @@ public:
     bool UsesPlantedSprint() const { return bPlantedSprint; }
     bool UsesSourcedRunStart() const { return bSourcedRunStart; }
     bool UsesMatchedRunStops() const { return bMatchedRunStops; }
+    bool UsesContiguousSprint() const { return bContiguousSprint; }
+    bool IsContiguousTrialReady() const { return bContiguousTrialReady&&bImportedPresentationActive; }
+    float GetContiguousStopRate() const { return ContiguousStopRate; }
+    float ContiguousStopEntryMaxErrorCm=0.f;
+    int32 ContiguousStopEntries=0,ContiguousExactStopEntries=0;
     float GetRunStopSourceOffset() const { return RunStopSourceOffset; }
     int32 RunStarts=0;
     bool UsesPrimaryRecovery() const { return bPrimaryRecovery; }
@@ -279,6 +284,9 @@ private:
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
     bool bSourcedRunStart=false;
+    bool bContiguousSprint=false,bContiguousTrialReady=false,bContiguousExactEntry=false,bMeasureContiguousEntry=false;
+    float ContiguousStopRate=1.f;
+    FVector ContiguousEntryFeet[4];
     bool bThreatCameraFraming=false,bThreatFramingActive=false,bThreatFitFound=false;
     float ThreatCameraArm=560.f,ThreatCameraFOV=72.f,ThreatTargetArm=560.f,ThreatTargetFOV=72.f,ThreatFitCooldown=0.f;
     void UpdateThreatCameraOptics(float DeltaSeconds,const FRotator& Look);

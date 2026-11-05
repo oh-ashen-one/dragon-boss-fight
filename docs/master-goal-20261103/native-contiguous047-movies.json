@@ -1,0 +1,26 @@
+{
+  "movies": [
+    {
+      "variant": "before",
+      "movie": "contiguous-native-before.mp4",
+      "sha256": "fd85bccf73a4224973d13d00c0ea4f984f10ed9c28c77e5578d1f8e2c5d5b0a2",
+      "nativeFrames": 1354,
+      "durationSeconds": 45.182613749057055,
+      "timingVerified": true,
+      "audio": "silent visual movement study",
+      "editorialOverlays": false
+    },
+    {
+      "variant": "after",
+      "movie": "contiguous-native-after.mp4",
+      "sha256": "ab9a1070fd7c10442f793f1c2a48805c5ffbe327c710b3ce25df494a3a30b8dd",
+      "nativeFrames": 1423,
+      "durationSeconds": 47.486279625445604,
+      "timingVerified": true,
+      "audio": "silent visual movement study",
+      "editorialOverlays": false
+    }
+  ],
+  "qualityAccepted": false,
+  "review": "blind-contiguous047-receipt.json"
+}

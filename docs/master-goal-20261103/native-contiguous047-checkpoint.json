@@ -1,0 +1,122 @@
+{
+  "scope": "Same Shipping build, scripted native input movement lab; not full combat, physical keyboard/mouse or quality acceptance",
+  "nativeImport": {
+    "inactiveTrial": true,
+    "runtimeAssetAndManifestUnchanged": true,
+    "nativeSamples": 396,
+    "canonicalSamples": 396
+  },
+  "runs": [
+    {
+      "variant": "before",
+      "evidence": "Evidence/native-blendproof-20261105T152648Z/unreal-blendproof-20261105T152709Z-DE8EEC7B/evidence.json",
+      "sourceId": "8755f4dc816ad7923c6a346ee72b0a696be80ce5d58040a56514d163fbad325f",
+      "nativeProcessExitCode": 0,
+      "allPassed": false,
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "passed": false,
+          "reason": "planted_foot_slide_924cm_per_s_transition",
+          "maxFrameSeconds": 0.025875791907310486,
+          "maxFootSlideCmS": 924.2091064453125,
+          "maxSteadyCmS": 29.08234214782715
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "passed": false,
+          "reason": "planted_foot_slide_601cm_per_s_transition",
+          "maxFrameSeconds": 0.02782108262181282,
+          "maxFootSlideCmS": 601.4266357421875,
+          "maxSteadyCmS": 11.67208194732666
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "passed": false,
+          "reason": "planted_foot_slide_587cm_per_s_transition",
+          "maxFrameSeconds": 0.03173520788550377,
+          "maxFootSlideCmS": 587.0022583007812,
+          "maxSteadyCmS": 11.675354957580566
+        },
+        {
+          "name": "Start_1H_control_side",
+          "passed": false,
+          "reason": "planted_foot_slide_1175cm_per_s_transition",
+          "maxFrameSeconds": 0.03068428859114647,
+          "maxFootSlideCmS": 1174.816162109375,
+          "maxSteadyCmS": 45.47174835205078
+        }
+      ],
+      "fullTwoHandWindowPeaksCmS": {
+        "RunStopTwoHandSourced / transition": 924.2091308971013,
+        "RunStartTwoHandSourced / transition": 576.1042039384864,
+        "RunTwoHandPlanted / transition": 270.3876481936344,
+        "IdleTwoHand / transition": 69.56434666928277,
+        "RunStopTwoHandSourced / steady": 29.08234344908125,
+        "RunTwoHandPlanted / steady": 27.28030053384301,
+        "RunStartTwoHandSourced / steady": 19.21539993016141,
+        "IdleTwoHand / steady": 1.3221473908624757
+      },
+      "inactiveTrialReady": false,
+      "exactStopEntries": 0,
+      "maxEntryPoseErrorCm": 0
+    },
+    {
+      "variant": "after",
+      "evidence": "Evidence/native-blendproof-20261105T152754Z/unreal-blendproof-20261105T152816Z-B408E4C3/evidence.json",
+      "sourceId": "8755f4dc816ad7923c6a346ee72b0a696be80ce5d58040a56514d163fbad325f",
+      "nativeProcessExitCode": 0,
+      "allPassed": false,
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "passed": false,
+          "reason": "planted_foot_slide_576cm_per_s_transition",
+          "maxFrameSeconds": 0.028097081929445267,
+          "maxFootSlideCmS": 576.1649169921875,
+          "maxSteadyCmS": 78.62567901611328
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "passed": false,
+          "reason": "planted_foot_slide_581cm_per_s_transition",
+          "maxFrameSeconds": 0.02831225097179413,
+          "maxFootSlideCmS": 580.7711181640625,
+          "maxSteadyCmS": 12.147398948669434
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "passed": false,
+          "reason": "planted_foot_slide_574cm_per_s_transition",
+          "maxFrameSeconds": 0.03225945681333542,
+          "maxFootSlideCmS": 574.1609497070312,
+          "maxSteadyCmS": 15.156822204589844
+        },
+        {
+          "name": "Start_1H_control_side",
+          "passed": false,
+          "reason": "planted_foot_slide_1276cm_per_s_transition",
+          "maxFrameSeconds": 0.03793112561106682,
+          "maxFootSlideCmS": 1276.29248046875,
+          "maxSteadyCmS": 57.99475860595703
+        }
+      ],
+      "fullTwoHandWindowPeaksCmS": {
+        "RunStartTwoHandSourced / transition": 576.1649154973456,
+        "RunTwoHandContiguous / steady": 78.62568041139289,
+        "RunStopTwoHandContiguous / steady": 66.93383319719406,
+        "RunTwoHandContiguous / transition": 58.04201885936834,
+        "IdleTwoHand / transition": 55.38291896273198,
+        "RunStartTwoHandSourced / steady": 18.646025114981928,
+        "IdleTwoHand / steady": 1.092366361407037
+      },
+      "inactiveTrialReady": true,
+      "exactStopEntries": 1,
+      "maxEntryPoseErrorCm": 0.00021995646238792688
+    }
+  ],
+  "blindReview": "blind-contiguous047-receipt.json",
+  "defaultPromoted": false,
+  "fullGoalComplete": false,
+  "movies": "native-contiguous047-movies.json; verified and served on the bare page"
+}

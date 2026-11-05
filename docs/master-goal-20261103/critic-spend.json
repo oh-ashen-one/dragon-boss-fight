@@ -134,9 +134,20 @@
       "maximumBudgetUSD": 3,
       "receipt": "blind-threat-camera-receipt.json",
       "verdict": "B visibly better; further integration allowed, final quality unaccepted"
+    },
+    {
+      "id": "contiguous047-first-native-round-20261105",
+      "status": "complete",
+      "actualModels": [
+        "claude-opus-5-5"
+      ],
+      "estimatedUSD": 0.7497906,
+      "maximumBudgetUSD": 3,
+      "receipt": "blind-contiguous047-receipt.json",
+      "verdict": "B earlier stop wins; A new sprint carry preferred; neither shippable, no trial promotion"
     }
   ],
-  "totalEstimatedUSD": 24.2965516,
+  "totalEstimatedUSD": 25.0463422,
   "invoice": false,
   "generationCreditsSeparate": "tripo-spend.json;275 observed Tripo credits; built-in image cost unreported",
   "unpricedAbortedCalls": 1

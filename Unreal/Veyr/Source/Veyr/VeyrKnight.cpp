@@ -237,6 +237,10 @@ void AVeyrKnight::BeginPlay()
         CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,TEXT("/Game/Characters/Customuse/Runtime/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
         if(CustomuseVisualDefinition)UE_LOG(LogTemp,Warning,TEXT("VEYR_LEGACY_DEFINITION approved native definition missing; old art is not integration acceptance"));
     }
+    bContiguousSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrContiguousSprint"));
+    if(bContiguousSprint)
+        CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
+            TEXT("/Game/Characters/Customuse/KnightB/v047contiguous/DA_KnightB.DA_KnightB"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     // Each completion feature keeps its "before" behind a flag (boss-fight-blueprint principle 8).
     bLockOnStrafeEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoLockOnStrafe"));
     bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
@@ -302,7 +306,8 @@ bool AVeyrKnight::HasVisualClip(FName Name) const
 float AVeyrKnight::VisualClipPlayRate(FName Name) const
 {
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
-    return C?FMath::Clamp(C->GameplayPlayRate,.1f,4.f):1.f;
+    const float Rate=C?FMath::Clamp(C->GameplayPlayRate,.1f,4.f):1.f;
+    return bContiguousSprint&&Name==FName(TEXT("RunStopTwoHandContiguous"))?Rate*ContiguousStopRate:Rate;
 }
 float AVeyrKnight::VisualClipDuration(FName Name,float Fallback) const
 {
@@ -313,7 +318,7 @@ float AVeyrKnight::VisualClipDuration(FName Name,float Fallback) const
 }
 float AVeyrKnight::VisualClipSpeed(FName Name) const
 {
-    if(bLocomotionPhaseMatch)
+    if(bLocomotionPhaseMatch&&Name!=FName(TEXT("RunTwoHandContiguous")))
         if(const FLocomotionPhaseCache* Cached=LocomotionPhaseCache.Find(Name))
             if(Cached->NominalSpeed>1.f)return Cached->NominalSpeed*VisualClipPlayRate(Name);
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Name):nullptr;
@@ -395,7 +400,7 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::Combo:return TEXT("LightCombo");
         case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
         case EVeyrKnightAction::Roll:return TEXT("Roll");
-        case EVeyrKnightAction::RunStop:return bSourcedSprint?(bTwoHanded?TEXT("RunStopTwoHandSourced"):TEXT("RunStopOneHandSourced")):TEXT("RunStop");
+        case EVeyrKnightAction::RunStop:return bContiguousSprint&&bTwoHanded?TEXT("RunStopTwoHandContiguous"):bSourcedSprint?(bTwoHanded?TEXT("RunStopTwoHandSourced"):TEXT("RunStopOneHandSourced")):TEXT("RunStop");
         case EVeyrKnightAction::BlinkLeft:return bTwoHanded&&HasVisualClip(TEXT("BlinkLeftTwoHand"))?FName(TEXT("BlinkLeftTwoHand")):FName(TEXT("BlinkLeft"));
         case EVeyrKnightAction::BlinkRight:return bTwoHanded&&HasVisualClip(TEXT("BlinkRightTwoHand"))?FName(TEXT("BlinkRightTwoHand")):FName(TEXT("BlinkRight"));
         case EVeyrKnightAction::Backstep:return TEXT("BackpedalStep");
@@ -423,6 +428,8 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
     }
     BlinkDirectionYaw=0.f;
     Action=NewAction;ActionElapsed=0.f;ActionDuration=Duration;ActionPresentationClip=ResolveActionClip(NewAction);RunStopSourceOffset=0.f;bDeferRunStopAdvance=false;
+    bContiguousExactEntry=bMeasureContiguousEntry=false;
+    if(NewAction!=EVeyrKnightAction::RunStop)ContiguousStopRate=1.f;
     if(NewAction==EVeyrKnightAction::LeapAttack)GetCharacterMovement()->SetMovementMode(MOVE_Flying);
     bContactSent=false;bHealGranted=false;bPreviousBladePoseValid=false;bPreserveRollPrefix=false;
     bBlinkHidden=false;bLateralDodgeBlocked=false;ContactedDamageWindows.Reset();CurrentDamageWindow=INDEX_NONE;
@@ -903,10 +910,24 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     const FName StopClip=ResolveActionClip(EVeyrKnightAction::RunStop);
     if(Action==EVeyrKnightAction::Ready&&bWasRunning&&MoveIntent.IsNearlyZero()&&HasVisualClip(StopClip))
     {
+        const bool Contiguous=bContiguousSprint&&bTwoHanded&&ImportedPresentation&&
+            ImportedPresentation->CurrentClip==FName(TEXT("RunTwoHandContiguous"));
+        const bool Exact=Contiguous&&ImportedPresentation->CurrentTransitionAlpha>=1.f;
+        const float EntrySpeed=GetPlanarSpeed();
+        float ContiguousPhase=0.f;
+        if(Contiguous)
+        {
+            const FName Run=TEXT("RunTwoHandContiguous");
+            const float Duration=VisualClipDuration(Run,1.f)*VisualClipPlayRate(Run);
+            const float Nominal=VisualClipSpeed(Run);
+            ContiguousPhase=FMath::Fmod(ImportedPresentation->CurrentTrimmedSeconds+
+                DeltaSeconds*EntrySpeed/FMath::Max(1.f,Nominal)*VisualClipPlayRate(Run),Duration);
+            ContiguousStopRate=FMath::Clamp(EntrySpeed/FMath::Max(1.f,Nominal),.1f,4.f)*VisualClipPlayRate(Run);
+        }
         // Walking physics already advanced this frame. Bring its pose to the
         // same time before choosing the stop prefix; do not apply a second
         // root-motion step on this entry frame.
-        if(bMatchedRunStops&&ImportedPresentation&&ImportedPresentation->CurrentTransitionAlpha>=1.f)
+        if((bMatchedRunStops||Contiguous)&&ImportedPresentation&&ImportedPresentation->CurrentTransitionAlpha>=1.f)
         {
             // Releasing Shift must not select Walk here. Advance the loop
             // which produced this frame's movement, without starting another
@@ -920,10 +941,20 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
                 if(ImportedPresentation->SampleClipTime(Outgoing,Next*Rate))PresentationLocomotionTime=Next;
             }
         }
-        const float Entry=bMatchedRunStops?ClosestLocomotionPhase(StopClip,GetPlanarSpeed()):0.f;
+        const float Entry=Contiguous?ContiguousPhase:bMatchedRunStops?ClosestLocomotionPhase(StopClip,GetPlanarSpeed()):0.f;
         ++RunStops;BeginAction(EVeyrKnightAction::RunStop,FMath::Max(.05f,VisualClipDuration(StopClip,.6f)-Entry/VisualClipPlayRate(StopClip)));
         RunStopSourceOffset=Entry;
-        bDeferRunStopAdvance=bMatchedRunStops;
+        bDeferRunStopAdvance=bMatchedRunStops||Contiguous;
+        if(Contiguous)
+        {
+            ++ContiguousStopEntries;bContiguousExactEntry=Exact;bMeasureContiguousEntry=Exact;
+            if(Exact)
+            {
+                ++ContiguousExactStopEntries;
+                const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
+                for(int32 I=0;I<4;++I)ContiguousEntryFeet[I]=ImportedPresentation->GetSocketLocation(Bones[I]);
+            }
+        }
     }
     bLateralDodgeBlocked=false;
     const bool bAttack=IsAttackAction();
@@ -1214,6 +1245,18 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     CustomuseVisualDefinition = Definition;
     bUsingPolishDefinition=Definition&&Definition->GetPathName().Contains(TEXT("/RuntimePolish/"));
     bApprovedNativeDefinitionActive=Definition&&(bUsingPolishDefinition||Definition->GetPathName().Contains(TEXT("/RuntimeApproved/")));
+    bContiguousTrialReady=false;
+    if(bContiguousSprint&&Definition&&Definition->GetPathName()==TEXT("/Game/Characters/Customuse/KnightB/v047contiguous/DA_KnightB.DA_KnightB"))
+    {
+        const FVeyrVisualClip* Run=Definition->Clips.Find(TEXT("RunTwoHandContiguous"));
+        const FVeyrVisualClip* Stop=Definition->Clips.Find(TEXT("RunStopTwoHandContiguous"));
+        bContiguousTrialReady=Run&&Stop&&Run->Sequence&&Stop->Sequence&&Run->bLoop&&!Stop->bLoop&&
+            Run->NominalSpeedCmPerSecond>1.f&&Run->RootSampleRate>0.f&&
+            FMath::IsNearlyEqual(Run->RootSampleRate,Stop->RootSampleRate,.01f)&&
+            Run->RootTranslationSamplesCm.Num()>1&&Stop->RootTranslationSamplesCm.Num()>=Run->RootTranslationSamplesCm.Num();
+        if(bContiguousTrialReady)for(int32 I=0;I<Run->RootTranslationSamplesCm.Num();++I)
+            if(!Run->RootTranslationSamplesCm[I].Equals(Stop->RootTranslationSamplesCm[I],.001f)){bContiguousTrialReady=false;break;}
+    }
     ClearBlinkEchoes();
     bPreviousBladePoseValid=false;
     bImportedPresentationActive = bRequestedPresentationClipSampled = bPresentationUsingFallback = false;
@@ -1239,6 +1282,8 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         SetPresentationDiagnostic(TEXT("Temporary primitive presentation: imported component or definition missing"));
         return false;
     }
+    if(bContiguousSprint&&!bContiguousTrialReady)
+    {SetPresentationDiagnostic(TEXT("Requested inactive contiguous trial is missing or its root prefix is incompatible"));return false;}
     // The intro displays the idle skin, but the first walk/attack can use
     // another approved mesh variant with distinct texture objects. Warm all
     // five current variants, deduplicating shared meshes and texture objects.
@@ -1261,7 +1306,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         return false;
     }
     bImportedPresentationActive = true;
-    if((bLocomotionPhaseMatch||bWalkEntryBlend||bSourcedRunStart||bMatchedRunStops)&&!BuildLocomotionPhaseCache())
+    if((bLocomotionPhaseMatch||bWalkEntryBlend||bSourcedRunStart||bMatchedRunStops||bContiguousSprint)&&!BuildLocomotionPhaseCache())
     {SetPresentationDiagnostic(TEXT("Native locomotion phase cache failed"));return false;}
     if(bStableWeaponPresentation)PrepareWeaponComponents();
     UpdateImportedPresentation();
@@ -1323,6 +1368,7 @@ FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
     // Normal movement uses the sourced walk in the current grip. Shift selects
     // the sourced run; Ctrl remains unbound. Cadence follows measured speed.
     if(!bAllowRun||!bSprintHeld)return bTwoHanded?TEXT("WalkTwoHand"):TEXT("Walk");
+    if(bContiguousSprint&&bTwoHanded)return TEXT("RunTwoHandContiguous");
     if(bPlantedSprint)return bTwoHanded?TEXT("RunTwoHandPlanted"):TEXT("RunOneHandPlanted");
     if(bTwoHanded)return bSourcedSprint?TEXT("RunTwoHandSourced"):TEXT("RunTwoHand");
     return RunAnimationVariant==1?TEXT("RunAlternate"):TEXT("Run");
@@ -1514,9 +1560,10 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         PresentationLocomotionTime+=DeltaSeconds*GetPlanarSpeed()/Nominal;Time=PresentationLocomotionTime;
     }
     const bool RunClip=Clip==FName(TEXT("Run"))||Clip==FName(TEXT("RunAlternate"))||
+        (bContiguousSprint&&Clip==FName(TEXT("RunTwoHandContiguous")))||
         (bPlantedSprint&&(Clip==FName(TEXT("RunOneHandPlanted"))||Clip==FName(TEXT("RunTwoHandPlanted"))))||
         (bSourcedSprint&&(Clip==FName(TEXT("RunTwoHand"))||Clip==FName(TEXT("RunTwoHandSourced"))));
-    bWasRunning=Moving&&(bSourcedSprint||!bTwoHanded)&&RunClip;
+    bWasRunning=Moving&&(bSourcedSprint||bContiguousSprint||!bTwoHanded)&&RunClip;
     PresentationLowerClip=PresentationTransitionLowerClip=RequestedLowerPresentationClip=NAME_None;
     PresentationLowerWeight=PresentationLowerTime=PresentationJumpPhase=0.f;
     const float DesiredRollYaw=IsRollPrefix()?FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw):0.f;
@@ -1540,7 +1587,10 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         }
         const bool ContiguousPrimary=bSourcedTwoHandHeavy&&bPrimaryChainActive&&PrimaryChainStep==1&&
             Clip==FName(TEXT("LightCombo"))&&PresentationTransitionClip==Clip;
-        const bool PreservePrefix=ContiguousPrimary||(bPreserveRollPrefix&&PresentationTransitionClip==FName(TEXT("Roll"))&&Clip==FName(TEXT("RollAttack")));
+        const bool ContiguousStop=bContiguousExactEntry&&Clip==FName(TEXT("RunStopTwoHandContiguous"))&&
+            ImportedPresentation->CurrentClip==FName(TEXT("RunTwoHandContiguous"));
+        const bool PreservePrefix=ContiguousPrimary||ContiguousStop||(bPreserveRollPrefix&&PresentationTransitionClip==FName(TEXT("Roll"))&&Clip==FName(TEXT("RollAttack")));
+        if(ContiguousStop)ContinuousTransitionSource=NAME_None;
         // Hand-space grip of the pose being left (last evaluated, possibly mid-blend) for the hand-locked sword.
         {
             FTransform H,W;
@@ -1550,7 +1600,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         bPresentationTransitionActive=!PreservePrefix&&!PresentationTransitionClip.IsNone()&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->BeginTransition();
         // The sourced Fab run carries the sword ~50-60 cm from where RunStop starts (RunStop was
         // authored from the earlier Blender run); a 0.10 s blend outran both clips' peak speeds.
-        auto IsStop=[](FName Name){return Name==FName(TEXT("RunStop"))||Name==FName(TEXT("RunStopOneHandSourced"))||Name==FName(TEXT("RunStopTwoHandSourced"));};
+        auto IsStop=[](FName Name){return Name==FName(TEXT("RunStop"))||Name==FName(TEXT("RunStopOneHandSourced"))||Name==FName(TEXT("RunStopTwoHandSourced"))||Name==FName(TEXT("RunStopTwoHandContiguous"));};
         bTransitionInvolvesRunStop=IsStop(Clip)||IsStop(PresentationTransitionClip);
         bTransitionInvolvesRunStart=Clip==FName(TEXT("RunStartTwoHandSourced"))||PresentationTransitionClip==FName(TEXT("RunStartTwoHandSourced"));
         // Entering or leaving lock-on locomotion changes posture (hips up to 26 cm lower in the strafes): blend longer.
@@ -1599,6 +1649,13 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     }
     else Sampled=ImportedPresentation->SampleClipTimeBlended(Clip,SampleTime,Alpha);
     if(Sampled)Sampled=UpdateLocomotionFootContacts(DeltaSeconds);
+    if(Sampled&&bMeasureContiguousEntry&&Clip==FName(TEXT("RunStopTwoHandContiguous")))
+    {
+        const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
+        for(int32 I=0;I<4;++I)ContiguousStopEntryMaxErrorCm=FMath::Max(ContiguousStopEntryMaxErrorCm,
+            float(FVector::Distance(ContiguousEntryFeet[I],ImportedPresentation->GetSocketLocation(Bones[I]))));
+        bMeasureContiguousEntry=false;
+    }
     if(Alpha>=1.f)bPresentationTransitionActive=false;
     bRequestedPresentationClipSampled=Sampled;bPresentationUsingFallback=!Sampled;
     PresentationPreviousActionElapsed=Action==EVeyrKnightAction::Ready?-1.f:ActionElapsed;

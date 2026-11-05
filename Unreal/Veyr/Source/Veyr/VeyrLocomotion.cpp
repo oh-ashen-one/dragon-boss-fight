@@ -18,14 +18,14 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
     if(!LocomotionPoseProbe->SetVisualDefinition(CustomuseVisualDefinition,false))return false;
     static const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
     constexpr int32 Count=96;
-    for(FName Clip:{FName(TEXT("Walk")),FName(TEXT("WalkTwoHand")),FName(TEXT("Run")),FName(TEXT("RunAlternate")),FName(TEXT("RunTwoHandSourced")),FName(TEXT("RunOneHandPlanted")),FName(TEXT("RunTwoHandPlanted")),FName(TEXT("RunStopOneHandSourced")),FName(TEXT("RunStopTwoHandSourced"))})
+    for(FName Clip:{FName(TEXT("Walk")),FName(TEXT("WalkTwoHand")),FName(TEXT("Run")),FName(TEXT("RunAlternate")),FName(TEXT("RunTwoHandSourced")),FName(TEXT("RunOneHandPlanted")),FName(TEXT("RunTwoHandPlanted")),FName(TEXT("RunTwoHandContiguous")),FName(TEXT("RunStopOneHandSourced")),FName(TEXT("RunStopTwoHandSourced"))})
     {
         if(!HasVisualClip(Clip))continue;
         const bool IsStop=Clip.ToString().StartsWith(TEXT("RunStop"));
         if(IsStop&&!bMatchedRunStops)continue;
         // The walk-entry candidate only needs phase samples. It never changes
         // nominal stride speed or enables the separate sprint experiment.
-        if(!bLocomotionPhaseMatch&&!bSourcedRunStart&&!IsStop&&Clip!=TEXT("Walk")&&Clip!=TEXT("WalkTwoHand"))continue;
+        if(!bLocomotionPhaseMatch&&!bSourcedRunStart&&!IsStop&&Clip!=TEXT("Walk")&&Clip!=TEXT("WalkTwoHand")&&!(bContiguousSprint&&Clip==TEXT("RunTwoHandContiguous")))continue;
         const float Duration=VisualClipDuration(Clip,1.f)*VisualClipPlayRate(Clip);
         const float SearchDuration=IsStop?FMath::Min(.60f,Duration*.45f):Duration,Dt=SearchDuration/Count;
         const FVeyrVisualClip* Definition=CustomuseVisualDefinition->Clips.Find(Clip);
@@ -67,6 +67,7 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
         UE_LOG(LogTemp,Display,TEXT("VEYR_LOCOMOTION_CACHE clip=%s measuredNominal=%.2f samples=%d"),*Clip.ToString(),Cache.NominalSpeed,Speeds.Num());
         LocomotionPhaseCache.Add(Clip,MoveTemp(Cache));
     }
+    if(bContiguousSprint&&!LocomotionPhaseCache.Contains(TEXT("RunTwoHandContiguous")))return false;
     if(!bLocomotionPhaseMatch)return LocomotionPhaseCache.Contains(TEXT("Walk"))&&LocomotionPhaseCache.Contains(TEXT("WalkTwoHand"));
     return bPlantedSprint?
         LocomotionPhaseCache.Contains(TEXT("RunOneHandPlanted"))&&LocomotionPhaseCache.Contains(TEXT("RunTwoHandPlanted")):

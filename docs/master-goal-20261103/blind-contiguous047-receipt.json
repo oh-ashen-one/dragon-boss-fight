@@ -1,0 +1,27 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "readCalls": 26,
+  "successfulImageBlocks": 25,
+  "winner": "B",
+  "mapping": {
+    "A": "new inactive v047 trial",
+    "B": "earlier sourced/planted movement test baseline"
+  },
+  "newCandidateVisiblyBetterOverall": false,
+  "newSprintCarryPreferred": true,
+  "earlierStopPreferred": true,
+  "finalQualityAccepted": false,
+  "nativeTrialPromoted": false,
+  "scope": "25 images; dense full two-hand sequence plus sparse controls and native-size stop details. No continuous video/full combat validation. Both variants used experimental source-start/planted flags; final default-game comparison remains required.",
+  "estimatedUSD": 0.7497906,
+  "maximumBudgetUSD": 3,
+  "remaining": [
+    "Keep clearer earlier plant/compression/settle while retaining new carry",
+    "Correct off-hand grip",
+    "Fix helmet/haft clearance and blade-rise snap",
+    "Native foot contact/start turns/steady motion",
+    "Actual continuous playback and full combat"
+  ]
+}

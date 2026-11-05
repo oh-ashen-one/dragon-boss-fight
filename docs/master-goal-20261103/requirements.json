@@ -55,7 +55,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "both_running_boots_supported_late_stop_marker_failure_retained_shared_prefix_native_representation_prepared_unimported_trial_controller_and_quality_pending",
+      "status": "inactive_native_trial_tested_entry_continuous_but0of4_contacts_blind_prefers_earlier_brake_new_carry_only_no_default_promotion",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -110,7 +110,10 @@
         "contiguous-placement-running-support.json",
         "contiguous-placement-source-movies.json",
         "contiguous-native-preparation.json",
-        "normalizer-prefix-regression.json"
+        "normalizer-prefix-regression.json",
+        "native-contiguous047-checkpoint.json",
+        "blind-contiguous047-receipt.json",
+        "earlier-brake-grip-diagnostic.json"
       ]
     },
     {
