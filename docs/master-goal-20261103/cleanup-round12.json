@@ -1,0 +1,16 @@
+{
+  "round": 12,
+  "directoriesRemoved": 3,
+  "freeGiBGained": 6.664905548095703,
+  "removed": [
+    "veyr-verified-bundle-kqk_c5eo",
+    "Unreal-Mac-20261105T105716Z",
+    "veyr-stage-jxkak9r7"
+  ],
+  "retainedBuilds": [
+    "t44prgms: previous controls-tested fallback",
+    "hf6ltuyy: latest camera trial, paired victory/heal/death checked"
+  ],
+  "scope": "Only completed receipt-owned artifacts without live-process, open-file or retained-symlink dependencies; films, assets and source retained",
+  "sourceAndWikiPushedBeforeCleanup": true
+}

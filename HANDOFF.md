@@ -9,6 +9,8 @@
 - Same-build follow-up `native-healing-20261105T113217Z` passed four real heals,100HP cap, injured empty-flask rejection, then player death/resource reset/movement/primary after restart in a fresh world. Twelve native heal/death stills inspected. These scoped checks do not prove final continuous presentation.
 - Encoder, critic and healing/death jobs are terminal. Main review server intentionally remains running. New critic cost0.7301996USD; known total24.2965516USD plus one older unpriced abort. No generation spend.
 
+Publication: knight f842ca5e19c3 and wiki637b016dc561 pushed and remote-verified. Cleanup round12 removed3 obsolete owned directories and reclaimed6.6649GiB. Retained only **t44prgms** (controls-tested fallback) and **hf6ltuyy** (current camera candidate); kqk_c5eo and redundant latest archive/stage are gone. Films and authoring assets remain.
+
 Next: improve flight player/hazard framing and inspect continuous transitions/manual behavior; preserve the clear threat-readability win. Movement remains unfinished: two stop-matcher revisions failed and need a different transition approach/source, not more weight tuning. Keep both-grip<=150s, all-move/settings/collision/performance, final launcher/Shipping promotion and cleanup in scope. Current launch pointer remains stale; do not launch through it.
 
 # Latest handoff/stop checkpoint — 2026-11-05
