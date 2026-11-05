@@ -1,3 +1,7 @@
+## Blocked execution checkpoint — November5 UTC
+
+The same shared GPU capacity/headroom blocker has persisted for three goal turns. No owned renderer/request is active. The complete backlog remains open where previously unverified; resume at the exact guarded source-contact/default-controls step in HANDOFF.md after live capacity changes. No speculative implementation or fidelity-only result closes a quality requirement.
+
 ## Latest native mobility-policy evidence — November5 UTC
 
 CPU-only native inspection confirms the current leap asset has its full vertical root path (22.835cm after component scaling); all source/runtime samples and policies match. The historical flat-capsule failure predates the existing code fix. Fresh gameplay, contacts and blind visual review remain required; no running/leap candidate is accepted. GPU rendering remains unavailable; see HANDOFF.md.

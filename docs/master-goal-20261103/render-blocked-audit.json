@@ -1,0 +1,32 @@
+{
+  "utc": "2026-11-05T04:01:09.299597+00:00",
+  "consecutiveGoalTurnsObserved": 3,
+  "previousTurnClassification": "progress: executed read-only native mobility-policy verification",
+  "currentTurnClassification": "no implementation progress; repeated blocker verified",
+  "condition": "Shared GPU at100percent; effective cap2 occupied by foreign clients",
+  "utilizationPercent": 100.0,
+  "effectiveCap": 2,
+  "clientKinds": {
+    "unreal-game": 1,
+    "godot": 1
+  },
+  "ownedRenderersOrRequests": 0,
+  "controlsRequestTerminal": true,
+  "nativePolicyProbeTerminal": true,
+  "safeIndependentWorkExhausted": true,
+  "remainingDependencies": {
+    "sprint": "Execute prepared Blender source-contact fit, inspect full motion and native joins",
+    "runningLeapLight": "Fresh rendered gameplay/contact baseline and follow-up source corrections",
+    "healingCameraIntro": "Continuous playback and threat-readability regressions",
+    "finalAcceptance": "Matched footage, actual blind Opus reviews, both-grip final victories, all moves/settings/collision/performance",
+    "delivery": "Newest fully verified Shipping build and launcher/current-pointer promotion"
+  },
+  "resumeWhen": "Normal shared GPU gate has capacity and headroom; no overrides or foreign-process changes",
+  "firstResumeActions": [
+    "Verify new live GPU state and task ownership",
+    "Run one guarded default-controls or sourced-contact Blender job",
+    "Inspect outcomes before next dependent job; keep all original requirements"
+  ],
+  "preserved": "Approved exact R5 intro, accepted combat/audio, stopped first-tie candidate, two retained builds and review media",
+  "goalComplete": false
+}

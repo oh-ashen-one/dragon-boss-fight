@@ -1,3 +1,13 @@
+# BLOCKED checkpoint — shared GPU capacity, November5 UTC
+
+**Full goal incomplete; blocked audit passed after three consecutive goal turns with the same external constraint.** Prior turn made progress through actual native mobility-policy inspection. Current live gate again shows100percent GPU, effective cap2 occupied by foreign launcher/Godot sessions. There is no owned Veyr renderer or queued capture; controls request95062 and native probe55962 are terminal. No launch retries, gate overrides, watchdog changes or foreign-process actions.
+
+Safe independent preparation and native asset-policy diagnostics are complete. Further source contact authoring, gameplay/camera/footing checks, before/after recording, blind review and final delivery need renderer capacity. More speculative edits or repeated identical probes would not establish the requested outcome. See docs/master-goal-20261103/render-blocked-audit.json. No new quality acceptance, package or spend.
+
+**Resume only after a fresh check establishes changed GPU capacity/headroom**, then use the normal gpu_slot gate for one owned job: default-recovery controls smoke onkqk_c5eo or the prepared ACCAD Blender contact fit (exact arguments in accad-next-authoring-step.json). Inspect that result before dependent work. Preserve the full scope: sprint/stop/turn, running/jumping/light transitions, normal-camera healing/threat visibility, final both-grip victories, every-move/settings/collision/performance, final Shipping launcher/pointer. Source/native fidelity is not quality acceptance. Do not restart stopped MixamoTurnv4 after its first blind tie.
+
+The exact approved R5 eight-shot intro and accepted recovery/heavy/wings/feedback/audio remain preserved. Retained apps:zio8vgsq tested comparison andkqk_c5eo default candidate. Current watch page8813 remains a deliverable. Previous14.874GiB cleanup stands. Prior code/wiki checkpoints6b1e7b44c5c0 and85f339f63409 were remote-verified; this final blocked record is pushed separately. Shared brain sync/doctor again verified6556abef. Foreign worktree edits remain untouched.
+
 # Current mobility-policy checkpoint — November5 UTC
 
 **Full goal active, incomplete. Previous continuation made progress; this one produced new native evidence.** Preserve the exact approved eight-shot R5 intro and accepted recovery/heavy/wings/feedback/audio. Knighta04d3b70c3d7 and wiki104f73d29977 were the prior pushed checkpoints. Shared brain freshness aged; sync--force completed and doctor again reports verified6556abef.

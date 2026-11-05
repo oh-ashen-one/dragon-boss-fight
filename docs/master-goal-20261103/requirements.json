@@ -150,7 +150,7 @@
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Previous continuation made progress through executed source-contact diagnostics and owned-build cleanup. This continuation verified current native mobility policy with a read-only NullRHI commandlet and identified the historical flat-capsule failure as predating its source fix. Full gameplay/visual scope remains open.",
+  "priorTurnClassification": "progress: executed read-only native mobility-policy verification",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -201,10 +201,12 @@
     "note": "New world-motion factoring is representation conversion of actual Blender-authored turns; v043 CPU-authoring studies remain quarantined and unimported."
   },
   "renderBlockerAudit": {
-    "consecutiveGoalTurnsObserved": 2,
-    "condition": "100percent GPU utilization; effective cap2 occupied by foreign sessions",
-    "currentTurnMadeIndependentProgress": true,
+    "consecutiveGoalTurnsObserved": 3,
+    "condition": "Shared GPU at100percent; effective cap2 occupied by foreign clients",
+    "currentTurnMadeIndependentProgress": false,
     "newRendererRequestQueued": false,
-    "note": "At three consecutive observations, mark blocked only if no meaningful independent work remains. Do not retry the unchanged gate or claim a live wait."
-  }
+    "atImpasse": true,
+    "evidence": "render-blocked-audit.json"
+  },
+  "goalStatus": "blocked_pending_GPU_capacity"
 }
