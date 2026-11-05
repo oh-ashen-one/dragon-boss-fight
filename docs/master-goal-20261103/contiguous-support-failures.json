@@ -1,0 +1,27 @@
+{
+  "status": "whole_body_support_stopped_after_two_failed_approaches",
+  "originalBoundsCm": {
+    "planar": 12,
+    "vertical": 6
+  },
+  "failures": [
+    {
+      "method": "fixed support point across stance",
+      "sourceFrame120fps": 187,
+      "reason": "required correction exceeded original bound",
+      "batch": "Local/Fortress20261103/contiguous-support-batch.json"
+    },
+    {
+      "method": "overlapping actual boot vertices / rolling support",
+      "sourceFrame120fps": 238,
+      "requestedPlanarCm": 15.812,
+      "requestedVerticalCm": 1.153,
+      "reason": "required planar correction exceeded12cm",
+      "batch": "Local/Fortress20261103/contiguous-support-rolling-batch.json"
+    }
+  ],
+  "derivedAssetsSaved": false,
+  "boundsRelaxed": false,
+  "nextApproach": "Supporting-leg/foot contact correction in Blender with original limb lengths and bounded pelvis compensation, preserving captured body motion; inspect actual motion before native import",
+  "scope": "Authoring failures, not engine crashes or blind quality verdicts"
+}

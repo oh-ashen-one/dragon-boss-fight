@@ -16,6 +16,7 @@ ROOT=Path(__file__).resolve().parents[3]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--pair-directory',type=Path,required=True)
 p.add_argument('--output',type=Path,required=True)
+p.add_argument('--baseline-source',type=Path,help='Explicit earlier full capture for a support/adaptation comparison')
 a=p.parse_args(sys.argv[sys.argv.index('--')+1:])
 pairdir=a.pair_directory.resolve(strict=True);out=a.output.resolve()
 assert pairdir.is_relative_to(ROOT/'Local') and out.is_relative_to(ROOT/'Local') and not out.exists()
@@ -41,7 +42,9 @@ def samples(path,first=0):
     return rows
 
 
-before=samples(source,16);after_loop=samples(loopfile);after_exit=samples(exitfile)
+baseline=a.baseline_source.resolve(strict=True) if a.baseline_source else source
+assert baseline.is_relative_to(ROOT/'Local')
+before=samples(baseline,16);after_loop=samples(loopfile);after_exit=samples(exitfile)
 assert len(after_loop)==81 and len(before)==len(after_exit)
 def depth(bone):return 0 if bone.parent is None else 1+depth(bone.parent)
 for label,loop,exit in [('before',before[:81],before),('after',after_loop,after_exit)]:
@@ -91,5 +94,5 @@ for label,loop,exit in [('before',before[:81],before),('after',after_loop,after_
             obj=bpy.data.objects.new('GridLine',curve);scene.collection.objects.link(obj)
     frames=list(range(0,len(rows),4));scales=ns['render'](label,frames,ortho_scale=2.8,resolution=960)
     bpy.ops.wm.save_as_mainfile(filepath=str(out/(label+'.blend')),compress=True)
-    (out/(label+'.json')).write_text(json.dumps({'variant':label,'frames':frames,'reviewFPS':30,'viewOrthoScales':scales,'groundHeightSourceUnits':0,'sourcePoseReconstructionMaxError':error,'source':str(source.relative_to(ROOT)),'pair':str(pairdir.relative_to(ROOT)),'loopRepeats':3,'accepted':False},indent=2)+'\n')
+    (out/(label+'.json')).write_text(json.dumps({'variant':label,'frames':frames,'reviewFPS':30,'viewOrthoScales':scales,'groundHeightSourceUnits':0,'sourcePoseReconstructionMaxError':error,'source':str(source.relative_to(ROOT)),'baselineSource':str(baseline.relative_to(ROOT)),'pair':str(pairdir.relative_to(ROOT)),'loopRepeats':3,'accepted':False},indent=2)+'\n')
 print('CONTIGUOUS_MATCHED_SOURCE_FRAMES_RENDERED',flush=True)

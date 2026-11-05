@@ -55,7 +55,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "contiguous_source_pair_export_fidelity_verified_fixed_reference_contact_failure_and_boot_support_gaps_render_weapon_batch_queued_native_and_quality_pending",
+      "status": "contiguous_pair_filmed_twohand_adaptation_verified_whole_body_support_failed_twice_switch_to_supporting_leg_correction_native_and_quality_pending",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -100,7 +100,10 @@
         "accad-contiguous-source-contact-screen.json",
         "contiguous-run-stop-export-check.json",
         "contiguous-root-carry-prediction.json",
-        "contiguous-boot-support-screen.json"
+        "contiguous-boot-support-screen.json",
+        "contiguous-source-movies.json",
+        "contiguous-weapon-export-check.json",
+        "contiguous-support-failures.json"
       ]
     },
     {

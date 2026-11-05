@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -14,8 +15,10 @@ def main():
     p.add_argument('review_directory',type=Path)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--receipt',type=Path,required=True)
+    p.add_argument('--prefix',default='contiguous-run-stop')
     a=p.parse_args();review=a.review_directory.resolve(strict=True);out=a.output.resolve(strict=True)
     assert not a.receipt.exists()
+    assert re.fullmatch(r'[a-z0-9-]{1,60}',a.prefix)
     work=review/'encode';assert not work.exists();work.mkdir()
     records=[];command=['ffmpeg','-hide_banner','-loglevel','error','-nostdin','-n']
     baseline=None
@@ -28,7 +31,7 @@ def main():
         files=[review/'Evidence'/side/f'{view}_{frame:04d}.png' for view in ['front','side','threequarter'] for frame in meta['frames']]
         assert all(path.is_file() for path in files)
         for i,path in enumerate(files):os.link(path,folder/f'frame-{i:06d}.png')
-        movie=out/('contiguous-run-stop-'+side+'.mp4');assert not movie.exists()
+        movie=out/(a.prefix+'-'+side+'.mp4');assert not movie.exists()
         records.append({'variant':side,'movie':movie.name,'frames':len(files),'fps':30,'durationSeconds':len(files)/30,'sourcePoseReconstructionMaxError':meta['sourcePoseReconstructionMaxError'],'matchedFloorAndCamera':True,'editorialOverlays':False})
         command+=['-framerate','30','-i',str(folder/'frame-%06d.png')]
     for i,record in enumerate(records):

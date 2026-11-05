@@ -1,0 +1,28 @@
+{
+  "scope": "Matched sourced Blender studies with repeated lead-in and deceleration, not native gameplay or acceptance",
+  "movies": [
+    {
+      "variant": "before",
+      "movie": "contiguous-run-stop-before.mp4",
+      "frames": 465,
+      "fps": 30,
+      "durationSeconds": 15.5,
+      "sourcePoseReconstructionMaxError": 1.430511474609375e-06,
+      "matchedFloorAndCamera": true,
+      "editorialOverlays": false,
+      "sha256": "bab88e019e6f464e34eb489f217b1457565a25a2bdf64af26f9e0a9582addb91"
+    },
+    {
+      "variant": "after",
+      "movie": "contiguous-run-stop-after.mp4",
+      "frames": 465,
+      "fps": 30,
+      "durationSeconds": 15.5,
+      "sourcePoseReconstructionMaxError": 1.430511474609375e-06,
+      "matchedFloorAndCamera": true,
+      "editorialOverlays": false,
+      "sha256": "58cdb702b2ed9da9205cc713956de92a1ec1502176680bd080fa88f333eb8e96"
+    }
+  ],
+  "sourceLicense": "CC BY3.0, Open Motion Project by ACCAD/The Ohio State University; adapted for Veyr"
+}

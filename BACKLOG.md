@@ -1,3 +1,7 @@
+# Source footage and weapon adaptation — 2026-11-05
+
+Matched run/stop source movies are available at `#contiguous`; the two-handed full-source adaptation is saved and independently checked. Neither is enabled in gameplay. Two whole-body support corrections failed their unchanged bounds and are stopped; next use supporting-leg contact correction. Final source/native contacts, weapon playback and blind quality review remain open. See HANDOFF.md for exact artifacts; all previous queued jobs are now terminal.
+
 # Exported locomotion pair — 2026-11-05
 
 The contiguous ACCAD run/exit pair is now saved and independently verified for shared entry poses and loop seam. It remains unaccepted: one fixed-reference foot window still exceeds60cm/s, and running boot-support coverage needs improvement. Matched source rendering and two-handed adaptation are queued in one owned Blender process; no new gameplay motion is enabled. Exact live handle and evidence are in HANDOFF.md.

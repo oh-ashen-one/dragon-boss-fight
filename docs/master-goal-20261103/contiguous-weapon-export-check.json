@@ -1,0 +1,54 @@
+{
+  "scope": "Independent exported source lower-body, anatomical arms and cup-parent checks; no playback/quality/native acceptance",
+  "sourceMetadata": {
+    "provider": "accad",
+    "authoringApplication": "Blender",
+    "sources": [
+      {
+        "file": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV8/ACCAD_RunToStand_v8support.blend",
+        "sha256": "efa79c99c977c20d0378c00f2b21a2124011ea1a73a5e69abbd1226f1ab5037b"
+      },
+      {
+        "file": "Local/CustomuseAssets/Polish20261025/idle-joins/knight/IdleTwoHand_Blender_v2r4.glb",
+        "sha256": "5b1c7ef3026453c40604430a9f6ced78c6611687f02f3b0695ae044dfd6ea891"
+      },
+      {
+        "file": "Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRun_v4rigid.glb",
+        "sha256": "2f3e46f940080b5fd0bc6c09d919166b49ea7b0e9354ae1d8788a2d17441cb96"
+      }
+    ],
+    "editableScene": "Local/AttackSources20261105/ACCADMale1/ContiguousWeaponV10/ACCAD_RunToStandTwoHand_v10weapon.blend",
+    "editableSceneSHA256": "00551cea434c9b8b192176b6a7c74b50503df3bc961c13e64294f077ae6e27c5",
+    "sha256": "ef575b8ff49b85786cbca42cb94eb779b0f65d95876e2cc190f5afccad02057f",
+    "fps": 120.0,
+    "duration": 3.2666666666666666,
+    "upperPhaseOffsetCycles": 0.0,
+    "constantRunGripOffsetOnShaft": -0.205,
+    "maximumPairedGripShiftCm": 14.424741011821514,
+    "maximumLeftGripErrorCm": 0.0001765670464547763,
+    "maximumLowerTorsoBasisError": 9.238719940185547e-07,
+    "lowerBodyAndTorsoPreserved": true,
+    "licenses": [
+      "ACCAD CC BY 3.0",
+      "Adobe Mixamo project incorporation; no raw-library redistribution"
+    ],
+    "license": "CC BY 3.0",
+    "sourceURL": "https://accad.ohio-state.edu/research/motion-lab/mocap-system-and-data",
+    "phaseMatchedSourceLoopFrames": [
+      16,
+      96
+    ],
+    "attribution": "Open Motion Project by ACCAD/The Ohio State University. Retargeted for Veyr; modifications not endorsed by the licensor.",
+    "nativeImported": false,
+    "accepted": false
+  },
+  "checksPassed": true,
+  "lowerTorsoWorldMatrixMaxError": 2.075815116686641e-06,
+  "armSegmentLengthMaxErrorCm": 0.0015361170229274033,
+  "cupSocketParent": "LeftHand",
+  "cupSocketParentRelativeMatrixMaxError": 8.046622115287505e-07,
+  "cupSocketScope": "Cup world pose follows the changed hand; it is not a torso bone. Parent-relative mounting is checked separately.",
+  "samples": 393,
+  "nativeImported": false,
+  "qualityAccepted": false
+}
