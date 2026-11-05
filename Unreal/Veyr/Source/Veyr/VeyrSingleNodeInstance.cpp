@@ -64,6 +64,7 @@ namespace
         explicit FVeyrSingleNodeProxy(UAnimInstance* Instance):FAnimSingleNodeInstanceProxy(Instance){}
         FVeyrPoseSnapshot LastPublished,TransitionSource;
         float Alpha=1.f;
+        bool bRootSpaceBlend=false;
         UAnimSequence* TransitionSequence=nullptr;
         float TransitionSeconds=0.f;
         FString EvaluationError;
@@ -76,6 +77,28 @@ namespace
         TMap<FName,FRotator> BoneRotations;
         TArray<FTransform> FootTargets;
         TArray<float> FootWeights;
+
+        bool RebaseRootForBlend(FPoseContext& Pose)
+        {
+            const FBoneContainer& Bones=Pose.Pose.GetBoneContainer();
+            const int32 MeshIndex=Bones.GetReferenceSkeleton().FindBoneIndex(TEXT("VeyrRoot"));
+            if(MeshIndex==INDEX_NONE){EvaluationError=TEXT("Root-space blend requires the canonical VeyrRoot");return false;}
+            const FCompactPoseBoneIndex Root=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(MeshIndex));
+            if(Root.GetInt()==INDEX_NONE||Bones.GetParentBoneIndex(Root).GetInt()!=INDEX_NONE||
+               !Pose.Pose[Root].GetScale3D().Equals(FVector::OneVector,.0001f))
+            {EvaluationError=TEXT("Root-space blend requires an unscaled hierarchy root");return false;}
+            const FTransform RootTransform=Pose.Pose[Root];
+            // VeyrRoot is nondeforming in the canonical knight. Move its
+            // transform into each direct child before interpolation. Their
+            // component poses are unchanged, and all lower local bone lengths
+            // remain intact. This avoids blending counter-rotating root/hips
+            // separately through large arcs during authored-turn transitions.
+            for(FCompactPoseBoneIndex Index:Pose.Pose.ForEachBoneIndex())
+                if(Bones.GetParentBoneIndex(Index)==Root)
+                {Pose.Pose[Index]=Pose.Pose[Index]*RootTransform;Pose.Pose[Index].NormalizeRotation();}
+            Pose.Pose[Root]=FTransform::Identity;
+            return true;
+        }
 
         bool ApplyFootTargets(FPoseContext& Output)
         {
@@ -281,6 +304,10 @@ namespace
                 }
                 else
                 {
+                    // Alpha0 and1 remain exact original local-pose endpoints.
+                    // Only the intermediate blend changes representation.
+                    if(bRootSpaceBlend&&(!RebaseRootForBlend(Output)||!RebaseRootForBlend(Source)))
+                    {LastPublished.bValid=false;return true;}
                     FAnimationPoseData DestinationData(Output),SourceData(Source);
                     FAnimationRuntime::BlendTwoPosesTogetherInPlace(DestinationData,SourceData,Alpha);
                 }
@@ -343,6 +370,12 @@ bool UVeyrSingleNodeInstance::SetExplicitTransitionAlpha(float Alpha)
     if(Alpha<1.f&&!Proxy.TransitionSource.bValid)return false;
     Proxy.Alpha=Alpha;
     return true;
+}
+
+void UVeyrSingleNodeInstance::SetExplicitRootSpaceBlend(bool bEnabled)
+{
+    check(IsInGameThread());
+    GetProxyOnGameThread<FVeyrSingleNodeProxy>().bRootSpaceBlend=bEnabled;
 }
 
 void UVeyrSingleNodeInstance::ClearTransitionSource()

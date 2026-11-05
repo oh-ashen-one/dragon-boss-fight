@@ -1,0 +1,139 @@
+{
+  "accepted": false,
+  "nativeImported": false,
+  "authoringApplication": "Blender",
+  "footFrameRevision": [
+    {
+      "name": "Mixamo_Turn180_A_v2feet",
+      "sourceSHA256": "2c2619167a6a4c011a6f50786743c4cf6a55dd409dfa5bedcb18ffb23fb1dcdd",
+      "fullFootFrameBones": [
+        "LeftFoot",
+        "RightFoot",
+        "LeftToeBase",
+        "RightToeBase"
+      ],
+      "footRestSlopes": {
+        "Left": {
+          "targetToeVectorPitchDegrees": -32.648866538337586,
+          "sourceToeVectorPitchDegrees": -39.17860779963645
+        },
+        "Right": {
+          "targetToeVectorPitchDegrees": -35.13800947176941,
+          "sourceToeVectorPitchDegrees": -39.17861321193134
+        }
+      },
+      "reviewGroundSourceUnits": 0.0,
+      "nativeImported": false
+    },
+    {
+      "name": "Mixamo_Turn180_B_v2feet",
+      "sourceSHA256": "f7b7f1edb67b19819c95174b56020f677135b8bf4253b41f2e6551999fe8c18f",
+      "fullFootFrameBones": [
+        "LeftFoot",
+        "RightFoot",
+        "LeftToeBase",
+        "RightToeBase"
+      ],
+      "footRestSlopes": {
+        "Left": {
+          "targetToeVectorPitchDegrees": -32.648866538337586,
+          "sourceToeVectorPitchDegrees": -39.17860779963645
+        },
+        "Right": {
+          "targetToeVectorPitchDegrees": -35.13800947176941,
+          "sourceToeVectorPitchDegrees": -39.17861321193134
+        }
+      },
+      "reviewGroundSourceUnits": 0.0,
+      "nativeImported": false
+    },
+    {
+      "name": "Mixamo_Turn_A_v2feet",
+      "sourceSHA256": "be010dad40f9d9fdd6f9b2ade4a23653b8af7441d9d5935f96d8a874b43789b8",
+      "fullFootFrameBones": [
+        "LeftFoot",
+        "RightFoot",
+        "LeftToeBase",
+        "RightToeBase"
+      ],
+      "footRestSlopes": {
+        "Left": {
+          "targetToeVectorPitchDegrees": -32.648866538337586,
+          "sourceToeVectorPitchDegrees": -39.17860779963645
+        },
+        "Right": {
+          "targetToeVectorPitchDegrees": -35.13800947176941,
+          "sourceToeVectorPitchDegrees": -39.17861321193134
+        }
+      },
+      "reviewGroundSourceUnits": 0.0,
+      "nativeImported": false
+    },
+    {
+      "name": "Mixamo_Turn_B_v2feet",
+      "sourceSHA256": "b126890a349342f5b96b6639fc43e959671e6f626443e9bfa1a15cbba3d1ab53",
+      "fullFootFrameBones": [
+        "LeftFoot",
+        "RightFoot",
+        "LeftToeBase",
+        "RightToeBase"
+      ],
+      "footRestSlopes": {
+        "Left": {
+          "targetToeVectorPitchDegrees": -32.648866538337586,
+          "sourceToeVectorPitchDegrees": -39.17860779963645
+        },
+        "Right": {
+          "targetToeVectorPitchDegrees": -35.13800947176941,
+          "sourceToeVectorPitchDegrees": -39.17861321193134
+        }
+      },
+      "reviewGroundSourceUnits": 0.0,
+      "nativeImported": false
+    }
+  ],
+  "sourceTrajectoryFits": [
+    {
+      "name": "Mixamo_Turn180_A_v3contacts",
+      "sha256": "f2f927b2c3dbe389c406313ccc8d92deff26f787c3a29c0c707a09b35bfb34ca",
+      "editableScene": "Local/AttackSources20261104/SourcedTurnContacts/Mixamo_Turn180_A_v3contacts.blend",
+      "editableSceneSHA256": "641822f9ab62a2dc4717b04b600ed0614ddda583f2bd63b1d09fc5a0f6bd2b1d",
+      "sourceFootPathsMatched": true,
+      "limbStretchAllowed": false,
+      "maximumPelvisShiftSourceUnits": 0.0,
+      "handRelativeWeaponPreserved": true
+    },
+    {
+      "name": "Mixamo_Turn180_B_v3contacts",
+      "sha256": "cd893c857a381fdd59eef3c782ec65c8d73688743e93d9c3799ad5ed1cf0ca9d",
+      "editableScene": "Local/AttackSources20261104/SourcedTurnContacts/Mixamo_Turn180_B_v3contacts.blend",
+      "editableSceneSHA256": "49e42bfe72ebe8caaaa43a7eb395386311802cd2c6b40c9f3a612c93317578f9",
+      "sourceFootPathsMatched": true,
+      "limbStretchAllowed": false,
+      "maximumPelvisShiftSourceUnits": 0.0,
+      "handRelativeWeaponPreserved": true
+    },
+    {
+      "name": "Mixamo_Turn_A_v3contacts",
+      "sha256": "f35994e849316e448a5bd0c86e59285c01dcff4e8276ac7e80a7c4ba82fe87a6",
+      "editableScene": "Local/AttackSources20261104/SourcedTurnContacts/Mixamo_Turn_A_v3contacts.blend",
+      "editableSceneSHA256": "2e30562135d82fceaaf4346308a438145ef60cd0eb95609830d79210cd42af8a",
+      "sourceFootPathsMatched": true,
+      "limbStretchAllowed": false,
+      "maximumPelvisShiftSourceUnits": 0.0,
+      "handRelativeWeaponPreserved": true
+    },
+    {
+      "name": "Mixamo_Turn_B_v3contacts",
+      "sha256": "129275e1b601233575a830f2de49692b4b221d12c4bae87651bcb2e65c8bf8e9",
+      "editableScene": "Local/AttackSources20261104/SourcedTurnContacts/Mixamo_Turn_B_v3contacts.blend",
+      "editableSceneSHA256": "a50f2a5c60bb92a098295e0d2b9c90b3f5aae07093b761f7f74230bc4be5ace5",
+      "sourceFootPathsMatched": true,
+      "limbStretchAllowed": false,
+      "maximumPelvisShiftSourceUnits": 0.008465163734858658,
+      "handRelativeWeaponPreserved": true
+    }
+  ],
+  "supportDiagnostics": "turn-support-point-diagnostics-v2.json",
+  "remaining": "Source-foot matching still leaves mesh-sole penetration/floating against native floor0. Correct target sole contacts in Blender and inspect before import; do not lower the60cm/s gate. New source joins and one-hand turns remain unbuilt."
+}

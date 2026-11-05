@@ -4,8 +4,10 @@ Preserve source motion and editable actions. These are separate candidates,
 not imported gameplay clips or replacements for accepted animations.
 """
 import hashlib
+import argparse
 import json
 import math
+import sys
 from pathlib import Path
 
 import bpy
@@ -13,6 +15,13 @@ import bpy
 ROOT = Path(__file__).resolve().parents[3]
 HELPER = ROOT/'tools/art/blender/fab_rig_testing/retarget.py'
 OUT = ROOT/'Local/AttackSources20261104/SourcedTurns'
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--output',type=Path)
+parser.add_argument('--full-foot-frames',action='store_true')
+args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+if args.output:
+    OUT=args.output.resolve()
+    assert OUT.is_relative_to(ROOT/'Local')
 assert not OUT.exists(), 'Preserve earlier authoring/review candidates'
 SRC = ROOT/'Local/AttackSources20261102/MixamoGreatSword/extracted'
 JOBS = [
@@ -38,11 +47,11 @@ review = {'__file__': str(HELPER)}
 exec(compile(HELPER.read_text(), str(HELPER), 'exec'), review)
 review['OUT'] = OUT
 for key, filename, digest in JOBS:
-    name = 'Mixamo_'+key+'_v1'
+    name = 'Mixamo_'+key+('_v2feet' if args.full_foot_frames else '_v1')
     # This process was created with --factory-startup and owns the entire scene.
     # The shared retarget helper requires the ownership marker before reset.
     bpy.context.scene['session_owner'] = ns['OWNER']
-    ns['run'](SRC/filename, 'mixamo', name, True, False, True, hold)
+    ns['run'](SRC/filename, 'mixamo', name, True, False, True, hold,foot_frames=args.full_foot_frames)
     scene = bpy.context.scene
     rig = bpy.data.objects['Knight_Comparison']
     fps = scene.render.fps/scene.render.fps_base
@@ -60,6 +69,13 @@ for key, filename, digest in JOBS:
         yaw.append(value)
     last = (rig.matrix_world@rig.pose.bones['Hips'].matrix).translation
     frames = sorted({round(i*fps/30) for i in range(round(end/fps*30)+1)})
+    if args.full_foot_frames:
+        # The game's character feet origin is source height0. Use that fixed
+        # ground here, not this candidate's lowest vertex, so burial is visible.
+        bpy.ops.mesh.primitive_plane_add(size=20,location=(0,0,-.0005))
+        ground=bpy.context.object;ground.name='NativeZeroGround'
+        material=bpy.data.materials.new('NativeZeroGround');material.diffuse_color=(.18,.20,.22,1)
+        ground.data.materials.append(material)
     scales = review['render'](name, frames, resolution=960, auto_frame=True)
     p = OUT/'Exports'/(name+'.json')
     data = json.loads(p.read_text())
@@ -70,5 +86,6 @@ for key, filename, digest in JOBS:
                 observedHipTwistDegrees=yaw, observedFinalTurnDegrees=yaw[-1],
                 reviewFrames=frames, reviewFPS=30, viewOrthoScales=scales,
                 nativeImported=False, accepted=False)
+    data['reviewGroundSourceUnits']=0. if args.full_foot_frames else None
     p.write_text(json.dumps(data, indent=2)+'\n')
 print('SOURCED_TURN_CANDIDATES_RENDERED_NOT_ACCEPTED', flush=True)

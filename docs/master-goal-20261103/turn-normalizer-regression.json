@@ -1,0 +1,13 @@
+{
+  "existingRunNormalizationByteIdentical": true,
+  "clips": [
+    {
+      "source": "Mixamo_ForwardRun_v4rigid.glb",
+      "unchangedSHA256": "83a8bb8a6d416551a20d7abd9220c135b888f1e705149d798075a95dcf1c2186"
+    },
+    {
+      "source": "FabMixamo_OneHandRun_v2blender.glb",
+      "unchangedSHA256": "c4261a18339f9c3fa28032da74639a77b161463ecc166b9ae136f69d76d43f31"
+    }
+  ]
+}

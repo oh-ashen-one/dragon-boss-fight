@@ -1,0 +1,72 @@
+{
+  "nativeImported": false,
+  "accepted": false,
+  "sourceAuthoring": "Blender; conversion preserves authored world motion",
+  "scope": "Two-hand source conversion only. One-hand variants and opposite180degree source remain required.",
+  "clips": [
+    {
+      "clip": "TurnRight180TwoHand",
+      "rootYawEndDegrees": 188.06342368811917,
+      "worldMotionReconstruction": {
+        "samples": 189,
+        "boneComparisons": 10395,
+        "maximumWorldPositionErrorCm": 0.03613877857643081,
+        "maximumWorldRotationErrorDegrees": 2.3722005120437366e-05,
+        "maximumMatrixError": 0.00011519147348420036,
+        "limits": {
+          "positionCm": 0.1,
+          "rotationDegrees": 0.1
+        },
+        "passed": true
+      }
+    },
+    {
+      "clip": "TurnRight180QuickTwoHand",
+      "rootYawEndDegrees": 181.95287682715724,
+      "worldMotionReconstruction": {
+        "samples": 133,
+        "boneComparisons": 7315,
+        "maximumWorldPositionErrorCm": 0.08664045106895973,
+        "maximumWorldRotationErrorDegrees": 1.6643112294063987e-05,
+        "maximumMatrixError": 0.00027525432400408653,
+        "limits": {
+          "positionCm": 0.1,
+          "rotationDegrees": 0.1
+        },
+        "passed": true
+      }
+    },
+    {
+      "clip": "TurnRight90TwoHand",
+      "rootYawEndDegrees": 98.22901474173834,
+      "worldMotionReconstruction": {
+        "samples": 173,
+        "boneComparisons": 9515,
+        "maximumWorldPositionErrorCm": 0.008011432887942132,
+        "maximumWorldRotationErrorDegrees": 1.716063790683883e-05,
+        "maximumMatrixError": 2.90437346091299e-05,
+        "limits": {
+          "positionCm": 0.1,
+          "rotationDegrees": 0.1
+        },
+        "passed": true
+      }
+    },
+    {
+      "clip": "TurnLeft90TwoHand",
+      "rootYawEndDegrees": -90.47416231642599,
+      "worldMotionReconstruction": {
+        "samples": 197,
+        "boneComparisons": 10835,
+        "maximumWorldPositionErrorCm": 0.007167809667748421,
+        "maximumWorldRotationErrorDegrees": 1.4489019236708837e-05,
+        "maximumMatrixError": 2.3461458503681865e-05,
+        "limits": {
+          "positionCm": 0.1,
+          "rotationDegrees": 0.1
+        },
+        "passed": true
+      }
+    }
+  ]
+}

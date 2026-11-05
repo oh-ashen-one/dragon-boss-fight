@@ -258,6 +258,8 @@ void AVeyrKnight::BeginPlay()
     bWalkEntryBlend=FParse::Param(FCommandLine::Get(),TEXT("VeyrWalkEntryBlend"));
     bStableWeaponPresentation=FParse::Param(FCommandLine::Get(),TEXT("VeyrStableWeaponPresentation"));
     bContinuousLocomotionBlend=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrContinuousLocomotionBlend"));
+    bSourcedMovementTurns=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedMovementTurns"));
+    bBlendTurnTrajectory=FParse::Param(FCommandLine::Get(),TEXT("VeyrBlendTurnTrajectory"));
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrRunStopBlend="),RequestedRunStopBlend)&&FMath::IsFinite(RequestedRunStopBlend))
         RunStopBlendSeconds=FMath::Clamp(RequestedRunStopBlend,.02f,.60f);
     if(DirectionalStaggers.Num()!=4)DirectionalStaggers.Init(0,4);
@@ -373,7 +375,7 @@ bool AVeyrKnight::CanStartGroundedAction() const
 {
     if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->IsArenaIntroActive())return false;
     return GripTransitionRemaining<=0.f&&!IsTerminal()&&IsGrounded()&&!bPressedJump&&
-        (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::RunStop);
+        (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::MovementTurn);
 }
 FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
 {
@@ -383,6 +385,7 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::HeavyAttack:return ChooseAttackClip(true);
         case EVeyrKnightAction::RunningAttack:return bDirectRunningAttack?TEXT("RunningAttackDirect"):TEXT("RunningAttackSourced");
         case EVeyrKnightAction::LeapAttack:return TEXT("LeapAttackSourced");
+        case EVeyrKnightAction::MovementTurn:return MovementTurnClip;
         case EVeyrKnightAction::Combo:return TEXT("LightCombo");
         case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
         case EVeyrKnightAction::Roll:return TEXT("Roll");
@@ -422,7 +425,7 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
     ActionRootTravelCm=0.f;bActionRootBlocked=false;
     if(NewAction!=EVeyrKnightAction::Ready)bWasRunning=false;
     if(IsAttackAction()||IsBlinkAction()||NewAction==EVeyrKnightAction::Guard||NewAction==EVeyrKnightAction::Heal||
-       NewAction==EVeyrKnightAction::RunStop||NewAction==EVeyrKnightAction::AttackRecovery||NewAction==EVeyrKnightAction::GuardBreak||NewAction==EVeyrKnightAction::Backstep||IsChangingGrip())
+       NewAction==EVeyrKnightAction::RunStop||NewAction==EVeyrKnightAction::MovementTurn||NewAction==EVeyrKnightAction::AttackRecovery||NewAction==EVeyrKnightAction::GuardBreak||NewAction==EVeyrKnightAction::Backstep||IsChangingGrip())
     {
         ConsumeMovementInputVector();GetCharacterMovement()->StopMovementImmediately();
     }
@@ -809,8 +812,12 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
                 LastBlinkHiddenStartWorld,LastBlinkHiddenEndWorld,LastBlinkLongestFrame,bLastBlinkHiddenFrameRendered?1:0);
         }
     }
-    ApplyAuthoredRootMotion(PreviousSeconds,ActionElapsed);
+    const bool BlendTurnTrajectory=bBlendTurnTrajectory&&Action==EVeyrKnightAction::MovementTurn&&ImportedPresentation&&ImportedPresentation->bRootSpaceBlend;
+    if(!BlendTurnTrajectory)ApplyAuthoredRootMotion(PreviousSeconds,ActionElapsed);
     UpdateImportedPresentation(DeltaSeconds);
+    // A frozen idle source contributes no root movement. Evaluate this
+    // frame's pose weight before applying the matching turn trajectory.
+    if(BlendTurnTrajectory)ApplyAuthoredRootMotion(PreviousSeconds,ActionElapsed);
     if(IsAttackAction())ResolveAttackWindows(PreviousSeconds);
     else if (Action == EVeyrKnightAction::Heal && bRequestedPresentationClipSampled && !bHealGranted && ActionElapsed >= VisualClipDuration(TEXT("Heal"),1.25f)*.55f)
     {
@@ -840,7 +847,7 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
         }
         else if(!ContinuePrimary&&BufferedAttackRemaining>0.f) { if(bBufferedHeavy)TryHeavyAttack();else TryLightAttack(); }
     }
-    const bool PassiveRecovery=Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::GripToOneHand||Action==EVeyrKnightAction::GripToTwoHand;
+    const bool PassiveRecovery=Action==EVeyrKnightAction::RunStop||Action==EVeyrKnightAction::MovementTurn||Action==EVeyrKnightAction::GripToOneHand||Action==EVeyrKnightAction::GripToTwoHand;
     if(PassiveRecovery&&RegenDelay<=0.f)Stamina=FMath::Min(100.f,Stamina+30.f*DeltaSeconds);
     if (Action == EVeyrKnightAction::Ready)
     {
@@ -882,6 +889,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     bLockOnStrafingLastFrame=bStrafing;
     // Sprinting forward or backward while locked runs freely (Souls convention); lateral keeps facing.
     const bool bFaceBoss=bStrafing&&!(bSprintHeld&&LockOnMoveDirection<2);
+    if(!bFaceBoss)TryBeginMovementTurn();
     Movement->bOrientRotationToMovement=Action==EVeyrKnightAction::Ready&&!MoveIntent.IsNearlyZero()&&!bFaceBoss;
     if(IsRollPrefix())
     {
@@ -1180,6 +1188,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     // another approved mesh variant with distinct texture objects. Warm all
     // five current variants, deduplicating shared meshes and texture objects.
     ImportedPresentation->bPreferCanonicalMesh=FParse::Param(FCommandLine::Get(),TEXT("VeyrCanonicalKnightSkin"));
+    ImportedPresentation->bRootSpaceBlend=ImportedPresentation->bPreferCanonicalMesh&&FParse::Param(FCommandLine::Get(),TEXT("VeyrTurnRootBlend"));
     TSet<USkeletalMesh*> Meshes;Meshes.Add(Definition->SkeletalMesh.Get());
     for(const auto& Entry:Definition->Clips)if(Entry.Value.MeshOverride)Meshes.Add(Entry.Value.MeshOverride.Get());
     TSet<UTexture2D*> Textures;
@@ -1715,6 +1724,7 @@ FVector AVeyrKnight::AuthoredRootDisplacementWorld(const FVector& Delta) const
 
 void AVeyrKnight::ApplyAuthoredRootMotion(float PreviousSeconds,float NewSeconds)
 {
+    if(Action==EVeyrKnightAction::MovementTurn){ApplyMovementTurnRoot(NewSeconds);return;}
     if(Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::Guard||Action==EVeyrKnightAction::Heal||Action==EVeyrKnightAction::AttackRecovery||
        Action==EVeyrKnightAction::Dead||Action==EVeyrKnightAction::Stagger)return;
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;

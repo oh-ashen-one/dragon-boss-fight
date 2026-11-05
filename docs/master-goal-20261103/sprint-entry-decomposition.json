@@ -1,0 +1,129 @@
+{
+  "scope": "Separate recorded foot displacement into capsule, actor yaw and local pose.\n\nRead-only diagnosis of the instantaneous pair at each gated peak. Vector\nmagnitudes are not additive percentages, and this does not replace visual QA.\n",
+  "sequences": [
+    {
+      "sequence": "SprintStop_1H",
+      "atSeconds": 4.936239719390869,
+      "gateWindowPeakCmS": 720.951416015625,
+      "instantaneousPairSeconds": 0.016669750213623047,
+      "actorYawDegrees": [
+        -166.8437042236328,
+        -154.8414306640625
+      ],
+      "clip": "RunOneHandPlanted",
+      "fromClip": "Idle",
+      "blendAlpha": 0.16669750213623047,
+      "points": {
+        "toeR": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 104.38068823477623,
+            "actorYaw": 579.5178870722697,
+            "localPose": 387.9474432619576
+          },
+          "vectorReconstructionErrorCm": 6.217248937900877e-15
+        },
+        "ankleR": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 104.38068823477623,
+            "actorYaw": 414.2492186443282,
+            "localPose": 224.90049691228356
+          },
+          "vectorReconstructionErrorCm": 6.217248937900877e-15
+        }
+      }
+    },
+    {
+      "sequence": "SprintStop_2H",
+      "atSeconds": 19.91729736328125,
+      "gateWindowPeakCmS": 1332.6456298828125,
+      "instantaneousPairSeconds": 0.020427703857421875,
+      "actorYawDegrees": [
+        125.75060272216797,
+        111.04264831542969
+      ],
+      "clip": "RunTwoHandPlanted",
+      "fromClip": "IdleTwoHand",
+      "blendAlpha": 0.7910728454589844,
+      "points": {
+        "toeL": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 287.3548608776791,
+            "actorYaw": 416.5557055920513,
+            "localPose": 904.7065339138335
+          },
+          "vectorReconstructionErrorCm": 5.773159728050814e-15
+        },
+        "ankleL": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 287.3548608776791,
+            "actorYaw": 562.8311639355628,
+            "localPose": 764.290351994755
+          },
+          "vectorReconstructionErrorCm": 1.4210854715202004e-14
+        }
+      }
+    },
+    {
+      "sequence": "WalkSprintWalk_1H",
+      "atSeconds": 35.01966094970703,
+      "gateWindowPeakCmS": 606.9723510742188,
+      "instantaneousPairSeconds": 0.021228790283203125,
+      "actorYawDegrees": [
+        152.29742431640625,
+        137.01287841796875
+      ],
+      "clip": "Walk",
+      "fromClip": "Idle",
+      "blendAlpha": 0.09409865736961365,
+      "points": {
+        "toeL": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 179.00219227314423,
+            "actorYaw": 498.31034600788297,
+            "localPose": 69.27803773444897
+          },
+          "vectorReconstructionErrorCm": 7.549516567451064e-15
+        },
+        "ankleL": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 179.00219227314423,
+            "actorYaw": 373.1010428287555,
+            "localPose": 70.4377820348263
+          },
+          "vectorReconstructionErrorCm": 1.0658141036401503e-14
+        }
+      }
+    },
+    {
+      "sequence": "WalkSprintWalk_2H",
+      "atSeconds": 48.7692985534668,
+      "gateWindowPeakCmS": 596.784423828125,
+      "instantaneousPairSeconds": 0.016666412353515625,
+      "actorYawDegrees": [
+        154.72047424316406,
+        142.7204132080078
+      ],
+      "clip": "WalkTwoHand",
+      "fromClip": "IdleTwoHand",
+      "blendAlpha": 0.08163533359766006,
+      "points": {
+        "toeL": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 155.40237125201148,
+            "actorYaw": 498.7405215829351,
+            "localPose": 60.232238254613236
+          },
+          "vectorReconstructionErrorCm": 4.440892098500626e-15
+        },
+        "ankleL": {
+          "horizontalSpeedComponentsCmS": {
+            "capsule": 155.40237125201148,
+            "actorYaw": 372.8831779073337,
+            "localPose": 60.19777153416524
+          },
+          "vectorReconstructionErrorCm": 1.4210854715202004e-14
+        }
+      }
+    }
+  ]
+}

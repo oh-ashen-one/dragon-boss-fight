@@ -1,26 +1,40 @@
 #!/usr/bin/env python3
 """Encode complete Blender review views at their sampled 30 fps, unannotated."""
 import hashlib
+import argparse
 import json
 from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT/'Local/AttackSources20261104/BlenderReviewFramed'
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--source-directory',type=Path)
+args=parser.parse_args()
+if args.source_directory:
+    SOURCE=args.source_directory.resolve(strict=True)
+    assert SOURCE.is_relative_to(ROOT/'Local')
+METADATA=SOURCE/'Exports' if (SOURCE/'Exports').is_dir() else SOURCE
 OUT = SOURCE/'movies'
 OUT.mkdir(parents=True, exist_ok=True)
 titles = {'Mixamo_ForwardRun_v4rigid': 'Two-handed run',
           'FabMixamo_OneHandRun_v2blender': 'One-handed run',
           'Mixamo_SlideAttack_v4blender': 'Running attack'}
+if args.source_directory:
+    titles={p.stem:p.stem.replace('Mixamo_','').replace('_v1','').replace('_',' ')
+            for p in sorted(METADATA.glob('*.json')) if p.with_suffix('.blend').exists()}
+    assert titles
 figures = []
 for name, title in titles.items():
-    metadata = SOURCE/(name+'.json')
+    metadata = METADATA/(name+'.json')
     if not metadata.exists():
         continue
     data = json.loads(metadata.read_text())
     assert data['reviewFPS'] == 30
     for view in ['front', 'side', 'threequarter']:
-        files = [SOURCE/'Evidence'/name/f'{view}_{f:04d}.png' for f in data['frames']]
+        frames=data.get('frames',data.get('reviewFrames'))
+        assert frames
+        files = [SOURCE/'Evidence'/name/f'{view}_{f:04d}.png' for f in frames]
         assert all(p.is_file() for p in files)
         movie = OUT/f'{name}-{view}.mp4'
         receipt = movie.with_suffix('.json')

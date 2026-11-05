@@ -1,0 +1,273 @@
+{
+  "passed": true,
+  "readOnlyNativeProbe": true,
+  "qualityAccepted": false,
+  "scope": "Exact local-pose endpoints, unchanged non-turn body/helper world poses, preserved leg lengths; interpolated foot-path diagnostics only. Native movement/contact and visual checks remain.",
+  "cases": [
+    {
+      "name": "turn_exit",
+      "source": "TurnRight180TwoHand",
+      "target": "RunTwoHandPlanted",
+      "rootTurnCase": true,
+      "nonTurnMaximumWorldPositionDifferenceCm": null,
+      "variants": {
+        "baseline": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 7.199438265104163e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 106.90101931907542,
+              "pathLengthCm": 262.5667327926508
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 107.49963236388948,
+              "pathLengthCm": 267.8677545061295
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 109.19593293366582,
+              "pathLengthCm": 268.4969093353321
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 113.17973088912649,
+              "pathLengthCm": 282.45759387546457
+            }
+          }
+        },
+        "rebased": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 7.197769605227222e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 8.890725943466114,
+              "pathLengthCm": 55.23388456584
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 3.7890561489932826,
+              "pathLengthCm": 32.61331424634587
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 7.645493344935486,
+              "pathLengthCm": 67.80463461132115
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 3.5704535278155882,
+              "pathLengthCm": 41.83669096231107
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "turn_entry",
+      "source": "IdleTwoHand",
+      "target": "TurnRight180TwoHand",
+      "rootTurnCase": true,
+      "nonTurnMaximumWorldPositionDifferenceCm": null,
+      "variants": {
+        "baseline": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 6.084816362772472e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 3.652108945951642,
+              "pathLengthCm": 38.53447665839629
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 3.830630928717193,
+              "pathLengthCm": 29.212026483020317
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 3.773072737757351,
+              "pathLengthCm": 41.13531445177405
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 3.0134762004726183,
+              "pathLengthCm": 25.1844294369571
+            }
+          }
+        },
+        "rebased": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 6.07765395699289e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 4.375719574151647,
+              "pathLengthCm": 39.016252238906624
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 3.700661614126339,
+              "pathLengthCm": 29.128501517776265
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 4.530045109443828,
+              "pathLengthCm": 41.58852824742648
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 3.0436140182202687,
+              "pathLengthCm": 25.168917532903667
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "run_stop",
+      "source": "RunTwoHandPlanted",
+      "target": "RunStopTwoHandSourced",
+      "rootTurnCase": false,
+      "nonTurnMaximumWorldPositionDifferenceCm": 5.091590458895984e-06,
+      "variants": {
+        "baseline": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 6.172829777995048e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 14.831874370993667,
+              "pathLengthCm": 110.67300833490265
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 8.642156054539248,
+              "pathLengthCm": 59.26543927603386
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 14.613479086451608,
+              "pathLengthCm": 115.30002830374373
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 7.8196119129970505,
+              "pathLengthCm": 51.83685965991907
+            }
+          }
+        },
+        "rebased": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 6.172829777995048e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 14.831874472748774,
+              "pathLengthCm": 110.67300843145088
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 8.642155761826235,
+              "pathLengthCm": 59.26543907283044
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 14.613479131846493,
+              "pathLengthCm": 115.30002834618406
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 7.819611667910472,
+              "pathLengthCm": 51.83685946080741
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "onehand_start",
+      "source": "Idle",
+      "target": "RunOneHandPlanted",
+      "rootTurnCase": false,
+      "nonTurnMaximumWorldPositionDifferenceCm": 3.5488997634698463e-06,
+      "variants": {
+        "baseline": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 6.073753866076004e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 5.572232949246632,
+              "pathLengthCm": 61.3617585925478
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 10.071379610737164,
+              "pathLengthCm": 35.67221244553455
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 5.475086800121951,
+              "pathLengthCm": 59.218162346860524
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 7.969937929494121,
+              "pathLengthCm": 31.971587062949425
+            }
+          }
+        },
+        "rebased": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 6.073753894497713e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 5.57223305726267,
+              "pathLengthCm": 61.36175862704235
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 10.071379569015221,
+              "pathLengthCm": 35.6722120878911
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 5.475086662167192,
+              "pathLengthCm": 59.2181622701207
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 7.969937759653309,
+              "pathLengthCm": 31.971587040265693
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "heavy_exit",
+      "source": "HeavyAttackTwoHandSourced",
+      "target": "IdleTwoHand",
+      "rootTurnCase": false,
+      "nonTurnMaximumWorldPositionDifferenceCm": 3.7976653013037566e-08,
+      "variants": {
+        "baseline": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 8.027349558403785e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 0.05234340502427942,
+              "pathLengthCm": 0.14349595705959217
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 0.0819700667250384,
+              "pathLengthCm": 2.611591303736596
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 0.05313422941616518,
+              "pathLengthCm": 0.10636933364797832
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 0.08295399755948864,
+              "pathLengthCm": 2.515373377325446
+            }
+          }
+        },
+        "rebased": {
+          "endpointsExact": true,
+          "maximumLegLengthExcessCm": 8.022575492816486e-06,
+          "footPaths": {
+            "LeftToeBase": {
+              "maximumDeviationFromEndpointLineCm": 0.052343417810167,
+              "pathLengthCm": 0.1434959779158417
+            },
+            "RightToeBase": {
+              "maximumDeviationFromEndpointLineCm": 0.08197005615284013,
+              "pathLengthCm": 2.611591303783164
+            },
+            "LeftFoot": {
+              "maximumDeviationFromEndpointLineCm": 0.053134241447750925,
+              "pathLengthCm": 0.10636935760528975
+            },
+            "RightFoot": {
+              "maximumDeviationFromEndpointLineCm": 0.08295398710623668,
+              "pathLengthCm": 2.515373377058156
+            }
+          }
+        }
+      }
+    }
+  ]
+}

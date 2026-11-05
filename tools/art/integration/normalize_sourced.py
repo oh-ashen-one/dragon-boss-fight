@@ -7,12 +7,13 @@ curves, remap palettes by name, and factor only explicit planar actor travel.
 import copy,json,math
 from pathlib import Path
 import numpy as np
+from scipy.spatial.transform import Rotation
 from normalize_approved import GLB,Writer,decompose,UE,digest,mesh_variant
 ROOT=Path(__file__).resolve().parents[3]
 BASE=ROOT/'Local/CustomuseAssets/Polish20261025/idle-joins/import-plan-KnightB.json'
 OUT=ROOT/'Local/CustomuseAssets/Sourced20261025'
 
-def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False,root_linear=False):
+def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False,root_linear=False,root_turn=False):
  src=GLB(path);names=canonical.skin_names();assert set(src.skin_names())==set(names)
  writer=Writer(src.g,src.binary);g=writer.g;body_index,body=src.body();_,cb=canonical.body()
  g['nodes']=copy.deepcopy(canonical.g['nodes']);g['scenes']=copy.deepcopy(canonical.g['scenes']);g['scene']=canonical.g.get('scene',0)
@@ -27,14 +28,29 @@ def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False,r
    if attr.startswith('JOINTS_'):primitive['attributes'][attr]=writer.add(palette[src.accessor(acc).astype(np.uint16)],'VEC4',5123)
  duration=src.duration();count=round(duration*fps);times=np.linspace(0,duration,count+1);poses=[];actors=[];initial=None;last_actor=None
  first_world,_=src.sample(0.);last_world,_=src.sample(duration)
+ turn_angles=np.zeros(len(times))
+ if root_turn:
+  assert root_prefix is not None and root_prefix>=duration-1e-6 and not root_linear and not root_vertical
+  initial_rotation=first_world[src.names['Hips']][:3,:3]
+  angles=[]
+  for t in times:
+   world,_=src.sample(float(t));relative=world[src.names['Hips']][:3,:3]@np.linalg.inv(initial_rotation)
+   q=Rotation.from_matrix(relative).as_quat()
+   angles.append(2*math.atan2(q[1],q[3]))
+  # Keep crossings of180degrees continuous. A wrapped rotvec would turn a
+  # sourced188degree pivot into a356degree jump between adjacent root keys.
+  turn_angles=np.unwrap(angles)
  vertical_base=max(first_world[src.names['Hips']][1,3],last_world[src.names['Hips']][1,3])
- for t in times:
+ for sample_index,t in enumerate(times):
   world,_=src.sample(float(t));hips=world[src.names['Hips']][:3,3]
   if initial is None:initial=hips.copy()
   actor=np.eye(4)
   if root_prefix is not None:
    if t<=root_prefix+1e-6 or last_actor is None:
     actor[:3,3]=(last_world[src.names['Hips']][:3,3]-first_world[src.names['Hips']][:3,3])*(t/duration) if root_linear else hips-initial
+    if root_turn:
+     actor[:3,:3]=Rotation.from_rotvec([0,turn_angles[sample_index],0]).as_matrix()
+     actor[:3,3]=hips-actor[:3,:3]@initial
     actor[1,3]=max(0.,hips[1]-vertical_base) if root_vertical else 0;last_actor=actor.copy()
    else:actor=last_actor.copy()
   actors.append(actor);counter=np.linalg.inv(actor);poses.append({n:counter@world[src.names[n]] for n in names})
@@ -52,7 +68,7 @@ def normalize_file(path,canonical,out,fps,root_prefix=None,root_vertical=False,r
  for i in sorted(set([0,len(times)//4,len(times)//2,3*len(times)//4,len(times)-1])):
   actual,_=check.sample(float(times[i]));raw,_=src.sample(float(times[i]));worst=max(worst,max(float(np.max(np.abs(actors[i]@actual[check.names[n]]-raw[src.names[n]]))) for n in names))
  assert worst<3e-5,(path,worst)
- return {'file':str(out),'sha256':sha,'sourceFile':str(Path(path).resolve()),'sourceSHA256':src.sha,'duration':duration,'rootSampleRate':count/duration,'rootTranslationSamplesCm':[(UE@a[:3,3]*100).tolist() for a in actors],'rootYawSamplesDegrees':[],'bRootMotionRemoved':root_prefix is not None,'rootMode':'linear_cycle_travel' if root_linear else 'authored_planar_profile' if root_prefix is not None else 'in_place','mesh_variant':'knight_'+mesh_variant(check)[:16],'canonicalReconstructionMaxMatrixError':worst}
+ return {'file':str(out),'sha256':sha,'sourceFile':str(Path(path).resolve()),'sourceSHA256':src.sha,'duration':duration,'rootSampleRate':count/duration,'rootTranslationSamplesCm':[(UE@a[:3,3]*100).tolist() for a in actors],'rootYawSamplesDegrees':(-np.degrees(turn_angles)).tolist() if root_turn else [],'bRootMotionRemoved':root_prefix is not None,'rootMode':'authored_planar_turn' if root_turn else 'linear_cycle_travel' if root_linear else 'authored_planar_profile' if root_prefix is not None else 'in_place','mesh_variant':'knight_'+mesh_variant(check)[:16],'canonicalReconstructionMaxMatrixError':worst}
 
 if __name__=='__main__':
  import argparse

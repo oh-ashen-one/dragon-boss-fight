@@ -1,0 +1,173 @@
+{
+  "plain_turn": {
+    "run": "native-blendproof-20261104T235037Z",
+    "passed": false,
+    "turnCount": 4,
+    "sequences": [
+      {
+        "name": "SprintStop_1H",
+        "passed": false,
+        "reason": "planted_foot_slide_722cm_per_s_transition",
+        "maximumSlideCmS": 722.3060913085938,
+        "steadySlideCmS": 33.10108947753906,
+        "exitWindowMaximumSlideCmS": null,
+        "overLimitWindows": 36,
+        "gripErrorCm": 0.147361159324646,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      },
+      {
+        "name": "SprintStop_2H",
+        "passed": false,
+        "reason": "planted_foot_slide_1788cm_per_s_transition",
+        "maximumSlideCmS": 1787.820556640625,
+        "steadySlideCmS": 94.46249389648438,
+        "exitWindowMaximumSlideCmS": 1787.820556640625,
+        "overLimitWindows": 40,
+        "gripErrorCm": 0.03357027843594551,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      },
+      {
+        "name": "WalkSprintWalk_1H",
+        "passed": false,
+        "reason": "planted_foot_slide_597cm_per_s_transition",
+        "maximumSlideCmS": 596.5708618164062,
+        "steadySlideCmS": 35.33722686767578,
+        "exitWindowMaximumSlideCmS": null,
+        "overLimitWindows": 34,
+        "gripErrorCm": 0.01478605717420578,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      },
+      {
+        "name": "WalkSprintWalk_2H",
+        "passed": false,
+        "reason": "sword_hand_space_error_4.74cm,planted_foot_slide_870cm_per_s_transition",
+        "maximumSlideCmS": 869.5546875,
+        "steadySlideCmS": 96.23562622070312,
+        "exitWindowMaximumSlideCmS": 824.9028930664062,
+        "overLimitWindows": 45,
+        "gripErrorCm": 4.738040447235107,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      }
+    ]
+  },
+  "root_rebase": {
+    "run": "native-blendproof-20261105T002526Z",
+    "passed": false,
+    "turnCount": 4,
+    "sequences": [
+      {
+        "name": "SprintStop_1H",
+        "passed": false,
+        "reason": "planted_foot_slide_716cm_per_s_transition",
+        "maximumSlideCmS": 715.7431640625,
+        "steadySlideCmS": 34.96821594238281,
+        "exitWindowMaximumSlideCmS": null,
+        "overLimitWindows": 36,
+        "gripErrorCm": 0.10336048901081085,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      },
+      {
+        "name": "SprintStop_2H",
+        "passed": false,
+        "reason": "planted_foot_slide_836cm_per_s_transition",
+        "maximumSlideCmS": 835.7401123046875,
+        "steadySlideCmS": 92.50376892089844,
+        "exitWindowMaximumSlideCmS": 542.7507934570312,
+        "overLimitWindows": 39,
+        "gripErrorCm": 0.02471012994647026,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      },
+      {
+        "name": "WalkSprintWalk_1H",
+        "passed": false,
+        "reason": "planted_foot_slide_596cm_per_s_transition",
+        "maximumSlideCmS": 596.3321533203125,
+        "steadySlideCmS": 45.3447151184082,
+        "exitWindowMaximumSlideCmS": null,
+        "overLimitWindows": 34,
+        "gripErrorCm": 0.01927168294787407,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      },
+      {
+        "name": "WalkSprintWalk_2H",
+        "passed": false,
+        "reason": "sword_hand_space_error_4.00cm,planted_foot_slide_843cm_per_s_transition",
+        "maximumSlideCmS": 843.4500122070312,
+        "steadySlideCmS": 93.86866760253906,
+        "exitWindowMaximumSlideCmS": 812.03369140625,
+        "overLimitWindows": 41,
+        "gripErrorCm": 4.00182580947876,
+        "legacyGripErrorCm": null,
+        "missingGripReferences": null
+      }
+    ]
+  },
+  "weighted_root_and_reference_check": {
+    "run": "native-blendproof-20261105T011547Z",
+    "passed": false,
+    "turnCount": 4,
+    "sequences": [
+      {
+        "name": "SprintStop_1H",
+        "passed": false,
+        "reason": "planted_foot_slide_720cm_per_s_transition",
+        "maximumSlideCmS": 720.4342041015625,
+        "steadySlideCmS": 70.04096221923828,
+        "exitWindowMaximumSlideCmS": null,
+        "overLimitWindows": 39,
+        "gripErrorCm": 4.058380909555126e-06,
+        "legacyGripErrorCm": 0.06316853314638138,
+        "missingGripReferences": 0
+      },
+      {
+        "name": "SprintStop_2H",
+        "passed": false,
+        "reason": "planted_foot_slide_975cm_per_s_transition",
+        "maximumSlideCmS": 974.86572265625,
+        "steadySlideCmS": 86.19015502929688,
+        "exitWindowMaximumSlideCmS": 240.64761352539062,
+        "overLimitWindows": 40,
+        "gripErrorCm": 4.19462821810157e-06,
+        "legacyGripErrorCm": 0.02694994956254959,
+        "missingGripReferences": 0
+      },
+      {
+        "name": "WalkSprintWalk_1H",
+        "passed": false,
+        "reason": "planted_foot_slide_596cm_per_s_transition",
+        "maximumSlideCmS": 596.15966796875,
+        "steadySlideCmS": 36.32005310058594,
+        "exitWindowMaximumSlideCmS": null,
+        "overLimitWindows": 34,
+        "gripErrorCm": 4.0587592593510635e-06,
+        "legacyGripErrorCm": 0.014809553511440754,
+        "missingGripReferences": 0
+      },
+      {
+        "name": "WalkSprintWalk_2H",
+        "passed": false,
+        "reason": "planted_foot_slide_944cm_per_s_transition",
+        "maximumSlideCmS": 943.5748901367188,
+        "steadySlideCmS": 96.20613861083984,
+        "exitWindowMaximumSlideCmS": 814.1019897460938,
+        "overLimitWindows": 43,
+        "gripErrorCm": 4.2729880078695714e-06,
+        "legacyGripErrorCm": 4.4135847091674805,
+        "missingGripReferences": 0
+      }
+    ]
+  },
+  "accepted": false,
+  "limitsUnchanged": {
+    "footSlideCmS": 60,
+    "gripCm": 2
+  },
+  "decision": "Keep turns and all trajectory experiments opt-in. Root rebase removes the major exit arc, but all4 contact trials remain failed. Weighted root has a separate disabled-by-default flag after larger entry peaks. Independent grip references remove the verified interrupted-blend false positive without changing2cm tolerance."
+}

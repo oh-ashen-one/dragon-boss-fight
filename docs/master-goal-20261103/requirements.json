@@ -53,7 +53,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "v044_steady_drift_reduced_all4_trials_fail_sourced_turns_Blender_retargeted_grounded_review_queued",
+      "status": "v045_turn_root_candidates_imported_native_all4_trials_fail_root_exit_arc_reduced_source_floor_contacts_and_joins_unfinished",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -63,7 +63,16 @@
         "v044-native-checkpoint.json",
         "v044-source-native-fidelity-raw.json",
         "v044-sprint-native-comparison.json",
-        "sourced-turn-diagnostics.json"
+        "sourced-turn-diagnostics.json",
+        "sourced-turn-root-preparation.json",
+        "turn-normalizer-regression.json",
+        "v045-native-checkpoint.json",
+        "v045-source-native-fidelity.json",
+        "native-turn-root-blend-summary.json",
+        "turn-gameplay-comparison.json",
+        "interrupted-grip-reference-audit.json",
+        "turn-source-contact-checkpoint.json",
+        "turn-support-point-diagnostics-v2.json"
       ]
     },
     {
@@ -128,7 +137,7 @@
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Progress: exact tour preserved; stable-prop and phase-matched walking handoff implemented and filmed; full and earliest-skip/retry checks passed; compact blind Opus preferred new handoff with conditional acceptance; 24.862GiB obsolete builds cleaned; scoped source and wiki pushed.",
+  "priorTurnClassification": "Progress: imported/fidelity-checked sourced turns, implemented opt-in root turning and root-space blending, filmed three failed gameplay candidates, fixed a grip-fixture false positive with independent native references, and authored foot-frame/ankle-path corrections in Blender. All locomotion contact trials remain failed; full scope incomplete.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -136,7 +145,7 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "one_live_grounded_turn_review_waiting_launch_budget_then_normal_gpu_slot",
+    "status": "no_owned_renderer_or_critic_live_native_video_encoder_may_be_finishing",
     "lastEditorRequest": "terminal cap-full-timeout901seconds, no renderer launched",
     "lastFullIntro": "native-intro-20261104T224547Z mechanics passed; blind handoff slightly preferred, conditional acceptance",
     "gpuSafetyControlsChanged": false
@@ -170,8 +179,9 @@
     "v043": "Diagnostic-only; not imported; import guard rejects it",
     "nextVersion": "v044blender",
     "blenderRecipesExecuted": true,
-    "activeNativeVersion": "v044blender",
+    "activeNativeVersion": "v045turns",
     "nativeImported": true,
-    "qualityAccepted": false
+    "qualityAccepted": false,
+    "note": "New world-motion factoring is representation conversion of actual Blender-authored turns; v043 CPU-authoring studies remain quarantined and unimported."
   }
 }

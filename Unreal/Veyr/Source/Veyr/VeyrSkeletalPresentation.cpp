@@ -158,6 +158,7 @@ bool UVeyrSkeletalPresentation::EvaluatePoseSynchronously()
     HandleExistingParallelEvaluationTask(true,true);
     UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
     Instance->bUseMultiThreadedAnimationUpdate=false;
+    Instance->SetExplicitRootSpaceBlend(bRootSpaceBlend);
     Instance->SetRootMotionMode(ERootMotionMode::IgnoreRootMotion);
     Instance->SetPlaying(false);
     Instance->SetPlayRate(0.f);

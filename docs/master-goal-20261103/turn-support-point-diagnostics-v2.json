@@ -1,0 +1,128 @@
+{
+  "sourceOnly": true,
+  "nativeGateChanged": false,
+  "accepted": false,
+  "scope": "Actual skinned sole vertices: combined same-side shin/foot/toe weight>0.75, below bind ankle, in the lowest1cm bind band; within1cm of native floor0 throughout a1/30s window. Includes heel skin weighted to the shin. Diagnostic only; source gaps/penetration remain failures.",
+  "clips": [
+    {
+      "name": "Mixamo_Turn180_A_v3contacts",
+      "sourceSHA256": "f2f927b2c3dbe389c406313ccc8d92deff26f787c3a29c0c707a09b35bfb34ca",
+      "feet": [
+        {
+          "side": "left",
+          "soleVertexCount": 33,
+          "minimumBindSoleHeightCm": -5.372377704131242e-05,
+          "minimumSoleHeightCm": -3.957844043721128,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.2083333407310729,
+            "boneMarkerSpeedCmS": 82.65761914300525,
+            "minimumGroundedSoleVertexSpeedCmS": 33.433931631680146,
+            "groundedSoleVertices": 18
+          }
+        },
+        {
+          "side": "right",
+          "soleVertexCount": 48,
+          "minimumBindSoleHeightCm": 3.3376093454437057,
+          "minimumSoleHeightCm": 2.2653076458929307,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.5333333522715467,
+            "boneMarkerSpeedCmS": 60.47102362628386,
+            "minimumGroundedSoleVertexSpeedCmS": null,
+            "groundedSoleVertices": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mixamo_Turn180_B_v3contacts",
+      "sourceSHA256": "cd893c857a381fdd59eef3c782ec65c8d73688743e93d9c3799ad5ed1cf0ca9d",
+      "feet": [
+        {
+          "side": "left",
+          "soleVertexCount": 33,
+          "minimumBindSoleHeightCm": -5.372377704131242e-05,
+          "minimumSoleHeightCm": -3.9913269076798596,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.18333333730697632,
+            "boneMarkerSpeedCmS": 202.17781514838305,
+            "minimumGroundedSoleVertexSpeedCmS": 101.82514434690543,
+            "groundedSoleVertices": 5
+          }
+        },
+        {
+          "side": "right",
+          "soleVertexCount": 48,
+          "minimumBindSoleHeightCm": 3.3376093454437057,
+          "minimumSoleHeightCm": 2.301266025591343,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.4500000097534873,
+            "boneMarkerSpeedCmS": 376.09629671832266,
+            "minimumGroundedSoleVertexSpeedCmS": null,
+            "groundedSoleVertices": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mixamo_Turn_A_v3contacts",
+      "sourceSHA256": "f35994e849316e448a5bd0c86e59285c01dcff4e8276ac7e80a7c4ba82fe87a6",
+      "feet": [
+        {
+          "side": "left",
+          "soleVertexCount": 33,
+          "minimumBindSoleHeightCm": -5.372377704131242e-05,
+          "minimumSoleHeightCm": -0.01809865288211495,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.4499999825344529,
+            "boneMarkerSpeedCmS": 42.73568117002675,
+            "minimumGroundedSoleVertexSpeedCmS": 11.11030801621341,
+            "groundedSoleVertices": 9
+          }
+        },
+        {
+          "side": "right",
+          "soleVertexCount": 48,
+          "minimumBindSoleHeightCm": 3.3376093454437057,
+          "minimumSoleHeightCm": 2.763739825230756,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.18333332621774007,
+            "boneMarkerSpeedCmS": 277.11047350675904,
+            "minimumGroundedSoleVertexSpeedCmS": null,
+            "groundedSoleVertices": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mixamo_Turn_B_v3contacts",
+      "sourceSHA256": "129275e1b601233575a830f2de49692b4b221d12c4bae87651bcb2e65c8bf8e9",
+      "feet": [
+        {
+          "side": "left",
+          "soleVertexCount": 33,
+          "minimumBindSoleHeightCm": -5.372377704131242e-05,
+          "minimumSoleHeightCm": -0.20095344271536272,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.0749999996350736,
+            "boneMarkerSpeedCmS": 188.95623017101994,
+            "minimumGroundedSoleVertexSpeedCmS": null,
+            "groundedSoleVertices": 0
+          }
+        },
+        {
+          "side": "right",
+          "soleVertexCount": 48,
+          "minimumBindSoleHeightCm": 3.3376093454437057,
+          "minimumSoleHeightCm": 0.6850378243884964,
+          "worstBoneMarkerWindow": {
+            "endSeconds": 0.5916666637878029,
+            "boneMarkerSpeedCmS": 292.74765600465355,
+            "minimumGroundedSoleVertexSpeedCmS": null,
+            "groundedSoleVertices": 0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "version": "v045turns",
+  "activeNativeDefinition": "/Game/Characters/Customuse/RuntimePolish/DA_Knight.DA_Knight",
+  "runtimeSourceDefinition": "/Game/Characters/Customuse/KnightB/v045turns/DA_KnightB",
+  "nativePoseProof": {
+    "definition": "/Game/Characters/Customuse/KnightB/v045turns/DA_KnightB",
+    "report": "/Users/midir/veyr-knight-20261028/Local/CustomuseImports/native-pose-proof-KnightB-v045turns.json",
+    "passed": true,
+    "samples": 378
+  },
+  "canonicalPoseProof": {
+    "definition": "/Game/Characters/Customuse/KnightB/v045turns/DA_KnightB",
+    "report": "/Users/midir/veyr-knight-20261028/Local/CustomuseImports/native-pose-proof-KnightB-v045turns-canonical.json",
+    "passed": true,
+    "samples": 378
+  },
+  "newClipCount": 4,
+  "newClipFidelityReport": "v045-source-native-fidelity.json",
+  "accepted": false,
+  "scope": "Native import and sampled pose fidelity only; gameplay turn binding is opt-in and untested. Other grips/left180 remain unbuilt."
+}

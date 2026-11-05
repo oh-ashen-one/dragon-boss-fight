@@ -9,6 +9,7 @@ class UInstancedStaticMeshComponent;
 class FJsonObject;
 class FJsonValue;
 class UWorld;
+class UVeyrSkeletalPresentation;
 
 /**
  * Engine-side visual proof tooling for the knight ("blendproof" replay mode, 2026-10-29).
@@ -31,12 +32,15 @@ public:
         FName Clip, From; FString Action; int32 Serial=0; bool bBlend=false, bHidden=false;
         FVector Capsule=FVector::ZeroVector, Toe[2]={FVector::ZeroVector,FVector::ZeroVector}, Ankle[2]={FVector::ZeroVector,FVector::ZeroVector};
         FVector Sword=FVector::ZeroVector, Hand=FVector::ZeroVector, SwordLocal=FVector::ZeroVector;
+        FVector AuthoredGripTarget=FVector::ZeroVector;
+        bool bAuthoredGripValid=false;
         bool bSwordValid=false, bHandValid=false, bFeetValid=false, bSprintRequested=false;
         float Speed=0.f, ClipPhase=0.f, ActorYaw=0.f;
         float HipHeight=0.f;
         bool bAuthoredSliding=false;
         float FootAnchorWeight[2]={0.f,0.f};
         float SwordHandCm=0.f, SwordExcessCm=0.f, SwordLocalErrCm=0.f;
+        float LegacySwordLocalErrCm=0.f;
         float CapsuleTravel=0.f, ToeTravel[2]={0.f,0.f}, AnkleTravel[2]={0.f,0.f};
         float ToeHeight[2]={0.f,0.f}, AnkleHeight[2]={0.f,0.f};
         bool bToePlanted[2]={false,false}, bAnklePlanted[2]={false,false};
@@ -72,6 +76,7 @@ private:
     TWeakObjectPtr<AVeyrDragon> Dragon;
     TWeakObjectPtr<ACameraActor> Camera;
     TWeakObjectPtr<UInstancedStaticMeshComponent> Checker;
+    TWeakObjectPtr<UVeyrSkeletalPresentation> GripReference;
     FHooks Hooks;
     FString RunDirectory, FramesFile;
     bool bDone=false, bBegan=false, bProofFloorApplied=false, bCameraApplied=false;

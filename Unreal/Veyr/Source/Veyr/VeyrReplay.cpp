@@ -389,6 +389,10 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         O->SetBoolField(TEXT("knightCanonicalSkin"),Knight->ImportedPresentation->bPreferCanonicalMesh);
         O->SetBoolField(TEXT("stableWeaponPresentation"),Knight->UsesStableWeaponPresentation());
         O->SetBoolField(TEXT("walkEntryBlend"),Knight->UsesWalkEntryBlend());
+        O->SetBoolField(TEXT("sourcedMovementTurns"),Knight->UsesSourcedMovementTurns());
+        O->SetBoolField(TEXT("blendedTurnTrajectory"),Knight->UsesBlendedTurnTrajectory());
+        O->SetBoolField(TEXT("turnRootSpaceBlend"),Knight->ImportedPresentation->bRootSpaceBlend);
+        O->SetNumberField(TEXT("movementTurns"),Knight->GetMovementTurnCount());
         O->SetNumberField(TEXT("knightMeshSwitches"),Knight->ImportedPresentation->MeshVariantSwitchCount);
         O->SetBoolField(TEXT("knightPSOPrecaching"),Knight->ImportedPresentation->IsPSOPrecaching());
         O->SetBoolField(TEXT("knightSceneProxyPresent"),Knight->ImportedPresentation->GetSceneProxy()!=nullptr);

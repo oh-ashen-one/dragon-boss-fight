@@ -16,6 +16,7 @@ class VEYR_API UVeyrSingleNodeInstance : public UAnimSingleNodeInstance
 public:
     bool CaptureTransitionSource();
     bool SetExplicitTransitionAlpha(float Alpha);
+    void SetExplicitRootSpaceBlend(bool bEnabled);
     void ClearTransitionSource();
     bool HasTransitionSource() const;
     bool SetExplicitTransitionSequence(UAnimSequence* Sequence,float SequenceSeconds);

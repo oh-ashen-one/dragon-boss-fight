@@ -1,0 +1,54 @@
+{
+  "sourceRun": "native-blendproof-20261104T235037Z",
+  "framesSHA256": "6e420b06faee6d6820c5037d5bdd341e8c4b17e88443452fd8736eae95f403b7",
+  "reference": "Separate native component sampling unblended assets at each recorded target phase",
+  "thresholdCm": 2.0,
+  "existingGateChanged": false,
+  "scope": "Grip diagnostic only; all foot/contact failures remain. Legacy grouping merges consecutive transition serials and can compare against an unrelated later endpoint.",
+  "sequences": [
+    {
+      "sequence": "SprintStop_1H",
+      "checkedBlendFrames": 40,
+      "legacyErrorCm": 0.147361159324646,
+      "independentReferenceErrorCm": 0.011179067469834285,
+      "worst": {
+        "seconds": 4.921916484832764,
+        "clip": "RunOneHandPlanted",
+        "alpha": 0.16671180725097656
+      }
+    },
+    {
+      "sequence": "SprintStop_2H",
+      "checkedBlendFrames": 47,
+      "legacyErrorCm": 0.03357027843594551,
+      "independentReferenceErrorCm": 0.011494245642159747,
+      "worst": {
+        "seconds": 22.789169311523438,
+        "clip": "RunStopTwoHandSourced",
+        "alpha": 0.11722563952207565
+      }
+    },
+    {
+      "sequence": "WalkSprintWalk_1H",
+      "checkedBlendFrames": 35,
+      "legacyErrorCm": 0.01478605717420578,
+      "independentReferenceErrorCm": 0.008909142227284374,
+      "worst": {
+        "seconds": 37.45582580566406,
+        "clip": "Idle",
+        "alpha": 0.10836204886436462
+      }
+    },
+    {
+      "sequence": "WalkSprintWalk_2H",
+      "checkedBlendFrames": 41,
+      "legacyErrorCm": 4.738040447235107,
+      "independentReferenceErrorCm": 0.00909479013057247,
+      "worst": {
+        "seconds": 49.15533447265625,
+        "clip": "WalkTwoHand",
+        "alpha": 0.2101231813430786
+      }
+    }
+  ]
+}

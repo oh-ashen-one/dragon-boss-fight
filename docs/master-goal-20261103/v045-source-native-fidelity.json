@@ -1,0 +1,109 @@
+{
+  "passed": true,
+  "scope": "Native import/compression fidelity at six sampled times per new clip; not visual/gameplay acceptance",
+  "planSHA256": "42ec30788c92693c38fc1f2e01d71fb74b2c204168eb3d22287c122c3a3e2d41",
+  "nativeProofSHA256": "c3d9859ee48ceb302d6c73bb86f52bdfff01f2cdda19ba0e7c84f0df0640801a",
+  "limits": {
+    "translationCm": 0.1,
+    "rotationDegrees": 0.1,
+    "scale": 0.001
+  },
+  "clips": [
+    {
+      "clip": "TurnRight180TwoHand",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 8.840862580318413e-05,
+        "rotationDegrees": 0.0007419111225265505,
+        "scale": 9.919578422001862e-07
+      },
+      "worstLocations": {
+        "translationCm": {
+          "bone": "Neck",
+          "timeSeconds": 0.6501666897535324
+        },
+        "rotationDegrees": {
+          "bone": "RightShoulder",
+          "timeSeconds": 0.6501666897535324
+        },
+        "scale": {
+          "bone": "LeftShoulder",
+          "timeSeconds": 0.7825500277876853
+        }
+      }
+    },
+    {
+      "clip": "TurnRight180QuickTwoHand",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 4.791078819623558e-05,
+        "rotationDegrees": 0.0003717162207194685,
+        "scale": 1.0301048524175016e-06
+      },
+      "worstLocations": {
+        "translationCm": {
+          "bone": "LeftForeArm",
+          "timeSeconds": 0.456500009894371
+        },
+        "rotationDegrees": {
+          "bone": "LeftUpLeg",
+          "timeSeconds": 0.456500009894371
+        },
+        "scale": {
+          "bone": "LeftShoulder",
+          "timeSeconds": 0.549450011909008
+        }
+      }
+    },
+    {
+      "clip": "TurnRight90TwoHand",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 8.182871585119739e-05,
+        "rotationDegrees": 0.00029040103739441127,
+        "scale": 1.0096159592798415e-06
+      },
+      "worstLocations": {
+        "translationCm": {
+          "bone": "Neck",
+          "timeSeconds": 0.7159499722123146
+        },
+        "rotationDegrees": {
+          "bone": "RightShoulder",
+          "timeSeconds": 0.0
+        },
+        "scale": {
+          "bone": "LeftShoulder",
+          "timeSeconds": 0.7159499722123146
+        }
+      }
+    },
+    {
+      "clip": "TurnLeft90TwoHand",
+      "samples": 6,
+      "boneComparisons": 330,
+      "maximumErrors": {
+        "translationCm": 9.25658651081334e-05,
+        "rotationDegrees": 0.00013482597060889953,
+        "scale": 9.559704611250552e-07
+      },
+      "worstLocations": {
+        "rotationDegrees": {
+          "bone": "RightShoulder",
+          "timeSeconds": 0.0
+        },
+        "translationCm": {
+          "bone": "Neck",
+          "timeSeconds": 0.8158499960303307
+        },
+        "scale": {
+          "bone": "Head",
+          "timeSeconds": 0.30216666519641877
+        }
+      }
+    }
+  ]
+}

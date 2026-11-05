@@ -64,7 +64,7 @@ def render(label,frames,ortho_scale=2.1,resolution=640,auto_frame=False):
    s.render.filepath=str(folder/f'{v}_{f:04d}.png');bpy.ops.render.render(write_still=True)
  return scales
 
-def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None,source_action=None):
+def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None,source_action=None,foot_frames=False):
  s=reset();bpy.ops.import_scene.gltf(filepath=str(TARGET));t=next(o for o in s.objects if o.type=='ARMATURE');t.name='Knight_Comparison'
  body=[o for o in s.objects if o.type=='MESH'];s.frame_set(0)
  grip=t.pose.bones['RightHand'].matrix.inverted()@t.pose.bones['WeaponSocket'].matrix
@@ -88,11 +88,26 @@ def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=N
  sw=src.matrix_world.copy();tw=t.matrix_world.copy();rest={n:(tw@b.matrix_local).copy() for n,b in t.data.bones.items()};sr={n:(sw@src.data.bones[v].matrix_local).copy() for n,v in mapping.items()}
  # Calibrate each segment's anatomical direction; imported glTF bone axes are
  # arbitrary and the knight's bind pose has relaxed arms instead of a T-pose.
- refs={};calibrated_hands=[]
+ refs={};calibrated_hands=[];calibrated_feet=[];foot_rest_slopes={}
  for n in mapping:
   correction=Quaternion((1,0,0,0))
   child=MAIN.get(n)
-  if hand_frames and n.endswith('Hand'):
+  if foot_frames and n in ('LeftFoot','RightFoot','LeftToeBase','RightToeBase'):
+    side='Left' if n.startswith('Left') else 'Right'
+    def sole_frame(matrices):
+     toe=matrices[side+'ToeBase'].translation-matrices[side+'Foot'].translation
+     pitch=math.degrees(math.atan2(toe.z,math.hypot(toe.x,toe.y)))
+     toe.z=0.;assert toe.length>1e-5,'Foot reference has no horizontal heading'
+     forward=toe.normalized();up=Vector((0,0,1));lateral=up.cross(forward).normalized()
+     return Matrix((forward,lateral,up)).transposed().to_quaternion(),pitch
+    target_frame,target_pitch=sole_frame(rest);source_frame,source_pitch=sole_frame(sr)
+    # Ankle-to-toe slopes differ with body proportions. Aligning that single
+    # vector can pitch a flat target boot into the floor. Calibrate horizontal
+    # heading plus the standing sole normal, then retain the source's animated
+    # foot/toe rotation deltas (including its heel roll and toe-off).
+    correction=source_frame@target_frame.inverted();calibrated_feet.append(n)
+    foot_rest_slopes[side]={'targetToeVectorPitchDegrees':target_pitch,'sourceToeVectorPitchDegrees':source_pitch}
+  elif hand_frames and n.endswith('Hand'):
     def palm_frame(matrices,prefix,get_name):
      h=matrices[get_name(prefix)].translation
      longitudinal=(matrices[get_name(prefix+'Middle')].translation-h).normalized()
@@ -168,4 +183,4 @@ def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=N
  s['session_owner']=OWNER;s['retarget_source']=str(file);s['retarget_scale']=scale
  bpy.ops.wm.save_as_mainfile(filepath=str(path.with_suffix('.blend')),compress=True)
  render(name,[0,N//4,N//2,3*N//4,N])
- report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'fullPalmFrameBones':calibrated_hands,'preservedFingerBones':list(finger_hold or {}),'scale':scale,'rootTravel':travel,'mirrored':mirror,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
+ report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'fullPalmFrameBones':calibrated_hands,'fullFootFrameBones':calibrated_feet,'footRestSlopes':foot_rest_slopes,'preservedFingerBones':list(finger_hold or {}),'scale':scale,'rootTravel':travel,'mirrored':mirror,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))

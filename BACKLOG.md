@@ -1,3 +1,7 @@
+## Latest turn diagnostics — November4 local evening / November5 UTC
+
+Root-turn integration and a root-space interpolation correction are implemented as opt-in candidates. Native conversion/endpoint checks pass and the largest turn-exit arc is reduced, but all four sprint/contact trials still fail. A misleading interrupted-blend grip error was corrected using independent native references; the2cm grip and60cm/s foot limits are unchanged. Source-foot frame calibration and ankle-path fits are now saved as four Blender scenes each, but native-floor contacts and entry/exit joins remain unaccepted. No turn candidate has shipped. See HANDOFF.md for exact builds, reports and live encoder status.
+
 ## Latest healing and sprint evidence — 2026-11-04 late evening
 
 - Normal-camera heal comparison passes four real charges/cap/empty rejection in both builds. The new auto-aim ceiling keeps boots visible in38/38 Heal samples vs0/38 before. Blind Opus clearly prefers the new framing; continuous weapon entry/exit and airborne/rearing threat visibility remain open. Camera flag stays opt-in.

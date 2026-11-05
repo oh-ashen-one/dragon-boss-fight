@@ -164,6 +164,17 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     if(Fwd0.IsNearlyZero())Fwd0=FVector::ForwardVector;
     Right0=FVector::CrossProduct(FVector::UpVector,Fwd0).GetSafeNormal();
     if(Knight->bLockedOn==bSprintProof)Knight->ToggleLockOn();
+    // Independently sample the authored destination grip. This component has
+    // no render state and does not use gameplay's grip-placement variables.
+    UVeyrSkeletalPresentation* Reference=NewObject<UVeyrSkeletalPresentation>(Knight.Get());
+    Knight->AddInstanceComponent(Reference);
+    if(!Reference->ConfigureRenderPolicy(true,false))return false;
+    Reference->SetupAttachment(Knight->GetCapsuleComponent());
+    Reference->SetVisibility(false);Reference->SetHiddenInGame(true);Reference->SetCastShadow(false);
+    Reference->bPreferCanonicalMesh=Knight->ImportedPresentation->bPreferCanonicalMesh;
+    Reference->RegisterComponent();
+    if(!Reference->SetVisualDefinition(Knight->CustomuseVisualDefinition,false))return false;
+    GripReference=Reference;
     // Fixed chase camera: an engine camera actor that follows the capsule with a world-fixed orientation.
     FActorSpawnParameters Params;Params.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     ACameraActor* Cam=World->SpawnActor<ACameraActor>(Home+FVector(0,0,190),FRotator::ZeroRotator,Params);
@@ -301,6 +312,17 @@ void FVeyrBlendProof::Sample(double Elapsed,float Dt)
     {
         F.SwordHandCm=FVector::Dist(F.Sword,F.Hand);
         F.SwordLocal=HandT.GetRotation().UnrotateVector(F.Sword-F.Hand);
+    }
+    if(F.bBlend&&P&&GripReference.IsValid())
+    {
+        FTransform ReferenceHand,ReferenceSocket;
+        if(GripReference->SampleClipTime(F.Clip,P->CurrentTrimmedSeconds)&&
+           GripReference->GetBoneTargetWorldTransform(TEXT("weapon_hand"),ReferenceHand)&&
+           GripReference->GetBoneTargetWorldTransform(TEXT("weapon_socket"),ReferenceSocket))
+        {
+            F.AuthoredGripTarget=ReferenceHand.GetRotation().UnrotateVector(ReferenceSocket.GetLocation()-ReferenceHand.GetLocation());
+            F.bAuthoredGripValid=true;
+        }
     }
     if(!Frames.IsEmpty())
     {
@@ -633,6 +655,36 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         }
         I=E;
     }
+    const float LegacyHandSpaceErrorMax=SwordLocalErrMax;
+    const float LegacyBlendExcessMax=SwordBlendExcessMax;
+    for(FFrame& F:Frames)F.LegacySwordLocalErrCm=F.SwordLocalErrCm;
+    SwordLocalErrMax=SwordBlendExcessMax=0.f;BlendSegments=BlendFrames=0;
+    int32 MissingGripReferences=0;
+    for(int32 I=0;I<N;)
+    {
+        if(!Frames[I].bBlend){++I;continue;}
+        const int32 Serial=Frames[I].Serial;
+        int32 E=I;while(E<N&&Frames[E].bBlend&&Frames[E].Serial==Serial)++E;
+        int32 BI=FMath::Max(0,I-1);
+        while(BI>0&&!(Frames[BI].bSwordValid&&Frames[BI].bHandValid))--BI;
+        const FFrame& Before=Frames[BI];++BlendSegments;
+        for(int32 J=I;J<E;++J)
+        {
+            FFrame& G=Frames[J];++BlendFrames;
+            if(!(G.bSwordValid&&G.bHandValid))continue;
+            if(!G.bAuthoredGripValid||!Before.bSwordValid||!Before.bHandValid)
+            {++MissingGripReferences;continue;}
+            // An interrupted blend may never reach its destination. Do not
+            // borrow a different later clip's endpoint, or merge serials.
+            const FVector Expected=FMath::Lerp(Before.SwordLocal,G.AuthoredGripTarget,G.Alpha);
+            G.SwordLocalErrCm=FVector::Dist(G.SwordLocal,Expected);
+            const float D0=Before.SwordHandCm,D1=G.AuthoredGripTarget.Size();
+            G.SwordExcessCm=FMath::Max(0.f,FMath::Max(FMath::Min(D0,D1)-G.SwordHandCm,G.SwordHandCm-FMath::Max(D0,D1)));
+            SwordLocalErrMax=FMath::Max(SwordLocalErrMax,G.SwordLocalErrCm);
+            SwordBlendExcessMax=FMath::Max(SwordBlendExcessMax,G.SwordExcessCm);
+        }
+        I=E;
+    }
     SwordExcessMax=FMath::Max(SwordBlendExcessMax,SwordSteadyExcessMax);
     if(SwordRawMin>1e8f)SwordRawMin=0.f;
     // 4. Capsule travel.
@@ -668,6 +720,7 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     }
     // 5. Gate.
     TArray<FString> Fail;
+    if(MissingGripReferences>0)Fail.Add(FString::Printf(TEXT("authored_grip_reference_missing_%d"),MissingGripReferences));
     if(!R.bCompleted)Fail.Add(TEXT("sequence_incomplete"));
     if(ClipFrames<2)Fail.Add(FString::Printf(TEXT("expected_clip_%s_seen_%d_frames"),D.ExpectedClip,ClipFrames));
     if(D.Kind==EKind::HeavyAttack&&!bExpectedActionSeen)Fail.Add(TEXT("heavy_input_never_started"));
@@ -716,6 +769,10 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     TSharedPtr<FJsonObject> Sw=MakeShared<FJsonObject>();
     Sw->SetNumberField(TEXT("maxExcessCm"),SwordExcessMax);Sw->SetNumberField(TEXT("maxBlendExcessCm"),SwordBlendExcessMax);Sw->SetNumberField(TEXT("maxSteadyExcessCm"),SwordSteadyExcessMax);
     Sw->SetNumberField(TEXT("maxHandSpaceErrorCm"),SwordLocalErrMax);Sw->SetNumberField(TEXT("rawHandToGripMinCm"),SwordRawMin);Sw->SetNumberField(TEXT("rawHandToGripMaxCm"),SwordRawMax);
+    Sw->SetNumberField(TEXT("legacyMergedHandSpaceErrorCm"),LegacyHandSpaceErrorMax);
+    Sw->SetNumberField(TEXT("legacyMergedBlendExcessCm"),LegacyBlendExcessMax);
+    Sw->SetNumberField(TEXT("missingAuthoredGripReferences"),MissingGripReferences);
+    Sw->SetStringField(TEXT("referenceScope"),TEXT("Each transition serial: preceding visible source grip and independently sampled unblended native destination at the current phase; unchanged2cm limit"));
     Sw->SetNumberField(TEXT("blendSegments"),BlendSegments);Sw->SetNumberField(TEXT("blendFrames"),BlendFrames);Sw->SetNumberField(TEXT("limitCm"),GSwordLimitCm);
     M->SetObjectField(TEXT("sword"),Sw);
     TSharedPtr<FJsonObject> Ft=MakeShared<FJsonObject>();
@@ -783,6 +840,8 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         O->SetArrayField(TEXT("ankleTravelCm"),{MakeShared<FJsonValueNumber>(F.AnkleTravel[0]),MakeShared<FJsonValueNumber>(F.AnkleTravel[1])});
         O->SetArrayField(TEXT("sword"),Vec(F.Sword));O->SetArrayField(TEXT("hand"),Vec(F.Hand));O->SetArrayField(TEXT("swordInHandSpace"),Vec(F.SwordLocal));
         O->SetNumberField(TEXT("swordToHandCm"),F.SwordHandCm);O->SetNumberField(TEXT("swordExcessCm"),F.SwordExcessCm);O->SetNumberField(TEXT("swordHandSpaceErrorCm"),F.SwordLocalErrCm);
+        O->SetNumberField(TEXT("legacySwordHandSpaceErrorCm"),F.LegacySwordLocalErrCm);
+        O->SetBoolField(TEXT("authoredGripTargetValid"),F.bAuthoredGripValid);O->SetArrayField(TEXT("authoredGripTarget"),Vec(F.AuthoredGripTarget));
         FString Line;
         const TSharedRef<TJsonWriter<TCHAR,TCondensedJsonPrintPolicy<TCHAR>>> W=TJsonWriterFactory<TCHAR,TCondensedJsonPrintPolicy<TCHAR>>::Create(&Line);
         if(FJsonSerializer::Serialize(O,W))Lines+=Line+TEXT("\n");

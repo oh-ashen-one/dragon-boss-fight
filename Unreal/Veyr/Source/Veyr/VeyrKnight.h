@@ -213,6 +213,9 @@ public:
     bool IsWeaponTrailActive() const;
     bool UsesStableWeaponPresentation() const { return bStableWeaponPresentation; }
     bool UsesWalkEntryBlend() const { return bWalkEntryBlend; }
+    bool UsesSourcedMovementTurns() const { return bSourcedMovementTurns; }
+    bool UsesBlendedTurnTrajectory() const { return bBlendTurnTrajectory; }
+    int32 GetMovementTurnCount() const { return MovementTurnCount; }
 
 protected:
     virtual void BeginPlay() override;
@@ -273,6 +276,14 @@ private:
     bool bLocomotionPhaseMatch=false;
     bool bWalkEntryBlend=false;
     bool bContinuousLocomotionBlend=false;
+    bool bSourcedMovementTurns=false;
+    bool bBlendTurnTrajectory=false;
+    int32 MovementTurnCount=0;
+    FName MovementTurnClip=NAME_None;
+    FTransform MovementTurnStart=FTransform::Identity;
+    bool TryBeginMovementTurn();
+    bool ReadMovementTurnRoot(FName Clip,float Seconds,FVector& Translation,float& Yaw) const;
+    void ApplyMovementTurnRoot(float Seconds);
     FName ContinuousTransitionSource=NAME_None;
     float ContinuousTransitionSeconds=0.f;
     bool bPrimaryRecovery=false;
