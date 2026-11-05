@@ -1,3 +1,7 @@
+## Latest native mobility-policy evidence — November5 UTC
+
+CPU-only native inspection confirms the current leap asset has its full vertical root path (22.835cm after component scaling); all source/runtime samples and policies match. The historical flat-capsule failure predates the existing code fix. Fresh gameplay, contacts and blind visual review remain required; no running/leap candidate is accepted. GPU rendering remains unavailable; see HANDOFF.md.
+
 ## Latest source/contact checkpoint — November5 UTC
 
 Default-recovery controls smoke terminated at the GPU gate without launching; it remains unrun. ACCADv3 source inspection found up to10.41cm boot penetration, so native import is blocked on actual Blender contact correction and visual review. The prepared correction/trim recipe is not yet executed. Scoped recovery acceptance and41.24/74.99second wins remain; all final combat/motion/regression work stays open. Another14.87GiB of obsolete owned builds was reclaimed. See HANDOFF.md.

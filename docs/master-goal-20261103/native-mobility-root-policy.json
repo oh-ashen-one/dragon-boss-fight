@@ -1,0 +1,148 @@
+{
+  "readOnly": true,
+  "nullRHI": true,
+  "success": true,
+  "renderedQualityAccepted": false,
+  "engine": "5.8.3-58210709+++UE5+Release-5.8",
+  "planSHA256": "a2294c148aaf52c5c2ded88716904f9074da3460f92173068398b931d012db5b",
+  "definitions": [
+    {
+      "path": "/Game/Characters/Customuse/KnightB/v039mixamo/DA_KnightB",
+      "meshScale": [
+        2.4411917667589784,
+        2.4411917667589784,
+        2.4411917667589784
+      ],
+      "runtimeSource": "",
+      "clips": [
+        {
+          "name": "LeapAttackSourced",
+          "sequence": "/Game/Characters/Customuse/KnightB/v039mixamo/Animations/LeapAttackSourced/Mixamo_JumpAttack_v2.Mixamo_JumpAttack_v2",
+          "rootMotionRemoved": true,
+          "rootMotionVertical": true,
+          "expectedRootMotionVertical": true,
+          "sampleRate": 120.0,
+          "sampleCount": 339,
+          "expectedSampleCount": 339,
+          "maximumSourceSampleErrorCm": 0.0,
+          "transformedRootHeightRangeCm": 22.83539471345817,
+          "matchesPlan": true
+        },
+        {
+          "name": "RunningAttackSourced",
+          "sequence": "/Game/Characters/Customuse/KnightB/v039mixamo/Animations/RunningAttackSourced/Mixamo_SlideAttack_v2.Mixamo_SlideAttack_v2",
+          "rootMotionRemoved": true,
+          "rootMotionVertical": false,
+          "expectedRootMotionVertical": false,
+          "sampleRate": 120.0,
+          "sampleCount": 333,
+          "expectedSampleCount": 333,
+          "maximumSourceSampleErrorCm": 0.0,
+          "transformedRootHeightRangeCm": 0.0,
+          "matchesPlan": true
+        }
+      ]
+    },
+    {
+      "path": "/Game/Characters/Customuse/KnightB/v045turns/DA_KnightB",
+      "meshScale": [
+        2.4411917667589784,
+        2.4411917667589784,
+        2.4411917667589784
+      ],
+      "runtimeSource": "",
+      "clips": [
+        {
+          "name": "LeapAttackSourced",
+          "sequence": "/Game/Characters/Customuse/KnightB/v039mixamo/Animations/LeapAttackSourced/Mixamo_JumpAttack_v2.Mixamo_JumpAttack_v2",
+          "rootMotionRemoved": true,
+          "rootMotionVertical": true,
+          "expectedRootMotionVertical": true,
+          "sampleRate": 120.0,
+          "sampleCount": 339,
+          "expectedSampleCount": 339,
+          "maximumSourceSampleErrorCm": 0.0,
+          "transformedRootHeightRangeCm": 22.83539471345817,
+          "matchesPlan": true
+        },
+        {
+          "name": "RunningAttackSourced",
+          "sequence": "/Game/Characters/Customuse/KnightB/v039mixamo/Animations/RunningAttackSourced/Mixamo_SlideAttack_v2.Mixamo_SlideAttack_v2",
+          "rootMotionRemoved": true,
+          "rootMotionVertical": false,
+          "expectedRootMotionVertical": false,
+          "sampleRate": 120.0,
+          "sampleCount": 333,
+          "expectedSampleCount": 333,
+          "maximumSourceSampleErrorCm": 0.0,
+          "transformedRootHeightRangeCm": 0.0,
+          "matchesPlan": true
+        }
+      ]
+    },
+    {
+      "path": "/Game/Characters/Customuse/RuntimePolish/DA_Knight",
+      "meshScale": [
+        2.4411917667589784,
+        2.4411917667589784,
+        2.4411917667589784
+      ],
+      "runtimeSource": "/Game/Characters/Customuse/KnightB/v045turns/DA_KnightB",
+      "clips": [
+        {
+          "name": "LeapAttackSourced",
+          "sequence": "/Game/Characters/Customuse/KnightB/v039mixamo/Animations/LeapAttackSourced/Mixamo_JumpAttack_v2.Mixamo_JumpAttack_v2",
+          "rootMotionRemoved": true,
+          "rootMotionVertical": true,
+          "expectedRootMotionVertical": true,
+          "sampleRate": 120.0,
+          "sampleCount": 339,
+          "expectedSampleCount": 339,
+          "maximumSourceSampleErrorCm": 0.0,
+          "transformedRootHeightRangeCm": 22.83539471345817,
+          "matchesPlan": true
+        },
+        {
+          "name": "RunningAttackSourced",
+          "sequence": "/Game/Characters/Customuse/KnightB/v039mixamo/Animations/RunningAttackSourced/Mixamo_SlideAttack_v2.Mixamo_SlideAttack_v2",
+          "rootMotionRemoved": true,
+          "rootMotionVertical": false,
+          "expectedRootMotionVertical": false,
+          "sampleRate": 120.0,
+          "sampleCount": 333,
+          "expectedSampleCount": 333,
+          "maximumSourceSampleErrorCm": 0.0,
+          "transformedRootHeightRangeCm": 0.0,
+          "matchesPlan": true
+        }
+      ]
+    }
+  ],
+  "commandletExitCode": 0,
+  "rendererCreated": false,
+  "nativePIDAbsent": true,
+  "scope": "Saved native asset policy and sample equality only; no gameplay, collision or visual acceptance",
+  "historicalFailure": {
+    "evidence": "Evidence/native-blendproof-20261102T123332Z/unreal-blendproof-20261102T123354Z-40B6CEFC/evidence.json",
+    "sourceId": "67e363d3badfca11b3d3203544f6a419e6914470fe341667870ce65abe120237",
+    "failure": "physical_capsule_leap_missing",
+    "fixCommit": "a358d27",
+    "fix": "Added MOVE_Flying during leap and preserved vertical displacement instead of always clearing Z",
+    "timing": "The November2 12:33UTC capture precedes the November2 13:48UTC fix commit",
+    "currentGameplayRetestRequired": true
+  },
+  "definitionFiles": [
+    {
+      "file": "Unreal/Veyr/Content/Characters/Customuse/KnightB/v039mixamo/DA_KnightB.uasset",
+      "sha256": "773a0d402a8ccf242b54c4be62a995b1b4656aee31e790dd4c26ff461582639e"
+    },
+    {
+      "file": "Unreal/Veyr/Content/Characters/Customuse/KnightB/v045turns/DA_KnightB.uasset",
+      "sha256": "4b2b7bc13906d794340beac4c368014d639bb39083b46f3b45f633adc3d6dcca"
+    },
+    {
+      "file": "Unreal/Veyr/Content/Characters/Customuse/RuntimePolish/DA_Knight.uasset",
+      "sha256": "769d9a8a5cf455a36a25a104a193c7c2ee58dcefd18d1da8fc889f67ffb6761c"
+    }
+  ]
+}

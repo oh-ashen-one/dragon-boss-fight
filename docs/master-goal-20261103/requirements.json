@@ -45,9 +45,10 @@
     {
       "id": "running_leap",
       "requirement": "Sourced attacks with contacts, root/capsule motion, interrupts and blind improvement",
-      "status": "Blender_direct_running_entry_native_imported_disabled_eight_trial_gameplay_checks_pending_leap_unfinished",
+      "status": "current_native_vertical_root_policy_verified_old_flat_capsule_failure_predates_fix_current_eight_trial_gameplay_and_quality_pending",
       "evidence": [
-        "cpu-animation-preparation.json"
+        "cpu-animation-preparation.json",
+        "native-mobility-root-policy.json"
       ]
     },
     {
@@ -149,7 +150,7 @@
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Previous approval-only reply was no progress. This continuation completed owned-build cleanup, verified the pending controls request terminated without launching, measured ACCAD source-floor defects and prepared guarded Blender correction; full objective remains incomplete.",
+  "priorTurnClassification": "Previous continuation made progress through executed source-contact diagnostics and owned-build cleanup. This continuation verified current native mobility policy with a read-only NullRHI commandlet and identified the historical flat-capsule failure as predating its source fix. Full gameplay/visual scope remains open.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -198,5 +199,12 @@
     "nativeImported": true,
     "qualityAccepted": false,
     "note": "New world-motion factoring is representation conversion of actual Blender-authored turns; v043 CPU-authoring studies remain quarantined and unimported."
+  },
+  "renderBlockerAudit": {
+    "consecutiveGoalTurnsObserved": 2,
+    "condition": "100percent GPU utilization; effective cap2 occupied by foreign sessions",
+    "currentTurnMadeIndependentProgress": true,
+    "newRendererRequestQueued": false,
+    "note": "At three consecutive observations, mark blocked only if no meaningful independent work remains. Do not retry the unchanged gate or claim a live wait."
   }
 }
