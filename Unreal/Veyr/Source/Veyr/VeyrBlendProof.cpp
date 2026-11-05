@@ -241,10 +241,11 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
     const FVector Target=K->GetActorLocation();
     if(bSnap||!bFocusValid){Focus=Target;bFocusValid=true;}
     else Focus+=(Target-Focus)*FMath::Clamp(Dt*4.f,0.f,1.f);
-    FVector Look(Focus.X,Focus.Y,FloorZ+((bHeavyProof||bMobilityProof)?220.f:100.f));
+    const bool FullBody=bHeavyProof||bMobilityProof||bPrimaryTapProof;
+    FVector Look(Focus.X,Focus.Y,FloorZ+(FullBody?220.f:100.f));
     const float Az=FMath::DegreesToRadians(D.CameraAzimuthDeg);
     const FVector Dir=Fwd0*FMath::Cos(Az)+Right0*FMath::Sin(Az);
-    FVector Location=Look+Dir*(bMobilityProof?1100.f:bHeavyProof?900.f:580.f);Location.Z=FloorZ+((bHeavyProof||bMobilityProof)?240.f:190.f);
+    FVector Location=Look+Dir*((bMobilityProof||bPrimaryTapProof)?1100.f:bHeavyProof?900.f:580.f);Location.Z=FloorZ+(FullBody?240.f:190.f);
     // Extra inspection chapter follows the actual rendered hand, so the
     // reviewer can judge contact through the fast strike without a crop.
     if(bHeavyProof&&SeqIndex==3&&K->ImportedPresentation)
@@ -256,7 +257,7 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
             Cam->GetCameraComponent()->SetFieldOfView(40.f);
         }
     }
-    else Cam->GetCameraComponent()->SetFieldOfView((bHeavyProof||bMobilityProof)?55.f:45.f);
+    else Cam->GetCameraComponent()->SetFieldOfView(FullBody?55.f:45.f);
     Cam->SetActorLocationAndRotation(Location,(Look-Location).Rotation());
     if(!bCameraApplied)
         if(APlayerController* PC=Cast<APlayerController>(K->GetController())){PC->SetViewTarget(Cam);bCameraApplied=true;}
@@ -897,7 +898,7 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     TSharedPtr<FJsonObject> Setup=MakeShared<FJsonObject>();
     Setup->SetBoolField(TEXT("bossPassive"),Dragon.IsValid()&&Dragon->bProofPassive);Setup->SetBoolField(TEXT("proofCameraApplied"),bCameraApplied);
     Setup->SetBoolField(TEXT("proofFloorApplied"),bProofFloorApplied);Setup->SetNumberField(TEXT("checkerCellCm"),25);Setup->SetNumberField(TEXT("checkerInstances"),CheckerInstances);
-    Setup->SetArrayField(TEXT("home"),Vec(Home));Setup->SetArrayField(TEXT("forwardToBoss"),Vec(Fwd0));Setup->SetNumberField(TEXT("cameraDistanceCm"),bHeavyProof?900:580);Setup->SetNumberField(TEXT("cameraFovDegrees"),(bHeavyProof||bPrimaryTapProof)?55:45);
+    Setup->SetArrayField(TEXT("home"),Vec(Home));Setup->SetArrayField(TEXT("forwardToBoss"),Vec(Fwd0));Setup->SetNumberField(TEXT("cameraDistanceCm"),(bMobilityProof||bPrimaryTapProof)?1100:bHeavyProof?900:580);Setup->SetNumberField(TEXT("cameraFovDegrees"),(bHeavyProof||bMobilityProof||bPrimaryTapProof)?55:45);
     Setup->SetBoolField(TEXT("weaponGripLockEnabled"),Knight.IsValid()&&Knight->bWeaponGripLockEnabled);
     O->SetObjectField(TEXT("setup"),Setup);
     TSharedPtr<FJsonObject> G=MakeShared<FJsonObject>();

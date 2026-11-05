@@ -252,7 +252,9 @@ void AVeyrKnight::BeginPlay()
     bDirectRunningAttack=bSourcedMoves&&FParse::Param(FCommandLine::Get(),TEXT("VeyrDirectRunningAttack"));
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
     bPlantedSprint=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrPlantedSprint"));
-    bPrimaryRecovery=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryRecovery"));
+    // Ordinary-input contact trials and blind full-body review accepted the
+    // released two-hand recovery; preserve a deliberate comparison baseline.
+    bPrimaryRecovery=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoPrimaryRecovery"));
     bReadableAutoLockCamera=FParse::Param(FCommandLine::Get(),TEXT("VeyrReadableAutoLock"));
     bLocomotionPhaseMatch=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrLocomotionPhaseMatch"));
     bWalkEntryBlend=FParse::Param(FCommandLine::Get(),TEXT("VeyrWalkEntryBlend"));

@@ -1,0 +1,55 @@
+{
+  "sourceOnly": true,
+  "accepted": false,
+  "nativeImported": false,
+  "clips": [
+    {
+      "name": "ACCAD_RunToStand_v1",
+      "duration": 3.266669988632202,
+      "firstSourceMovementSeconds": 0.0,
+      "peakPlanarSpeedSourceUnitsS": 2.390547342873093,
+      "netTranslationSourceUnits": [
+        -2.4278515959536153,
+        0.04432068417695212,
+        2.4090302645285493
+      ],
+      "initialBodyForward": [
+        -0.4540094854939377,
+        0.0,
+        0.8909968502085346
+      ]
+    },
+    {
+      "name": "ACCAD_StandToRun_v1",
+      "duration": 3.5000035762786865,
+      "firstSourceMovementSeconds": 1.250001277242388,
+      "peakPlanarSpeedSourceUnitsS": 2.266972402746113,
+      "netTranslationSourceUnits": [
+        2.314421810496104,
+        -0.015416482909379359,
+        -2.311605556575555
+      ],
+      "initialBodyForward": [
+        -0.8711225589252357,
+        0.0,
+        -0.4910656649894689
+      ]
+    },
+    {
+      "name": "ACCAD_StandToWalk_v1",
+      "duration": 9.500009536743164,
+      "firstSourceMovementSeconds": 2.883336227818539,
+      "peakPlanarSpeedSourceUnitsS": 0.6923859917692705,
+      "netTranslationSourceUnits": [
+        2.665115025079409,
+        0.005567028113064976,
+        -2.6708091343744105
+      ],
+      "initialBodyForward": [
+        -0.8072909510725104,
+        0.0,
+        -0.5901536412803378
+      ]
+    }
+  ]
+}

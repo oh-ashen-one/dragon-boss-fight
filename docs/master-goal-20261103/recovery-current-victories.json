@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "bossHealthOrDamageChanged": false,
+  "currentBuildOnlyNotFullGoal": true,
+  "runs": [
+    {
+      "grip": "two-handed",
+      "run": "native-victory-20261105T025323Z",
+      "terminalSeconds": 41.24011993408203,
+      "terminalWallSeconds": 41.483773831278086,
+      "bossMaxHealth": 650,
+      "restartResources": true,
+      "restartMovement": true,
+      "restartAttack": true,
+      "sourceId": "fe1ed194a724c75e48654f29838a2e50e54a8094875f2b6d987bbb137dec6fc6",
+      "recoveryEnabled": true,
+      "scope": "Ordinary replay inputs and normal camera; capture overhead is not a performance benchmark"
+    },
+    {
+      "grip": "one-handed",
+      "run": "native-victory-20261105T030339Z",
+      "terminalSeconds": 74.98744201660156,
+      "terminalWallSeconds": 75.64659637212753,
+      "bossMaxHealth": 650,
+      "restartResources": true,
+      "restartMovement": true,
+      "restartAttack": true,
+      "sourceId": "fe1ed194a724c75e48654f29838a2e50e54a8094875f2b6d987bbb137dec6fc6",
+      "recoveryEnabled": true,
+      "scope": "Ordinary replay inputs and normal camera; capture overhead is not a performance benchmark"
+    }
+  ]
+}

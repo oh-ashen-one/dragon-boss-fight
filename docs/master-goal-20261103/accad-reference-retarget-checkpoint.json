@@ -1,0 +1,68 @@
+{
+  "authoringApplication": "Blender",
+  "sourceFirst": true,
+  "newWholeMotionAuthored": false,
+  "clips": [
+    {
+      "name": "ACCAD_RunToStand_v3reference",
+      "sourceSHA256": "0ad2dbdfa9753f4d57a3eae73ca3592111df040dd124c2d47822bcd54a5c86a9",
+      "convertedSHA256": "f4c15177d94a27c9be7e8c94a0d862b05893fb1c862ec320c83a5ccfbbb12c9e",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports/ACCAD_RunToStand_v3reference.blend",
+      "editableSceneSHA256": "0008630c4bf365f3991bc1c535879d337c70a91c0b3fc0e07d36829aa2cea47c",
+      "durationSeconds": 3.26666335662206,
+      "sourceReferenceConversion": {
+        "sourceKeyCount": 99,
+        "referenceCaptureFrame": 99,
+        "referenceAtEnd": true,
+        "maximumRigSpaceMatrixError": 7.152557373046875e-07,
+        "globalHeadingAlignmentDegrees": 40.23012889672222,
+        "originalRigPreserved": true,
+        "scope": "Exact captured-key rebase plus one rigid global heading alignment; not a quality verdict"
+      },
+      "license": "CC BY 3.0",
+      "nativeImported": false,
+      "accepted": false
+    },
+    {
+      "name": "ACCAD_StandToRun_v3reference",
+      "sourceSHA256": "fa6b27ef00d00b238300898287f7cbb559b28ec0cc94b773a51827fb728349aa",
+      "convertedSHA256": "82227396c2b913df90b034e102afc063183c486a5e097ebb9223a0c4d649f2e5",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports/ACCAD_StandToRun_v3reference.blend",
+      "editableSceneSHA256": "85cb925206963cae1691fdf59a08b823b45ee16ba89de8c155ebc2b1d98e3095",
+      "durationSeconds": 3.499996453523636,
+      "sourceReferenceConversion": {
+        "sourceKeyCount": 106,
+        "referenceCaptureFrame": 1,
+        "referenceAtEnd": false,
+        "maximumRigSpaceMatrixError": 9.5367431640625e-07,
+        "globalHeadingAlignmentDegrees": -134.6294772880038,
+        "originalRigPreserved": true,
+        "scope": "Exact captured-key rebase plus one rigid global heading alignment; not a quality verdict"
+      },
+      "license": "CC BY 3.0",
+      "nativeImported": false,
+      "accepted": false
+    },
+    {
+      "name": "ACCAD_StandToWalk_v3reference",
+      "sourceSHA256": "6841f6e6182068dda2df766998fbeecd6fdc441fa997531455ac8f9f3ec5e9a4",
+      "convertedSHA256": "9d2e13800dcbaed325edbef51adf0ce2d51fddcbd8219d868023119298671841",
+      "editableScene": "Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports/ACCAD_StandToWalk_v3reference.blend",
+      "editableSceneSHA256": "9f7ee32d1345680c306dfec72ed7b29a8c8de520e34b6f40fa296f729dc267ce",
+      "durationSeconds": 9.499990373849869,
+      "sourceReferenceConversion": {
+        "sourceKeyCount": 286,
+        "referenceCaptureFrame": 1,
+        "referenceAtEnd": false,
+        "maximumRigSpaceMatrixError": 7.152557373046875e-07,
+        "globalHeadingAlignmentDegrees": -141.9835415474783,
+        "originalRigPreserved": true,
+        "scope": "Exact captured-key rebase plus one rigid global heading alignment; not a quality verdict"
+      },
+      "license": "CC BY 3.0",
+      "nativeImported": false,
+      "accepted": false
+    }
+  ],
+  "findings": "Initial generic BVH mapping was visibly misoriented. Rebased the source reference to a real standing capture frame and aligned heading rigidly, preserving every captured source key. Starts use the first frame; the stop uses its standing endpoint. Upper-body weapon adaptation, source joins and native gameplay remain pending."
+}

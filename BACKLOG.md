@@ -1,3 +1,10 @@
+## Latest recovery and sourcing state — November5 UTC
+
+- Primary tap recovery now passes4/4 native contact trials and won full-body blind Opus review. Current normal-camera wins:41.24s two-handed and74.99s one-handed at unchanged650HP, with restart checks passed. Recovery is default in the newest source/Shipping candidate; default-controls smoke remains queued.
+- The grounded turn v4 first blind round tied. It is stopped, unimported and guarded against promotion; do not continue that candidate.
+- Publisher-direct CC BY3.0 ACCAD starts/stops/turns are acquired. Three captured-key-preserving Blender retargets now have corrected standing references and three-view renders. Weapon adaptation, contacts, trimming and native integration remain open.
+- All original locomotion/mobility/light/camera/full-regression requirements remain. See HANDOFF.md for the single live queued controls request.
+
 ## Latest turn diagnostics — November4 local evening / November5 UTC
 
 Root-turn integration and a root-space interpolation correction are implemented as opt-in candidates. Native conversion/endpoint checks pass and the largest turn-exit arc is reduced, but all four sprint/contact trials still fail. A misleading interrupted-blend grip error was corrected using independent native references; the2cm grip and60cm/s foot limits are unchanged. Source-foot frame calibration and ankle-path fits are now saved as four Blender scenes each, but native-floor contacts and entry/exit joins remain unaccepted. No turn candidate has shipped. See HANDOFF.md for exact builds, reports and live encoder status.

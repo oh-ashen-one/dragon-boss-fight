@@ -15,6 +15,9 @@ for side,suffix in [('Left','l'),('Right','r')]:
 
 def source_name(n,kind):
  if kind=='fab':return UE.get(n)
+ if kind=='accad':
+  if 'Hand' in n and n not in ('LeftHand','RightHand'):return None
+  return {'Spine':'ToSpine','Spine1':'Spine','Spine2':'Spine1'}.get(n,n)
  if 'Hand' in n and n not in ('LeftHand','RightHand'):return 'mixamorig:'+n+'1'
  return 'mixamorig:'+n
 
@@ -64,16 +67,64 @@ def render(label,frames,ortho_scale=2.1,resolution=640,auto_frame=False):
    s.render.filepath=str(folder/f'{v}_{f:04d}.png');bpy.ops.render.render(write_still=True)
  return scales
 
-def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None,source_action=None,foot_frames=False):
+def rebase_bvh_reference(src,target,at_end=False):
+ """Use the real first standing pose as reference, retaining all source keys."""
+ scene=bpy.context.scene;original=src.animation_data.action;original.use_fake_user=True
+ start,end=(round(f) for f in original.frame_range);names=[b.name for b in src.pose.bones]
+ samples=[]
+ for f in range(start,end+1):
+  scene.frame_set(f);bpy.context.view_layer.update();samples.append({n:src.pose.bones[n].matrix.copy() for n in names})
+ backup=src.copy();backup.data=src.data.copy();scene.collection.objects.link(backup)
+ backup.name='Original_BVH_Source';backup.hide_render=True;backup.hide_set(True)
+ src.data=src.data.copy();src.animation_data.action=None
+ reference_frame=end if at_end else start
+ reference=samples[-1] if at_end else samples[0]
+ scene.frame_set(reference_frame)
+ for n in names:src.pose.bones[n].matrix=reference[n];bpy.context.view_layer.update()
+ bpy.ops.object.select_all(action='DESELECT');src.select_set(True);bpy.context.view_layer.objects.active=src
+ bpy.ops.object.mode_set(mode='POSE');bpy.ops.pose.armature_apply(selected=False);bpy.ops.object.mode_set(mode='OBJECT')
+ action=bpy.data.actions.new(original.name+'_StandingReference');src.animation_data.action=action;previous={};worst=0.
+ for i,row in enumerate(samples):
+  scene.frame_set(start+i)
+  for n in names:
+   bone=src.pose.bones[n];bone.rotation_mode='QUATERNION';bone.matrix=row[n];bpy.context.view_layer.update()
+   q=bone.rotation_quaternion.copy()
+   if n in previous:q.make_compatible(previous[n])
+   bone.rotation_quaternion=q;previous[n]=q.copy()
+   for prop in ['location','rotation_quaternion','scale']:bone.keyframe_insert(prop,frame=start+i)
+  worst=max(worst,max(abs(src.pose.bones[n].matrix[r][c]-row[n][r][c]) for n in names for r in range(4) for c in range(4)))
+ assert worst<1e-5,'Source reference conversion changed world motion at capture keys'
+ for layer in action.layers:
+  for strip in layer.strips:
+   for bag in strip.channelbags:
+    for curve in bag.fcurves:
+     for key in curve.keyframe_points:key.interpolation='LINEAR'
+ scene.frame_set(reference_frame);bpy.context.view_layer.update()
+ def forward(rig,posed):
+  matrices={n:(rig.matrix_world@(rig.pose.bones[n].matrix if posed else rig.data.bones[n].matrix_local)) for n in ['LeftFoot','LeftToeBase','RightFoot','RightToeBase']}
+  v=sum((matrices[s+'ToeBase'].translation-matrices[s+'Foot'].translation for s in ['Left','Right']),Vector());v.z=0
+  assert v.length>1e-5
+  return v.normalized()
+ a,b=forward(src,True),forward(target,False)
+ angle=math.atan2(a.cross(b).z,a.dot(b));src.matrix_world=Matrix.Rotation(angle,4,'Z')@src.matrix_world
+ bpy.context.view_layer.update()
+ return {'sourceKeyCount':len(samples),'referenceCaptureFrame':reference_frame,'referenceAtEnd':at_end,'maximumRigSpaceMatrixError':worst,'globalHeadingAlignmentDegrees':math.degrees(angle),'originalRigPreserved':True,'scope':'Exact captured-key rebase plus one rigid global heading alignment; not a quality verdict'}
+
+def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=None,source_action=None,foot_frames=False,standing_reference=False,reference_at_end=False):
  s=reset();bpy.ops.import_scene.gltf(filepath=str(TARGET));t=next(o for o in s.objects if o.type=='ARMATURE');t.name='Knight_Comparison'
  body=[o for o in s.objects if o.type=='MESH'];s.frame_set(0)
  grip=t.pose.bones['RightHand'].matrix.inverted()@t.pose.bones['WeaponSocket'].matrix
  t.animation_data_clear()
  for b in t.pose.bones:b.matrix_basis=Matrix.Identity(4);b.rotation_mode='QUATERNION'
  before=set(s.objects)
- if Path(file).suffix.lower() in ('.glb','.gltf'):bpy.ops.import_scene.gltf(filepath=str(file))
+ if Path(file).suffix.lower()=='.bvh':
+  import addon_utils
+  addon_utils.enable('io_anim_bvh',default_set=False,persistent=False)
+  bpy.ops.import_anim.bvh(filepath=str(file),global_scale=.01,frame_start=1,update_scene_fps=True,update_scene_duration=True,use_fps_scale=False,axis_forward='-Z',axis_up='Y')
+ elif Path(file).suffix.lower() in ('.glb','.gltf'):bpy.ops.import_scene.gltf(filepath=str(file))
  else:bpy.ops.import_scene.fbx(filepath=str(file))
  src=next(o for o in set(s.objects)-before if o.type=='ARMATURE');src.name='Source_'+kind
+ reference_report=rebase_bvh_reference(src,t,reference_at_end) if standing_reference else None
  if source_action:
   actions=[a for a in bpy.data.actions if a.name==source_action or a.name.startswith(source_action+'_')]
   if len(actions)!=1:raise ValueError(f'Expected one named source action {source_action}; found {[a.name for a in actions]}')
@@ -84,7 +135,7 @@ def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=N
   o.hide_render=True
   if o.type=='MESH':o.hide_set(True)
  ad=src.animation_data;start,end=(round(x) for x in ad.action.frame_range);source_fps=s.render.fps/s.render.fps_base;N=end-start;s.frame_start=0;s.frame_end=N
- mapping={n:source_name(n,kind) for n in list(MAIN)+['Head','LeftToeBase','RightToeBase']};mapping={n:v for n,v in mapping.items() if v in src.data.bones}
+ mapping={n:source_name(n,kind) for n in list(MAIN)+['Head','LeftToeBase','RightToeBase']};mapping={n:v for n,v in mapping.items() if v and v in src.data.bones}
  sw=src.matrix_world.copy();tw=t.matrix_world.copy();rest={n:(tw@b.matrix_local).copy() for n,b in t.data.bones.items()};sr={n:(sw@src.data.bones[v].matrix_local).copy() for n,v in mapping.items()}
  # Calibrate each segment's anatomical direction; imported glTF bone axes are
  # arbitrary and the knight's bind pose has relaxed arms instead of a T-pose.
@@ -123,7 +174,7 @@ def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=N
    a=(rest[child].translation-rest[n].translation).normalized();b=(sr[child].translation-sr[n].translation).normalized();correction=a.rotation_difference(b)
   elif n.endswith('Hand'):
    child=source_name(n+'Middle',kind)
-   if child in src.data.bones:
+   if child and child in src.data.bones:
     a=(rest[n+'Middle'].translation-rest[n].translation).normalized();b=((sw@src.data.bones[child].head_local)-sr[n].translation).normalized();correction=a.rotation_difference(b)
   refs[n]=correction@rest[n].to_quaternion()
  scale=sum((rest[a].translation-rest[b].translation).length for a,b in [('LeftUpLeg','LeftLeg'),('LeftLeg','LeftFoot')])/sum((sr[a].translation-sr[b].translation).length for a,b in [('LeftUpLeg','LeftLeg'),('LeftLeg','LeftFoot')])
@@ -183,4 +234,4 @@ def run(file,kind,name,travel=False,mirror=False,hand_frames=False,finger_hold=N
  s['session_owner']=OWNER;s['retarget_source']=str(file);s['retarget_scale']=scale
  bpy.ops.wm.save_as_mainfile(filepath=str(path.with_suffix('.blend')),compress=True)
  render(name,[0,N//4,N//2,3*N//4,N])
- report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'fullPalmFrameBones':calibrated_hands,'fullFootFrameBones':calibrated_feet,'footRestSlopes':foot_rest_slopes,'preservedFingerBones':list(finger_hold or {}),'scale':scale,'rootTravel':travel,'mirrored':mirror,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
+ report={'name':name,'source':str(file.relative_to(ROOT)),'provider':kind,'duration':N/source_fps,'fps':source_fps,'mappedBones':mapping,'fullPalmFrameBones':calibrated_hands,'fullFootFrameBones':calibrated_feet,'footRestSlopes':foot_rest_slopes,'sourceReferenceConversion':reference_report,'preservedFingerBones':list(finger_hold or {}),'scale':scale,'rootTravel':travel,'mirrored':mirror,'sha256':hashlib.sha256(path.with_suffix('.glb').read_bytes()).hexdigest()};path.with_suffix('.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))

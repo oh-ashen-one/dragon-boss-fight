@@ -1,0 +1,21 @@
+{
+  "maximumFrameSeconds": 0.05,
+  "purpose": "Reject the actual coarse-capture false-pass case before visual acceptance; no gameplay/contact threshold changed",
+  "runs": [
+    {
+      "run": "native-blendproof-20261105T022539Z",
+      "maximumTrialFrameSeconds": 0.09846274554729462,
+      "eligible": false
+    },
+    {
+      "run": "native-blendproof-20261105T023720Z",
+      "maximumTrialFrameSeconds": 0.035516414791345596,
+      "eligible": true
+    },
+    {
+      "run": "native-blendproof-20261105T024045Z",
+      "maximumTrialFrameSeconds": 0.04304670915007591,
+      "eligible": true
+    }
+  ]
+}

@@ -17,8 +17,15 @@ SOURCES = [ROOT/'Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRu
            ROOT/'Local/AttackSources20261104/BlenderMotion/Mixamo_SlideAttack_v4blender.blend']
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--source-directory',type=Path)
+parser.add_argument('--source',type=Path,action='append')
 parser.add_argument('--output',type=Path)
+parser.add_argument('--floor-source',type=float)
+parser.add_argument('--ortho-scale',type=float)
 args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+assert not (args.source and args.source_directory)
+if args.source:
+    SOURCES=[p.resolve(strict=True) for p in args.source]
+    assert args.output and all(p.is_relative_to(ROOT/'Local') and p.suffix=='.blend' for p in SOURCES)
 if args.source_directory:
     source_directory=args.source_directory.resolve(strict=True)
     assert source_directory.is_relative_to(ROOT/'Local')
@@ -55,6 +62,10 @@ for source in SOURCES:
                 floor = min(floor, min((evaluated.matrix_world @ mesh.vertices[i].co).z for i in indices))
             evaluated.to_mesh_clear()
     assert abs(floor) < .5
+    measured_floor=floor
+    if args.floor_source is not None:
+        assert abs(args.floor_source)<.5
+        floor=args.floor_source
     bpy.ops.mesh.primitive_plane_add(size=20, location=(0, 0, floor-.0005))
     ground = bpy.context.object
     ground.name = 'ReviewGround'
@@ -73,9 +84,11 @@ for source in SOURCES:
             obj = bpy.data.objects.new('GridLine', curve)
             scene.collection.objects.link(obj)
     fps=scene.render.fps/scene.render.fps_base
-    frames = sorted({round(i*fps/30) for i in range(round(scene.frame_end/fps*30)+1)})
-    scales=ns['render'](source.stem, frames, resolution=960, auto_frame=True)
+    frames = sorted({min(scene.frame_end,round(i*fps/30)) for i in range(round(scene.frame_end/fps*30)+1)})
+    assert args.ortho_scale is None or args.ortho_scale>0
+    scales=ns['render'](source.stem, frames, ortho_scale=args.ortho_scale or 2.1,resolution=960, auto_frame=args.ortho_scale is None)
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/(source.stem+'.blend')), compress=True)
     (OUT/(source.stem+'.json')).write_text(json.dumps({'source': str(source.relative_to(ROOT)), 'frames': frames,
-        'sourceFPS': fps, 'reviewFPS': 30, 'viewOrthoScales':scales,'groundHeightSourceUnits': floor, 'reviewed': False, 'accepted': False}, indent=2)+'\n')
+        'sourceFPS': fps, 'reviewFPS': 30, 'viewOrthoScales':scales,'groundHeightSourceUnits': floor,
+        'measuredMinimumBootHeightSourceUnits':measured_floor,'reviewed': False, 'accepted': False}, indent=2)+'\n')
 print('BLENDER_AUTHORED_MOTION_REVIEW_RENDERED', flush=True)

@@ -1,0 +1,10 @@
+{
+  "id": "primary-recovery-cropped-review-aborted-20261105",
+  "status": "aborted_before_verdict",
+  "estimatedUSD": 0.7000446,
+  "reason": "Primary-tap inspection camera cropped head and weapon; abort was prompted by observed framing error, not a quality verdict. Camera repaired for full-body recapture.",
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "receipt": "primary-recovery-crop-abort.json"
+}

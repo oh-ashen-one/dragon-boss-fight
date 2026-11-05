@@ -53,7 +53,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "v045_turn_root_candidates_imported_native_all4_trials_fail_root_exit_arc_reduced_source_floor_contacts_and_joins_unfinished",
+      "status": "ground4_first_blind_tie_stopped_ACCAd_professional_starts_acquired_Blender_retargeted_not_imported_locomotion_unfinished",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -72,7 +72,10 @@
         "turn-gameplay-comparison.json",
         "interrupted-grip-reference-audit.json",
         "turn-source-contact-checkpoint.json",
-        "turn-support-point-diagnostics-v2.json"
+        "turn-support-point-diagnostics-v2.json",
+        "blind-ground4-receipt.json",
+        "accad-locomotion-source-ledger.json",
+        "accad-reference-retarget-checkpoint.json"
       ]
     },
     {
@@ -97,10 +100,14 @@
     {
       "id": "balance",
       "requirement": "Both-grip risk/reward and measured <=150s victories",
-      "status": "recovery_candidate_both_grips_under150_HP_damage_unchanged_contact_and_blind_gates_pending",
+      "status": "primary_recovery_default_contact4of4_blind_visible_pass_current_both_grips_under150_default_smoke_and_final_balance_remaining",
       "evidence": [
         "primary-recovery-diagnosis.json",
-        "recovery-pilot-victories.json"
+        "recovery-pilot-victories.json",
+        "primary-recovery-contact-comparison.json",
+        "blind-primary-recovery-review.md",
+        "blind-primary-recovery-receipt.json",
+        "recovery-current-victories.json"
       ]
     },
     {
@@ -145,7 +152,7 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "no_owned_renderer_or_critic_live_native_video_encoder_may_be_finishing",
+    "status": "one_live_default_controls_request_waiting_launch_budget_then_normal_gpu_slot",
     "lastEditorRequest": "terminal cap-full-timeout901seconds, no renderer launched",
     "lastFullIntro": "native-intro-20261104T224547Z mechanics passed; blind handoff slightly preferred, conditional acceptance",
     "gpuSafetyControlsChanged": false

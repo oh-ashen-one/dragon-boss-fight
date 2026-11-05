@@ -1,0 +1,12 @@
+{
+  "run": "native-blendproof-20261105T022539Z",
+  "recoveryEnabled": false,
+  "reportedGatePass": true,
+  "acceptedAsValidation": false,
+  "eligibleForBlindReview": false,
+  "reason": "1080p readback cadence undersampled the short transition; apparent4/4 baseline pass is not evidence of repaired contact. Repeat at720p with the same full-body camera.",
+  "savedFrames": 387,
+  "skippedSlots": 269,
+  "wallFrameP95Seconds": 0.09461608529090881,
+  "maximumFrameSeconds": 0.17961519956588745
+}

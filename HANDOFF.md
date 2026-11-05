@@ -1,4 +1,32 @@
-# Current turn/root-blend checkpoint — 2026-11-04 local evening / November5 UTC
+# Current recovery / new-source checkpoint — November4 local evening / November5 UTC
+
+**Full goal active and incomplete; previous continuation made concrete progress.** Preserve the approved R5 eight-shot tour and accepted heavy/wings/feedback/audio. Latest AGENTS installation names cache bee18d358eb46f8e17ac at the same approved6556abef revision. The local freshness timestamp later aged; sync--force succeeded and approved GitHub main was verified directly again. Routine decisions remain autonomous.
+
+## Closed candidate and accepted scoped recovery
+
+- Grounded turn v4 was actually authored in Blender with native floor0, preserved ankle XY/limb lengths/grip, and rendered in matched three-view footage. First blind Opus round was **TIE**. Per owner rule this candidate is STOPPED, unaccepted and not imported. Do not tune, re-review or promote it without new direction. DO_NOT_IMPORT.md and candidateStopped metadata are in Local/AttackSources20261105/GroundedTurns. Its source review page53995 is labeled stopped; raw scenes/movies remain evidence.
+- Single-tap recovery before/after contact tests originally passed1/4 versus4/4. The first visual packet had a cropped inspection camera, so that paid review was interrupted BEFORE any verdict; known0.7000446USD, no approval. Fixed PrimaryTapProof's own camera to1100cm /55degree /220cm look height; normal gameplay camera unchanged.
+- A1080p full-body recording undersampled100ms transitions and misleadingly reported4/4 for the old baseline. It is explicitly excluded from validation. The primary-review preparer now rejects trial frame intervals over50ms. The same720p camera recaptures are valid: native-blendproof-20261105T023720Z baseline1/4;024045Z recovery4/4;2H slide about251→46cm/s, unchanged60cm/s limit and2cm grip limit. Both include full knight/weapon.
+- Actual Opus5.5 inspected all24 full-body images once and selected **A=new, visibly better, scoped recovery accepted**. One-hand control unchanged; slow-tail feel/live-combat caveats preserved. Report/receipt blind-primary-recovery-*. No tie occurred in this valid recovery review.
+- Current normal-camera victories with recovery/canonical/stable-prop/walk-entry/readable-camera flags passed:2H native-victory-20261105T025323Z at41.240s game/41.484s wall;1H030339Z at74.987s game/75.647s wall. Both at650HP with unchanged damage; terminal pose, resources, movement and primary input after restart passed. Films with game-master audio are encoded. These do not close unfinished locomotion/mobility or the full regression suite.
+- PrimaryRecovery is now ON by default in source; VeyrNoPrimaryRecovery preserves the baseline. Latest Shipping package030744Z PASSED: /private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app. Normal-default controls smoke is still pending below. Other unaccepted movement/turn flags remain off.
+
+## New professional motion source
+
+- Free publisher-direct ACCAD Male1 archive acquired (3,283,636bytes,69 BVHs);15 selected starts/stops/turns. CC BY3.0, attribution recorded in accad-attribution.md and accad-locomotion-source-ledger.json. No account/login/store clicks, purchases or generation. Treg returned401; no account changes or paid fallback; used built-in public search. Mixamo/Fab/SimReady/ThreeJS and existing CC0 sets were checked; no unofficial Epic repack used.
+- Three bases were actually retargeted in Blender: stand-to-walk, stand-to-run, run-to-stand. The initial generic BVH reference was visibly misoriented. A captured standing reference, preserving all original keyed source matrices and retaining a separate original rig, corrected that; starts use the first standing frame and the stop its final standing frame. One rigid heading alignment is recorded. No whole motion authored from scratch.
+- Current files: Local/AttackSources20261105/ACCADMale1/RetargetStartsReferenceV3/Exports and full three-view frames/scenes in Reference3Inspection. Source-key reconstruction errors below1e-5. Stand-to-run now faces forward with about3.27source units of forward travel; the source has about1.25s standing lead-in. These are unarmed upper-body bases: weapon-specific composition, sensible trimming, contacts, source/native verification and gameplay remain unfinished. No ACCAD clip is imported or accepted.
+
+## Live work / next step
+
+- **One live queued controls run: tool95062**, Evidence/native-controls-20261105T031820Z, log Local/Fortress20261103/default-recovery-controls.log. It cleared the10-start/hour wait and was confirmed live in the normal GPU gate. Effective cap2 is occupied by other sessions (launcher-classified client and Godot); no Veyr renderer has launched for this request yet. Continue this exact request; never duplicate or override the gate. No other owned renderer/critic/encoder is active.
+- All prior Blender jobs, critic calls and movie encoders are terminal. Main bare review8813 now includes Attack recovery and Current victories. Page200 and all four movie range206 responses verified; victory labels correctly distinguish the two grips. Existing approved tour and diagnostic films remain. Server tool93896, PID in master-review-server.json. Grounding page53995 shows stopped status. Keep only justified apps after new checks/publication; LatestShipping.json and final persistent launcher still need final delivery work.
+- Known critic estimates now22.6174234USD plus the older unpriced abort. This includes0.4909562USD grounding tie and1.0222302USD accepted full-body recovery review. No AI-generation spend this continuation.
+- Next: finish the exact queued default-controls check; inspect/use the new sourced starts with appropriate weapon pose and trim rather than resuming the tied grounding candidate. Keep running/leap/light, sprint/stop/turn, camera threat readability, default-build regressions and final both-grip150second checks in scope.
+
+This continuation needs scoped security checks, pushes, durable wiki updates and receipt-owned cleanup before handoff. Foreign deletion Local/knight-review-20261028/critique-round2.md remains untouched/unstaged; no dragon checkout changes.
+
+# Historical turn/root-blend checkpoint — November4 local / November5 UTC
 
 **Full goal active and incomplete. Prior turn/continuation was progress, not blocked.** Preserve exact owner-approved R5 fortress tour and accepted attacks/wings/fight feel/audio. The following newer verified facts supersede older running/pending paragraphs. Source checkpoint b975d41e3376 and wiki4186c4be972b were pushed and remote-verified. This is an unaccepted integration checkpoint, not completed gameplay.
 

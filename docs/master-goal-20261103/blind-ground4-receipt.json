@@ -1,0 +1,18 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "readCalls": 23,
+  "imageResults": 22,
+  "mapping": {
+    "A": "Mixamo_Turn180_A_v4grounded",
+    "B": "Mixamo_Turn180_A_v3contacts"
+  },
+  "verdict": "TIE",
+  "visiblyBetter": false,
+  "accepted": false,
+  "candidateStopped": true,
+  "nativeImported": false,
+  "reason": "Owner first-blind-tie rule; no repeat review or further tuning of this candidate",
+  "estimatedUSD": 0.49095619999999995
+}

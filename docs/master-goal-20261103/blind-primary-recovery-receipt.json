@@ -1,0 +1,20 @@
+{
+  "actualModels": [
+    "claude-opus-5-5"
+  ],
+  "readCalls": 25,
+  "successfulImageBlocks": 24,
+  "winner": "A",
+  "mapping": {
+    "A": "native-blendproof-20261105T024045Z",
+    "B": "native-blendproof-20261105T023720Z"
+  },
+  "visiblyBetter": true,
+  "scopedRecoveryAccepted": true,
+  "fullGoalAccepted": false,
+  "remaining": [
+    "Ordinary-camera continuous combat and response/lockout assessment",
+    "Current-build both-grip victory and regression checks"
+  ],
+  "estimatedUSD": 1.0222302
+}
