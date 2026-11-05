@@ -1,0 +1,18 @@
+{
+  "run": "Evidence/native-controls-20261105T094710Z",
+  "sourceId": "2bdccaeafea29f877da54e590a2e7bf71fe36fd5f0c3e933f92642371c9f77d3",
+  "app": "/private/tmp/veyr-verified-bundle-t44prgms/Veyr-Mac-Shipping.app",
+  "passed": true,
+  "frameCount": 676,
+  "eventScreenshotsInspected": 23,
+  "presentationFlags": [
+    "VeyrCanonicalKnightSkin",
+    "VeyrStableWeaponPresentation",
+    "VeyrWalkEntryBlend",
+    "VeyrReadableAutoLock"
+  ],
+  "sourcedRunStart": false,
+  "matchedRunStops": false,
+  "primaryRecoveryDefaultEnabled": true,
+  "scope": "Ordinary control mechanics under the tested presentation flags; final full-game regression and quality remain open"
+}

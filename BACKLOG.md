@@ -3,6 +3,7 @@
 Full MASTER_GOAL remains active and incomplete. These current facts supersede historical implementation plans below; preserve the eight original playtest notes as context.
 
 - Accepted/scoped: exact owner-approved R5 opening tour; heavy attacks, wider idle wings, feedback/settings and chosen audio; recovery contact/Opus pass, prior41.24s2H and74.99s1H wins at650HP. Newest prior-default controls smoke passed. Final build regressions remain.
+- Follow-up: the run-start completion speed dip is repaired and checked against actual displacement. Two stop-matcher revisions still fail contact gates; the next step must change transition approach or source. Newest controls smoke passed with movement experiments disabled.
 - Sprint/start/stop/turn: source ACCAD two-hand run-start won its first blind Opus round for a native trial, imported as v046 and now has a real opt-in gameplay state. Start/handoff/release/attack-cancel mechanics work, but same-app contact tests still fail0/4. Entry turns and stopping joins need repair. One-hand start and source-review shoulder/grip/weight/clearance caveats remain.
 - Running/jumping: fresh8-case test fails all foot-contact gates; actual leap capsule lift23–24cm is now observed. Three one-hand capture trials are too sparse for acceptance review. Running-entry and leap contacts remain unfinished.
 - Still open: light transitions, healing/camera continuity and tall/airborne threat readability; final both-grip balance/wins; all-move/settings/collision/performance tests; final verified Shipping installation/launcher/pointer.

@@ -253,6 +253,7 @@ void AVeyrKnight::BeginPlay()
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
     bPlantedSprint=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrPlantedSprint"));
     bSourcedRunStart=bPlantedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedRunStart"));
+    bMatchedRunStops=bSourcedSprint&&FParse::Param(FCommandLine::Get(),TEXT("VeyrMatchedRunStops"));
     // Ordinary-input contact trials and blind full-body review accepted the
     // released two-hand recovery; preserve a deliberate comparison baseline.
     bPrimaryRecovery=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoPrimaryRecovery"));
@@ -420,7 +421,7 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
         if(NewAction!=EVeyrKnightAction::Ready)bPrimaryAttackHeld=false;
     }
     BlinkDirectionYaw=0.f;
-    Action=NewAction;ActionElapsed=0.f;ActionDuration=Duration;ActionPresentationClip=ResolveActionClip(NewAction);
+    Action=NewAction;ActionElapsed=0.f;ActionDuration=Duration;ActionPresentationClip=ResolveActionClip(NewAction);RunStopSourceOffset=0.f;bDeferRunStopAdvance=false;
     if(NewAction==EVeyrKnightAction::LeapAttack)GetCharacterMovement()->SetMovementMode(MOVE_Flying);
     bContactSent=false;bHealGranted=false;bPreviousBladePoseValid=false;bPreserveRollPrefix=false;
     bBlinkHidden=false;bLateralDodgeBlocked=false;ContactedDamageWindows.Reset();CurrentDamageWindow=INDEX_NONE;
@@ -439,6 +440,7 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
 void AVeyrKnight::FinishAction()
 {
     const bool WasRunStart=Action==EVeyrKnightAction::RunStart;
+    const bool CompletedRunStart=WasRunStart&&ActionElapsed>=ActionDuration;
     FVector Carry=RunStartVelocity;
     if(WasRunStart&&!bActionRootBlocked&&ActionElapsed>=ActionDuration)
     {
@@ -457,6 +459,10 @@ void AVeyrKnight::FinishAction()
         // inserts an idle frame and an unrelated second acceleration.
         GetCharacterMovement()->MaxWalkSpeed=bSprintHeld?580.f:240.f;
         GetCharacterMovement()->Velocity=Carry.GetClampedToMaxSize(GetCharacterMovement()->MaxWalkSpeed);
+        // Root-driven movement consumed this tick's input. Queue the still-held
+        // direction for the next movement tick, otherwise it brakes once before
+        // Ready supplies input again. Cancellations must not synthesize a step.
+        if(CompletedRunStart&&bSprintHeld&&!MoveIntent.IsNearlyZero())AddMovementInput(MoveIntent,1.f);
     }
 }
 
@@ -563,7 +569,7 @@ void AVeyrKnight::TryDirectionalBlink()
 
 float AVeyrKnight::GetActionSourceSeconds() const
 {
-    return PrimarySourceOffset+ActionElapsed*VisualClipPlayRate(ActionPresentationClip);
+    return PrimarySourceOffset+ActionElapsed*VisualClipPlayRate(ActionPresentationClip)+(Action==EVeyrKnightAction::RunStop?RunStopSourceOffset:0.f);
 }
 
 float AVeyrKnight::PrimarySegmentSourceStart(int32 Step) const
@@ -817,7 +823,8 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
     GripTransitionRemaining=FMath::Max(0.f,GripTransitionRemaining-DeltaSeconds);
     BufferedAttackRemaining=FMath::Max(0.f,BufferedAttackRemaining-DeltaSeconds);
     const float PreviousSeconds=ActionElapsed;
-    ActionElapsed+=DeltaSeconds;
+    const bool DeferStop=bDeferRunStopAdvance;bDeferRunStopAdvance=false;
+    ActionElapsed+=DeferStop?0.f:DeltaSeconds;
     if(IsBlinkAction())
     {
         // Evidence only: the hidden window is defined on the action clock (see UpdateImportedPresentation); record when
@@ -834,7 +841,7 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
     }
     const bool BlendTurnTrajectory=bBlendTurnTrajectory&&Action==EVeyrKnightAction::MovementTurn&&ImportedPresentation&&ImportedPresentation->bRootSpaceBlend;
     if(!BlendTurnTrajectory)ApplyAuthoredRootMotion(PreviousSeconds,ActionElapsed);
-    UpdateImportedPresentation(DeltaSeconds);
+    UpdateImportedPresentation(DeferStop?0.f:DeltaSeconds);
     // A frozen idle source contributes no root movement. Evaluate this
     // frame's pose weight before applying the matching turn trajectory.
     if(BlendTurnTrajectory)ApplyAuthoredRootMotion(PreviousSeconds,ActionElapsed);
@@ -895,7 +902,27 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     const FName StopClip=ResolveActionClip(EVeyrKnightAction::RunStop);
     if(Action==EVeyrKnightAction::Ready&&bWasRunning&&MoveIntent.IsNearlyZero()&&HasVisualClip(StopClip))
     {
-        ++RunStops;BeginAction(EVeyrKnightAction::RunStop,VisualClipDuration(StopClip,.6f));
+        // Walking physics already advanced this frame. Bring its pose to the
+        // same time before choosing the stop prefix; do not apply a second
+        // root-motion step on this entry frame.
+        if(bMatchedRunStops&&ImportedPresentation&&ImportedPresentation->CurrentTransitionAlpha>=1.f)
+        {
+            // Releasing Shift must not select Walk here. Advance the loop
+            // which produced this frame's movement, without starting another
+            // transition before the actual stop transition is captured.
+            const FName Outgoing=ImportedPresentation->CurrentClip;
+            const auto* Previous=CustomuseVisualDefinition->Clips.Find(Outgoing);
+            const float Nominal=VisualClipSpeed(Outgoing),Rate=VisualClipPlayRate(Outgoing);
+            if(Previous&&Previous->bLoop&&Nominal>1.f)
+            {
+                const float Next=ImportedPresentation->CurrentTrimmedSeconds/Rate+DeltaSeconds*GetPlanarSpeed()/Nominal;
+                if(ImportedPresentation->SampleClipTime(Outgoing,Next*Rate))PresentationLocomotionTime=Next;
+            }
+        }
+        const float Entry=bMatchedRunStops?ClosestLocomotionPhase(StopClip,GetPlanarSpeed()):0.f;
+        ++RunStops;BeginAction(EVeyrKnightAction::RunStop,FMath::Max(.05f,VisualClipDuration(StopClip,.6f)-Entry/VisualClipPlayRate(StopClip)));
+        RunStopSourceOffset=Entry;
+        bDeferRunStopAdvance=bMatchedRunStops;
     }
     bLateralDodgeBlocked=false;
     const bool bAttack=IsAttackAction();
@@ -1231,7 +1258,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         return false;
     }
     bImportedPresentationActive = true;
-    if((bLocomotionPhaseMatch||bWalkEntryBlend||bSourcedRunStart)&&!BuildLocomotionPhaseCache())
+    if((bLocomotionPhaseMatch||bWalkEntryBlend||bSourcedRunStart||bMatchedRunStops)&&!BuildLocomotionPhaseCache())
     {SetPresentationDiagnostic(TEXT("Native locomotion phase cache failed"));return false;}
     if(bStableWeaponPresentation)PrepareWeaponComponents();
     UpdateImportedPresentation();
@@ -1544,7 +1571,8 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         ContinuousTransitionSource=ActionPresentationClip;
         ContinuousTransitionSeconds=ActionElapsed*VisualClipPlayRate(ActionPresentationClip);
     }
-    const float SampleTime=Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset);
+    const float SampleTime=Time*VisualClipPlayRate(Clip)+(Action==EVeyrKnightAction::Ready?0.f:PrimarySourceOffset)+
+        (Action==EVeyrKnightAction::RunStop?RunStopSourceOffset:0.f);
     ProofBlendAlpha=Alpha;bProofBlendActive=bPresentationTransitionActive&&Alpha<1.f;
     bWeaponGripBlendActive=false;
     if(bWeaponGripLockEnabled&&Alpha<1.f)
@@ -1665,7 +1693,8 @@ FVector AVeyrKnight::RootTranslationAt(float Seconds) const
 {
     const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
     if(!C||C->RootTranslationSamplesCm.IsEmpty()||C->RootSampleRate<=0.f)return FVector::ZeroVector;
-    const float Frame=FMath::Clamp(Seconds*VisualClipPlayRate(ActionPresentationClip)*C->RootSampleRate,0.f,float(C->RootTranslationSamplesCm.Num()-1));
+    const float SourceSeconds=Seconds*VisualClipPlayRate(ActionPresentationClip)+(Action==EVeyrKnightAction::RunStop?RunStopSourceOffset:0.f);
+    const float Frame=FMath::Clamp(SourceSeconds*C->RootSampleRate,0.f,float(C->RootTranslationSamplesCm.Num()-1));
     const int32 A=FMath::FloorToInt(Frame),B=FMath::Min(A+1,C->RootTranslationSamplesCm.Num()-1);
     return FMath::Lerp(C->RootTranslationSamplesCm[A],C->RootTranslationSamplesCm[B],Frame-A);
 }
@@ -1785,6 +1814,15 @@ void AVeyrKnight::ApplyAuthoredRootMotion(float PreviousSeconds,float NewSeconds
     // Sourced RollAttack contains the exact new-roll prefix. Its actor path
     // remains constant after that prefix, so both actions share swept travel.
     FVector Delta=RootTranslationAt(NewSeconds)-RootTranslationAt(PreviousSeconds);
+    if(Action==EVeyrKnightAction::RunStart&&ActionDuration>0.f&&NewSeconds>ActionDuration)
+    {
+        // Finish the fraction of this frame beyond the authored start using
+        // its endpoint velocity. The target loop is already fully blended in;
+        // clamping all travel to the last key creates a visible one-frame pause.
+        const float Span=FMath::Min(.0333333f,ActionDuration);
+        Delta+=(RootTranslationAt(ActionDuration)-RootTranslationAt(ActionDuration-Span))*
+            ((NewSeconds-FMath::Max(PreviousSeconds,ActionDuration))/Span);
+    }
     if(Action!=EVeyrKnightAction::LeapAttack||!C->bRootMotionVertical)Delta.Z=0.f;
     Delta=AuthoredRootDisplacementWorld(Delta);
     if(Delta.IsNearlyZero())return;

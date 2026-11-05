@@ -55,7 +55,7 @@
     {
       "id": "sprint",
       "requirement": "Sourced acceleration, stride, downshift and natural stop in both grips",
-      "status": "v046_source_blind_win_native_start_state_compiles_packages_and_input_mechanics_work_0of4_contact_trials_final_quality_open",
+      "status": "run_start_handoff_speed_dip_fixed_stop_matcher_two_revisions_still0of4_contact_fail_change_transition_approach_or_source",
       "evidence": [
         "locomotion-native.json",
         "sprint-phase-pilot.json",
@@ -90,7 +90,12 @@
         "blind-accad-weapon-review.md",
         "accad-weapon-export-invariants.json",
         "v046-start-native-checkpoint.json",
-        "native-run-start-comparison.json"
+        "native-run-start-comparison.json",
+        "stop-matching-gameplay.json",
+        "start-transition-diagnosis.json",
+        "stop-phase-independent-check.json",
+        "stop-root-origin-diagnosis.json",
+        "original-twohand-stop-fit-check.json"
       ]
     },
     {
@@ -131,7 +136,9 @@
       "id": "regression",
       "requirement": "Gameplay, camera, collision, warnings, death, restart and every-move film",
       "status": "unverified",
-      "evidence": []
+      "evidence": [
+        "latest-controls-smoke.json"
+      ]
     },
     {
       "id": "delivery",
@@ -163,7 +170,7 @@
   "imageProvider": "built-in image_gen",
   "requestedImageModel": "GPT Image 2.5",
   "actualImageModel": "not exposed by tool",
-  "priorTurnClassification": "Progress: GPU headroom returned, newest default controls passed, actual Blender source corrections and weapon composition executed, matched films rendered/encoded, first blind source review running.",
+  "priorTurnClassification": "Progress: source run-start blind win/native prototype, passed controls, repaired handoff speed dip, measured two failed stop-matching revisions, recorded/encoded native comparisons and independent diagnoses. Full goal remains incomplete.",
   "dragonCheckoutRestored": {
     "branch": "claude-code-enhancements",
     "commit": "898b4d7",
@@ -171,7 +178,7 @@
     "rawAssets": "Not restored by Git; verify private source assets separately if dragon authoring becomes necessary."
   },
   "localRenderGate": {
-    "status": "all_owned_engine_encoder_and_critic_jobs_terminal",
+    "status": "all_owned_compute_jobs_terminal_review_servers_retained",
     "lastEditorRequest": "terminal cap-full-timeout901seconds, no renderer launched",
     "lastFullIntro": "native-intro-20261104T224547Z mechanics passed; blind handoff slightly preferred, conditional acceptance",
     "gpuSafetyControlsChanged": false,
@@ -199,9 +206,10 @@
       "VeyrStableWeaponPresentation",
       "VeyrWalkEntryBlend"
     ],
-    "newestDefaultCandidateApp": "/private/tmp/veyr-verified-bundle-2_gxw0jo/Veyr-Mac-Shipping.app",
-    "newestDefaultControlsVerified": false,
-    "priorDefaultControlsVerifiedApp": "/private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app"
+    "newestDefaultCandidateApp": "/private/tmp/veyr-verified-bundle-t44prgms/Veyr-Mac-Shipping.app",
+    "newestDefaultControlsVerified": true,
+    "priorDefaultControlsVerifiedApp": "/private/tmp/veyr-verified-bundle-kqk_c5eo/Veyr-Mac-Shipping.app",
+    "controlsScope": "With canonical/stable/walk/readable presentation flags; new movement experiments disabled"
   },
   "mapApproachChange": "After two rejected blind rounds: inspect runtime floor binding, use licensed scanned support assets where useful, replace disconnected backdrop with a connected foundation.",
   "authoringWorkflowCorrection": {

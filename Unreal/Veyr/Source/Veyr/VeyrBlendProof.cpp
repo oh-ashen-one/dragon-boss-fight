@@ -777,19 +777,25 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
         if(Frames.IsEmpty()||Frames.Last().Speed>10.f)Fail.Add(TEXT("did_not_settle_to_stop"));
         if(D.Kind==EKind::SpeedTransition&&(WalkBeforeRun<2||WalkAfterRun<2))Fail.Add(TEXT("walk_run_walk_coverage_missing"));
     }
-    int32 StartFrames=0,ReadyRunFrames=0;bool AttackAfterStart=false;
+    int32 StartFrames=0,ReadyRunFrames=0,HandoffSamples=0;bool AttackAfterStart=false;
+    float HandoffReferenceSpeed=0.f,HandoffMinimumPhysicalSpeed=MAX_flt;
     if(bRunStartProof)
     {
         for(const FFrame& F:Frames)if(F.Phase==1)
         {
-            if(F.Action==TEXT("RunStart"))++StartFrames;
+            if(F.Action==TEXT("RunStart")){++StartFrames;HandoffReferenceSpeed=F.Speed;}
             if(F.Action==TEXT("Ready")&&F.Speed>400.f)++ReadyRunFrames;
+            if(StartFrames>0&&F.Action==TEXT("Ready")&&F.Dt>.001f&&HandoffSamples<2)
+            {HandoffMinimumPhysicalSpeed=FMath::Min(HandoffMinimumPhysicalSpeed,F.CapsuleTravel/F.Dt);++HandoffSamples;}
             if(F.Action==TEXT("LightAttack")||F.Action==TEXT("Combo"))AttackAfterStart=true;
         }
         const bool WantStart=D.bTwo&&Knight.IsValid()&&Knight->UsesSourcedRunStart();
         if(WantStart&&StartFrames<2)Fail.Add(TEXT("sourced_run_start_not_entered"));
         if(!D.bTwo&&StartFrames>0)Fail.Add(TEXT("onehand_control_entered_twohand_start"));
         if(D.ActionSeconds>3.f&&(ReadyRunFrames<2||PeakSpeed<500.f))Fail.Add(TEXT("start_to_running_handoff_missing"));
+        if(WantStart&&D.ActionSeconds>3.f&&HandoffReferenceSpeed>200.f&&
+           (HandoffSamples<2||HandoffMinimumPhysicalSpeed<HandoffReferenceSpeed*.6f))
+            Fail.Add(TEXT("run_start_handoff_speed_dip"));
         if(D.Kind==EKind::RunStartAttack&&!AttackAfterStart)Fail.Add(TEXT("run_start_attack_cancel_failed"));
         if(Frames.IsEmpty()||Frames.Last().Speed>10.f)Fail.Add(TEXT("run_start_did_not_settle"));
     }
@@ -811,6 +817,8 @@ void FVeyrBlendProof::FinalizeSequence(double Elapsed)
     {
         M->SetNumberField(TEXT("runStartFrames"),StartFrames);M->SetNumberField(TEXT("readyRunningFrames"),ReadyRunFrames);
         M->SetBoolField(TEXT("attackAfterStartObserved"),AttackAfterStart);
+        M->SetNumberField(TEXT("handoffReferenceSpeedCmS"),HandoffReferenceSpeed);
+        M->SetNumberField(TEXT("handoffMinimumPhysicalSpeedCmS"),HandoffSamples?HandoffMinimumPhysicalSpeed:0.f);
     }
     M->SetNumberField(TEXT("peakSpeedCmPerSecond"),PeakSpeed);M->SetNumberField(TEXT("walkBeforeRunFrames"),WalkBeforeRun);M->SetNumberField(TEXT("walkAfterRunFrames"),WalkAfterRun);
     M->SetBoolField(TEXT("setupTimedOut"),bSetupTimedOut);M->SetBoolField(TEXT("actionTimedOut"),bActionTimedOut);

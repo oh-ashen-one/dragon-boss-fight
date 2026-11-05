@@ -1,0 +1,23 @@
+{
+  "sourceFirstPoseVersusApprovedTwoHandIdleCm": {
+    "LeftFoot": 0.627566510050868,
+    "RightFoot": 0.8701024695701781,
+    "LeftToeBase": 6.916510642042216,
+    "RightToeBase": 7.6271685544760155,
+    "Hips": 1.3463243347463365
+  },
+  "nativeTransitionMaximumFootSpeedCmS": {
+    "IdleTwoHand -> RunStartTwoHandSourced": 601.78369140625,
+    "RunStartTwoHandSourced -> RunTwoHandPlanted": 270.2359924316406,
+    "RunTwoHandPlanted -> RunStopTwoHandSourced": 639.6078491210938,
+    "RunStopTwoHandSourced -> IdleTwoHand": 69.01285552978516,
+    "RunStartTwoHandSourced -> WalkTwoHand": 40.480716705322266,
+    "WalkTwoHand -> IdleTwoHand": 352.62628173828125,
+    "RunStartTwoHandSourced -> LightCombo": 185.54818725585938,
+    "LightCombo -> IdleTwoHand": 45.823936462402344,
+    "Idle -> RunOneHandPlanted": 676.035888671875,
+    "RunOneHandPlanted -> RunStopOneHandSourced": 1124.737060546875,
+    "RunStopOneHandSourced -> Idle": 69.22816467285156
+  },
+  "scope": "Diagnostics only; actor-facing changes and pose mismatch are separate contributors. No acceptance or threshold change."
+}

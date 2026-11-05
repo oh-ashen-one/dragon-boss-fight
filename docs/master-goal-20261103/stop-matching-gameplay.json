@@ -1,0 +1,248 @@
+{
+  "scope": "Unaccepted opt-in transition experiments; all four native contact gates still fail",
+  "variants": [
+    {
+      "label": "handoff_fixed",
+      "run": "Evidence/native-blendproof-20261105T075827Z",
+      "sourceId": "55fdea90fbba0021e939f95a088a2f69125d9778829674f3b9cea93c2562604e",
+      "passed": false,
+      "sequencesPassed": 0,
+      "transitionsMaxFootCmS": {
+        "IdleTwoHand -> RunStartTwoHandSourced": 601.1856079101562,
+        "RunStartTwoHandSourced -> RunTwoHandPlanted": 282.5261535644531,
+        "RunTwoHandPlanted -> RunStopTwoHandSourced": 793.429443359375,
+        "RunStopTwoHandSourced -> IdleTwoHand": 69.5872802734375,
+        "RunStartTwoHandSourced -> WalkTwoHand": 40.79691696166992,
+        "WalkTwoHand -> IdleTwoHand": 353.24755859375,
+        "RunStartTwoHandSourced -> LightCombo": 180.78839111328125,
+        "LightCombo -> IdleTwoHand": 45.82340621948242,
+        "Idle -> RunOneHandPlanted": 665.142333984375,
+        "RunOneHandPlanted -> RunStopOneHandSourced": 1069.51708984375,
+        "RunStopOneHandSourced -> Idle": 69.48548889160156
+      },
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "reason": "planted_foot_slide_793cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 419.42462158203125,
+          "handoffMinimumPhysicalSpeedCmS": 419.4226989746094,
+          "steadyFootMaxCmS": 35.34246063232422,
+          "maximumFrameSeconds": 0.030320875346660614
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "reason": "planted_foot_slide_601cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 135.5340576171875,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 11.659872055053711,
+          "maximumFrameSeconds": 0.027850165963172913
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "reason": "planted_foot_slide_587cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 128.8175506591797,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 23.648103713989258,
+          "maximumFrameSeconds": 0.031467415392398834
+        },
+        {
+          "name": "Start_1H_control_side",
+          "reason": "planted_foot_slide_1070cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 0,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 30.635509490966797,
+          "maximumFrameSeconds": 0.03522295877337456
+        }
+      ],
+      "selectedStopOffsets": [
+        0
+      ]
+    },
+    {
+      "label": "stop_before",
+      "run": "Evidence/native-blendproof-20261105T082039Z",
+      "sourceId": "8a20bdf8f433c002554e46e8c20190a13c69c8068daa39d374eebe440f9899e6",
+      "passed": false,
+      "sequencesPassed": 0,
+      "transitionsMaxFootCmS": {
+        "IdleTwoHand -> RunStartTwoHandSourced": 601.4818725585938,
+        "RunStartTwoHandSourced -> RunTwoHandPlanted": 285.7450866699219,
+        "RunTwoHandPlanted -> RunStopTwoHandSourced": 796.7850952148438,
+        "RunStopTwoHandSourced -> IdleTwoHand": 69.18949890136719,
+        "RunStartTwoHandSourced -> WalkTwoHand": 37.029747009277344,
+        "WalkTwoHand -> IdleTwoHand": 348.0441589355469,
+        "RunStartTwoHandSourced -> LightCombo": 192.3388671875,
+        "LightCombo -> IdleTwoHand": 45.80763626098633,
+        "Idle -> RunOneHandPlanted": 675.9085693359375,
+        "RunOneHandPlanted -> RunStopOneHandSourced": 1072.6383056640625,
+        "RunStopOneHandSourced -> Idle": 69.27366638183594
+      },
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "reason": "planted_foot_slide_797cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 421.76092529296875,
+          "handoffMinimumPhysicalSpeedCmS": 419.4228820800781,
+          "steadyFootMaxCmS": 35.04087448120117,
+          "maximumFrameSeconds": 0.03816074877977371
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "reason": "planted_foot_slide_601cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 132.0062255859375,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 11.560799598693848,
+          "maximumFrameSeconds": 0.030362293124198914
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "reason": "planted_foot_slide_588cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 126.8474349975586,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 11.578493118286133,
+          "maximumFrameSeconds": 0.030684836208820343
+        },
+        {
+          "name": "Start_1H_control_side",
+          "reason": "planted_foot_slide_1073cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 0,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 60.21918869018555,
+          "maximumFrameSeconds": 0.036159124225378036
+        }
+      ],
+      "selectedStopOffsets": [
+        0
+      ]
+    },
+    {
+      "label": "stop_wrong_walk_attempt",
+      "run": "Evidence/native-blendproof-20261105T082753Z",
+      "sourceId": "8a20bdf8f433c002554e46e8c20190a13c69c8068daa39d374eebe440f9899e6",
+      "passed": false,
+      "sequencesPassed": 0,
+      "transitionsMaxFootCmS": {
+        "IdleTwoHand -> RunStartTwoHandSourced": 609.2980346679688,
+        "RunStartTwoHandSourced -> RunTwoHandPlanted": 283.05218505859375,
+        "WalkTwoHand -> RunStopTwoHandSourced": 1612.353759765625,
+        "RunStopTwoHandSourced -> IdleTwoHand": 68.6683120727539,
+        "RunStartTwoHandSourced -> WalkTwoHand": 40.26927185058594,
+        "WalkTwoHand -> IdleTwoHand": 342.0605773925781,
+        "RunStartTwoHandSourced -> LightCombo": 186.2383575439453,
+        "LightCombo -> IdleTwoHand": 45.71470260620117,
+        "Idle -> RunOneHandPlanted": 687.262939453125,
+        "Walk -> RunStopOneHandSourced": 1114.244873046875,
+        "RunStopOneHandSourced -> Idle": 69.37779235839844
+      },
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "reason": "planted_foot_slide_1612cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 419.427490234375,
+          "handoffMinimumPhysicalSpeedCmS": 419.4191589355469,
+          "steadyFootMaxCmS": 34.46627426147461,
+          "maximumFrameSeconds": 0.02439695969223976
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "reason": "planted_foot_slide_609cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 135.23582458496094,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 11.523578643798828,
+          "maximumFrameSeconds": 0.025408416986465454
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "reason": "planted_foot_slide_582cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 135.59812927246094,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 11.457802772521973,
+          "maximumFrameSeconds": 0.028249748051166534
+        },
+        {
+          "name": "Start_1H_control_side",
+          "reason": "planted_foot_slide_1114cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 0,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 32.207210540771484,
+          "maximumFrameSeconds": 0.030912332236766815
+        }
+      ],
+      "selectedStopOffsets": [
+        0,
+        0.20000000298023224
+      ]
+    },
+    {
+      "label": "stop_outgoing_loop_fixed",
+      "run": "Evidence/native-blendproof-20261105T085933Z",
+      "sourceId": "2bdccaeafea29f877da54e590a2e7bf71fe36fd5f0c3e933f92642371c9f77d3",
+      "passed": false,
+      "sequencesPassed": 0,
+      "transitionsMaxFootCmS": {
+        "IdleTwoHand -> RunStartTwoHandSourced": 610.2738647460938,
+        "RunStartTwoHandSourced -> RunTwoHandPlanted": 273.0921325683594,
+        "RunTwoHandPlanted -> RunStopTwoHandSourced": 322.4595947265625,
+        "RunStopTwoHandSourced -> IdleTwoHand": 68.45156860351562,
+        "RunStartTwoHandSourced -> WalkTwoHand": 39.84562301635742,
+        "WalkTwoHand -> IdleTwoHand": 369.82196044921875,
+        "RunStartTwoHandSourced -> LightCombo": 181.6786346435547,
+        "LightCombo -> IdleTwoHand": 45.777305603027344,
+        "Idle -> RunOneHandPlanted": 668.0379638671875,
+        "RunOneHandPlanted -> RunStopOneHandSourced": 1216.9903564453125,
+        "RunStopOneHandSourced -> Idle": 69.8148193359375
+      },
+      "trials": [
+        {
+          "name": "Start_2H_full_side",
+          "reason": "planted_foot_slide_576cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 421.44207763671875,
+          "handoffMinimumPhysicalSpeedCmS": 419.42633056640625,
+          "steadyFootMaxCmS": 56.77383041381836,
+          "maximumFrameSeconds": 0.02608245611190796
+        },
+        {
+          "name": "Start_2H_release_threequarter",
+          "reason": "planted_foot_slide_610cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 135.59890747070312,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 11.533381462097168,
+          "maximumFrameSeconds": 0.03027670830488205
+        },
+        {
+          "name": "Start_2H_attack_cancel_side",
+          "reason": "planted_foot_slide_581cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 134.25408935546875,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 14.438207626342773,
+          "maximumFrameSeconds": 0.030609168112277985
+        },
+        {
+          "name": "Start_1H_control_side",
+          "reason": "planted_foot_slide_1217cm_per_s_transition",
+          "handoffReferenceSpeedCmS": 0,
+          "handoffMinimumPhysicalSpeedCmS": 0,
+          "steadyFootMaxCmS": 51.02946090698242,
+          "maximumFrameSeconds": 0.027644626796245575
+        }
+      ],
+      "selectedStopOffsets": [
+        0,
+        0.21875
+      ]
+    }
+  ],
+  "findings": [
+    "Run-start exit speed dip fixed: full-step continuation and queued held input retain about419cm/s through the handoff.",
+    "First stop matcher sampled Walk after Shift release; corrected to sample the outgoing Run loop directly.",
+    "Corrected two-hand run-to-stop peak about322cm/s; one-hand remains about1217cm/s; both exceed60.",
+    "Independent reconstruction matches native outgoing feet within0.011cm and confirms nearest stop poses still have large foot gaps. Phase selection alone is insufficient.",
+    "After two unsuccessful stop-matcher revisions, change transition approach or source rather than reweighting this matcher to chase a pass."
+  ],
+  "thresholdsUnchanged": {
+    "footCmPerSecond": 60,
+    "gripCm": 2
+  },
+  "qualityAccepted": false,
+  "nativeBlindReviewAttempted": false
+}

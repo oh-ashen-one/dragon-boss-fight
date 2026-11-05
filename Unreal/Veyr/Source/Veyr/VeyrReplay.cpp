@@ -395,6 +395,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         O->SetNumberField(TEXT("movementTurns"),Knight->GetMovementTurnCount());
         O->SetBoolField(TEXT("sourcedRunStart"),Knight->UsesSourcedRunStart());
         O->SetNumberField(TEXT("runStarts"),Knight->RunStarts);
+        O->SetBoolField(TEXT("matchedRunStops"),Knight->UsesMatchedRunStops());
+        O->SetNumberField(TEXT("runStopSourceOffset"),Knight->GetRunStopSourceOffset());
         O->SetNumberField(TEXT("knightMeshSwitches"),Knight->ImportedPresentation->MeshVariantSwitchCount);
         O->SetBoolField(TEXT("knightPSOPrecaching"),Knight->ImportedPresentation->IsPSOPrecaching());
         O->SetBoolField(TEXT("knightSceneProxyPresent"),Knight->ImportedPresentation->GetSceneProxy()!=nullptr);

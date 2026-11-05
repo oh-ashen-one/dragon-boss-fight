@@ -56,6 +56,8 @@ public:
     bool UsesSourcedSprint() const { return bSourcedSprint; }
     bool UsesPlantedSprint() const { return bPlantedSprint; }
     bool UsesSourcedRunStart() const { return bSourcedRunStart; }
+    bool UsesMatchedRunStops() const { return bMatchedRunStops; }
+    float GetRunStopSourceOffset() const { return RunStopSourceOffset; }
     int32 RunStarts=0;
     bool UsesPrimaryRecovery() const { return bPrimaryRecovery; }
     bool UsesReadableAutoLockCamera() const { return bReadableAutoLockCamera; }
@@ -274,6 +276,9 @@ private:
     bool bSourcedMoves=false;
     bool bSourcedSprint=false;
     bool bSourcedRunStart=false;
+    bool bMatchedRunStops=false;
+    float RunStopSourceOffset=0.f;
+    bool bDeferRunStopAdvance=false;
     FVector RunStartVelocity=FVector::ZeroVector;
     FName RunStartLoopClip=NAME_None;
     float RunStartLoopTime=0.f;
@@ -297,11 +302,11 @@ private:
     bool bReadableAutoLockCamera=false;
     UPROPERTY() TArray<TObjectPtr<UTexture2D>> WarmedVariantTextures;
     UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> LocomotionPoseProbe;
-    struct FLocomotionPhasePose { float Time=0.f; FVector Points[4]; };
+    struct FLocomotionPhasePose { float Time=0.f,RootSpeed=0.f; FVector Points[4]; };
     struct FLocomotionPhaseCache { TArray<FLocomotionPhasePose> Poses; float NominalSpeed=0.f; };
     TMap<FName,FLocomotionPhaseCache> LocomotionPhaseCache;
     bool BuildLocomotionPhaseCache();
-    float ClosestLocomotionPhase(FName Clip) const;
+    float ClosestLocomotionPhase(FName Clip,float DesiredSpeed=-1.f) const;
 
     void LeapPressed();
     bool bPrimaryAttackHeld=false,bPrimaryAttackBuffered=false,bPrimaryChainActive=false,bStartingPrimaryStep=false;
