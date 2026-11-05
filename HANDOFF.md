@@ -86,3 +86,7 @@ The prepared two-hand clips are `RunTwoHandContiguous` and `RunStopTwoHandContig
 - Known critic estimates24.2965516USD plus one older unpriced abort; generation credits separate. No new spend in this pass.
 
 Complete ledger: `docs/master-goal-20261103/requirements.json`. Prior detailed reports and source history remain in Git. Update/push this handoff and durable wiki facts after each substantial checkpoint; keep final claims scoped to actual evidence.
+
+## Historical cleanup reconciled
+
+The October29 cleanup recovered28.42GiB and retained the then-current v030 delivery. Its old v027/v029 and October18–19 local build paths were removed; see `docs/storage-cleanup-20261029/README.md` and `result.json`. Those historical paths are not current launch targets.
