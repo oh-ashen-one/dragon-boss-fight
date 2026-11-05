@@ -1,0 +1,37 @@
+{
+  "scope": "Actual source skinned-boot near-floor point screening. Same vertices within1.05cm of floor in adjacent frames, >=8 points; 75th-percentile tangential speed per interval at420cm/s playback. Does not replace or relax native60cm/s bone gate; rolling-toe coverage supplement only.",
+  "results": [
+    {
+      "foot": "Left",
+      "model": "source_root_carry",
+      "contactIntervals": 9,
+      "medianSupportVertices": 16.0,
+      "medianTangentialCmS": 57.15038271942923,
+      "peakTangentialCmS": 69.20595665125352
+    },
+    {
+      "foot": "Left",
+      "model": "constant_capsule_speed",
+      "contactIntervals": 9,
+      "medianSupportVertices": 16.0,
+      "medianTangentialCmS": 67.10189618558582,
+      "peakTangentialCmS": 81.27842528164012
+    },
+    {
+      "foot": "Right",
+      "model": "source_root_carry",
+      "contactIntervals": 0,
+      "medianSupportVertices": null,
+      "medianTangentialCmS": null,
+      "peakTangentialCmS": null
+    },
+    {
+      "foot": "Right",
+      "model": "constant_capsule_speed",
+      "contactIntervals": 0,
+      "medianSupportVertices": null,
+      "medianTangentialCmS": null,
+      "peakTangentialCmS": null
+    }
+  ]
+}

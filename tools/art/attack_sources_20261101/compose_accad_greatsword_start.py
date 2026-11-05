@@ -5,10 +5,12 @@ arms by distance/foot heights, blend from the existing idle, and correct the
 paired grip with bounded no-stretch arm IK. No motion is authored from scratch.
 """
 import hashlib
+import argparse
 import json
 import math
 from pathlib import Path
 import statistics
+import sys
 
 import bpy
 from mathutils import Matrix, Vector
@@ -18,6 +20,15 @@ SOURCE = ROOT/'Local/AttackSources20261105/ACCADMale1/SupportFitV5/ACCAD_StandTo
 IDLE = ROOT/'Local/CustomuseAssets/Polish20261025/idle-joins/knight/IdleTwoHand_Blender_v2r4.glb'
 RUN = ROOT/'Local/AttackSources20261103/ForwardRigidPlants/Mixamo_ForwardRun_v4rigid.glb'
 DEST = ROOT/'Local/AttackSources20261105/ACCADMale1/WeaponStartV6/ACCAD_StandToRunTwoHand_v6weapon'
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--source',type=Path)
+parser.add_argument('--output',type=Path)
+parser.add_argument('--loop-frames',type=int,nargs=2,help='Match donor arm phase to one measured source stride')
+args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+assert bool(args.source)==bool(args.output)
+if args.source:
+    SOURCE=args.source.resolve(strict=True);DEST=args.output.resolve()
+    assert SOURCE.is_relative_to(ROOT/'Local') and DEST.is_relative_to(ROOT/'Local') and SOURCE.suffix=='.blend'
 assert not DEST.with_suffix('.blend').exists()
 meta = json.loads(SOURCE.with_suffix('.json').read_text())
 assert meta['editableSceneSHA256'] == hashlib.sha256(SOURCE.read_bytes()).hexdigest()
@@ -94,6 +105,10 @@ for key, path in [('idle', IDLE), ('run', RUN)]:
         idle_palm = world(rig, 'WeaponSocket').inverted() @ (world(rig, 'LeftHand') @ palm)
 stride = donors['run']['travel']; assert .1 < stride < 5
 active = [i for i in range(0, end+1, 4) if speeds[i] > .6*max(speeds)]
+if args.loop_frames:
+    first,last=args.loop_frames;assert 0<=first<last<=end
+    stride=distances[last]-distances[first];assert .1<stride<5
+    active=list(range(first,last,4))
 assert len(active) > 5
 def norm(rows):
     means = [statistics.mean(row[s] for row in rows) for s in range(2)]
@@ -186,6 +201,8 @@ report = {'provider': 'accad', 'authoringApplication': 'Blender', 'sources': [{'
     'maximumPairedGripShiftCm': max(shifts), 'maximumLeftGripErrorCm': max(errors),
     'maximumLowerTorsoBasisError': lower_error, 'lowerBodyAndTorsoPreserved': True,
     'licenses': ['ACCAD CC BY 3.0', 'Adobe Mixamo project incorporation; no raw-library redistribution'],
+    'license':meta.get('license','CC BY 3.0'),'sourceURL':meta.get('sourceURL','https://accad.ohio-state.edu/research/motion-lab/mocap-system-and-data'),
+    'phaseMatchedSourceLoopFrames':args.loop_frames,
     'attribution': meta['attribution'], 'nativeImported': False, 'accepted': False}
 DEST.with_suffix('.json').write_text(json.dumps(report, indent=2)+'\n')
 print('ACCAD_GREATSWORD_START_AUTHORED_NOT_ACCEPTED', flush=True)

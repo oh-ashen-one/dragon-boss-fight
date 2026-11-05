@@ -1,5 +1,5 @@
 {
-  "status": "source_foundation_saved_pair_extraction_queued_not_integrated",
+  "status": "source_pair_saved_export_fidelity_verified_render_and_weapon_batch_queued",
   "source": "ACCAD Male1 C02 RunToStand, CC BY3.0; existing acquired source/provenance reused",
   "approach": "Extract running cycle and full exit from the same source capture. Exit retains the identical loop prefix for phase-continuous entry, unlike the failed unrelated-clip phase matcher. Airborne loop correction is still unverified.",
   "savedSources": [
@@ -49,23 +49,82 @@
     }
   ],
   "sourceContactScreen": "accad-contiguous-source-contact-screen.json",
-  "sourceContactFinding": "One right-foot source screening window62.110cm/s exceeds unchanged60cm/s. This is not native acceptance.",
+  "sourceContactFinding": "Fixed full-source reference still gives one right-foot window62.101cm/s above60. Recomputing percentile after trimming would hide that window; diagnostic now retains original references.",
   "pairAuthoring": "tools/art/attack_sources_20261101/extract_contiguous_run_stop.py",
-  "pairArtifactVerified": false,
-  "queuedOutput": "Local/AttackSources20261105/ACCADMale1/ContiguousPairV9a",
-  "queuedLog": "Local/Fortress20261103/accad-contiguous-pair-anatomy.log",
-  "queuedToolHandle": 94130,
-  "queue": "Owned ten-starts-per-hour budget, then ordinary gpu_slot. No duplicate or bypass.",
+  "pairArtifactVerified": true,
+  "queuedOutput": "Local/AttackSources20261105/ACCADMale1/ContiguousPairReviewV9",
+  "queuedLog": "Local/Fortress20261103/contiguous-render-weapon-batch.log",
+  "queuedToolHandle": 91252,
+  "queue": "One verified live driver waits on the owned launch budget, then ordinary gpu_slot; two fixed hashed scripts run serially in the same Blender process. No server, duplicate request or gate override.",
   "preflightFailures": [
     "Local-basis translation was not an anatomical length; switched to parent-relative pose transforms",
     "Root-parented WeaponSocket is a prop; preserve its verified constant RightHand-relative grip",
     "Pelvis root travel is not a limb length; separated anatomical links and unskinned helper-root rebase metrics"
   ],
   "remaining": [
-    "Verify actual pair artifact/guards after queued job",
-    "Independent export prefix/seam/sole/contact checks",
-    "Matched actual Blender films and inspection",
-    "Weapon-specific upper-body adaptation",
+    "Watch matched source films when rendered",
+    "Verify queued two-handed weapon adaptation",
+    "Refine actual boot support and remaining sliding",
     "Native import/controller, before/after and blind Opus review"
-  ]
+  ],
+  "pair": {
+    "clips": [
+      {
+        "provider": "accad",
+        "license": "CC BY 3.0",
+        "sourceURL": "https://accad.ohio-state.edu/research/motion-lab/mocap-system-and-data",
+        "attribution": "Open Motion Project by ACCAD/The Ohio State University. Retargeted for Veyr; modifications not endorsed by the licensor.",
+        "source": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV8/ACCAD_RunToStand_v8support.blend",
+        "authoringApplication": "Blender",
+        "editableScene": "Local/AttackSources20261105/ACCADMale1/ContiguousPairV9a/ACCAD_RunCycle_v9seam.blend",
+        "editableSceneSHA256": "4bb30e9a190fa2e60a1d0467b7e5de50c49c5964536b83d6ef33a26f8191660a",
+        "sha256": "a117c020f981a46b8db35c9bbaabc7150b392a27c626a127354870e65fbc1df2",
+        "sourceFrames120fps": [
+          16,
+          96
+        ],
+        "fps": 120.0,
+        "duration": 0.6666666666666666,
+        "maximumAirborneSeamChangeCm": 16.10940267141578,
+        "maximumHelperRootRebaseCm": 166.02652538272966,
+        "maximumUncorrectedPoseChangeCm": 0.0004374313550630688,
+        "maximumLimbLengthChangeCm": 0.0021670754982180524,
+        "nativeImported": false,
+        "accepted": false
+      },
+      {
+        "provider": "accad",
+        "license": "CC BY 3.0",
+        "sourceURL": "https://accad.ohio-state.edu/research/motion-lab/mocap-system-and-data",
+        "attribution": "Open Motion Project by ACCAD/The Ohio State University. Retargeted for Veyr; modifications not endorsed by the licensor.",
+        "source": "Local/AttackSources20261105/ACCADMale1/ContiguousStopV8/ACCAD_RunToStand_v8support.blend",
+        "authoringApplication": "Blender",
+        "editableScene": "Local/AttackSources20261105/ACCADMale1/ContiguousPairV9a/ACCAD_RunExit_v9seam.blend",
+        "editableSceneSHA256": "1857374d06c2f443790b333ee64d553d43143d42434ee0bdeaba54a6f23aa420",
+        "sha256": "017db5d645af501cd8fd813c7d7647f278762279045ba2fe33c1d5b497a67c75",
+        "sourceFrames120fps": [
+          16,
+          392
+        ],
+        "fps": 120.0,
+        "duration": 3.1333333333333333,
+        "maximumAirborneSeamChangeCm": 16.126067375312072,
+        "maximumHelperRootRebaseCm": 166.02652538272966,
+        "maximumUncorrectedPoseChangeCm": 0.0007886928366953173,
+        "maximumLimbLengthChangeCm": 0.0021670754982180524,
+        "nativeImported": false,
+        "accepted": false
+      }
+    ],
+    "loopPrefixPoseEqualityError": 0.0,
+    "loopSeamRelativePositionErrorCm": 0.00024328843145317953,
+    "rootTravelSourceUnits": [
+      -0.1496499925851822,
+      -1.3519501686096191,
+      0.0
+    ],
+    "scope": "Actual Blender source adaptation; source/native contacts and visual quality remain unaccepted"
+  },
+  "exportCheck": "contiguous-run-stop-export-check.json",
+  "queuedPlan": "Local/Fortress20261103/contiguous-render-weapon-batch-plan.json"
 }

@@ -1,0 +1,43 @@
+{
+  "scope": "Independent exported source/pair diagnostic; no native contact, gameplay or visual acceptance",
+  "fidelityChecksPassed": true,
+  "checks": {
+    "prefixPoseMaxError": 0.0,
+    "loopSeamPositionErrorCm": 0.0003055318994300111,
+    "loopSeamRotationMaxError": 2.324858012103803e-06,
+    "unmodifiedPosePositionErrorCm": 0.0010002230804571032,
+    "handRelativeSocketMaxError": 5.715809599876609e-06,
+    "minimumSourceBootHeightDuringSeamCm": 6.499549020315183
+  },
+  "sourceContactScreen": [
+    {
+      "side": "Left",
+      "fixedBaselineReferenceCm": [
+        16.710487704485388,
+        3.6035525358018305
+      ],
+      "windows": 126,
+      "windowsOver60": 0,
+      "worst": {
+        "seconds": 1.4583333333333333,
+        "cmS": 40.1700822180188
+      }
+    },
+    {
+      "side": "Right",
+      "fixedBaselineReferenceCm": [
+        19.493200890869247,
+        4.611362834408786
+      ],
+      "windows": 115,
+      "windowsOver60": 1,
+      "worst": {
+        "seconds": 1.15,
+        "cmS": 62.10069055131904
+      }
+    }
+  ],
+  "sourceContactScreenPassed": false,
+  "nativeImported": false,
+  "qualityAccepted": false
+}

@@ -1,0 +1,35 @@
+{
+  "scope": "Read-only source-to-controller screening at420cm/s; no engine/physics/collision or actual idle reference. No animation authored.",
+  "loopNominalCmS": 498.079058888275,
+  "playRate": 0.8432396273343645,
+  "results": [
+    {
+      "foot": "Left",
+      "model": "source_root_carry",
+      "windows": 0,
+      "maxCmS": null,
+      "over60": 0
+    },
+    {
+      "foot": "Left",
+      "model": "constant_capsule_speed",
+      "windows": 0,
+      "maxCmS": null,
+      "over60": 0
+    },
+    {
+      "foot": "Right",
+      "model": "source_root_carry",
+      "windows": 0,
+      "maxCmS": null,
+      "over60": 0
+    },
+    {
+      "foot": "Right",
+      "model": "constant_capsule_speed",
+      "windows": 0,
+      "maxCmS": null,
+      "over60": 0
+    }
+  ]
+}

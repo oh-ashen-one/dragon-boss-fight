@@ -1,3 +1,7 @@
+# Exported locomotion pair — 2026-11-05
+
+The contiguous ACCAD run/exit pair is now saved and independently verified for shared entry poses and loop seam. It remains unaccepted: one fixed-reference foot window still exceeds60cm/s, and running boot-support coverage needs improvement. Matched source rendering and two-handed adaptation are queued in one owned Blender process; no new gameplay motion is enabled. Exact live handle and evidence are in HANDOFF.md.
+
 # Locomotion source follow-up — 2026-11-05
 
 New approach: derive a run/stop pair from the same ACCAD capture. Untrimmed fitted and boot-corrected Blender sources are saved; pair extraction is queued and unverified, weapon adaptation/native gameplay/films/Opus remain open. Source screening still has one62.110cm/s right-foot window over the unchanged60cm/s limit. No new animation is enabled. See HANDOFF.md for the live handle.
