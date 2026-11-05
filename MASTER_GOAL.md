@@ -1,5 +1,7 @@
 # Veyr master goal — combat completion and gothic fortress overhaul
 
+**Archived plan:** the owner cleared this goal on2026-11-05 and requested a stable compile/consolidation/cleanup handoff instead. Unfinished items remain in BACKLOG.md; they are not silently accepted or automatically resumed. Current source is consolidated on main under that explicit wrap-up authority.
+
 Owner brief: 2026-11-03. Activate this work when the owner starts a goal referencing this file. Writing this brief alone does not start generation, purchases or engine work.
 
 ## Resume checkpoint — 2026-11-03

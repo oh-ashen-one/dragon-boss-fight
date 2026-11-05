@@ -1,24 +1,26 @@
 # Veyr — The Cinder Warden
 
-An original native Unreal Engine 5.8 dragon encounter in a ruined cathedral arena. An eight-foot armored knight attacks four independently damageable legs, breaks the dragon's balance, and reaches its exposed crown before it rises again.
+An original native Unreal Engine 5.8 dragon encounter in a gothic fortress and ruined war-court. An armored knight attacks independently damageable legs, breaks the dragon's balance, and reaches its exposed head before it rises again.
 
-Both main characters use Customuse models. The owner played the a450a43b build and rejected its animation, HUD and environment presentation. An owner-directed revision is in progress: a Tripo wooden boat-shaped greatsword, one-/two-handed combat, corrected character poses and whole-body attacks, an active dragon, a moonlit Gothic cathedral and a restrained HUD. See [the current art-pass brief](docs/art-pass-20261019.md). The prior 11-scenario mechanical pass and 3:34 fight remain historical results, not acceptance of this revision.
+The current presentation includes the owner-approved fortress and mural tour as a skippable pre-fight intro, sourced heavy attacks, broader idle wings, healing, combat feedback, one owner-supplied soundtrack, dedicated dragon effects and one player hit grunt. Experimental movement replacements remain disabled when they have not passed gameplay and visual review. See [the current handoff](HANDOFF.md) and [remaining backlog](BACKLOG.md) for honest status.
 
 ## Play and controls
 
-The private owner handoff includes the signed local macOS ZIP. Click or press Enter to capture control; Escape releases the mouse. Movement is WASD, mouse controls the free camera, Shift rolls, J/LMB performs a light attack, K a heavy attack, F/RMB readies a two-handed guard, Q uses one of four healing draughts, Tab toggles lock-on, E switches one-/two-handed grip in the current revision, and R restarts after defeat or victory.
+On the owner's Mac, use **Play Veyr** on the Desktop. It launches the current verified Shipping app through the shared GPU guard, with the tested presentation settings and no Terminal window. The local installation pointer is `Local/LatestShipping.json`; packaged builds and licensed/private assets are not published in this repository.
 
-Guard direction, stamina, invulnerability timing and healing charges matter. Each leg has its own stagger meter. A buckle leads to a brief exposed-head opening with bonus damage, followed by recovery. Fire sweeps, bites, claws, rear stomps, tail sweeps and flight/landing share visible anticipation and danger areas.
+Click or press Enter to take control. Move with WASD and aim the camera with the mouse. Shift sprints, LMB attacks, F performs a heavy attack, RMB guards, E changes grip, Q rolls, Space blinks, R heals, Tab toggles lock-on, and Escape opens the menu. The game displays its controls and restart action on screen. The intro can be skipped and does not repeat on a retry in the same session.
+
+Guard direction, stamina, invulnerability timing and healing charges matter. Leg staggers create exposed-head openings. Fire, bites, claws, rear stomps, tail sweeps and flight have visible anticipation and danger areas.
 
 ## Native project and validation
 
-The project is `Unreal/Veyr/Veyr.uproject`; the task branch is `feat/unreal-migration`. Build the editor module with:
+The project is `Unreal/Veyr/Veyr.uproject`; consolidated source is on `main`. Build the editor module with:
 
 ```sh
 python3 tools/unreal/build.py --engine <installed-engine-root>
 ```
 
-`tools/unreal/package.py --engine <installed-engine-root>` builds, cooks and audits a local Mac package. The delivery copy comes from the matching fresh stage, with an independently verified signed ZIP and extraction. Build/cook success is separate from runtime acceptance.
+`tools/unreal/package.py --engine <installed-engine-root> --configuration Shipping` builds, cooks and audits a local Mac package. The delivery copy comes from the matching fresh stage, with an independently verified signed ZIP and extraction. Build/cook success is separate from runtime acceptance.
 
 Run a bounded native scenario through the host's shared GPU coordinator:
 

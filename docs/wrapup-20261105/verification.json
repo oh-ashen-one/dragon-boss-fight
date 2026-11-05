@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "editorCompiled": true,
+  "shippingCompiledAndPackaged": true,
+  "packageReceipt": "Local/package-20261105T195840Z/receipt.json",
+  "runs": [
+    {
+      "label": "controls",
+      "run": "Evidence/native-controls-20261105T201317Z",
+      "sourceId": "8755f4dc816ad7923c6a346ee72b0a696be80ce5d58040a56514d163fbad325f",
+      "passed": true,
+      "finished": true,
+      "reason": "movement jump-disabled attacks roll stamina recovery lock toggles actual guard contact heal and full-health rejection observed",
+      "victoryGameSeconds": -1,
+      "victoryWallSeconds": -1
+    },
+    {
+      "label": "intro",
+      "run": "Evidence/native-intro-20261105T201411Z",
+      "sourceId": "8755f4dc816ad7923c6a346ee72b0a696be80ce5d58040a56514d163fbad325f",
+      "passed": true,
+      "finished": true,
+      "reason": "Production intro/skip isolated combat and music; player view,90cm movement,primary input,one soundtrack start and real enemy-hit recovery verified",
+      "victoryGameSeconds": -1,
+      "victoryWallSeconds": -1
+    },
+    {
+      "label": "victory-one",
+      "run": "Evidence/native-victory-20261105T201512Z",
+      "sourceId": "8755f4dc816ad7923c6a346ee72b0a696be80ce5d58040a56514d163fbad325f",
+      "passed": true,
+      "finished": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "victoryGameSeconds": 74.92892456054688,
+      "victoryWallSeconds": 75.61752866581082
+    },
+    {
+      "label": "victory-two",
+      "run": "Evidence/native-victory-20261105T201701Z",
+      "sourceId": "8755f4dc816ad7923c6a346ee72b0a696be80ce5d58040a56514d163fbad325f",
+      "passed": true,
+      "finished": true,
+      "reason": "victory terminal pose, resource reset, movement and primary attack after restart verified",
+      "victoryGameSeconds": 38.7814826965332,
+      "victoryWallSeconds": 39.11158908158541
+    }
+  ],
+  "presentationFlags": [
+    "VeyrCanonicalKnightSkin",
+    "VeyrStableWeaponPresentation",
+    "VeyrWalkEntryBlend",
+    "VeyrReadableAutoLock"
+  ],
+  "experimentalMovementEnabled": false,
+  "introControlsScreenshotsInspected": 36,
+  "scope": "Final current-play-profile smoke and native screenshots; unfinished animation experiments remain disabled, not accepted",
+  "victoryRestartScreenshotsInspected": 7
+}

@@ -14,7 +14,9 @@ do {
     try output.seekToEnd()
     let process = Process()
     process.executableURL = URL(fileURLWithPath: python)
-    process.arguments = [script] + Array(CommandLine.arguments.dropFirst())
+    // Ignore LaunchServices bookkeeping arguments; the GUI always opens the
+    // verified current build. --check is reserved for installation validation.
+    process.arguments = [script] + (CommandLine.arguments.contains("--check") ? ["--check"] : [])
     var environment = ProcessInfo.processInfo.environment
     environment["PATH"] = "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     process.environment = environment

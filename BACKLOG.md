@@ -1,3 +1,7 @@
+# Playable wrap-up delivered — 2026-11-05
+
+The owner ended the long-running goal and authorized consolidation into main. The current accepted play profile was compiled and passed controls, full intro, both-grip victory/restart checks. Unfinished movement and camera experiments remain disabled; the items below are future work, not an active autonomous goal. See HANDOFF.md and `docs/wrapup-20261105/verification.json` for the current playable handoff.
+
 # Native trial and blind verdict — 2026-11-05
 
 v047 is now imported as an inactive trial and tested in a Shipping build. Exact run-to-stop entry is continuous, and two transition peaks improved, but all4 full movement cases still fail contacts. Blind Opus prefers the earlier brake's plant/settle and the new trial's sprint carry; neither is shippable. No default promotion. Next retain those strengths while repairing grip/clearance and actual native contact/start-turn failures. Native movies are queued behind STREAMING; see HANDOFF.md for the sole live handle. Source-only/prepared-only descriptions below are historical.

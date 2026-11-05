@@ -14,6 +14,10 @@ p.add_argument('--receipt',type=Path,required=True)
 p.add_argument('--verification',required=True)
 a=p.parse_args();receipt=a.receipt.resolve(strict=True);data=json.loads(receipt.read_text())
 assert data['packagingSucceeded'] and data['configuration']=='Shipping' and len(data['apps'])==1
+verification=json.loads((ROOT/a.verification).read_text())
+assert verification['passed'] and verification['runs'] and all(r['passed'] for r in verification['runs'])
+assert len({r['sourceId'] for r in verification['runs']})==1
+source_id=verification['runs'][0]['sourceId']
 source=Path(data['apps'][0]).resolve(strict=True)
 subprocess.run(['codesign','--verify','--deep','--strict',str(source)],check=True,capture_output=True)
 info=plistlib.loads((source/'Contents/Info.plist').read_bytes());binary=source/'Contents/MacOS'/info['CFBundleExecutable']
@@ -35,7 +39,7 @@ plist={'CFBundleIdentifier':'local.veyr.play','CFBundleName':'Play Veyr','CFBund
 (resources/'veyr-launcher-owner.json').write_text(json.dumps({'repository':str(ROOT),'purpose':'GPU-guarded Shipping launch'},indent=2)+'\n')
 subprocess.run(['codesign','--force','--sign','-',str(launcher)],check=True,capture_output=True)
 subprocess.run(['codesign','--verify','--deep','--strict',str(launcher)],check=True,capture_output=True)
-pointer={'app':str(app),'packageReceipt':str(receipt.relative_to(ROOT)),'binarySHA256':digest,'verification':a.verification,'launcher':str(launcher),'experimentalMovementEnabled':False}
+pointer={'app':str(app),'packageReceipt':str(receipt.relative_to(ROOT)),'binarySHA256':digest,'sourceId':source_id,'verification':a.verification,'launcher':str(launcher),'experimentalMovementEnabled':False}
 (ROOT/'Local/LatestShipping.json').write_text(json.dumps(pointer,indent=2)+'\n')
 subprocess.run([str(executables/'PlayVeyr'),'--check'],check=True)
 desktop=Path.home()/'Desktop/Play Veyr.app';assert not desktop.exists() and not desktop.is_symlink(), 'Preserve an existing desktop item'

@@ -1,0 +1,90 @@
+{
+  "ownerAuthorizedMainPublication": true,
+  "branches": [
+    {
+      "branch": "Fab-3D-Rig-Testing",
+      "head": "3310d644c2eecae736183991e4fa5d0a14ef4b26",
+      "includedInMain": true
+    },
+    {
+      "branch": "checkpoint/unity-native-009",
+      "head": "1382c42ffa99b61a92862da80cb6117d5d6aec5b",
+      "includedInMain": true
+    },
+    {
+      "branch": "claude-code-enhancements",
+      "head": "898b4d7c684994e4a6b6fc05b8c56943b263ea72",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-asset-review-20261019",
+      "head": "83c32681ba57fc64c3abf6d6324508b1e544a71a",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-build-cleanup-20261029",
+      "head": "12dac4591db29997aa85bffd1a9cdcb0a2a052f5",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-cathedral-overhaul-20261026",
+      "head": "7e90b54744dece68a0f7a19c11d98b563758525d",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-combat-arena-polish-20261025",
+      "head": "b94db5ac2d35c7ae8c58ee05aba49cc110956d57",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-dragon-dangling-hover-20261025",
+      "head": "327d3acc7078d9af6670f7da05459c002d494e59",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-moonlit-silver-hud-20261025",
+      "head": "1fdd13921372a9721881f61e1fdef377b004d0f4",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-native-animation-integration-20261025",
+      "head": "e6868d57628bb1eec52e4a8b5d57e3a176e2eaeb",
+      "includedInMain": true
+    },
+    {
+      "branch": "codex/veyr-settings-restart-20261028",
+      "head": "0755fafcb0152e6b3c5f48e181ee4953c258e9c9",
+      "includedInMain": true
+    },
+    {
+      "branch": "fable/knight-complete-20261028",
+      "head": "25a2d4e7d9ecbbc6736e8ff3b1fa129a35a5838b",
+      "includedInMain": true
+    },
+    {
+      "branch": "fable/veyr-knight-v4-20261021",
+      "head": "ee29677a89f1447da9f0f4ddb811c082263964a2",
+      "includedInMain": true
+    },
+    {
+      "branch": "feat/first-playable",
+      "head": "1382c42ffa99b61a92862da80cb6117d5d6aec5b",
+      "includedInMain": true
+    },
+    {
+      "branch": "feat/unreal-migration",
+      "head": "f30218a4233507d22f87ed3945a78998be2d3718",
+      "includedInMain": true
+    },
+    {
+      "branch": "main",
+      "head": "b4452c19a14c79dac8f50c335f3614333efd3241",
+      "includedInMain": true
+    }
+  ],
+  "checkoutsRetained": [
+    "knight/game authoring checkout",
+    "dragon authoring checkout with private editable assets"
+  ],
+  "linkedTemporaryWorktreesFound": 0
+}
