@@ -1,5 +1,7 @@
 # Knight motion review handoff
 
+Privacy note: Machine-specific home-directory prefixes are shown as `$HOME`; use the appropriate configured paths on other machines.
+
 **Current: feedback v3 is delivered; stop here per owner.** Read root `HANDOFF.md`
 and `tools/art/blender/feedback_v3/README.md`. One-hand walk is now approved. The
 loopback/laptop notes below are historical; use the existing private tailnet
@@ -25,7 +27,7 @@ approvals and technical history.
   the archived embedded scripts retain the original Studio paths.
 - `WalkTwoHand_Blender_v3.glb`, 3.5 seconds, SHA256
   `d0713bac27cd87f6d5ed34eebb2c10a4bc6d1011a125bbe30f65bda405cd3c3d`.
-- Editable scene: `/Users/midir/veyr-blender-walk-20261021/Knight_Walk_Blender_v3.blend`
+- Editable scene: `$HOME/veyr-blender-walk-20261021/Knight_Walk_Blender_v3.blend`
   on the Studio; SHA256 `b37a8e36dfcc1c1edb8c3df6289ae74a746ab8538f9c571fcb3d260b1fda20e9`.
 - Scripts and usage: `tools/art/blender/README.md`. Reports:
   `reviews/blender-walk-v3-{authoring,export,audit}.json`.
@@ -60,7 +62,7 @@ also permits up to four Blender-only processes. Verified Studio `Mac15,14`;
 foreign Blender PIDs 27849 and 27888 remain untouched. Task session launched
 through the shared GPU slot wrapper: owner `codex-veyr-walk-20261021`,
 loopback MCP port 9881, Blender PID 28574, work folder
-`/Users/midir/veyr-blender-walk-20261021`. Query the owner tag before mutation.
+`$HOME/veyr-blender-walk-20261021`. Query the owner tag before mutation.
 Do not reuse stale PIDs without checking live state. No game engine was running
 or queued at launch. `powermetrics` required sudo authentication; the slot tool's
 IOAccelerator sample was 13 percent before launch. No claim of a completed
@@ -203,7 +205,7 @@ selected segment and offers normal/half/quarter speed. Earlier drafts remain
 in the ignored asset cache. Approved one-hand v10 and both idles are unchanged.
 
 Studio copy destination (verified `Mac15,14`):
-`/Users/midir/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/twohand-strong-review-20261019-codex/`.
+`$HOME/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/twohand-strong-review-20261019-codex/`.
 Both clips, strong-grip sword, and original GIF were copied with exclusive file
 creation and verified matching SHA256 hashes. Re-running the final generator
 reproduced both clips byte-for-byte. The approved one-hand attack and both idle
@@ -252,7 +254,7 @@ https://cdnb.artstation.com/p/assets/images/images/032/421/303/original/elhuevoc
 into ignored `.asset-cache/reference/onehand/`; it refuses a mismatched source.
 
 Private candidate destination on verified Studio `Mac15,14`:
-`/Users/midir/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/light-attack-review-20261019/LightAttack_BlackKnightReference_v10.glb`.
+`$HOME/Documents/Codex/2026-10-17/task-3/Local/art-pass-20261019/knight/light-attack-review-20261019/LightAttack_BlackKnightReference_v10.glb`.
 Copied with matching SHA256 and exclusive destination creation. Generator replay
 produced the identical SHA256. No Studio engine/game launch or Unreal rebuild
 is part of this review.

@@ -1,5 +1,7 @@
 # Owner-requested wrap-up — 2026-11-05
 
+Privacy note: machine-specific home paths are written as `$HOME`; verify the current checkout before use.
+
 The owner cleared the long-running goal and explicitly requested compilation, consolidation of obsolete Veyr branches/worktrees, deletion of superseded builds, and publication to main. This authorizes the main merge/push for this wrap-up and supersedes the earlier no-main restriction. Do not restart the animation research loop.
 
 Package the current accepted play profile (canonical skin, stable weapon presentation, walk-entry blend, readable auto-lock), preserving the approved R5 intro/audio/heavies/wings/recovery. Rejected contiguous movement and threat-camera trials stay disabled. Their failed checks and blind verdicts remain documented, not claimed complete. Install a stable Shipping app and GPU-guarded launcher, run final smoke checks, publish all relevant branch history, then prune only owned superseded artifacts and fully merged inactive branches. Preserve other sessions' processes/checkouts and the pre-existing review-file deletion.

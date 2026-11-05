@@ -1,5 +1,7 @@
 # Sourced knight animation integration
 
+Privacy note: Machine-specific home-directory prefixes are shown as `$HOME`; use the appropriate configured paths on other machines.
+
 The owner selected the sourced walk, slash, run and forward roll for the game and
 explicitly retained the original guard. Work remains on `Fab-3D-Rig-Testing`.
 
@@ -59,7 +61,7 @@ verification passed168 pose samples and84 transition checks, all18 integration
 features, eight collision stages and original guard combat behavior. Packaged stance/contact and victory/restart also passed on build
 `a2e260003cfa1796692ed45b2497efee42171e00621fcc277b20b95cbd9a809b`.
 The signed unpacked app is delivered at
-`/Users/midir/Downloads/Veyr-Sourced-Animations-v027/Veyr.app` and was observed
+`$HOME/Downloads/Veyr-Sourced-Animations-v027/Veyr.app` and was observed
 at its fresh start screen. Native capture preserves actual timestamps; recording
 adds overhead and is not an isolated60fps benchmark.
 The original guard `.uasset` SHA256 remains:

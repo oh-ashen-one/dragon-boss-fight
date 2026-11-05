@@ -1,5 +1,7 @@
 # Knight Blender authoring
 
+Privacy note: Machine-specific home-directory prefixes are shown as `$HOME`; use the appropriate configured paths on other machines.
+
 Owner rule, 2026-10-21: use Blender for character animation authoring and
 refinement. Python automates Blender and validates exported playback. Keep
 approved clips unchanged and retain editable Blender sources.
@@ -34,7 +36,7 @@ Resolve and change those paths for a different machine; do not assume portabilit
 ## Candidate v3
 
 - Blender 5.2.0 LTS; 60 fps, 211 samples, 3.5 seconds.
-- Editable scene: Studio `/Users/midir/veyr-blender-walk-20261021/Knight_Walk_Blender_v3.blend`.
+- Editable scene: Studio `$HOME/veyr-blender-walk-20261021/Knight_Walk_Blender_v3.blend`.
 - Export: `WalkTwoHand_Blender_v3.glb`, SHA256
   `d0713bac27cd87f6d5ed34eebb2c10a4bc6d1011a125bbe30f65bda405cd3c3d`.
 - Endpoint matrix errors versus preserved idle endpoints: below 2.3e-6.
