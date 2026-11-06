@@ -476,12 +476,6 @@ float AVeyrDragon::WalkCycleDistance() const
 FName AVeyrDragon::VideoClip(FName Keyed) const
 {
     if(bLegacyDragon||!VisualDefinition||Keyed.IsNone())return Keyed;
-    // With the new attacks, the video2rig stagger chain pushed the scripted victory past 150 s
-    // (234 s; either group alone passes). Opt-in until the stagger timing is rebalanced.
-    {
-        const FString K=Keyed.ToString();
-        if((K.StartsWith(TEXT("Buckle"))||K==TEXT("Collapse")||K==TEXT("Exposed"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrVideoStagger")))return Keyed;
-    }
     // Comparison/bisect aid: -VeyrLegacyClips=Buckle,Collapse keeps keyed clips whose names start with a listed prefix.
     FString LegacyList;
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrLegacyClips="),LegacyList))
