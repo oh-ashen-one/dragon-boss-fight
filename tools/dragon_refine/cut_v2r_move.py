@@ -117,6 +117,14 @@ for s in src_frames:
     scene.frame_set(whole, subframe=s - whole)
     poses.append({pb.name: (pb.location.copy(), pb.matrix_basis.to_quaternion(), pb.scale.copy()) for pb in arm.pose.bones})
 
+# 1a. Optional in-place cycle: remove the root bone's linear travel (the engine moves the actor instead).
+travel_bone = spec.get('remove_root_travel')
+if travel_bone:
+    l_first, l_last = poses[0][travel_bone][0].copy(), poses[-1][travel_bone][0].copy()
+    for i, pose in enumerate(poses):
+        loc, q, scl = pose[travel_bone]
+        pose[travel_bone] = (loc - (l_last - l_first) * (i / max(1, len(poses) - 1)), q, scl)
+
 # 1b. Optional loop: ease the last N output poses onto the first pose so the clip cycles cleanly.
 loop_n = int(spec.get('loop_blend_frames', 0))
 if loop_n:

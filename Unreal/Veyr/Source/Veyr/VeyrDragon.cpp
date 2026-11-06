@@ -472,6 +472,8 @@ float AVeyrDragon::WalkCycleDistance() const
 FName AVeyrDragon::VideoClip(FName Keyed) const
 {
     if(bLegacyDragon||!VisualDefinition||Keyed.IsNone())return Keyed;
+    // The video2rig walk cycle changes travel speed and showcase framing; opt-in until reviewed.
+    if(Keyed==FName(TEXT("Walk"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrVideoWalk")))return Keyed;
     const FName Video(*(Keyed.ToString()+TEXT("V2r")));
     const FVeyrVisualClip* Clip=VisualDefinition->Clips.Find(Video);
     return Clip&&Clip->Sequence?Video:Keyed;
@@ -485,6 +487,8 @@ float AVeyrDragon::VideoStateDuration(FName Keyed,float Fixed) const
 
 FString AVeyrDragon::BiteClipStem() const
 {
+    // Newer video2rig bites use the common <Clip>V2r naming through VideoClip().
+    if(!bLegacyDragon&&VisualDefinition&&VisualDefinition->Clips.Contains(TEXT("BiteActiveV2r")))return TEXT("Bite");
     return bVideoBite&&VisualDefinition&&VisualDefinition->Clips.Contains(TEXT("BiteV2rActive"))?TEXT("BiteV2r"):TEXT("Bite");
 }
 
@@ -517,17 +521,18 @@ bool AVeyrDragon::CalibrateBiteGroundAim()
 {
     bBiteGroundAimReady=false;BiteGroundPitchDegrees=0.f;BiteGroundStrikeMuzzleHeightCm=0.f;
     BiteNeckBase=BiteNeckMiddle=BiteHead=NAME_None;BiteGroundAimDiagnostic.Reset();
-    if(!HasGroundTargetBite()&&BiteClipStem()==TEXT("BiteV2r"))
+    const FName VideoActive=ImportedMoveClip(EVeyrDragonMove::Bite,0,TEXT("Active"));
+    if(!HasGroundTargetBite()&&VideoActive.ToString().Contains(TEXT("V2r")))
     {
         // The video2rig strike already lunges low: no neck correction. Measure its own
         // native muzzle height at the impact time against the same reach rule.
-        const FVeyrVisualClip& Active=VisualDefinition->Clips.FindChecked(TEXT("BiteV2rActive"));
+        const FVeyrVisualClip& Active=VisualDefinition->Clips.FindChecked(VideoActive);
         const float Trimmed=FMath::Clamp((Active.ImpactSeconds>=0.f?Active.ImpactSeconds:Active.StartSeconds)-Active.StartSeconds,
-            0.f,VisualClipDuration(TEXT("BiteV2rActive"),.5f));
+            0.f,VisualClipDuration(VideoActive,.5f));
         const float HalfHeight=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleHalfHeight():122.f;
         FTransform Mouth;
         AttackPoseProbe->SetComponentSpaceBoneRotations({});
-        if(!AttackPoseProbe->SampleClipTime(TEXT("BiteV2rActive"),Trimmed)||!AttackPoseProbe->GetBoneTargetWorldTransform(TEXT("mouth"),Mouth))
+        if(!AttackPoseProbe->SampleClipTime(VideoActive,Trimmed)||!AttackPoseProbe->GetBoneTargetWorldTransform(TEXT("mouth"),Mouth))
         {BiteGroundAimDiagnostic=TEXT("Video bite native pose sample failed");return false;}
         BiteGroundStrikeMuzzleHeightCm=Mouth.GetLocation().Z-GetActorLocation().Z;
         // Reachable when the unchanged 100 cm jaw capsule overlaps the knight's capsule height

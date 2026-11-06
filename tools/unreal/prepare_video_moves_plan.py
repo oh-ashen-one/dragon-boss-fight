@@ -54,7 +54,7 @@ def main(manifest_path):
         duration = proof['durationSeconds']
         common = dict(**entry, source_duration=duration, root_motion_policy='preserve', root_motion_removed=False,
                       root_translation_samples_cm=[], root_yaw_samples_degrees=[], root_sample_rate=cut['output_fps'],
-                      nominal_speed_cm_per_second=0., gameplay_play_rate=1., damage_windows=[],
+                      nominal_speed_cm_per_second=float(mv.get('nominal_speed_cm_per_second', 0.)), gameplay_play_rate=1., damage_windows=[],
                       approved_source_file=source.name, approved_source_sha256=source_sha, owner_approved=False)
         if mv.get('phases'):
             w, a = cut['trims_out_s']['windup_end'], cut['trims_out_s']['active_end']
