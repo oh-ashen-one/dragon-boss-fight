@@ -725,14 +725,16 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
     }
     if(bUsingCustomuseVisual&&VisualDefinition)
     {
-        const FName Windup=ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Windup"));
+        const int32 Leg=Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg;
+        const FName Windup=ImportedMoveClip(Move,Leg,TEXT("Windup"));
         const FVeyrVisualClip* Config=VisualDefinition->Clips.Find(Windup);
-        if((Move==EVeyrDragonMove::Fire||Move==EVeyrDragonMove::Bite)&&Config&&
-           Config->ApprovedSourceFile.StartsWith(TEXT("Dragon_")))
+        // Video2rig moves carry their own retimed phases; play them at their authored length.
+        if(Config&&(((Move==EVeyrDragonMove::Fire||Move==EVeyrDragonMove::Bite)&&Config->ApprovedSourceFile.StartsWith(TEXT("Dragon_")))||
+           Windup.ToString().EndsWith(TEXT("V2r"))))
         {
             WindupDuration=VisualClipDuration(Windup,WindupDuration);
-            ActiveDuration=VisualClipDuration(ImportedMoveClip(Move,0,TEXT("Active")),ActiveDuration);
-            RecoveryDuration=VisualClipDuration(ImportedMoveClip(Move,0,TEXT("Recovery")),RecoveryDuration);
+            ActiveDuration=VisualClipDuration(ImportedMoveClip(Move,Leg,TEXT("Active")),ActiveDuration);
+            RecoveryDuration=VisualClipDuration(ImportedMoveClip(Move,Leg,TEXT("Recovery")),RecoveryDuration);
         }
         if(Move==EVeyrDragonMove::FlyAway&&HasAuthoredFlight())
         {

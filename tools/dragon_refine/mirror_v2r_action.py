@@ -21,7 +21,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--action', required=True)
 ap.add_argument('--output', type=Path, required=True)
 ap.add_argument('--report', type=Path, required=True)
-ap.add_argument('--axis', choices=('x', 'y', 'z'), default='y', help='Armature axis across which the creature is mirrored')
+ap.add_argument('--axis', choices=('auto', 'x', 'y', 'z'), default='auto', help='Armature axis across which the creature is mirrored')
 a = ap.parse_args(sys.argv[sys.argv.index('--') + 1:])
 if a.output.exists():
     raise RuntimeError('Refusing to overwrite ' + str(a.output))
@@ -30,13 +30,25 @@ scene = bpy.context.scene
 arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE' and o.animation_data and o.animation_data.action)
 source = arm.animation_data.action
 start, end = (int(round(x)) for x in source.frame_range)
-k = 'xyz'.index(a.axis)
-S = Matrix.Identity(4)
-S[k][k] = -1.0
-
 bones = arm.data.bones
 rest = {b.name: b.matrix_local.copy() for b in bones}
 height = max(b.head_local.length for b in bones) or 1.0
+
+
+def axis_cost(axis):
+    total = 0.0
+    for b in bones:
+        t = b.head_local.copy()
+        t[axis] = -t[axis]
+        total += min((c.head_local - t).length for c in bones)
+    return total
+
+
+# The armature's own axes may be rotated relative to the world: pick the reflection that pairs best.
+k = 'xyz'.index(a.axis) if a.axis != 'auto' else min(range(3), key=axis_cost)
+a.axis = 'xyz'[k]
+S = Matrix.Identity(4)
+S[k][k] = -1.0
 
 
 def mirrored(v):
@@ -45,14 +57,19 @@ def mirrored(v):
     return v
 
 
-twin, residual = {}, {}
-for b in bones:
-    target = mirrored(b.head_local)
-    best = min(bones, key=lambda c: ((c.head_local - target).length, abs(len(c.parent_recursive) - len(b.parent_recursive))))
-    twin[b.name] = best.name
-    residual[b.name] = (best.head_local - target).length / height
+# Explicit pairs from the rig's limb chains (the Tripo rest pose is not symmetric enough to pair by
+# position). Front chains differ by one segment; links are matched in order. Unlisted bones are midline.
+PAIRS = [('bone_6', 'bone_11'), ('bone_7', 'tripo::0_Left_Limb_0'), ('tripo::1_Left_Limb_0', 'tripo::0_Left_Limb_1'),
+         ('bone_9', 'bone_14'), ('tripo::1_Left_Limb_1', 'tripo::0_Left_Limb_2')]
+PAIRS += [(f'tripo::1_Right_Limb_{i}', f'tripo::0_Right_Limb_{i}') for i in range(5)]
+PAIRS += [(f'VeyrWingPosZ{p}', f'VeyrWingNegZ{p}') for p in ('Root', 'Elbow', 'Membrane', 'Wrist', 'Tip')]
+twin = {b.name: b.name for b in bones}
+for l, r in PAIRS:
+    if l in twin and r in twin:
+        twin[l], twin[r] = r, l
+pairs_broken = []
+residual = {b.name: (mirrored(b.head_local) - bones[twin[b.name]].head_local).length / height for b in bones}
 asym = sorted(((v, n) for n, v in residual.items()), reverse=True)[:5]
-pairs_broken = [n for n, t in twin.items() if twin.get(t) != n]
 
 # 1. Target armature-space matrices for every frame.
 targets = []

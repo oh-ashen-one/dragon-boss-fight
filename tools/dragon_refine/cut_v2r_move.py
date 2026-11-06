@@ -117,6 +117,47 @@ for s in src_frames:
     scene.frame_set(whole, subframe=s - whole)
     poses.append({pb.name: (pb.location.copy(), pb.matrix_basis.to_quaternion(), pb.scale.copy()) for pb in arm.pose.bones})
 
+# 1b. Optional loop: ease the last N output poses onto the first pose so the clip cycles cleanly.
+loop_n = int(spec.get('loop_blend_frames', 0))
+if loop_n:
+    first = poses[0]
+    for k in range(loop_n):
+        i = len(poses) - loop_n + k
+        u = (k + 1) / loop_n
+        w = u * u * (3 - 2 * u)
+        blended = {}
+        for name, (loc, q, scl) in poses[i].items():
+            l0, q0, s0 = first[name]
+            q1 = q0.copy()
+            if q1.dot(q) < 0:
+                q1.negate()
+            blended[name] = (loc.lerp(l0, w), q.slerp(q1, w), scl.lerp(s0, w))
+        poses[i] = blended
+
+# 1c. Optional wing re-base: folded wings crumple this rig's membrane (it is spread at rest). Move each
+# wing bone's base pose from the clip's first frame toward rest by `weight`, keeping the clip's own wing
+# motion relative to that first frame: q = slerp(q0, I, w) . (q0^-1 . q_t).
+rebase = spec.get('wing_rebase')
+if rebase:
+    w = float(rebase['weight'])
+    wing = [n for n in bones if 'VeyrWing' in n]
+    q_first = {n: poses[0][n][1].copy() for n in wing}
+    # Target: rest (identity) by default, or a measured spread pose (probe_wing_spread.py JSON).
+    target = {n: Quaternion() for n in wing}
+    if rebase.get('target'):
+        for n, q in json.loads(Path(rebase['target']).read_text())['quats'].items():
+            if n in target:
+                target[n] = Quaternion(q)
+    for pose in poses:
+        for n in wing:
+            loc, q, scl = pose[n]
+            q0 = q_first[n]
+            t = target[n].copy()
+            if t.dot(q0) < 0:
+                t.negate()
+            base = q0.slerp(t, w)
+            pose[n] = (loc, base @ (q0.inverted() @ q), scl)
+
 # 2. Additive jaw layer, authored in source frames and mapped to output time.
 jaw = spec.get('jaw')
 jaw_curve = None
