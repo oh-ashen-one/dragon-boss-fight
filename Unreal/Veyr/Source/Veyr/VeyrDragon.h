@@ -120,8 +120,12 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return State == EVeyrDragonState::Dead; }
     bool UsesPacingRevision() const { return !bLegacyPacing; }
     FName IdlePresentationClip() const { return bOpenIdleWings?FName(TEXT("IdleOpen")):FName(TEXT("Idle")); }
-    /** "BiteV2r" when -VeyrVideoBite is set and the video2rig bite trims exist; otherwise the keyed "Bite". */
+    /** "BiteV2r" when the video2rig bite trims exist (default; -VeyrLegacyDragon restores "Bite"). */
     FString BiteClipStem() const;
+    /** The "<Clip>V2r" video2rig variant when present and enabled, otherwise the keyed clip. */
+    FName VideoClip(FName Keyed) const;
+    /** Duration of the video2rig variant when one plays, otherwise the fixed state length. */
+    float VideoStateDuration(FName Keyed,float Fixed) const;
     bool UsesFinisherRevision() const { return !bLegacyPacing&&!bLegacyFinisher; }
     /** Explicit non-combat rehearsal; never used by victory validation. */
     bool BeginShowcase();
@@ -231,6 +235,7 @@ private:
     bool bLegacyPacing=false;
     bool bOpenIdleWings=false;
     bool bVideoBite=false;
+    bool bLegacyDragon=false;
     bool bLegacyFinisher=false;
     bool bShowcaseMode=false;
     FName ShowcaseSegment=NAME_None,ShowcaseOverrideClip=NAME_None;

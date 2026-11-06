@@ -56,7 +56,8 @@ bool FVeyrShowcase::Begin(UWorld* World,AVeyrKnight* InKnight,AVeyrDragon* InDra
 {
     Hooks=InHooks;Knight=InKnight;Dragon=InDragon;bPlayerCamera=PlayerCamera;
     if(!World||!InKnight||!InDragon||!InDragon->VisualDefinition)return false;
-    auto Add=[this](const TCHAR* Name,TArray<FName> Clips,TArray<FString> RequiredStates){Steps.Add({FName(Name),MoveTemp(Clips),MoveTemp(RequiredStates)});};
+    auto Add=[this,InDragon](const TCHAR* Name,TArray<FName> Clips,TArray<FString> RequiredStates)
+    {for(FName& C:Clips)C=InDragon->VideoClip(C);Steps.Add({FName(Name),MoveTemp(Clips),MoveTemp(RequiredStates)});};
     Add(TEXT("Idle"),{InDragon->IdlePresentationClip()},{TEXT("Idle")});
     Add(TEXT("Roar"),{TEXT("Roar")},{TEXT("Idle")});
     Add(TEXT("Walk"),{TEXT("Walk")},{TEXT("Reposition")});
@@ -88,7 +89,13 @@ bool FVeyrShowcase::Begin(UWorld* World,AVeyrKnight* InKnight,AVeyrDragon* InDra
     for(const TCHAR* Stem:{TEXT("Bite"),TEXT("BiteV2r")})for(const TCHAR* Phase:{TEXT("Windup"),TEXT("Active"),TEXT("Recovery")})
         Accounted.Add(FName(*(FString(Stem)+Phase)));
     for(const auto& Entry:InDragon->VisualDefinition->Clips)
+    {
+        const FString Key=Entry.Key.ToString();
+        // Keyed clips stay as -VeyrLegacyDragon comparisons beside their video2rig variants.
+        if(Key.EndsWith(TEXT("V2r"))&&Accounted.Contains(FName(*Key.LeftChop(3))))continue;
+        if(Accounted.Contains(FName(*(Key+TEXT("V2r")))))continue;
         if(!Accounted.Contains(Entry.Key)){Hooks.Finish(false,TEXT("Unclassified native clip in showcase inventory: ")+Entry.Key.ToString());return false;}
+    }
     const auto& Hover=InDragon->VisualDefinition->Clips.FindChecked(TEXT("FlightActive"));
     const auto* Alternate=InDragon->VisualDefinition->Clips.Find(TEXT("FlightHoverAlternate"));
     if(Alternate&&(Alternate->ApprovedSourceSHA256!=Hover.ApprovedSourceSHA256||Alternate->StartSeconds!=Hover.StartSeconds||

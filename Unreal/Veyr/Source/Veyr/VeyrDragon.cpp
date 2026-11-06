@@ -158,8 +158,9 @@ void AVeyrDragon::BeginPlay()
     bLegacyFinisher=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingNoFinisher"));
     // Half-spread idle won blind review; the original breathing is preserved.
     bOpenIdleWings=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyIdleWings"));
-    // Opt-in until owner review: one continuous video2rig bite in place of the keyed bite.
-    bVideoBite=FParse::Param(FCommandLine::Get(),TEXT("VeyrVideoBite"));
+    // Owner 2026-11-05: video2rig moves that pass review play by default; this restores every keyed clip.
+    bLegacyDragon=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyDragon"));
+    bVideoBite=!bLegacyDragon;
     if(UsesPacingRevision())NextFlightAt=20.f;
     Super::BeginPlay();
     FString ReplayMode;
@@ -376,13 +377,13 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,UsesPacingRevision()?1.25f:.40f);}
             break;
         case EVeyrDragonState::Buckle:
-            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Collapse,1.f);
+            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Collapse,VideoStateDuration(TEXT("Collapse"),1.f));
             break;
         case EVeyrDragonState::Collapse:
             if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Exposed,7.f);
             break;
         case EVeyrDragonState::Exposed:
-            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Rise,2.f);
+            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Rise,VideoStateDuration(TEXT("Rise"),2.f));
             break;
         case EVeyrDragonState::Rise:
             if(StateElapsed>=StateDuration)
@@ -440,7 +441,7 @@ void AVeyrDragon::ChooseAttack()
 
 float AVeyrDragon::VisualClipDuration(FName ClipName,float Fallback) const
 {
-    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(ClipName):nullptr;
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(VideoClip(ClipName)):nullptr;
     if(!Clip||!Clip->Sequence)return Fallback;
     const float End=Clip->EndSeconds<0.f?Clip->Sequence->GetPlayLength():Clip->EndSeconds;
     return End>Clip->StartSeconds?End-Clip->StartSeconds:Fallback;
@@ -462,10 +463,24 @@ bool AVeyrDragon::IsLandingContactWindow() const
 
 float AVeyrDragon::WalkCycleDistance() const
 {
-    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(TEXT("Walk")):nullptr;
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(VideoClip(TEXT("Walk"))):nullptr;
     if(Clip&&Clip->NominalSpeedCmPerSecond>0.f)
         return Clip->NominalSpeedCmPerSecond*VisualClipDuration(TEXT("Walk"),3.2f);
     return 134.f;
+}
+
+FName AVeyrDragon::VideoClip(FName Keyed) const
+{
+    if(bLegacyDragon||!VisualDefinition||Keyed.IsNone())return Keyed;
+    const FName Video(*(Keyed.ToString()+TEXT("V2r")));
+    const FVeyrVisualClip* Clip=VisualDefinition->Clips.Find(Video);
+    return Clip&&Clip->Sequence?Video:Keyed;
+}
+
+float AVeyrDragon::VideoStateDuration(FName Keyed,float Fixed) const
+{
+    const FName Clip=VideoClip(Keyed);
+    return Clip!=Keyed?VisualClipDuration(Clip,Fixed):Fixed;
 }
 
 FString AVeyrDragon::BiteClipStem() const
@@ -572,7 +587,7 @@ bool AVeyrDragon::CalibrateBiteGroundAim()
 
 bool AVeyrDragon::ReadTurnTrajectory(float SourceSeconds,FVector& Translation,float& YawDegrees) const
 {
-    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(RepositionTurnClip):nullptr;
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(VideoClip(RepositionTurnClip)):nullptr;
     if(!Clip||!Clip->bRootMotionRemoved||Clip->RootTranslationSamplesCm.Num()<2||
        Clip->RootYawSamplesDegrees.Num()!=Clip->RootTranslationSamplesCm.Num()||Clip->RootSampleRate<=0.f)return false;
     const float Sample=FMath::Clamp((Clip->StartSeconds+SourceSeconds)*Clip->RootSampleRate,0.f,
@@ -664,7 +679,7 @@ void AVeyrDragon::BeginReposition()
     }
     RepositionTurnDuration=bRepositionAuthoredTurn?RepositionTurnSourceDuration/1.22f:
         FMath::Abs(RepositionYawDelta)>.5f?FMath::Max(.3f,FMath::Abs(RepositionYawDelta)/40.f):0.f;
-    const FVeyrVisualClip* Walk=VisualDefinition?VisualDefinition->Clips.Find(TEXT("Walk")):nullptr;
+    const FVeyrVisualClip* Walk=VisualDefinition?VisualDefinition->Clips.Find(VideoClip(TEXT("Walk"))):nullptr;
     const float WalkSpeed=Walk&&Walk->NominalSpeedCmPerSecond>0.f?Walk->NominalSpeedCmPerSecond:160.f;
     RepositionTravelDuration=FVector::Dist2D(MoveStart,MoveEnd)/(WalkSpeed*1.25f);
     bRepositionWalking=RepositionTurnDuration<=.001f;
@@ -998,7 +1013,7 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
     if(Region<4&&CanStagger())
     {
         LegStagger[Region]=FMath::Min(100.f,LegStagger[Region]+(bHeavy?45.f:25.f));
-        if(LegStagger[Region]>=100.f){StruckLeg=Region;++CollapseCount;EnterState(EVeyrDragonState::Buckle,.65f);}
+        if(LegStagger[Region]>=100.f){StruckLeg=Region;++CollapseCount;EnterState(EVeyrDragonState::Buckle,VideoStateDuration(FName(*FString::Printf(TEXT("Buckle%d"),Region)),.65f));}
     }
 }
 
@@ -1569,7 +1584,7 @@ void AVeyrDragon::UpdateImportedPresentation()
         }
     }
     if(Name==TEXT("Idle"))Name=IdlePresentationClip().ToString();
-    const FName Clip(*Name);
+    const FName Clip=VideoClip(FName(*Name));
     bool Sampled=false;
     if(VisualDefinition->Clips.Contains(Clip)&&VisualDefinition->Clips[Clip].Sequence)
     {
@@ -1606,6 +1621,8 @@ void AVeyrDragon::UpdateImportedPresentation()
             if(State==EVeyrDragonState::Dead&&UsesPacingRevision()&&Name.StartsWith(TEXT("DeathFall")))ImportedTransitionSeconds=.35f;
             if(Clip!=LastImportedClip&&(Clip==FName(TEXT("Roar"))||LastImportedClip==FName(TEXT("Roar"))))ImportedTransitionSeconds=.6f;
             if(Clip==FName(TEXT("IdleOpen"))||LastImportedClip==FName(TEXT("IdleOpen")))ImportedTransitionSeconds=FMath::Max(ImportedTransitionSeconds,.35f);
+            // Video2rig buckle ends mid-lurch; give the hand-off into the fall weight.
+            if(LastImportedState==EVeyrDragonState::Buckle&&State==EVeyrDragonState::Collapse&&Clip.ToString().EndsWith(TEXT("V2r")))ImportedTransitionSeconds=.25f;
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;
         }
         const float TransitionSeconds=ImportedTransitionSeconds;
@@ -1686,7 +1703,7 @@ FName AVeyrDragon::ImportedMoveClip(EVeyrDragonMove Attack,int32 Leg,const TCHAR
         const FString Numbered=Name+FString::FromInt(Leg);
         if(Leg==1||(VisualDefinition&&VisualDefinition->Clips.Contains(FName(*(Numbered+TEXT("Active"))))))Name=Numbered;
     }
-    return FName(*(Name+Suffix));
+    return VideoClip(FName(*(Name+Suffix)));
 }
 
 bool AVeyrDragon::ContainsAny(const TArray<FVeyrDragonFootprint>& Footprints,const FVector& Point)

@@ -70,7 +70,7 @@ bool AVeyrDragon::StartShowcaseSegment(FName Segment,FString& Error)
     {
         StruckLeg=FCString::Atoi(*Name.Right(1));
         if(StruckLeg<0||StruckLeg>3){Error=TEXT("Invalid stagger limb");return false;}
-        EnterState(EVeyrDragonState::Buckle,.65f);return true;
+        EnterState(EVeyrDragonState::Buckle,VideoStateDuration(FName(*FString::Printf(TEXT("Buckle%d"),StruckLeg)),.65f));return true;
     }
     if(Segment==TEXT("Death")){EnterState(EVeyrDragonState::Dead,3.4f);return true;}
     EVeyrDragonMove Attack;
