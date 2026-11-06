@@ -463,17 +463,19 @@ bool AVeyrDragon::IsLandingContactWindow() const
 
 float AVeyrDragon::WalkCycleDistance() const
 {
-    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(VideoClip(TEXT("Walk"))):nullptr;
+    const FName Key=VideoClip(TEXT("Walk"));
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(Key):nullptr;
     if(Clip&&Clip->NominalSpeedCmPerSecond>0.f)
-        return Clip->NominalSpeedCmPerSecond*VisualClipDuration(TEXT("Walk"),3.2f);
+    {
+        const float Speed=Key==FName(TEXT("WalkV2r"))?FMath::Min(Clip->NominalSpeedCmPerSecond,160.f):Clip->NominalSpeedCmPerSecond;
+        return Speed*VisualClipDuration(TEXT("Walk"),3.2f);
+    }
     return 134.f;
 }
 
 FName AVeyrDragon::VideoClip(FName Keyed) const
 {
     if(bLegacyDragon||!VisualDefinition||Keyed.IsNone())return Keyed;
-    // The video2rig walk cycle changes travel speed and showcase framing; opt-in until reviewed.
-    if(Keyed==FName(TEXT("Walk"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrVideoWalk")))return Keyed;
     // With the new attacks, the video2rig stagger chain pushed the scripted victory past 150 s
     // (234 s; either group alone passes). Opt-in until the stagger timing is rebalanced.
     {
@@ -697,8 +699,10 @@ void AVeyrDragon::BeginReposition()
     }
     RepositionTurnDuration=bRepositionAuthoredTurn?RepositionTurnSourceDuration/1.22f:
         FMath::Abs(RepositionYawDelta)>.5f?FMath::Max(.3f,FMath::Abs(RepositionYawDelta)/40.f):0.f;
-    const FVeyrVisualClip* Walk=VisualDefinition?VisualDefinition->Clips.Find(VideoClip(TEXT("Walk"))):nullptr;
-    const float WalkSpeed=Walk&&Walk->NominalSpeedCmPerSecond>0.f?Walk->NominalSpeedCmPerSecond:160.f;
+    const FName WalkKey=VideoClip(TEXT("Walk"));
+    const FVeyrVisualClip* Walk=VisualDefinition?VisualDefinition->Clips.Find(WalkKey):nullptr;
+    const float WalkSpeed=Walk&&Walk->NominalSpeedCmPerSecond>0.f?
+        (WalkKey==FName(TEXT("WalkV2r"))?FMath::Min(Walk->NominalSpeedCmPerSecond,160.f):Walk->NominalSpeedCmPerSecond):160.f;
     RepositionTravelDuration=FVector::Dist2D(MoveStart,MoveEnd)/(WalkSpeed*1.25f);
     bRepositionWalking=RepositionTurnDuration<=.001f;
     RepeatedMoveCount=0;
@@ -1612,7 +1616,7 @@ void AVeyrDragon::UpdateImportedPresentation()
         const float End=Config.EndSeconds<0.f?Config.Sequence->GetPlayLength():Config.EndSeconds;
         const float Duration=End-Config.StartSeconds;
         const bool Turning=State==EVeyrDragonState::Reposition&&!bRepositionWalking;
-        float SampleSeconds=Clip==FName(TEXT("Walk"))?WalkPhase*Duration:Turning?TurnPhase*Duration:Clock;
+        float SampleSeconds=(Clip==FName(TEXT("Walk"))||Clip==FName(TEXT("WalkV2r")))?WalkPhase*Duration:Turning?TurnPhase*Duration:Clock;
         const bool AuthoredTurn=State==EVeyrDragonState::Reposition&&!bRepositionWalking&&bRepositionAuthoredTurn;
         if(AuthoredTurn){const float T=FMath::Clamp(StateElapsed/FMath::Max(.001f,RepositionTurnDuration),0.f,1.f);SampleSeconds=(bRepositionReverseTurn?1.f-T:T)*Duration;}
         if(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)SampleSeconds=StateElapsed;

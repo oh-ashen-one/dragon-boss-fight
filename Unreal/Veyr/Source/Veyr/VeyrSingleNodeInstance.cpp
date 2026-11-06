@@ -269,6 +269,16 @@ namespace
             ++EvaluationSerial;
             EvaluationError.Reset();
             FAnimSingleNodeInstanceProxy::Evaluate(Output);
+            {
+                const FBoneContainer& WalkBones=Output.Pose.GetBoneContainer();
+                const int32 Spine0Mesh=WalkBones.GetReferenceSkeleton().FindBoneIndex(TEXT("tripo__Spine_0"));
+                if(Spine0Mesh!=INDEX_NONE)
+                {
+                    const FCompactPoseBoneIndex Spine0=WalkBones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Spine0Mesh));
+                    if(Spine0.GetInt()!=INDEX_NONE&&Output.Pose[Spine0].GetTranslation().Y>25.f)
+                        Output.Pose[Spine0].AddToTranslation(FVector(12.44f,-38.99f,0.f));
+                }
+            }
             if(!ApplyLowerBody(Output)||!ApplyBoneRotations(Output))
             {
                 LastPublished.bValid=false;return true;
