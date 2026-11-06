@@ -117,6 +117,42 @@ for s in src_frames:
     scene.frame_set(whole, subframe=s - whole)
     poses.append({pb.name: (pb.location.copy(), pb.matrix_basis.to_quaternion(), pb.scale.copy()) for pb in arm.pose.bones})
 
+# 0. Optional root-turn extraction: record the root bone's planar yaw/travel per output frame (relative to
+# frame 0) so the engine can turn the actor, then hold the root's frame-0 yaw/position in the pose.
+root_turn = spec.get('extract_root_turn')
+root_samples = None
+if root_turn:
+    from mathutils import Matrix
+    pb0 = arm.pose.bones[root_turn]
+    def world_root(i):
+        s = src_frames[i]; whole = math.floor(s)
+        scene.frame_set(whole, subframe=s - whole)
+        return (arm.matrix_world @ pb0.matrix).copy()
+    m0 = world_root(0)
+    yaw0 = math.atan2((m0.to_3x3() @ Vector((0, 1, 0))).y, (m0.to_3x3() @ Vector((0, 1, 0))).x)
+    root_samples, prev, unwrap = [], None, 0.0
+    for i in range(len(src_frames)):
+        m = world_root(i)
+        f = m.to_3x3() @ Vector((0, 1, 0))
+        y = math.atan2(f.y, f.x) - yaw0
+        if prev is not None:
+            while y + unwrap - prev > math.pi: unwrap -= 2 * math.pi
+            while y + unwrap - prev < -math.pi: unwrap += 2 * math.pi
+        y += unwrap; prev = y
+        d = m.translation - m0.translation
+        root_samples.append((d.x, d.y, y))
+        # Counter-rotate the pose about the frame-0 root so the body stays facing frame 0's way.
+        undo = Matrix.Translation(m0.translation) @ Matrix.Rotation(-y, 4, 'Z') @ Matrix.Translation(-m0.translation - Vector((d.x, d.y, 0)))
+        local = (arm.matrix_world.inverted() @ undo @ m)
+        par = pb0.parent
+        basis = (pb0.bone.matrix_local.inverted() @ local) if not par else \
+            ((par.bone.matrix_local.inverted() @ pb0.bone.matrix_local).inverted() @ (arm.matrix_world.inverted() @ (arm.matrix_world @ par.matrix)).inverted() @ local)
+        l, q, sc = basis.decompose()
+        poses_override = (l, q, sc)
+        root_samples[-1] = root_samples[-1] + (poses_override,)
+    for i, smp in enumerate(root_samples):
+        poses[i][root_turn] = smp[3]
+
 # 1a. Optional in-place cycle: remove the root bone's linear travel (the engine moves the actor instead).
 travel_bone = spec.get('remove_root_travel')
 if travel_bone:
@@ -232,6 +268,7 @@ report = {
     'max_bone_step_deg_per_frame': round(max(steps), 3), 'median_bone_step_deg_per_frame': round(sorted(steps)[len(steps) // 2], 3),
     'mouth_path_m': [[round(c, 5) for c in p] for p in mouth],
     'jaw_layer': jaw,
+    'root_turn_samples_m_m_rad': [[round(s[0], 6), round(s[1], 6), round(s[2], 6)] for s in root_samples] if root_samples else None,
 }
 out_blend.parent.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=str(out_blend), copy=False)
