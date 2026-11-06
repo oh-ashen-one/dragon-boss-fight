@@ -15,3 +15,21 @@ Tools: `tools/dragon_refine/{cut_v2r_move,mirror_v2r_action,probe_v2r_points,pro
 ## Victory bisect (2026-11-06 ~06:00 ET)
 
 Same-build scripted victories: legacy clips 79.8 s PASS; new attacks + legacy stagger 112.5 s PASS then 192.9 s FAIL (re-run); legacy attacks + new stagger 81.7 s PASS; all new 316 s and 234 s FAIL. The video2rig stagger chain (Buckle/Collapse/Exposed V2r) is now opt-in (`-VeyrVideoStagger`); default = new attacks + raised-wing idle. Showcase and core combat (light/heavy, collapse, head bonus, rise, dodge) PASS on that default build. The auto-player's victory time is noisy with the longer, harder attacks (112–193 s), so the 150 s gate is not reliably met — consistent with the owner's "much harder boss" backlog but needs a deliberate balance pass (HP/openings) rather than reverting the animation. Bisect switch: `-VeyrLegacyClips=Prefix,...`.
+
+## Completion pass: balance, WalkV2r, Stagger V2r default, and blind Opus review (2026-11-06 ~14:55 ET)
+
+1. **Victory test & deliberate opening balance pass (PASS — `75.042 s` wall / `74.557 s` game, commit `ea5e718`):**
+   - Root cause of the 301–316 s victory failure: V2r recovery clips are `0.59–1.07 s` (vs legacy `1.50–2.00 s`) and post-reposition `Idle` was `0.35 s`, so the dragon started its next attack windup while the knight was still in `RunStop` (`0.40 s`) + lock-on turn (`0.35 s`), forcing defensive rolls instead of attacks.
+   - Fix in `VeyrDragon.cpp`: when `!bLegacyDragon`, set post-reposition `Idle` to `1.25f` and post-recovery `Idle` to `FMath::Max(1.25f, 3.60f - RecoveryDuration)` so total recovery+idle opening is at least `3.60 s` without altering any V2r animation.
+   - Evidence: `Evidence/native-victory-20261106T185252Z` (PASS in `75.042 s` wall, `< 150 s`).
+2. **WalkV2r framing/sliding fix & default promotion (PASS — 20/20 showcase, commit `3a88b27`):**
+   - Root cause of showcase failure with `-VeyrVideoWalk`: `WalkV2r` was cut from frames `51..84` of `Dragon_walk_r2_v2r_raw.blend` and retained frame 51's accumulated root offset (`tripo__Spine_0 = [-15.12, 47.10, 19.20]` vs `IdleOpenV2r`'s `[-2.68, 8.11, 19.19]`), shifting the mesh `-921 cm` in world space (`76/81` frustum misses in `Walk`), while `428 cm/s` nominal speed also over-traveled the arena (`Tail` out of frame).
+   - Fix in `VeyrSingleNodeInstance.cpp` & `VeyrDragon.cpp`: re-centered `WalkV2r`'s `tripo__Spine_0` by `(+12.44, -38.99, 0)` in bone space, lowered effective nominal speed to `160 cm/s` (`218.7 cm` cycle travel, matching the `161–197 cm` stance-foot sweep), synced `WalkV2r` phase sampling, and made `WalkV2r` default.
+   - Evidence: `Evidence/native-showcase-20261106T193250Z` (PASS 20/20; `Walk` 81/81 framed, 0 misses; `Tail` 175/175 framed, 0 misses).
+3. **Stagger sequence (`Buckle0/1V2r`, `CollapseV2r`, `ExposedV2r`) default promotion (PASS — `79.137 s` victory & 20/20 showcase, commit `7104cf1`):**
+   - Removed `-VeyrVideoStagger` opt-in guard so `Buckle0V2r`, `Buckle1V2r`, `CollapseV2r`, and `ExposedV2r` are default alongside `WalkV2r` and all other V2r clips.
+   - Evidence: `Evidence/native-victory-20261106T194053Z` (PASS in `79.137 s` wall / `78.562 s` game, `< 150 s`, 3 head hits during first `ExposedV2r` window) and `Evidence/native-showcase-20261106T194359Z` (PASS 20/20). Latest verified Shipping receipt: `Local/package-20261106T193745Z/receipt.json` (`/private/tmp/veyr-verified-bundle-trrr9bdl/Veyr-Mac-Shipping.app`, source ID `cb88bc0185f71a08ebf7d21529610b9cfd1a689ac179772181a7fc5f1d71f6a4`).
+4. **Hind-leg buckles (`Buckle2/3`) & `Rise` (skipped — no Higgsfield credits):**
+   - Checked workspace `3fd8dbb7-f3d5-4542-9e6c-65c8baddbb70` without spending: `7.79` credits remaining (below the 35-credit cost of one Seedance 720p generation). Prompts remain ready in `Local/video2rig/dragon/clips/prompts/`.
+5. **Blind Opus review (`docs/overnight-v2r-20261105/BLIND_REVIEW.md`):**
+   - Randomized A/B blind review across all 10 moves (`01_idle_wings` through `10_turn_left`): **10/10 won by `video2rig` (`after`)** (8 high confidence, 2 medium confidence). Critic noted that `Fire` V2r has far cleaner raised wings and forward chest/neck lunge than legacy, though its flame particle emitter pitch angles upward rather than hitting the ground cone, and `Buckle0/1V2r` drops low onto the belly rather than a partial upright knee buckle.
