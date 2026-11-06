@@ -474,6 +474,19 @@ FName AVeyrDragon::VideoClip(FName Keyed) const
     if(bLegacyDragon||!VisualDefinition||Keyed.IsNone())return Keyed;
     // The video2rig walk cycle changes travel speed and showcase framing; opt-in until reviewed.
     if(Keyed==FName(TEXT("Walk"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrVideoWalk")))return Keyed;
+    // With the new attacks, the video2rig stagger chain pushed the scripted victory past 150 s
+    // (234 s; either group alone passes). Opt-in until the stagger timing is rebalanced.
+    {
+        const FString K=Keyed.ToString();
+        if((K.StartsWith(TEXT("Buckle"))||K==TEXT("Collapse")||K==TEXT("Exposed"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrVideoStagger")))return Keyed;
+    }
+    // Comparison/bisect aid: -VeyrLegacyClips=Buckle,Collapse keeps keyed clips whose names start with a listed prefix.
+    FString LegacyList;
+    if(FParse::Value(FCommandLine::Get(),TEXT("VeyrLegacyClips="),LegacyList))
+    {
+        TArray<FString> Prefixes;LegacyList.ParseIntoArray(Prefixes,TEXT(","));
+        for(const FString& P:Prefixes)if(!P.IsEmpty()&&Keyed.ToString().StartsWith(P))return Keyed;
+    }
     const FName Video(*(Keyed.ToString()+TEXT("V2r")));
     const FVeyrVisualClip* Clip=VisualDefinition->Clips.Find(Video);
     return Clip&&Clip->Sequence?Video:Keyed;
