@@ -1,3 +1,11 @@
+# Opus 5.5 final enhancements — branch `opus-5.5-final-enhancements` (2026-11-05)
+
+- **Video2rig bite, end to end (opt-in `-VeyrVideoBite`, awaiting owner visual review).** Existing Seedance bite → video2rig fit → Blender cut/retime (2.47 s, body lunge kept, jaw snap) → canonical export → native DragonV3B `v034videobite` (300 poses, 0 failures; RuntimePolish/DA_Dragon promoted, keyed Bite retained) → Shipping `Local/package-20261106T001217Z`. Before/after showcase runs on that one app both PASS 20/20. Review page `Local/bite-review-20261105/serve/` on port 8814 (task-owned server). Details and exact evidence: `docs/video-bite-20261105.md`.
+- The playtest items below remain open. Next candidates once the owner approves the bite: same pipeline for claw/stagger/collapse/rise, root-motion actor travel, Leshy-style brain.
+- `Local/video2rig/dragon/` was restored from release `v2r-dragon-20261028`; later Seedance clips are re-downloadable from Higgsfield history (no spend).
+
+---
+
 # New owner playtest backlog — 2026-11-05 (record only)
 
 **Do not implement yet.** The owner is collecting feedback for a different session. These are requested changes, not completed fixes or authorization to resume the archived goal. Leave the running game, installed build, code and assets unchanged while collecting notes.

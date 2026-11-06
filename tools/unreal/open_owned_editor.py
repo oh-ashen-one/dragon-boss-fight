@@ -21,6 +21,8 @@ parser.add_argument('--audio-capture-seconds',type=int,choices=range(10,121),hel
 parser.add_argument('--video-fps',type=int,choices=range(1,16))
 parser.add_argument('--replay-start-two-handed',action='store_true',help='Victory QA requests the ordinary authored grip transition before combat')
 parser.add_argument('--slot-wait-seconds', type=int, default=1800)
+parser.add_argument('--capture-slots', type=int, choices=(2, 3), default=2,
+                    help='Machine-wide renderer cap passed to gpu_slot; 3 is the owner cap since 2026-10-29 (watchdog still lowers it)')
 a = parser.parse_args()
 if not 30 <= a.slot_wait_seconds <= 3600:
     parser.error('Slot wait must be 30..3600 seconds')
@@ -50,8 +52,8 @@ if a.audio_capture_seconds:
     command.extend(['-VeyrAudioCapture='+str(audio),'-VeyrAudioCaptureSeconds='+str(a.audio_capture_seconds)])
 if a.video_fps:command.append('-VeyrVideoFPS='+str(a.video_fps))
 if a.replay_start_two_handed:command.append('-VeyrReplayStartTwoHanded')
-(run/'launch.json').write_text(json.dumps({'command':command,'autoRestart':False,'rendererLimit':2},indent=2)+'\n')
-environment=os.environ.copy();environment['GPU_SLOT_CAPTURE_SLOTS']='2'
+(run/'launch.json').write_text(json.dumps({'command':command,'autoRestart':False,'rendererLimit':a.capture_slots},indent=2)+'\n')
+environment=os.environ.copy();environment['GPU_SLOT_CAPTURE_SLOTS']=str(a.capture_slots)
 print('Owned editor run:',run,flush=True)
 with (run/'launcher.log').open('w') as output:
     result=subprocess.run(command,cwd=ROOT,env=environment,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT)

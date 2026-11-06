@@ -158,6 +158,8 @@ void AVeyrDragon::BeginPlay()
     bLegacyFinisher=FParse::Param(FCommandLine::Get(),TEXT("VeyrPacingNoFinisher"));
     // Half-spread idle won blind review; the original breathing is preserved.
     bOpenIdleWings=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyIdleWings"));
+    // Opt-in until owner review: one continuous video2rig bite in place of the keyed bite.
+    bVideoBite=FParse::Param(FCommandLine::Get(),TEXT("VeyrVideoBite"));
     if(UsesPacingRevision())NextFlightAt=20.f;
     Super::BeginPlay();
     FString ReplayMode;
@@ -466,9 +468,14 @@ float AVeyrDragon::WalkCycleDistance() const
     return 134.f;
 }
 
+FString AVeyrDragon::BiteClipStem() const
+{
+    return bVideoBite&&VisualDefinition&&VisualDefinition->Clips.Contains(TEXT("BiteV2rActive"))?TEXT("BiteV2r"):TEXT("Bite");
+}
+
 bool AVeyrDragon::HasGroundTargetBite() const
 {
-    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(TEXT("BiteActive")):nullptr;
+    const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(ImportedMoveClip(EVeyrDragonMove::Bite,0,TEXT("Active"))):nullptr;
     return Clip&&Clip->Sequence&&Clip->ApprovedSourceFile.Contains(TEXT("Dragon_Bite_Blender_v2"));
 }
 
@@ -495,6 +502,26 @@ bool AVeyrDragon::CalibrateBiteGroundAim()
 {
     bBiteGroundAimReady=false;BiteGroundPitchDegrees=0.f;BiteGroundStrikeMuzzleHeightCm=0.f;
     BiteNeckBase=BiteNeckMiddle=BiteHead=NAME_None;BiteGroundAimDiagnostic.Reset();
+    if(!HasGroundTargetBite()&&BiteClipStem()==TEXT("BiteV2r"))
+    {
+        // The video2rig strike already lunges low: no neck correction. Measure its own
+        // native muzzle height at the impact time against the same reach rule.
+        const FVeyrVisualClip& Active=VisualDefinition->Clips.FindChecked(TEXT("BiteV2rActive"));
+        const float Trimmed=FMath::Clamp((Active.ImpactSeconds>=0.f?Active.ImpactSeconds:Active.StartSeconds)-Active.StartSeconds,
+            0.f,VisualClipDuration(TEXT("BiteV2rActive"),.5f));
+        const float HalfHeight=IsValid(Target)?Target->GetCapsuleComponent()->GetScaledCapsuleHalfHeight():122.f;
+        FTransform Mouth;
+        AttackPoseProbe->SetComponentSpaceBoneRotations({});
+        if(!AttackPoseProbe->SampleClipTime(TEXT("BiteV2rActive"),Trimmed)||!AttackPoseProbe->GetBoneTargetWorldTransform(TEXT("mouth"),Mouth))
+        {BiteGroundAimDiagnostic=TEXT("Video bite native pose sample failed");return false;}
+        BiteGroundStrikeMuzzleHeightCm=Mouth.GetLocation().Z-GetActorLocation().Z;
+        // Reachable when the unchanged 100 cm jaw capsule overlaps the knight's capsule height
+        // and the snout stays above the floor (a low snap reaches from the shins up).
+        bBiteGroundAimReady=BiteGroundStrikeMuzzleHeightCm>=0.f&&BiteGroundStrikeMuzzleHeightCm-100.f<=2.f*HalfHeight;
+        BiteGroundAimDiagnostic=FString::Printf(TEXT("Video bite strike muzzle %.2f cm at %.3f s; unchanged jaw radius 100 cm; %s"),
+            BiteGroundStrikeMuzzleHeightCm,Trimmed,bBiteGroundAimReady?TEXT("reachable"):TEXT("outside anatomical reach"));
+        return bBiteGroundAimReady;
+    }
     if(!HasGroundTargetBite())return true;
     const FVeyrVisualBoneTarget* Neck=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
     const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
@@ -1530,7 +1557,7 @@ void AVeyrDragon::UpdateImportedPresentation()
         default:
         {
             static const TCHAR* Moves[]={TEXT("Fire"),TEXT("Flight"),TEXT("Claw"),TEXT("Stomp"),TEXT("Tail"),TEXT("Bite")};
-            Name=Moves[static_cast<int32>(Move)];
+            Name=Move==EVeyrDragonMove::Bite?BiteClipStem():FString(Moves[static_cast<int32>(Move)]);
             if(Move==EVeyrDragonMove::BackStomp)Name+=FString::FromInt(StompLeg);
             if(Move==EVeyrDragonMove::ClawSwipe)
                 Name=ImportedMoveClip(Move,ClawLeg,TEXT("")).ToString();
@@ -1652,7 +1679,7 @@ void AVeyrDragon::UpdateImportedPresentation()
 FName AVeyrDragon::ImportedMoveClip(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Suffix) const
 {
     static const TCHAR* Names[]={TEXT("Fire"),TEXT("Flight"),TEXT("Claw"),TEXT("Stomp"),TEXT("Tail"),TEXT("Bite")};
-    FString Name=Names[static_cast<int32>(Attack)];
+    FString Name=Attack==EVeyrDragonMove::Bite?BiteClipStem():FString(Names[static_cast<int32>(Attack)]);
     if(Attack==EVeyrDragonMove::BackStomp)Name+=FString::FromInt(Leg);
     if(Attack==EVeyrDragonMove::ClawSwipe)
     {

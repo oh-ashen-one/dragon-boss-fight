@@ -66,7 +66,7 @@ bool FVeyrShowcase::Begin(UWorld* World,AVeyrKnight* InKnight,AVeyrDragon* InDra
     Add(TEXT("TurnRightFine"),{TEXT("TurnRightFine")},{TEXT("Reposition")});
     for(const TCHAR* Name:{TEXT("Fire"),TEXT("Flight"),TEXT("Claw0"),TEXT("Claw1"),TEXT("Stomp2"),TEXT("Stomp3"),TEXT("Tail"),TEXT("Bite")})
     {
-        const FString N(Name);
+        const FString N=FCString::Strcmp(Name,TEXT("Bite"))==0?InDragon->BiteClipStem():FString(Name);
         Add(Name,{FName(*(N+TEXT("Windup"))),FName(*(N+TEXT("Active"))),FName(*(N+TEXT("Recovery")))},
             {TEXT("Windup"),TEXT("Active"),TEXT("Recovery")});
     }
@@ -84,6 +84,9 @@ bool FVeyrShowcase::Begin(UWorld* World,AVeyrKnight* InKnight,AVeyrDragon* InDra
     Accounted.Add(TEXT("Idle"));Accounted.Add(TEXT("IdleOpen")); // inactive visual variant retained for comparisons
     for(FName Name:{FName(TEXT("TurnRight")),FName(TEXT("FlightHoverAlternate")),FName(TEXT("ClawWindup")),FName(TEXT("ClawActive")),
         FName(TEXT("ClawRecovery")),FName(TEXT("Death")),FName(TEXT("DeathDown")),FName(TEXT("DeathFallDown"))})Accounted.Add(Name);
+    // Both bite variants are retained for -VeyrVideoBite before/after comparisons.
+    for(const TCHAR* Stem:{TEXT("Bite"),TEXT("BiteV2r")})for(const TCHAR* Phase:{TEXT("Windup"),TEXT("Active"),TEXT("Recovery")})
+        Accounted.Add(FName(*(FString(Stem)+Phase)));
     for(const auto& Entry:InDragon->VisualDefinition->Clips)
         if(!Accounted.Contains(Entry.Key)){Hooks.Finish(false,TEXT("Unclassified native clip in showcase inventory: ")+Entry.Key.ToString());return false;}
     const auto& Hover=InDragon->VisualDefinition->Clips.FindChecked(TEXT("FlightActive"));

@@ -1910,10 +1910,10 @@ float AVeyrReplay::AuthoredKnightSeconds(FName Clip,float Fallback) const
 float AVeyrReplay::DragonPhaseSeconds(EVeyrDragonMove Move,const TCHAR* Phase,float Fallback) const
 {
     if(!Dragon||!Dragon->VisualDefinition)return Fallback;
-    const TCHAR* Prefix=Move==EVeyrDragonMove::Fire?TEXT("Fire"):Move==EVeyrDragonMove::FlyAway?TEXT("Flight"):
+    const FString Prefix=Move==EVeyrDragonMove::Fire?TEXT("Fire"):Move==EVeyrDragonMove::FlyAway?TEXT("Flight"):
         Move==EVeyrDragonMove::ClawSwipe?TEXT("Claw"):Move==EVeyrDragonMove::BackStomp?TEXT("Stomp2"):
-        Move==EVeyrDragonMove::TailSmack?TEXT("Tail"):TEXT("Bite");
-    const FVeyrVisualClip* C=Dragon->VisualDefinition->Clips.Find(FName(*(FString(Prefix)+Phase)));
+        Move==EVeyrDragonMove::TailSmack?TEXT("Tail"):*Dragon->BiteClipStem();
+    const FVeyrVisualClip* C=Dragon->VisualDefinition->Clips.Find(FName(*(Prefix+Phase)));
     if(!C||!C->Sequence)return Fallback;
     const float End=C->EndSeconds<0.f?C->Sequence->GetPlayLength():C->EndSeconds;
     float Duration=End>C->StartSeconds?End-C->StartSeconds:Fallback;
