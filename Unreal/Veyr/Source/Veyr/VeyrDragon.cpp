@@ -333,7 +333,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             const float TravelT=bRepositionWalking?FMath::Clamp((StateElapsed-RepositionTurnDuration)/RepositionTravelDuration,0.f,1.f):0.f;
             if(!bRepositionAuthoredTurn||StateElapsed>=RepositionTurnDuration)
                 SetActorLocation(FMath::Lerp(MoveStart,MoveEnd,TravelT));
-            if(StateElapsed>=StateDuration){bJustRepositioned=true;EnterState(EVeyrDragonState::Idle,.35f);}
+            if(StateElapsed>=StateDuration){bJustRepositioned=true;EnterState(EVeyrDragonState::Idle,bLegacyDragon?.35f:1.25f);}
             break;
         }
         case EVeyrDragonState::Windup:
@@ -374,7 +374,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             if(IsLandingContactWindow()){UpdateImportedPresentation();TryDamageTarget();}
             // A readable grounded opening after each committed move. This is
             // ordinary combat time, not a replay-only damage opportunity.
-            if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,UsesPacingRevision()?1.25f:.40f);}
+            if(StateElapsed>=StateDuration){++CompletedAttacks[MoveIndex(Move)];EnterState(EVeyrDragonState::Idle,!UsesPacingRevision()?.40f:bLegacyDragon?1.25f:FMath::Max(1.25f,3.60f-RecoveryDuration));}
             break;
         case EVeyrDragonState::Buckle:
             if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Collapse,VideoStateDuration(TEXT("Collapse"),1.f));
