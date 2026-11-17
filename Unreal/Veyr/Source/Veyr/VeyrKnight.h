@@ -269,6 +269,8 @@ private:
     float BlinkCooldownRemaining=0.f;
     bool bWasRunning=false;
     bool bSprintHeld=false;
+    /** Walk/sprint/strafe speed multiplier (-VeyrLegacyPace restores 1). */
+    float MovePace=1.f;
     struct FLocomotionFootPlant
     {
         FVector AnchorToe=FVector::ZeroVector;

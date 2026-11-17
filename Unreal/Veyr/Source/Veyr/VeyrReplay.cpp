@@ -119,7 +119,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bPerformanceMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrPerformance"));
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro and absolute evidence directory")); return false;
     }
@@ -222,7 +222,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
-    DurationLimit=ReplayMode==TEXT("intro")?50.f:ReplayMode==TEXT("blendproof")?420.f:ReplayMode==TEXT("lockon")?180.f:ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
+    DurationLimit=ReplayMode==TEXT("intro")?50.f:ReplayMode==TEXT("blendproof")?420.f:ReplayMode==TEXT("lockon")?180.f:ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("camp")?420.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
     InitializeVideo();
     if(IsShowcase())
     {
@@ -283,6 +283,15 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     }
     if(!IsValid(Knight)||!IsValid(Dragon))return O;
     O->SetNumberField(TEXT("bossMaxHealth"),Dragon->MaxHealth);
+    O->SetNumberField(TEXT("bossBodyScale"),Dragon->BodyScale);O->SetNumberField(TEXT("bossPaceScale"),Dragon->PaceScale);
+    O->SetBoolField(TEXT("bossAggression"),Dragon->bAggression);O->SetBoolField(TEXT("floorTelegraph"),Dragon->bFloorTelegraph);
+    O->SetNumberField(TEXT("brainSeed"),Dragon->BrainSeed);O->SetNumberField(TEXT("chainCount"),Dragon->ChainCount);
+    O->SetNumberField(TEXT("trampleCount"),Dragon->TrampleCount);
+    O->SetNumberField(TEXT("antiCampFlights"),Dragon->AntiCampFlights);O->SetNumberField(TEXT("repositionCount"),Dragon->RepositionCount);
+    O->SetNumberField(TEXT("underBodySeconds"),Dragon->UnderBodySeconds);O->SetNumberField(TEXT("campSeconds"),Dragon->CampSeconds);
+    O->SetNumberField(TEXT("longestBossIdleSeconds"),Dragon->LongestIdleSeconds);
+    O->SetBoolField(TEXT("playerUnderBody"),Dragon->IsPointUnderBody(Knight->GetFootLocation()));
+    O->SetNumberField(TEXT("playerSpeedCmPerSecond"),Knight->GetPlanarSpeed());
     if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())O->SetNumberField(TEXT("encounterWallSeconds"),Mode->GetFightWallSeconds());
     O->SetNumberField(TEXT("playerHealth"),Knight->Health); O->SetNumberField(TEXT("stamina"),Knight->Stamina);
     O->SetNumberField(TEXT("healsRemaining"),Knight->HealingCharges); O->SetNumberField(TEXT("bossHealth"),Dragon->Health);
@@ -1955,6 +1964,14 @@ float AVeyrReplay::SafeStationarySeconds(const FVector& Point) const
     const bool InWarning=Contains(Dragon->GetWarningFootprints(),Point,110.f);
     if(Dragon->IsPointInsideActiveDanger(Point))return 0.f;
     if(LandingDangerPending()&&InWarning)return FMath::Max(0.f,DangerContactDelay()-.15f);
+    if(Dragon->bAggression)
+    {
+        // The random brain cannot be predicted move by move. A competent player still knows the
+        // quickest blow that can reach where they stand; use that bound and nothing more.
+        if(InWarning&&Dragon->State==EVeyrDragonState::Windup)return FMath::Max(0.f,Remaining-.15f);
+        if(InWarning&&Dragon->State==EVeyrDragonState::Active)return 0.f;
+        return FMath::Max(0.f,Dragon->EarliestNextContactSeconds(Point)-.15f);
+    }
     const int32 Predicted=Dragon->PredictPositionalMove(Point);
     // At a stationary position the ordinary positional policy selects this move.
     // Anti-repeat reposition and periodic flight cannot strike earlier than this
@@ -2012,7 +2029,8 @@ FVector AVeyrReplay::LegApproachGoal() const
 {
     const FVector Leg=Dragon->GetLegLocation(TargetLeg);
     const bool NeedHeavy=(ReplayMode==TEXT("core")||bLegIsolation)&&bLightLegContact&&!bHeavyLegContact;
-    const float StandOff=NeedHeavy?Knight->PreferredHeavyStandOffCm():185.f;
+    // The ankle blocker grows with the creature; keep the same 110 cm gap from its surface.
+    const float StandOff=(NeedHeavy?Knight->PreferredHeavyStandOffCm():185.f)+75.f*(Dragon->BodyScale-1.f);
     return Leg+(Leg-Dragon->GetActorLocation()).GetSafeNormal2D()*StandOff;
 }
 
@@ -2026,7 +2044,7 @@ FVector AVeyrReplay::HeadApproachGoal(FName* OutBlocker,float* OutSweepDistance)
     const FVector CenterOffset=Player->GetComponentLocation()-Knight->GetFootLocation();
     FVector End=Head;End.Z=Knight->GetFootLocation().Z;End+=CenterOffset;
     TInlineComponentArray<UCapsuleComponent*> Parts;Dragon->GetComponents(Parts);
-    float Outside=600.f;
+    float Outside=600.f*Dragon->BodyScale;
     for(const UCapsuleComponent* Part:Parts)
         if(Part&&Part->GetName().StartsWith(TEXT("VeyrSolid_"))&&Part->IsQueryCollisionEnabled()&&Part->GetCollisionResponseToChannel(ECC_Pawn)==ECR_Block)
             Outside=FMath::Max(Outside,static_cast<float>(FVector::DotProduct(Part->Bounds.Origin-End,Forward)+Part->Bounds.SphereRadius+Player->GetScaledCapsuleRadius()+100.f));
@@ -2053,16 +2071,31 @@ FVector AVeyrReplay::EscapeDirection() const
     const TArray<FVeyrDragonFootprint> Warning=Dragon->GetWarningFootprints();
     const FVector WarningOrigin=Warning.IsEmpty()?Dragon->GetActorLocation():Warning[0].Origin;
     FVector Best=(Feet-WarningOrigin).GetSafeNormal2D(); float BestScore=-1.e9f;
+    if(Dragon->bAggression)
+    {
+        // Against the larger envelopes, leave by the shortest way out rather than a fixed long dash.
+        for(int32 I=0;I<24;++I)
+        {
+            const FVector D=FVector::ForwardVector.RotateAngleAxis(I*15.f,FVector::UpVector);
+            float Exit=2000.f;
+            for(int32 Step=1;Step<=16;++Step)
+                if(!Contains(Warning,Feet+D*(Step*100.f),75.f)){Exit=Step*100.f;break;}
+            if((Feet+D*Exit).Size2D()>3100.f)continue;
+            const float Score=-Exit+static_cast<float>(FVector::DotProduct(D,(Feet-WarningOrigin).GetSafeNormal2D()))*60.f;
+            if(Score>BestScore){BestScore=Score;Best=D;}
+        }
+        return Best;
+    }
     for(int32 I=0;I<24;++I)
     {
         const FVector D=FVector::ForwardVector.RotateAngleAxis(I*15.f,FVector::UpVector);
-        const FVector Candidate=Feet+D*650.f;
+        const FVector Candidate=Feet+D*650.f*Dragon->BodyScale;
         if(Candidate.Size2D()>3100)continue;
         const bool bSafe=!Contains(Warning,Candidate,75.f);
         float Score=bSafe?10000.f:0.f;
         Score+=static_cast<float>(FVector::Dist2D(Candidate,WarningOrigin))*.1f;
         // Prefer routes that exit the telegraph early, not ones crossing its whole interior.
-        for(int32 Step=1;Step<=5;++Step)if(!Contains(Warning,Feet+D*(Step*100.f),45.f))Score+=100.f;
+        for(int32 Step=1;Step<=5;++Step)if(!Contains(Warning,Feet+D*(Step*100.f*Dragon->BodyScale),45.f))Score+=100.f;
         if(Score>BestScore){BestScore=Score;Best=D;}
     }
     return Best;
@@ -2236,6 +2269,103 @@ bool AVeyrReplay::DriveBlendProofInputs()
     return true;
 }
 
+FVector AVeyrReplay::CampGoal(int32 Zone) const
+{
+    const float S=Dragon->BodyScale;
+    const FVector Center=Dragon->GetActorLocation(),Forward=Dragon->GetActorForwardVector().GetSafeNormal2D();
+    const FVector Right=Dragon->GetActorRightVector().GetSafeNormal2D();
+    // Legs: 0 front-left, 1 front-right, 2 hind-left, 3 hind-right (measured anatomy).
+    auto LegOut=[&](int32 I){const FVector Leg=Dragon->GetLegLocation(I);return Leg+(Leg-Center).GetSafeNormal2D()*(185.f+75.f*(S-1.f));};
+    auto Mid=[&](int32 A,int32 B){return (Dragon->GetLegLocation(A)+Dragon->GetLegLocation(B))*.5f;};
+    FVector Goal;
+    switch(Zone)
+    {
+        case 0:Goal=(Mid(0,1)+Mid(2,3))*.5f;break;                 // under the belly
+        case 1:Goal=LegOut(3);break;                               // back-right foot (owner's corner)
+        case 2:Goal=LegOut(2);break;
+        case 3:Goal=LegOut(1);break;
+        case 4:Goal=LegOut(0);break;
+        case 5:Goal=Mid(0,2)-Right*300.f*S;break;                  // left flank
+        case 6:Goal=Mid(1,3)+Right*300.f*S;break;                  // right flank
+        case 7:Goal=Mid(2,3)-Forward*500.f*S;break;                // behind, in the tail's arc
+        default:{Goal=Dragon->GetHeadLocation()+Forward*250.f*S;break;} // in front of the head
+    }
+    Goal.Z=Knight->GetFootLocation().Z;
+    return Goal;
+}
+
+TSharedPtr<FJsonObject> AVeyrReplay::CampEvidence() const
+{
+    TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
+    TArray<TSharedPtr<FJsonValue>> Zones;
+    for(const FCampZoneResult& R:CampResults)
+    {
+        TSharedPtr<FJsonObject> Z=MakeShared<FJsonObject>();
+        Z->SetStringField(TEXT("zone"),R.Zone);Z->SetNumberField(TEXT("arrivedAtSeconds"),R.ArrivedAt);
+        Z->SetNumberField(TEXT("firstHitSecondsAfterArrival"),R.FirstHitAfter);Z->SetNumberField(TEXT("antiCampFlightSecondsAfterArrival"),R.FlightAfter);
+        Z->SetNumberField(TEXT("hits"),R.Hits);Z->SetBoolField(TEXT("passed"),R.bPassed);
+        Zones.Add(MakeShared<FJsonValueObject>(Z));
+    }
+    O->SetArrayField(TEXT("zones"),Zones);
+    O->SetStringField(TEXT("policy"),TEXT("knight sprints to a boss-relative spot, stands there two seconds at a time and re-seeks it when the boss has moved; no rolling, guarding, attacking or healing; health is topped up between zones (lab only); a zone passes when a blow lands within 20 s of arrival, the underbelly also needs takeoff within 6 s"));
+    return O;
+}
+
+bool AVeyrReplay::DriveCampInputs()
+{
+    if(ReplayMode!=TEXT("camp"))return false;
+    static const TCHAR* Names[9]={TEXT("under"),TEXT("rear_right"),TEXT("rear_left"),TEXT("front_right"),TEXT("front_left"),
+        TEXT("flank_left"),TEXT("flank_right"),TEXT("tail"),TEXT("front")};
+    if(Knight->bLockedOn)Knight->ToggleLockOn();
+    FVector Movement=FVector::ZeroVector;
+    if(CampZone<9)
+    {
+        if(CampResults.Num()<=CampZone)
+        {
+            FCampZoneResult R;R.Zone=Names[CampZone];CampResults.Add(R);CampZoneStarted=Elapsed;
+            Knight->Health=100.f; // lab top-up: each zone is measured from full health
+        }
+        FCampZoneResult& R=CampResults[CampZone];
+        const FVector Feet=Knight->GetFootLocation(),Goal=CampGoal(CampZone);
+        const float Distance=static_cast<float>(FVector::Dist2D(Feet,Goal));
+        // A camper plants himself: reach the spot, stand for two seconds, and only then look again
+        // and follow the boss if it has moved. Nobody tracks a turning creature with zero delay.
+        if(Elapsed<CampHoldUntil)
+        {
+            const float Drift=static_cast<float>(FVector::Dist2D(Feet,CampHoldPoint));
+            if(Drift>40.f&&Knight->Action==EVeyrKnightAction::Ready)Movement=(CampHoldPoint-Feet).GetSafeNormal2D()*FMath::Clamp(Drift/160.f,.2f,1.f);
+        }
+        else if(Distance>60.f)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(Distance/160.f,.25f,1.f);
+        else{CampHoldUntil=Elapsed+2.f;CampHoldPoint=Feet;}
+        const bool Standing=!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Buckle&&Dragon->State!=EVeyrDragonState::Collapse&&
+            Dragon->State!=EVeyrDragonState::Exposed&&Dragon->State!=EVeyrDragonState::Rise;
+        if(R.ArrivedAt<0.f&&Distance<150.f*Dragon->BodyScale&&Standing)
+        {
+            R.ArrivedAt=Elapsed;CampHitsAtArrival=Knight->HitsTaken;CampFlightsAtArrival=Dragon->AntiCampFlights;
+            Event(FString::Printf(TEXT("camp_arrived_%s"),Names[CampZone]));
+        }
+        if(R.ArrivedAt>=0.f)
+        {
+            R.Hits=Knight->HitsTaken-CampHitsAtArrival;
+            if(R.FirstHitAfter<0.f&&R.Hits>0){R.FirstHitAfter=Elapsed-R.ArrivedAt;Event(FString::Printf(TEXT("camp_hit_%s"),Names[CampZone]));}
+            if(R.FlightAfter<0.f&&Dragon->AntiCampFlights>CampFlightsAtArrival)
+            {R.FlightAfter=Elapsed-R.ArrivedAt;Event(FString::Printf(TEXT("camp_takeoff_%s"),Names[CampZone]));}
+            const bool Under=CampZone==0;
+            const bool Hit=R.FirstHitAfter>=0.f;
+            R.bPassed=Hit&&R.FirstHitAfter<=20.f&&(!Under||(R.FlightAfter>=0.f&&R.FlightAfter<=6.f));
+            // Under the belly, wait for the whole answer (takeoff, fire, landing) before moving on.
+            const bool Done=Under?(Hit&&R.FlightAfter>=0.f&&!Dragon->IsAirborne()&&Dragon->Move!=EVeyrDragonMove::FlyAway)||Elapsed-R.ArrivedAt>30.f:
+                Hit||Elapsed-R.ArrivedAt>25.f;
+            if(Done&&Knight->Action!=EVeyrKnightAction::Stagger){++CampZone;}
+        }
+        else if(Elapsed-CampZoneStarted>45.f){++CampZone;} // never reached a standing boss: recorded as failed
+        if(Knight->Health<45.f)Knight->Health=100.f;
+    }
+    Knight->SetSprintRequested(!Movement.IsNearlyZero());
+    Knight->SetReplayInput(Movement,false,false,false,false,false,false);
+    return true;
+}
+
 void AVeyrReplay::DriveInputs()
 {
     if(DriveBlendProofInputs())return;
@@ -2244,6 +2374,7 @@ void AVeyrReplay::DriveInputs()
     if(DriveStanceInputs())return;
     if(DriveLockOnInputs())return;
     if(DriveScenarioInputs())return;
+    if(DriveCampInputs())return;
     if(bVictoryStartTwoHandedRequested&&!bVictoryGripTransitionCompleted)
     {
         Knight->SetSprintRequested(false);Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
@@ -2270,7 +2401,7 @@ void AVeyrReplay::DriveInputs()
     if(ReplayMode!=TEXT("death"))
     {
         if(bCombatHealSeeking&&(Knight->SuccessfulHeals>CombatHealCountAtRequest||Knight->HealingCharges<=0))bCombatHealSeeking=false;
-        if(!bCombatHealSeeking&&Knight->Health<75.f&&Knight->HealingCharges>0)
+        if(!bCombatHealSeeking&&Knight->Health<(Dragon->bAggression?62.f:75.f)&&Knight->HealingCharges>0)
         {bCombatHealSeeking=true;CombatHealCountAtRequest=Knight->SuccessfulHeals;Event(TEXT("combat_heal_retreat_requested"),false);}
     }
     if(ReplayMode==TEXT("death"))
@@ -2296,24 +2427,43 @@ void AVeyrReplay::DriveInputs()
             // Route beside the head, then approach the actual solid-body
             // boundary. A fixed snout offset omitted its 100cm blocker radius
             // and asked the Pawn to navigate inside the dragon.
-            bHeadWaypoint=FVector::DotProduct(Relative,Forward)<150.f;
+            bHeadWaypoint=FVector::DotProduct(Relative,Forward)<150.f*Dragon->BodyScale;
             const float Side=FVector::DotProduct(Relative,Right)<0.f?-1.f:1.f;
-            Goal=bHeadWaypoint?Head+Forward*200.f+Right*(Side*360.f):HeadApproachGoal();
+            Goal=bHeadWaypoint?Head+Forward*200.f*Dragon->BodyScale+Right*(Side*360.f*Dragon->BodyScale):HeadApproachGoal();
         }
         else
         {
+            if(PrimaryVictory&&Dragon->bAggression)
+            {
+                // The boss turns and steps constantly: work the nearest leg, switching only when
+                // another is clearly closer so stagger still builds on one limb.
+                int32 Near=TargetLeg;float NearDistance=static_cast<float>(FVector::Dist2D(Feet,Dragon->GetLegLocation(TargetLeg)));
+                for(int32 I=0;I<4;++I)
+                {
+                    const float D=static_cast<float>(FVector::Dist2D(Feet,Dragon->GetLegLocation(I)));
+                    if(D<NearDistance*.6f){Near=I;NearDistance=D;}
+                }
+                TargetLeg=Near;
+            }
             Goal=LegApproachGoal();
         }
         const float GoalDistance=static_cast<float>(FVector::Dist2D(Feet,Goal));
         // Use the same optional lock toggle available to a player: run around
         // the low head freely, then lock again for the measured punish range.
-        const float GoalTolerance=bHeadRoute?15.f:45.f;
+        const float GoalTolerance=bHeadRoute?15.f:45.f+25.f*(Dragon->BodyScale-1.f);
         bWantLock=!bHeadWaypoint&&GoalDistance<GoalTolerance;
         const FVector StrikeTarget=bHeadRoute?Dragon->GetHeadLocation():Dragon->GetLegLocation(TargetLeg);
         const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
         if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
         const bool bDodgeExercise=ReplayMode==TEXT("core")&&Knight->DodgedHits==0&&Dragon->Move==EVeyrDragonMove::BackStomp;
+        bool bEvade=bThreat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending());
+        // A single strike is read and rolled through at the last moment, as a practised player does.
+        // Only a sustained hazard (fire sweep, the hunting jet, a landing) is walked out of early.
+        const bool bSustained=Dragon->Move==EVeyrDragonMove::Fire||Dragon->Move==EVeyrDragonMove::FlyAway;
+        if(bEvade&&Dragon->bAggression&&!bSustained&&Dragon->State==EVeyrDragonState::Windup&&DangerContactDelay()>=.32f)bEvade=false;
+        const bool bHealWindow=bCombatHealSeeking&&bAvailable&&Knight->IsGrounded()&&
+            SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f;
         if(bDodgeExercise&&Dragon->State==EVeyrDragonState::Windup&&bThreat)
         {
             // Cross the stomp center while invulnerable so an actual damaging contact is observed.
@@ -2323,17 +2473,19 @@ void AVeyrReplay::DriveInputs()
                 Movement=(Dragon->GetWarningFootprint().Origin-Feet).GetSafeNormal2D(); bRoll=true;bWantLock=false;
             }
         }
-        else if(bThreat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending()))
+        else if(bEvade)
         {
             Movement=EscapeDirection();bWantLock=false;
             bRoll=bAvailable&&Knight->Stamina>=18.f&&DangerContactDelay()<.32f;
         }
-        else if(bCombatHealSeeking)
+        else if(bCombatHealSeeking&&(bHealWindow||!Dragon->bAggression||Knight->Health<35.f))
         {
             bWantLock=false;
-            if(bAvailable&&Knight->IsGrounded()&&SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f)
+            if(bHealWindow)
             {bHeal=true;Movement=FVector::ZeroVector;Event(TEXT("combat_heal_safe_window"),false);}
-            else Movement=Knight->Action==EVeyrKnightAction::Heal?FVector::ZeroVector:EscapeDirection();
+            else if(Knight->Action==EVeyrKnightAction::Heal)Movement=FVector::ZeroVector;
+            // Badly hurt against the aggressive boss: open real distance, not just the edge of one swing.
+            else Movement=Dragon->bAggression?(Feet-Dragon->GetActorLocation()).GetSafeNormal2D():EscapeDirection();
         }
         else if(Dragon->Move==EVeyrDragonMove::FlyAway&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending()))
         {
@@ -2781,6 +2933,13 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(IsShowcase()&&Showcase.IsValid())Root->SetObjectField(TEXT("showcase"),Showcase->Evidence());
     if(ReplayMode==TEXT("integration"))Root->SetObjectField(TEXT("integration"),IntegrationEvidence(true));
     if(ReplayMode==TEXT("collision"))Root->SetObjectField(TEXT("collision"),CollisionEvidence(true));
+    if(ReplayMode==TEXT("camp"))Root->SetObjectField(TEXT("camp"),CampEvidence());
+    if(bFinal&&IsValid(Dragon)&&FParse::Param(FCommandLine::Get(),TEXT("VeyrBrainMap")))
+    {
+        TArray<TSharedPtr<FJsonValue>> Map;
+        for(const FString& Line:Dragon->BrainReachMap())Map.Add(MakeShared<FJsonValueString>(Line));
+        Root->SetArrayField(TEXT("brainReachMap"),Map);
+    }
     if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
@@ -2945,6 +3104,11 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     }
     if(bTerminalSettling||bAwaitingReload||bRestartVerification)AdvanceRestart(DeltaSeconds);
     else if(ReplayMode==TEXT("death")&&Knight->IsDead())BeginTerminalVerification();
+    else if(ReplayMode==TEXT("camp")&&CampZone>=9)
+    {
+        bool All=true;for(const FCampZoneResult& R:CampResults)All&=R.bPassed;
+        Finish(All,All?TEXT("every camped zone was hit; underbelly drew takeoff and fire"):TEXT("at least one camped zone stayed safe"));
+    }
     else if(Knight->IsDead())Finish(false,TEXT("player died before objectives"));
     else if(ReplayMode==TEXT("victory")&&Dragon->IsDead())BeginTerminalVerification();
     else if(bLegIsolation&&bIsolationViolated)Finish(false,TEXT("leg isolation failed: contact or stagger changed a different region"));

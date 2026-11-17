@@ -86,7 +86,9 @@ void AVeyrGameMode::StartPlay()
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     Arena=GetWorld()->SpawnActor<AVeyrArena>(FVector::ZeroVector,FRotator::ZeroRotator,Params);
-    Dragon=GetWorld()->SpawnActor<AVeyrDragon>(FVector(500,0,0),FRotator(0,180,0),Params);
+    // The creature scales about its origin; back the spawn off so the snout starts where it always did
+    // (674 cm ahead of the origin at the original size) and the opening distance to the knight holds.
+    Dragon=GetWorld()->SpawnActor<AVeyrDragon>(FVector(500.f+674.f*(AVeyrDragon::ConfiguredBodyScale()-1.f),0,0),FRotator(0,180,0),Params);
     if(Arena&&Dragon)Arena->AddTickPrerequisiteActor(Dragon);
     if(Dragon&&FightFeel)Dragon->AddTickPrerequisiteActor(FightFeel);
     DragonEffects=GetWorld()->SpawnActor<AVeyrDragonEffects>();

@@ -119,6 +119,6 @@ TArray<FTransform> AVeyrDragon::GetShowcaseFramingTransforms() const
 FVector AVeyrDragon::GetShowcaseFlightFacing() const
 {
     // Same hover position/target as the production flight arc at its midpoint.
-    const FVector Hover=FMath::Lerp(MoveStart,MoveEnd,.35f)+AttackForward.RotateAngleAxis(90.f,FVector::UpVector)*280.f;
+    const FVector Hover=FMath::Lerp(MoveStart,MoveEnd,.35f)+AttackForward.RotateAngleAxis(90.f,FVector::UpVector)*280.f*BodyScale;
     return (AerialFireTarget-Hover).GetSafeNormal2D();
 }

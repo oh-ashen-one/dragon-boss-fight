@@ -29,11 +29,11 @@ namespace
             TEXT("foot0"),TEXT("foot1"),TEXT("foot2"),TEXT("foot3"),TEXT("tail0"),TEXT("tail1"),TEXT("tail2"),TEXT("tail3"),TEXT("tail_tip")})
         {
             FTransform T;
-            if(Dragon->ImportedPresentation->GetBoneTargetWorldTransform(Name,T))Add(T.GetLocation(),FName(Name)==TEXT("head")?350.f:100.f);
+            if(Dragon->ImportedPresentation->GetBoneTargetWorldTransform(Name,T))Add(T.GetLocation(),(FName(Name)==TEXT("head")?350.f:100.f)*Dragon->BodyScale);
         }
         for(const TCHAR* Name:{TEXT("VeyrWingNegZRoot"),TEXT("VeyrWingNegZElbow"),TEXT("VeyrWingNegZWrist"),TEXT("VeyrWingNegZTip"),TEXT("VeyrWingNegZMembrane"),
             TEXT("VeyrWingPosZRoot"),TEXT("VeyrWingPosZElbow"),TEXT("VeyrWingPosZWrist"),TEXT("VeyrWingPosZTip"),TEXT("VeyrWingPosZMembrane")})
-            Add(Dragon->ImportedPresentation->GetBoneLocation(Name),120.f);
+            Add(Dragon->ImportedPresentation->GetBoneLocation(Name),120.f*Dragon->BodyScale);
         return Points;
     }
     FBox PointBounds(const TArray<FVector>& Points)
@@ -151,7 +151,7 @@ void FVeyrShowcase::FrameShot()
     {
         const FVector Travel=Dragon->GetLandingLocation()-Dragon->GetActorLocation();
         const TArray<FVector> Start=Points;
-        for(const FVector& P:Start){Points.Add(P+Travel);Points.Add(P+FVector(0,0,1400));Points.Add(P+Travel+FVector(0,0,1400));}
+        for(const FVector& P:Start){Points.Add(P+Travel);Points.Add(P+FVector(0,0,1400*Dragon->BodyScale));Points.Add(P+Travel+FVector(0,0,1400*Dragon->BodyScale));}
     }
     else
     {
@@ -164,7 +164,7 @@ void FVeyrShowcase::FrameShot()
             else for(float A:{-F.HalfAngleDegrees,0.f,F.HalfAngleDegrees})Points.Add(F.Origin+F.Forward.RotateAngleAxis(A,FVector::UpVector)*F.OuterRadius);
         }
         if(Segment==TEXT("Walk")){const TArray<FVector> Start=Points;const FVector Travel=Dragon->GetLandingLocation()-Dragon->GetActorLocation();for(const FVector& P:Start)Points.Add(P+Travel);}
-        if(Segment==TEXT("Roar")){const TArray<FVector> Start=Points;for(const FVector& P:Start)Points.Add(P+FVector(0,0,350));}
+        if(Segment==TEXT("Roar")){const TArray<FVector> Start=Points;for(const FVector& P:Start)Points.Add(P+FVector(0,0,350*Dragon->BodyScale));}
     }
     ShotFocus=PointBounds(Points).GetCenter();
     const FString Name=Segment.ToString();
@@ -176,25 +176,26 @@ void FVeyrShowcase::FrameShot()
     FVector Feature=Dragon->GetHeadLocation();
     if(Name.StartsWith(TEXT("Claw"))||Name.StartsWith(TEXT("Stomp"))||Name.StartsWith(TEXT("Stagger")))
         Feature=Dragon->GetLegLocation(FCString::Atoi(*Name.Right(1)));
-    if(Name==TEXT("Tail"))Feature=Dragon->GetActorLocation()-Dragon->GetActorForwardVector()*500.f;
+    if(Name==TEXT("Tail"))Feature=Dragon->GetActorLocation()-Dragon->GetActorForwardVector()*500.f*Dragon->BodyScale;
     FVector FeatureDirection=(Feature-Dragon->GetActorLocation()).GetSafeNormal2D();
     if(Name.StartsWith(TEXT("Claw"))||Name.StartsWith(TEXT("Stomp"))||Name.StartsWith(TEXT("Stagger")))
         Preferred=FeatureDirection; // The actual anatomical side, not a guessed left/right camera sign.
     if(Segment==TEXT("Flight"))
     {FeatureDirection=Dragon->GetShowcaseFlightFacing();Preferred=FeatureDirection.RotateAngleAxis(-40.f,FVector::UpVector);}
-    FVector Best=ShotFocus+Preferred*2400.f+FVector(0,0,450.f);
+    const float Sc=Dragon->BodyScale;
+    FVector Best=ShotFocus+Preferred*2400.f*Sc+FVector(0,0,450.f*Sc);
     float BestScore=TNumericLimits<float>::Max(),BestFOV=60.f;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrShowcaseCamera),true,Dragon.Get());Params.AddIgnoredActor(Knight.Get());
     for(int32 I=0;I<16;++I)
     {
         const FVector Direction=Preferred.RotateAngleAxis(I*22.5f,FVector::UpVector);
-        FVector P=ShotFocus+Direction*2400.f;
+        FVector P=ShotFocus+Direction*2400.f*Sc;
         // Camera remains inside the open court; raise it only when needed to
         // cover a full aerial envelope without looking through architecture.
-        P.Z=ShotFocus.Z+(Segment==TEXT("Flight")?1000.f:450.f);
-        if(P.SizeSquared2D()>FMath::Square(2800.f))continue;
+        P.Z=ShotFocus.Z+(Segment==TEXT("Flight")?1000.f:450.f)*Sc;
+        if(Sc<=1.01f?P.SizeSquared2D()>FMath::Square(2800.f):(FMath::Abs(P.X)>4500.f||FMath::Abs(P.Y)>4000.f))continue;
         FRotator Rotation=(ShotFocus-P).Rotation();float FOV=RequiredFOV(P,Rotation,Points);
-        for(int32 Lift=0;FOV>88.f&&Lift<4;++Lift){P.Z+=250.f;Rotation=(ShotFocus-P).Rotation();FOV=RequiredFOV(P,Rotation,Points);}
+        for(int32 Lift=0;FOV>88.f&&Lift<4;++Lift){P.Z+=250.f*Sc;Rotation=(ShotFocus-P).Rotation();FOV=RequiredFOV(P,Rotation,Points);}
         FHitResult Hit;const bool Blocked=Dragon->GetWorld()->LineTraceSingleByChannel(Hit,P,ShotFocus,ECC_Camera,Params)||
             Dragon->GetWorld()->LineTraceSingleByChannel(Hit,P,PointBounds(FramingPoints(Dragon.Get())).GetCenter(),ECC_Camera,Params);
         const float FeatureView=FVector::DotProduct((P-Dragon->GetActorLocation()).GetSafeNormal2D(),FeatureDirection);

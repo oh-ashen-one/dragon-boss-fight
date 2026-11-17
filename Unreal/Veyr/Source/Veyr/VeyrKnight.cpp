@@ -252,6 +252,9 @@ void AVeyrKnight::BeginPlay()
     // v042 won the matched front/side visual review. Keep an explicit
     // baseline switch for comparisons; ordinary play uses the fitted drink.
     bSourcedHeal=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoSourcedHeal"));
+    // Owner 2026-11-05: running read as about 0.75x. Locomotion clips advance by distance, so the
+    // faster travel plays the 822.8 cm/s run nearer its authored cadence without sliding.
+    MovePace=AVeyrDragon::ConfiguredPaceScale();
     bSourcedMoves=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedMoves"));
     bDirectRunningAttack=bSourcedMoves&&FParse::Param(FCommandLine::Get(),TEXT("VeyrDirectRunningAttack"));
     bSourcedSprint=FParse::Param(FCommandLine::Get(),TEXT("VeyrSourcedSprint"));
@@ -465,7 +468,7 @@ void AVeyrKnight::FinishAction()
     {
         // Keep the measured swept velocity on exit; restarting from zero
         // inserts an idle frame and an unrelated second acceleration.
-        GetCharacterMovement()->MaxWalkSpeed=bSprintHeld?580.f:240.f;
+        GetCharacterMovement()->MaxWalkSpeed=(bSprintHeld?580.f:240.f)*MovePace;
         GetCharacterMovement()->Velocity=Carry.GetClampedToMaxSize(GetCharacterMovement()->MaxWalkSpeed);
         // Root-driven movement consumed this tick's input. Queue the still-held
         // direction for the next movement tick, otherwise it brakes once before
@@ -995,7 +998,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     }
     else if(Action==EVeyrKnightAction::Ready&&!bLateralDodgeBlocked)
     {
-        Movement->MaxWalkSpeed=bFaceBoss?LockOnSpeedCap(SelectDirectionalLocomotion(true)):bSprintHeld?580.f:240.f;
+        Movement->MaxWalkSpeed=bFaceBoss?LockOnSpeedCap(SelectDirectionalLocomotion(true)):(bSprintHeld?580.f:240.f)*MovePace;
         AddMovementInput(MoveIntent,1.f);
     }
     else
@@ -1020,7 +1023,7 @@ FVector AVeyrKnight::CombatAimPoint() const
     if(!IsValid(Boss))return GetActorLocation()+GetActorForwardVector()*200.f;
     if(!Boss->UsesPacingRevision())return Boss->GetActorLocation();
     if(Boss->IsHeadExposed())return Boss->GetHeadLocation();
-    FVector Point=Boss->GetActorLocation();float Nearest=450.f;
+    FVector Point=Boss->GetActorLocation();float Nearest=450.f*Boss->BodyScale;
     if(!Boss->IsAirborne())for(int32 I=0;I<4;++I)
     {
         const FVector Leg=Boss->GetLegLocation(I);
@@ -1037,13 +1040,16 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     UpdateThreatCameraOptics(DeltaSeconds,Controller?Controller->GetControlRotation():FRotator::ZeroRotator);
     // The default stays close. The isolated threat-framing trial changes
     // optics only for flight/rise; manual look and solid-world collision win.
-    const float Arm=bThreatCameraFraming?ThreatCameraArm:560.f;
+    // A creature twice the size needs a little more room and lens to read: 560 cm / 72 degrees at the
+    // original scale, 700 cm / 78 degrees at 2x. The knight stays a clear figure in the lower frame.
+    const float BossScale=IsValid(Boss)?Boss->BodyScale:1.f;
+    const float Arm=bThreatCameraFraming?ThreatCameraArm:560.f+140.f*(BossScale-1.f);
     CameraDistance=Arm;FlightCameraBlend=0.f;CameraPitchCeiling=68.f;
     CameraBoom->TargetArmLength=Arm;
     CameraBoom->SetRelativeLocation(FVector(0,0,170.f-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
     CameraBoom->SocketOffset=FVector(0,42.f,12.f);
     CameraBoom->bEnableCameraLag=false;CameraBoom->bEnableCameraRotationLag=false;
-    CombatCamera->SetFieldOfView(bThreatCameraFraming?ThreatCameraFOV:72.f);
+    CombatCamera->SetFieldOfView(bThreatCameraFraming?ThreatCameraFOV:72.f+6.f*(BossScale-1.f));
     if(Controller)
     {
         FRotator Look=Controller->GetControlRotation().GetNormalized();
@@ -1080,7 +1086,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
                     // Look down toward the contact instead of horizontally
                     // into the torso. The arm/lens remain player-controlled.
                     Leg.Z=GetFootLocation().Z+(Boss->UsesPacingRevision()?100.f:170.f);
-                    const float Blend=FMath::SmoothStep(0.f,1.f,FMath::Clamp((650.f-Nearest)/350.f,0.f,1.f));
+                    const float Blend=FMath::SmoothStep(0.f,1.f,FMath::Clamp((650.f*Boss->BodyScale-Nearest)/(350.f*Boss->BodyScale),0.f,1.f));
                     Focus=FMath::Lerp(Focus,Leg,Blend);
                 }
                 if(!bContactCameraFocusInitialized){ContactCameraFocus=Focus;bContactCameraFocusInitialized=true;}
@@ -1089,7 +1095,9 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             else bContactCameraFocusInitialized=false;
             const FVector Delta=Focus-CameraBoom->GetComponentLocation();
             FRotator Desired=Delta.Rotation();
-            AutoLockPitchCeiling=25.f;
+            // A taller creature needs the lock to look further up; the knight settles lower in the frame.
+            const float ScaleLift=16.f*(BossScale-1.f);
+            AutoLockPitchCeiling=25.f+.6f*ScaleLift;
             if(bReadableAutoLockCamera)
             {
                 FVector2D ViewSize(16.f,9.f);
@@ -1097,10 +1105,12 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
                 const float Aspect=ViewSize.Y>1.f?static_cast<float>(ViewSize.X/ViewSize.Y):16.f/9.f;
                 const float VerticalHalf=FMath::RadiansToDegrees(FMath::Atan(FMath::Tan(FMath::DegreesToRadians(CombatCamera->FieldOfView*.5f))/FMath::Max(.5f,Aspect)));
                 const float FeetAngle=FMath::RadiansToDegrees(FMath::Atan2(90.f,Arm));
-                AutoLockPitchCeiling=FMath::Clamp(VerticalHalf-FeetAngle-3.5f,-5.f,25.f);
+                AutoLockPitchCeiling=FMath::Clamp(VerticalHalf-FeetAngle-3.5f+ScaleLift,-5.f,25.f+.6f*ScaleLift);
             }
             // Only automatic aim is constrained. Manual upward look retains
             // its full range, and neither lens nor arm length changes.
+            // An airborne boss is the threat: let the lock look up at it instead of holding the boots in frame.
+            if(Boss->IsAirborne()&&Boss->BodyScale>1.01f)AutoLockPitchCeiling=FMath::Max(AutoLockPitchCeiling,50.f);
             if(bThreatFramingActive&&bThreatFitFound)Desired.Pitch=AutoLockPitchCeiling;
             Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,AutoLockPitchCeiling);
             // Avoid spinning underneath a target whose head crosses overhead.
@@ -1335,12 +1345,12 @@ float AVeyrKnight::LockOnSpeedCap(FName Clip) const
     // Strafes and backpedal play near their measured stance-foot speed so feet do not skate
     // or blur: lateral walk <= 1.2x nominal (cap 240), strafe run <= 1.1x (cap 580),
     // backpedal 100 cm/s (approved loop nominal 59.9 cm/s plays at 1.67x).
-    if(Clip.ToString().StartsWith(TEXT("Backpedal")))return 100.f;
+    if(Clip.ToString().StartsWith(TEXT("Backpedal")))return 100.f*MovePace;
     const float Nominal=VisualClipSpeed(Clip);
     const FString Name=Clip.ToString();
-    if(Name.StartsWith(TEXT("StrafeRun")))return Nominal>1.f?FMath::Min(580.f,Nominal*1.1f):450.f;
-    if(Name.StartsWith(TEXT("Strafe")))return Nominal>1.f?FMath::Min(240.f,Nominal*1.2f):175.f;
-    return bSprintHeld?580.f:240.f;
+    if(Name.StartsWith(TEXT("StrafeRun")))return (Nominal>1.f?FMath::Min(580.f,Nominal*1.1f):450.f)*MovePace;
+    if(Name.StartsWith(TEXT("Strafe")))return (Nominal>1.f?FMath::Min(240.f,Nominal*1.2f):175.f)*MovePace;
+    return (bSprintHeld?580.f:240.f)*MovePace;
 }
 FName AVeyrKnight::SelectDirectionalLocomotion(bool bAllowRun) const
 {

@@ -118,6 +118,38 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<AVeyrKnight> Target;
 
     UFUNCTION(BlueprintPure, Category="Combat") bool IsDead() const { return State == EVeyrDragonState::Dead; }
+    // ---- Owner playtest 2026-11-05 (PLAYTEST_GOAL.md). Each has a restore switch for before/after films.
+    /** Uniform creature scale against the 244 cm knight: -VeyrDragonScale=1 restores the old size. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") float BodyScale=1.f;
+    /** Travel/turn/attack tempo multiplier: -VeyrLegacyPace restores 1. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") float PaceScale=1.f;
+    /** Zone-aware random brain, chains and anti-camping: -VeyrLegacyBrain restores the positional policy. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") bool bAggression=false;
+    /** Floor attack rings are hidden by default; -VeyrFloorTelegraph draws them again. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") bool bFloorTelegraph=false;
+    /** Under half health the tempo tightens and strings run longer. */
+    bool InSecondPhase() const { return bAggression&&Health<=MaxHealth*.5f; }
+    /** True between the four planted feet: the underbelly camping zone. */
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointUnderBody(const FVector& Point) const;
+    /** Lower bound on when a new blow could land on a stationary point: what a competent player reads. */
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") float EarliestNextContactSeconds(const FVector& Point) const;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 BrainSeed=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 ChainCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 AntiCampFlights=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 RepositionCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 TrampleCount=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") float UnderBodySeconds=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") float CampSeconds=0.f;
+    /** Longest unbroken Idle while the encounter was live (the passive-gap gate). */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") float LongestIdleSeconds=0.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat") float ExposedSeconds=7.f;
+    /** How far the creature's origin may travel from the court centre. The court is 4900 x 4400 cm
+     * to its walls; a body twice as long and wide keeps tail and wings inside by roaming less. */
+    float RoamRadius() const { return 2700.f-700.f*(BodyScale-1.f); }
+    static float ConfiguredBodyScale();
+    static float ConfiguredPaceScale();
+    /** Actor pose without the creature scale: world-centimetre local frames for reach tests. */
+    FTransform RigidTransform() const { return FTransform(GetActorQuat(),GetActorLocation()); }
     bool UsesPacingRevision() const { return !bLegacyPacing; }
     FName IdlePresentationClip() const { return bOpenIdleWings?FName(TEXT("IdleOpen")):FName(TEXT("Idle")); }
     /** "BiteV2r" when the video2rig bite trims exist (default; -VeyrLegacyDragon restores "Bite"). */
@@ -280,6 +312,18 @@ private:
     FVector ImportedMouthWorld=FVector::ZeroVector, ImportedMouthAimWorld=FVector::ZeroVector;
     FVector ImportedContactFeetWorld[4], ImportedTailWorld[4];
     TMap<FName,TArray<FVeyrDragonFootprint>> LocalAttackWarnings;
+    /** Unpadded contact sweep per clip: a player standing inside it is struck. The brain's "certain reach". */
+    TMap<FName,TArray<FVeyrDragonFootprint>> LocalAttackContacts;
+    bool CachedContactContains(FName Clip,const FVector& WorldPoint) const;
+    /** Certain reach after the wind-up has turned the body by up to TrackLimitDegrees toward the player. */
+    bool TrackedContactContains(FName Clip,const FVector& WorldPoint,float* OutYawDegrees=nullptr) const;
+public:
+    /** Lab: text map of which strike is certain at each spot around the body (evidence "brainReachMap"). */
+    TArray<FString> BrainReachMap() const;
+private:
+    static constexpr float TrackLimitDegrees=30.f,TrackRateDegreesPerSecond=55.f;
+    float WindupTrackBudget=0.f,WindupTrackYaw=0.f;
+    bool bWindupTrackPending=false;
     TArray<FVeyrDragonFootprint> CommittedWarning;
     TMap<FIntPoint,float> WarningSurfaceHeights;
     TWeakObjectPtr<AVeyrArena> WarningArena;
@@ -386,6 +430,24 @@ private:
     bool DataWindowsReplaceContact() const;
     /** -VeyrMoveDataDump on the command line logs the gate lines once the capsules are bound. */
     void LogMoveDataDumpIfRequested() const;
+    // ---- Aggression revision (owner 2026-11-05): reach-based random choice, strings and anti-camping.
+    struct FBrainOption { EVeyrDragonMove Move; int32 Leg; float Weight; };
+    FRandomStream BrainRandom;
+    int32 ComboCount=0,ComboBudget=1,ForcedStompLeg=INDEX_NONE,CampHitsBaseline=0;
+    bool bChainedAttack=false;
+    float IdleRunSeconds=0.f,FrontSweetCm=600.f;
+    static constexpr float UnderBodyLimit=2.5f,CampLimit=10.f,ChainWindupScale=.85f,MinimumWindup=.45f;
+    /** Trample: a foot, shin or tail segment moving fast while the body turns or walks hurts on contact. */
+    float SolidPartSpeed[19]={};
+    float TrampleCooldown=0.f;
+    void GatherBrainOptions(const FVector& Feet,const FVector& Lead,bool bChain,TArray<FBrainOption>& Out) const;
+    bool BeginBrainOption(const TArray<FBrainOption>& Options,bool bChained);
+    void ChooseAggressiveAttack();
+    bool TryChainAttack();
+    void RollComboBudget();
+    void UpdateCampTimers(float DeltaSeconds);
+    /** Paced phase lengths and damage for one attack, exactly as BeginAttack will play it. */
+    void BaseAttackTiming(EVeyrDragonMove Attack,int32 Leg,float& Windup,float& Active,float& Recovery,float& Damage) const;
     void EnterState(EVeyrDragonState Next, float Duration);
     void ChooseAttack();
     void BeginAttack(EVeyrDragonMove Next);

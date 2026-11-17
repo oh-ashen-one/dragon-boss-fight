@@ -179,6 +179,15 @@ private:
     void Observe();
     void DriveInputs();
     bool DriveScenarioInputs();
+    // ---- camp: stand in each zone around the boss without dodging; it must reach every one.
+    struct FCampZoneResult { FString Zone; float ArrivedAt=-1.f,FirstHitAfter=-1.f,FlightAfter=-1.f; int32 Hits=0; bool bPassed=false; };
+    TArray<FCampZoneResult> CampResults;
+    int32 CampZone=0,CampHitsAtArrival=0,CampFlightsAtArrival=0;
+    float CampZoneStarted=0.f,CampHoldUntil=0.f;
+    FVector CampHoldPoint=FVector::ZeroVector;
+    bool DriveCampInputs();
+    FVector CampGoal(int32 Zone) const;
+    TSharedPtr<FJsonObject> CampEvidence() const;
     bool DriveBoundaryInputs();
     bool DriveStanceInputs();
     void ObserveScenarios();
