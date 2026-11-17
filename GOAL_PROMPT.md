@@ -1,3 +1,19 @@
+# Veyr playtest goal — paste into a fresh /goal (2026-11-17)
+
+Current activation prompt. The older resume prompt below is superseded history; the long animation research it describes is part of Tier 2 here.
+
+```text
+/goal Finish the Veyr playtest backlog in /Users/midir/veyr-knight-20261028/PLAYTEST_GOAL.md so I can play it fully and shoot the video. Read that file, then HANDOFF.md, BACKLOG.md, AGENTS.md and the wiki page dragon-boss-fight. Verify live repo, build and GPU state before acting. Work on branch opus/playtest-goal-20261117 from main. Make every routine decision yourself; don't ask me routine questions; no deadline.
+
+Tier 1 in this order: remove the yellow/red floor attack circles; scale the dragon to about 30 ft against the 6 ft knight with reach, collision, camera and arena clearance following; about 1.3x faster knight and dragon movement with no foot sliding; range- and position-aware random attacks with anti-camping (under the dragon -> takeoff + fire, back-right foot and every other zone covered); much more aggressive pressure; 845 HP starting value, tuned together with aggression. Competent scripted wins stay at 150 s or less in both grips while a passive player dies; if those truly conflict, keep it hard and report the numbers.
+
+When Tier 1 passes, install the new Shipping build behind Play Veyr.app and capture a full intro-to-victory film with game audio plus a death run, then message me that it's ready. Then do Tier 2: sprint start/stop and run/leap foot contacts, light-attack transitions, heal, flight camera, using new approaches only; never revive rejected candidates.
+
+Every change: before/after native film, frames you inspected yourself, blind Opus critic on each Tier 1 item, and the full regression set (controls, intro, showcase 20/20, both-grip victory/restart, death/restart). Keep the approved 8-shot intro, OST and SFX unchanged. Blender for animation, sourced motion first, no paid generations without asking. Follow GPU slot rules, 60 fps, background windowed launches, my processes only. Commit and push after each verified step. When every gate passes, merge into main and push. Delete superseded builds you own, and update HANDOFF, BACKLOG and the wiki. Don't mark the goal complete until every Tier 1 and Tier 2 item meets its "done when".
+```
+
+---
+
 # Veyr resume goal — paste into a fresh /goal
 
 This is a reusable activation prompt. Editing this file does not restart the cleared goal.
