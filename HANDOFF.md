@@ -1,3 +1,51 @@
+# Playtest goal — branch `opus/playtest-goal-20261117` (started 2026-11-17, in progress)
+
+Goal file: `PLAYTEST_GOAL.md`. Activation prompt: `GOAL_PROMPT.md`. Critic rubric and results: `docs/playtest-goal-20261117/`.
+Session model: Fable 5.2 (owner switched the session before starting the goal). Critics: `opus-critic` (Opus 5.5 high).
+
+## What is built so far (Tier 1, all behind restore switches)
+
+| Item | Default now | Restore switch (for before/after films) |
+|---|---|---|
+| 1 Floor rings | hidden | `-VeyrFloorTelegraph` |
+| 2 Scale | 2x (idle head 1546 cm, was 756; knight 244 cm) | `-VeyrDragonScale=1` |
+| 3 Pace | knight and dragon travel 1.3x | `-VeyrLegacyPace` |
+| 4+5 Brain | reach-based random choice, aim tracking, strings, anti-camp takeoff, trample | `-VeyrLegacyBrain` |
+| 6 Health | 845 | `-VeyrBossHealth=650` |
+
+Other switches: `-VeyrBrainSeed=N` (replays default to 20261117; normal play seeds from the clock), `-VeyrBrainMap`
+(writes the reach map into replay evidence as `brainReachMap`).
+
+## How to build and test
+
+```
+python3 tools/unreal/build.py --engine "/Users/Shared/Epic Games/UE_5.8" --target VeyrEditor --configuration Development
+python3 tools/unreal/package.py --engine "/Users/Shared/Epic Games/UE_5.8" --configuration Shipping
+python3 tools/unreal/playtest_suite.py --app <app from the newest Local/package-*/receipt.json> --run camp --run death --run victory --run victory:two-handed
+```
+
+`playtest_suite.py` passes the owner's play profile, queues politely when another session holds the GPU (exit 75 from
+`gpu_slot` means nothing was launched) and stops after two launches that leave no evidence.
+
+New replay mode `camp`: the knight stands in nine boss-relative zones (under, each foot, both flanks, tail, front) without
+dodging; a zone passes when a blow lands within 20 s, and the underbelly must also draw a takeoff within 6 s.
+
+## Findings worth keeping
+
+- The run clip's authored speed is 822.8 cm/s and the knight sprinted at 580, so it played at 0.70x. That is the "0.75x" feel.
+- At 2x, claw and tail swings pass over the knight's head (strike heights doubled, the knight did not), so only ground-level
+  stomps connected. The struck column now grows with the creature (`ImportedContactHitsKnight`).
+- A test knight that follows a boss-relative spot with zero delay can never be reached by turning; the camp knight now
+  stands two seconds at a time, like a person.
+- The shared GPU was busy with another session's jobs for long stretches on 2026-11-17; expect queue waits of 10-20 minutes.
+
+## Not done yet
+
+Balance (the scripted player still loses), regression set, before/after films, blind critics, install, full-fight film,
+all of Tier 2. Nothing here is owner-accepted.
+
+---
+
 # Opus 5.5 final enhancements — branch `opus-5.5-final-enhancements` (2026-11-05)
 
 - **Video2rig bite, end to end (opt-in `-VeyrVideoBite`, awaiting owner visual review).** Existing Seedance bite → video2rig fit → Blender cut/retime (2.47 s, body lunge kept, jaw snap) → canonical export → native DragonV3B `v034videobite` (300 poses, 0 failures; RuntimePolish/DA_Dragon promoted, keyed Bite retained) → Shipping `Local/package-20261106T001217Z`. Before/after showcase runs on that one app both PASS 20/20. Review page `Local/bite-review-20261105/serve/` on port 8814 (task-owned server). Details and exact evidence: `docs/video-bite-20261105.md`.
