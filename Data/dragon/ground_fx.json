@@ -9,6 +9,7 @@
     "wing": {"touch_cm": 10, "lift_cm": 45, "min_speed": 1.4},
     "dust_tier_max_speed": [1.2, 3.5],
     "stomp_min_speed": 1.0,
+    "body_cloud_min_speed": 2.0,
     "landing_window_s": 1.2,
     "peak_time_constant_s": 0.08,
     "min_event_interval_s": 0.12
