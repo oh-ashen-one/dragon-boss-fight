@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "VeyrVisualDefinition.h"
 #include "VeyrDragonGrounding.h"
+struct FVeyrLegLock;
 #include "VeyrSkeletalPresentation.generated.h"
 
 /**
@@ -84,6 +85,18 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     bool SampleClipPhaseBlended(FName ClipName, float Phase, float Alpha);
+
+    /** F2 (2026-11-18): blend from a still-running source. SourceSequenceSeconds is absolute in the source's
+     * sequence (it may run past the source trim into the same action's next phase). The source gets the
+     * destination's clean-up (Spine_0 fix, its own mirror repair, root offset, aim rotations). Alpha as above. */
+    bool SampleClipTimeMovingSource(FName ClipName,float ElapsedSeconds,float Alpha,FName SourceClip,float SourceSequenceSeconds);
+    /** F4: planar Spine_0 offsets removed from the next samples (component cm): destination, moving source. */
+    void SetRootOffsets(const FVector& Destination,const FVector& Source);
+    /** F3: re-evaluate the current explicit pose with up to four leg locks (cleared by ClearLegLocks only). */
+    bool SetLegLocks(const TArray<FVeyrLegLock>& Locks);
+    void ClearLegLocks();
+    TArray<float> GetLegLockMissCm() const;
+    FString GetLegLockError() const;
 
     /** Explicit lower-body overlay, then the frozen whole-pose transition.
      * Times are seconds relative to each clip's trimmed start. Hips and both

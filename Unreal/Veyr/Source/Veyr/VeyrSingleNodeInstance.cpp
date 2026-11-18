@@ -80,10 +80,19 @@ namespace
         bool bMirrorRepair=false;
         TSet<FName> MirrorRestBones,MirrorTranslatingBones;
         int32 MirrorRepairEvaluations=0;
+        // F2 (2026-11-18): the moving transition source gets the same clean-up as the destination.
+        bool bTransitionMirrorRepair=false,bTransitionCleanup=false;
+        // F4: planar Spine_0 offsets removed from each pose (component cm), the actor carries them instead.
+        FVector RootOffsetDest=FVector::ZeroVector,RootOffsetSource=FVector::ZeroVector;
+        // F3: generic two-bone leg locks (dragon). Target = animated end-bone position + Delta * Weight.
+        TArray<FVeyrLegLock> LegLocks;
+        TArray<float> LegLockMissCm;
+        FString LegLockError;
 
-        void ApplyMirrorRepair(FPoseContext& Output)
+        void ApplyMirrorRepair(FPoseContext& Output){ApplyMirrorRepairIf(Output,bMirrorRepair);}
+        void ApplyMirrorRepairIf(FPoseContext& Output,bool bEnabled)
         {
-            if(!bMirrorRepair)return;
+            if(!bEnabled)return;
             const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
             const FReferenceSkeleton& Reference=Bones.GetReferenceSkeleton();
             for(FCompactPoseBoneIndex Index:Output.Pose.ForEachBoneIndex())
@@ -272,6 +281,87 @@ namespace
             return true;
         }
 
+        void ApplySpine0Fix(FPoseContext& Pose)
+        {
+            const FBoneContainer& WalkBones=Pose.Pose.GetBoneContainer();
+            const int32 Spine0Mesh=WalkBones.GetReferenceSkeleton().FindBoneIndex(TEXT("tripo__Spine_0"));
+            if(Spine0Mesh==INDEX_NONE)return;
+            const FCompactPoseBoneIndex Spine0=WalkBones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Spine0Mesh));
+            if(Spine0.GetInt()!=INDEX_NONE&&Pose.Pose[Spine0].GetTranslation().Y>25.f)
+                Pose.Pose[Spine0].AddToTranslation(FVector(12.44f,-38.99f,0.f));
+        }
+
+        /** Component-space transform of a compact bone (walks the parent chain). */
+        static FTransform ComponentOf(const FPoseContext& Pose,FCompactPoseBoneIndex Index)
+        {
+            const FBoneContainer& Bones=Pose.Pose.GetBoneContainer();
+            FTransform Result=FTransform::Identity;
+            while(Index.GetInt()!=INDEX_NONE){Result=Result*Pose.Pose[Index];Index=Bones.GetParentBoneIndex(Index);}
+            return Result;
+        }
+
+        void ApplyRootOffset(FPoseContext& Pose,const FVector& Offset)
+        {
+            if(Offset.IsNearlyZero(.001))return;
+            const FBoneContainer& Bones=Pose.Pose.GetBoneContainer();
+            const int32 Mesh=Bones.GetReferenceSkeleton().FindBoneIndex(TEXT("tripo__Spine_0"));
+            if(Mesh==INDEX_NONE)return;
+            const FCompactPoseBoneIndex Spine0=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Mesh));
+            if(Spine0.GetInt()==INDEX_NONE)return;
+            const FCompactPoseBoneIndex Parent=Bones.GetParentBoneIndex(Spine0);
+            const FTransform ParentCS=Parent.GetInt()==INDEX_NONE?FTransform::Identity:ComponentOf(Pose,Parent);
+            // Move the body bone by -Offset in component space; every descendant follows.
+            Pose.Pose[Spine0].AddToTranslation(ParentCS.InverseTransformVector(-Offset));
+        }
+
+        bool ApplyLegLocks(FPoseContext& Output)
+        {
+            LegLockMissCm.SetNumZeroed(LegLocks.Num());
+            if(LegLocks.IsEmpty())return true;
+            const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
+            const FReferenceSkeleton& Ref=Bones.GetReferenceSkeleton();
+            TArray<FTransform> CS;CS.SetNum(Output.Pose.GetNumBones());
+            for(FCompactPoseBoneIndex I:Output.Pose.ForEachBoneIndex())
+            {
+                const auto Parent=Bones.GetParentBoneIndex(I);
+                CS[I.GetInt()]=Parent.GetInt()==INDEX_NONE?Output.Pose[I]:Output.Pose[I]*CS[Parent.GetInt()];
+            }
+            for(int32 L=0;L<LegLocks.Num();++L)
+            {
+                const FVeyrLegLock& Lock=LegLocks[L];
+                if(Lock.Weight<=0.f||Lock.Delta.IsNearlyZero(.01))continue;
+                FCompactPoseBoneIndex Idx[3];
+                for(int32 J=0;J<3;++J)
+                {
+                    const int32 Mesh=Ref.FindBoneIndex(Lock.Bones[J]);
+                    Idx[J]=Mesh==INDEX_NONE?FCompactPoseBoneIndex(INDEX_NONE):Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Mesh));
+                    if(Idx[J].GetInt()==INDEX_NONE){LegLockError=TEXT("Leg lock bone missing: ")+Lock.Bones[J].ToString();return true;}
+                }
+                if(Bones.GetParentBoneIndex(Idx[2])!=Idx[1]||Bones.GetParentBoneIndex(Idx[1])!=Idx[0])
+                {LegLockError=TEXT("Leg lock needs a direct three-bone chain at ")+Lock.Bones[0].ToString();return true;}
+                FTransform Upper=CS[Idx[0].GetInt()],Knee=CS[Idx[1].GetInt()],End=CS[Idx[2].GetInt()];
+                const FQuat EndRotation=End.GetRotation();
+                const FVector Target=End.GetLocation()+Lock.Delta*FMath::Clamp(Lock.Weight,0.f,1.f);
+                // Bend plane: the move's own knee direction.
+                const FVector Mid=(Upper.GetLocation()+End.GetLocation())*.5;
+                FVector Bend=Knee.GetLocation()-Mid;
+                if(Bend.SizeSquared()<1.0)Bend=Lock.LastBend;
+                const FVector Pole=Knee.GetLocation()+Bend.GetSafeNormal()*100.f;
+                AnimationCore::SolveTwoBoneIK(Upper,Knee,End,Pole,Target,false,1.,1.);
+                End.SetRotation(EndRotation); // paw/hoof keeps its own orientation; toes ride it
+                LegLockMissCm[L]=static_cast<float>(FVector::Distance(End.GetLocation(),Target));
+                const auto Parent=Bones.GetParentBoneIndex(Idx[0]);
+                const FTransform ParentCS=Parent.GetInt()==INDEX_NONE?FTransform::Identity:CS[Parent.GetInt()];
+                Output.Pose[Idx[0]]=Upper.GetRelativeTransform(ParentCS);
+                Output.Pose[Idx[1]]=Knee.GetRelativeTransform(Upper);
+                Output.Pose[Idx[2]]=End.GetRelativeTransform(Knee);
+                for(int32 J=0;J<3;++J)Output.Pose[Idx[J]].NormalizeRotation();
+                // Children of the chain read CS lazily below only through Output; refresh the three entries.
+                CS[Idx[0].GetInt()]=Upper;CS[Idx[1].GetInt()]=Knee;CS[Idx[2].GetInt()]=End;
+            }
+            return true;
+        }
+
         virtual void Initialize(UAnimInstance* Instance) override
         {
             FAnimSingleNodeInstanceProxy::Initialize(Instance);
@@ -281,6 +371,8 @@ namespace
             TransitionSequence=nullptr;TransitionSeconds=0.f;
             FootTargets.Reset();FootWeights.Reset();
             bMirrorRepair=false;MirrorRestBones.Reset();MirrorTranslatingBones.Reset();MirrorRepairEvaluations=0;
+            bTransitionMirrorRepair=bTransitionCleanup=false;RootOffsetDest=RootOffsetSource=FVector::ZeroVector;
+            LegLocks.Reset();LegLockMissCm.Reset();LegLockError.Reset();
             MaskAsset.Reset();MaskBoneMap.Reset();LowerMask.Reset();LowerWeights.Reset();
         }
 
@@ -289,17 +381,9 @@ namespace
             ++EvaluationSerial;
             EvaluationError.Reset();
             FAnimSingleNodeInstanceProxy::Evaluate(Output);
-            {
-                const FBoneContainer& WalkBones=Output.Pose.GetBoneContainer();
-                const int32 Spine0Mesh=WalkBones.GetReferenceSkeleton().FindBoneIndex(TEXT("tripo__Spine_0"));
-                if(Spine0Mesh!=INDEX_NONE)
-                {
-                    const FCompactPoseBoneIndex Spine0=WalkBones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Spine0Mesh));
-                    if(Spine0.GetInt()!=INDEX_NONE&&Output.Pose[Spine0].GetTranslation().Y>25.f)
-                        Output.Pose[Spine0].AddToTranslation(FVector(12.44f,-38.99f,0.f));
-                }
-            }
+            ApplySpine0Fix(Output);
             ApplyMirrorRepair(Output);
+            ApplyRootOffset(Output,RootOffsetDest);
             if(!ApplyLowerBody(Output)||!ApplyBoneRotations(Output))
             {
                 LastPublished.bValid=false;return true;
@@ -324,6 +408,15 @@ namespace
                     FAnimationPoseData SourceData(Source);
                     TransitionSequence->GetAnimationPose(SourceData,FAnimExtractContext(static_cast<double>(TransitionSeconds),false));
                     if(Source.ContainsNaN()){EvaluationError=TEXT("Continuous transition source produced a non-finite pose");LastPublished.bValid=false;return true;}
+                    if(bTransitionCleanup)
+                    {
+                        // F2: same Spine_0 fix, mirror repair, root-track offset and aim rotations as the destination,
+                        // so a moving source never pops when its weight changes.
+                        ApplySpine0Fix(Source);
+                        ApplyMirrorRepairIf(Source,bTransitionMirrorRepair);
+                        ApplyRootOffset(Source,RootOffsetSource);
+                        if(!ApplyBoneRotations(Source)){LastPublished.bValid=false;return true;}
+                    }
                 }
                 if(Alpha<=0.f)
                 {
@@ -344,6 +437,7 @@ namespace
                 }
             }
             if(!ApplyFootTargets(Output)){LastPublished.bValid=false;return true;}
+            if(!ApplyLegLocks(Output)){LastPublished.bValid=false;return true;}
             if(Output.ContainsNaN())
             {
                 EvaluationError=TEXT("Explicit pose transition produced a non-finite pose");
@@ -382,6 +476,7 @@ bool UVeyrSingleNodeInstance::CaptureTransitionSource()
     if(!Proxy.LastPublished.bValid)return false;
     Proxy.TransitionSource.CopyFrom(Proxy.LastPublished);
     Proxy.TransitionSequence=nullptr;Proxy.TransitionSeconds=0.f;ExplicitTransitionSequence=nullptr;
+    Proxy.bTransitionCleanup=Proxy.bTransitionMirrorRepair=false;
     return true;
 }
 
@@ -415,6 +510,7 @@ void UVeyrSingleNodeInstance::ClearTransitionSource()
     auto& Proxy=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
     Proxy.TransitionSource.bValid=false;Proxy.Alpha=1.f;
     Proxy.TransitionSequence=nullptr;Proxy.TransitionSeconds=0.f;ExplicitTransitionSequence=nullptr;
+    Proxy.bTransitionCleanup=Proxy.bTransitionMirrorRepair=false;
 }
 
 bool UVeyrSingleNodeInstance::HasTransitionSource() const
@@ -482,4 +578,40 @@ void UVeyrSingleNodeInstance::SetExplicitMirrorRepair(bool bEnabled,const TArray
 int32 UVeyrSingleNodeInstance::GetMirrorRepairEvaluations() const
 {
     return GetProxyOnGameThread<FVeyrSingleNodeProxy>().MirrorRepairEvaluations;
+}
+
+void UVeyrSingleNodeInstance::SetExplicitTransitionCleanup(bool bEnabled,bool bSourceMirrorRepair)
+{
+    check(IsInGameThread());
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();P.bTransitionCleanup=bEnabled;P.bTransitionMirrorRepair=bSourceMirrorRepair;
+}
+
+void UVeyrSingleNodeInstance::SetExplicitRootOffsets(const FVector& Destination,const FVector& Source)
+{
+    check(IsInGameThread());
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    P.RootOffsetDest=Destination.ContainsNaN()?FVector::ZeroVector:Destination;P.RootOffsetSource=Source.ContainsNaN()?FVector::ZeroVector:Source;
+}
+
+bool UVeyrSingleNodeInstance::SetExplicitLegLocks(const TArray<FVeyrLegLock>& Locks)
+{
+    if(!IsInGameThread()||Locks.Num()>4)return false;
+    for(const FVeyrLegLock& L:Locks)if(L.Delta.ContainsNaN()||!FMath::IsFinite(L.Weight))return false;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();P.LegLocks=Locks;P.LegLockError.Reset();return true;
+}
+
+void UVeyrSingleNodeInstance::ClearExplicitLegLocks()
+{
+    if(!IsInGameThread())return;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();P.LegLocks.Reset();
+}
+
+TArray<float> UVeyrSingleNodeInstance::GetLegLockMissCm() const
+{
+    return GetProxyOnGameThread<FVeyrSingleNodeProxy>().LegLockMissCm;
+}
+
+FString UVeyrSingleNodeInstance::GetLegLockError() const
+{
+    return GetProxyOnGameThread<FVeyrSingleNodeProxy>().LegLockError;
 }

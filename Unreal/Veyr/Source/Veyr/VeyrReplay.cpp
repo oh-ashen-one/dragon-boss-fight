@@ -3105,6 +3105,8 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     {
         Root->SetNumberField(TEXT("audioStartVideoSeconds"),MixMode->GetMixCaptureStartedWall()-VideoStartedWallTime);
     }
+    // F1-F4 (2026-11-18): per-clip playback rates, blend kinds, planted-foot slide, root travel.
+    if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlayback"),Dragon->PlaybackEvidence());
     Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
     Root->SetBoolField(TEXT("headlessNumbersOnly"),bHeadless);Root->SetNumberField(TEXT("stillIntervalSeconds"),StillInterval);
     LastEvidence=Root;

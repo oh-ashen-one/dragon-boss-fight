@@ -115,6 +115,17 @@ def run_spec(spec, delay=0.0):
                     'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepWorstClipMedianFloatCm1x', 'sweepWorstClip',
                     'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
             record['a123'] = {k: x[k] for k in keys if k in x}
+        if 'dragonPlayback' in e:
+            # Quality goal F1-F4: switches, worst source rate outside holds, worst planted-foot slide, per-clip rate/slide.
+            x = e['dragonPlayback']
+            keys = ('clipTempo', 'twoClipBlend', 'footLock', 'slowSnapTurn', 'rootTracks', 'worstFrameSourceRateOutsideHolds',
+                    'worstRateClip', 'worstPlantedSlideCmPerSec', 'worstSlideClip', 'gateRateAtMost1_25', 'gateSlideUnder5',
+                    'walkStrideSpeedCmPerSec', 'trackTravelWorldCm', 'footLockDiagnostic')
+            record['playback'] = {k: x[k] for k in keys if k in x}
+            record['playback']['clips'] = {k: {'rate': round(c.get('meanSourceRateOutsideHolds', 0), 3),
+                                               'slide': round(c.get('worstPlantedSlideCmPerSec', 0), 2),
+                                               'steps': c.get('steps', 0), 'blends': c.get('blends', {})}
+                                           for k, c in x.get('clips', {}).items()}
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:

@@ -75,6 +75,18 @@ bool FVeyrShowcase::Begin(UWorld* World,AVeyrKnight* InKnight,AVeyrDragon* InDra
         Add(*FString::Printf(TEXT("Stagger%d"),I),{FName(*FString::Printf(TEXT("Buckle%d"),I)),TEXT("Collapse"),TEXT("Exposed"),TEXT("Rise")},
             {TEXT("Buckle"),TEXT("Collapse"),TEXT("Exposed"),TEXT("Rise")});
     Add(TEXT("Death"),{TEXT("DeathFall")},{TEXT("Dead")});
+    bMovesMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrShowcaseMoves"));
+    FString CameraMode;
+    if(FParse::Value(FCommandLine::Get(),TEXT("VeyrShowcaseCamera="),CameraMode))
+        FixedCameraAngle=CameraMode.Equals(TEXT("side"),ESearchCase::IgnoreCase)?90.f:CameraMode.Equals(TEXT("quarter"),ESearchCase::IgnoreCase)?45.f:-1000.f;
+    if(bMovesMode)
+    {
+        // Every move twice, back to back, so each transition into and out of it is seen twice. Death ends the run.
+        TArray<FStep> Twice;
+        for(const FStep& Step:Steps){Twice.Add(Step);if(Step.Name!=TEXT("Death"))Twice.Add(Step);}
+        Steps=MoveTemp(Twice);
+        InDragon->SetShowcaseGameTiming(true);
+    }
     for(const FStep& Step:Steps)for(FName Name:Step.Clips)
     {
         const FVeyrVisualClip* Clip=InDragon->VisualDefinition->Clips.Find(Name);
@@ -198,6 +210,18 @@ void FVeyrShowcase::FrameShot()
     if(Segment==TEXT("Flight"))
     {FeatureDirection=Dragon->GetShowcaseFlightFacing();Preferred=FeatureDirection.RotateAngleAxis(-40.f,FVector::UpVector);}
     const float Sc=Dragon->BodyScale;
+    if(FixedCameraAngle>-999.f)
+    {
+        // Fixed proof camera: one station per chapter at a set angle to the facing, never re-scored or re-aimed.
+        const FVector Side=Dragon->GetActorForwardVector().GetSafeNormal2D().RotateAngleAxis(FixedCameraAngle,FVector::UpVector);
+        FVector P=ShotFocus+Side*2400.f*Sc;P.Z=ShotFocus.Z+(Segment==TEXT("Flight")?1000.f:450.f)*Sc;
+        P.X=FMath::Clamp(P.X,-4500.,4500.);P.Y=FMath::Clamp(P.Y,-4000.,4000.);
+        const FRotator Rotation=(ShotFocus-P).Rotation();
+        Camera->SetActorLocationAndRotation(P,Rotation);
+        Camera->GetCameraComponent()->SetFieldOfView(FMath::Clamp(RequiredFOV(P,Rotation,Points)*1.08f,48.f,108.f));
+        CameraDiagnostic=FString::Printf(TEXT("Fixed proof camera at %.0f deg to the dragon's facing"),FixedCameraAngle);
+        return;
+    }
     FVector Best=ShotFocus+Preferred*2400.f*Sc+FVector(0,0,450.f*Sc);
     float BestScore=TNumericLimits<float>::Max(),BestFOV=60.f;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrShowcaseCamera),true,Dragon.Get());Params.AddIgnoredActor(Knight.Get());
@@ -268,7 +292,7 @@ void FVeyrShowcase::Tick(float,float Elapsed)
         // the arena; widen only as needed, never breathe with each wingbeat.
         // The larger creature lunges and rears across more of the frame than a fixed aim can hold from inside
         // the court: the shot keeps its station but follows the creature's centre.
-        if(Dragon->BodyScale>1.01f)
+        if(Dragon->BodyScale>1.01f&&FixedCameraAngle<-999.f)
         {
             const FRotator Want=(FMath::Lerp(ShotFocus,PointBounds(Points).GetCenter(),.8f)-Camera->GetActorLocation()).Rotation();
             Camera->SetActorRotation(FMath::RInterpTo(Camera->GetActorRotation(),Want,1.f/60.f,14.f));
@@ -287,7 +311,8 @@ void FVeyrShowcase::Tick(float,float Elapsed)
     for(FName Name:Steps[StepIndex].Clips)
     {
         const FSeen* S=Seen.Find(Name);
-        Passed&=S&&S->Frames>=2&&S->Min<=.15f&&S->Max>=.85f;
+        // At game timing a recovery ends at its recovery_exit and fades out (F1).
+        Passed&=S&&S->Frames>=2&&S->Min<=.15f&&S->Max>=FMath::Min(.85f,Dragon->PlaybackPhaseCeiling(Name)-.1f);
         if(!bPlayerCamera)Passed&=S&&S->FramedFrames>=FMath::CeilToInt(S->Frames*.9f);
     }
     for(const FString& State:Steps[StepIndex].States)Passed&=States.Contains(State);

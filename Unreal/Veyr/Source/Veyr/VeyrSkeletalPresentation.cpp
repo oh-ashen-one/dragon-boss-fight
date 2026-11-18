@@ -291,6 +291,60 @@ bool UVeyrSkeletalPresentation::SampleClipTimeCrossfaded(FName ClipName,float El
     return SampleClipTimeInternal(ClipName,ElapsedSeconds,Alpha,true);
 }
 
+bool UVeyrSkeletalPresentation::SampleClipTimeMovingSource(FName ClipName,float ElapsedSeconds,float Alpha,FName SourceClip,float SourceSequenceSeconds)
+{
+    if(!IsInGameThread()||!FMath::IsFinite(SourceSequenceSeconds)||SourceSequenceSeconds<0.f)return false;
+    const FVeyrVisualClip* Destination=nullptr;float DestinationEnd=0.f;
+    if(!ResolveClip(ClipName,Destination,DestinationEnd))return false;
+    const FVeyrVisualClip* Source=VisualDefinition->Clips.Find(SourceClip);
+    if(!Source||!Source->Sequence||Source->Sequence->GetSkeleton()!=GetSkeletalMeshAsset()->GetSkeleton()||
+       Source->Sequence->IsValidAdditive()||!Source->Sequence->IsCompressedDataValid())
+        return Fail(TEXT("Invalid moving transition source clip"));
+    const float Seconds=FMath::Clamp(SourceSequenceSeconds,0.f,Source->Sequence->GetPlayLength());
+    HandleExistingParallelEvaluationTask(true,true);
+    UVeyrSingleNodeInstance* Instance=CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    if(!Instance->SetExplicitTransitionSequence(Source->Sequence,Seconds))return Fail(TEXT("Moving source requires a captured transition"));
+    const bool SourceMirrored=bRepairMirroredClips&&!MirroredSequenceTag.IsEmpty()&&Source->Sequence->GetName().Contains(MirroredSequenceTag);
+    // Stays on with this source (re-evaluations, leg locks) until the next capture or clear.
+    Instance->SetExplicitTransitionCleanup(true,SourceMirrored);
+    return SampleClipTimeInternal(ClipName,ElapsedSeconds,Alpha,true);
+}
+
+void UVeyrSkeletalPresentation::SetRootOffsets(const FVector& Destination,const FVector& Source)
+{
+    if(!IsInGameThread())return;
+    HandleExistingParallelEvaluationTask(true,true);
+    if(auto* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance()))I->SetExplicitRootOffsets(Destination,Source);
+}
+
+bool UVeyrSkeletalPresentation::SetLegLocks(const TArray<FVeyrLegLock>& Locks)
+{
+    if(!IsInGameThread()||!bPoseEvaluated||!CheckReady())return false;
+    HandleExistingParallelEvaluationTask(true,true);
+    auto* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    if(!I||!I->SetExplicitLegLocks(Locks))return Fail(TEXT("Invalid leg locks"));
+    return EvaluatePoseSynchronously();
+}
+
+void UVeyrSkeletalPresentation::ClearLegLocks()
+{
+    if(!IsInGameThread())return;
+    HandleExistingParallelEvaluationTask(true,true);
+    if(auto* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance()))I->ClearExplicitLegLocks();
+}
+
+TArray<float> UVeyrSkeletalPresentation::GetLegLockMissCm() const
+{
+    const auto* I=Cast<UVeyrSingleNodeInstance>(const_cast<UVeyrSkeletalPresentation*>(this)->GetSingleNodeInstance());
+    return I?I->GetLegLockMissCm():TArray<float>();
+}
+
+FString UVeyrSkeletalPresentation::GetLegLockError() const
+{
+    const auto* I=Cast<UVeyrSingleNodeInstance>(const_cast<UVeyrSkeletalPresentation*>(this)->GetSingleNodeInstance());
+    return I?I->GetLegLockError():FString();
+}
+
 bool UVeyrSkeletalPresentation::BeginTransition()
 {
     if(!IsInGameThread())return false;

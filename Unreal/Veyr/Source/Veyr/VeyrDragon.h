@@ -5,6 +5,7 @@
 #include "VeyrCombatTypes.h"
 #include "VeyrMoveData.h"
 #include "VeyrGroundContacts.h"
+#include "VeyrDragonPlayback.h"
 #include "VeyrDragon.generated.h"
 
 class AVeyrKnight;
@@ -328,10 +329,79 @@ public:
     /** Showcase rails for the feel proof: Collapse (Buckle skipped) as one segment. */
     bool StartFeelSegment(FName Segment,FString& Error);
 
+    // ---- F1-F4 (2026-11-18): clip playback. See VeyrDragonPlayback.h for data and restore switches.
+    bool UsesClipTempo() const { return bClipTempo; }
+    bool UsesTwoClipBlend() const { return bTwoClipBlend; }
+    bool UsesFootLock() const { return bFootLock; }
+    bool UsesRootTracks() const { return bRootTracks; }
+    /** Per-move playback counters for evidence.json: phase rates, blend kinds, planted-foot slide, travel vs track. */
+    TSharedPtr<class FJsonObject> PlaybackEvidence() const;
+    /** Real seconds of a turn clip at its playback rate (showcase and reposition share it). */
+    float TurnClipSeconds(FName Clip,float LegacySeconds) const;
+    /** Showcase rehearsals play whole recoveries unless game timing is asked for (-VeyrShowcaseMoves). */
+    void SetShowcaseGameTiming(bool bEnabled){bShowcaseGameTiming=bEnabled;}
+    /** Last clip phase a state reaches at game timing: recovery_exit for tempo recoveries, else 1. */
+    float PlaybackPhaseCeiling(FName Clip) const;
+
 protected:
     virtual void BeginPlay() override;
 
 private:
+    // ---- F1-F4 playback state
+    FVeyrDragonPlayback Playback;
+    FString PlaybackDiagnostic;
+    bool bPlaybackInit=false,bShowcaseGameTiming=false;
+    void InitPlayback();
+    /** Authored-turn phase 0..1 at the current state time (tempo-mapped when F1 is on). */
+    float RepositionTurnPhase() const;
+    /** F1 walk: actor speed whose stride matches the clip at its authored cadence (world cm/s), times the walk rate. */
+    float TempoWalkBaseSpeed() const;
+    float TempoWalkRate() const;
+    bool bClipTempo=false,bTwoClipBlend=false,bFootLock=false,bSlowSnapTurn=false,bRootTracks=false;
+    float PhaseEntryReal=0.f,WalkStrideSpeedCm=0.f;
+    const FVeyrClipPlayback* TempoClip(FName Clip,float& OutRate,float& OutHoldRate) const;
+    /** Real seconds of the clip's whole trim at its playback rate; negative when the clip has no tempo data. */
+    float TempoDuration(FName Clip) const;
+    bool TempoTrimmedSeconds(FName Clip,float RealElapsed,float& OutTrimmed) const;
+    float ActivePhaseSeconds(float Phase) const;
+    const FVeyrMoveTempo* TempoForMove(EVeyrDragonMove Attack,int32 Leg) const;
+    float SnapTrackRate() const;
+    float MeasureWalkStrideSpeed();
+    // F2 moving fade source
+    FName FadeSourceClip=NAME_None;
+    float FadeSourceSeconds=0.f,FadeSourceRate=0.f,FadeSourceMin=0.f,FadeSourceMax=0.f,FadeLastClock=-1.f;
+    bool bFadeSourceLoop=false,bFadeActive=false;
+    float LastSampledSequenceSeconds=0.f,LastSampleClock=-1.f,LastSequenceRate=1.f;
+    FName LastSampledClip=NAME_None;
+    // F4 root tracks
+    FName TrackStem=NAME_None,FadeTrackStem=NAME_None;
+    float TrackEntryBaked=0.f,TrackLastBaked=0.f,FadeTrackEntryBaked=0.f,FadeTrackLastBaked=0.f;
+    FVector TrackTravelWorld=FVector::ZeroVector;
+    void ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight);
+    // F3 floor lock
+    struct FFootLockFoot
+    {
+        bool bLocked=false,bStepping=false,bReleasing=false,bHasPrev=false;
+        FVector Pin=FVector::ZeroVector,From=FVector::ZeroVector,PrevTip=FVector::ZeroVector,PrevDrawn=FVector::ZeroVector,Target=FVector::ZeroVector;
+        float T=0.f,Weight=0.f;
+        FVector LastBend=FVector(1,0,0);
+    };
+    FFootLockFoot LockFeet[4];
+    float FootLockClock=-1.f;
+    FString FootLockDiagnostic;
+    void UpdateFootLock(bool bFading);
+    void ResetFootLock();
+    // Evidence
+    struct FPlaybackStat
+    {
+        double RealSeconds=0,SourceSeconds=0,RealNonHold=0,SourceNonHold=0;float MaxRateNonHold=0.f;int32 Frames=0;
+        TMap<FString,int32> Blends;
+        double PlantedSeconds[4]={0,0,0,0},AnimatedSlideCm[4]={0,0,0,0},DrawnSlideCm[4]={0,0,0,0};
+        int32 Steps=0,Slips=0;float MaxIkMissCm=0.f;
+        FVector TravelWorld=FVector::ZeroVector;double TrackLengthCm=0;
+    };
+    TMap<FName,FPlaybackStat> PlaybackStats;
+    FName PlaybackStatKey(FName Clip) const;
     bool bLegacyPacing=false;
     bool bOpenIdleWings=false;
     bool bVideoBite=false;
