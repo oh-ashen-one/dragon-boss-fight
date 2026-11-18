@@ -167,6 +167,12 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxDropCm=75.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingDropRate=6.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingReleaseRate=3.f;
+    /** Ground mode tracks the support sole closely (rate 20, speed cap 300 cm/s x scale) and also raises a
+     * sunk body (bounded by GroundingMaxDropCm). -VeyrGroundingLowerOnly restores the first rule: lower only,
+     * eased at GroundingDropRate. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingTrackRate=20.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxSpeedCm=300.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") bool bGroundingLowerOnly=false;
     EVeyrGroundingMode LastGroundingMode=EVeyrGroundingMode::Release;
     FVeyrSoleSample LastSoleSample;
     const FVeyrSoleModel& GetSoleModel() const { return SoleModel; }

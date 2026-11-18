@@ -72,6 +72,7 @@ private:
     TArray<float> LiveGroundLowest;
     float SweepBeforeIdleMedianCm=0.f,SweepWorstPlantedAfterCm=0.f,SweepWorstBeforeMedianCm=0.f; FName SweepWorstPlantedClip;
     int32 SweepClipsWithin3Cm=0,SweepGroundClips=0;
+    float SideSign=0.f,SideCameraDistanceCm=0.f;
     TWeakObjectPtr<class ACameraActor> SideCamera;
     void UpdateSideCamera();
     float WorstSweepFloatCm=0.f; FName WorstSweepClip;

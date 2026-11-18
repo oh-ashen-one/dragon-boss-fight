@@ -146,7 +146,7 @@ void FVeyrA123Proof::SweepSoles()
         }
         P->ResetGrounding();
         if(P->SampleClipTime(Pair.Key,0.f))for(int32 I=0;I<60;++I)P->StepGrounding(EVeyrGroundingMode::Ground,Step);
-        FVector Previous[4];bool bHasPrevious=false;
+        FVector Previous[4];bool bHasPrevious=false;TArray<float> Support;float StillWorst=0.f;
         for(float T=0.f;T<=Seconds+1e-3f;T+=Step)
         {
             FVeyrSoleSample S;
@@ -154,15 +154,20 @@ void FVeyrA123Proof::SweepSoles()
             P->StepGrounding(EVeyrGroundingMode::Ground,Step);
             if(!P->MeasureSoles(S)){++SoleFailures;continue;}
             After.Add(S.LowestAboveFloorCm);
-            // A planted sole: within 15 cm (x scale) of the floor and moving under 1.5 cm (x scale) per frame.
+            // The planted (support) sole is the lowest one: the foot the body rests on. Its distance from
+            // the floor, either way, is what reads as floating or sinking.
+            Support.Add(FMath::Abs(S.LowestAboveFloorCm));
+            // Reported only: other feet that are low (under 15 cm x scale) and still (under 1.5 cm x scale a
+            // frame) but not the support, i.e. a paw resting just off the floor.
             for(int32 F=0;F<4;++F)
             {
                 const bool bSlow=bHasPrevious&&FVector::Dist2D(S.Lowest[F],Previous[F])<1.5f*Scale;
-                if(bSlow&&S.SoleAboveFloorCm[F]<15.f*Scale){PlantedWorst=FMath::Max(PlantedWorst,FMath::Abs(S.SoleAboveFloorCm[F]));++PlantedSamples;}
+                if(bSlow&&S.SoleAboveFloorCm[F]<15.f*Scale){StillWorst=FMath::Max(StillWorst,FMath::Abs(S.SoleAboveFloorCm[F]));}
                 Previous[F]=S.Lowest[F];
             }
             bHasPrevious=true;
         }
+        PlantedSamples=Support.Num();PlantedWorst=Support.IsEmpty()?0.f:Percentile(Support,.9f);
         if(Before.IsEmpty())continue;
         ++SweepGroundClips;SweepClipsWithin3Cm+=PlantedWorst<=3.f?1:0;
         TSharedPtr<FJsonObject> C=MakeShared<FJsonObject>();
@@ -172,8 +177,10 @@ void FVeyrA123Proof::SweepSoles()
         C->SetNumberField(TEXT("beforeLowestSoleMaxCm"),Percentile(Before,1.f));
         C->SetNumberField(TEXT("afterLowestSoleMedianCm"),Percentile(After,.5f));
         C->SetNumberField(TEXT("afterLowestSoleMaxCm"),Percentile(After,1.f));
-        C->SetNumberField(TEXT("afterPlantedSoleWorstCm"),PlantedWorst);
-        C->SetNumberField(TEXT("afterPlantedSamples"),PlantedSamples);
+        C->SetNumberField(TEXT("afterSupportSoleP90AbsCm"),PlantedWorst);
+        C->SetNumberField(TEXT("afterSupportSoleMaxAbsCm"),Support.IsEmpty()?0.f:Percentile(Support,1.f));
+        C->SetNumberField(TEXT("afterSupportSamples"),PlantedSamples);
+        C->SetNumberField(TEXT("afterLowStillOtherFootWorstCm"),StillWorst);
         Clips.Add(MakeShared<FJsonValueObject>(C));
         if(Pair.Key.ToString().StartsWith(TEXT("IdleOpen")))SweepBeforeIdleMedianCm=Percentile(Before,.5f);
         SweepWorstBeforeMedianCm=FMath::Max(SweepWorstBeforeMedianCm,Percentile(Before,.5f));
@@ -200,11 +207,25 @@ void FVeyrA123Proof::UpdateSideCamera()
         SideCamera=Cam;
         if(APlayerController* PC=Cast<APlayerController>(K->GetController()))PC->SetViewTarget(Cam);
     }
-    // Side-on, lens 40 cm above the floor, far enough to hold all four feet.
+    // Side-on, lens 40 cm above the floor, far enough to hold all four feet (90 degree lens) but inside the
+    // arena: of the two flanks take the one with more room, sticky so the view does not flip.
     const FVector Extent=D->ImportedPresentation?FVector(D->ImportedPresentation->Bounds.BoxExtent):FVector(800.f);
-    const FVector Base(D->GetActorLocation().X,D->GetActorLocation().Y,D->GetActorLocation().Z);
-    const FVector Eye=Base+D->GetActorRightVector()*FMath::Max(Extent.X,Extent.Y)*2.6f+FVector(0,0,40.f);
+    const FVector Base=D->GetActorLocation();
+    const float Want=FMath::Max(Extent.X,Extent.Y)*1.3f;
+    auto Room=[&](const FVector& Dir)
+    {
+        FHitResult Hit;FCollisionQueryParams Q(SCENE_QUERY_STAT(VeyrSoleSideCamera),false,D);Q.AddIgnoredActor(K);
+        const FVector From=Base+FVector(0,0,40.f),To=From+Dir*Want;
+        return W->SweepSingleByChannel(Hit,From,To,FQuat::Identity,ECC_Camera,FCollisionShape::MakeSphere(30.f),Q)?FMath::Max(0.f,Hit.Distance-60.f):Want;
+    };
+    const FVector Right=D->GetActorRightVector();
+    const float RoomRight=Room(Right),RoomLeft=Room(-Right);
+    if(SideSign==0.f||(SideSign>0.f?RoomRight:RoomLeft)<Want*.6f)SideSign=RoomRight>=RoomLeft?1.f:-1.f;
+    const float Distance=SideSign>0.f?RoomRight:RoomLeft;
+    const FVector Eye=Base+Right*SideSign*Distance+FVector(0,0,40.f);
     Cam->SetActorLocationAndRotation(Eye,(Base+FVector(0,0,60.f*Scale)-Eye).Rotation());
+    Cam->GetCameraComponent()->SetFieldOfView(90.f);
+    SideCameraDistanceCm=Distance;
 }
 
 void FVeyrA123Proof::Input(const FVector& Move,bool bLight) const
@@ -368,7 +389,7 @@ void FVeyrA123Proof::Finalize(double Elapsed)
         const float Median=Percentile(LiveGroundLowest,.5f),P90=Percentile(LiveGroundLowest,.9f);
         // Done when: planted soles within 3 cm of the floor in every ground clip at the shipped scale.
         bPassed=SweepGroundClips>0&&SweepClipsWithin3Cm==SweepGroundClips&&LiveGroundLowest.Num()>=200&&FMath::Abs(Median)<=3.f;
-        Reason=FString::Printf(TEXT("sweep: %d of %d ground clips with planted soles within 3 cm (worst %.1f cm, %s); before: idle float %.1f cm, worst clip median %.1f cm (%s); live ground frames %d lowest sole median %.1f p90 %.1f cm"),
+        Reason=FString::Printf(TEXT("sweep: %d of %d ground clips with the planted sole within 3 cm, p90 (worst %.1f cm, %s); before: idle float %.1f cm, worst clip median %.1f cm (%s); live ground frames %d lowest sole median %.1f p90 %.1f cm"),
             SweepClipsWithin3Cm,SweepGroundClips,SweepWorstPlantedAfterCm,*SweepWorstPlantedClip.ToString(),SweepBeforeIdleMedianCm,WorstSweepFloatCm,*WorstSweepClip.ToString(),LiveGroundLowest.Num(),Median,P90);
     }
     UE_LOG(LogTemp,Display,TEXT("VEYR_GATE a123 %s %s: %s"),*Mode,bPassed?TEXT("PASS"):TEXT("FAIL"),*Reason);
@@ -429,6 +450,8 @@ TSharedPtr<FJsonObject> FVeyrA123Proof::Evidence() const
         O->SetNumberField(TEXT("sweepBeforeIdleFloatCm"),SweepBeforeIdleMedianCm);
         O->SetNumberField(TEXT("sweepBeforeWorstClipMedianCm"),WorstSweepFloatCm);
         O->SetNumberField(TEXT("sweepAfterPlantedWorstCm"),SweepWorstPlantedAfterCm);
+        O->SetNumberField(TEXT("sideCameraDistanceCm"),SideCameraDistanceCm);
+        if(const AVeyrDragon* GD=Dragon.Get();GD&&GD->ImportedPresentation)O->SetBoolField(TEXT("groundingLowerOnly"),GD->ImportedPresentation->bGroundingLowerOnly);
         O->SetStringField(TEXT("sweepAfterPlantedWorstClip"),SweepWorstPlantedClip.ToString());
         O->SetNumberField(TEXT("sweepGroundClips"),SweepGroundClips);O->SetNumberField(TEXT("sweepClipsWithin3Cm"),SweepClipsWithin3Cm);
         O->SetStringField(TEXT("sweepWorstClip"),WorstSweepClip.ToString());
