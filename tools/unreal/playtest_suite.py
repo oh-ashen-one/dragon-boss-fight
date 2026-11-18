@@ -94,6 +94,17 @@ def run_spec(spec, delay=0.0):
             'whiffOpenings': max([s.get('whiffOpenings', 0) for s in samples] or [0]),
             'guardPocketFlights': max([s.get('guardPocketFlights', 0) for s in samples] or [0]),
             'exposedCapRises': max([s.get('exposedCapRises', 0) for s in samples] or [0]),
+            # Knock-down length (floor = Exposed start to standing; buckle start to standing / to the end of the post-rise wait); the
+            # sample with the most completed knock-downs is the last one before any restart.
+            **(lambda kd: {'legacyKnockdown': kd.get('legacyKnockdown'), 'knockdownsStood': kd.get('knockdownsStood', 0),
+                           'knockdownLongestFloorSeconds': kd.get('knockdownLongestFloorSeconds'),
+                           'knockdownMeanFloorSeconds': kd.get('knockdownMeanFloorSeconds'),
+                           'knockdownLongestStandSeconds': kd.get('knockdownLongestStandSeconds'),
+                           'knockdownMeanStandSeconds': kd.get('knockdownMeanStandSeconds'),
+                           'knockdownsActed': kd.get('knockdownsActed', 0),
+                           'knockdownLongestActSeconds': kd.get('knockdownLongestActSeconds'),
+                           'knockdownMeanActSeconds': kd.get('knockdownMeanActSeconds')})(
+                max(samples or [{}], key=lambda s: (s.get('knockdownsStood', 0), s.get('knockdownsActed', 0)))),
             'courtOverreachCm': max([s.get('bossCourtOverreachCm', -100000) for s in samples] or [-100000]),
             'bossAttacks': max([s.get('bossAttacksStarted', 0) for s in samples] or [0]),
             'bossContacts': max([s.get('bossDamageContacts', 0) for s in samples] or [0]),

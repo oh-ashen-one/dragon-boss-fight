@@ -442,6 +442,20 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("lastHitRegion"),Dragon->GetLastHitRegion()); O->SetNumberField(TEXT("lastSwordDamage"),Dragon->GetLastSwordDamage());
     O->SetNumberField(TEXT("collapses"),Dragon->GetCollapseCount()); O->SetNumberField(TEXT("headBonusHits"),Dragon->GetHeadBonusHitCount());
     O->SetNumberField(TEXT("headWindow"),Dragon->GetHeadWindowRemaining());
+    {
+        // Knock-down length evidence: buckle start to standing (Rise end) and to the end of the post-rise wait.
+        auto Stats=[&O](const TArray<float>& Values,const TCHAR* Longest,const TCHAR* Mean)
+        {
+            float Max=0.f,Sum=0.f;for(float V:Values){Max=FMath::Max(Max,V);Sum+=V;}
+            O->SetNumberField(Longest,Max);O->SetNumberField(Mean,Values.Num()?Sum/Values.Num():0.f);
+        };
+        O->SetBoolField(TEXT("legacyKnockdown"),Dragon->bLegacyKnockdown);
+        O->SetNumberField(TEXT("knockdownsStood"),Dragon->KnockdownStandSeconds.Num());
+        Stats(Dragon->KnockdownFloorSeconds,TEXT("knockdownLongestFloorSeconds"),TEXT("knockdownMeanFloorSeconds"));
+        Stats(Dragon->KnockdownStandSeconds,TEXT("knockdownLongestStandSeconds"),TEXT("knockdownMeanStandSeconds"));
+        O->SetNumberField(TEXT("knockdownsActed"),Dragon->KnockdownActSeconds.Num());
+        Stats(Dragon->KnockdownActSeconds,TEXT("knockdownLongestActSeconds"),TEXT("knockdownMeanActSeconds"));
+    }
     O->SetNumberField(TEXT("targetLeg"),TargetLeg);
     const FVector ReviewLeg=Dragon->GetLegLocation(TargetLeg);
     const FVector ReviewGoal=ReplayMode==TEXT("stance")?ReviewLeg+(ReviewLeg-Dragon->GetActorLocation()).GetSafeNormal2D()*250.f:LegApproachGoal();
@@ -2012,9 +2026,10 @@ float AVeyrReplay::SafeStationarySeconds(const FVector& Point) const
         case EVeyrDragonState::Recovery:Window=Remaining+.9f+NextWindup;break;
         case EVeyrDragonState::Idle:Window=Remaining+NextWindup;break;
         case EVeyrDragonState::Reposition:Window=Remaining+.75f+.4f;break;
-        case EVeyrDragonState::Buckle:Window=Remaining+1.f+7.f+2.f+.8f+.4f;break;
-        case EVeyrDragonState::Collapse:Window=Remaining+7.f+2.f+.8f+.4f;break;
-        case EVeyrDragonState::Exposed:Window=Remaining+2.f+.8f+.4f;break;
+        // The new knock-down timing is shorter: read the dragon's own plan instead of the legacy constants.
+        case EVeyrDragonState::Buckle:Window=Dragon->bLegacyKnockdown?Remaining+1.f+7.f+2.f+.8f+.4f:Dragon->GetKnockdownRemaining()+.8f+.4f;break;
+        case EVeyrDragonState::Collapse:Window=Dragon->bLegacyKnockdown?Remaining+7.f+2.f+.8f+.4f:Dragon->GetKnockdownRemaining()+.8f+.4f;break;
+        case EVeyrDragonState::Exposed:Window=Dragon->bLegacyKnockdown?Remaining+2.f+.8f+.4f:Dragon->GetKnockdownRemaining()+.8f+.4f;break;
         case EVeyrDragonState::Rise:Window=Remaining+.8f+.4f;break;
         case EVeyrDragonState::Dead:Window=1000.f;break;
         default:break;

@@ -194,6 +194,26 @@ public:
     float ExposedDamage=0.f;
     float ExposedDamageCap=200.f;
     int32 ExposedCapRises=0;
+    /** Owner 2026-11-18: "He should only be on the floor for 5 seconds maximum." Floor time runs from the body
+     * reaching the floor (start of Exposed) to standing again (end of Rise). The rise plays 1.25x and the lying
+     * window is what is left of the 5 s; buckle and fall keep their authored speed.
+     * -VeyrLegacyKnockdown restores the 7 s lying window and the authored rise. */
+    bool bLegacyKnockdown=false;
+    float KnockdownFloorBudgetSeconds=4.9f; // 0.1 s under the 5 s limit: states end on frame boundaries
+    float KnockdownRiseRate=1.25f;
+    float KnockdownBuckleSeconds(int32 Leg) const;
+    float KnockdownCollapseSeconds() const;
+    float KnockdownRiseSeconds() const;
+    float PostRiseIdleSeconds() const { return bAggression?.5f:.8f; }
+    /** Lying window of a knock-down (fitted to the floor budget, never above ExposedSeconds). */
+    float PlannedExposedSeconds() const;
+    /** Time left until the dragon is standing again (end of Rise); 0 when it is not knocked down. */
+    float GetKnockdownRemaining() const;
+    /** Evidence per knock-down that ended standing: floor time (Exposed start to Rise end), buckle start to
+     * Rise end, and buckle start to the end of the post-rise wait. */
+    TArray<float> KnockdownFloorSeconds, KnockdownStandSeconds, KnockdownActSeconds;
+    float KnockdownElapsed=0.f, KnockdownFloorStart=-1.f;
+    bool bKnockdownActive=false, bKnockdownAwaitAct=false;
     /** Largest distance any grounded body part reached past the court floor edge; negative = always inside. */
     float CourtOverreachCm=-100000.f;
     static float ConfiguredBodyScale();
