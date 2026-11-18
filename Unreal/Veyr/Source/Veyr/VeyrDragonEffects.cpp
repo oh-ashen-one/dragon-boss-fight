@@ -4,6 +4,7 @@
 #include "VeyrFightFeel.h"
 #include "VeyrGameMode.h"
 #include "Engine/World.h"
+#include "VeyrLook.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/PointLightComponent.h"
@@ -37,6 +38,13 @@ AVeyrDragonEffects::AVeyrDragonEffects()
         Light->SetIntensityUnits(ELightUnits::Lumens);
         Light->SetCastShadows(false);Light->SetIntensity(0.f);Light->SetAttenuationRadius(650.f);
         Light->SetLightColor(FLinearColor(1.f,.23f,.025f));Light->SetVisibility(false);
+        if(!VeyrLook::IsLegacy())
+        {
+            // Only the far light may cast a shadow, only at tier 0, and its radius is capped
+            // in Tick: a moving shadowed point light re-renders six VSM faces every frame.
+            Light->SetLightColor(FLinearColor(1.f,.42f,.12f));Light->SetCastShadows(I==2&&VeyrLook::BreathShadow());
+            Light->SetSourceRadius(60.f);Light->SetVolumetricScatteringIntensity(1.5f);
+        }
         FireLights.Add(Light);
     }
     static ConstructorHelpers::FObjectFinderOptional<UStaticMesh> Plane(TEXT("/Engine/BasicShapes/Plane.Plane"),LOAD_Quiet|LOAD_NoWarn);
@@ -152,6 +160,8 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         }
         Impacts->MarkRenderStateDirty();
     }
+    const bool bRelit=!VeyrLook::IsLegacy();
+    const float FireScale=FMath::Max(1.f,static_cast<float>(Dragon->BodyScale));
     const bool FireMove=Dragon->Move==EVeyrDragonMove::Fire&&!Dragon->IsDead()&&!Dragon->IsEncounterStopped();
     const bool Windup=FireMove&&Dragon->State==EVeyrDragonState::Windup;
     const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
@@ -175,7 +185,8 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         for(int32 I=0;I<FireLights.Num();++I)
         {
             FireLights[I]->SetVisibility(I==0);FireLights[I]->SetWorldLocation(Mouth);
-            FireLights[I]->SetIntensity(I==0?800.f*T*T:0.f);
+            FireLights[I]->SetIntensity(I==0?(bRelit?3000.f:800.f)*T*T:0.f);
+            if(bRelit&&I==0)FireLights[I]->SetAttenuationRadius(900.f*FireScale);
         }
     }
     if(Active)
@@ -231,8 +242,22 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
             Position.Z=FMath::Max(Position.Z,45.f);
             const float Flicker=.85f+.15f*FMath::Sin(EffectsClock*19.f-I*2.f);
             FireLights[I]->SetVisibility(true);FireLights[I]->SetWorldLocation(Position);
-            FireLights[I]->SetAttenuationRadius(550.f+I*120.f);
-            FireLights[I]->SetIntensity((I==0?4200.f:I==1?3000.f:1800.f)*Flicker*Startup);
+            if(bRelit)
+            {
+                // Phase C: the breath is the strongest moving warm source in the court;
+                // it floods the paving and the dragon's underside, and the far light
+                // throws the knight's shadow away from the fire.
+                // The shadowed far light stays at 20 m so its moving shadow redraws only nearby
+                // casters; the unshadowed ones carry the reach of a 2x-3x dragon's breath.
+                const float Reach=(1800.f+I*600.f)*FireScale;
+                FireLights[I]->SetAttenuationRadius(FireLights[I]->CastShadows?FMath::Min(Reach,2000.f):Reach);
+                FireLights[I]->SetIntensity((I==0?25000.f:I==1?18000.f:11000.f)*Flicker*Startup);
+            }
+            else
+            {
+                FireLights[I]->SetAttenuationRadius(550.f+I*120.f);
+                FireLights[I]->SetIntensity((I==0?4200.f:I==1?3000.f:1800.f)*Flicker*Startup);
+            }
         }
         Core->MarkRenderStateDirty();Flame->MarkRenderStateDirty();Embers->MarkRenderStateDirty();
         VisibleSpriteCount+=CoreCount+FlameCount+EmberCount;
@@ -255,5 +280,9 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
         Smoke->MarkRenderStateDirty();VisibleSpriteCount+=SmokeCount;
     }
     if(!Active&&!Windup)
-        for(UPointLightComponent* Light:FireLights){Light->SetIntensity(700.f*FMath::Clamp(1.f-TailAge/.25f,0.f,1.f));Light->SetVisibility(TailAge<.25f);}
+    {
+        // Relit: the court cools over 0.6 s after the breath instead of snapping off.
+        const float Tail=bRelit?.6f:.25f,Peak=bRelit?9000.f:700.f;
+        for(UPointLightComponent* Light:FireLights){Light->SetIntensity(Peak*FMath::Clamp(1.f-TailAge/Tail,0.f,1.f));Light->SetVisibility(TailAge<Tail);}
+    }
 }

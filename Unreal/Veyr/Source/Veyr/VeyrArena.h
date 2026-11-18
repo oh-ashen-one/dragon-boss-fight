@@ -10,6 +10,8 @@ class UMaterialInstanceDynamic;
 class UStaticMesh;
 class UTexture2D;
 class UPointLightComponent;
+class UDirectionalLightComponent;
+class UPostProcessComponent;
 class UStaticMeshComponent;
 class APlayerController;
 class UVeyrSkeletalPresentation;
@@ -54,6 +56,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bFortressGateProbeReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") TMap<FName,FVector> ConnectedMeshDimensionsCm;
     UFUNCTION(BlueprintPure, Category="Environment") float GetMaximumWalkableHeightNear(const FVector& WorldPoint,float RadiusCm) const;
+    /** Phase C frame-report counters: court parts split out for Lumen, shadowed court lights now. */
+    int32 GetLumenSplitComponentCount() const { return LumenSplitParts.Num(); }
+    int32 CountShadowedCourtLights() const;
     /** GLB front is provisionally +Y after import; root verifies native orientation. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Environment") float CathedralFacingYawOffset=90.f;
 
@@ -80,6 +85,17 @@ private:
     UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> Materials;
     UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> FortressFireLights;
     TArray<float> FortressFireIntensities;
+    UPROPERTY() TObjectPtr<UDirectionalLightComponent> CharacterRim;
+    UPROPERTY() TObjectPtr<UDirectionalLightComponent> DragonRimLight;
+    UPROPERTY() TObjectPtr<UPostProcessComponent> CourtGrade;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> LumenSplitParts;
+    /** The twelve fortress braziers; at tier >= 2 only the ones nearest the camera keep shadows. */
+    UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> BrazierLights;
+    float BrazierShadowClock=0.f;
+    /** New look ticks every frame (rims follow the camera); the rest keeps its 30 Hz step. */
+    float SlowTickAccumulator=0.f;
+    void UpdateBrazierShadowBudget(const FVector& Camera);
+    void AimRelitRims();
     UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Batches;
     UPROPERTY() TMap<FName,TObjectPtr<UStaticMesh>> PolishMeshes;
     UPROPERTY() TMap<FName,TObjectPtr<UInstancedStaticMeshComponent>> PolishBatches;
@@ -136,6 +152,11 @@ private:
     void ImportedPiece(UStaticMesh* Mesh,const FName Name,const FVector& Position,float Height,float Yaw,bool bArchitecture=true);
     void BuildDistance();
     void BuildLighting();
+    /** Phase C relit court (default); BuildLighting's original body is the -VeyrLegacyRender path. */
+    void BuildRelitLighting();
+    /** Lumen caches no surface for non-Nanite instanced meshes: draw shadow-casting court instances as components. */
+    void SplitCourtInstancesForLumen();
+    void TickRelitLighting(float DeltaSeconds);
     void BuildCollision();
     bool LoadPolishKit();
     FVector KitSize(FName Name,float Height) const;
