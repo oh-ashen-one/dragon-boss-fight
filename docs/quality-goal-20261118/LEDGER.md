@@ -27,7 +27,9 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-18 12:52 | Free effects inventory | haiku-scout, Haiku 5.5 high | none | short | done: only Cascade effects on disk (Paragon packs: Rampage/Gideon dust, Terra/Greystone ground impacts, Kwang/Greystone sparks, debris meshes); engine ships Niagara templates and the Cascade-to-Niagara converter; no dragon-breath effect |
 | 11-18 13:10 | B4-B6 weight code (contacts, shake, dust, spine reaction, trail) in a worktree | opus-builder, Opus 5.5 high | none | 2.5 h | compiles 13:38 (`fable/quality-goal-Bfeel` `2c32825`); never run; waits for the engine. Broke the wait-for-other-builds rule once (reported it) |
 | 11-18 13:20 | C picture: renderer features, relit courtyard, controls box (code in a worktree) | opus-builder, Opus 5.5 high | none | 2 h | compiles 13:40 (`fable/quality-goal-C` `a3afaa3`); never run; needs about 5 engine hours; waits |
-| 11-18 13:44 | B1-B3 sound wiring code in a worktree (on top of the weight branch) | sonnet-builder, Sonnet 5.5 high | none | 2 h | running |
+| 11-18 13:44 | B1-B3 sound wiring code in a worktree (on top of the weight branch) | sonnet-builder, Sonnet 5.5 high | none | 2 h | compiles 14:00 (`fable/quality-goal-Baudio` `067c6a8`): variants, contact sounds, breathing, per-move sounds, polish default; never run; waits |
+| 11-18 13:50 | D1-D2 camera for a giant (code in a worktree) | opus-builder, Opus 5.5 high | none | 2 h | compiles 14:03 (`fable/quality-goal-D` `bd9a2ce`): lock target slides chest to striking limb, mouse no longer drops the lock, camera life, framing metrics, `framing` replay; never run; waits |
+| 11-18 13:50 | F1-F4 dragon playback (tempo, cross-fades, foot lock, root tracks; code in a worktree) | opus-builder, Opus 5.5 high | none | 3 h | running |
 
 ## Spend
 
