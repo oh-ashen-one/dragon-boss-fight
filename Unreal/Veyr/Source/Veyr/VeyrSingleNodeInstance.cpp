@@ -87,6 +87,9 @@ namespace
         // F3: generic two-bone leg locks (dragon). Target = animated end-bone position + Delta * Weight.
         TArray<FVeyrLegLock> LegLocks;
         TArray<float> LegLockMissCm;
+        FVector LegLockBends[4]={FVector(1,0,0),FVector(1,0,0),FVector(1,0,0),FVector(1,0,0)};
+        // Review M7: the outgoing clip's aim/flinch layer, kept for the moving transition source.
+        TMap<FName,FRotator> SourceBoneRotations,PublishedBoneRotations;
         FString LegLockError;
 
         void ApplyMirrorRepair(FPoseContext& Output){ApplyMirrorRepairIf(Output,bMirrorRepair);}
@@ -173,13 +176,14 @@ namespace
             return true;
         }
 
-        bool ApplyBoneRotations(FPoseContext& Output)
+        bool ApplyBoneRotations(FPoseContext& Output){return ApplyBoneRotationsFrom(Output,BoneRotations);}
+        bool ApplyBoneRotationsFrom(FPoseContext& Output,const TMap<FName,FRotator>& Rotations)
         {
-            if(BoneRotations.IsEmpty())return true;
+            if(Rotations.IsEmpty())return true;
             const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
             const FReferenceSkeleton& Reference=Bones.GetReferenceSkeleton();
             TMap<int32,FQuat> Deltas;
-            for(const auto& Entry:BoneRotations)
+            for(const auto& Entry:Rotations)
             {
                 const int32 MeshIndex=Reference.FindBoneIndex(Entry.Key);
                 if(MeshIndex==INDEX_NONE)
@@ -345,8 +349,9 @@ namespace
                 // Bend plane: the move's own knee direction.
                 const FVector Mid=(Upper.GetLocation()+End.GetLocation())*.5;
                 FVector Bend=Knee.GetLocation()-Mid;
-                if(Bend.SizeSquared()<1.0)Bend=Lock.LastBend;
+                if(Bend.SizeSquared()<1.0)Bend=LegLockBends[L%4];else LegLockBends[L%4]=Bend; // review L3
                 const FVector Pole=Knee.GetLocation()+Bend.GetSafeNormal()*100.f;
+                const FTransform OldEnd=End;
                 AnimationCore::SolveTwoBoneIK(Upper,Knee,End,Pole,Target,false,1.,1.);
                 End.SetRotation(EndRotation); // paw/hoof keeps its own orientation; toes ride it
                 LegLockMissCm[L]=static_cast<float>(FVector::Distance(End.GetLocation(),Target));
@@ -356,6 +361,18 @@ namespace
                 Output.Pose[Idx[1]]=Knee.GetRelativeTransform(Upper);
                 Output.Pose[Idx[2]]=End.GetRelativeTransform(Knee);
                 for(int32 J=0;J<3;++J)Output.Pose[Idx[J]].NormalizeRotation();
+                // Review H2: paw bones hanging off the knee beside the end bone follow the end bone, not the shin.
+                for(const FName Rider:Lock.Riders)
+                {
+                    if(Rider.IsNone())continue;
+                    const int32 Mesh=Ref.FindBoneIndex(Rider);
+                    const FCompactPoseBoneIndex R=Mesh==INDEX_NONE?FCompactPoseBoneIndex(INDEX_NONE):Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(Mesh));
+                    if(R.GetInt()==INDEX_NONE||Bones.GetParentBoneIndex(R)!=Idx[1])
+                    {LegLockError=TEXT("Leg lock rider is not a child of the knee: ")+Rider.ToString();continue;}
+                    const FTransform NewRider=CS[R.GetInt()].GetRelativeTransform(OldEnd)*End;
+                    Output.Pose[R]=NewRider.GetRelativeTransform(Knee);Output.Pose[R].NormalizeRotation();
+                    CS[R.GetInt()]=NewRider;
+                }
                 // Children of the chain read CS lazily below only through Output; refresh the three entries.
                 CS[Idx[0].GetInt()]=Upper;CS[Idx[1].GetInt()]=Knee;CS[Idx[2].GetInt()]=End;
             }
@@ -415,7 +432,7 @@ namespace
                         ApplySpine0Fix(Source);
                         ApplyMirrorRepairIf(Source,bTransitionMirrorRepair);
                         ApplyRootOffset(Source,RootOffsetSource);
-                        if(!ApplyBoneRotations(Source)){LastPublished.bValid=false;return true;}
+                        if(!ApplyBoneRotationsFrom(Source,SourceBoneRotations)){LastPublished.bValid=false;return true;}
                     }
                 }
                 if(Alpha<=0.f)
@@ -447,6 +464,7 @@ namespace
             // Capture AFTER blending so an interrupted transition starts from
             // the current blended pose, not the previous clip's endpoint.
             LastPublished.Capture(Output);
+            PublishedBoneRotations=BoneRotations;
             return true;
         }
     };
@@ -477,6 +495,7 @@ bool UVeyrSingleNodeInstance::CaptureTransitionSource()
     Proxy.TransitionSource.CopyFrom(Proxy.LastPublished);
     Proxy.TransitionSequence=nullptr;Proxy.TransitionSeconds=0.f;ExplicitTransitionSequence=nullptr;
     Proxy.bTransitionCleanup=Proxy.bTransitionMirrorRepair=false;
+    Proxy.SourceBoneRotations=Proxy.PublishedBoneRotations; // review M7: the outgoing clip keeps its own aim layer
     return true;
 }
 

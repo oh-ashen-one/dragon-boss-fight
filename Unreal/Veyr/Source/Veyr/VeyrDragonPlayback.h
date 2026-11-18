@@ -53,6 +53,10 @@ public:
     TMap<FName,FVeyrMoveTempo> Moves;
     TMap<FName,float> Fades;
     float FadeDefault=.35f,TrackRateDps=90.f,TrackLeadSeconds=.06f;
+    /** Rate factor on attack phases while the boss is in phase two (the old x1.12 escalation). */
+    float Phase2Rate=1.12f;
+    /** "compiled" (VeyrDragonPlaybackData.inl) or the loose file path that overrode it. */
+    FString Source;
     FVeyrFootLockTuning FootLock;
 
     /** Strips "V2r" and a Windup/Active/Recovery suffix; returns the stem entry and the phase (NAME_None for whole clips). */

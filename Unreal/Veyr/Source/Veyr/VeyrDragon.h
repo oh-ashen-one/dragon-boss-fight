@@ -343,6 +343,10 @@ public:
     void SetShowcaseGameTiming(bool bEnabled){bShowcaseGameTiming=bEnabled;}
     /** Last clip phase a state reaches at game timing: recovery_exit for tempo recoveries, else 1. */
     float PlaybackPhaseCeiling(FName Clip) const;
+    /** Review M2: a foot in a floor-lock step is lifted by the lock, not by the clip (no ground contact). */
+    bool IsFootLockStepping(int32 Leg) const;
+    /** Review M6: real phase seconds on the tempo path (Fallback otherwise). */
+    float PlaybackAttackPhaseSeconds(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Phase,float Fallback) const;
 
 protected:
     virtual void BeginPlay() override;

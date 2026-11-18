@@ -11,13 +11,15 @@ namespace
 {
     float SmoothStep01(float X){X=FMath::Clamp(X,0.f,1.f);return X*X*(3.f-2.f*X);}
     const TCHAR* const GLegNames[4]={TEXT("FL"),TEXT("FR"),TEXT("HL"),TEXT("HR")};
-    // creature.json limbs, UE names: upper, knee/elbow (the hinge), end (wrist/hock). The front right chain has
-    // one more toe (tripo__0_Left_Limb_3) below bone_14; it rides the end bone like every toe.
+    // creature.json limbs, UE names: upper, knee/elbow (the hinge), end (wrist/hock).
     const TCHAR* const GLegBones[4][3]={
         {TEXT("bone_7"),TEXT("tripo__1_Left_Limb_0"),TEXT("bone_9")},
         {TEXT("tripo__0_Left_Limb_0"),TEXT("tripo__0_Left_Limb_1"),TEXT("bone_14")},
         {TEXT("tripo__1_Right_Limb_1"),TEXT("tripo__1_Right_Limb_2"),TEXT("tripo__1_Right_Limb_3")},
         {TEXT("tripo__0_Right_Limb_1"),TEXT("tripo__0_Right_Limb_2"),TEXT("tripo__0_Right_Limb_3")}};
+    // Bones parented to the knee/elbow beside the end bone (GLB hierarchy) that belong to the paw: FL toe, FR toe chain
+    // (tripo__0_Left_Limb_3 is its child). The hind toes (Limb_4) are children of the hock end bone already.
+    const TCHAR* const GLegRiders[4]={TEXT("tripo__1_Left_Limb_1"),TEXT("tripo__0_Left_Limb_2"),nullptr,nullptr};
 }
 
 const FVeyrClipPlayback* AVeyrDragon::TempoClip(FName Clip,float& OutRate,float& OutHoldRate) const
@@ -27,6 +29,9 @@ const FVeyrClipPlayback* AVeyrDragon::TempoClip(FName Clip,float& OutRate,float&
     FName Phase;
     const FVeyrClipPlayback* C=Playback.Find(Clip,Phase);
     if(C)Playback.RatesFor(*C,Phase,OutRate,OutHoldRate);
+    // Review H4: the wounded boss keeps its phase-two speed-up on every attack phase (fire's sweep excepted), as before.
+    if(C&&!Phase.IsNone()&&InSecondPhase()&&!(C->Move==FName(TEXT("fire"))&&Phase==FName(TEXT("Active"))))
+    {OutRate*=Playback.Phase2Rate;OutHoldRate*=Playback.Phase2Rate;}
     return C;
 }
 
@@ -129,7 +134,7 @@ void AVeyrDragon::InitPlayback()
     const bool Loaded=Playback.Load(Diagnostic);
     PlaybackDiagnostic=Diagnostic;
     bClipTempo=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacyClipTempo"));
-    bTwoClipBlend=!FParse::Param(Cmd,TEXT("VeyrLegacyBlend"));
+    bTwoClipBlend=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacyBlend"));
     bFootLock=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoFootLock"));
     bSlowSnapTurn=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
@@ -240,8 +245,10 @@ void AVeyrDragon::ResetFootLock()
 
 void AVeyrDragon::UpdateFootLock(bool bFading)
 {
-    const bool Eligible=bFootLock&&Playback.bLoaded&&!IsDead()&&!IsAirborne()&&
-        !(Move==EVeyrDragonMove::FlyAway&&(State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery));
+    // Review M1: standing states only. Down (buckle, collapse, exposed, rise), dead or flying the clip's own feet play.
+    const bool Standing=State==EVeyrDragonState::Idle||State==EVeyrDragonState::Reposition||State==EVeyrDragonState::Windup||
+        State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery;
+    const bool Eligible=bFootLock&&Playback.bLoaded&&Standing&&!IsDead()&&!IsAirborne()&&Move!=EVeyrDragonMove::FlyAway;
     if(!Eligible){bool Any=false;for(const auto& F:LockFeet)Any|=F.bLocked||F.bStepping||F.bReleasing;if(Any)ResetFootLock();return;}
     FVeyrSoleSample Anim;
     if(!ImportedPresentation->MeasureSoles(Anim)||!Anim.bValid){FootLockDiagnostic=TEXT("sole model unavailable");return;}
@@ -251,17 +258,20 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
     const float S=BodyScale;
     FPlaybackStat& Stat=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
     TArray<FVeyrLegLock> Locks;Locks.SetNum(4);
+    bool AnyWeight=false;
     for(int32 L=0;L<4;++L)
     {
         FFootLockFoot& F=LockFeet[L];
-        const FVector Tip=Anim.Lowest[L];
+        // Review H3: the pin is a foot-fixed anchor (the wrist/hock end bone), not whichever sole point is lowest this
+        // frame, so a paw rolling heel to toe is not translated by a foot length. The sole only answers "how high".
+        const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
         const float Height=Anim.SoleAboveFloorCm[L];
         if(Dt>0.f)
         {
-            const float Speed=F.bHasPrev?static_cast<float>(FVector::Dist2D(Tip,F.PrevTip))/Dt:0.f;
+            const float Speed=F.bHasPrev?static_cast<float>(FVector::Dist2D(Anchor,F.PrevTip))/Dt:0.f;
             if(F.bLocked)
             {
-                const float Drag=static_cast<float>(FVector::Dist2D(F.Pin,Tip));
+                const float Drag=static_cast<float>(FVector::Dist2D(F.Pin,Anchor));
                 if(Height>T.ReleaseHeightCm*S||(Height>2.f*S&&Drag>T.DragReleaseCm*S))
                 {F.bLocked=false;F.bReleasing=true;F.T=0.f;F.From=F.Pin;}
                 else if(Drag>T.SlipCm*S)
@@ -274,7 +284,7 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
             else if(F.bStepping)
             {
                 F.T+=Dt/FMath::Max(.05f,T.StepSeconds);
-                if(F.T>=1.f){F.bStepping=false;F.bLocked=Height<T.PlantHeightCm*S;F.Pin=Tip;}
+                if(F.T>=1.f){F.bStepping=false;F.bLocked=Height<T.PlantHeightCm*S;F.Pin=Anchor;}
             }
             else if(F.bReleasing)
             {
@@ -283,38 +293,55 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
             }
             // A foot plants only when it is low AND slow in the clip (bFading only marks evidence).
             if(!F.bLocked&&!F.bStepping&&Height<T.PlantHeightCm*S&&Speed<T.PlantSpeedCms*S)
-            {F.bLocked=true;F.bReleasing=false;F.Pin=Tip;}
+            {F.bLocked=true;F.bReleasing=false;F.Pin=Anchor;}
             if(Height<T.PlantHeightCm*S&&F.bHasPrev)
-            {Stat.PlantedSeconds[L]+=Dt;Stat.AnimatedSlideCm[L]+=FVector::Dist2D(Tip,F.PrevTip);}
-            F.PrevTip=Tip;F.bHasPrev=true;
+            {Stat.PlantedSeconds[L]+=Dt;Stat.AnimatedSlideCm[L]+=FVector::Dist2D(Anchor,F.PrevTip);}
+            F.PrevTip=Anchor;F.bHasPrev=true;
         }
-        FVector Goal=Tip;float Weight=0.f;
-        if(F.bLocked){Goal=FVector(F.Pin.X,F.Pin.Y,Tip.Z);Weight=1.f;}
+        FVector Goal=Anchor;float Weight=0.f;
+        if(F.bLocked){Goal=FVector(F.Pin.X,F.Pin.Y,Anchor.Z);Weight=1.f;}
         else if(F.bStepping)
         {
             const float U=SmoothStep01(F.T);
-            Goal=FMath::Lerp(F.From,Tip,U);Goal.Z=Tip.Z+FMath::Sin(PI*FMath::Clamp(F.T,0.f,1.f))*T.StepLiftCm*S;Weight=1.f;
+            Goal=FMath::Lerp(F.From,Anchor,U);Goal.Z=Anchor.Z+FMath::Sin(PI*FMath::Clamp(F.T,0.f,1.f))*T.StepLiftCm*S;Weight=1.f;
         }
-        else if(F.bReleasing){Goal=FMath::Lerp(F.From,Tip,SmoothStep01(F.T));Goal.Z=Tip.Z;Weight=1.f;}
-        F.Target=Goal;F.Weight=Weight;
+        else if(F.bReleasing){Goal=FMath::Lerp(F.From,Anchor,SmoothStep01(F.T));Goal.Z=Anchor.Z;Weight=1.f;}
+        F.Target=Goal;F.Weight=Weight;AnyWeight|=Weight>0.f&&!Goal.Equals(Anchor,.05);
         FVeyrLegLock& Lock=Locks[L];
         for(int32 J=0;J<3;++J)Lock.Bones[J]=FName(GLegBones[L][J]);
-        Lock.Delta=ImportedPresentation->GetComponentTransform().InverseTransformVector(Goal-Tip);
-        Lock.Weight=Weight;Lock.LastBend=F.LastBend;
+        // Review H2: the front paws' toe bones hang off the elbow beside the end bone; they ride the end bone.
+        if(GLegRiders[L])Lock.Riders[0]=FName(GLegRiders[L]);
+        Lock.Delta=ImportedPresentation->GetComponentTransform().InverseTransformVector(Goal-Anchor);
+        Lock.Weight=Weight;
     }
+    // Review L4: nothing pinned this frame -> no second evaluation (the pose was sampled unlocked).
+    if(!AnyWeight){for(FFootLockFoot& F:LockFeet)F.PrevDrawn=FVector::ZeroVector;return;}
     if(!ImportedPresentation->SetLegLocks(Locks)){FootLockDiagnostic=ImportedPresentation->LastError;return;}
-    const FString Error=ImportedPresentation->GetLegLockError();
-    if(!Error.IsEmpty())FootLockDiagnostic=Error;
+    const FString LockError=ImportedPresentation->GetLegLockError();
+    if(!LockError.IsEmpty())FootLockDiagnostic=LockError;
     for(float Miss:ImportedPresentation->GetLegLockMissCm())
         Stat.MaxIkMissCm=FMath::Max(Stat.MaxIkMissCm,Miss*static_cast<float>(ImportedPresentation->GetComponentTransform().GetScale3D().GetAbsMax()));
-    FVeyrSoleSample Drawn;
-    if(Dt>0.f&&ImportedPresentation->MeasureSoles(Drawn)&&Drawn.bValid)
+    if(Dt>0.f)
         for(int32 L=0;L<4;++L)
         {
             FFootLockFoot& F=LockFeet[L];
-            if(F.bLocked&&!F.PrevDrawn.IsZero())Stat.DrawnSlideCm[L]+=FVector::Dist2D(Drawn.Lowest[L],F.PrevDrawn);
-            F.PrevDrawn=F.bLocked?Drawn.Lowest[L]:FVector::ZeroVector;
+            const FVector Drawn=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
+            if(F.bLocked&&!F.PrevDrawn.IsZero())Stat.DrawnSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevDrawn);
+            F.PrevDrawn=F.bLocked?Drawn:FVector::ZeroVector;
         }
+}
+
+bool AVeyrDragon::IsFootLockStepping(int32 Leg) const
+{
+    return Leg>=0&&Leg<4&&bFootLock&&LockFeet[Leg].bStepping;
+}
+
+float AVeyrDragon::PlaybackAttackPhaseSeconds(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Phase,float Fallback) const
+{
+    if(!bClipTempo||Attack==EVeyrDragonMove::FlyAway)return Fallback;
+    float W=0.f,A=0.f,R=0.f,D=0.f;
+    BaseAttackTiming(Attack,Leg,W,A,R,D);
+    return FCString::Strcmp(Phase,TEXT("Windup"))==0?W:FCString::Strcmp(Phase,TEXT("Active"))==0?A:FCString::Strcmp(Phase,TEXT("Recovery"))==0?R:Fallback;
 }
 
 TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const

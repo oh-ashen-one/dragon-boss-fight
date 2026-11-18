@@ -451,6 +451,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             {
                 ++CompletedAttacks[MoveIndex(Move)];
                 float Gap=!UsesPacingRevision()?.40f:bLegacyDragon?1.25f:FMath::Max(1.25f,3.60f-RecoveryDuration);
+                bool bInStringGap=false;
                 if(bAggression)
                 {
                     // A finished string leaves one honest opening; inside a string the next blow follows at once.
@@ -464,12 +465,13 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                         if(bStringLanded)WhiffStreak=0;else{++WhiffOpenings;++WhiffStreak;}
                         ComboCount=0;bStringLanded=false;RollComboBudget();
                     }
-                    else Gap=BrainRandom.FRandRange(.2f,.45f)*(InSecondPhase()?.8f:1.f);
+                    else{Gap=BrainRandom.FRandRange(.2f,.45f)*(InSecondPhase()?.8f:1.f);bInStringGap=true;}
                     // An armed anti-camp answer does not wait out the opening.
                     if(AntiCampArmed())Gap=.15f;
                 }
-                // F1: per-move gap shaping from playback.json (the clip tempo path only; anti-camp untouched).
-                if(const FVeyrMoveTempo* T=TempoForMove(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg);T&&!(bAggression&&AntiCampArmed()))
+                // F1: per-move gap shaping from playback.json, only for the short gaps inside a string (review H4:
+                // the whiff-punish and string-landed openings and the anti-camp answer stay as they were).
+                if(const FVeyrMoveTempo* T=TempoForMove(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg);T&&bInStringGap&&!AntiCampArmed())
                     Gap=FMath::Max(.05f,Gap*T->GapScale+T->GapAdd);
                 EnterState(EVeyrDragonState::Idle,Gap);
             }
@@ -1245,8 +1247,14 @@ float AVeyrDragon::EarliestNextContactSeconds(const FVector& Point) const
         const FVector Local=RigidTransform().InverseTransformPosition(Point);
         const float Distance=static_cast<float>(Local.Size2D());
         const float OffAxis=FMath::Abs(FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(Local.Y),static_cast<float>(Local.X))));
-        const float Turn=OffAxis>TrackLimitDegrees?FMath::Max(.3f,(OffAxis-TrackLimitDegrees)/(60.f*PaceScale)):0.f;
-        const float Walk=FMath::Max(0.f,Distance-FrontSweetCm-150.f*BodyScale)/(200.f*BodyScale*PaceScale);
+        float Turn=OffAxis>TrackLimitDegrees?FMath::Max(.3f,(OffAxis-TrackLimitDegrees)/(60.f*PaceScale)):0.f;
+        float Walk=FMath::Max(0.f,Distance-FrontSweetCm-150.f*BodyScale)/(200.f*BodyScale*PaceScale);
+        if(bClipTempo)
+        {
+            // Review M4: the same turn and walk speeds BeginReposition now uses.
+            Turn=OffAxis>TrackLimitDegrees?(OffAxis-TrackLimitDegrees>=45.f?TurnClipSeconds(TEXT("TurnLeft"),Turn):FMath::Max(.3f,(OffAxis-TrackLimitDegrees)/60.f)):0.f;
+            if(TempoWalkBaseSpeed()>0.f)Walk=FMath::Max(0.f,Distance-FrontSweetCm-150.f*BodyScale)/(TempoWalkBaseSpeed()*TempoWalkRate());
+        }
         float BiteW,FireW,A,R,D;
         BaseAttackTiming(EVeyrDragonMove::Bite,0,BiteW,A,R,D);BaseAttackTiming(EVeyrDragonMove::Fire,0,FireW,A,R,D);
         const float ViaBite=FMath::Max(.35f,Turn+Walk)+.15f+BiteW;
@@ -2039,7 +2047,11 @@ bool AVeyrDragon::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         CalibrateBiteGroundAim()&&CacheImportedAttackWarnings();
     if(!bImportedAttackCacheReady&&!BiteGroundAimDiagnostic.IsEmpty())ImportedCombatDiagnostic=BiteGroundAimDiagnostic;
     InitPlayback();ResetFootLock();TrackStem=FadeTrackStem=NAME_None;bFadeActive=false;
-    if(bImportedAttackCacheReady&&bClipTempo)WalkStrideSpeedCm=MeasureWalkStrideSpeed();
+    if(bImportedAttackCacheReady&&bClipTempo)
+    {
+        WalkStrideSpeedCm=MeasureWalkStrideSpeed();
+        UE_LOG(LogTemp,Display,TEXT("VEYR_DRAGON_WALK_STRIDE speed=%.0f measured=%d fallback=%.0f"),WalkStrideSpeedCm,WalkStrideSpeedCm>0.f?1:0,TempoWalkBaseSpeed());
+    }
     AttackPoseProbe->SetVisibility(false);AttackPoseProbe->SetHiddenInGame(true);
     LastImportedClip=NAME_None;bImportedTransitionReady=false;
     bPresentationMotionInitialized=false;WalkPhase=TurnPhase=0.f;
@@ -2181,6 +2193,8 @@ void AVeyrDragon::UpdateImportedPresentation()
         // every idle wrap adds a visible hitch and changes the breathing timing.
         const bool AuthoredTurnTempo=AuthoredTurn&&bClipTempo;
         if(AuthoredTurnTempo){const float T=RepositionTurnPhase();SampleSeconds=(bRepositionReverseTurn?1.f-T:T)*Duration;}
+        // Review H1: a change while a fade is still running starts from the displayed (blended) pose, frozen.
+        const bool MidFade=bImportedTransitionReady&&ImportedTransitionSeconds>0.f&&Clock-ImportedTransitionStarted<ImportedTransitionSeconds;
         if(LastImportedClip!=Clip||LastImportedState!=State)
         {
             const FName PreviousClip=LastImportedClip;const EVeyrDragonState PreviousState=LastImportedState;
@@ -2220,7 +2234,8 @@ void AVeyrDragon::UpdateImportedPresentation()
                 if(State==EVeyrDragonState::Dead)Fade=Playback.FadeFor(TEXT("dead"));
                 if(Clip==FName(TEXT("Roar"))||PreviousClip==FName(TEXT("Roar")))Fade=Playback.FadeFor(TEXT("roar"));
                 ImportedTransitionSeconds=FMath::Max(.05f,Fade);
-                if(Previous&&Previous->Sequence&&LastSampledClip==PreviousClip&&LastSampleClock>=0.f)
+                if(MidFade)BlendKind=TEXT("frozenMidFade");
+                else if(Previous&&Previous->Sequence&&LastSampledClip==PreviousClip&&LastSampleClock>=0.f)
                 {
                     FadeSourceClip=PreviousClip;FadeSourceSeconds=LastSampledSequenceSeconds;FadeSourceRate=LastSequenceRate;
                     FadeSourceMin=Previous->StartSeconds;
@@ -2318,8 +2333,6 @@ void AVeyrDragon::UpdateImportedPresentation()
     }
     // A3: one eased vertical offset of the visible body; -VeyrNoDragonGrounding disables. See VeyrDragonGrounding.h.
     ImportedPresentation->UpdateGrounding(VeyrGroundingModeFor(this));
-    // F3: four-foot floor lock after grounding (grounding sets body height; the lock keeps planted feet still).
-    if(Sampled)UpdateFootLock(bFadeActive);
     FTransform Head,Feet[4];
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),Head))return;
     for(int32 I=0;I<4;++I)
@@ -2348,6 +2361,10 @@ void AVeyrDragon::UpdateImportedPresentation()
     }
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("tail_tip"),Tail))return;
     bImportedTargetsValid=!ImportedMouthWorld.Equals(ImportedMouthAimWorld,.01f);
+    // F3: four-foot floor lock after grounding (grounding sets body height; the lock keeps planted feet still).
+    // Review M3: after the gameplay leg points above are read, so sword leg hits, stomp-leg choice and solid-body
+    // blockers use the clip's own legs; only the drawn pose (and what reads it later) carries the lock.
+    if(Sampled)UpdateFootLock(bFadeActive);
 }
 
 FName AVeyrDragon::ImportedMoveClip(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Suffix) const

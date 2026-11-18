@@ -10,6 +10,8 @@ class UAnimSequence;
 struct FVeyrLegLock
 {
     FName Bones[3];
+    /** Paw bones parented to the knee beside the end bone; they keep their pose relative to the end bone. */
+    FName Riders[2];
     /** Component-space move of the end bone, cm; applied with Weight. */
     FVector Delta=FVector::ZeroVector;
     float Weight=0.f;

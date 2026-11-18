@@ -5,6 +5,8 @@
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "Misc/SecureHash.h"
+#include "VeyrDragonPlaybackData.inl"
 
 namespace
 {
@@ -39,14 +41,20 @@ bool FVeyrClipPlayback::InHold(float SourceFrame) const
 bool FVeyrDragonPlayback::Load(FString& OutDiagnostic)
 {
     bLoaded=false;Clips.Reset();Moves.Reset();Fades.Reset();
+    // Review H5: the data is compiled in (packaged builds do not stage Data/); a readable loose playback.json in the
+    // checkout (or -VeyrMoveData=<dir>) overrides it for tuning without a rebuild.
+    FString Compiled;
+    for(const TCHAR* Chunk:GVeyrDragonPlaybackJson)Compiled+=Chunk;
     Path=FPaths::Combine(FBossMoveData::ResolveDirectory(),TEXT("playback.json"));
     FString Text;
-    if(!FFileHelper::LoadFileToString(Text,*Path)){OutDiagnostic=TEXT("unreadable ")+Path;return false;}
     TSharedPtr<FJsonObject> Root;
-    if(!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid()){OutDiagnostic=TEXT("bad JSON ")+Path;return false;}
+    if(FFileHelper::LoadFileToString(Text,*Path)&&FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)&&Root.IsValid())Source=Path;
+    else if(FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Compiled),Root)&&Root.IsValid()){Source=TEXT("compiled");Text=Compiled;}
+    else{OutDiagnostic=TEXT("no readable playback data (loose or compiled)");return false;}
     const TSharedPtr<FJsonObject>* Obj=nullptr;
     if(Root->TryGetObjectField(TEXT("fades"),Obj))
         for(const auto& E:(*Obj)->Values){double V=0;if(E.Value->TryGetNumber(V)){if(E.Key==TEXT("default"))FadeDefault=V;else Fades.Add(FName(*E.Key),V);}}
+    Phase2Rate=FMath::Clamp(Num(Root,TEXT("phase2_rate"),1.12f),1.f,2.f);
     if(Root->TryGetObjectField(TEXT("turn"),Obj)){TrackRateDps=Num(*Obj,TEXT("track_rate_dps"),TrackRateDps);TrackLeadSeconds=Num(*Obj,TEXT("track_lead_seconds"),TrackLeadSeconds);}
     if(Root->TryGetObjectField(TEXT("foot_lock"),Obj))
     {
@@ -91,7 +99,8 @@ bool FVeyrDragonPlayback::Load(FString& OutDiagnostic)
         Clips.Add(C.Stem,MoveTemp(C));
     }
     bLoaded=Clips.Num()>0;
-    OutDiagnostic=FString::Printf(TEXT("%s clips=%d moves=%d fade=%.2f track=%.0fdps%s"),*Path,Clips.Num(),Moves.Num(),FadeDefault,TrackRateDps,*OutDiagnostic);
+    OutDiagnostic=FString::Printf(TEXT("source=%s md5=%s clips=%d moves=%d fade=%.2f track=%.0fdps phase2=%.2f%s"),*Source,
+        *FMD5::HashAnsiString(*Text).Left(8),Clips.Num(),Moves.Num(),FadeDefault,TrackRateDps,Phase2Rate,*OutDiagnostic);
     return bLoaded;
 }
 
