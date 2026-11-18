@@ -27,25 +27,15 @@ His words, mapped to the items below. Still discussion; nothing started.
 - **Attacks**: screen shake, and "a blurred line that follows the tip of the hammer". The swing is "fluid and fast",
   not "a blocky 90 degree angle attack". (Items 19, 21: full-width smoothed trail, motion blur, blows that turn toward
   the stick and exit into movement.)
-- **Hero model** is "a much higher-quality 3D asset. There's no breaking... straight out of Elden Ring". TO DO
-  (not started): compare the two hero models directly in Blender (mesh density, skin weights at the joints, textures,
-  how cloth or armour hides the bends) before deciding anything; the guess that his cloak hides what our plate armour
-  shows is unverified. OPEN DECISION, owner is looking at candidates: repair our knight or replace it with a finished
-  professional character. Shown to him: Paragon Greystone and Paragon Kwang (free, Epic, on Fab) and Fab's free knights.
-  Owner's candidate (2026-11-18): "Dark Knight - Female Character" by Hawtor Studio / Toni Garcia,
-  https://www.fab.com/listings/5be9349e-acb1-4a0b-8811-9e999e036755 : free, hand-made (not AI-generated), Blender
-  source, about 53k vertices in 33 objects, 4K armour textures, one sword, Rigify rig (not an Epic skeleton), two walk
-  cycles only, author credit asked, licence line on the listing reads blank and must be confirmed, author warns that
-  extreme poses clip. Before committing: confirm the licence; a one-day trial (import, retarget idle, run, one attack
-  and a roll, look for clipping, view it in the game's light). Not started.
-  Skeleton fit (owner asked for candidates that avoid redoing the animation work): our knight's rig was auto-made
-  for that one model, so no store character shares it. Our clips are almost all Mixamo sources (Sword and Shield and
-  Great Sword packs) refined in Blender, so the closest fit is a character already on the Mixamo skeleton: Mixamo's
-  own free characters (Maria J J Ong, the greatsword knight the Great Sword pack is shown on; Paladin J Nordstrom;
-  Knight D Pelegrini). Next closest: Epic's skeleton (Paragon Greystone, free), which is also the skeleton the motion
-  matching sample in item 20 uses. Third-party Epic-skeleton knights checked on Fab are paid (15-50 USD) and need the
-  owner's approval. The blank licence line also shows on Epic's own listing when logged out, so it is not specific to
-  the Dark Knight listing; confirm terms when acquiring.
+- **Hero model** is "a much higher-quality 3D asset. There's no breaking... straight out of Elden Ring".
+  **DECIDED by the owner (2026-11-18): replace our knight with Paragon: Greystone** (Epic Games, free on Fab,
+  https://www.fab.com/listings/122fd7bf-6f12-4304-a930-cccbbacdaebc), **in the dark skin he picked**: black plate
+  armour with gold trim, dark green tabard, sword with a glowing gold edge, shield with a gold glow. His screenshot of
+  that skin: `Local/knight-candidates/greystone-owner-pick-20261118.png` (local only). See section G.
+  Owner's rules for this: **free assets only**; **Mixamo is for animations only** (its characters "look much
+  shittier" than Fab's). Considered and not chosen: "Dark Knight - Female Character" by Hawtor Studio
+  (https://www.fab.com/listings/5be9349e-acb1-4a0b-8811-9e999e036755; free, Rigify rig, the most retarget work), Mixamo's
+  own knights (rejected on looks), third-party Epic-skeleton knights on Fab (paid, 15-50 USD).
 - **Boss room interior and lighting** "looks amazing", "almost looks candlelit"; the building outside is about the
   same as our castle ("80%"). DECIDED by the owner: keep the courtyard and relight it. The light does not have to be
   realistic or have a visible source ("Where is this lighting coming from? There are no candles. That doesn't
@@ -127,6 +117,25 @@ them on and it was never done.
 20. Locomotion by motion matching (Unreal Pose Search with Epic's free Game Animation Sample, retargeted) instead of
     about six looping clips; sourced turns, starts and stops on by default until then.
 21. A full-width weapon trail; more impact variety (sparks, floor hits on a miss, a short slow-motion tail on heavies).
+
+## G. New knight: Paragon Greystone (owner's pick, NOT STARTED)
+
+22. Acquire "Paragon: Greystone" from Fab with the owner's Epic account (free; Epic's own listing). Confirm the terms
+    shown at download. The PARAGON name may not be used to name or advertise the game. Epic's raw files stay out of
+    this public repository (same rule as the current character content: local only, with acquisition steps recorded).
+23. First a one-day trial, then show the owner a clip before anything else: the chosen dark skin in the game's light
+    beside the current knight, with idle, run, one attack and one roll.
+24. Retarget our clips (Mixamo sources refined in Blender) onto Greystone's Epic skeleton with one retarget setup;
+    redo the hand fixes (sword grip, planted feet) and rerun the grip and foot-contact proofs. Keep the current knight
+    behind a switch until the owner accepts the new one.
+25. Design points to settle with the owner before building: Greystone carries a **shield**; our knight has one sword
+    with a one-hand / two-hand grip switch and a guard. Does the shield stay (guard with the shield, drop the two-hand
+    grip) or is it hidden? Which sword: his or our current one? Capsule, camera height and attack reach need a
+    re-check for his proportions.
+26. This also sets up item 20: Epic's motion matching sample uses the same family of skeleton.
+27. Still to do before or during the trial: the direct comparison of the reference hero and ours in Blender (why
+    ours "breaks"), so the same fault is not carried over.
+
 
 # Playtest goal closed — 2026-11-18
 

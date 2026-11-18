@@ -1,3 +1,30 @@
+# Planning with the owner — 2026-11-18, after the playtest goal closed. NOTHING IS STARTED.
+
+Branch **`fable/owner-feedback-20261118`** (pushed; `main` + backlog and audio-tool commits only, no game code changed).
+The whole agreed list is the top block of `BACKLOG.md`. Read it first. The owner is still deciding the plan: **do not
+build anything until he says the plan is settled** (he stopped sound work that was started on a "yes").
+
+- **What happened today:** read-only comparison with the reference game (Can It Code's Leshy fight). The owner played
+  both. His footage and frames: `~/leshy-reference`; side-by-side page: `Local/playtest-goal-review/vs.html`
+  (`python3 serve.py 8823`). The reference game runs on this Mac from `~/leshy-bossfight-mac` (launch line in the wiki
+  page `dragon-boss-fight`; Esc quits it).
+- **Decided by the owner:** hitboxes and difficulty stay; the dragon gets bigger, never smaller; relight the courtyard
+  (the light need not have a visible source); replace the knight with **Paragon: Greystone in the dark gold-trimmed
+  skin** (backlog section G); free assets only; Mixamo for animations only; Freesound recordings first for sound,
+  Higgsfield or Fish Audio only where no recording fits.
+- **Bugs he saw in `79fe0bc`:** foot mesh pinches out on close hits, camera goes inside the dragon, dragon floats about
+  3 ft, knock-down must be 5 s at most (backlog section A).
+- **Not decided:** the order of work (proposed: bugs, then weight and sound, lighting, knight, dragon animation
+  playback); the shield and grip question for Greystone.
+- **Paused sound work:** candidates in `Local/AudioSources20261118/`, tools in `tools/audio/` (`freesound_candidates.py`,
+  `prepare_recorded_set.py`); `VeyrAudio.cpp` untouched. Analysis tool: `~/.cache/earshot/venv`.
+- **Who builds:** the session model (Fable) directs only. Building goes to `opus-builder` / `sonnet-builder`, gates to
+  `opus-critic`. Show the owner a clip or an audition page early, compare against the reference footage, one game
+  process at a time.
+- **Playable build of `79fe0bc`:** `/private/tmp/veyr-verified-bundle-2484pvq3/Veyr-Mac-Shipping.app` (not installed;
+  gone after a reboot, re-package from `main`). Launch: `python3 tools/unreal/play_shipping.py --app <that app>`. The
+  GPU gate opens no slot between 11:00 and 13:00 ET while `~/.cache/gpu-slot/STREAMING` exists.
+
 # Playtest goal — closed by the owner on 2026-11-18, merged into `main`
 
 Goal file: `PLAYTEST_GOAL.md`. Numbers, reviews and open items: `docs/playtest-goal-20261117/RESULTS.md`.
