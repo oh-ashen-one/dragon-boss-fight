@@ -38,6 +38,14 @@ His words, mapped to the items below. Still discussion; nothing started.
   cycles only, author credit asked, licence line on the listing reads blank and must be confirmed, author warns that
   extreme poses clip. Before committing: confirm the licence; a one-day trial (import, retarget idle, run, one attack
   and a roll, look for clipping, view it in the game's light). Not started.
+  Skeleton fit (owner asked for candidates that avoid redoing the animation work): our knight's rig was auto-made
+  for that one model, so no store character shares it. Our clips are almost all Mixamo sources (Sword and Shield and
+  Great Sword packs) refined in Blender, so the closest fit is a character already on the Mixamo skeleton: Mixamo's
+  own free characters (Maria J J Ong, the greatsword knight the Great Sword pack is shown on; Paladin J Nordstrom;
+  Knight D Pelegrini). Next closest: Epic's skeleton (Paragon Greystone, free), which is also the skeleton the motion
+  matching sample in item 20 uses. Third-party Epic-skeleton knights checked on Fab are paid (15-50 USD) and need the
+  owner's approval. The blank licence line also shows on Epic's own listing when logged out, so it is not specific to
+  the Dark Knight listing; confirm terms when acquiring.
 - **Boss room interior and lighting** "looks amazing", "almost looks candlelit"; the building outside is about the
   same as our castle ("80%"). DECIDED by the owner: keep the courtyard and relight it. The light does not have to be
   realistic or have a visible source ("Where is this lighting coming from? There are no candles. That doesn't
