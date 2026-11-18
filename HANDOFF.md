@@ -10,8 +10,9 @@ build anything until he says the plan is settled** (he stopped sound work that w
   page `dragon-boss-fight`; Esc quits it).
 - **Decided by the owner:** hitboxes and difficulty stay; the dragon gets bigger, never smaller; relight the courtyard
   (the light need not have a visible source); replace the knight with **Paragon: Greystone in the dark gold-trimmed
-  skin** (backlog section G); free assets only; Mixamo for animations only; Freesound recordings first for sound,
-  Higgsfield or Fish Audio only where no recording fits.
+  skin** (backlog section G); free store assets only; Mixamo for animations only; Freesound recordings first for
+  sound; generation only through fal.ai (`~/.config/fal/secrets.env`) or Fish Audio, Higgsfield is gone. The goal to
+  run is `QUALITY_GOAL.md`; its start line is at the top of `GOAL_PROMPT.md`.
 - **Bugs he saw in `79fe0bc`:** foot mesh pinches out on close hits, camera goes inside the dragon, dragon floats about
   3 ft, knock-down must be 5 s at most (backlog section A).
 - **Not decided:** the order of work (proposed: bugs, then weight and sound, lighting, knight, dragon animation
