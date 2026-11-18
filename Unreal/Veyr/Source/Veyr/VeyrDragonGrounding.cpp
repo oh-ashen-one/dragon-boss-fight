@@ -76,6 +76,7 @@ bool FVeyrHullModel::Initialize(UVeyrSkeletalPresentation* Presentation)
     for(const FVeyrHullPoint& Source:GVeyrHullPoints)
     {
         FPoint Point;Point.Radius=static_cast<float>(Source.Radius*MapScale);
+        Point.bWing=Source.Bones[0]&&FCString::Strncmp(Source.Bones[0],TEXT("VeyrWing"),8)==0;
         const FVector P=ApplyMap(Map,FVector(Source.X,Source.Y,Source.Z));
         const FVector N=NormalMatrix.TransformVector(FVector(Source.NX,Source.NY,Source.NZ)).GetSafeNormal();
         for(int32 I=0;I<4;++I)
@@ -125,6 +126,7 @@ bool FVeyrHullModel::SkinSurface(UVeyrSkeletalPresentation* Presentation,TArray<
     OutPositions.Reserve(Points.Num());OutNormals.Reserve(Points.Num());
     for(const FPoint& Point:Points)
     {
+        if(Point.bWing)continue;
         FVector Skinned=FVector::ZeroVector,Normal=FVector::ZeroVector;
         for(const FInfluence& I:Point.Influences)
             if(I.Bone!=INDEX_NONE&&Pose.IsValidIndex(I.Bone))

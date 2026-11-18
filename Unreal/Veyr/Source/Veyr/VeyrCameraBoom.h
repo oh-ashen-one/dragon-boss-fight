@@ -45,6 +45,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 BodyFrames=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 ResultInsideFrames=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 GuardEvents=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 PivotInsideFrames=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 ShapeCount=0;
 
     /** Dragon size factor used this frame (BodyScale / 2). */
@@ -56,7 +57,7 @@ public:
     bool IsPointInsideBareDragon(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
     /** Solid capsules only (no clearance, no hull): the knight push bodies. */
     bool IsPointInsideSolidCapsule(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
-    /** Back-face check: the nearest of 6500 skinned skin samples faces away from Point by more than Margin. */
+    /** Back-face check: the nearest skinned body skin sample (wings excluded) faces away from Point by more than Margin. */
     bool IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm=nullptr);
     AVeyrDragon* GetDragon() const { return Dragon.Get(); }
     /** Rebuild the body and wing shapes from the dragon's current pose (the arm does this each update;

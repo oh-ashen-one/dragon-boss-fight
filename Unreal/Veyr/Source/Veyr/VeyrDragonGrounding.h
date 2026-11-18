@@ -61,14 +61,15 @@ public:
     bool IsReadyFor(const UVeyrSkeletalPresentation* Presentation) const;
     /** Camera boom spheres for the current pose: world centres (XYZ) and radii (W). */
     bool Skin(UVeyrSkeletalPresentation* Presentation,TArray<FVector4>& Out) const;
-    /** Every skin sample (boom + dense) with its skinned outward normal, world space. */
+    /** Every body skin sample (boom + dense) with its skinned outward normal, world space. Wing samples are
+     * left out: the membranes are open sheets, so the far side of one is not inside anything. */
     bool SkinSurface(UVeyrSkeletalPresentation* Presentation,TArray<FVector>& OutPositions,TArray<FVector>& OutNormals) const;
     int32 BoomCount() const { return FMath::Min(BoomPoints,Points.Num()); }
     int32 BoomWingCount() const { return BoomWing; }
     FString Diagnostic;
 private:
     struct FInfluence { int32 Bone=INDEX_NONE; float Weight=0.f; FVector BoneLocal=FVector::ZeroVector,NormalLocal=FVector::ZeroVector; };
-    struct FPoint { float Radius=0.f; FInfluence Influences[4]; };
+    struct FPoint { float Radius=0.f; bool bWing=false; FInfluence Influences[4]; };
     TArray<FPoint> Points;
     int32 BoomPoints=0,BoomWing=0;
     TWeakObjectPtr<const USkeletalMesh> FittedMesh;

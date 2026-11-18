@@ -192,21 +192,33 @@ FVector UVeyrCameraBoom::BlendLocations(const FVector& DesiredArmLocation,const 
         if(GetWorld()->SweepSingleByChannel(Hit,Pulled,Result,FQuat::Identity,ProbeChannel,FCollisionShape::MakeSphere(ProbeSize),Params))
             Result=Hit.Location;
     }
-    // Last guard: never leave the camera inside the bare body. Walk the arm back toward the pivot, first
-    // with the lift and then without it, and take the longest arm that is outside; the pivot itself last.
+    // Last guard: never leave the camera inside the bare body. Try, longest arm first: the clear part of the
+    // arm (with the lift, without it, and held level at the pivot's height, which is the room under the
+    // belly), then points past the contact (the far side of a tail or leg sweeping through), then the pivot
+    // lowered, then the pivot itself.
     if(IsPointInsideBareDragon(Result,Probe))
     {
         ++GuardEvents;
+        const FVector Level(Base.X,Base.Y,Origin.Z);
+        const float LiftPerFraction=LiftCm/FMath::Max(BodyFraction,.01f);
+        auto Outside=[&](const FVector& P){return !IsPointInsideBareDragon(P,Probe);};
         bool bFound=false;
-        for(int32 Pass=0;Pass<2&&!bFound;++Pass)
-            for(int32 I=16;I>=0&&!bFound;--I)
-            {
-                const float F=BodyFraction*I/16.f;
-                const FVector Candidate=FMath::Lerp(Origin,Base,F)+FVector::UpVector*(Pass==0?LiftCm*F/FMath::Max(BodyFraction,.01f):0.f);
-                if(!IsPointInsideBareDragon(Candidate,Probe)){Result=Candidate;bFound=true;}
-            }
-        if(!bFound)Result=Origin;
-        // Keep the eased state consistent with where the camera actually went.
+        for(int32 I=16;I>=1&&!bFound;--I)
+        {
+            const float F=BodyFraction*I/16.f;
+            const FVector Arm=FMath::Lerp(Origin,Base,F);
+            const FVector Options[3]={Arm+FVector::UpVector*LiftPerFraction*F,Arm,FMath::Lerp(Origin,Level,F)};
+            for(const FVector& P:Options)if(Outside(P)){Result=P;bFound=true;break;}
+        }
+        for(int32 I=1;I<=16&&!bFound;++I)
+        {
+            const float F=BodyFraction+(1.f-BodyFraction)*I/16.f;
+            const FVector Options[2]={FMath::Lerp(Origin,Base,F),FMath::Lerp(Origin,Level,F)};
+            for(const FVector& P:Options)if(Outside(P)){Result=P;bFound=true;break;}
+        }
+        for(int32 K=1;K<=6&&!bFound;++K)
+        {const FVector P=Origin-FVector::UpVector*25.f*S*K;if(Outside(P)){Result=P;bFound=true;}}
+        if(!bFound){Result=Origin;++PivotInsideFrames;}
         BodyFraction=FMath::Min(BodyFraction,Length>1.f?static_cast<float>(FVector::Dist2D(Origin,Result)/FMath::Max(1.0,FVector::Dist2D(Origin,Base))):BodyFraction);
     }
     // Evidence: inside the bare body (clearance removed), with a 10 cm near-plane margin.

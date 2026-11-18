@@ -307,7 +307,8 @@ void FVeyrA123Proof::Live(double Elapsed,float Dt)
             const float S=B->DragonScale();
             FName Shape;
             // Three independent views of "inside", each with a 10 cm near-plane margin: the solid capsules
-            // (knight push bodies), the back-face check (nearest of 6500 skinned skin samples faces away),
+            // (knight push bodies), the back-face check (nearest of the ~4200 skinned body samples faces away;
+            // wings are open sheets and are left out),
             // and the conservative hull spheres the boom itself keeps clear of (reported, not gated).
             const bool bCapsule=B->IsPointInsideSolidCapsule(Cam,10.f,&Shape);
             float Depth=0.f;
@@ -408,7 +409,7 @@ TSharedPtr<FJsonObject> FVeyrA123Proof::Evidence() const
         O->SetNumberField(TEXT("cameraFrames"),CameraFrames);O->SetNumberField(TEXT("cameraInsideFrames"),CameraInsideFrames);
         O->SetNumberField(TEXT("capsuleInsideFrames"),CapsuleInsideFrames);O->SetNumberField(TEXT("backFaceFrames"),BackFaceFrames);
         O->SetNumberField(TEXT("maxBackFaceDepthCm"),MaxBackFaceDepthCm);O->SetNumberField(TEXT("hullInsideFrames"),HullInsideFrames);
-        if(UVeyrCameraBoom* GB=Knight.IsValid()?Cast<UVeyrCameraBoom>(Knight->CameraBoom):nullptr){O->SetNumberField(TEXT("boomGuardEvents"),GB->GuardEvents);O->SetNumberField(TEXT("boomResultInsideFrames"),GB->ResultInsideFrames);}
+        if(UVeyrCameraBoom* GB=Knight.IsValid()?Cast<UVeyrCameraBoom>(Knight->CameraBoom):nullptr){O->SetNumberField(TEXT("boomGuardEvents"),GB->GuardEvents);O->SetNumberField(TEXT("boomPivotInsideFrames"),GB->PivotInsideFrames);O->SetNumberField(TEXT("boomResultInsideFrames"),GB->ResultInsideFrames);}
         O->SetNumberField(TEXT("collapseFrames"),CollapseFrames);O->SetNumberField(TEXT("collapseInsideFrames"),CollapseInsideFrames);
         O->SetNumberField(TEXT("maxLiftCm"),MaxLiftCm);O->SetNumberField(TEXT("minBodyFraction"),MinFraction);
         O->SetNumberField(TEXT("maxCameraJumpCmPerFrame"),MaxCameraJumpCm);
