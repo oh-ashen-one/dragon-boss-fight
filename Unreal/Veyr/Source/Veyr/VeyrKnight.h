@@ -293,17 +293,24 @@ private:
     };
     FStanceFoot StanceFeet[2];
     bool bStanceCleanup=false;
-    /** One-hand chain flow (-VeyrChainFlow): a held chain cuts each swing's return-to-guard short after its
+    /** One-hand chain flow (default on, -VeyrNoChainFlow restores): a held chain cuts each swing's return-to-guard short after its
      * strike and enters the next swing past its first frames, with a longer eased blend, so the blade keeps
      * moving instead of resetting between blows. Timing of each strike inside its own swing is unchanged. */
     bool bChainFlow=false;
-    /** Flight framing (-VeyrFlightFraming): while the dragon is airborne the lens widens to 90 degrees, the
+    /** Flight framing (default on, -VeyrNoFlightFraming restores): while the dragon is airborne the lens widens to 90 degrees, the
      * lock keeps the whole knight in frame and leans toward where the fire or the landing will hit. */
     bool bFlightFraming=false;
+    /** Near-boss framing (default on at the larger scale, -VeyrNoBossNearFraming restores): close to the
+     * 30 ft dragon the arm lengthens and the lens widens a little so its head and the knight's feet fit
+     * one frame during wind-ups. Blends out with distance. */
+    bool bBossNearFraming=true;
+    float BossNearBlend=0.f;
     float FlightFramingBlend=0.f;
     bool bFlowTransition=false;
     int32 ChainFlowCancels=0;
     float ChainFlowCancelSeconds() const;
+    /** Length of one step of a flowing one-hand chain (0, 1 light; 2 heavy), for planning a punish. */
+    float ChainFlowStepSeconds(int32 Step) const;
     int32 StancePins=0,StanceLifts=0;
     bool UpdateStanceCleanup(float DeltaSeconds);
     bool bSprintContactRevision=false;

@@ -73,4 +73,21 @@ is hit most. The difficulty was kept, as the goal says. Raw records: `data/b14-h
 - Two-hand fights are about half as long as one-hand fights, as they were before this goal (41 s vs 75 s at 650 HP).
 - Wind-up snap turns pivot the 30 ft body by up to 30 degrees in about 0.15 s without a stepping animation.
 
-Rendered regression, before/after films, blind reviews and Tier 2 are recorded below as they complete.
+
+## Blind reviews (Opus 5.5, high; sides labelled A/B at random, the reviewer is never told which is new)
+
+"Better" is the reviewer's choice between before and after. "Meets" is the reviewer's verdict on the owner's words.
+Every pack used native frames from the packaged build plus the measured numbers above.
+
+| Item | Better side | Confidence | Meets | What the reviewer still wants |
+|---|---|---|---|---|
+| 1 Floor rings | new | high | MEETS | nothing; ring arcs in 9 of 13 old frames, none in the new ones, wind-up poses and HUD intact |
+| 2 Dragon size | new | high | PARTLY | head 6.3 knight-heights (was 3.1), "tiny beneath its legs" reads; the close camera showed legs and belly in wind-ups and cropped the knight. Answered with the near-boss framing (longer arm, wider lens near the dragon) |
+| 3 Pace | new | high | PARTLY | 754 vs 580 cm/s is exactly 1.30x, run clip at 0.92 of authored speed (was 0.70), dragon acts 1.6x as often; film stills cannot prove the planted foot holds, and the camera clips into the 2x dragon at close range |
+| 4 Attack choice (two rounds) | new | high | PARTLY | every zone hit within 5.6 s (old: four zones safe for 20 s or never), takeoff under the belly, no attack three times running; the attack log listed fire-from-the-air hits as misses (logging fixed afterwards) and stills rarely show the limb touching the knight |
+| 5 Aggression | see below | | | |
+| 6 Health | new | high | PARTLY | 845 / 650 = 1.30 confirmed on the bar; one-hand fights overshot 150 s on 7 of 16 seeds. Answered with the one-hand stagger change (three cuts bring a leg down) |
+| 7-8 Sprint and running-attack contacts | new | medium | PARTLY | contact test 4 of 4 against 0 of 4, no frozen leg, no regression; the cropped proof frames cannot settle "fluid or blocky" |
+| 9 Light-attack chain, round 1 | tie | high | FAILS | both sides reset to a standing pose for about 0.25 s between cuts. The hand-over was reworked after this round |
+| 10 Heal, three rounds | new | high | PARTLY | rim at the lower visor, continuous drink, cup comes away downward; the fist holds the far end of the handle and the elbow plate shows pale streaks (both are the unchanged asset) |
+| 11 Flight camera, round 1 | new | high | PARTLY | whole dragon, fire reaching visible ground and the horizon in every frame; the knight was still out of frame for most of the upward look. The upward look was capped lower after this round |

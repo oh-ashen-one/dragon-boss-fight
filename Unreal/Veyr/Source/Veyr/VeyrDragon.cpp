@@ -427,7 +427,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             if(StateElapsed>=StateDuration)
             {
                 if(Move==EVeyrDragonMove::FlyAway)SetActorLocation(MoveEnd);
-                CloseBrainLogEntry(TEXT("miss"));
+                if(Move!=EVeyrDragonMove::FlyAway)CloseBrainLogEntry(TEXT("miss"));
                 if(TryChainAttack())break;
                 EnterState(EVeyrDragonState::Recovery,RecoveryDuration);
             }
@@ -1289,6 +1289,7 @@ void AVeyrDragon::TryDamageTarget()
             // Separate one-hit budget from the later landing; guard/dodge rules remain authoritative.
             const float Before=Target->Health;Target->ApplyBossDamage(26.f,Beam.Origin);bAerialFireConsumed=true;++DamageContactCount;
             if(FMath::IsNearlyEqual(Before,Target->Health))++AvoidedContactCount;
+            else if(bBrainLogOpen&&!BrainLog.IsEmpty())BrainLog.Last()+=TEXT(" [fire from the air HIT]");
         }
     }
     if(bContactConsumed)return;
@@ -1935,6 +1936,8 @@ void AVeyrDragon::ResolveKnightBodyPenetration()
         TrampleCooldown=1.5f;++TrampleCount;++DamageContactCount;
         const float Before=Target->Health;
         Target->ApplyBossDamage(18.f,Deepest->GetComponentLocation(),false);
+        CloseBrainLogEntry(TEXT("miss"));
+        if(BrainLog.Num()<400)BrainLog.Add(FString::Printf(TEXT("%.1f trample -> %s"),EncounterClock,Target->Health>=Before-.001f?TEXT("rolled"):TEXT("HIT")));
         if(Target->Health>=Before-.001f)++AvoidedContactCount;
         else if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
             Mode->FightFeel->Impact(Target->GetFootLocation(),.55f,TEXT("stomp"));

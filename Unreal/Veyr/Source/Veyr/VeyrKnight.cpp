@@ -248,8 +248,11 @@ void AVeyrKnight::BeginPlay()
     bSprintContactRevision=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintContactRevision"));
     // Default on (2026-11-18): sprint 4/4, running/leap 8/8 in the contact proof. -VeyrNoStanceCleanup restores the raw feet.
     bStanceCleanup=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoStanceCleanup"))&&!bSprintContactRevision;
-    bChainFlow=FParse::Param(FCommandLine::Get(),TEXT("VeyrChainFlow"));
-    bFlightFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrFlightFraming"));
+    // Default on (2026-11-18); -VeyrNoChainFlow restores the full swing between chained cuts.
+    bChainFlow=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoChainFlow"));
+    // Default on (2026-11-18); -VeyrNoFlightFraming restores the fixed lens in flight.
+    bFlightFraming=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoFlightFraming"));
+    bBossNearFraming=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoBossNearFraming"));
     // Mixamo downward heavy won the independent blind comparison. Keep an
     // explicit legacy switch for reproducible before/after captures.
     bSourcedTwoHandHeavy=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyTwoHandHeavy"));
@@ -608,7 +611,16 @@ float AVeyrKnight::ChainFlowCancelSeconds() const
     if(!bChainFlow||bTwoHanded||!bPrimaryChainActive||PrimaryChainStep>=2||!C||C->DamageWindows.IsEmpty())return ActionDuration;
     const float Rate=VisualClipPlayRate(ActionPresentationClip);
     const float WindowEnd=static_cast<float>(C->DamageWindows.Last().Y-PrimarySourceOffset)/Rate;
-    return FMath::Clamp(WindowEnd+.14f,.2f,ActionDuration);
+    return FMath::Clamp(WindowEnd+.06f,.2f,ActionDuration);
+}
+float AVeyrKnight::ChainFlowStepSeconds(int32 Step) const
+{
+    const bool Heavy=Step>=2;
+    const FName Clip=ChooseAttackClip(Heavy);
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(Clip):nullptr;
+    const float Full=GetAttackDuration(Heavy),Lead=Step>0?FMath::Clamp(GetAttackContactTime(Heavy)-.12f,0.f,.30f):0.f;
+    if(Heavy||!C||C->DamageWindows.IsEmpty())return FMath::Max(.1f,Full-Lead);
+    return FMath::Clamp(static_cast<float>(C->DamageWindows.Last().Y)/VisualClipPlayRate(Clip)+.06f,.2f,Full)-Lead;
 }
 float AVeyrKnight::GetPrimaryFirstStepDuration() const
 {
@@ -620,6 +632,7 @@ float AVeyrKnight::GetPrimaryFirstStepDuration() const
 float AVeyrKnight::GetPrimaryChainDuration() const
 {
     if(bTwoHanded&&bSourcedTwoHandHeavy)return PrimarySegmentSourceStart(2)/VisualClipPlayRate(TEXT("LightCombo"))+GetAttackDuration(true);
+    if(!bTwoHanded&&bChainFlow)return ChainFlowStepSeconds(0)+ChainFlowStepSeconds(1)+ChainFlowStepSeconds(2);
     return bTwoHanded?VisualClipDuration(TEXT("LightCombo"),3.32f):2.f*GetAttackDuration(false)+GetAttackDuration(true);
 }
 float AVeyrKnight::GetPrimaryChainRemainingSeconds() const
@@ -630,8 +643,8 @@ float AVeyrKnight::GetPrimaryChainRemainingSeconds() const
         if(bSourcedTwoHandHeavy&&PrimaryChainStep==2)return FMath::Max(0.f,ActionDuration-ActionElapsed);
         return FMath::Max(0.f,GetPrimaryChainDuration()-GetActionSourceSeconds()/VisualClipPlayRate(TEXT("LightCombo")));
     }
-    float Remaining=FMath::Max(0.f,ActionDuration-ActionElapsed);
-    for(int32 Step=PrimaryChainStep+1;Step<3;++Step)Remaining+=GetAttackDuration(Step==2);
+    float Remaining=FMath::Max(0.f,(bChainFlow?ChainFlowCancelSeconds():ActionDuration)-ActionElapsed);
+    for(int32 Step=PrimaryChainStep+1;Step<3;++Step)Remaining+=bChainFlow?ChainFlowStepSeconds(Step):GetAttackDuration(Step==2);
     return Remaining;
 }
 
@@ -663,8 +676,9 @@ bool AVeyrKnight::StartPrimaryStep(int32 Step)
     bFlowTransition=false;
     if(bChainFlow&&!Two&&Step>0)
     {
-        // Enter past the first frames of the wind-up (never closer than 0.2 s to the strike).
-        const float LeadIn=FMath::Clamp(GetAttackContactTime(Heavy)-.22f,0.f,.12f);
+        // Enter in the raise itself, not in the upright first frames: the blade goes from the last
+        // follow-through straight up into the next cut (the strike still comes at least 0.12 s later).
+        const float LeadIn=FMath::Clamp(GetAttackContactTime(Heavy)-.12f,0.f,.30f);
         PrimarySourceOffset=LeadIn*VisualClipPlayRate(ActionPresentationClip);
         ActionDuration=FMath::Max(.1f,ActionDuration-LeadIn);bFlowTransition=true;
     }
@@ -1068,7 +1082,12 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     // A creature twice the size needs a little more room and lens to read: 560 cm / 72 degrees at the
     // original scale, 700 cm / 78 degrees at 2x. The knight stays a clear figure in the lower frame.
     const float BossScale=IsValid(Boss)?Boss->BodyScale:1.f;
-    const float Arm=bThreatCameraFraming?ThreatCameraArm:560.f+140.f*(BossScale-1.f);
+    // Close to the larger creature: +200 cm of arm and +10 degrees of lens per unit of extra scale, full
+    // inside 900 cm * scale of its centre and gone by 1500 cm * scale.
+    const float BossRange=IsValid(Boss)?static_cast<float>(FVector::Dist2D(GetActorLocation(),Boss->GetActorLocation())):100000.f;
+    const bool NearNow=bBossNearFraming&&BossScale>1.01f&&IsValid(Boss)&&!Boss->IsDead()&&HasEnteredEncounter();
+    BossNearBlend=FMath::FInterpTo(BossNearBlend,NearNow?1.f-FMath::SmoothStep(900.f*BossScale,1500.f*BossScale,BossRange):0.f,DeltaSeconds,2.f);
+    const float Arm=bThreatCameraFraming?ThreatCameraArm:560.f+140.f*(BossScale-1.f)+200.f*(BossScale-1.f)*BossNearBlend;
     CameraDistance=Arm;FlightCameraBlend=0.f;CameraPitchCeiling=68.f;
     CameraBoom->TargetArmLength=Arm;
     CameraBoom->SetRelativeLocation(FVector(0,0,170.f-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
@@ -1077,7 +1096,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     const bool FlightNow=bFlightFraming&&IsValid(Boss)&&Boss->IsFlightHazardActive();
     FlightFramingBlend=FMath::FInterpConstantTo(FlightFramingBlend,FlightNow?1.f:0.f,DeltaSeconds,1.f/.6f);
     const float FlightEase=FMath::SmoothStep(0.f,1.f,FlightFramingBlend);
-    CombatCamera->SetFieldOfView(FMath::Lerp(bThreatCameraFraming?ThreatCameraFOV:72.f+6.f*(BossScale-1.f),90.f,FlightEase));
+    CombatCamera->SetFieldOfView(FMath::Lerp(bThreatCameraFraming?ThreatCameraFOV:72.f+6.f*(BossScale-1.f)+10.f*(BossScale-1.f)*BossNearBlend,90.f,FlightEase));
     if(Controller)
     {
         FRotator Look=Controller->GetControlRotation().GetNormalized();
@@ -1127,7 +1146,9 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             FRotator Desired=Delta.Rotation();
             // A taller creature needs the lock to look further up, but never so far that the knight
             // leaves the frame: at 2x the lock may crop his shins, no more.
-            const float ScaleLift=6.f*(BossScale-1.f);
+            // With the wider near-boss lens the whole knight stays in frame: the extra upward lift that
+            // cropped his shins is only used where that lens is not active.
+            const float ScaleLift=6.f*(BossScale-1.f)*(1.f-BossNearBlend);
             AutoLockPitchCeiling=25.f+.6f*ScaleLift;
             if(bReadableAutoLockCamera)
             {
@@ -1149,10 +1170,10 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;
             Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
         }
-        // While the dragon is in the air, looking up (by lock or by hand) stops at 46 degrees and the lens
-        // opens a little further past 28, so the knight's head and shoulders stay in the bottom of the frame.
-        Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,FMath::Lerp(68.f,46.f,FlightEase));Look.Roll=0.f;
-        if(FlightEase>0.f)CombatCamera->SetFieldOfView(CombatCamera->FieldOfView+FlightEase*8.f*FMath::Clamp((Look.Pitch-28.f)/18.f,0.f,1.f));
+        // While the dragon is in the air, looking up (by lock or by hand) stops at 40 degrees and the lens
+        // opens a little further past 24, so the knight's head and shoulders stay in the bottom of the frame.
+        Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,FMath::Lerp(68.f,40.f,FlightEase));Look.Roll=0.f;
+        if(FlightEase>0.f)CombatCamera->SetFieldOfView(CombatCamera->FieldOfView+FlightEase*8.f*FMath::Clamp((Look.Pitch-24.f)/14.f,0.f,1.f));
         Controller->SetControlRotation(Look);
         // Preserve a shoulder-height lens during upward look rather than
         // orbiting it into the floor and shortening the arm into the armor.
@@ -1660,7 +1681,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=bFlowTransition&&IsAttackAction()?.17f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float BlendSeconds=bFlowTransition&&IsAttackAction()?.14f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float Alpha=RunStartTail?FMath::Clamp((ActionElapsed-(ActionDuration-.30f))/.30f,0.f,1.f):
         bTransitionIdleWalkEdge||(bFlowTransition&&IsAttackAction())?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;

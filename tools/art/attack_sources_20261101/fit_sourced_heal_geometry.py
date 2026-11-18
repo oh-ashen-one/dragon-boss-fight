@@ -6,7 +6,7 @@ from mathutils import Matrix,Vector
 parser=argparse.ArgumentParser();parser.add_argument('--helmet-fit',action='store_true');parser.add_argument('--low-elbow',action='store_true');parser.add_argument('--sip',action='store_true',help='v8: rim at the lower visor, a living hold (progressive tip, head back, two swallows) and the cup lowered to the hip before it leaves the hand');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
 assert not args.low_elbow or args.helmet_fit
 assert not args.sip or args.low_elbow
-ROOT=Path(__file__).resolve().parents[3];OUT=ROOT/'Local/AttackSources20261103/HealGeometry';OUT.mkdir(parents=True,exist_ok=True);DEST=OUT/('Quaternius_Heal_v10sip' if args.sip else 'Quaternius_Heal_v7arm' if args.low_elbow else 'Quaternius_Heal_v6helmet' if args.helmet_fit else 'Quaternius_Heal_v5geometry');assert not DEST.with_suffix('.blend').exists()
+ROOT=Path(__file__).resolve().parents[3];OUT=ROOT/'Local/AttackSources20261103/HealGeometry';OUT.mkdir(parents=True,exist_ok=True);DEST=OUT/('Quaternius_Heal_v11sip' if args.sip else 'Quaternius_Heal_v7arm' if args.low_elbow else 'Quaternius_Heal_v6helmet' if args.helmet_fit else 'Quaternius_Heal_v5geometry');assert not DEST.with_suffix('.blend').exists()
 APPROVED=ROOT/'Local/CustomuseAssets/Polish20261025/idle-joins/knight/Heal_Blender_v4.glb';SOURCE=ROOT/'Local/AttackSources20261102/QuaterniusRetarget/Exports/Quaternius_Consume_v1.blend';CUP=ROOT/'Local/CustomuseAssets/Polish20261025/props/DrinkingCup.glb'
 measured=json.loads((ROOT/'docs/master-goal-20261103/heal-socket-basis.json').read_text());basis=Matrix(measured['samples'][0]['staticMeshLocalToBoneLocal']);assert max(abs(basis[i][j]-(1 if i==j else 0)) for i in range(4) for j in range(4))<1e-5
 RIM=basis@Vector((.060,-.023,-.091));NORMAL=(basis.to_3x3()@Vector((0,-1,0))).normalized()
@@ -75,11 +75,12 @@ for f in range(289):
    neck_bone.matrix_basis=base_neck@Matrix.Rotation(math.radians(sign*.4*amount),4,'X');head_bone.matrix_basis=base_head@Matrix.Rotation(math.radians(sign*.6*amount),4,'X');bpy.context.view_layer.update()
    return (world(rig,'Head')@mouth_local).z
   back=1. if tip(1.,10.)>tip(-1.,10.) else -1.
-  tip(back,24.*sip+2.*gulp)
+  tip(back,34.*sip+2.*gulp)
  head_matrix=world(rig,'Head');mouth=head_matrix@mouth_local if args.helmet_fit else head_matrix.translation+Vector((0,-.10,.03))
  if args.helmet_fit:
   face=(head_matrix.to_3x3()@face_local).normalized();raw_normal=(desired_rotation.to_matrix()@grip.to_3x3()@NORMAL).normalized();theta=math.acos(max(-1.,min(1.,raw_normal.z)));limit=math.radians(80);theta=limit*math.tanh(theta/limit)
-  if args.sip:theta=max(math.radians(20),min(math.radians(88),theta-math.radians(30.*(1.-sip))+math.radians(8.*sip+2.*gulp)))
+  # v11: at the end of the drink the base is above the rim (about 105 degrees).
+  if args.sip:theta=max(math.radians(20),min(math.radians(106),theta-math.radians(30.*(1.-sip))+math.radians(26.*sip+2.*gulp)))
   inward=Vector((-face.x,-face.y,0)).normalized();normal_goal=Vector((0,0,math.cos(theta)))+inward*math.sin(theta);correction=raw_normal.rotation_difference(normal_goal);desired_rotation=Matrix.Identity(3).to_quaternion().slerp(correction,contact)@desired_rotation
   cup_linear=Matrix.LocRotScale(Vector(),desired_rotation,current.to_scale()).to_3x3()@grip.to_3x3();normal=(cup_linear@NORMAL).normalized();toward=-(face-normal*face.dot(normal))
   if toward.length<1e-5:toward=Vector((0,0,-1))-normal*normal.dot(Vector((0,0,-1)))
