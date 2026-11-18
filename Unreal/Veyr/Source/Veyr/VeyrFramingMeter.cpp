@@ -8,6 +8,8 @@
 #include "Dom/JsonValue.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
+#include "Camera/PlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
 
 void FVeyrFramingMeter::Begin(AVeyrKnight* InKnight,AVeyrDragon* InDragon)
 {
@@ -35,6 +37,13 @@ void FVeyrFramingMeter::Sample(float DeltaSeconds)
     AVeyrKnight* K=Knight.Get();AVeyrDragon* D=Dragon.Get();
     if(!K||!D||!K->CombatCamera||!K->GetWorld())return;
     SampledSeconds+=DeltaSeconds;
+    // Measure only the view that is actually rendered: the knight's own camera, not an inspection/proof camera or a blend.
+    const APlayerController* PC=Cast<APlayerController>(K->GetController());
+    const APlayerCameraManager* Manager=PC?PC->PlayerCameraManager.Get():nullptr;
+    if(!PC||PC->GetViewTarget()!=K||(Manager&&Manager->PendingViewTarget.Target!=nullptr)){++OtherViewFrames;Commit();return;}
+    if(!K->HasEnteredEncounter()){++PreEncounterFrames;return;}
+    const double W=FMath::Max(0.f,DeltaSeconds);
+    Seconds+=W;
     const UCameraComponent* Camera=K->CombatCamera;
     CamLoc=Camera->GetComponentLocation();
     const FRotationMatrix Basis(Camera->GetComponentRotation());
@@ -53,21 +62,23 @@ void FVeyrFramingMeter::Sample(float DeltaSeconds)
     FVector2D PFeet,PTop,PL,PR,PMid;
     const bool bFeet=Project(Feet,PFeet),bTop=Project(Top,PTop);
     const bool bFull=bFeet&&bTop&&Project(Mid-Side,PL)&&Project(Mid+Side,PR)&&OnScreen(PFeet)&&OnScreen(PTop)&&OnScreen(PL)&&OnScreen(PR);
-    KnightFull+=bFull?1:0;
-    KnightCenter+=Project(Mid,PMid)&&OnScreen(PMid)?1:0;
-    if(K->bLockedOn){++LockedFrames;LockedKnightFull+=bFull?1:0;}
+    KnightFull+=bFull?W:0.0;
+    KnightCenter+=Project(Mid,PMid)&&OnScreen(PMid)?W:0.0;
+    if(K->bLockedOn){Locked+=W;LockedKnightFull+=bFull?W:0.0;}
     if(bFeet&&bTop)
     {
         const float H=100.f*(PFeet.Y-PTop.Y);
-        KnightHeightSum+=H;++KnightHeightFrames;KnightHeights.Add(H);
+        KnightHeightSum+=H*W;KnightHeightSeconds+=W;KnightHeights.Add(H);
     }
     FVector2D PHead,PChest;
     const bool bHead=Project(D->GetHeadLocation(),PHead)&&OnScreen(PHead);
     const bool bChest=Project(D->GetChestLocation(),PChest)&&OnScreen(PChest);
-    HeadOn+=bHead?1:0;ChestOn+=bChest?1:0;HeadOrChest+=bHead||bChest?1:0;
+    HeadOn+=bHead?W:0.0;ChestOn+=bChest?W:0.0;HeadOrChest+=bHead||bChest?W:0.0;
 
-    if(const UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(K->CameraBoom))
+    if(UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(K->CameraBoom))
     {
+        // The legacy arm never builds its shapes; build them so an old-arm A/B is measured the same way.
+        if(Boom->bLegacyBoom)Boom->RefreshDragonShapes();
         const float S=Boom->DragonScale();
         if(Boom->IsPointInsideDragon(CamLoc,10.f-FMath::Min(Boom->BodyClearanceCm,Boom->WingClearanceCm)*S))++InsideBody;
     }
@@ -95,7 +106,7 @@ TSharedPtr<FJsonObject> FVeyrFramingMeter::Evidence() const
 {
     TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
     const AVeyrKnight* K=Knight.Get();const AVeyrDragon* D=Dragon.Get();
-    auto Share=[](int32 N,int32 Of){return Of>0?double(N)/Of:0.0;};
+    auto Share=[](double N,double Of){return Of>0.0?N/Of:0.0;};
     TArray<FStrike> All=Strikes;
     if(Current.Attack>=0&&Current.BestCm<TNumericLimits<float>::Max())All.Add(Current);
     int32 Visible=0,Near=0,NearVisible=0;
@@ -115,26 +126,27 @@ TSharedPtr<FJsonObject> FVeyrFramingMeter::Evidence() const
     }
     TArray<float> Heights=KnightHeights;Heights.Sort();
     auto Pct=[&Heights](float P){return Heights.IsEmpty()?0.f:Heights[FMath::Clamp(FMath::RoundToInt(P*(Heights.Num()-1)),0,Heights.Num()-1)];};
-    O->SetNumberField(TEXT("frames"),FrameCount);
-    O->SetNumberField(TEXT("knightFullyInFrameShare"),Share(KnightFull,FrameCount));
-    O->SetNumberField(TEXT("knightCentreOnScreenShare"),Share(KnightCenter,FrameCount));
-    O->SetNumberField(TEXT("lockedFrames"),LockedFrames);
-    O->SetNumberField(TEXT("lockedKnightFullyInFrameShare"),Share(LockedKnightFull,LockedFrames));
-    O->SetNumberField(TEXT("headOrChestOnScreenShare"),Share(HeadOrChest,FrameCount));
-    O->SetNumberField(TEXT("headOnScreenShare"),Share(HeadOn,FrameCount));
-    O->SetNumberField(TEXT("chestOnScreenShare"),Share(ChestOn,FrameCount));
-    O->SetNumberField(TEXT("knightMeanScreenHeightPct"),KnightHeightFrames?KnightHeightSum/KnightHeightFrames:0.0);
+    O->SetNumberField(TEXT("frames"),FrameCount);O->SetNumberField(TEXT("measuredSeconds"),Seconds);
+    O->SetNumberField(TEXT("otherViewFrames"),OtherViewFrames);O->SetNumberField(TEXT("preEncounterFrames"),PreEncounterFrames);
+    O->SetNumberField(TEXT("knightFullyInFrameShare"),Share(KnightFull,Seconds));
+    O->SetNumberField(TEXT("knightCentreOnScreenShare"),Share(KnightCenter,Seconds));
+    O->SetNumberField(TEXT("lockedSeconds"),Locked);
+    O->SetNumberField(TEXT("lockedKnightFullyInFrameShare"),Share(LockedKnightFull,Locked));
+    O->SetNumberField(TEXT("headOrChestOnScreenShare"),Share(HeadOrChest,Seconds));
+    O->SetNumberField(TEXT("headOnScreenShare"),Share(HeadOn,Seconds));
+    O->SetNumberField(TEXT("chestOnScreenShare"),Share(ChestOn,Seconds));
+    O->SetNumberField(TEXT("knightMeanScreenHeightPct"),KnightHeightSeconds>0.0?KnightHeightSum/KnightHeightSeconds:0.0);
     O->SetNumberField(TEXT("knightScreenHeightP10Pct"),Pct(.1f));O->SetNumberField(TEXT("knightScreenHeightP90Pct"),Pct(.9f));
     O->SetNumberField(TEXT("cameraInsideBodyFrames"),InsideBody);
     O->SetNumberField(TEXT("strikes"),All.Num());
-    O->SetNumberField(TEXT("strikeLimbVisibleShare"),Share(Visible,All.Num()));
+    O->SetNumberField(TEXT("strikeLimbVisibleShare"),Share(double(Visible),double(All.Num())));
     O->SetNumberField(TEXT("nearStrikes"),Near);
-    O->SetNumberField(TEXT("nearStrikeLimbVisibleShare"),Share(NearVisible,Near));
+    O->SetNumberField(TEXT("nearStrikeLimbVisibleShare"),Share(double(NearVisible),double(Near)));
     TSharedPtr<FJsonObject> Moves=MakeShared<FJsonObject>();
     for(const auto& Pair:ByMove)Moves->SetStringField(Pair.Key.ToString(),FString::Printf(TEXT("%d/%d"),Pair.Value.X,Pair.Value.Y));
     O->SetObjectField(TEXT("strikeLimbVisibleByMove"),Moves);
     O->SetArrayField(TEXT("strikeList"),List);
-    O->SetBoolField(TEXT("goalD1Met"),Share(KnightFull,FrameCount)>=.95&&All.Num()>0&&Share(Visible,All.Num())>=.90);
+    O->SetBoolField(TEXT("goalD1Met"),Share(KnightFull,Seconds)>=.95&&All.Num()>0&&Share(double(Visible),double(All.Num()))>=.90);
     if(K)
     {
         O->SetBoolField(TEXT("giantCamera"),K->UsesGiantCamera());
@@ -146,6 +158,6 @@ TSharedPtr<FJsonObject> FVeyrFramingMeter::Evidence() const
         O->SetObjectField(TEXT("cameraNow"),C);
     }
     if(D)O->SetNumberField(TEXT("bodyScale"),D->BodyScale);
-    O->SetStringField(TEXT("scope"),TEXT("geometric: combat camera component pose, horizontal FOV, viewport aspect (16:9 when headless); occlusion by the dragon's own body is not counted"));
+    O->SetStringField(TEXT("scope"),TEXT("geometric: combat camera component pose, horizontal FOV, viewport aspect (16:9 when headless); only frames with the knight as view target (no blend) after the encounter starts; shares weighted by game seconds; occlusion by the dragon's own body is not counted"));
     return O;
 }

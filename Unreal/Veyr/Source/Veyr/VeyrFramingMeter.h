@@ -15,6 +15,8 @@ class FJsonObject;
  *   strikeLimbVisibleShare   per dragon attack, the striking limb's contact point at its closest approach to the
  *                            knight during the active window, inside the screen
  *   cameraInsideBodyFrames   the camerahug check (boom shapes, bare body + 10 cm near plane)
+ * Only frames where the knight's combat camera is the rendered view (no other view target, no blend) after the
+ * knight has entered the encounter are counted; shares are weighted by game time.
  * Goal row D1: knight fully in frame >= 95 % of frames, striking limb visible at contact >= 90 % of strikes.
  */
 class FVeyrFramingMeter
@@ -24,13 +26,15 @@ public:
     void Sample(float DeltaSeconds);
     TSharedPtr<FJsonObject> Evidence() const;
     int32 Frames() const { return FrameCount; }
-    float KnightFullyInFrameShare() const { return FrameCount?float(KnightFull)/FrameCount:0.f; }
+    float KnightFullyInFrameShare() const { return Seconds>0.0?float(KnightFull/Seconds):0.f; }
 
 private:
     TWeakObjectPtr<AVeyrKnight> Knight;
     TWeakObjectPtr<AVeyrDragon> Dragon;
-    int32 FrameCount=0,KnightFull=0,KnightCenter=0,HeadOrChest=0,HeadOn=0,ChestOn=0,InsideBody=0,LockedFrames=0,LockedKnightFull=0;
-    double KnightHeightSum=0.0; int32 KnightHeightFrames=0;
+    // Frames counted; shares are weighted by game seconds (hit-stop and slow frames do not dominate).
+    int32 FrameCount=0,InsideBody=0,OtherViewFrames=0,PreEncounterFrames=0;
+    double Seconds=0.0,KnightFull=0.0,KnightCenter=0.0,HeadOrChest=0.0,HeadOn=0.0,ChestOn=0.0,Locked=0.0,LockedKnightFull=0.0;
+    double KnightHeightSum=0.0,KnightHeightSeconds=0.0;
     TArray<float> KnightHeights;
     float SampledSeconds=0.f;
     struct FStrike { int32 Attack=-1; FName Limb; FName Move; float BestCm=TNumericLimits<float>::Max(); bool bVisible=false; FVector2D Screen=FVector2D::ZeroVector; float AtSeconds=0.f; };

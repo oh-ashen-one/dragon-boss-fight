@@ -114,7 +114,8 @@ float AVeyrKnight::UpdateGiantCamera(float DeltaSeconds,float FlightEase,bool bF
     float PitchMax=V*.5f-FeetAngle-3.f;
     float LensNeedTarget=0.f,ArmNeedTarget=0.f;
 
-    if(bLock&&ManualCameraRemaining<=0.f)
+    // The 1.8 s manual suspension exists only on the legacy mouse path.
+    if(bLock&&(!bLegacyLockMouse||ManualCameraRemaining<=0.f))
     {
         if(!bGiantLockRotValid){GiantLockRot=FRotator(Look.Pitch,Look.Yaw,0.f);bGiantLockRotValid=true;}
         if(bFollowFall&&DeathCameraSide==0.f)
@@ -136,6 +137,23 @@ float AVeyrKnight::UpdateGiantCamera(float DeltaSeconds,float FlightEase,bool bF
         }
         GiantStrikeWeight=FMath::FInterpTo(GiantStrikeWeight,bGiantLastStrikeValid?WantWeight:0.f,DeltaSeconds,6.f);
         FVector Aim=bGiantLastStrikeValid?FMath::Lerp(Chest,GiantLastStrike,GiantStrikeWeight):Chest;
+        // A limb passing close to the knight must not whip the yaw: keep the aim within 25 degrees of the chest bearing.
+        {
+            const FVector ToChest=Chest-Feet,ToAim=Aim-Feet;
+            if(ToChest.Size2D()>60.f*S&&ToAim.Size2D()>1.f)
+            {
+                const float ChestYaw=Deg(FMath::Atan2(ToChest.Y,ToChest.X)),AimYaw=Deg(FMath::Atan2(ToAim.Y,ToAim.X));
+                const float Off=FMath::FindDeltaAngleDegrees(ChestYaw,AimYaw);
+                if(FMath::Abs(Off)>25.f)
+                {
+                    const FVector Turned=FRotator(0,ChestYaw+FMath::Sign(Off)*25.f,0).Vector()*ToAim.Size2D();
+                    Aim=FVector(Feet.X+Turned.X,Feet.Y+Turned.Y,Aim.Z);
+                }
+            }
+        }
+        // Knocked down, the head is the target the knight strikes: look at it.
+        GiantHeadBlend=FMath::FInterpTo(GiantHeadBlend,Boss->IsHeadExposed()?1.f:0.f,DeltaSeconds,4.f);
+        Aim=FMath::Lerp(Aim,Head,GiantHeadBlend);
         if(bFollowFall)Aim=FMath::Lerp(Boss->GetActorLocation()+FVector(0,0,100),Head,.7f);
         // In flight the danger is where the jet or the landing meets the ground: lean the view there.
         if(FlightEase>0.f)Aim=FMath::Lerp(Aim,FMath::Lerp(Head,Boss->GetFlightHazardPoint()+FVector(0,0,150),.35f),FlightEase);
@@ -185,7 +203,7 @@ float AVeyrKnight::UpdateGiantCamera(float DeltaSeconds,float FlightEase,bool bF
     else
     {
         bGiantLockRotValid=false;GiantMouseYaw=GiantMousePitch=0.f;
-        GiantStrikeWeight=0.f;bGiantLastStrikeValid=false;
+        GiantStrikeWeight=0.f;bGiantLastStrikeValid=false;GiantHeadBlend=0.f;
         GiantUnderBelly=FMath::FInterpTo(GiantUnderBelly,0.f,DeltaSeconds,3.f);
         GiantLensExtra=FMath::FInterpTo(GiantLensExtra,0.f,DeltaSeconds,3.f);
         GiantArmExtra=FMath::FInterpTo(GiantArmExtra,0.f,DeltaSeconds,2.f);

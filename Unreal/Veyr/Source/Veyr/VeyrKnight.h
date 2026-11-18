@@ -325,7 +325,8 @@ private:
     FRotator LifeRotation=FRotator::ZeroRotator; FVector LifeLocation=FVector::ZeroVector;
     FVector GiantLastCamera=FVector::ZeroVector; bool bGiantLastCameraValid=false;
     FVector GiantLastStrike=FVector::ZeroVector; bool bGiantLastStrikeValid=false;
-    float LifeFree=0.f,LifeNod=0.f;
+    float LifeFree=0.f,LifeNod=0.f,GiantHeadBlend=0.f;
+    float LockedInputYaw() const;
     FGiantCameraEvidence GiantEvidence;
     void InitGiantCamera();
     /** Arm, lens and control rotation for the giant camera (replaces the legacy block of UpdateCamera). Returns the arm length. */

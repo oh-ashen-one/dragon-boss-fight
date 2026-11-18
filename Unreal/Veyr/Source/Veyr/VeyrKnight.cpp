@@ -567,7 +567,7 @@ void AVeyrKnight::TryDirectionalBlink()
     FVector Direction=MoveIntent.GetSafeNormal2D();
     if(!bReplayControlled)
     {
-        const float Yaw=bLockedOn&&IsValid(Boss)?(Boss->GetActorLocation()-GetActorLocation()).Rotation().Yaw:
+        const float Yaw=bLockedOn&&IsValid(Boss)?LockedInputYaw():
             Controller?Controller->GetControlRotation().Yaw:GetActorRotation().Yaw;
         const FRotationMatrix Basis(FRotator(0,Yaw,0));
         Direction=(Basis.GetUnitAxis(EAxis::X)*(float(bForwardHeld)-float(bBackHeld))+
@@ -751,7 +751,20 @@ void AVeyrKnight::SetGuard(bool bHeld)
         BeginAction(EVeyrKnightAction::Guard, 0.f);
 }
 
-void AVeyrKnight::ToggleLockOn() { if (!IsTerminal() && IsValid(Boss)) bLockedOn = !bLockedOn; }
+void AVeyrKnight::ToggleLockOn()
+{
+    if (IsTerminal() || !IsValid(Boss)) return;
+    bLockedOn = !bLockedOn;
+    // Giant camera: a pan just before locking must not suspend the new lock (the mouse looks around it instead).
+    if (bLockedOn && bGiantCamera && !bThreatCameraFraming && !bLegacyLockMouse) ManualCameraRemaining = 0.f;
+}
+float AVeyrKnight::LockedInputYaw() const
+{
+    // Giant camera: WASD follows the screen's lock direction (not the dragon's centre, which the view no longer
+    // aims at); the springy mouse glance is left out so a held key does not curve. Legacy: toward the dragon.
+    if (bGiantCamera && !bThreatCameraFraming && bGiantLockRotValid) return static_cast<float>(GiantLockRot.Yaw);
+    return static_cast<float>((Boss->GetActorLocation()-GetActorLocation()).Rotation().Yaw);
+}
 
 void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnblockable)
 {
@@ -822,7 +835,7 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     BlinkCooldownRemaining=FMath::Max(0.f,BlinkCooldownRemaining-DeltaSeconds);
     RegenDelay = FMath::Max(0.f, RegenDelay - DeltaSeconds);
     DamageGrace = FMath::Max(0.f, DamageGrace - DeltaSeconds);
-    const float FacingYaw=bLockedOn&&IsValid(Boss)?(Boss->GetActorLocation()-GetActorLocation()).Rotation().Yaw:
+    const float FacingYaw=bLockedOn&&IsValid(Boss)?LockedInputYaw():
         Controller?Controller->GetControlRotation().Yaw:GetActorRotation().Yaw;
     const FRotator ViewYaw(0.f,FacingYaw,0.f);
     MoveIntent = bReplayControlled ? ReplayMove.GetClampedToMaxSize(1.f) :
@@ -2393,14 +2406,14 @@ void AVeyrKnight::LookYaw(float Value)
     if (!MouseLookReady() || FMath::Abs(Value)<=.001f) return;
     // Phase D: locked on, the mouse looks around the lock instead of dropping it (-VeyrLegacyLockMouse restores the 1.8 s suspension).
     // Same degrees per count as the controller path (PlayerController input scale 2.5).
-    if (bGiantCamera && !bThreatCameraFraming && !bLegacyLockMouse && bLockedOn && IsValid(Boss))
+    if (bGiantCamera && !bThreatCameraFraming && !bLegacyLockMouse && bLockedOn && bGiantLockRotValid)
     { GiantMouseYaw+=Value*.7f*MouseSensitivity*2.5f; GiantMouseIdle=0.f; return; }
     ManualCameraRemaining=1.8f; AddControllerYawInput(Value * .7f * MouseSensitivity);
 }
 void AVeyrKnight::LookPitch(float Value)
 {
     if (!MouseLookReady() || FMath::Abs(Value)<=.001f) return;
-    if (bGiantCamera && !bThreatCameraFraming && !bLegacyLockMouse && bLockedOn && IsValid(Boss))
+    if (bGiantCamera && !bThreatCameraFraming && !bLegacyLockMouse && bLockedOn && bGiantLockRotValid)
     { GiantMousePitch+=Value*.6f*MouseSensitivity*2.5f; GiantMouseIdle=0.f; return; }
     ManualCameraRemaining=1.8f; AddControllerPitchInput(-Value * .6f * MouseSensitivity);
 }
