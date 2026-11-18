@@ -41,8 +41,8 @@ the reference footage.
   top-ups, no plan changes.
 - Generation with **Higgsfield and Fish Audio is allowed** on the credits the accounts already hold (owner,
   2026-11-18): sounds where no recording fits, and Seedance clips through Higgsfield for new dragon moves. One job at
-  a time, reviewed before the next; every job logged in the clip or audio ledger with its credit cost; at most 20
-  video clips in this goal unless the owner raises it; Seedance at 720p. Stop generating and report if an account
+  a time, reviewed before the next; every job logged in the clip or audio ledger with its credit cost; at most 8
+  video clips in this goal unless the owner raises it, and only under row F6; Seedance at 720p. Stop generating and report if an account
   runs low rather than buying more.
 - Mixamo is for animations only, not characters. Sound comes from Freesound CC0 recordings first.
 - The new knight is Paragon: Greystone in the dark gold-trimmed skin
@@ -112,7 +112,7 @@ An old/new audition page for the sounds goes on the localhost page before the bu
 | F3 | Four-foot floor lock at runtime, feet pinned in the clips; no whole-body snap turn under planted feet. | Planted-foot slide under 5 cm per second in every ground move. |
 | F4 | Move the dragon along each clip's own root track where the clip has one. | Travel matches the clip; no slide-back at blends. |
 | F5 | Pipeline upgrades: dense reader, upstream's whole-clip fit merged on a fork branch, refit existing clips. | Adopted only where a blind critic prefers the refit over the current clip. |
-| F6 | New dragon moves from new Seedance clips through Higgsfield, following the tool's own notes (first-frame start picture, full real speed, side and top views for tail and turns): a charge, a leaping strike, one authored multi-hit combo, and proper left and right turns. | Each move is in the brain with measured hit windows and root motion, passes the reach check at the shipped scale, and a blind critic prefers the fight with them. Difficulty band holds. |
+| F6 | Only if still needed after F1-F5: new dragon clips through Higgsfield Seedance, following the tool's own notes (first-frame start picture, full real speed, side and top views for tail and turns). Judge the fight against the reference footage first; generate only what is still missing. Expected at most: a proper right turn (today it is the left turn played backwards), a charge, a leaping strike, one authored multi-hit combo. | Each new move is in the brain with measured hit windows and root motion, passes the reach check at the shipped scale, and a blind critic prefers the fight with it. Difficulty band holds. If F1-F5 already reach parity on boss animation, this row is closed as not needed. |
 
 ## Checkpoint after every phase
 
