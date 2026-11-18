@@ -180,6 +180,7 @@ void AVeyrDragon::BeginPlay()
     bFloorTelegraph=FParse::Param(FCommandLine::Get(),TEXT("VeyrFloorTelegraph"));
     // Owner 2026-11-18: at most 5 s on the floor; this restores the 7 s lying window and authored rates.
     bLegacyKnockdown=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyKnockdown"));
+    bRiseHeadBonus=!bLegacyKnockdown&&FParse::Param(FCommandLine::Get(),TEXT("VeyrRiseHeadBonus"));
     BodyScale=ConfiguredBodyScale();PaceScale=ConfiguredPaceScale();
     bAggression=!bLegacyPacing&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBrain"));
     SetActorScale3D(FVector(BodyScale));
@@ -1504,13 +1505,13 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
     AcceptedSwings.Add(SwingId); RecentSwings.Add(SwingId);
     if(RecentSwings.Num()>512){AcceptedSwings.Remove(RecentSwings[0]);RecentSwings.RemoveAt(0);}
     LastHitRegion=Region; ++SwordContactCount;
-    LastSwordDamage=Region<4?(bHeavy?72.f:34.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?270.f:125.f):(bHeavy?85.f:44.f);
+    LastSwordDamage=Region<4?(bHeavy?72.f:34.f):Region==5?(bHeavy?65.f:30.f):IsHeadBonusActive()?(bHeavy?270.f:125.f):(bHeavy?85.f:44.f);
     if(UsesPacingRevision())
-        LastSwordDamage=Region<4?(bHeavy?85.f:45.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?120.f:65.f):(bHeavy?85.f:44.f);
+        LastSwordDamage=Region<4?(bHeavy?85.f:45.f):Region==5?(bHeavy?65.f:30.f):IsHeadBonusActive()?(bHeavy?120.f:65.f):(bHeavy?85.f:44.f);
     LastSwordDamage*=FMath::Clamp(DamageMultiplier,1.f,1.55f);
     // boxes.json body-part share (wings 0.5, tail 0.7); 1 for every hard-coded region.
     LastSwordDamage*=FMath::Clamp(PartDamageScale,0.f,2.f);
-    if(Region==4&&IsHeadExposed())++HeadBonusHitCount;
+    if(Region==4&&IsHeadBonusActive())++HeadBonusHitCount;
     // A player trading blows is fighting, not sheltering: the slow anti-camp fuse backs off.
     CampSeconds=FMath::Max(0.f,CampSeconds-4.f);
     Health=FMath::Max(0.f,Health-LastSwordDamage);
@@ -1563,6 +1564,18 @@ float AVeyrDragon::GetLegContactRadius(int32 Index) const
     return Radii[FMath::Clamp(Index,0,3)]*Scale;
 }
 float AVeyrDragon::GetLegStagger(int32 Index) const {return LegStagger[FMath::Clamp(Index,0,3)];}
+bool AVeyrDragon::IsHeadBonusActive() const
+{
+    return IsHeadExposed()||(bRiseHeadBonus&&State==EVeyrDragonState::Rise&&StateElapsed<StateDuration*RiseHeadBonusFraction);
+}
+
+float AVeyrDragon::GetHeadBonusRemaining() const
+{
+    const float Remaining=FMath::Max(0.f,StateDuration-StateElapsed);
+    if(IsHeadExposed())return Remaining+(bRiseHeadBonus?KnockdownRiseSeconds()*RiseHeadBonusFraction:0.f);
+    return IsHeadBonusActive()?FMath::Max(0.f,StateDuration*RiseHeadBonusFraction-StateElapsed):0.f;
+}
+
 float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,StateDuration-StateElapsed):0.f;}
 
 float AVeyrDragon::KnockdownBuckleSeconds(int32 Leg) const
