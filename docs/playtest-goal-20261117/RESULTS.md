@@ -1,6 +1,6 @@
 # Playtest goal results
 
-Branch `opus/playtest-goal-20261117`. Build under test: `Local/package-20261118T094500Z` (Shipping, "build 13").
+Branch `opus/playtest-goal-20261117`. Build under test: `Local/package-20261118T105325Z` (Shipping, "build 14").
 Nothing here is owner-accepted; difficulty and feel are the owner's call.
 
 ## How the numbers were measured
@@ -16,32 +16,33 @@ Nothing here is owner-accepted; difficulty and feel are the owner's call.
 - The scripted player is frame-perfect at rolling out of strikes. Almost all the damage it takes is from tramples, the
   hunting fire jet and landings. A person will be hit by strikes far more often.
 
-## Tier 1, measured (build 13, clean 60 fps)
+## Tier 1, measured (build 14, clean 60 fps)
 
 | Gate | Result |
 |---|---|
-| One-hand scripted win, default seed | 109.6 s, 4 hits taken, 1 heal |
-| One-hand, 16 seeds | 15 wins and 1 death. 11 wins within 150 s (81-140 s), 4 wins at 153-179 s. Median win 119 s; 7.4 hits taken on average |
-| Two-hand scripted win, default seed | 64.4 s, 3 hits taken |
-| Two-hand, 16 seeds | 16 wins, all within 150 s (59-98 s, median 65.5 s); 4.0 hits taken on average |
+| One-hand scripted win, default seed | 106.1 s, 4 hits taken, 1 heal |
+| One-hand, 16 seeds | 15 wins and 1 death. 11 wins within 150 s (81-148 s), 4 wins at 158-180 s. Median win 126 s; 7.6 hits taken on average |
+| Two-hand scripted win, default seed | 71.4 s, 5 hits taken |
+| Two-hand, 16 seeds | 16 wins, all within 150 s (57-119 s, median 71 s); 4.6 hits taken on average |
 | Passive player (stands in front, never dodges), 4 seeds | dies in 7.5-11.8 s; 4 blows, 4 land |
 | Passive player at the entrance, 27 m away | dies in 14.6 s; both opening fire breaths land |
-| Camp test, 9 boss-relative zones | every zone hit within 12.2 s; under the belly: takeoff after 4.3 s, first hit 2.9 s |
-| Longest boss idle | 2.15 s, and only after a string the player avoided completely (the punish window) |
+| Camp test, 9 boss-relative zones | every zone hit within 3.9 s; under the belly: takeoff after 3.4 s, first hit 2.6 s |
+| Longest boss idle | 2.20 s, and only after a string the player avoided completely (the punish window) |
+| Showcase (every dragon move, framed) | 20 of 20 segments |
 
 Same build with the old behaviour switched back on:
 
 | Run | Old behaviour | New |
 |---|---|---|
-| One-hand win (all five switches back) | 79.8 s, 0 hits taken, 9 boss attacks | 109.6 s, 4 hits |
-| Two-hand win (all five switches back) | 56.3 s, 0 hits taken, 6 boss attacks | 64.4 s, 3 hits |
+| One-hand win (all five switches back) | 83.1 s, 0 hits taken | 106.1 s, 4 hits |
+| Two-hand win (all five switches back) | 56.3 s, 0 hits taken | 71.4 s, 5 hits |
 | Passive player dies after | 49.3 s | 7.7 s |
-| Old brain and 650 HP at the new size and pace: one-hand / two-hand win | 61.4 s / 20.7 s, 0 hits, 6 / 2 boss attacks | as above |
+| Old brain and 650 HP at the new size and pace: one-hand / two-hand win | 61.3 s / 20.7 s, 0 hits | as above |
 | Camp test with the old brain | under the belly never answered (first hit 25 s); left flank safe | all zones pass |
 
 The 150 s limit and "very hard" pull against each other for the one-hand grip. The default-seed run and the median are
-inside the limit, but 4 of 16 seeds run 153-179 s and one is a death; those are the fights where the scripted player
-is hit most (9-14 hits, 3-4 heals). The difficulty was kept, as the goal says. Raw records: `data/b13-headless.json`.
+inside the limit, but 4 of 16 seeds run 158-180 s and one is a death; those are the fights where the scripted player
+is hit most. The difficulty was kept, as the goal says. Raw records: `data/b14-headless.json`.
 
 ## What changed in the boss (items 4, 5, 6)
 

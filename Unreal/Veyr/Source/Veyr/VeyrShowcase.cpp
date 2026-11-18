@@ -163,8 +163,23 @@ void FVeyrShowcase::FrameShot()
             }
             else for(float A:{-F.HalfAngleDegrees,0.f,F.HalfAngleDegrees})Points.Add(F.Origin+F.Forward.RotateAngleAxis(A,FVector::UpVector)*F.OuterRadius);
         }
+        // At the larger scale a whole fire envelope (35 m and more) cannot share one shot with the creature
+        // from inside the court: frame the creature and the first 15 m*scale of whatever it threatens.
+        if(Dragon->BodyScale>1.01f)
+        {
+            const FVector Centre=Dragon->GetActorLocation();const float Limit=1500.f*Dragon->BodyScale;
+            for(FVector& P:Points){const FVector Offset=P-Centre;if(Offset.SizeSquared2D()>FMath::Square(Limit))P=Centre+Offset*(Limit/Offset.Size2D());}
+        }
         if(Segment==TEXT("Walk")){const TArray<FVector> Start=Points;const FVector Travel=Dragon->GetLandingLocation()-Dragon->GetActorLocation();for(const FVector& P:Start)Points.Add(P+Travel);}
         if(Segment==TEXT("Roar")){const TArray<FVector> Start=Points;for(const FVector& P:Start)Points.Add(P+FVector(0,0,350*Dragon->BodyScale));}
+        if(Segment==TEXT("Fire"))
+        {
+            // The breathing head swings well outside its wind-up pose: keep the whole sweep in the shot.
+            const FVector Head=Dragon->GetHeadLocation(),Right=Dragon->GetActorRightVector(),Forward=Dragon->GetActorForwardVector();
+            const float Sc=Dragon->BodyScale;
+            for(float Side:{-1.f,1.f}){Points.Add(Head+Right*Side*800.f*Sc);Points.Add(Head+Right*Side*800.f*Sc+FVector(0,0,400.f*Sc));Points.Add(Head+Right*Side*500.f*Sc+Forward*500.f*Sc);}
+            Points.Add(Head+Forward*600.f*Sc);Points.Add(Head+FVector(0,0,500.f*Sc));
+        }
     }
     ShotFocus=PointBounds(Points).GetCenter();
     const FString Name=Segment.ToString();
@@ -206,8 +221,12 @@ void FVeyrShowcase::FrameShot()
             FMath::Max(0.f,-FeatureView)*300.f+(Blocked?10000.f:0.f)+FMath::Max(0.f,FOV-88.f)*100.f;
         if(Score<BestScore){BestScore=Score;Best=P;BestFOV=FOV;}
     }
-    Camera->SetActorLocationAndRotation(Best,(ShotFocus-Best).Rotation());
-    Camera->GetCameraComponent()->SetFieldOfView(FMath::Clamp(BestFOV,48.f,95.f));
+    // At the larger scale the shot starts already aimed where Tick() keeps it (no first-frames lag).
+    const FVector Aim=Sc>1.01f?FMath::Lerp(ShotFocus,PointBounds(FramingPoints(Dragon.Get())).GetCenter(),.8f):ShotFocus;
+    Camera->SetActorLocationAndRotation(Best,(Aim-Best).Rotation());
+    // The larger creature barely fits a court-bound shot: allow a wider lens and a little headroom for
+    // the poses that follow the one the shot was fitted to.
+    Camera->GetCameraComponent()->SetFieldOfView(Sc>1.01f?FMath::Clamp(BestFOV*1.08f,48.f,108.f):FMath::Clamp(BestFOV,48.f,95.f));
     CameraDiagnostic=BestScore>=10000.f?TEXT("No unobstructed candidate: rendered review required"):TEXT("Chapter shot fitted to evaluated anatomical supports and action envelope");
 }
 
@@ -247,8 +266,15 @@ void FVeyrShowcase::Tick(float,float Elapsed)
         const auto Points=FramingPoints(Dragon.Get());
         // Keep the planned shot fixed so locomotion remains visible against
         // the arena; widen only as needed, never breathe with each wingbeat.
+        // The larger creature lunges and rears across more of the frame than a fixed aim can hold from inside
+        // the court: the shot keeps its station but follows the creature's centre.
+        if(Dragon->BodyScale>1.01f)
+        {
+            const FRotator Want=(FMath::Lerp(ShotFocus,PointBounds(Points).GetCenter(),.8f)-Camera->GetActorLocation()).Rotation();
+            Camera->SetActorRotation(FMath::RInterpTo(Camera->GetActorRotation(),Want,1.f/60.f,14.f));
+        }
         const float Need=RequiredFOV(Camera->GetActorLocation(),Camera->GetActorRotation(),Points);
-        if(Need>Camera->GetCameraComponent()->FieldOfView)Camera->GetCameraComponent()->SetFieldOfView(FMath::Min(95.f,Need+2.f));
+        if(Need>Camera->GetCameraComponent()->FieldOfView)Camera->GetCameraComponent()->SetFieldOfView(FMath::Min(Dragon->BodyScale>1.01f?108.f:95.f,Need+2.f));
         Dragon->SetViewOcclusion(Camera->GetActorLocation(),ShotFocus,false);
         if(auto* Mode=Dragon->GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
             Mode->FightFeel->ApplyCameraShake(Camera->GetCameraComponent());

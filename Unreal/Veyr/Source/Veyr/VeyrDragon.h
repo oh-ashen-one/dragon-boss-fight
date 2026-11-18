@@ -489,7 +489,7 @@ private:
     int32 ComboCount=0,ComboBudget=1,ForcedStompLeg=INDEX_NONE,CampHitsBaseline=0;
     bool bChainedAttack=false;
     float IdleRunSeconds=0.f,FrontSweetCm=600.f;
-    static constexpr float UnderBodyLimit=2.5f,GuardPocketLimit=4.f,CampLimit=10.f,ChainWindupScale=.85f,MinimumWindup=.45f;
+    static constexpr float UnderBodyLimit=2.f,GuardPocketLimit=4.f,CampLimit=10.f,ChainWindupScale=.85f,MinimumWindup=.45f;
     /** Trample: a foot, shin or tail segment moving fast while the body turns or walks hurts on contact. */
     float SolidPartSpeed[19]={};
     float TrampleCooldown=0.f;

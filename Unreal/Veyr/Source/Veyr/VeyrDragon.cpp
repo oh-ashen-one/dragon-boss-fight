@@ -434,6 +434,9 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             break;
         case EVeyrDragonState::Recovery:
             if(IsLandingContactWindow()){UpdateImportedPresentation();TryDamageTarget();}
+            // Sheltering under the belly is answered at once: the recovery is cut short for the takeoff.
+            if(bAggression&&Move!=EVeyrDragonMove::FlyAway&&UnderBodySeconds>=UnderBodyLimit&&AntiCampArmed()&&StateElapsed>=.3f)
+            {++CompletedAttacks[MoveIndex(Move)];ComboCount=0;bStringLanded=false;RollComboBudget();EnterState(EVeyrDragonState::Idle,.05f);break;}
             // A readable grounded opening after each committed move. This is
             // ordinary combat time, not a replay-only damage opportunity.
             if(StateElapsed>=StateDuration)
@@ -878,7 +881,7 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
         {
             // Fewer scheduled flights under aggression: the pressure stays on the ground.
             NextFlightAt=EncounterClock+(bAggression?45.f:20.f);bAerialFireConsumed=false;
-            UnderBodySeconds=0.f;CampSeconds=0.f;GuardPocketSeconds=0.f;SpacedFlightReadyAt=EncounterClock+40.f;
+            UnderBodySeconds=0.f;CampSeconds=0.f;GuardPocketSeconds=0.f;SpacedFlightReadyAt=EncounterClock+28.f;
             AerialFireTarget=Ground(Target->GetFootLocation());
             const FVector Side=GetActorRightVector()*(TotalAttacks%2==0?1.f:-1.f);
             MoveEnd=ClampArena(Ground(Target->GetActorLocation())+Side*900.f*BodyScale,RoamRadius()-200.f);

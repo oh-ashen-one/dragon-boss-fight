@@ -22,7 +22,7 @@ manifest = run / 'native-video' / 'frames.jsonl'
 evidence = json.loads((run / 'evidence.json').read_text())
 audio = sorted((run.parent / 'master-audio').glob('*.wav'))
 assert manifest.is_file(), 'run has no native video'
-assert len(audio) == 1, f'expected one master recording, found {len(audio)}'
+assert audio, 'run has no master recording'
 assert not a.output.exists(), 'refusing to overwrite the output'
 silent = a.output.with_suffix('.silent.mp4')
 if not silent.exists():
@@ -30,8 +30,15 @@ if not silent.exists():
                     '--world-index', str(a.world_index), '--output', str(silent), '--threads', '4'], check=True)
 first = next(json.loads(line) for line in manifest.read_text().splitlines()
              if line.strip() and json.loads(line).get('type') == 'frame' and json.loads(line).get('worldIndex', 0) == a.world_index)
+# A run that restarts the world after its ending leaves one recording per world. Their file names carry the
+# start time in 100 ns ticks; evidence.json holds the video-clock start of the last one. The film uses the
+# recording of the requested world.
+ticks = [int(path.stem.rsplit('-', 1)[1]) for path in audio]
+chosen = min(a.world_index, len(audio) - 1)
+audio_start = float(evidence.get('audioStartVideoSeconds', 0.0)) - (ticks[-1] - ticks[chosen]) / 1e7
+audio = [audio[chosen]]
 # Audio position of the first encoded video frame.
-offset = first['wallSeconds'] - float(evidence.get('audioStartVideoSeconds', 0.0))
+offset = first['wallSeconds'] - audio_start
 cmd = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', str(silent)]
 cmd += (['-ss', f'{offset:.4f}'] if offset >= 0 else ['-itsoffset', f'{-offset:.4f}']) + ['-i', str(audio[0])]
 cmd += ['-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', str(a.output)]

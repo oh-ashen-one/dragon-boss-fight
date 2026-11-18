@@ -1149,7 +1149,10 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;
             Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
         }
-        Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,68.f);Look.Roll=0.f;
+        // While the dragon is in the air, looking up (by lock or by hand) stops at 46 degrees and the lens
+        // opens a little further past 28, so the knight's head and shoulders stay in the bottom of the frame.
+        Look.Pitch=FMath::Clamp(FRotator::NormalizeAxis(Look.Pitch),-55.f,FMath::Lerp(68.f,46.f,FlightEase));Look.Roll=0.f;
+        if(FlightEase>0.f)CombatCamera->SetFieldOfView(CombatCamera->FieldOfView+FlightEase*8.f*FMath::Clamp((Look.Pitch-28.f)/18.f,0.f,1.f));
         Controller->SetControlRotation(Look);
         // Preserve a shoulder-height lens during upward look rather than
         // orbiting it into the floor and shortening the arm into the armor.
