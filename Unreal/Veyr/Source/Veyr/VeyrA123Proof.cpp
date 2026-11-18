@@ -306,11 +306,21 @@ void FVeyrA123Proof::Live(double Elapsed,float Dt)
             const FVector Cam=K->CombatCamera->GetComponentLocation();
             const float S=B->DragonScale();
             FName Shape;
-            const bool bInside=B->IsPointInsideBareDragon(Cam,10.f,&Shape);
+            // Three independent views of "inside", each with a 10 cm near-plane margin: the solid capsules
+            // (knight push bodies), the back-face check (nearest of 6500 skinned skin samples faces away),
+            // and the conservative hull spheres the boom itself keeps clear of (reported, not gated).
+            const bool bCapsule=B->IsPointInsideSolidCapsule(Cam,10.f,&Shape);
+            float Depth=0.f;
+            const bool bBack=B->IsPointBehindSkin(Cam,10.f,&Depth);
+            FName HullShape;
+            if(B->IsPointInsideBareDragon(Cam,10.f,&HullShape))++HullInsideFrames;
+            if(bBack){++BackFaceFrames;MaxBackFaceDepthCm=FMath::Max(MaxBackFaceDepthCm,Depth);if(!bCapsule)Shape=TEXT("BackFace");}
+            const bool bInside=bCapsule||bBack;
             (void)S;
             ++CameraFrames;
             const bool bCollapse=D->State==EVeyrDragonState::Collapse||D->State==EVeyrDragonState::Exposed;
             CollapseFrames+=bCollapse?1:0;
+            if(bCapsule)++CapsuleInsideFrames;
             if(bInside)
             {
                 ++CameraInsideFrames;CollapseInsideFrames+=bCollapse?1:0;InsideByShape.FindOrAdd(Shape)++;
@@ -349,7 +359,8 @@ void FVeyrA123Proof::Finalize(double Elapsed)
     else if(Mode==TEXT("camerahug"))
     {
         bPassed=CameraFrames>300&&CameraInsideFrames==0;
-        Reason=FString::Printf(TEXT("camera inside the dragon in %d of %d frames (collapse/exposed %d of %d)"),CameraInsideFrames,CameraFrames,CollapseInsideFrames,CollapseFrames);
+        Reason=FString::Printf(TEXT("camera inside the dragon in %d of %d frames: capsule %d, back-face %d (collapse/exposed %d of %d; conservative hull %d)"),
+            CameraInsideFrames,CameraFrames,CapsuleInsideFrames,BackFaceFrames,CollapseInsideFrames,CollapseFrames,HullInsideFrames);
     }
     else
     {
@@ -395,6 +406,9 @@ TSharedPtr<FJsonObject> FVeyrA123Proof::Evidence() const
     else if(Mode==TEXT("camerahug"))
     {
         O->SetNumberField(TEXT("cameraFrames"),CameraFrames);O->SetNumberField(TEXT("cameraInsideFrames"),CameraInsideFrames);
+        O->SetNumberField(TEXT("capsuleInsideFrames"),CapsuleInsideFrames);O->SetNumberField(TEXT("backFaceFrames"),BackFaceFrames);
+        O->SetNumberField(TEXT("maxBackFaceDepthCm"),MaxBackFaceDepthCm);O->SetNumberField(TEXT("hullInsideFrames"),HullInsideFrames);
+        if(UVeyrCameraBoom* GB=Knight.IsValid()?Cast<UVeyrCameraBoom>(Knight->CameraBoom):nullptr){O->SetNumberField(TEXT("boomGuardEvents"),GB->GuardEvents);O->SetNumberField(TEXT("boomResultInsideFrames"),GB->ResultInsideFrames);}
         O->SetNumberField(TEXT("collapseFrames"),CollapseFrames);O->SetNumberField(TEXT("collapseInsideFrames"),CollapseInsideFrames);
         O->SetNumberField(TEXT("maxLiftCm"),MaxLiftCm);O->SetNumberField(TEXT("minBodyFraction"),MinFraction);
         O->SetNumberField(TEXT("maxCameraJumpCmPerFrame"),MaxCameraJumpCm);

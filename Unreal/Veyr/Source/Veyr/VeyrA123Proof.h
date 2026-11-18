@@ -62,6 +62,7 @@ private:
 
     // camerahug
     int32 CameraFrames=0,CameraInsideFrames=0,CollapseFrames=0,CollapseInsideFrames=0,PullInStart=0;
+    int32 CapsuleInsideFrames=0,BackFaceFrames=0,HullInsideFrames=0;float MaxBackFaceDepthCm=0.f;
     float MaxLiftCm=0.f,MinFraction=1.f,MaxCameraJumpCm=0.f;
     FVector LastCameraRelative=FVector::ZeroVector; bool bHasLastCamera=false;
     TMap<FName,int32> InsideByShape;

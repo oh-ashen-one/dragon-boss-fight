@@ -44,6 +44,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 PullInEvents=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 BodyFrames=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 ResultInsideFrames=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 GuardEvents=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 ShapeCount=0;
 
     /** Dragon size factor used this frame (BodyScale / 2). */
@@ -53,6 +54,10 @@ public:
     bool IsPointInsideDragon(const FVector& Point,float Radius,FName* OutShape=nullptr) const;
     /** Same against the bare body (clearances removed): Margin > 0 is a near-plane allowance. */
     bool IsPointInsideBareDragon(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
+    /** Solid capsules only (no clearance, no hull): the knight push bodies. */
+    bool IsPointInsideSolidCapsule(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
+    /** Back-face check: the nearest of 6500 skinned skin samples faces away from Point by more than Margin. */
+    bool IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm=nullptr);
     AVeyrDragon* GetDragon() const { return Dragon.Get(); }
     /** Rebuild the body and wing shapes from the dragon's current pose (the arm does this each update;
      * replays call it so legacy-arm runs are measured against the same shapes). */
@@ -66,6 +71,8 @@ private:
     TArray<FShape> Shapes;
     FVeyrHullModel Hull;
     TArray<FVector4> HullSpheres;
+    TArray<FVector> SurfacePositions,SurfaceNormals;
+    uint64 SurfaceFrame=0;
     TWeakObjectPtr<AVeyrDragon> Dragon;
     bool bPrerequisiteAdded=false;
     float PreviousTarget=1.f;

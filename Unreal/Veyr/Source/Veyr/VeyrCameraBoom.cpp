@@ -65,7 +65,7 @@ void UVeyrCameraBoom::RefreshShapes()
             {
                 const FVector4& H=HullSpheres[I];
                 FShape X;X.A=X.B=FVector(H.X,H.Y,H.Z);X.Radius=static_cast<float>(H.W)+Clear;X.Clearance=Clear;
-                X.Name=I<800?WingName:BodyName; // table order: 800 wing samples, then body
+                X.Name=I<Hull.BoomWingCount()?WingName:BodyName; // table order: wing samples, then body
                 Shapes.Add(X);
             }
         }
@@ -94,6 +94,34 @@ bool UVeyrCameraBoom::IsPointInsideBareDragon(const FVector& Point,float Margin,
     return false;
 }
 
+bool UVeyrCameraBoom::IsPointInsideSolidCapsule(const FVector& Point,float Margin,FName* OutShape) const
+{
+    for(const FShape& Shape:Shapes)
+        if(Shape.Name.ToString().StartsWith(TEXT("VeyrSolid_"))&&ShapeDistance(Shape,Point)+Shape.Clearance<Margin){if(OutShape)*OutShape=Shape.Name;return true;}
+    return false;
+}
+
+bool UVeyrCameraBoom::IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm)
+{
+    if(OutDepthCm)*OutDepthCm=0.f;
+    AVeyrDragon* D=Dragon.Get();
+    UVeyrSkeletalPresentation* Presentation=D?D->ImportedPresentation.Get():nullptr;
+    if(!Presentation||!D->bUsingCustomuseVisual)return false;
+    if(SurfaceFrame!=GFrameCounter)
+    {
+        SurfaceFrame=GFrameCounter;
+        if(!Hull.IsReadyFor(Presentation))Hull.Initialize(Presentation);
+        Hull.SkinSurface(Presentation,SurfacePositions,SurfaceNormals);
+    }
+    int32 Best=INDEX_NONE;double BestDistance=TNumericLimits<double>::Max();
+    for(int32 I=0;I<SurfacePositions.Num();++I)
+    {const double Distance=FVector::DistSquared(SurfacePositions[I],Point);if(Distance<BestDistance){BestDistance=Distance;Best=I;}}
+    if(Best==INDEX_NONE)return false;
+    const float Signed=static_cast<float>(FVector::DotProduct(Point-SurfacePositions[Best],SurfaceNormals[Best]));
+    if(OutDepthCm)*OutDepthCm=-Signed;
+    return Signed<-Margin;
+}
+
 float UVeyrCameraBoom::FirstContact(const FVector& Origin,const FVector& End,float Radius) const
 {
     const FVector Mid=(Origin+End)*.5;const float Half=static_cast<float>(FVector::Dist(Origin,End))*.5f;
@@ -104,16 +132,20 @@ float UVeyrCameraBoom::FirstContact(const FVector& Origin,const FVector& End,flo
     {
         // Quick reject: the shape cannot reach the segment's bounding sphere.
         if(ShapeDistance(Shape,Mid)>Half+Radius)continue;
-        if(ShapeDistance(Shape,Origin)<Radius)continue;
+        // Origin inside the inflated shape (knight right against the body): fall back to the bare
+        // shape plus the probe, and skip only if the origin is inside even that.
+        float R=Radius;
+        if(ShapeDistance(Shape,Origin)<R)R=Radius-Shape.Clearance;
+        if(ShapeDistance(Shape,Origin)<R)continue;
         float Previous=0.f;
         for(int32 I=1;I<=Steps;++I)
         {
             const float T=static_cast<float>(I)/Steps;
             if(T>=Best)break;
-            if(ShapeDistance(Shape,FMath::Lerp(Origin,End,T))<Radius)
+            if(ShapeDistance(Shape,FMath::Lerp(Origin,End,T))<R)
             {
                 float Lo=Previous,Hi=T; // refine: Lo outside, Hi inside
-                for(int32 K=0;K<8;++K){const float M=(Lo+Hi)*.5f;(ShapeDistance(Shape,FMath::Lerp(Origin,End,M))<Radius?Hi:Lo)=M;}
+                for(int32 K=0;K<8;++K){const float M=(Lo+Hi)*.5f;(ShapeDistance(Shape,FMath::Lerp(Origin,End,M))<R?Hi:Lo)=M;}
                 Best=FMath::Min(Best,Lo);
                 break;
             }
@@ -145,8 +177,12 @@ FVector UVeyrCameraBoom::BlendLocations(const FVector& DesiredArmLocation,const 
     // pulled point still sits inside a tall part (a leg or the torso side right behind the knight).
     float WantLift=LiftMaxCm*S*(1.f-BodyFraction);
     if(WantLift>1.f)WantLift*=FirstContact(Pulled,Pulled+FVector::UpVector*WantLift,Probe);
+    // Rising out of a tall part is allowed only while the way up stays outside the bare body.
     for(float Extra=0.f;IsPointInsideDragon(Pulled+FVector::UpVector*WantLift,Probe)&&Extra<LiftMaxCm*S*2.f;Extra+=25.f*S)
+    {
+        if(IsPointInsideBareDragon(Pulled+FVector::UpVector*(WantLift+25.f*S),Probe))break;
         WantLift+=25.f*S;
+    }
     LiftCm=WantLift>LiftCm?WantLift:FMath::FInterpTo(LiftCm,WantLift,DeltaTime,LiftReleaseRate);
     FVector Result=Pulled+FVector::UpVector*LiftCm;
     if(LiftCm>1.f&&GetWorld())
@@ -155,6 +191,23 @@ FVector UVeyrCameraBoom::BlendLocations(const FVector& DesiredArmLocation,const 
         FHitResult Hit;FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrBoomLift),false,GetOwner());
         if(GetWorld()->SweepSingleByChannel(Hit,Pulled,Result,FQuat::Identity,ProbeChannel,FCollisionShape::MakeSphere(ProbeSize),Params))
             Result=Hit.Location;
+    }
+    // Last guard: never leave the camera inside the bare body. Walk the arm back toward the pivot, first
+    // with the lift and then without it, and take the longest arm that is outside; the pivot itself last.
+    if(IsPointInsideBareDragon(Result,Probe))
+    {
+        ++GuardEvents;
+        bool bFound=false;
+        for(int32 Pass=0;Pass<2&&!bFound;++Pass)
+            for(int32 I=16;I>=0&&!bFound;--I)
+            {
+                const float F=BodyFraction*I/16.f;
+                const FVector Candidate=FMath::Lerp(Origin,Base,F)+FVector::UpVector*(Pass==0?LiftCm*F/FMath::Max(BodyFraction,.01f):0.f);
+                if(!IsPointInsideBareDragon(Candidate,Probe)){Result=Candidate;bFound=true;}
+            }
+        if(!bFound)Result=Origin;
+        // Keep the eased state consistent with where the camera actually went.
+        BodyFraction=FMath::Min(BodyFraction,Length>1.f?static_cast<float>(FVector::Dist2D(Origin,Result)/FMath::Max(1.0,FVector::Dist2D(Origin,Base))):BodyFraction);
     }
     // Evidence: inside the bare body (clearance removed), with a 10 cm near-plane margin.
     if(IsPointInsideBareDragon(Result,10.f))++ResultInsideFrames;

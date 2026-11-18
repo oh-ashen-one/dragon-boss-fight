@@ -50,7 +50,7 @@ private:
 };
 
 /**
- * A2 (2026-11-18): the dragon's skin as 1500 spheres (VeyrDragonHullPoints.inl: farthest-point samples of
+ * A2 (2026-11-18): the dragon's skin as 1500 boom spheres plus 5000 denser samples with normals (VeyrDragonHullPoints.inl: farthest-point samples of
  * the shipped mesh, wings and body separately), skinned with the evaluated pose. The bone-only wing model
  * missed the membranes by a median 135 cm (1x), so the camera arm keeps clear of these instead.
  */
@@ -59,13 +59,18 @@ class FVeyrHullModel
 public:
     bool Initialize(UVeyrSkeletalPresentation* Presentation);
     bool IsReadyFor(const UVeyrSkeletalPresentation* Presentation) const;
-    /** World centres (XYZ) and radii (W) for the current pose. */
+    /** Camera boom spheres for the current pose: world centres (XYZ) and radii (W). */
     bool Skin(UVeyrSkeletalPresentation* Presentation,TArray<FVector4>& Out) const;
+    /** Every skin sample (boom + dense) with its skinned outward normal, world space. */
+    bool SkinSurface(UVeyrSkeletalPresentation* Presentation,TArray<FVector>& OutPositions,TArray<FVector>& OutNormals) const;
+    int32 BoomCount() const { return FMath::Min(BoomPoints,Points.Num()); }
+    int32 BoomWingCount() const { return BoomWing; }
     FString Diagnostic;
 private:
-    struct FInfluence { int32 Bone=INDEX_NONE; float Weight=0.f; FVector BoneLocal=FVector::ZeroVector; };
+    struct FInfluence { int32 Bone=INDEX_NONE; float Weight=0.f; FVector BoneLocal=FVector::ZeroVector,NormalLocal=FVector::ZeroVector; };
     struct FPoint { float Radius=0.f; FInfluence Influences[4]; };
     TArray<FPoint> Points;
+    int32 BoomPoints=0,BoomWing=0;
     TWeakObjectPtr<const USkeletalMesh> FittedMesh;
 };
 

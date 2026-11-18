@@ -62,30 +62,33 @@ namespace
 
 bool FVeyrHullModel::Initialize(UVeyrSkeletalPresentation* Presentation)
 {
-    Points.Reset();FittedMesh.Reset();
+    Points.Reset();FittedMesh.Reset();BoomPoints=GVeyrHullBoomWing+GVeyrHullBoomBody;BoomWing=GVeyrHullBoomWing;
     const USkeletalMesh* Mesh=Presentation?Presentation->GetSkeletalMeshAsset():nullptr;
     if(!Mesh){Diagnostic=TEXT("No skeletal mesh");return false;}
     const FReferenceSkeleton& Reference=Mesh->GetRefSkeleton();
     const TArray<FTransform> Rest=ReferenceComponentSpace(Reference);
     double Map[3][4];float Residual=0.f;int32 Joints=0;
     if(!FitGltfFrame(Reference,Rest,Map,Residual,Joints,Diagnostic))return false;
-    const double MapScale=FMath::Pow(FMath::Abs(FMatrix(FPlane(Map[0][0],Map[1][0],Map[2][0],0),FPlane(Map[0][1],Map[1][1],Map[2][1],0),
-        FPlane(Map[0][2],Map[1][2],Map[2][2],0),FPlane(0,0,0,1)).Determinant()),1.0/3.0);
+    const FMatrix Linear(FPlane(Map[0][0],Map[1][0],Map[2][0],0),FPlane(Map[0][1],Map[1][1],Map[2][1],0),FPlane(Map[0][2],Map[1][2],Map[2][2],0),FPlane(0,0,0,1));
+    const double MapScale=FMath::Pow(FMath::Abs(Linear.Determinant()),1.0/3.0);
+    // Normals map through the inverse transpose of the linear part (row-vector convention here).
+    const FMatrix NormalMatrix=Linear.Inverse().GetTransposed();
     for(const FVeyrHullPoint& Source:GVeyrHullPoints)
     {
         FPoint Point;Point.Radius=static_cast<float>(Source.Radius*MapScale);
         const FVector P=ApplyMap(Map,FVector(Source.X,Source.Y,Source.Z));
+        const FVector N=NormalMatrix.TransformVector(FVector(Source.NX,Source.NY,Source.NZ)).GetSafeNormal();
         for(int32 I=0;I<4;++I)
         {
             if(!Source.Bones[I]||Source.Weights[I]<=0.f)continue;
             const int32 Bone=Reference.FindBoneIndex(FName(Source.Bones[I]));
             if(Bone==INDEX_NONE){Diagnostic=FString::Printf(TEXT("Hull bone %s missing"),Source.Bones[I]);Points.Reset();return false;}
-            Point.Influences[I]={Bone,Source.Weights[I],Rest[Bone].InverseTransformPosition(P)};
+            Point.Influences[I]={Bone,Source.Weights[I],Rest[Bone].InverseTransformPosition(P),Rest[Bone].InverseTransformVectorNoScale(N)};
         }
         Points.Add(Point);
     }
     FittedMesh=Mesh;
-    Diagnostic=FString::Printf(TEXT("Hull model: %d spheres, fit residual %.3f imported cm"),Points.Num(),Residual);
+    Diagnostic=FString::Printf(TEXT("Hull model: %d samples (%d boom), fit residual %.3f imported cm"),Points.Num(),BoomCount(),Residual);
     return Points.Num()>0;
 }
 
@@ -101,13 +104,33 @@ bool FVeyrHullModel::Skin(UVeyrSkeletalPresentation* Presentation,TArray<FVector
     const TArray<FTransform>& Pose=Presentation->GetComponentSpaceTransforms();
     const FTransform Component=Presentation->GetComponentTransform();
     const double Scale=Component.GetScale3D().GetAbsMax();
-    Out.Reserve(Points.Num());
-    for(const FPoint& Point:Points)
+    const int32 Count=BoomCount();Out.Reserve(Count);
+    for(int32 Index=0;Index<Count;++Index)
     {
+        const FPoint& Point=Points[Index];
         FVector Skinned=FVector::ZeroVector;
         for(const FInfluence& I:Point.Influences)
             if(I.Bone!=INDEX_NONE&&Pose.IsValidIndex(I.Bone))Skinned+=Pose[I.Bone].TransformPosition(I.BoneLocal)*I.Weight;
         Out.Emplace(Component.TransformPosition(Skinned),Point.Radius*Scale);
+    }
+    return true;
+}
+
+bool FVeyrHullModel::SkinSurface(UVeyrSkeletalPresentation* Presentation,TArray<FVector>& OutPositions,TArray<FVector>& OutNormals) const
+{
+    OutPositions.Reset();OutNormals.Reset();
+    if(!IsReadyFor(Presentation)||!Presentation->bPoseEvaluated)return false;
+    const TArray<FTransform>& Pose=Presentation->GetComponentSpaceTransforms();
+    const FTransform Component=Presentation->GetComponentTransform();
+    OutPositions.Reserve(Points.Num());OutNormals.Reserve(Points.Num());
+    for(const FPoint& Point:Points)
+    {
+        FVector Skinned=FVector::ZeroVector,Normal=FVector::ZeroVector;
+        for(const FInfluence& I:Point.Influences)
+            if(I.Bone!=INDEX_NONE&&Pose.IsValidIndex(I.Bone))
+            {Skinned+=Pose[I.Bone].TransformPosition(I.BoneLocal)*I.Weight;Normal+=Pose[I.Bone].TransformVectorNoScale(I.NormalLocal)*I.Weight;}
+        OutPositions.Add(Component.TransformPosition(Skinned));
+        OutNormals.Add(Component.TransformVectorNoScale(Normal).GetSafeNormal());
     }
     return true;
 }

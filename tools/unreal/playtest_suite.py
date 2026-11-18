@@ -121,7 +121,7 @@ def run_spec(spec, delay=0.0):
             # Quality goal A1-A3 proof modes (footclosehits / camerahug / soleheights).
             x = e['a123']
             keys = ('mirroredClips', 'sweepMirroredMaxStretchCm1x', 'sweepLegacyMirroredMaxStretchCm1x', 'liveMirroredFrames',
-                    'liveMirroredMaxStretchCm', 'liveMirrorRepairSamples', 'cameraFrames', 'cameraInsideFrames', 'collapseFrames',
+                    'liveMirroredMaxStretchCm', 'liveMirrorRepairSamples', 'cameraFrames', 'cameraInsideFrames', 'capsuleInsideFrames', 'backFaceFrames', 'maxBackFaceDepthCm', 'hullInsideFrames', 'boomGuardEvents', 'boomResultInsideFrames', 'collapseFrames',
                     'collapseInsideFrames', 'pullInEvents', 'maxLiftCm', 'maxCameraJumpCmPerFrame', 'liveGroundFrames',
                     'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepBeforeIdleFloatCm', 'sweepBeforeWorstClipMedianCm', 'sweepWorstClip', 'sweepAfterPlantedWorstCm', 'sweepAfterPlantedWorstClip', 'sweepGroundClips', 'sweepClipsWithin3Cm', 'legHitsPerFoot', 'liveAnyClipMaxStretchCm',
                     'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
