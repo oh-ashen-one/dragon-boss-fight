@@ -55,7 +55,7 @@ bool AVeyrDragon::StartShowcaseSegment(FName Segment,FString& Error)
             bRepositionReverseTurn=(Left?-1.f:1.f)*Yaw<0.f;
             const FTransform End=RepositionTurnTransform(1.f);
             TurnEnd=End.Rotator();MoveStart=MoveEnd=End.GetLocation();
-            RepositionTurnDuration=RepositionTurnSourceDuration/1.22f;
+            RepositionTurnDuration=TurnClipSeconds(RepositionTurnClip,RepositionTurnSourceDuration/1.22f); // F1 rate when on
         }
         else
         {

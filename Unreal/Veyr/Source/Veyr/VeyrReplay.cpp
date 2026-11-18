@@ -1987,6 +1987,8 @@ float AVeyrReplay::DragonPhaseSeconds(EVeyrDragonMove Move,const TCHAR* Phase,fl
     const float End=C->EndSeconds<0.f?C->Sequence->GetPlayLength():C->EndSeconds;
     float Duration=End>C->StartSeconds?End-C->StartSeconds:Fallback;
     if(Move==EVeyrDragonMove::FlyAway&&FCString::Strcmp(Phase,TEXT("Active"))==0&&C->ApprovedSourceFile.Contains(TEXT("Dragon_FlyHover")))Duration*=2.f;
+    // F1 review M6: on the clip-tempo path the bot reads the phase lengths the dragon really plays.
+    if(Dragon->UsesClipTempo())Duration=Dragon->PlaybackAttackPhaseSeconds(Move,Move==EVeyrDragonMove::BackStomp?2:0,Phase,Duration);
     return Duration;
 }
 
@@ -3148,6 +3150,8 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     {
         Root->SetNumberField(TEXT("audioStartVideoSeconds"),MixMode->GetMixCaptureStartedWall()-VideoStartedWallTime);
     }
+    // F1-F4 (2026-11-18): per-clip playback rates, blend kinds, planted-foot slide, root travel.
+    if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlayback"),Dragon->PlaybackEvidence());
     Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
     Root->SetBoolField(TEXT("headlessNumbersOnly"),bHeadless);Root->SetNumberField(TEXT("stillIntervalSeconds"),StillInterval);
     LastEvidence=Root;

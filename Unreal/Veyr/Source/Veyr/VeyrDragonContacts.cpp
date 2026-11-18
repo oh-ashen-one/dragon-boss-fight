@@ -56,6 +56,7 @@ void AVeyrDragon::UpdateGroundContacts(float DeltaSeconds)
             // A missed floor trace reports the actor's own height (17 m up in flight): use the arena floor (Z 0) instead.
             const float Floor=FMath::IsNearlyEqual(Soles.FloorZ[I],ActorZ,.01f)&&ActorZ>1.f?0.f:Soles.FloorZ[I];
             FloorZ=FMath::Min(FloorZ,Floor);
+            if(IsFootLockStepping(I))continue; // F3 review M2: a lock step is not the clip's footfall
             GroundContacts.Sample(I,FootNames[I],EVeyrGroundContactPart::Foot,I,
                 FVector(Soles.Lowest[I].X,Soles.Lowest[I].Y,Soles.FloorZ[I]+Soles.SoleAboveFloorCm[I]),Floor);
         }

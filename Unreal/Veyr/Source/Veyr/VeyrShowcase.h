@@ -39,6 +39,10 @@ private:
     uint8 SavedMovementMode=0,SavedCustomMovementMode=0;
     FVector ShotFocus=FVector::ZeroVector;
     FString CameraDiagnostic;
+    // F proof (2026-11-18): -VeyrShowcaseMoves plays every move twice at game timing; -VeyrShowcaseCamera=side|quarter
+    // holds one fixed camera angle relative to the dragon's facing (side-on 90 deg, three-quarter 45 deg).
+    bool bMovesMode=false;
+    float FixedCameraAngle=-1000.f;
     bool BeginStep(float Elapsed);
     void FrameShot();
     void ObserveFrame();
