@@ -6,12 +6,12 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 
 | Phase | State | Evidence |
 |---|---|---|
-| A bugs | in progress | |
-| B weight and sound | sound set in preparation (no engine) | |
-| C picture | not started | |
-| D camera and size | not started | |
+| A bugs | A1-A3 proven; A4 floor time proven; showcase regression and difficulty band open | `Local/playtest-goal-review/phaseA/`, `Evidence/native-{footclosehits,camerahug,soleheights}-20261118T*` |
+| B weight and sound | sound set staged (116 recorded + 26 generated); weight and sound code written, reviewed, fixed; waiting for the engine | `http://localhost:8823/audio.html` |
+| C picture | code written, reviewed, fixed; waiting for the engine | |
+| D camera and size | camera code written, reviewed, fixed; waiting for the engine | |
 | E new knight | assets found on disk; plan in progress | |
-| F dragon animation | not started | |
+| F dragon animation | playback code written, reviewed, fixed; waiting for the engine | |
 
 ## Spawns
 
@@ -20,7 +20,9 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-18 12:37 | A4 knock-down 5 s + difficulty band | opus-builder, Opus 5.5 high | held until 13:45 | 2.5 h | floor time 4.94 s max over 35 knock-downs (was 5.8-9.3), `-VeyrLegacyKnockdown`, pushed `735fa3c`. Band NOT held yet: the scripted knight reaches the head too late in a 3 s window (65/0/0/0 damage per knock-down against about 250). Paused by the director: band pass happens after the grounding fix merges. Next levers: bot locks on while closing, head bonus through 40 % of the rise, boss health |
 | 11-18 12:37 | A1-A3 diagnosis (pinched foot, camera inside, floating) | opus-builder, Opus 5.5 high | none | 1 h | done 12:46: A1 = mirror tool leaves one right-front toe bone unpaired (339 vertices follow it); A2 = nothing on the dragon blocks the camera; A3 = clips raise the body bone, to be measured |
 | 11-18 12:47 | A1-A3 implementation in a worktree, no building | same agent | none | 1.5 h | coded 13:07 (`fable/quality-goal-A123`: camera boom, grounding, mirror-toe fix, three proof replays); compiles; re-mirrored clips and film checker ready |
-| 11-18 13:46 | A1-A3 merge, build, proofs, regression, baseline film | same agent | holds | 3 h | running |
+| 11-18 13:46 | A1-A3 merge, build, proofs, regression, baseline film | same agent | held to 16:30 | 3 h | A1 met (stretch 0.002 cm against 768 cm), A2 met (0 of 10285 frames inside, legacy 449), A3 met (67/67 clips within 3 cm, live float 0.0 cm against 25.5 cm median; the owner's 3 ft was not reproduced, worst clip was 68 cm). Package `78f2c849` (`3e5b681`). Regression: controls, intro, death, two-hand win pass; showcase FAILS at the Tail segment (new); one-hand win 166.9 s (band pass pending). Baseline film made |
+| 11-18 16:33 | Showcase Tail regression: bisect and fix | same agent | holds | 1 h | running |
+| 11-18 16:35 | Progress page (`progress.html`, clips by phase) | sonnet-builder, Sonnet 5.5 high | none | 1 h | running |
 | 11-18 12:37 | B1 recorded sound set + audition page | sonnet-builder, Sonnet 5.5 high | none | 2.5 h | done 14:20: 116 CC0 cuts for 25 cues staged in `Local/AudioSources20261118/staged/Recorded20261118/`, receipt and tools pushed (`e3886c0`), audition page `http://localhost:8823/audio.html`. Weak: giant steps, wing flaps, impacts, heal, breathing |
 | 11-18 14:24 | Generated supplement for the weak cues through fal.ai (3 USD cap) | same agent | none | 75 min | done 14:40: 26 kept of 37 takes (breathing, giant steps, wing, impact, heal, growl), staged in `staged/Generated20261118/`, 0.13 USD, pushed `8154450` |
 | 11-18 12:37 | Greystone / animation sample access lookup | haiku-scout, Haiku 5.5 high | none | short | done: both already in `/Users/Shared/UnrealEngine/Launcher/VaultCache` (Greystone 2.1 GB, Game Animation Sample 5.8 7.0 GB); no login needed |
