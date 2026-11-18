@@ -40,3 +40,4 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | When | Provider | Job | Cost |
 |---|---|---|---|
 | | | none so far | 0 USD |
+| 11-18 | fal.ai elevenlabs/sound-effects/v3 | 37 sound-effect takes for dragon breath, steps, wing, impact, heal, growl (docs/audio-20261118/generation-ledger.json) | 0.13 USD of the 3 USD budget |

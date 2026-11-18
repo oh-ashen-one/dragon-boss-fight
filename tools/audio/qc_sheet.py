@@ -18,7 +18,7 @@ cues = sorted({f.name.rsplit('_', 1)[0] for f in files})
 if len(sys.argv) > 3:
     cues = [c for c in cues if c in sys.argv[3:]]
 for cue in cues:
-    items = sorted(folder.glob(cue + '_*.pcm'), key=lambda f: int(f.stem.rsplit('_', 1)[1]))
+    items = sorted(folder.glob(cue + '_*[0-9].pcm'), key=lambda f: int(''.join(ch for ch in f.stem.rsplit('_', 1)[1] if ch.isdigit())))
     fig, axes = plt.subplots(len(items), 2, figsize=(11, 1.25 * len(items) + 0.4), squeeze=False)
     for row, f in zip(axes, items):
         x = np.frombuffer(f.read_bytes(), dtype='<i2') / 32768

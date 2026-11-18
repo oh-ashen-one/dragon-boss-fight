@@ -18,9 +18,12 @@ p.add_argument('--receipt', type=Path, required=True)
 p.add_argument('--audio-root', type=Path, required=True)
 p.add_argument('--code-tones', type=Path, required=True)
 p.add_argument('--recorded', type=Path, required=True, help='folder with the <Cue>_<n>.pcm variants (the staged set)')
+p.add_argument('--generated-receipt', type=Path, default=None)
+p.add_argument('--generated', type=Path, default=None, help='folder with the generated <Cue>_g<n>.pcm')
 p.add_argument('--out', type=Path, required=True)
 a = p.parse_args()
 receipt = json.loads(a.receipt.read_text())
+generated = json.loads(a.generated_receipt.read_text()) if a.generated_receipt else {}
 RATE = 24000
 GROUPS = [
     ('Knight', [('Swing', 'Sword swing'), ('HeavySwing', 'Heavy swing'), ('Footstep', 'Footstep'), ('Roll', 'Roll'),
@@ -74,6 +77,11 @@ for group, cues in GROUPS:
             title = html.escape(v['title'].rsplit('.', 1)[0] if v['title'].lower().endswith(('.wav', '.mp3', '.flac', '.ogg', '.aiff')) else v['title'])
             cells.append(f'<span class="v"><button data-src="audio/new/{cue}_{n}.wav"{loop}>{n}</button>'
                          f'<a href="{v["page"]}" target="_blank" rel="noopener" title="{title}">{title[:26]}</a></span>')
+        for v in generated.get(cue, {}).get('variants', []):
+            n = v['file'].rsplit('_', 1)[1].split('.')[0]
+            to_wav(a.generated / v['file'], a.out / f'audio/new/{cue}_{n}.wav')
+            cells.append(f'<span class="v gen"><button class="g" data-src="audio/new/{cue}_{n}.wav"{loop}>{n}</button>'
+                         f'<span class="tag" title="{html.escape(v["prompt"])}">generated</span></span>')
         rows.append(f'<div class="row"><div class="name">{html.escape(label)}</div><div class="cells">{"".join(cells)}</div></div>')
 
 page = '''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -86,7 +94,7 @@ h1{font-size:18px;font-weight:600;margin:0 0 12px}h2{font-size:12px;letter-spaci
 .v{display:flex;align-items:center;gap:6px}
 button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;min-width:44px;height:34px;padding:0 12px;font:inherit;cursor:pointer}
 button:hover{border-color:var(--gold)}button.on{background:var(--gold);color:#111;border-color:var(--gold)}
-button.old{color:var(--dim);border-style:dashed}.none{color:var(--dim);padding:6px 10px;border:1px dashed var(--line);border-radius:6px}
+button.g{border-color:#5a7a9a}.tag{color:#7f9ab8;font-size:12px}button.old{color:var(--dim);border-style:dashed}.none{color:var(--dim);padding:6px 10px;border:1px dashed var(--line);border-radius:6px}
 a{color:var(--dim);font-size:12px;text-decoration:none;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}a:hover{color:var(--text)}
 @media(max-width:640px){.row{grid-template-columns:1fr}.name{padding-top:0}}
 </style></head><body><h1>Veyr audio</h1>

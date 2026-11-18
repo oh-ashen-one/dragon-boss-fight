@@ -148,7 +148,7 @@ def check(raw, shape, seconds_min, peak_by=0.10, attack_ms=40, max_pulses=2, lea
     fast = envelope(raw, 3)
     first = int(np.argmax(fast > fast.max() * 0.12))
     attack = (int(np.argmax(fast)) - first) / RATE * 1000
-    spec = np.abs(np.fft.rfft(raw * np.hanning(len(raw)))) ** 2
+    spec = np.abs(np.fft.rfft(raw)) ** 2
     freqs = np.fft.rfftfreq(len(raw), 1 / RATE)
     audible = float(spec[freqs >= 130].sum() / max(spec.sum(), 1e-12))
     slow = envelope(raw, 50)
@@ -172,7 +172,7 @@ def check(raw, shape, seconds_min, peak_by=0.10, attack_ms=40, max_pulses=2, lea
         return False, m, 'several events in one cut'
     if audible < 0.10:
         return False, m, 'too low to hear on small speakers'
-    if shape == 'swell' and not (0.08 <= frac <= 0.85):
+    if shape == 'swell' and not ((0.0 if a.clean else 0.08) <= frac <= 0.85):
         return False, m, 'peak at the edge'
     if shape != 'loop' and tail_db > tail_limit:
         return False, m, 'cut off at the tail'
@@ -220,12 +220,17 @@ p.add_argument('--output', type=Path, required=True)
 p.add_argument('--receipt', type=Path, required=True)
 p.add_argument('--plan', type=Path, default=Path(__file__).with_name('recorded_set_plan.json'),
                help='plan file; its per-cue "exclude" lists the Freesound ids rejected after looking at the cuts')
+p.add_argument('--suffix', default='', help='variant name infix, e.g. g gives <Cue>_g1.pcm (generated set)')
+p.add_argument('--levels', type=Path, default=None, help='receipt of the recorded set: take each cue\'s shared event RMS from it')
+p.add_argument('--no-pitch', action='store_true', help='ignore the per-cue pitchFactor (generated sounds are already the right size)')
+p.add_argument('--clean', action='store_true', help='clean (generated) sources: skip the noisy lead-in rule, allow several pulses')
 p.add_argument('--only', help='comma-separated cue names')
 p.add_argument('--audio-root', type=Path, default=None, help='Content/Audio folder holding the old sets (levels)')
 a = p.parse_args()
 audio_root = a.audio_root or a.output.parent
 ledger = json.loads((a.sources / 'candidates.json').read_text())
 plan = json.loads(a.plan.read_text())
+levels = {c: v['levelRmsDb'] for c, v in json.loads(a.levels.read_text()).items() if v.get('levelRmsDb') is not None} if a.levels else {}
 a.output.mkdir(parents=True, exist_ok=True)
 a.receipt.parent.mkdir(parents=True, exist_ok=True)
 receipt = json.loads(a.receipt.read_text()) if a.receipt.exists() else {}
@@ -248,7 +253,7 @@ for cue, (text, shape, variants, longest, tail, ceiling_db, extra) in CUES.items
         continue
     excluded = {str(i) for i in plan.get(cue, {}).get('exclude', [])}
     pool = list(ledger.get(cue, []))
-    for other in extra.get('alsoFrom', []):  # sounds fetched for a related cue can serve this one too
+    for other in ([] if a.clean else extra.get('alsoFrom', [])):  # sounds fetched for a related cue can serve this one too
         pool += ledger.get(other, [])
     for other in extra.get('distinctFrom', []):  # do not reuse a recording another cue already took
         excluded |= {v['page'].rstrip('/').rsplit('/', 1)[1] for v in receipt.get(other, {}).get('variants', [])}
@@ -262,17 +267,23 @@ for cue, (text, shape, variants, longest, tail, ceiling_db, extra) in CUES.items
         print(cue, 'has no candidates', flush=True)
         continue
     ranked = earshot.rank(files, text)['results']
-    kept = [r for r in ranked if good(r['verdict']) and not r.get('near_silent')]
+    kept = [r for r in ranked if (good(r['verdict']) or a.clean) and not r.get('near_silent')]
     # Second chance for weak-ranked files: the model is a content check, our checks decide quality.
     rejected = {'multi': 0, 'tooShort': 0, 'cutOff': 0, 'clipped': 0, 'noisy': 0, 'silence': 0, 'edge': 0, 'attack': 0, 'other': 0}
     cuts = []
+    why_counts, examples = {}, []
     min_len = extra.get('min', 0.08 if cue in ('Footstep', 'Bite', 'DragonSnort') else 0.15)
+    if a.clean:
+        min_len = min(min_len, 0.25)  # generated takes are single clean events: dry and short is fine
     for r in kept:
         source = Path(r['path'])
         samples = decode(source)
         total = len(samples) / RATE
-        found = earshot.find(str(source), text, top=8, kind='texture' if shape == 'loop' else 'event',
-                             win=longest if shape == 'loop' else None)
+        if a.clean:  # a generated take is one event by construction: the whole file is the segment
+            found = {'duration': total, 'segments': [{'start': 0.0, 'end': total, 'verdict': 'strong'}]}
+        else:
+            found = earshot.find(str(source), text, top=8, kind='texture' if shape == 'loop' else 'event',
+                                 win=longest if shape == 'loop' else None)
         segs = sorted((s for s in found['segments'] if good(s['verdict'])), key=lambda s: s['start'])
         starts = [s['start'] for s in sorted(found['segments'], key=lambda s: s['start'])]
         for seg in segs:
@@ -290,12 +301,14 @@ for cue, (text, shape, variants, longest, tail, ceiling_db, extra) in CUES.items
                     continue
                 piece = piece - float(np.mean(piece))
                 if shape != 'loop':
-                    piece = trim_tail(trim_head(piece, shape), -40 if extra.get('longTail') else -30)
-                ok, m, why = check(piece, shape, min_len, extra.get('peakBy', 0.10), extra.get('attackMs', 40), extra.get('pulses', 3 if shape == 'hit' else 2),
-                                lead_check=shape == 'hit' or bool(extra.get('voice')), tail_limit=extra.get('tailDb', -20))
+                    piece = trim_tail(trim_head(piece, shape), (-55 if a.clean else -40 if extra.get('longTail') else -30))
+                ok, m, why = check(piece, shape, min_len, extra.get('peakBy', 0.10), extra.get('attackMs', 40), extra.get('pulses', 3 if shape == 'hit' else 2) + (4 if a.clean else 0),
+                                lead_check=(shape == 'hit' or bool(extra.get('voice'))) and not a.clean, tail_limit=max(extra.get('tailDb', -20), -14) if a.clean else extra.get('tailDb', -20))
                 if ok or why not in ('cut off at the tail', 'too short'):
                     break
             if not ok:
+                why_counts[why] = why_counts.get(why, 0) + 1
+                examples.append({'source': source.stem, 'why': why, **m})
                 key = {'too short': 'tooShort', 'cut off at the tail': 'cutOff', 'clipped in the source': 'clipped',
                        'mostly silence': 'silence', 'peak at the edge': 'edge',
                        'attack not at the start': 'attack'}.get(why, 'noisy' if why.startswith('noisy') else 'other')
@@ -310,7 +323,7 @@ for cue, (text, shape, variants, longest, tail, ceiling_db, extra) in CUES.items
             sf.write(target, piece, RATE, subtype='FLOAT')
             cuts.append({'wav': target, 'source': source, 'start': round(begin, 3), 'data': piece, 'metrics': m})
     if not cuts:
-        print(cue, 'no usable cut;', len(kept), 'of', len(files), 'files matched; rejected', rejected, flush=True)
+        print(cue, 'no usable cut;', len(kept), 'of', len(files), 'files matched; rejected', rejected, why_counts, flush=True)
         receipt[cue] = {'description': text, 'candidates': len(files), 'matching': len(kept), 'variants': [],
                         'rejectedCuts': rejected}
         a.receipt.write_text(json.dumps(receipt, indent=1) + '\n')
@@ -323,7 +336,7 @@ for cue, (text, shape, variants, longest, tail, ceiling_db, extra) in CUES.items
     for limit in (1, 2, 3, 6):  # first one cut per recording, then more, so variants differ
         for r in again:
             c = by_path[r['path']]
-            if c in chosen or not good(r['verdict']) or beeps.get(r['path'], -9) > r['z'] - 0.5:
+            if c in chosen or (not good(r['verdict']) and not a.clean) or beeps.get(r['path'], -9) > r['z'] - 0.5:
                 continue
             if voices and voices.get(r['path'], -9) > r['z'] - 0.5:
                 continue
@@ -338,7 +351,7 @@ for cue, (text, shape, variants, longest, tail, ceiling_db, extra) in CUES.items
             taken.append((page, c['start']))
             per_source[c['source']] = per_source.get(c['source'], 0) + 1
     # ---- levelling: same event RMS for every variant, peaks under the ceiling
-    pitch = extra.get('pitch', 1.0)  # a big creature: the recording is played slower (lower and longer), never generated
+    pitch = 1.0 if a.no_pitch else extra.get('pitch', 1.0)  # a big creature: the recording is played slower (lower and longer), never generated
     for c in chosen:
         if pitch != 1.0:
             c['data'] = resample_poly(c['data'], 100, int(round(100 * pitch)))
@@ -347,29 +360,33 @@ for cue, (text, shape, variants, longest, tail, ceiling_db, extra) in CUES.items
         c['crest'] = c['peakDb'] - c['rmsDb']
     old = old_level(audio_root, extra['old'], a.sources / '_code_tones') if extra.get('old') else None
     feasible = float(np.median([ceiling_db - c['crest'] for c in chosen])) if chosen else -20.0
-    target_rms = feasible  # peak-limited level shared by all variants; the old level is only reported
+    target_rms = feasible
+    if a.levels and cue in levels:
+        target_rms = min(feasible, levels[cue])  # same loudness as the recorded variants of this cue
+    # peak-limited level shared by all variants; the old level is only reported
     for c in chosen:
         gain = target_rms - c['rmsDb']
         y = soft_limit(c['data'] * 10 ** (gain / 20), 10 ** (ceiling_db / 20))
         c['final'] = y
         c['finalRmsDb'], c['finalPeakDb'] = active_rms_db(y), db(np.max(np.abs(y)))
     spread = max(c['finalRmsDb'] for c in chosen) - min(c['finalRmsDb'] for c in chosen) if chosen else 0
-    for old_file in a.output.glob(cue + '_*.pcm'):
+    for old_file in a.output.glob(cue + '_' + a.suffix + '[0-9]*.pcm'):
         old_file.unlink()
     out = []
     for index, c in enumerate(chosen, 1):
         pcm = np.clip(np.round(c['final'] * 32767), -32768, 32767).astype('<i2')
-        target = a.output / f'{cue}_{index}.pcm'
+        target = a.output / f'{cue}_{a.suffix}{index}.pcm'
         target.write_bytes(pcm.tobytes())
         origin = records[str(c['source'].relative_to(a.sources))]
         out.append({'file': target.name, 'seconds': round(len(pcm) / RATE, 3), 'sourceStart': c['start'],
                     'match': c['verdict'], 'matchZ': c['z'], 'beepZ': c['beepZ'], 'voiceZ': c['voiceZ'],
                     'rmsDb': round(c['finalRmsDb'], 1), 'peakDb': round(c['finalPeakDb'], 1),
                     'checks': c['metrics'], 'title': origin['title'], 'author': origin['author'],
-                    'page': origin['page'], 'license': origin['license'], 'sourceSHA256': origin['sha256'],
+                    'page': origin['page'], 'license': origin['license'],
+                    **({k_: origin[k_] for k_ in ('generated', 'endpoint', 'prompt', 'job') if k_ in origin}), 'sourceSHA256': origin['sha256'],
                     'sha256': hashlib.sha256(target.read_bytes()).hexdigest()})
     receipt[cue] = {'description': text, 'shape': shape, 'loop': shape == 'loop', 'candidates': len(files),
-                    'matching': len(kept), 'cutsPassingChecks': len(cuts), 'rejectedCuts': rejected,
+                    'matching': len(kept), 'cutsPassingChecks': len(cuts), 'rejectedCuts': rejected, 'rejectedReasons': why_counts, 'rejectedExamples': examples[:12],
                     'levelRmsDb': round(target_rms, 1), 'levelSpreadDb': round(spread, 2),
                     'ceilingDb': ceiling_db, 'pitchFactor': pitch, 'oldGameLevelRmsDb': round(old[0], 1) if old else None,
                     'volumeToMatchOldLevel': round(10 ** ((old[0] - target_rms) / 20), 2) if old else None,
