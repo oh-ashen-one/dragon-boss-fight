@@ -300,10 +300,10 @@ private:
     /** Flight framing (default on, -VeyrNoFlightFraming restores): while the dragon is airborne the lens widens to 90 degrees, the
      * lock keeps the whole knight in frame and leans toward where the fire or the landing will hit. */
     bool bFlightFraming=false;
-    /** Near-boss framing (default on at the larger scale, -VeyrNoBossNearFraming restores): close to the
+    /** Near-boss framing (opt-in, -VeyrBossNearFraming): close to the
      * 30 ft dragon the arm lengthens and the lens widens a little so its head and the knight's feet fit
      * one frame during wind-ups. Blends out with distance. */
-    bool bBossNearFraming=true;
+    bool bBossNearFraming=false;
     float BossNearBlend=0.f;
     float FlightFramingBlend=0.f;
     bool bFlowTransition=false;

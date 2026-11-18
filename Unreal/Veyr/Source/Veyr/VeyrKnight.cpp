@@ -252,7 +252,9 @@ void AVeyrKnight::BeginPlay()
     bChainFlow=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoChainFlow"));
     // Default on (2026-11-18); -VeyrNoFlightFraming restores the fixed lens in flight.
     bFlightFraming=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoFlightFraming"));
-    bBossNearFraming=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoBossNearFraming"));
+    // Opt-in only: measured on film it raised head-in-view during wind-ups from 11 % to 19 % but made the knight
+    // read too small for the whole fight.
+    bBossNearFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrBossNearFraming"));
     // Mixamo downward heavy won the independent blind comparison. Keep an
     // explicit legacy switch for reproducible before/after captures.
     bSourcedTwoHandHeavy=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyTwoHandHeavy"));
