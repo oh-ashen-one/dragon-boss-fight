@@ -231,7 +231,8 @@ void FVeyrA123Proof::UpdateSideCamera()
     auto Room=[&](const FVector& From,const FVector& Dir)
     {
         FHitResult Hit;FCollisionQueryParams Q(SCENE_QUERY_STAT(VeyrSoleSideCamera),false,D);Q.AddIgnoredActor(K);
-        const FVector A=From+FVector(0,0,20.f);
+        // Swept 80 cm up so the floor itself is not the first hit (a 20 cm sphere at lens height starts in it).
+        const FVector A=From+FVector(0,0,80.f);
         return W->SweepSingleByChannel(Hit,A,A+Dir*Want,FQuat::Identity,ECC_Camera,FCollisionShape::MakeSphere(20.f),Q)?FMath::Max(0.f,Hit.Distance-40.f):Want;
     };
     const FVector PawRight=PawFor(1.f),PawLeft=PawFor(-1.f);
