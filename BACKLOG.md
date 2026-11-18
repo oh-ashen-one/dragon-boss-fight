@@ -14,6 +14,29 @@ Leshy fight) and ours: `Local/playtest-goal-review/vs.html` (`python3 serve.py 8
 - The reference boss is a humanoid, moose-like creature about two knight-heights tall; ours is a heavy four-legged
   dragon. Copy his techniques, not his proportions.
 
+## What the owner noticed playing the reference game (2026-11-18)
+
+His words, mapped to the items below. Still discussion; nothing started.
+
+- **Sound of the world**: footsteps audible on snow and sand, the hero running, the boss breathing in idle with a
+  sound on the floor. (Items 5-7. His footsteps are sorted by surface; the boss idle clip has breath sounds at fixed
+  times.)
+- **Hero run is fluid, not blocky**; a "slightly overexaggerated" whole-body turn and abrupt stop when reversing
+  mid-run. (Item 20: his motion matching has 135/180 degree pivots and stops at four foot phases; ours has turns and
+  stops off by default.)
+- **Attacks**: screen shake, and "a blurred line that follows the tip of the hammer". The swing is "fluid and fast",
+  not "a blocky 90 degree angle attack". (Items 19, 21: full-width smoothed trail, motion blur, blows that turn toward
+  the stick and exit into movement.)
+- **Hero model** is "a much higher-quality 3D asset. There's no breaking... straight out of Elden Ring". OPEN
+  DECISION: repair our plate-armour knight, or replace it with a finished professional character (source-first rule:
+  check Fab/Paragon first).
+- **Boss room interior and lighting** "looks amazing", "almost looks candlelit"; the building outside is about the
+  same as our castle ("80%"). (Item 8, plus OPEN DECISION: relight the open courtyard with shadowed fire light, or
+  give the fight an enclosed, darker room.)
+- **Intro**: cut from walking into a letterboxed close-up of the boss. "We don't necessarily need that."
+- **Weight**: when the boss hits or moves "the camera shakes, and you could feel that he weighs a ton"; the same when
+  you hit him. (Items 9, 17: shake by impact speed and distance, dust under feet, whole-spine flinch.)
+
 ## A. Bugs the owner saw (fix first)
 
 1. **Foot mesh pinches out sideways.** When the knight hits the dragon from very close, a corner of a foot (the owner
