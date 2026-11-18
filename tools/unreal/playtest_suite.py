@@ -122,6 +122,10 @@ def run_spec(spec, delay=0.0):
             record['audio'] = {'newSet': a.get('newSet'), 'cuesStarted': a.get('cuesStarted'), 'cuesDropped': a.get('cuesDropped'),
                                'cueCounts': fired, 'silentCueRequests': a.get('silentCueRequests'),
                                'dragon': a.get('dragon'), 'knight': a.get('knight')}
+            if e.get('audioSetup'):
+                record['audio']['setup'] = e['audioSetup']
+            if not a.get('newSet'):
+                print('    WARNING: audio.newSet is false: this run played the PREVIOUS sounds (new set missing or -VeyrLegacyCues)', flush=True)
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:

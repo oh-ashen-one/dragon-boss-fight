@@ -69,14 +69,16 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
     if(!bLoadedOnce)
     {
         // B1-B3: the new recorded set and triggers are the default; -VeyrLegacyAudio restores today's sounds and triggers.
-        const bool bLegacy=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyAudio"));
-        bNewSet=!bLegacy&&FPaths::DirectoryExists(FPaths::ProjectContentDir()/TEXT("Audio/Recorded20261118"));
+        // -VeyrLegacyAudio keeps its pre-goal meaning (older music and vocals: no owner score, no pain cue, no dragon library).
+        // -VeyrLegacyCues restores today's default sound exactly (the previous single-sample cues and triggers).
+        bLegacyCues=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCues"));
+        bNewSet=!bLegacyCues&&FPaths::DirectoryExists(FPaths::ProjectContentDir()/TEXT("Audio/Recorded20261118"));
         bNoVariants=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoAudioVariants"));
         bNoBreath=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonBreath"));
         bNoMoveSounds=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonMoveSounds"));
-        bContactAudio=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonContactSounds"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoGroundContacts"));
+        bContactAudio=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonContactSounds"));
         bLogCues=FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioLog"));
-        if(!bLegacy&&!bNewSet)UE_LOG(LogTemp,Warning,TEXT("VEYR_AUDIO new recorded set folder missing; playing the previous set"));
+        if(!bLegacyCues&&!bNewSet)UE_LOG(LogTemp,Error,TEXT("VEYR_AUDIO_NEW_SET_MISSING Content/Audio/Recorded20261118 not found: playing the PREVIOUS sounds (evidence audio.newSet=false)"));
     }
     bAudioPolish=bNewSet?!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoAudioPolish")):FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioPolish"));
     StopVoices();
@@ -95,7 +97,7 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
         else {BuildSamples();LoadRecordedSamples();}
     }
     for (double& Time : LastCueTimes) Time = -100.0;
-    Pending.Reset();for(FExpect& E:Expect)E=FExpect();
+    Pending.Reset();for(FExpect& E:Expect)E=FExpect();bBodyDownHeard=false;LastLandingHeard=-100.0;
     BreathClock=3.f;GrowlClock=Rand.FRandRange(7.f,12.f);bBreathExhaleNext=false;TimedClipKey=NAME_None;TimedLastPhase=TimedLastTime=-1.f;
     for(int32& C:CueCounts)C=0;for(int32& C:CueSilent)C=0;
     bTerminal = InKnight->IsDead() || InDragon->IsDead();
@@ -103,6 +105,12 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
     CuesStarted = CuesDropped = 0;
     MusicStarts=PlayerPainCues=DragonVocalCues=0;MusicStartWorldSeconds=-1.f;
     SnapshotCounters(); // Binding mid-encounter must not replay historical events.
+}
+
+double AVeyrAudio::AudioNow() const
+{
+    const UWorld* W=GetWorld();
+    return !W?0.0:bNewSet?W->GetRealTimeSeconds():W->GetTimeSeconds();
 }
 
 void AVeyrAudio::SnapshotCounters()
@@ -306,7 +314,7 @@ void AVeyrAudio::PlayCue(ECue Cue, float Volume)
 void AVeyrAudio::ExpireVoices()
 {
     if (!GetWorld()) return;
-    const double Now = GetWorld()->GetTimeSeconds();
+    const double Now = AudioNow();
     for (int32 I = 0; I < TotalVoices; ++I)
     {
         if (VoiceEndTimes[I] <= 0 || Now < VoiceEndTimes[I]) continue;

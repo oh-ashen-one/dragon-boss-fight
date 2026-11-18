@@ -42,7 +42,8 @@ public:
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 PlayerPainCues=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 DragonVocalCues=0;
     /** Quality goal B1-B3 (2026-11-18): the new recorded set, variants, dragon presence, timed sounds. Evidence for evidence.json "audio". */
-    TSharedRef<FJsonObject> AudioEvidence() const;
+    TSharedRef<FJsonObject> AudioEvidence() const;      // dynamic counters, one per replay sample
+    TSharedRef<FJsonObject> AudioSetupEvidence() const; // static: switches, variants loaded, tables; once at the evidence root
     bool UsesNewSet() const { return bNewSet; }
 
 protected:
@@ -55,7 +56,7 @@ private:
     static constexpr int32 VoiceCount = 12;
     static constexpr int32 StepVoiceCount = 8;
     static constexpr int32 TotalVoices = VoiceCount + StepVoiceCount;
-    static constexpr int32 MaxVariants = 12;
+    static constexpr int32 MaxVariants = 16;
     static constexpr int32 CueCount = static_cast<int32>(ECue::Count);
     static constexpr int32 SampleRate = 24000;
 
@@ -109,7 +110,7 @@ private:
     struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; };
     struct FExpect { bool bActive=false; double Deadline=0.0; ECue Cue=ECue::Count; float Volume=1.f; ECue Second=ECue::Count; float SecondVolume=1.f; };
 
-    bool bNewSet=false,bLoadedOnce=false;
+    bool bNewSet=false,bLoadedOnce=false,bLegacyCues=false;
     bool bNoVariants=false,bNoBreath=false,bNoMoveSounds=false,bContactAudio=true,bLogCues=false;
     FCueBank Banks[CueCount];
     FRandomStream Rand{0x6C1A5B07};
@@ -134,6 +135,16 @@ private:
 
     void LoadNewSet();
     void LoadBank(ECue Cue,const FString& Dir);
+    void LoadCueSources();
+    double AudioNow() const; // real time in the new path (sound does not stretch with hit-stop), game time in the legacy path
+    bool ContactAudioActive() const;
+    enum class ESourceMode : uint8 { Mixed, Recorded, Generated };
+    ESourceMode DefaultSource=ESourceMode::Mixed;
+    TMap<FName,ESourceMode> CueSource;
+    FString SourcesDiagnostic;
+    bool bBodyDownHeard=false;
+    double LastLandingHeard=-100.0;
+    TArray<FVeyrGroundContact> ContactScratch;
     void SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNormalize);
     static const TCHAR* CueName(int32 Index);
     static float TargetLevelDb(ECue Cue);

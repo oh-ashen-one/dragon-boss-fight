@@ -82,6 +82,37 @@ void AVeyrAudio::SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNor
     (void)bNormalize;
 }
 
+void AVeyrAudio::LoadCueSources()
+{
+    // Per-cue choice of recorded files (<Cue>_<n>.pcm), generated ones (<Cue>_g<n>.pcm) or both. Compiled default: mixed for
+    // every cue. Data/dragon/audio_sources.json overrides it when the folder is found (dev runs; packaged builds have no Data/).
+    DefaultSource=ESourceMode::Mixed;CueSource.Reset();SourcesDiagnostic=TEXT("compiled default: mixed");
+    const FString File=FPaths::Combine(FBossMoveData::ResolveDirectory(),TEXT("audio_sources.json"));
+    FString Text;TSharedPtr<FJsonObject> Root;
+    if(!FPaths::FileExists(File)||!FFileHelper::LoadFileToString(Text,*File))return;
+    if(!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text),Root)||!Root.IsValid())
+    {SourcesDiagnostic=TEXT("audio_sources.json does not parse; compiled default: mixed");return;}
+    auto Parse=[](const FString& V,ESourceMode& Out)
+    {
+        if(V.Equals(TEXT("recorded"),ESearchCase::IgnoreCase))Out=ESourceMode::Recorded;
+        else if(V.Equals(TEXT("generated"),ESearchCase::IgnoreCase))Out=ESourceMode::Generated;
+        else if(V.Equals(TEXT("mixed"),ESearchCase::IgnoreCase))Out=ESourceMode::Mixed;
+        else return false;
+        return true;
+    };
+    FString Def;
+    if(Root->TryGetStringField(TEXT("default"),Def))Parse(Def,DefaultSource);
+    const TSharedPtr<FJsonObject>* Cues=nullptr;
+    int32 N=0;
+    if(Root->TryGetObjectField(TEXT("cues"),Cues)&&Cues&&Cues->IsValid())
+        for(const auto& E:(*Cues)->Values)
+        {
+            FString V;ESourceMode M;
+            if(E.Value.IsValid()&&E.Value->TryGetString(V)&&Parse(V,M)){CueSource.Add(FName(*FString(*E.Key)),M);++N;}
+        }
+    SourcesDiagnostic=FString::Printf(TEXT("%s: default %d, %d cue overrides"),*File,int32(DefaultSource),N);
+}
+
 void AVeyrAudio::LoadBank(ECue Cue,const FString& Dir)
 {
     const int32 Index=static_cast<int32>(Cue);
@@ -89,15 +120,28 @@ void AVeyrAudio::LoadBank(ECue Cue,const FString& Dir)
     B.Variants.Reset();B.Gains.Reset();B.Last=-1;
     TArray<FString> Files;
     IFileManager::Get().FindFiles(Files,*(Dir/(FString(CueName(Index))+TEXT("_*.pcm"))),true,false);
-    // Natural order by the number after the underscore.
-    Algo::Sort(Files,[](const FString& A,const FString& B2)
+    // Name after the underscore: "<n>" = recorded, "g<n>" = generated supplement.
+    auto Number=[](const FString& F,bool& bGenerated)->int32
     {
-        int32 Ua=INDEX_NONE,Ub=INDEX_NONE;A.FindLastChar('_',Ua);B2.FindLastChar('_',Ub);
-        const int32 Na=Ua==INDEX_NONE?0:FCString::Atoi(*A.Mid(Ua+1));const int32 Nb=Ub==INDEX_NONE?0:FCString::Atoi(*B2.Mid(Ub+1));
-        return Na<Nb;
-    });
+        int32 U=INDEX_NONE;F.FindLastChar('_',U);
+        FString Tail=U==INDEX_NONE?FString():F.Mid(U+1);Tail.RemoveFromEnd(TEXT(".pcm"));
+        bGenerated=Tail.StartsWith(TEXT("g"));
+        if(bGenerated)Tail.RightChopInline(1);
+        return FCString::Atoi(*Tail);
+    };
+    TArray<FString> Recorded,Generated;
+    for(const FString& F:Files){bool bG=false;Number(F,bG);(bG?Generated:Recorded).Add(F);}
+    auto ByNumber=[&Number](const FString& A,const FString& B2){bool g=false;return Number(A,g)<Number(B2,g);};
+    Algo::Sort(Recorded,ByNumber);Algo::Sort(Generated,ByNumber);
+    const ESourceMode* Override=CueSource.Find(FName(CueName(Index)));
+    ESourceMode Mode=Override?*Override:DefaultSource;
+    if(Mode==ESourceMode::Recorded&&Recorded.IsEmpty()&&!Generated.IsEmpty()){UE_LOG(LogTemp,Warning,TEXT("VEYR_AUDIO_SOURCE %s: recorded-only but none recorded; using generated"),CueName(Index));Mode=ESourceMode::Mixed;}
+    if(Mode==ESourceMode::Generated&&Generated.IsEmpty()&&!Recorded.IsEmpty()){UE_LOG(LogTemp,Warning,TEXT("VEYR_AUDIO_SOURCE %s: generated-only but none generated; using recorded"),CueName(Index));Mode=ESourceMode::Mixed;}
+    TArray<FString> Use;
+    if(Mode!=ESourceMode::Generated)Use.Append(Recorded);
+    if(Mode!=ESourceMode::Recorded)Use.Append(Generated);
     const float TargetDb=TargetLevelDb(Cue);
-    for(const FString& File:Files)
+    for(const FString& File:Use)
     {
         if(B.Variants.Num()>=MaxVariants)break;
         TArray<uint8> Bytes;TArray<int16> S;
@@ -123,11 +167,15 @@ void AVeyrAudio::LoadNewSet()
     // Music and cathedral ambience are untouched: the same files, the same owner score, the same levels.
     for(int32 I=0;I<2;++I)
         FFileHelper::LoadFileToArray(BedPCM[I],*(FPaths::ProjectContentDir()/TEXT("Audio/Overhaul")/(I==0?TEXT("Music.pcm"):TEXT("Ambience.pcm"))));
+    // -VeyrLegacyAudio keeps its pre-goal meaning: older music and vocals (no owner score, no pain cue, no dragon library).
+    const bool bOlderVocals=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyAudio"));
+    if(!bOlderVocals)
     {
         TArray<uint8> Score;
         if(FFileHelper::LoadFileToArray(Score,*(FPaths::ProjectContentDir()/TEXT("Audio/OwnerScore20261102/Music.pcm")))&&Score.Num()>4&&Score.Num()%4==0)
         {BedPCM[0]=MoveTemp(Score);BedSampleRates[0]=48000;BedChannels[0]=2;bOwnerScoreLoaded=true;}
     }
+    LoadCueSources();
     const FString Dir=FPaths::ProjectContentDir()/TEXT("Audio/Recorded20261118");
     int32 Loaded=0;TArray<FString> Missing;
     for(int32 I=0;I<CueCount;++I)
@@ -138,6 +186,16 @@ void AVeyrAudio::LoadNewSet()
         if(Banks[I].Variants.IsEmpty())Missing.Add(CueName(I));else Loaded+=Banks[I].Variants.Num();
     }
     // The three dragon roar files and the single human pain cue stay exactly as they are.
+    if(bOlderVocals)
+    {
+        // The pre-goal vocals: whatever Audio/Overhaul holds for these four (no tone is generated when a file is absent).
+        TArray<uint8> Bytes;
+        for(ECue Cue:{ECue::Roar,ECue::DragonGrowl,ECue::DragonPain,ECue::PlayerPain})
+            if(FFileHelper::LoadFileToArray(Bytes,*(FPaths::ProjectContentDir()/TEXT("Audio/Overhaul")/(FString(CueName(static_cast<int32>(Cue)))+TEXT(".pcm")))))
+            {SetBankFromSingle(Cue,Bytes,false);if(!Banks[static_cast<int32>(Cue)].Variants.IsEmpty())++Loaded;}
+        bDragonLibraryLoaded=false;
+    }
+    else
     {
         TArray<uint8> Bytes;
         if(FFileHelper::LoadFileToArray(Bytes,*(FPaths::ProjectContentDir()/TEXT("Audio/Fish20261102/PlayerPain.pcm"))))
@@ -260,13 +318,13 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
         ++CueSilent[Index];
         return false;
     }
-    const double Now=GetWorld()->GetTimeSeconds();
+    const double Now=AudioNow(); // real time: hit-stop and slow tails do not stretch cue gaps or voice lifetimes
     const bool bStep=Cue==ECue::Footstep||Cue==ECue::DragonStep;
     if(Cue==ECue::PlayerPain&&Now-LastCueTimes[Index]<.8)return false;
     if((Cue==ECue::DragonGrowl||Cue==ECue::DragonPain)&&Now-LastCueTimes[Index]<2.0)return false;
     if((Cue==ECue::DragonGrowlLow||Cue==ECue::DragonSnort)&&Now-LastCueTimes[Index]<1.5)return false;
     if(Now-LastCueTimes[Index]<(bStep?.025:.06))return false;
-    if(bAudioPolish&&(Cue==ECue::Contact||Cue==ECue::Impact||Cue==ECue::Roar||Cue==ECue::Guard||Cue==ECue::ArmorHit||Cue==ECue::Exposed))MusicDuckUntil=Now+.35;
+    if(bAudioPolish&&(Cue==ECue::Contact||Cue==ECue::Impact||Cue==ECue::Roar||Cue==ECue::Guard||Cue==ECue::ArmorHit||Cue==ECue::Exposed))MusicDuckUntil=GetWorld()->GetTimeSeconds()+.35; // the duck is read against game time in RefreshMix
     const int32 Lo=bStep?VoiceCount:0,Hi=bStep?TotalVoices:VoiceCount;
     int32 Slot=INDEX_NONE;
     for(int32 I=Lo;I<Hi;++I)if(VoiceEndTimes[I]<=0){Slot=I;break;}
@@ -361,14 +419,14 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
 void AVeyrAudio::QueueCue(float Delay,ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff)
 {
     if(!GetWorld())return;
-    FPending P;P.At=GetWorld()->GetTimeSeconds()+Delay;P.Cue=Cue;P.Volume=Volume;P.Place=Place;P.World=World;P.Part=Part;P.Inner=Inner;P.Falloff=Falloff;
+    FPending P;P.At=AudioNow()+Delay;P.Cue=Cue;P.Volume=Volume;P.Place=Place;P.World=World;P.Part=Part;P.Inner=Inner;P.Falloff=Falloff;
     Pending.Add(P);
 }
 
 void AVeyrAudio::UpdatePending()
 {
     if(Pending.IsEmpty()||!GetWorld())return;
-    const double Now=GetWorld()->GetTimeSeconds();
+    const double Now=AudioNow();
     for(int32 I=Pending.Num()-1;I>=0;--I)
     {
         if(Pending[I].At>Now)continue;
@@ -393,8 +451,7 @@ void AVeyrAudio::StopCueVoices(ECue A,ECue B)
 
 void AVeyrAudio::ArmExpect(int32 Slot,float Seconds,ECue Cue,float Volume,ECue Second,float SecondVolume)
 {
-    const AVeyrDragon* D=Dragon.Get();
-    if(!bContactAudio||!D||!GetWorld())
+    if(!ContactAudioActive()||!GetWorld())
     {
         // No contact events: the old state-change guess plays at once.
         PlayCueEx(Cue,Volume,EPlace::Body);
@@ -402,7 +459,14 @@ void AVeyrAudio::ArmExpect(int32 Slot,float Seconds,ECue Cue,float Volume,ECue S
         return;
     }
     FExpect& E=Expect[Slot];
-    E.bActive=true;E.Deadline=GetWorld()->GetTimeSeconds()+Seconds;E.Cue=Cue;E.Volume=Volume;E.Second=Second;E.SecondVolume=SecondVolume;
+    E.bActive=true;E.Deadline=AudioNow()+Seconds;E.Cue=Cue;E.Volume=Volume;E.Second=Second;E.SecondVolume=SecondVolume;
+}
+
+bool AVeyrAudio::ContactAudioActive() const
+{
+    // Contacts exist only while the detector runs: not under -VeyrNoGroundContacts / -VeyrLegacyFeel, and only on the imported dragon.
+    const AVeyrDragon* D=Dragon.Get();
+    return bContactAudio&&D&&VeyrFeelSwitches::GroundContacts()&&D->bUsingCustomuseVisual&&D->ImportedPresentation;
 }
 
 void AVeyrAudio::SatisfyExpect(int32 Slot){Expect[Slot].bActive=false;}
@@ -410,7 +474,7 @@ void AVeyrAudio::SatisfyExpect(int32 Slot){Expect[Slot].bActive=false;}
 void AVeyrAudio::UpdateExpectations()
 {
     if(!GetWorld())return;
-    const double Now=GetWorld()->GetTimeSeconds();
+    const double Now=AudioNow();
     for(FExpect& E:Expect)
     {
         if(!E.bActive||Now<E.Deadline)continue;
@@ -441,7 +505,7 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
         case EVeyrGroundContactClass::BodyFall:
         {
             const bool bBulk=C.Part==EVeyrGroundContactPart::Body||C.Part==EVeyrGroundContactPart::Head||C.Part==EVeyrGroundContactPart::Neck;
-            if(bBulk)SatisfyExpect(0);
+            if(bBulk){SatisfyExpect(0);bBodyDownHeard=true;}
             if(bBulk||S>.6f)
             {
                 if(PlayCueEx(ECue::Exposed,FMath::Lerp(.6f,1.f,S),EPlace::World,At))++BodyFallSounds;
@@ -453,6 +517,9 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
         }
         case EVeyrGroundContactClass::Landing:
             SatisfyExpect(1);
+            // One landing sound per landing: a foot-by-foot landing (and the detector's 1.2 s window) must not replay it.
+            if(AudioNow()-LastLandingHeard<1.5)break;
+            LastLandingHeard=AudioNow();
             if(PlayCueEx(ECue::Exposed,.9f,EPlace::World,At))++BodyFallSounds;
             if(PlayCueEx(ECue::DragonStep,1.f,EPlace::World,At))++DragonSteps;
             QueueCue(.12f,ECue::Debris,.85f,EPlace::World,At);++DebrisSounds;
@@ -463,12 +530,12 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
 void AVeyrAudio::HandleContacts()
 {
     const AVeyrDragon* D=Dragon.Get();
-    if(!D||!bContactAudio)return;
-    TArray<FVeyrGroundContact> Out;
-    const int32 Last=D->GetGroundContactsSince(LastContactSerial,Out);
+    if(!D||!ContactAudioActive())return;
+    ContactScratch.Reset();
+    const int32 Last=D->GetGroundContactsSince(LastContactSerial,ContactScratch);
     if(Last<LastContactSerial){LastContactSerial=Last;return;} // the detector restarted
     LastContactSerial=Last;
-    for(const FVeyrGroundContact& C:Out)HandleContact(C);
+    for(const FVeyrGroundContact& C:ContactScratch)HandleContact(C);
 }
 
 // ---------------------------------------------------------------- dragon: timed sounds
@@ -600,7 +667,6 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
     const AVeyrKnight* K=Knight.Get();const AVeyrDragon* D=Dragon.Get();
     if(!K||!D){StopVoices();bInitialized=false;SetActorTickEnabled(false);return;}
     UpdatePending();UpdateVoiceFollow();LoadTimedSounds(false);
-    const double Now=GetWorld()->GetTimeSeconds();
     if(K->IsDead()){StopVoices();PlayCueEx(ECue::Death,1.f);bTerminal=true;return;}
     if(D->IsDead())
     {
@@ -647,7 +713,7 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
         if(RoarClock<=0.f&&D->State==EVeyrDragonState::Windup){PlayCueEx(ECue::Roar,.85f,EPlace::Head);RoarClock=17.f;}
     }
     if(D->Move==EVeyrDragonMove::FlyAway&&D->GetActiveFlameBeam().bDamaging)
-    {if(Now-LastCueTimes[static_cast<int32>(ECue::Fire)]>3.f)PlayCueEx(ECue::Fire,1.f,EPlace::Head);}
+    {if(AudioNow()-LastCueTimes[static_cast<int32>(ECue::Fire)]>3.f)PlayCueEx(ECue::Fire,1.f,EPlace::Head);}
     // Fire and take-off threat calls only; no roar on every wind-up (the existing rule).
     if(bDragonLibraryLoaded&&D->State==EVeyrDragonState::Windup&&RoarClock<=0.f&&
        (D->Move==EVeyrDragonMove::Fire||D->Move==EVeyrDragonMove::FlyAway))
@@ -692,15 +758,16 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
     if(!bAudioPolish&&K->SuccessfulHeals>LastHeals)PlayCueEx(ECue::Heal,1.f);
     if(D->GetCollapseCount()>LastCollapses)
     {
+        bBodyDownHeard=false;
         ArmExpect(0,4.f,ECue::Impact,.7f);
         PlayCueEx(ECue::DragonPain,.9f,EPlace::Head);
     }
     if(D->GetAttackCount(EVeyrDragonMove::Fire)>LastFireAttacks)PlayCueEx(ECue::Breath,1.f,EPlace::Head);
-    if(bWasAirborne&&!D->IsAirborne())ArmExpect(1,1.f,ECue::Impact,1.f);
+    if(bWasAirborne&&!D->IsAirborne()&&AudioNow()-LastLandingHeard>2.5)ArmExpect(1,1.f,ECue::Impact,1.f);
     if(D->State!=LastDragonState)
     {
         if(D->State==EVeyrDragonState::Windup)bSwingFromData=false;
-        if(D->State==EVeyrDragonState::Exposed)ArmExpect(0,.9f,ECue::Exposed,1.f,ECue::Impact,.8f);
+        if(D->State==EVeyrDragonState::Exposed){if(!bBodyDownHeard)ArmExpect(0,.9f,ECue::Exposed,1.f,ECue::Impact,.8f);} // the knock-down already thudded: no second one
         else if(D->State==EVeyrDragonState::Buckle)PlayCueEx(ECue::DragonPain,.8f,EPlace::Head);
         else if(D->State==EVeyrDragonState::Active)
         {
@@ -724,25 +791,17 @@ TSharedRef<FJsonObject> AVeyrAudio::AudioEvidence() const
 {
     TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();
     O->SetBoolField(TEXT("newSet"),bNewSet);
-    O->SetBoolField(TEXT("polish"),bAudioPolish);
-    O->SetBoolField(TEXT("variants"),!bNoVariants);
-    O->SetBoolField(TEXT("dragonBreath"),!bNoBreath);
-    O->SetBoolField(TEXT("dragonMoveSounds"),!bNoMoveSounds);
-    O->SetBoolField(TEXT("dragonContactSounds"),bContactAudio);
     O->SetNumberField(TEXT("cuesStarted"),CuesStarted);
     O->SetNumberField(TEXT("cuesDropped"),CuesDropped);
     O->SetNumberField(TEXT("activeVoices"),ActiveVoices);
-    O->SetNumberField(TEXT("samplesLoaded"),RecordedCuesLoaded);
-    TSharedRef<FJsonObject> Cues=MakeShared<FJsonObject>(),Variants=MakeShared<FJsonObject>(),Silent=MakeShared<FJsonObject>();
+    TSharedRef<FJsonObject> Cues=MakeShared<FJsonObject>(),Silent=MakeShared<FJsonObject>();
     for(int32 I=0;I<CueCount;++I)
     {
         const FString Name=CueName(I);
         Cues->SetNumberField(Name,CueCounts[I]);
-        if(Banks[I].Variants.Num()>0||CueCounts[I]>0)Variants->SetNumberField(Name,Banks[I].Variants.Num());
         if(CueSilent[I]>0)Silent->SetNumberField(Name,CueSilent[I]);
     }
     O->SetObjectField(TEXT("cueCounts"),Cues);
-    O->SetObjectField(TEXT("variantsLoaded"),Variants);
     O->SetObjectField(TEXT("silentCueRequests"),Silent);
     TSharedRef<FJsonObject> Dragon_=MakeShared<FJsonObject>();
     Dragon_->SetNumberField(TEXT("footfalls"),ContactsHandled[0]);Dragon_->SetNumberField(TEXT("stomps"),ContactsHandled[1]);
@@ -751,11 +810,30 @@ TSharedRef<FJsonObject> AVeyrAudio::AudioEvidence() const
     Dragon_->SetNumberField(TEXT("guessFallbacks"),ContactFallbacks);
     Dragon_->SetNumberField(TEXT("breathIn"),BreathIns);Dragon_->SetNumberField(TEXT("breathOut"),BreathOuts);Dragon_->SetNumberField(TEXT("growlsAndSnorts"),Growls);
     Dragon_->SetNumberField(TEXT("timedEventsFired"),TimedEventsFired);Dragon_->SetNumberField(TEXT("timedEventsSkipped"),TimedEventsSkipped);
-    Dragon_->SetNumberField(TEXT("timedClips"),TimedClips.Num());Dragon_->SetNumberField(TEXT("soundsReloads"),SoundsReloads);
-    Dragon_->SetStringField(TEXT("soundsTable"),SoundsDiagnostic);
+    Dragon_->SetNumberField(TEXT("soundsReloads"),SoundsReloads);
     O->SetObjectField(TEXT("dragon"),Dragon_);
     TSharedRef<FJsonObject> Kn=MakeShared<FJsonObject>();
     Kn->SetNumberField(TEXT("footSteps"),KnightSteps);Kn->SetNumberField(TEXT("armorLayers"),ArmorLayers);
     O->SetObjectField(TEXT("knight"),Kn);
+    return O;
+}
+
+TSharedRef<FJsonObject> AVeyrAudio::AudioSetupEvidence() const
+{
+    TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();
+    O->SetBoolField(TEXT("newSet"),bNewSet);
+    O->SetBoolField(TEXT("legacyCues"),bLegacyCues);
+    O->SetBoolField(TEXT("polish"),bAudioPolish);
+    O->SetBoolField(TEXT("variants"),!bNoVariants);
+    O->SetBoolField(TEXT("dragonBreath"),!bNoBreath);
+    O->SetBoolField(TEXT("dragonMoveSounds"),!bNoMoveSounds);
+    O->SetBoolField(TEXT("dragonContactSounds"),ContactAudioActive());
+    O->SetNumberField(TEXT("samplesLoaded"),RecordedCuesLoaded);
+    TSharedRef<FJsonObject> Variants=MakeShared<FJsonObject>();
+    for(int32 I=0;I<CueCount;++I)if(Banks[I].Variants.Num()>0)Variants->SetNumberField(CueName(I),Banks[I].Variants.Num());
+    O->SetObjectField(TEXT("variantsLoaded"),Variants);
+    O->SetNumberField(TEXT("timedClips"),TimedClips.Num());
+    O->SetStringField(TEXT("soundsTable"),SoundsDiagnostic);
+    O->SetStringField(TEXT("cueSources"),SourcesDiagnostic);
     return O;
 }
