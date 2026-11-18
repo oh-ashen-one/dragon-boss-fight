@@ -262,6 +262,8 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     }
     Clock+=DeltaSeconds; EncounterClock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
     StaggerProtection=FMath::Max(0.f,StaggerProtection-DeltaSeconds);
+    if(State==EVeyrDragonState::Exposed&&bUsingCustomuseVisual&&BodyScale>0.f)
+        DownHeadLocalPerScale=GetActorQuat().UnrotateVector(GetHeadLocation()-GetActorLocation())/BodyScale;
     if(bKnockdownActive||bKnockdownAwaitAct)
     {
         KnockdownElapsed+=DeltaSeconds;
@@ -1506,7 +1508,6 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
     if(UsesPacingRevision())
         LastSwordDamage=Region<4?(bHeavy?85.f:45.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?120.f:65.f):(bHeavy?85.f:44.f);
     LastSwordDamage*=FMath::Clamp(DamageMultiplier,1.f,1.55f);
-    if(!bLegacyKnockdown&&Region==4&&IsHeadExposed())LastSwordDamage*=KnockdownExposedDamageScale;
     // boxes.json body-part share (wings 0.5, tail 0.7); 1 for every hard-coded region.
     LastSwordDamage*=FMath::Clamp(PartDamageScale,0.f,2.f);
     if(Region==4&&IsHeadExposed())++HeadBonusHitCount;

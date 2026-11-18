@@ -2471,9 +2471,12 @@ void AVeyrReplay::DriveInputs()
         const bool bHeadRoute=bDown||Dragon->State==EVeyrDragonState::Rise;
         bool bHeadWaypoint=false;
         FVector Goal;
+        // New knock-down timing: a person runs for where the head will land the moment the leg buckles, so the
+        // whole shorter lying window is attack time. Legacy timing keeps chasing the falling head.
+        const bool bHeadLanding=!Dragon->bLegacyKnockdown&&(Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse);
         if(bHeadRoute)
         {
-            const FVector Head=Dragon->GetHeadLocation();
+            const FVector Head=bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation();
             const FVector Forward=Dragon->GetActorForwardVector(),Right=Dragon->GetActorRightVector();
             const FVector Relative=Feet-Head;
             // Route beside the head, then approach the actual solid-body
@@ -2481,7 +2484,9 @@ void AVeyrReplay::DriveInputs()
             // and asked the Pawn to navigate inside the dragon.
             bHeadWaypoint=FVector::DotProduct(Relative,Forward)<150.f*Dragon->BodyScale;
             const float Side=FVector::DotProduct(Relative,Right)<0.f?-1.f:1.f;
-            Goal=bHeadWaypoint?Head+Forward*200.f*Dragon->BodyScale+Right*(Side*360.f*Dragon->BodyScale):HeadApproachGoal();
+            // Landing stand-off: the swept approach in front of the lying head measured 612 cm at scale 2.
+            Goal=bHeadWaypoint?Head+Forward*200.f*Dragon->BodyScale+Right*(Side*360.f*Dragon->BodyScale):
+                bHeadLanding?FVector(Head.X,Head.Y,Feet.Z)+Forward*306.f*Dragon->BodyScale:HeadApproachGoal();
         }
         else
         {
@@ -2504,11 +2509,8 @@ void AVeyrReplay::DriveInputs()
         // the low head freely, then lock again for the measured punish range.
         const float GoalTolerance=bHeadRoute?15.f:45.f+25.f*(Dragon->BodyScale-1.f);
         bWantLock=!bHeadWaypoint&&GoalDistance<GoalTolerance;
-        const FVector StrikeTarget=bHeadRoute?Dragon->GetHeadLocation():Dragon->GetLegLocation(TargetLeg);
-        // Locked onto the 2x head the knight can settle about 18 degrees off its centre and wait out the whole
-        // shorter lying window; with the new knock-down timing a head strike starts within 22 degrees.
-        const float FacingNeed=bHeadRoute&&Dragon->IsHeadExposed()&&!Dragon->bLegacyKnockdown?.93f:.97f;
-        const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>FacingNeed;
+        const FVector StrikeTarget=bHeadRoute?(bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
+        const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
         if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
         const bool bDodgeExercise=ReplayMode==TEXT("core")&&Knight->DodgedHits==0&&Dragon->Move==EVeyrDragonMove::BackStomp;

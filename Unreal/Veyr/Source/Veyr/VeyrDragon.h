@@ -201,9 +201,11 @@ public:
     bool bLegacyKnockdown=false;
     float KnockdownFloorBudgetSeconds=4.9f; // 0.1 s under the 5 s limit: states end on frame boundaries
     float KnockdownRiseRate=1.25f;
-    /** The shorter lying window gives fewer blows; each blow to the exposed head counts this much more
-     * (the 200-damage early end is unchanged). 1 under -VeyrLegacyKnockdown. */
-    float KnockdownExposedDamageScale=2.f;
+    /** Where the head lies during Exposed, in actor space per unit of BodyScale. Measured on build A
+     * (2026-11-18, 8 fights, scale 2: 1390 cm ahead, 88 cm left, 287 cm up); refreshed from every Exposed frame. */
+    FVector DownHeadLocalPerScale=FVector(695.f,-44.f,143.5f);
+    /** Where the head will lie once the fall ends (valid from the buckle on); the scripted player heads there. */
+    FVector GetPredictedDownHeadLocation() const { return GetActorLocation()+GetActorQuat().RotateVector(DownHeadLocalPerScale*BodyScale); }
     float KnockdownBuckleSeconds(int32 Leg) const;
     float KnockdownCollapseSeconds() const;
     float KnockdownRiseSeconds() const;
