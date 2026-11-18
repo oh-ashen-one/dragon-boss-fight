@@ -4,7 +4,8 @@
 /**
  * B4-B6 (2026-11-18): one table for the weight layer: contact thresholds, shake by class, flinch, trail,
  * camera punches and the effect assets. Read once from Data/dragon/ground_fx.json beside moves.json; the
- * compiled defaults below are the same numbers, so a packaged build without Data/ behaves identically.
+ * compiled defaults carry the same numbers and asset paths for packaged builds (Data/ is not staged). The
+ * assets are loaded by path, so they appear in a package only when their folders are in DirectoriesToAlwaysCook.
  * Switches restore the old behaviour piece by piece; -VeyrLegacyFeel restores all of it.
  */
 namespace VeyrFeelSwitches
@@ -41,6 +42,7 @@ struct FVeyrFeelTuning
     FPart Foot,Head{14.f,45.f,1.f},Neck{14.f,45.f,1.f},Body{14.f,45.f,1.f},Tail{10.f,35.f,1.2f},Wing{10.f,45.f,1.4f};
     float DustTierMaxSpeed[2]={1.2f,3.5f};
     float StompMinSpeed=1.f;
+    float BodyCloudMinSpeed=2.f;      // a body fall at least this fast (m/s at 1x) throws the body cloud
     float LandingWindowSeconds=1.2f;
     float PeakTimeConstant=.08f;
     float MinEventInterval=.12f;

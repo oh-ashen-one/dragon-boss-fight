@@ -27,7 +27,8 @@ float UVeyrCameraBoom::DragonScale() const
 void UVeyrCameraBoom::FindDragon()
 {
     if(Dragon.IsValid()||!GetWorld())return;
-    if(TActorIterator<AVeyrDragon> It(GetWorld());It)Dragon=*It; // first dragon (same as the loop-and-break; -Werror clean)
+    TActorIterator<AVeyrDragon> It(GetWorld());
+    if(It)Dragon=*It;
     if(AVeyrDragon* D=Dragon.Get();D&&!bPrerequisiteAdded)
     {
         // The dragon poses its body and solid capsules in its own tick; read them after it.
