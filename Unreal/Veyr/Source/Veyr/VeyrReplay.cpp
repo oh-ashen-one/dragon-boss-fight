@@ -2533,7 +2533,7 @@ void AVeyrReplay::DriveInputs()
         // knight turns to the head while it arrives instead of sprinting in, playing a run-stop and turning after.
         bCloseOnHead=bHeadRoute&&!bHeadWaypoint&&!Dragon->bLegacyKnockdown&&(Dragon->State!=EVeyrDragonState::Rise||bRiseHold)&&GoalDistance<200.f;
         bWantLock|=bCloseOnHead;
-        const FVector StrikeTarget=bHeadRoute?((bHeadLanding||bRiseHold)?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
+        const FVector StrikeTarget=bHeadRoute?(bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
         const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
         if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/(bCloseOnHead?60.f:160.f),bCloseOnHead?.4f:.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
@@ -2586,6 +2586,9 @@ void AVeyrReplay::DriveInputs()
                 {
                     float Cost=Knight->GetPrimaryStepCost(0)+Reserve;
                     float Need=Knight->GetPrimaryFirstStepDuration();
+                    // Under the head bonus a person swings when the first blow lands inside the window, not only
+                    // when the whole swing fits in it.
+                    if(Dragon->bRiseHeadBonus&&Dragon->IsHeadBonusActive())Need=FMath::Min(Need,Knight->GetAttackContactTime(false)+.05f);
                     if(Dragon->IsHeadBonusActive()&&(!Dragon->bAggression||SafeTime>Knight->GetPrimaryChainDuration()+.1f))
                     {
                         Need=Knight->GetPrimaryChainDuration();Cost=0.f;
