@@ -117,6 +117,15 @@ def run_spec(spec, delay=0.0):
             'aggression': latest.get('bossAggression'), 'floorTelegraph': latest.get('floorTelegraph'),
             'evidence': evidence[-1],
         })
+        if 'a123' in e:
+            # Quality goal A1-A3 proof modes (footclosehits / camerahug / soleheights).
+            x = e['a123']
+            keys = ('mirroredClips', 'sweepMirroredMaxStretchCm1x', 'sweepLegacyMirroredMaxStretchCm1x', 'liveMirroredFrames',
+                    'liveMirroredMaxStretchCm', 'liveMirrorRepairSamples', 'cameraFrames', 'cameraInsideFrames', 'collapseFrames',
+                    'collapseInsideFrames', 'pullInEvents', 'maxLiftCm', 'maxCameraJumpCmPerFrame', 'liveGroundFrames',
+                    'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepWorstClipMedianFloatCm1x', 'sweepWorstClip',
+                    'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
+            record['a123'] = {k: x[k] for k in keys if k in x}
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:

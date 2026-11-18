@@ -70,6 +70,16 @@ for l, r in PAIRS:
 pairs_broken = []
 residual = {b.name: (mirrored(b.head_local) - bones[twin[b.name]].head_local).length / height for b in bones}
 asym = sorted(((v, n) for n, v in residual.items()), reverse=True)[:5]
+# A bone with no twin is only a midline bone when its rest head lies on the mirror plane. The FR toe
+# (tripo::0_Left_Limb_3, the front chains differ by one segment) is not: mirroring it as a midline
+# bone reflected its own source motion onto the other side and tore it up to 0.72 rig heights away
+# from its foot in every mirrored clip (owner-seen foot pinch, 2026-11-18). Unpaired side bones now
+# keep their rest pose relative to their (mirrored) parent, and the output is gated on bone stretch.
+SIDE_LIMIT = 0.02
+unpaired_side = sorted(n for n, v in residual.items() if twin[n] == n and v > SIDE_LIMIT)
+pairs_broken = list(unpaired_side)
+# Midline/root bones may carry translation (body offset, flight root). Every other link is rigid.
+TRANSLATING = {'VeyrRoot', 'tripo::Root', 'tripo::Spine_0'}
 
 # 1. Target armature-space matrices for every frame.
 targets = []
@@ -103,6 +113,12 @@ for i, frame in enumerate(targets):
         else:
             basis = rest[b.name].inverted() @ M
         loc, rot, scl = basis.decompose()
+        if b.name in unpaired_side:
+            loc, rot, scl = Matrix.Identity(4).decompose()
+        elif b.name not in TRANSLATING:
+            # Rest asymmetry turns the mirrored target into small link translations (up to 0.016 rig
+            # heights measured). The source rig is rotation-only on these links: keep them rigid.
+            loc = loc * 0.0
         if b.name in previous and previous[b.name].dot(rot) < 0:
             rot.negate()
         previous[b.name] = rot
@@ -113,18 +129,30 @@ for i, frame in enumerate(targets):
 if hasattr(arm.animation_data, 'action_slot') and mirror.slots:
     arm.animation_data.action_slot = mirror.slots[0]
 
-# 3. Verify the evaluated pose reproduces the targets.
+# 3. Verify the evaluated pose reproduces the targets (rotation part; link translations are pinned
+# above), and refuse any output where a rigid link stretches away from its parent.
 worst = 0.0
+stretch = 0.0
+stretch_bone = ''
 for i, frame in enumerate(targets):
     scene.frame_set(start + i)
     for pb in arm.pose.bones:
-        d = pb.matrix - frame[pb.name]
-        worst = max(worst, max(abs(d[r][c]) for r in range(4) for c in range(4)))
+        if pb.name not in unpaired_side:
+            d = pb.matrix.to_3x3() - frame[pb.name].to_3x3()
+            worst = max(worst, max(abs(d[r][c]) for r in range(3) for c in range(3)))
+        if pb.parent and pb.name not in TRANSLATING:
+            rest_gap = (pb.bone.head_local - pb.parent.bone.head_local).length
+            gap = abs((pb.head - pb.parent.head).length - rest_gap) / height
+            if gap > stretch:
+                stretch, stretch_bone = gap, pb.name
+if stretch > 0.01:
+    raise RuntimeError(f'Mirrored action stretches {stretch_bone} by {stretch:.4f} rig heights; refusing to save')
 a.output.parent.mkdir(parents=True, exist_ok=True)
 bpy.ops.wm.save_as_mainfile(filepath=str(a.output), copy=False)
 report = {'source_blend': bpy.data.filepath, 'source_action': source.name, 'mirror_action': mirror.name,
           'axis': a.axis, 'frames': [start, end], 'twins': twin, 'unpaired_or_one_way': pairs_broken,
           'largest_rest_asymmetry_share_of_height': [[round(v, 4), n] for v, n in asym],
-          'evaluated_vs_target_max_error': worst}
+          'evaluated_vs_target_max_error': worst, 'max_link_stretch_share_of_height': stretch,
+          'max_link_stretch_bone': stretch_bone, 'unpaired_side_bones_kept_at_rest': unpaired_side}
 a.report.write_text(json.dumps(report, indent=1))
-print('MIRROR_OK', a.output, 'max error', worst, 'one-way twins', len(pairs_broken))
+print('MIRROR_OK', a.output, 'max rotation error', worst, 'max link stretch', stretch, 'unpaired side bones at rest', unpaired_side)

@@ -4,6 +4,8 @@
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/SkinnedAssetCommon.h"
+#include "Engine/World.h"
+#include "Misc/CommandLine.h"
 
 UVeyrSkeletalPresentation::UVeyrSkeletalPresentation()
 {
@@ -18,6 +20,10 @@ UVeyrSkeletalPresentation::UVeyrSkeletalPresentation()
     SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SetGenerateOverlapEvents(false);
     SetCanEverAffectNavigation(false);
+    // A1: the front chains differ by one segment, so the FR toe had no twin and the old mirror tool
+    // reflected its own motion across the body (up to 0.72 rig heights off its foot).
+    MirroredClipRestBones={FName(TEXT("tripo__0_Left_Limb_3"))};
+    MirroredClipTranslatingBones={FName(TEXT("VeyrRoot")),FName(TEXT("tripo__Root")),FName(TEXT("tripo__Spine_0"))};
 }
 
 bool UVeyrSkeletalPresentation::ConfigureRenderPolicy(bool bInCPUPoseOnly, bool bInRequestSkinCache)
@@ -135,6 +141,11 @@ bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDef
     if(!ApplyMeshRenderPolicy(InDefinition->SkeletalMesh))return false;
     SetSkeletalMesh(InDefinition->SkeletalMesh,true);
     SetRelativeTransform(InDefinition->MeshRelativeTransform);
+    bRepairMirroredClips=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyMirrorToe"));
+    bGroundingEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonGrounding"));
+    GroundingBaseLocation=InDefinition->MeshRelativeTransform.GetLocation();
+    GroundingOffsetCm=GroundingTargetCm=0.f;LastGroundingWorldSeconds=-1.0;
+    SoleModel=FVeyrSoleModel();
     SetLeaderPoseComponent(nullptr);
     // This setter selects AnimationBlueprint mode internally, but instantiates
     // our native SingleNode subclass. No animation blueprint asset is involved.
@@ -328,9 +339,14 @@ bool UVeyrSkeletalPresentation::SampleClipTimeInternal(FName ClipName, float Ela
     bTransitionSourceCaptured=Instance->HasTransitionSource();
     if(!Instance->SetExplicitTransitionAlpha(Alpha))return Fail(TEXT("Blended sample requires BeginTransition before alpha < 1"));
     if(Instance->GetAnimationAsset()!=Clip->Sequence)Instance->SetAnimationAsset(Clip->Sequence,false,0.f);
+    // A1: repair only the upper/whole-pose clip. A mirrored clip used as a lower-body layer is not
+    // repaired (no current move layers one); the replay FootCloseHits stretch check would show it.
+    bCurrentClipMirrorRepaired=bRepairMirroredClips&&!MirroredSequenceTag.IsEmpty()&&Clip->Sequence->GetName().Contains(MirroredSequenceTag);
+    Instance->SetExplicitMirrorRepair(bCurrentClipMirrorRepaired,MirroredClipRestBones,MirroredClipTranslatingBones);
     SetForceRefPose(false);
     Instance->SetPositionWithPreviousTime(SequenceTime,SequenceTime,false);
     if(!EvaluatePoseSynchronously())return false;
+    if(bCurrentClipMirrorRepaired)++MirrorRepairSamples;
     if(!FMath::IsNearlyEqual(Instance->GetCurrentTime(),SequenceTime,.0001f))
         return Fail(TEXT("Animation time advanced unexpectedly during deterministic sampling"));
     CurrentClip=ClipName;
@@ -451,4 +467,61 @@ bool UVeyrSkeletalPresentation::SetComponentSpaceBoneRotations(const TMap<FName,
     if(!CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance())->SetExplicitBoneRotations(Rotations))
         return Fail(TEXT("Rotation modifiers require at most four finite bones within 20 degrees per axis and 25 degrees total"));
     return true;
+}
+
+float UVeyrSkeletalPresentation::MeasureMaxLinkStretchCm(FName& OutBone)
+{
+    OutBone=NAME_None;
+    if(!bPoseEvaluated||!GetSkeletalMeshAsset())return -1.f;
+    const FReferenceSkeleton& Reference=GetSkeletalMeshAsset()->GetRefSkeleton();
+    const TArray<FTransform>& Rest=Reference.GetRefBonePose();
+    const TArray<FTransform>& Pose=GetComponentSpaceTransforms();
+    if(Pose.Num()!=Rest.Num())return -1.f;
+    const float WorldScale=static_cast<float>(GetComponentTransform().GetScale3D().GetAbsMax());
+    float Worst=0.f;
+    for(int32 Bone=0;Bone<Pose.Num();++Bone)
+    {
+        const int32 Parent=Reference.GetParentIndex(Bone);
+        const FName Name=Reference.GetBoneName(Bone);
+        if(Parent==INDEX_NONE||MirroredClipTranslatingBones.Contains(Name))continue;
+        const float Now=static_cast<float>(FVector::Dist(Pose[Bone].GetLocation(),Pose[Parent].GetLocation()));
+        const float RestLength=static_cast<float>(Rest[Bone].GetTranslation().Size()*Pose[Parent].GetScale3D().GetAbsMax());
+        const float Stretch=FMath::Abs(Now-RestLength)*WorldScale;
+        if(Stretch>Worst){Worst=Stretch;OutBone=Name;}
+    }
+    return Worst;
+}
+
+bool UVeyrSkeletalPresentation::MeasureSoles(FVeyrSoleSample& Out)
+{
+    if(!SoleModel.IsReady()||SoleModel.FittedMesh.Get()!=GetSkeletalMeshAsset())
+    {
+        if(!SoleModel.Initialize(this)){GroundingDiagnostic=SoleModel.Diagnostic;return false;}
+        GroundingDiagnostic=SoleModel.Diagnostic;
+    }
+    return SoleModel.Measure(this,Out);
+}
+
+void UVeyrSkeletalPresentation::UpdateGrounding(EVeyrGroundingMode Mode)
+{
+    UWorld* World=GetWorld();
+    if(!bGroundingEnabled||!World||!bPoseEvaluated)return;
+    const double Now=World->GetTimeSeconds();
+    const float Delta=LastGroundingWorldSeconds<0.0?0.f:static_cast<float>(FMath::Max(0.0,Now-LastGroundingWorldSeconds));
+    LastGroundingWorldSeconds=Now;
+    LastGroundingMode=Mode;
+    const USceneComponent* Parent=GetAttachParent();
+    const float ParentScale=Parent?FMath::Max(.01f,static_cast<float>(Parent->GetComponentScale().Z)):1.f;
+    // Measure with the offset already applied, so the target is the offset that would put the lowest
+    // sole on the floor. It only ever lowers the body (target <= 0) and by a bounded amount.
+    if(Mode==EVeyrGroundingMode::Ground&&MeasureSoles(LastSoleSample))
+        GroundingTargetCm=FMath::Clamp(GroundingOffsetCm-LastSoleSample.LowestAboveFloorCm,-GroundingMaxDropCm*ParentScale,0.f);
+    else if(Mode==EVeyrGroundingMode::Release)GroundingTargetCm=0.f;
+    // Hold keeps the last target (collapse, exposed, rise and death lie on the belly).
+    const float Rate=GroundingTargetCm<GroundingOffsetCm?GroundingDropRate:GroundingReleaseRate;
+    const float Next=Delta>0.f?FMath::FInterpTo(GroundingOffsetCm,GroundingTargetCm,Delta,Rate):GroundingOffsetCm;
+    ++GroundingUpdates;
+    if(FMath::IsNearlyEqual(Next,GroundingOffsetCm,.01f)&&Delta>0.f&&GroundingUpdates>1)return;
+    GroundingOffsetCm=Next;
+    SetRelativeLocation(GroundingBaseLocation+FVector(0.f,0.f,GroundingOffsetCm/ParentScale));
 }
