@@ -8,6 +8,7 @@
 namespace
 {
 #include "VeyrDragonSolePoints.inl"
+#include "VeyrDragonHullPoints.inl"
 
     TArray<FTransform> ReferenceComponentSpace(const FReferenceSkeleton& Reference)
     {
@@ -20,6 +21,95 @@ namespace
         }
         return Out;
     }
+
+    /** Least-squares affine map from glTF rest heads (metres, Y up) to the imported reference pose
+     * (component cm). Affine, so axis swaps, handedness and the import scale need no assumption. */
+    bool FitGltfFrame(const FReferenceSkeleton& Reference,const TArray<FTransform>& Rest,double Map[3][4],float& Residual,int32& Joints,FString& Error)
+    {
+        FMatrix Normal(ForceInitToZero);double Rhs[3][4]={{0}};
+        TArray<TPair<FVector,FVector>> Pairs;
+        for(const FVeyrSoleJointHead& Head:GVeyrSoleJointHeads)
+        {
+            const int32 Bone=Reference.FindBoneIndex(FName(Head.Bone));
+            if(Bone==INDEX_NONE)continue;
+            const FVector G(Head.X,Head.Y,Head.Z),U=Rest[Bone].GetLocation();
+            const double X[4]={G.X,G.Y,G.Z,1.0};
+            for(int32 R=0;R<4;++R){for(int32 C=0;C<4;++C)Normal.M[R][C]+=X[R]*X[C];for(int32 K=0;K<3;++K)Rhs[K][R]+=X[R]*U[K];}
+            Pairs.Emplace(G,U);
+        }
+        Joints=Pairs.Num();
+        if(Pairs.Num()<12){Error=FString::Printf(TEXT("Only %d glTF joints found"),Pairs.Num());return false;}
+        if(FMath::Abs(Normal.Determinant())<1e-12){Error=TEXT("Degenerate glTF joint fit");return false;}
+        const FMatrix Inverse=Normal.Inverse();
+        for(int32 K=0;K<3;++K)for(int32 C=0;C<4;++C){double V=0;for(int32 R=0;R<4;++R)V+=Inverse.M[C][R]*Rhs[K][R];Map[K][C]=V;}
+        double Sum=0;
+        for(const auto& P:Pairs)
+        {
+            const FVector G=P.Key;
+            const FVector A(Map[0][0]*G.X+Map[0][1]*G.Y+Map[0][2]*G.Z+Map[0][3],Map[1][0]*G.X+Map[1][1]*G.Y+Map[1][2]*G.Z+Map[1][3],Map[2][0]*G.X+Map[2][1]*G.Y+Map[2][2]*G.Z+Map[2][3]);
+            Sum+=FVector::DistSquared(A,P.Value);
+        }
+        Residual=static_cast<float>(FMath::Sqrt(Sum/Pairs.Num()));
+        // The dragon rest pose is about 49 imported cm tall; 0.5 cm RMS is about 1 % of it.
+        if(Residual>.5f){Error=FString::Printf(TEXT("glTF frame fit residual %.3f imported cm is too large"),Residual);return false;}
+        return true;
+    }
+    FVector ApplyMap(const double Map[3][4],const FVector& G)
+    {
+        return FVector(Map[0][0]*G.X+Map[0][1]*G.Y+Map[0][2]*G.Z+Map[0][3],Map[1][0]*G.X+Map[1][1]*G.Y+Map[1][2]*G.Z+Map[1][3],Map[2][0]*G.X+Map[2][1]*G.Y+Map[2][2]*G.Z+Map[2][3]);
+    }
+}
+
+bool FVeyrHullModel::Initialize(UVeyrSkeletalPresentation* Presentation)
+{
+    Points.Reset();FittedMesh.Reset();
+    const USkeletalMesh* Mesh=Presentation?Presentation->GetSkeletalMeshAsset():nullptr;
+    if(!Mesh){Diagnostic=TEXT("No skeletal mesh");return false;}
+    const FReferenceSkeleton& Reference=Mesh->GetRefSkeleton();
+    const TArray<FTransform> Rest=ReferenceComponentSpace(Reference);
+    double Map[3][4];float Residual=0.f;int32 Joints=0;
+    if(!FitGltfFrame(Reference,Rest,Map,Residual,Joints,Diagnostic))return false;
+    const double MapScale=FMath::Pow(FMath::Abs(FMatrix(FPlane(Map[0][0],Map[1][0],Map[2][0],0),FPlane(Map[0][1],Map[1][1],Map[2][1],0),
+        FPlane(Map[0][2],Map[1][2],Map[2][2],0),FPlane(0,0,0,1)).Determinant()),1.0/3.0);
+    for(const FVeyrHullPoint& Source:GVeyrHullPoints)
+    {
+        FPoint Point;Point.Radius=static_cast<float>(Source.Radius*MapScale);
+        const FVector P=ApplyMap(Map,FVector(Source.X,Source.Y,Source.Z));
+        for(int32 I=0;I<4;++I)
+        {
+            if(!Source.Bones[I]||Source.Weights[I]<=0.f)continue;
+            const int32 Bone=Reference.FindBoneIndex(FName(Source.Bones[I]));
+            if(Bone==INDEX_NONE){Diagnostic=FString::Printf(TEXT("Hull bone %s missing"),Source.Bones[I]);Points.Reset();return false;}
+            Point.Influences[I]={Bone,Source.Weights[I],Rest[Bone].InverseTransformPosition(P)};
+        }
+        Points.Add(Point);
+    }
+    FittedMesh=Mesh;
+    Diagnostic=FString::Printf(TEXT("Hull model: %d spheres, fit residual %.3f imported cm"),Points.Num(),Residual);
+    return Points.Num()>0;
+}
+
+bool FVeyrHullModel::IsReadyFor(const UVeyrSkeletalPresentation* Presentation) const
+{
+    return Presentation&&Points.Num()>0&&FittedMesh.Get()==Presentation->GetSkeletalMeshAsset();
+}
+
+bool FVeyrHullModel::Skin(UVeyrSkeletalPresentation* Presentation,TArray<FVector4>& Out) const
+{
+    Out.Reset();
+    if(!IsReadyFor(Presentation)||!Presentation->bPoseEvaluated)return false;
+    const TArray<FTransform>& Pose=Presentation->GetComponentSpaceTransforms();
+    const FTransform Component=Presentation->GetComponentTransform();
+    const double Scale=Component.GetScale3D().GetAbsMax();
+    Out.Reserve(Points.Num());
+    for(const FPoint& Point:Points)
+    {
+        FVector Skinned=FVector::ZeroVector;
+        for(const FInfluence& I:Point.Influences)
+            if(I.Bone!=INDEX_NONE&&Pose.IsValidIndex(I.Bone))Skinned+=Pose[I.Bone].TransformPosition(I.BoneLocal)*I.Weight;
+        Out.Emplace(Component.TransformPosition(Skinned),Point.Radius*Scale);
+    }
+    return true;
 }
 
 bool FVeyrSoleModel::Initialize(UVeyrSkeletalPresentation* Presentation)
@@ -29,31 +119,10 @@ bool FVeyrSoleModel::Initialize(UVeyrSkeletalPresentation* Presentation)
     if(!Mesh){Diagnostic=TEXT("No skeletal mesh");return false;}
     const FReferenceSkeleton& Reference=Mesh->GetRefSkeleton();
     const TArray<FTransform> Rest=ReferenceComponentSpace(Reference);
-    // Least-squares affine map from glTF rest heads (metres, Y up) to the imported reference pose
-    // (component cm). Affine, so axis swaps, handedness and the import scale need no assumption.
-    FMatrix Normal(ForceInitToZero);double Rhs[3][4]={{0}};
-    TArray<TPair<FVector,FVector>> Pairs;
-    for(const FVeyrSoleJointHead& Head:GVeyrSoleJointHeads)
-    {
-        const int32 Bone=Reference.FindBoneIndex(FName(Head.Bone));
-        if(Bone==INDEX_NONE)continue;
-        const FVector G(Head.X,Head.Y,Head.Z),U=Rest[Bone].GetLocation();
-        const double X[4]={G.X,G.Y,G.Z,1.0};
-        for(int32 R=0;R<4;++R){for(int32 C=0;C<4;++C)Normal.M[R][C]+=X[R]*X[C];for(int32 K=0;K<3;++K)Rhs[K][R]+=X[R]*U[K];}
-        Pairs.Emplace(G,U);
-    }
-    if(Pairs.Num()<12){Diagnostic=FString::Printf(TEXT("Only %d sole-model joints found on %s"),Pairs.Num(),*Mesh->GetName());return false;}
-    if(FMath::Abs(Normal.Determinant())<1e-12){Diagnostic=TEXT("Degenerate sole-model joint fit");return false;}
-    const FMatrix Inverse=Normal.Inverse();
-    double Map[3][4];
-    for(int32 K=0;K<3;++K)for(int32 C=0;C<4;++C){double V=0;for(int32 R=0;R<4;++R)V+=Inverse.M[C][R]*Rhs[K][R];Map[K][C]=V;}
-    auto Apply=[&](const FVector& G){return FVector(Map[0][0]*G.X+Map[0][1]*G.Y+Map[0][2]*G.Z+Map[0][3],
-        Map[1][0]*G.X+Map[1][1]*G.Y+Map[1][2]*G.Z+Map[1][3],Map[2][0]*G.X+Map[2][1]*G.Y+Map[2][2]*G.Z+Map[2][3]);};
-    double Sum=0;for(const auto& P:Pairs)Sum+=FVector::DistSquared(Apply(P.Key),P.Value);
-    FitResidualImportedCm=static_cast<float>(FMath::Sqrt(Sum/Pairs.Num()));
-    // The dragon rest pose is about 49 imported cm tall; 0.5 cm RMS is about 1 % of it.
-    if(FitResidualImportedCm>.5f)
-    {Diagnostic=FString::Printf(TEXT("Sole-model frame fit residual %.3f imported cm is too large; grounding off"),FitResidualImportedCm);return false;}
+    double Map[3][4];int32 Joints=0;FString Error;
+    if(!FitGltfFrame(Reference,Rest,Map,FitResidualImportedCm,Joints,Error))
+    {Diagnostic=Error+TEXT("; grounding off");return false;}
+    auto Apply=[&](const FVector& G){return ApplyMap(Map,G);};
     for(const FVeyrSolePoint& Source:GVeyrSolePoints)
     {
         FPoint Point;Point.Foot=Source.Foot;const FVector P=Apply(FVector(Source.X,Source.Y,Source.Z));
@@ -67,7 +136,7 @@ bool FVeyrSoleModel::Initialize(UVeyrSkeletalPresentation* Presentation)
         Points.Add(Point);
     }
     FittedMesh=Mesh;bReady=Points.Num()>0;
-    Diagnostic=FString::Printf(TEXT("Sole model: %d points, %d joints, fit residual %.3f imported cm"),Points.Num(),Pairs.Num(),FitResidualImportedCm);
+    Diagnostic=FString::Printf(TEXT("Sole model: %d points, %d joints, fit residual %.3f imported cm"),Points.Num(),Joints,FitResidualImportedCm);
     return bReady;
 }
 

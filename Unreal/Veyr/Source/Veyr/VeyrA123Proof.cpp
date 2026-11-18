@@ -46,7 +46,7 @@ bool FVeyrA123Proof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* In
     if(Mode!=TEXT("camerahug")&&(!InDragon->bUsingCustomuseVisual||!InDragon->ImportedPresentation||!InDragon->ImportedPresentation->VisualDefinition))
         return false;
     if(Mode==TEXT("camerahug")&&!Cast<UVeyrCameraBoom>(InKnight->CameraBoom))return false;
-    LiveSeconds=Mode==TEXT("camerahug")?200.f:Mode==TEXT("footclosehits")?380.f:150.f;
+    LiveSeconds=Mode==TEXT("camerahug")?200.f:Mode==TEXT("footclosehits")?560.f:150.f;
     return true;
 }
 
@@ -257,11 +257,13 @@ void FVeyrA123Proof::Live(double Elapsed,float Dt)
     AVeyrKnight* K=Knight.Get();AVeyrDragon* D=Dragon.Get();
     if(!K||!D)return;
     if(K->Health<45.f){K->Health=100.f;++HealthRefills;} // same refill as the camp mode, so the run lasts
+    // footclosehits needs 80 landed leg hits, far beyond the boss's health: top it up (test only, counted).
+    if(Mode==TEXT("footclosehits")&&!D->IsDead()&&D->Health<D->MaxHealth*.4f){D->Health=D->MaxHealth*.85f;++BossHealthRefills;}
     const FVector Target=KnightTargetFor(Elapsed);
     FVector To=Target-K->GetActorLocation();To.Z=0;
-    const float Near=Mode==TEXT("footclosehits")?220.f:Mode==TEXT("soleheights")?150.f:120.f;
+    const float Near=Mode==TEXT("footclosehits")?300.f:Mode==TEXT("soleheights")?150.f:120.f;
     const bool bArrived=To.Size()<Near;
-    const bool bAttack=Mode!=TEXT("soleheights")&&bArrived&&FMath::Fmod(Elapsed,.6)<Dt*1.5;
+    const bool bAttack=Mode!=TEXT("soleheights")&&bArrived&&FMath::Fmod(Elapsed,Mode==TEXT("footclosehits")?.3:.6)<Dt*1.5;
     Input(bArrived?FVector::ZeroVector:To.GetSafeNormal(),bAttack);
     UVeyrSkeletalPresentation* P=D->ImportedPresentation;
     if(Mode==TEXT("footclosehits")&&P&&P->bPoseEvaluated)
@@ -304,7 +306,8 @@ void FVeyrA123Proof::Live(double Elapsed,float Dt)
             const FVector Cam=K->CombatCamera->GetComponentLocation();
             const float S=B->DragonScale();
             FName Shape;
-            const bool bInside=B->IsPointInsideDragon(Cam,10.f-FMath::Min(B->BodyClearanceCm,B->WingClearanceCm)*S,&Shape);
+            const bool bInside=B->IsPointInsideBareDragon(Cam,10.f,&Shape);
+            (void)S;
             ++CameraFrames;
             const bool bCollapse=D->State==EVeyrDragonState::Collapse||D->State==EVeyrDragonState::Exposed;
             CollapseFrames+=bCollapse?1:0;
@@ -365,6 +368,7 @@ TSharedPtr<FJsonObject> FVeyrA123Proof::Evidence() const
     TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
     O->SetStringField(TEXT("mode"),Mode);O->SetBoolField(TEXT("done"),bDone);O->SetBoolField(TEXT("passed"),bPassed);
     O->SetNumberField(TEXT("bodyScale"),BodyScale);O->SetNumberField(TEXT("knightHealthRefills"),HealthRefills);
+    O->SetNumberField(TEXT("bossHealthRefills"),BossHealthRefills);
     O->SetBoolField(TEXT("legacyMirrorToe"),FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyMirrorToe")));
     O->SetBoolField(TEXT("legacyCameraBoom"),FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraBoom")));
     O->SetBoolField(TEXT("noDragonGrounding"),FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonGrounding")));

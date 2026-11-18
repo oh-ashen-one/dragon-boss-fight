@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "VeyrDragonGrounding.h"
 #include "VeyrCameraBoom.generated.h"
 
 class AVeyrDragon;
@@ -11,8 +12,9 @@ class AVeyrDragon;
  * The dragon's solid capsules ignore the camera channel and its mesh has no collision, so the stock
  * arm sweep never saw the dragon and the camera ended up inside it (owner: legs, belly and the whole
  * body during Collapse). This arm keeps the stock world sweep, then sweeps a sphere along the arm
- * against the dragon's live solid capsules (VeyrSolid_*) plus capsules and triangles for each wing
- * (bones VeyrWing{NegZ,PosZ}{Root,Elbow,Membrane,Wrist,Tip}), all inflated by a clearance.
+ * against the dragon's live solid capsules (VeyrSolid_*) plus 1500 skinned skin-hull spheres
+ * (FVeyrHullModel; the wings' bones alone missed the membranes by a median 135 cm), all inflated by a
+ * clearance.
  *
  * Pull-in is instant, release eases out at ReleaseRate, and the camera rises in proportion to the
  * pull (and further while its point would still sit inside the body), like the reference warden arm.
@@ -49,6 +51,8 @@ public:
     /** True when the point is within Radius of the dragon's body or wing shapes (shapes are refreshed
      * on each arm update; call after the arm ticked this frame). Optional name of the shape hit. */
     bool IsPointInsideDragon(const FVector& Point,float Radius,FName* OutShape=nullptr) const;
+    /** Same against the bare body (clearances removed): Margin > 0 is a near-plane allowance. */
+    bool IsPointInsideBareDragon(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
     AVeyrDragon* GetDragon() const { return Dragon.Get(); }
     /** Rebuild the body and wing shapes from the dragon's current pose (the arm does this each update;
      * replays call it so legacy-arm runs are measured against the same shapes). */
@@ -58,8 +62,10 @@ protected:
     virtual FVector BlendLocations(const FVector& DesiredArmLocation,const FVector& TraceHitLocation,bool bHitSomething,float DeltaTime) override;
 
 private:
-    struct FShape { FVector A=FVector::ZeroVector,B=FVector::ZeroVector,C=FVector::ZeroVector; float Radius=0.f; bool bTriangle=false; FName Name; };
+    struct FShape { FVector A=FVector::ZeroVector,B=FVector::ZeroVector,C=FVector::ZeroVector; float Radius=0.f,Clearance=0.f; bool bTriangle=false; FName Name; };
     TArray<FShape> Shapes;
+    FVeyrHullModel Hull;
+    TArray<FVector4> HullSpheres;
     TWeakObjectPtr<AVeyrDragon> Dragon;
     bool bPrerequisiteAdded=false;
     float PreviousTarget=1.f;

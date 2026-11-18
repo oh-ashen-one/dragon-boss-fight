@@ -49,5 +49,25 @@ private:
     bool bReady=false;
 };
 
+/**
+ * A2 (2026-11-18): the dragon's skin as 1500 spheres (VeyrDragonHullPoints.inl: farthest-point samples of
+ * the shipped mesh, wings and body separately), skinned with the evaluated pose. The bone-only wing model
+ * missed the membranes by a median 135 cm (1x), so the camera arm keeps clear of these instead.
+ */
+class FVeyrHullModel
+{
+public:
+    bool Initialize(UVeyrSkeletalPresentation* Presentation);
+    bool IsReadyFor(const UVeyrSkeletalPresentation* Presentation) const;
+    /** World centres (XYZ) and radii (W) for the current pose. */
+    bool Skin(UVeyrSkeletalPresentation* Presentation,TArray<FVector4>& Out) const;
+    FString Diagnostic;
+private:
+    struct FInfluence { int32 Bone=INDEX_NONE; float Weight=0.f; FVector BoneLocal=FVector::ZeroVector; };
+    struct FPoint { float Radius=0.f; FInfluence Influences[4]; };
+    TArray<FPoint> Points;
+    TWeakObjectPtr<const USkeletalMesh> FittedMesh;
+};
+
 /** Which grounding rule the dragon's current state wants. Reads only public dragon state. */
 EVeyrGroundingMode VeyrGroundingModeFor(const AVeyrDragon* Dragon);

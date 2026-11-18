@@ -50,29 +50,24 @@ void UVeyrCameraBoom::RefreshShapes()
         const float Radius=Capsule->GetScaledCapsuleRadius();
         const float Half=FMath::Max(0.f,Capsule->GetScaledCapsuleHalfHeight()-Radius);
         const FVector Center=Capsule->GetComponentLocation(),Axis=Capsule->GetUpVector();
-        FShape Shape;Shape.A=Center-Axis*Half;Shape.B=Center+Axis*Half;Shape.Radius=Radius+BodyClearanceCm*S;Shape.Name=Capsule->GetFName();
+        FShape Shape;Shape.A=Center-Axis*Half;Shape.B=Center+Axis*Half;Shape.Radius=Radius+BodyClearanceCm*S;Shape.Clearance=BodyClearanceCm*S;Shape.Name=Capsule->GetFName();
         Shapes.Add(Shape);
     }
     UVeyrSkeletalPresentation* Presentation=D->ImportedPresentation;
     if(Presentation&&D->bUsingCustomuseVisual&&Presentation->bPoseEvaluated)
     {
-        for(const TCHAR* Side:{TEXT("NegZ"),TEXT("PosZ")})
+        if(!Hull.IsReadyFor(Presentation))Hull.Initialize(Presentation);
+        if(Hull.Skin(Presentation,HullSpheres))
         {
-            FVector P[5];bool bOk=true;
-            const TCHAR* Parts[5]={TEXT("Root"),TEXT("Elbow"),TEXT("Membrane"),TEXT("Wrist"),TEXT("Tip")};
-            for(int32 I=0;I<5;++I)
+            static const FName WingName(TEXT("VeyrHullWing")),BodyName(TEXT("VeyrHullBody"));
+            const float Clear=WingClearanceCm*S;
+            for(int32 I=0;I<HullSpheres.Num();++I)
             {
-                const int32 Bone=Presentation->GetBoneIndex(FName(*FString::Printf(TEXT("VeyrWing%s%s"),Side,Parts[I])));
-                if(Bone==INDEX_NONE){bOk=false;break;}
-                P[I]=Presentation->GetBoneTransform(Bone).GetLocation();
+                const FVector4& H=HullSpheres[I];
+                FShape X;X.A=X.B=FVector(H.X,H.Y,H.Z);X.Radius=static_cast<float>(H.W)+Clear;X.Clearance=Clear;
+                X.Name=I<800?WingName:BodyName; // table order: 800 wing samples, then body
+                Shapes.Add(X);
             }
-            if(!bOk)continue;
-            const float Arm=30.f*S+WingClearanceCm*S,Sheet=WingClearanceCm*S;
-            const FName Name(*FString::Printf(TEXT("VeyrWing%s"),Side));
-            auto Segment=[&](const FVector& A,const FVector& B,float R){FShape X;X.A=A;X.B=B;X.Radius=R;X.Name=Name;Shapes.Add(X);};
-            auto Triangle=[&](const FVector& A,const FVector& B,const FVector& C){FShape X;X.A=A;X.B=B;X.C=C;X.Radius=Sheet;X.bTriangle=true;X.Name=Name;Shapes.Add(X);};
-            Segment(P[0],P[1],Arm);Segment(P[3],P[4],Arm);
-            Triangle(P[0],P[1],P[4]);Triangle(P[0],P[3],P[2]);Triangle(P[0],P[2],P[4]);
         }
     }
     ShapeCount=Shapes.Num();
@@ -92,13 +87,23 @@ bool UVeyrCameraBoom::IsPointInsideDragon(const FVector& Point,float Radius,FNam
     return false;
 }
 
+bool UVeyrCameraBoom::IsPointInsideBareDragon(const FVector& Point,float Margin,FName* OutShape) const
+{
+    for(const FShape& Shape:Shapes)
+        if(ShapeDistance(Shape,Point)+Shape.Clearance<Margin){if(OutShape)*OutShape=Shape.Name;return true;}
+    return false;
+}
+
 float UVeyrCameraBoom::FirstContact(const FVector& Origin,const FVector& End,float Radius) const
 {
+    const FVector Mid=(Origin+End)*.5;const float Half=static_cast<float>(FVector::Dist(Origin,End))*.5f;
     // Shapes that already contain the origin cannot be avoided by pulling in; the lift handles those.
     constexpr int32 Steps=32;
     float Best=1.f;
     for(const FShape& Shape:Shapes)
     {
+        // Quick reject: the shape cannot reach the segment's bounding sphere.
+        if(ShapeDistance(Shape,Mid)>Half+Radius)continue;
         if(ShapeDistance(Shape,Origin)<Radius)continue;
         float Previous=0.f;
         for(int32 I=1;I<=Steps;++I)
@@ -152,6 +157,6 @@ FVector UVeyrCameraBoom::BlendLocations(const FVector& DesiredArmLocation,const 
             Result=Hit.Location;
     }
     // Evidence: inside the bare body (clearance removed), with a 10 cm near-plane margin.
-    if(IsPointInsideDragon(Result,10.f-FMath::Min(BodyClearanceCm,WingClearanceCm)*S))++ResultInsideFrames;
+    if(IsPointInsideBareDragon(Result,10.f))++ResultInsideFrames;
     return Result;
 }

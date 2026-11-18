@@ -32,7 +32,7 @@ public:
     /** Owns the knight's input for this tick. */
     void Drive(double Elapsed,float Dt);
     TSharedPtr<FJsonObject> Evidence() const;
-    float DurationLimit() const { return Mode==TEXT("camerahug")?240.f:Mode==TEXT("footclosehits")?420.f:200.f; }
+    float DurationLimit() const { return Mode==TEXT("camerahug")?240.f:Mode==TEXT("footclosehits")?620.f:200.f; }
 
 private:
     TWeakObjectPtr<UWorld> World;
@@ -47,7 +47,7 @@ private:
     float LiveSeconds=90.f;
     float Scale=1.f;           // dragon BodyScale / 2
     float BodyScale=2.f;
-    int32 HealthRefills=0;
+    int32 HealthRefills=0,BossHealthRefills=0;
     TSharedPtr<FJsonObject> SweepJson;
     FString FailReason;
 
