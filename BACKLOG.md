@@ -32,6 +32,12 @@ His words, mapped to the items below. Still discussion; nothing started.
   how cloth or armour hides the bends) before deciding anything; the guess that his cloak hides what our plate armour
   shows is unverified. OPEN DECISION, owner is looking at candidates: repair our knight or replace it with a finished
   professional character. Shown to him: Paragon Greystone and Paragon Kwang (free, Epic, on Fab) and Fab's free knights.
+  Owner's candidate (2026-11-18): "Dark Knight - Female Character" by Hawtor Studio / Toni Garcia,
+  https://www.fab.com/listings/5be9349e-acb1-4a0b-8811-9e999e036755 : free, hand-made (not AI-generated), Blender
+  source, about 53k vertices in 33 objects, 4K armour textures, one sword, Rigify rig (not an Epic skeleton), two walk
+  cycles only, author credit asked, licence line on the listing reads blank and must be confirmed, author warns that
+  extreme poses clip. Before committing: confirm the licence; a one-day trial (import, retarget idle, run, one attack
+  and a roll, look for clipping, view it in the game's light). Not started.
 - **Boss room interior and lighting** "looks amazing", "almost looks candlelit"; the building outside is about the
   same as our castle ("80%"). DECIDED by the owner: keep the courtyard and relight it. The light does not have to be
   realistic or have a visible source ("Where is this lighting coming from? There are no candles. That doesn't
