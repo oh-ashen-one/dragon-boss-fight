@@ -115,6 +115,13 @@ def run_spec(spec, delay=0.0):
                     'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepWorstClipMedianFloatCm1x', 'sweepWorstClip',
                     'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
             record['a123'] = {k: x[k] for k in keys if k in x}
+        if 'audio' in latest:
+            # Quality goal B1-B3: which cues fired (counts by cue, dragon contacts/breaths/timed sounds, knight steps).
+            a = latest['audio']
+            fired = {k: v for k, v in a.get('cueCounts', {}).items() if v}
+            record['audio'] = {'newSet': a.get('newSet'), 'cuesStarted': a.get('cuesStarted'), 'cuesDropped': a.get('cuesDropped'),
+                               'cueCounts': fired, 'silentCueRequests': a.get('silentCueRequests'),
+                               'dragon': a.get('dragon'), 'knight': a.get('knight')}
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:

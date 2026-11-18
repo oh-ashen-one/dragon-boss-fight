@@ -421,6 +421,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         O->SetNumberField(TEXT("playerPainCues"),SnapshotMode->Audio->PlayerPainCues);
         O->SetNumberField(TEXT("dragonVocalCues"),SnapshotMode->Audio->DragonVocalCues);
         O->SetBoolField(TEXT("ambienceLoaded"),SnapshotMode->Audio->bAmbienceLoaded);
+        O->SetObjectField(TEXT("audio"),SnapshotMode->Audio->AudioEvidence()); // B1-B3 cue counts by type
     }
     O->SetStringField(TEXT("connectedCourtDiagnostic"),SnapshotArena?SnapshotArena->ConnectedCourtDiagnostic:TEXT("Arena missing"));
     FName ApproachBlocker;float ApproachSweepDistance=0.f;

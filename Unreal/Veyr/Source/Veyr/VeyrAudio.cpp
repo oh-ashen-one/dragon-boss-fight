@@ -31,13 +31,20 @@ namespace
     };
 }
 
+const TCHAR* AVeyrAudio::CueName(int32 Index)
+{
+    static const TCHAR* Names[]={TEXT("Swing"),TEXT("HeavySwing"),TEXT("Contact"),TEXT("Guard"),TEXT("Impact"),TEXT("Breath"),TEXT("Fire"),TEXT("Heal"),TEXT("Exposed"),TEXT("Death"),TEXT("Victory"),TEXT("Roll"),TEXT("Blink"),TEXT("Footstep"),TEXT("Wing"),TEXT("Roar"),TEXT("Break"),TEXT("PlayerPain"),TEXT("DragonGrowl"),TEXT("DragonPain"),
+        TEXT("ArmorHit"),TEXT("DragonStep"),TEXT("DragonSwing"),TEXT("Bite"),TEXT("Debris"),TEXT("DragonBreathIn"),TEXT("DragonBreathOut"),TEXT("DragonGrowlLow"),TEXT("DragonSnort")};
+    return Index>=0&&Index<int32(UE_ARRAY_COUNT(Names))?Names[Index]:TEXT("?");
+}
+
 AVeyrAudio::AVeyrAudio()
 {
     PrimaryActorTick.bCanEverTick = true;
     PrimaryActorTick.bStartWithTickEnabled = false;
     PrimaryActorTick.TickGroup = TG_PostUpdateWork;
     SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("AudioRoot")));
-    for (int32 I = 0; I < VoiceCount; ++I)
+    for (int32 I = 0; I < TotalVoices; ++I)
     {
         UAudioComponent* Voice = CreateDefaultSubobject<UAudioComponent>(*FString::Printf(TEXT("CombatVoice%d"), I));
         Voice->SetupAttachment(GetRootComponent());
@@ -48,7 +55,7 @@ AVeyrAudio::AVeyrAudio()
         Voice->bIsUISound = false; // Obey game pause; no sound leaking into a paused/restarted encounter.
         Voices.Add(Voice);
     }
-    VoiceWaves.SetNum(VoiceCount);
+    VoiceWaves.SetNum(TotalVoices);
     for(int32 I=0;I<2;++I)
     {
         auto* Bed=CreateDefaultSubobject<UAudioComponent>(I==0?TEXT("BossMusic"):TEXT("CathedralAmbience"));
@@ -59,7 +66,19 @@ AVeyrAudio::AVeyrAudio()
 
 void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
 {
-    bAudioPolish=FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioPolish"));
+    if(!bLoadedOnce)
+    {
+        // B1-B3: the new recorded set and triggers are the default; -VeyrLegacyAudio restores today's sounds and triggers.
+        const bool bLegacy=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyAudio"));
+        bNewSet=!bLegacy&&FPaths::DirectoryExists(FPaths::ProjectContentDir()/TEXT("Audio/Recorded20261118"));
+        bNoVariants=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoAudioVariants"));
+        bNoBreath=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonBreath"));
+        bNoMoveSounds=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonMoveSounds"));
+        bContactAudio=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonContactSounds"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoGroundContacts"));
+        bLogCues=FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioLog"));
+        if(!bLegacy&&!bNewSet)UE_LOG(LogTemp,Warning,TEXT("VEYR_AUDIO new recorded set folder missing; playing the previous set"));
+    }
+    bAudioPolish=bNewSet?!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoAudioPolish")):FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioPolish"));
     StopVoices();
     if (Knight.IsValid()) RemoveTickPrerequisiteActor(Knight.Get());
     if (Dragon.IsValid()) RemoveTickPrerequisiteActor(Dragon.Get());
@@ -69,8 +88,16 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
     if (!bInitialized) return;
     AddTickPrerequisiteActor(InKnight);
     AddTickPrerequisiteActor(InDragon);
-    if (Samples[0].IsEmpty()) {BuildSamples();LoadRecordedSamples();}
+    if (!bLoadedOnce)
+    {
+        bLoadedOnce=true;
+        if(bNewSet)LoadNewSet();
+        else {BuildSamples();LoadRecordedSamples();}
+    }
     for (double& Time : LastCueTimes) Time = -100.0;
+    Pending.Reset();for(FExpect& E:Expect)E=FExpect();
+    BreathClock=3.f;GrowlClock=Rand.FRandRange(7.f,12.f);bBreathExhaleNext=false;TimedClipKey=NAME_None;TimedLastPhase=TimedLastTime=-1.f;
+    for(int32& C:CueCounts)C=0;for(int32& C:CueSilent)C=0;
     bTerminal = InKnight->IsDead() || InDragon->IsDead();
     bBossDeathSeen = false;
     CuesStarted = CuesDropped = 0;
@@ -90,6 +117,7 @@ void AVeyrAudio::SnapshotCounters()
     LastCollapses = D->GetCollapseCount(); LastFireAttacks = D->GetAttackCount(EVeyrDragonMove::Fire);
     LastDragonState = D->State; bWasAirborne = D->IsAirborne();
     LastPlayerPosition=K->GetActorLocation();
+    LastContactSerial=D->GetGroundContactSerial();
 }
 
 void AVeyrAudio::Tick(float DeltaSeconds)
@@ -104,6 +132,7 @@ void AVeyrAudio::Tick(float DeltaSeconds)
     ExpireVoices();
     UpdateBeds();
     if (!bInitialized || bTerminal) return;
+    if(bNewSet){TickNew(DeltaSeconds);return;}
     const AVeyrKnight* K = Knight.Get();
     const AVeyrDragon* D = Dragon.Get();
     if (!K || !D)
@@ -269,7 +298,7 @@ void AVeyrAudio::PlayCue(ECue Cue, float Volume)
     // Procedural FIFO underflow pads silence; explicitly stop instead of relying on EOF.
     VoiceEndTimes[Slot] = Now + Durations[Index] + .15;
     LastCueTimes[Index] = Now;
-    ++CuesStarted; ++ActiveVoices;
+    ++CuesStarted; ++ActiveVoices;++CueCounts[Index];VoiceCue[Slot]=Index;VoiceFollowMode[Slot]=0;
     if(Cue==ECue::PlayerPain)++PlayerPainCues;
     if(Cue==ECue::Roar||Cue==ECue::DragonGrowl||Cue==ECue::DragonPain)++DragonVocalCues;
 }
@@ -278,7 +307,7 @@ void AVeyrAudio::ExpireVoices()
 {
     if (!GetWorld()) return;
     const double Now = GetWorld()->GetTimeSeconds();
-    for (int32 I = 0; I < VoiceCount; ++I)
+    for (int32 I = 0; I < TotalVoices; ++I)
     {
         if (VoiceEndTimes[I] <= 0 || Now < VoiceEndTimes[I]) continue;
         if (IsValid(Voices[I])) { Voices[I]->Stop(); Voices[I]->SetSound(nullptr); }
@@ -288,7 +317,7 @@ void AVeyrAudio::ExpireVoices()
 
 void AVeyrAudio::StopVoices()
 {
-    for (int32 I = 0; I < VoiceCount; ++I)
+    for (int32 I = 0; I < TotalVoices; ++I)
     {
         if (Voices.IsValidIndex(I) && IsValid(Voices[I])) { Voices[I]->Stop(); Voices[I]->SetSound(nullptr); }
         if (VoiceWaves.IsValidIndex(I)) VoiceWaves[I] = nullptr;
@@ -389,7 +418,9 @@ void AVeyrAudio::BuildSamples()
 
 void AVeyrAudio::LoadRecordedSamples()
 {
-    static const TCHAR* Names[]={TEXT("Swing"),TEXT("HeavySwing"),TEXT("Contact"),TEXT("Guard"),TEXT("Impact"),TEXT("Breath"),TEXT("Fire"),TEXT("Heal"),TEXT("Exposed"),TEXT("Death"),TEXT("Victory"),TEXT("Roll"),TEXT("Blink"),TEXT("Footstep"),TEXT("Wing"),TEXT("Roar"),TEXT("Break"),TEXT("PlayerPain"),TEXT("DragonGrowl"),TEXT("DragonPain")};
+    static const TCHAR* Names[]={TEXT("Swing"),TEXT("HeavySwing"),TEXT("Contact"),TEXT("Guard"),TEXT("Impact"),TEXT("Breath"),TEXT("Fire"),TEXT("Heal"),TEXT("Exposed"),TEXT("Death"),TEXT("Victory"),TEXT("Roll"),TEXT("Blink"),TEXT("Footstep"),TEXT("Wing"),TEXT("Roar"),TEXT("Break"),TEXT("PlayerPain"),TEXT("DragonGrowl"),TEXT("DragonPain"),
+        TEXT("ArmorHit"),TEXT("DragonStep"),TEXT("DragonSwing"),TEXT("Bite"),TEXT("Debris"),TEXT("DragonBreathIn"),TEXT("DragonBreathOut"),TEXT("DragonGrowlLow"),TEXT("DragonSnort")};
+    static_assert(UE_ARRAY_COUNT(Names)==CueCount,"cue names");
     int32 Loaded=0;
     for(int32 I=0;I<CueCount;++I)
     {
@@ -473,5 +504,7 @@ void AVeyrAudio::UpdateBeds()
 }
 void AVeyrAudio::PlayDestruction(const FVector& Position)
 {
-    DestructionLocation=Position;PlayCue(ECue::Break,.8f);
+    DestructionLocation=Position;
+    if(bNewSet)PlayCueEx(ECue::Break,.8f,EPlace::World,Position,NAME_None,900.f,9000.f);
+    else PlayCue(ECue::Break,.8f);
 }
