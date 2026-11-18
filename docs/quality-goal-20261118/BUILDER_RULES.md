@@ -29,6 +29,10 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
   in the background (`open -g`), never fullscreen, never focused.
 - **No rendered launch while `~/.cache/gpu-slot/STREAMING` exists** (the owner's 11:00-13:00 ET stream window). Never
   remove that file and never set `GPU_SLOT_STREAMING_SLOTS`. Use that time for code, builds and windowless runs.
+- **Never signal a process by name pattern** (`pkill`, `killall`, `pgrep ... | xargs kill`). Other sessions on this
+  machine run their own engines and their own `gpu_slot` captures (for example a Unity project). Record the PID of
+  every process you start, at launch, and signal only those PIDs after checking `ps -o pid,ppid,command -p <pid>`
+  shows it is yours. On 2026-11-18 a builder's broad pattern hit another session's `gpu_slot` capture.
 - Own only processes you started. Stop a driver script first, then SIGTERM the game and wait up to 60 s; SIGKILL only
   if it is still alive. Never relaunch automatically after two crashes: stop and report. No tool that raises an OS
   dialog. No computer-use or mouse control.

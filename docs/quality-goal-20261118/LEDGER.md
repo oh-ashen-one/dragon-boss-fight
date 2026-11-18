@@ -41,3 +41,7 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 |---|---|---|---|
 | | | none so far | 0 USD |
 | 11-18 | fal.ai elevenlabs/sound-effects/v3 | 37 sound-effect takes for dragon breath, steps, wing, impact, heal, growl (docs/audio-20261118/generation-ledger.json) | 0.13 USD of the 3 USD budget |
+
+## Incidents
+
+- 11-18 15:35 ET: while stopping its own suite, the phase A builder sent SIGTERM by name pattern to pid 36755, another session's `gpu_slot` capture (label `catacombs-promote017-Promote062B`, a Unity batch run). The gate log shows that capture released with exit 124 after 33 s at 15:35:37, so the signal most likely ended that run early. That session carried on with later launches. Rule added: signal only recorded PIDs, never by pattern. Reported to the owner.
