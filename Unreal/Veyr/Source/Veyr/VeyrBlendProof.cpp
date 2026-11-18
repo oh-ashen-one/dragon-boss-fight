@@ -111,6 +111,18 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
         };
         return HeavyDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(HeavyDefs)-1)];
     }
+    if(bGreystoneTrialProof)
+    {
+        // Same four actions for the KnightB and Greystone films; pre/post idle phases give the idle.
+        const TCHAR* RunClip=Knight.IsValid()&&Knight->UsesPlantedSprint()?TEXT("RunOneHandPlanted"):TEXT("Run");
+        static const FDef TrialDefs[]={
+            {TEXT("Trial_run_1H_side"),EKind::Strafe,0,true,false,2.2f,1276.f,RunClip,90.f},
+            {TEXT("Trial_primary_1H_side"),EKind::PrimaryTap,0,false,false,0.f,0.f,TEXT("LightAttack"),90.f},
+            {TEXT("Trial_primary_1H_threequarter"),EKind::PrimaryTap,0,false,false,0.f,0.f,TEXT("LightAttack"),35.f},
+            {TEXT("Trial_roll_attack_1H_side"),EKind::RollAttack,0,false,false,0.f,480.f,TEXT("RollAttack"),90.f},
+        };
+        return TrialDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(TrialDefs)-1)];
+    }
     if(bSprintProof)
     {
         const bool Planted=Knight.IsValid()&&Knight->UsesPlantedSprint();
@@ -138,7 +150,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount() const{return bRunStartProof?4:bPrimaryTapProof?4:bMobilityProof?8:bHeavyProof?4:bSprintProof?4:9;}
+int32 FVeyrBlendProof::DefCount() const{return bGreystoneTrialProof?4:bRunStartProof?4:bPrimaryTapProof?4:bMobilityProof?8:bHeavyProof?4:bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {
@@ -166,7 +178,8 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     bMobilityProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrMobilityAttackProof"));
     bPrimaryHeavyProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryHeavyProof"));
     bHeavyProof=bPrimaryHeavyProof||FParse::Param(FCommandLine::Get(),TEXT("VeyrHeavyProof"));
-    if(int32(bSprintProof)+int32(bHeavyProof)+int32(bMobilityProof)+int32(bPrimaryTapProof)+int32(bRunStartProof)>1)return false;
+    bGreystoneTrialProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneTrialProof"));
+    if(int32(bSprintProof)+int32(bHeavyProof)+int32(bMobilityProof)+int32(bPrimaryTapProof)+int32(bRunStartProof)+int32(bGreystoneTrialProof)>1)return false;
     if(bHeavyProof&&FParse::Value(FCommandLine::Get(),TEXT("VeyrHeavyReviewSlowMo="),HeavyReviewSlowMo)&&FMath::IsFinite(HeavyReviewSlowMo))
         HeavyReviewSlowMo=FMath::Clamp(HeavyReviewSlowMo,.1f,1.f);
     else HeavyReviewSlowMo=1.f;
@@ -195,7 +208,7 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     if(Cam&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintGameplayCamera"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrProofGameplayCamera")))
     {
         Cam->GetCameraComponent()->bConstrainAspectRatio=false;
-        Cam->GetCameraComponent()->SetFieldOfView((bHeavyProof||bPrimaryTapProof||bRunStartProof)?55.f:45.f);
+        Cam->GetCameraComponent()->SetFieldOfView((bHeavyProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof)?55.f:45.f);
         Camera=Cam;
         if(APlayerController* PC=Cast<APlayerController>(Knight->GetController())){PC->SetViewTarget(Cam);bCameraApplied=true;}
     }
@@ -255,11 +268,11 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
     const FVector Target=K->GetActorLocation();
     if(bSnap||!bFocusValid){Focus=Target;bFocusValid=true;}
     else Focus+=(Target-Focus)*FMath::Clamp(Dt*4.f,0.f,1.f);
-    const bool FullBody=bHeavyProof||bMobilityProof||bPrimaryTapProof||bRunStartProof;
+    const bool FullBody=bHeavyProof||bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof;
     FVector Look(Focus.X,Focus.Y,FloorZ+(FullBody?220.f:100.f));
     const float Az=FMath::DegreesToRadians(D.CameraAzimuthDeg);
     const FVector Dir=Fwd0*FMath::Cos(Az)+Right0*FMath::Sin(Az);
-    FVector Location=Look+Dir*((bMobilityProof||bPrimaryTapProof||bRunStartProof)?1100.f:bHeavyProof?900.f:580.f);Location.Z=FloorZ+(FullBody?240.f:190.f);
+    FVector Location=Look+Dir*((bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof)?1100.f:bHeavyProof?900.f:580.f);Location.Z=FloorZ+(FullBody?240.f:190.f);
     // Extra inspection chapter follows the actual rendered hand, so the
     // reviewer can judge contact through the fast strike without a crop.
     if(bHeavyProof&&SeqIndex==3&&K->ImportedPresentation)
@@ -361,7 +374,7 @@ void FVeyrBlendProof::DriveSetup(double Elapsed,float Dt)
 {
     AVeyrKnight* K=Knight.Get();const FDef& D=Def(SeqIndex);
     if(SeqSetupStart<0)SeqSetupStart=Elapsed;
-    if(K->bLockedOn==(bSprintProof||bRunStartProof))K->ToggleLockOn();
+    if(K->bLockedOn==WantsUnlocked(D))K->ToggleLockOn();
     const bool Ready=K->Action==EVeyrKnightAction::Ready&&K->IsGrounded();
     if(Elapsed-SeqSetupStart>30.0){bSetupTimedOut=true;SetupStable=1.f;}
     if(!Ready){Neutral();SetupStable=0.f;return;}
@@ -948,6 +961,7 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     O->SetBoolField(TEXT("primaryHeavyProof"),bPrimaryHeavyProof);
     O->SetBoolField(TEXT("mobilityAttackProof"),bMobilityProof);
     O->SetBoolField(TEXT("primaryTapProof"),bPrimaryTapProof);
+    O->SetBoolField(TEXT("greystoneTrialProof"),bGreystoneTrialProof);
     O->SetBoolField(TEXT("runStartProof"),bRunStartProof);
     O->SetNumberField(TEXT("heavyReviewTimeDilation"),HeavyReviewSlowMo);
     O->SetBoolField(TEXT("allPassed"),bDone&&PassedCount==DefCount());
@@ -955,7 +969,7 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     TSharedPtr<FJsonObject> Setup=MakeShared<FJsonObject>();
     Setup->SetBoolField(TEXT("bossPassive"),Dragon.IsValid()&&Dragon->bProofPassive);Setup->SetBoolField(TEXT("proofCameraApplied"),bCameraApplied);
     Setup->SetBoolField(TEXT("proofFloorApplied"),bProofFloorApplied);Setup->SetNumberField(TEXT("checkerCellCm"),25);Setup->SetNumberField(TEXT("checkerInstances"),CheckerInstances);
-    Setup->SetArrayField(TEXT("home"),Vec(Home));Setup->SetArrayField(TEXT("forwardToBoss"),Vec(Fwd0));Setup->SetNumberField(TEXT("cameraDistanceCm"),(bMobilityProof||bPrimaryTapProof||bRunStartProof)?1100:bHeavyProof?900:580);Setup->SetNumberField(TEXT("cameraFovDegrees"),(bHeavyProof||bMobilityProof||bPrimaryTapProof||bRunStartProof)?55:45);
+    Setup->SetArrayField(TEXT("home"),Vec(Home));Setup->SetArrayField(TEXT("forwardToBoss"),Vec(Fwd0));Setup->SetNumberField(TEXT("cameraDistanceCm"),(bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof)?1100:bHeavyProof?900:580);Setup->SetNumberField(TEXT("cameraFovDegrees"),(bHeavyProof||bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof)?55:45);
     Setup->SetBoolField(TEXT("weaponGripLockEnabled"),Knight.IsValid()&&Knight->bWeaponGripLockEnabled);
     O->SetObjectField(TEXT("setup"),Setup);
     TSharedPtr<FJsonObject> G=MakeShared<FJsonObject>();

@@ -196,7 +196,8 @@ FVector FVeyrCapsuleCoupling::Step(const FVector& ClipTravel,const FVector& Caps
     const float Allowed=MaxCorrectionShare*Planar(ClipTravel).Size();
     const float Size=BodyOffset.Size();
     if(Size>KINDA_SMALL_NUMBER)BodyOffset-=BodyOffset/Size*FMath::Min(Allowed,Size);
-    if(BodyOffset.Size()>MaxSeparationCm)BodyOffset=BodyOffset.GetSafeNormal()*MaxSeparationCm;
+    ++Steps;WorstSeparationCm=FMath::Max(WorstSeparationCm,float(BodyOffset.Size()));
+    if(BodyOffset.Size()>MaxSeparationCm){BodyOffset=BodyOffset.GetSafeNormal()*MaxSeparationCm;++ClampedSteps;}
     return BodyOffset;
 }
 
@@ -307,7 +308,7 @@ bool FVeyrMotionMatcher::SearchFallback(const USkeletalMeshComponent* Mesh,EVeyr
     // Query in capsule space: x forward, y right, z up (the baker uses the same frame).
     const AActor* Owner=Mesh->GetOwner();
     if(!Owner)return false;
-    const FTransform Frame(FRotator(0.f,Sim.Yaw,0.f),Owner->GetActorLocation());
+    const FTransform Frame(FRotator(0.f,Sim.Yaw,0.f),Mesh->GetComponentLocation()); // sole level, like the baker's root bone
     FVeyrMotionFeatures Q;int32 K=0;
     auto Push=[&](const FVector& V){Q.Values[K++]=V.X;Q.Values[K++]=V.Y;Q.Values[K++]=V.Z;};
     const FName Feet[2]={VeyrBoneRoles::Resolve(Mesh,EVeyrBoneRole::LeftAnkle),VeyrBoneRoles::Resolve(Mesh,EVeyrBoneRole::RightAnkle)};
@@ -393,6 +394,9 @@ TSharedRef<FJsonObject> FVeyrMotionMatcher::Evidence() const
     O->SetNumberField(TEXT("forcedSearches"),ForcedSearches);
     O->SetNumberField(TEXT("fallbackSearches"),FallbackSearches);
     O->SetNumberField(TEXT("switches"),Switches);
+    O->SetNumberField(TEXT("couplingSteps"),Coupling.Steps);
+    O->SetNumberField(TEXT("couplingClampedSteps"),Coupling.ClampedSteps);
+    O->SetNumberField(TEXT("couplingWorstSeparationCm"),Coupling.WorstSeparationCm);
     O->SetStringField(TEXT("gate"),GateName(Gates.Current));
     O->SetNumberField(TEXT("bodyOffsetCm"),Coupling.BodyOffset.Size());
     if(!LastError.IsEmpty())O->SetStringField(TEXT("error"),LastError);

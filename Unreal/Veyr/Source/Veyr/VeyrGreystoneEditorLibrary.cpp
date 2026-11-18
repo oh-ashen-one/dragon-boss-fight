@@ -18,6 +18,9 @@ int32 UVeyrGreystoneEditorLibrary::RetargetPoseSearchDatabase(UPoseSearchDatabas
         if(!Mapped||!*Mapped)continue;
         FPoseSearchDatabaseAnimationAsset Copy=*Entry;
         Copy.AnimAsset=*Mapped;
+        // Greystone has no mirror data table yet: keep only the original (unmirrored) poses.
+        if(Schema&&!Schema->GetMirrorDataTable(UE::PoseSearch::DefaultRole))
+            Copy.MirrorOption=EPoseSearchMirrorOption::UnmirroredOnly;
         Database->SetAnimationAssetAt(Copy,Index);
         ++Replaced;
     }

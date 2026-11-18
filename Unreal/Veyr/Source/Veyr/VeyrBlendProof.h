@@ -86,6 +86,8 @@ private:
     bool bMobilityProof=false;
     bool bPrimaryTapProof=false;
     bool bRunStartProof=false;
+    bool bGreystoneTrialProof=false; // -VeyrGreystoneTrialProof: run, attack, roll (E trial film, both rigs)
+    bool WantsUnlocked(const FDef& D) const {return bSprintProof||bRunStartProof||(bGreystoneTrialProof&&D.bSprint);}
     int32 LightCountAtInput=0;
     int32 HeavyCountAtInput=0;
     float HeavyReviewSlowMo=1.f;

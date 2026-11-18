@@ -96,8 +96,10 @@ struct FVeyrCapsuleCoupling
     FVector BodyOffset=FVector::ZeroVector; // planar, world cm, body minus capsule
     float MaxSeparationCm=15.f;
     float MaxCorrectionShare=.20f;
+    int32 ClampedSteps=0,Steps=0;   // review metric: how often the 15 cm clamp had to engage (visible slide)
+    float WorstSeparationCm=0.f;     // before the clamp
 
-    void Reset(){BodyOffset=FVector::ZeroVector;}
+    void Reset(){BodyOffset=FVector::ZeroVector;ClampedSteps=Steps=0;WorstSeparationCm=0.f;}
     /** ClipTravel: planar world displacement of the clip root this frame. CapsuleTravel: what the capsule did. */
     FVector Step(const FVector& ClipTravel,const FVector& CapsuleTravel);
 };
@@ -106,7 +108,7 @@ struct FVeyrCapsuleCoupling
 struct FVeyrMotionChoice
 {
     const UAnimSequence* Sequence=nullptr;
-    FName FallbackClip;      // set when the fallback table chose (clip key in the Greystone definition)
+    FName FallbackClip;      // set when the fallback table chose: the sequence object path (rows store paths)
     float Time=0.f;
     bool bMirrored=false;
     float Cost=MAX_flt;
