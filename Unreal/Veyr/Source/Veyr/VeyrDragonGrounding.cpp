@@ -65,6 +65,31 @@ bool FVeyrHullModel::Initialize(UVeyrSkeletalPresentation* Presentation)
     Points.Reset();FittedMesh.Reset();BoomPoints=GVeyrHullBoomWing+GVeyrHullBoomBody;BoomWing=GVeyrHullBoomWing;
     const USkeletalMesh* Mesh=Presentation?Presentation->GetSkeletalMeshAsset():nullptr;
     if(!Mesh){Diagnostic=TEXT("No skeletal mesh");return false;}
+    if(FitCache.IsEmpty()&&Presentation->VisualDefinition)
+    {
+        // First use: fit every mesh variant the clips can switch to now, so no switch pays for a fit mid-move.
+        const UVeyrVisualDefinition* Definition=Presentation->VisualDefinition;
+        TArray<const USkeletalMesh*,TInlineAllocator<8>> Variants;
+        if(Definition->SkeletalMesh)Variants.AddUnique(Definition->SkeletalMesh.Get());
+        for(const auto& Entry:Definition->Clips)if(Entry.Value.MeshOverride)Variants.AddUnique(Entry.Value.MeshOverride.Get());
+        for(const USkeletalMesh* Variant:Variants)
+            if(Variant!=Mesh&&Variant->GetRefSkeleton().GetNum()==Mesh->GetRefSkeleton().GetNum())
+            {TArray<FPoint> Out;Fit(Variant,Out);FitCache.Add(TObjectKey<USkeletalMesh>(Variant),MoveTemp(Out));}
+    }
+    // A failed fit is cached empty too, so a mesh that cannot be fitted is not refitted every frame.
+    if(const TArray<FPoint>* Cached=FitCache.Find(TObjectKey<USkeletalMesh>(Mesh)))Points=*Cached;
+    else
+    {
+        TArray<FPoint> Out;Fit(Mesh,Out);
+        Points=Out;FitCache.Add(TObjectKey<USkeletalMesh>(Mesh),MoveTemp(Out));
+    }
+    FittedMesh=Mesh;
+    return Points.Num()>0;
+}
+
+bool FVeyrHullModel::Fit(const USkeletalMesh* Mesh,TArray<FPoint>& Out)
+{
+    Out.Reset();
     const FReferenceSkeleton& Reference=Mesh->GetRefSkeleton();
     const TArray<FTransform> Rest=ReferenceComponentSpace(Reference);
     double Map[3][4];float Residual=0.f;int32 Joints=0;
@@ -73,6 +98,8 @@ bool FVeyrHullModel::Initialize(UVeyrSkeletalPresentation* Presentation)
     const double MapScale=FMath::Pow(FMath::Abs(Linear.Determinant()),1.0/3.0);
     // Normals map through the inverse transpose of the linear part (row-vector convention here).
     const FMatrix NormalMatrix=Linear.Inverse().GetTransposed();
+    TMap<UPTRINT,int32> BoneOf; // the table repeats a few dozen bone names 26000 times
+    Out.Reserve(UE_ARRAY_COUNT(GVeyrHullPoints));
     for(const FVeyrHullPoint& Source:GVeyrHullPoints)
     {
         FPoint Point;Point.Radius=static_cast<float>(Source.Radius*MapScale);
@@ -82,15 +109,15 @@ bool FVeyrHullModel::Initialize(UVeyrSkeletalPresentation* Presentation)
         for(int32 I=0;I<4;++I)
         {
             if(!Source.Bones[I]||Source.Weights[I]<=0.f)continue;
-            const int32 Bone=Reference.FindBoneIndex(FName(Source.Bones[I]));
-            if(Bone==INDEX_NONE){Diagnostic=FString::Printf(TEXT("Hull bone %s missing"),Source.Bones[I]);Points.Reset();return false;}
+            int32* Known=BoneOf.Find(reinterpret_cast<UPTRINT>(Source.Bones[I]));
+            const int32 Bone=Known?*Known:BoneOf.Add(reinterpret_cast<UPTRINT>(Source.Bones[I]),Reference.FindBoneIndex(FName(Source.Bones[I])));
+            if(Bone==INDEX_NONE){Diagnostic=FString::Printf(TEXT("Hull bone %s missing"),Source.Bones[I]);Out.Reset();return false;}
             Point.Influences[I]={Bone,Source.Weights[I],Rest[Bone].InverseTransformPosition(P),Rest[Bone].InverseTransformVectorNoScale(N)};
         }
-        Points.Add(Point);
+        Out.Add(Point);
     }
-    FittedMesh=Mesh;
-    Diagnostic=FString::Printf(TEXT("Hull model: %d samples (%d boom), fit residual %.3f imported cm"),Points.Num(),BoomCount(),Residual);
-    return Points.Num()>0;
+    Diagnostic=FString::Printf(TEXT("Hull model: %d samples (%d boom), fit residual %.3f imported cm"),Out.Num(),FMath::Min(BoomPoints,Out.Num()),Residual);
+    return Out.Num()>0;
 }
 
 bool FVeyrHullModel::IsReadyFor(const UVeyrSkeletalPresentation* Presentation) const
