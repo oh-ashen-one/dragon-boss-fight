@@ -1,3 +1,11 @@
+# Playtest goal closed — 2026-11-18
+
+The owner closed the 2026-11-17 playtest goal after watching before/after films ("It looks more the same") and had the
+branch merged into `main`. All six Tier 1 changes and the Tier 2 foot-contact, heal, chain and flight-camera changes are
+in source behind restore switches; none is owner-accepted and no new build is installed. Numbers, blind-review verdicts
+and what stays open: [docs/playtest-goal-20261117/RESULTS.md](docs/playtest-goal-20261117/RESULTS.md). State and
+switches: top of [HANDOFF.md](HANDOFF.md).
+
 # Latest owner feedback — 2026-11-05; documentation only
 
 Six new OPEN / NOT STARTED requirements are recorded at the top of [HANDOFF.md](HANDOFF.md): faster player/dragon movement; much harder aggression; range/position-aware attacks and anti-camping; remove the yellow/red floor attack-radius circle; approximately 30% more dragon HP; and a roughly 30-ft dragon that dwarfs the player. The owner explicitly said **do not fix anything yet**. Earlier delivery/testing results below are historical and do not imply acceptance of the current difficulty or scale.

@@ -1,20 +1,34 @@
-# Playtest goal — branch `opus/playtest-goal-20261117` (started 2026-11-17, in progress)
+# Playtest goal — closed by the owner on 2026-11-18, merged into `main`
 
-Goal file: `PLAYTEST_GOAL.md`. Activation prompt: `GOAL_PROMPT.md`. Critic rubric and results: `docs/playtest-goal-20261117/`.
-Session model: Fable 5.2 (owner switched the session before starting the goal). Critics: `opus-critic` (Opus 5.5 high).
+Goal file: `PLAYTEST_GOAL.md`. Numbers, reviews and open items: `docs/playtest-goal-20261117/RESULTS.md`.
+Session model: Fable 5.2. Critics: `opus-critic` (Opus 5.5 high).
 
-## What is built so far (Tier 1, all behind restore switches)
+**Read this first.** The owner watched the before/after films and said: "The before and after isn't really that crazy.
+It looks more the same." The goal was marked complete "for now", not accepted. Do not resume it without a new brief.
 
-| Item | Default now | Restore switch (for before/after films) |
+## State
+
+- `main` holds all of the source below. Nothing new is installed: **Play Veyr.app still launches the 2026-11-06 build**
+  (`~/Applications/Veyr/652188ae51a3/`). The last package of this run (build 18, source `e9fcb8a`) was deleted in
+  clean-up; re-package from `main` to get it back. Its rendered regression and 16-seed numbers were never completed.
+- Knight content `v050heal` (heal fit v11) is active locally and is not in the repository (character content is ignored).
+
+## Defaults now, and the switch that restores the old behaviour
+
+| Change | Default now | Restore switch |
 |---|---|---|
-| 1 Floor rings | hidden | `-VeyrFloorTelegraph` |
-| 2 Scale | 2x (idle head 1546 cm, was 756; knight 244 cm) | `-VeyrDragonScale=1` |
-| 3 Pace | knight and dragon travel 1.3x | `-VeyrLegacyPace` |
-| 4+5 Brain | reach-based random choice, aim tracking, strings, anti-camp takeoff, trample | `-VeyrLegacyBrain` |
-| 6 Health | 845 | `-VeyrBossHealth=650` |
+| Floor rings | hidden | `-VeyrFloorTelegraph` |
+| Scale | 2x (idle head 1546 cm; knight 244 cm) | `-VeyrDragonScale=1` |
+| Pace | knight and dragon travel 1.3x | `-VeyrLegacyPace` |
+| Brain | reach-based random choice, snap tracking, strings, whiff punish, anti-camp takeoff, fire aim | `-VeyrLegacyBrain` |
+| Health | 845 | `-VeyrBossHealth=650` |
+| Knight foot clean-up | on | `-VeyrNoStanceCleanup` |
+| One-hand chain flow | on (not reviewed in its final form) | `-VeyrNoChainFlow` |
+| Flight camera framing | on | `-VeyrNoFlightFraming` |
+| Near-boss camera framing | off | `-VeyrBossNearFraming` turns it on |
 
-Other switches: `-VeyrBrainSeed=N` (replays default to 20261117; normal play seeds from the clock), `-VeyrBrainMap`
-(writes the reach map into replay evidence as `brainReachMap`).
+Other switches: `-VeyrBrainSeed=N` (replays default to 20261117; normal play seeds from the clock), `-VeyrBrainMap`,
+`-VeyrStillInterval=N`, `-VeyrFilmIntro`, `-VeyrDeathFar`.
 
 ## How to build and test
 
@@ -22,27 +36,27 @@ Other switches: `-VeyrBrainSeed=N` (replays default to 20261117; normal play see
 python3 tools/unreal/build.py --engine "/Users/Shared/Epic Games/UE_5.8" --target VeyrEditor --configuration Development
 python3 tools/unreal/package.py --engine "/Users/Shared/Epic Games/UE_5.8" --configuration Shipping
 python3 tools/unreal/playtest_suite.py --app <app from the newest Local/package-*/receipt.json> --run camp --run death --run victory --run victory:two-handed
+python3 tools/unreal/reinstall_shipping.py --receipt <receipt.json> --suite <Local/playtest-suite-*.json> --verification docs/playtest-goal-20261117/RESULTS.md
 ```
 
-`playtest_suite.py` passes the owner's play profile, queues politely when another session holds the GPU (exit 75 from
-`gpu_slot` means nothing was launched) and stops after two launches that leave no evidence.
-
-New replay mode `camp`: the knight stands in nine boss-relative zones (under, each foot, both flanks, tail, front) without
-dodging; a zone passes when a blow lands within 20 s, and the underbelly must also draw a takeoff within 6 s.
+- Add `headless` to a run (`victory:headless,-VeyrBrainSeed=3`) for a numbers-only run with no window and no GPU slot.
+  **Each headless run is still a full game process and shows as a running app. The owner objected to 8 at once on
+  2026-11-18: run them one at a time unless told otherwise.**
+- Do not edit source while `build.py` runs (it checks a source hash), and do not delete evidence younger than an hour
+  (the launch budget counts its receipts).
+- `mux_film.py <run> --output <mp4>` joins a filmed run with its game audio; `critic_pack.py` builds blind A/B packs.
 
 ## Findings worth keeping
 
-- The run clip's authored speed is 822.8 cm/s and the knight sprinted at 580, so it played at 0.70x. That is the "0.75x" feel.
-- At 2x, claw and tail swings pass over the knight's head (strike heights doubled, the knight did not), so only ground-level
-  stomps connected. The struck column now grows with the creature (`ImportedContactHitsKnight`).
-- A test knight that follows a boss-relative spot with zero delay can never be reached by turning; the camp knight now
-  stands two seconds at a time, like a person.
-- The shared GPU was busy with another session's jobs for long stretches on 2026-11-17; expect queue waits of 10-20 minutes.
+- The run clip's authored speed is 822.8 cm/s and the knight sprinted at 580, so it played at 0.70x.
+- At 2x, claw and tail swings passed over the knight's head and the fire passed over him entirely; both are corrected.
+- Fight outcomes are chaotic per seed. Judge balance on 16 seeds per grip, never on one run.
+- The scripted player is frame-perfect, so it understates how often a person is hit.
+- Camera at 2x is the weakest part: from under the dragon the wind-ups cannot be read and the camera clips into the body.
 
-## Not done yet
+## Open
 
-Balance (the scripted player still loses), regression set, before/after films, blind critics, install, full-fight film,
-all of Tier 2. Nothing here is owner-accepted.
+See "Open at close" in `docs/playtest-goal-20261117/RESULTS.md`.
 
 ---
 

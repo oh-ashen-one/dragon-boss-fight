@@ -1,5 +1,11 @@
 # Veyr playtest goal — 2026-11-17
 
+**Closed by the owner on 2026-11-18** ("mark this as complete for now") and merged into `main`. The owner's view of the
+before/after films: "It looks more the same." Blind reviews rated items 1 and 6 "meets", items 2-5, 7-8, 10 and 11
+"partly", and the first version of item 9 "fails" (its rework was not reviewed). Deliverables 1-3 were not finished: no
+new build is installed and the only full film is from an earlier build of the run. Details:
+`docs/playtest-goal-20261117/RESULTS.md`. The text below is the goal as written.
+
 Owner-requested goal: implement every open backlog item, then hand back a build ready for a full playthrough and a recorded video. Baseline: `main` at `d1022c0` (2026-11-06), installed app `~/Applications/Veyr/652188ae51a3/`, dragon 650 HP, scripted one-hand victory 70.1 s. All 12 video2rig dragon move families are on by default.
 
 Work branch: `opus/playtest-goal-20261117` (from `main`). The prompt to start it is in `GOAL_PROMPT.md`.
