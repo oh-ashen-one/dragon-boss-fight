@@ -1,3 +1,83 @@
+# Owner playtest feedback and gap backlog — 2026-11-18; NOT STARTED
+
+The owner played today's `main` (`79fe0bc`, packaged, not installed) and asked for the items below to be recorded.
+**Nothing here is started; wait for the owner's go.** Side-by-side footage of the reference game (Can It Code's
+Leshy fight) and ours: `Local/playtest-goal-review/vs.html` (`python3 serve.py 8823`, then
+`http://localhost:8823/vs.html`); reference frames in `~/leshy-reference`.
+
+## Keep as it is (owner, 2026-11-18)
+
+- **Hitboxes and overall difficulty**: "really good". Do not retune.
+- **Dragon size**: 2x is fine and "the dragon needs to be much bigger". Never shrink the dragon to fix framing; fix the
+  camera for a huge dragon instead. A larger scale needs the reach check on every attack again (fire and swings passed
+  over the knight when the scale first went to 2x).
+- The reference boss is a humanoid, moose-like creature about two knight-heights tall; ours is a heavy four-legged
+  dragon. Copy his techniques, not his proportions.
+
+## A. Bugs the owner saw (fix first)
+
+1. **Foot mesh pinches out sideways.** When the knight hits the dragon from very close, a corner of a foot (the owner
+   thinks the right one) stretches far out to the right. Suspects to bisect: the stance clean-up foot hold
+   (`-VeyrNoStanceCleanup`), the per-leg stagger, the six rig bones with no skin weight.
+2. **Camera goes inside the dragon.** Very close to the body the camera clips through and shows the inside of the
+   mesh. "That should never happen." Needs camera collision against the dragon's body volumes (pull in fast, release
+   slowly, rise against large bodies) and a near-plane check at 2x and above.
+3. **Dragon floats above the floor**, about 3 ft by the owner's eye. Measure sole height per clip at the shipped scale
+   (the video-to-animation rest pose is known to sit 18 cm high at 1x) and ground every clip.
+4. **Knock-down lasts far too long.** From the moment the dragon drops after a stagger to the moment it is back up:
+   5 seconds at most. Today the exposed phase alone is 7 s (`ExposedSeconds`, `VeyrDragon.h:156`) plus the fall and rise
+   clips.
+
+## B. Sound (owner: "We need better sound for sure")
+
+5. **Replace the placeholder sounds**: "too many basic beeps, dings". Several cues are sine tones generated in code
+   (`VeyrAudio.cpp`, `Tone(...)`); the recorded set is about 22 short files with one contact sound and one swing.
+   `Data/dragon/sounds.json` is an empty stub, so no dragon move has its own timed sound and the dragon has no footsteps.
+6. Sources to use, in this order: real recordings (Freesound CC0, as the reference game did); the audio tracks of our
+   own Seedance dragon clips (generated with audio on, already paid for) as the dragon's voice; generated effects from
+   Higgsfield audio or Fish Audio where no recording fits (the owner named both; any paid generation one at a time with
+   his budget OK); a Suno fight track as a candidate.
+7. Play sounds from clip time per move (voice from the head, body and footfalls from the contact point), with several
+   variants and random pitch per event, sorted by surface.
+
+## C. Picture: features the reference has on and ours has off
+
+Why they are off: the first native Unreal commit (`8430d78`, 2026-10-18) created `DefaultEngine.ini` with a
+lightweight prototype renderer and no reason recorded; `docs/canitcode-enhancements.md` (2026-10-28) listed turning
+them on and it was never done.
+
+8. Turn on Lumen global illumination and reflections, virtual shadow maps, auto exposure and motion blur; let the
+   arena's lights cast shadows; remove the flat fill lights. Measure the frame rate on this Mac before and after.
+9. Add Niagara effects (the project has none): dust under each foot sized by contact speed, hit bursts in three sizes,
+   debris, fire. Take free Fab/Epic systems first.
+10. Hide the always-on controls box after the first seconds.
+
+## D. Camera for a huge dragon
+
+11. Lock-on aims at the chest, eases in about a third of a second, and keeps the knight and the striking limb in view;
+    mouse movement must not drop the lock for 1.8 s.
+12. Position lag, a pull-back and wider lens when sprinting, a small lean into turns. Today lag is forced off.
+
+## E. Dragon animation playback
+
+13. Play the video-to-animation clips at their own speed and shorten only the holds; today most phases run 2-4x and the
+    1.3x pace multiplies again. Difficulty must stay where the owner likes it: re-check the 16-seed numbers.
+14. Cross-fade two running clips over 0.3-0.4 s instead of blending from a frozen pose in 0.12 s.
+15. Lock all four feet to the floor at runtime and pin them in the clips; replace the pre-strike snap turn (rotates the
+    whole body under planted feet) with turn clips or a spine twist.
+16. Move the dragon along each clip's own root track; add a charge, a leaping strike and one authored multi-hit combo
+    (new clips, 35 credits each, owner's budget OK first).
+17. A stronger hit reaction: the whole spine rocks and dips, the flash is on the mesh.
+18. Pipeline: train the dense reader (about 4 h GPU, no spend), merge upstream's whole-clip fit into the fork, test a
+    side|top start picture for tail and turns, drop the 55 % wing re-base where it hides the video's motion.
+
+## F. Knight
+
+19. Buffer the roll and let it interrupt actions; attacks turn toward the stick.
+20. Locomotion by motion matching (Unreal Pose Search with Epic's free Game Animation Sample, retargeted) instead of
+    about six looping clips; sourced turns, starts and stops on by default until then.
+21. A full-width weapon trail; more impact variety (sparks, floor hits on a miss, a short slow-motion tail on heavies).
+
 # Playtest goal closed — 2026-11-18
 
 The owner closed the 2026-11-17 playtest goal after watching before/after films ("It looks more the same") and had the
