@@ -57,7 +57,8 @@ public:
     bool IsPointInsideBareDragon(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
     /** Solid capsules only (no clearance, no hull): the knight push bodies. */
     bool IsPointInsideSolidCapsule(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
-    /** Back-face check: the nearest skinned body skin sample (wings excluded) faces away from Point by more than Margin. */
+    /** Back-face check: at least 9 of the 12 nearest skinned body skin samples (wings excluded) face away from
+     * Point by more than Margin, and the nearest is within 200 cm x scale. */
     bool IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm=nullptr);
     AVeyrDragon* GetDragon() const { return Dragon.Get(); }
     /** Rebuild the body and wing shapes from the dragon's current pose (the arm does this each update;

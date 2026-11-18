@@ -347,7 +347,7 @@ void FVeyrA123Proof::Live(double Elapsed,float Dt)
             const float S=B->DragonScale();
             FName Shape;
             // Three independent views of "inside", each with a 10 cm near-plane margin: the solid capsules
-            // (knight push bodies), the back-face check (nearest of the ~4200 skinned body samples faces away;
+            // (knight push bodies), the back-face check (9 of the 12 nearest skinned body samples face away;
             // wings are open sheets and are left out),
             // and the conservative hull spheres the boom itself keeps clear of (reported, not gated).
             const bool bCapsule=B->IsPointInsideSolidCapsule(Cam,10.f,&Shape);

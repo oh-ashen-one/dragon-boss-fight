@@ -113,13 +113,29 @@ bool UVeyrCameraBoom::IsPointBehindSkin(const FVector& Point,float Margin,float*
         if(!Hull.IsReadyFor(Presentation))Hull.Initialize(Presentation);
         Hull.SkinSurface(Presentation,SurfacePositions,SurfaceNormals);
     }
-    int32 Best=INDEX_NONE;double BestDistance=TNumericLimits<double>::Max();
+    // Consensus of the 12 nearest body samples, so a single sample with a bent normal (spines, horns,
+    // the tail tip) cannot decide it, and only within 200 cm x scale of the skin: the body is nowhere thicker.
+    constexpr int32 K=12;
+    TArray<TPair<double,int32>,TInlineAllocator<K+1>> Nearest;
     for(int32 I=0;I<SurfacePositions.Num();++I)
-    {const double Distance=FVector::DistSquared(SurfacePositions[I],Point);if(Distance<BestDistance){BestDistance=Distance;Best=I;}}
-    if(Best==INDEX_NONE)return false;
-    const float Signed=static_cast<float>(FVector::DotProduct(Point-SurfacePositions[Best],SurfaceNormals[Best]));
-    if(OutDepthCm)*OutDepthCm=-Signed;
-    return Signed<-Margin;
+    {
+        const double Distance=FVector::DistSquared(SurfacePositions[I],Point);
+        if(Nearest.Num()==K&&Distance>=Nearest.Last().Key)continue;
+        int32 At=Nearest.Num();
+        while(At>0&&Nearest[At-1].Key>Distance)--At;
+        Nearest.Insert(TPair<double,int32>(Distance,I),At);
+        if(Nearest.Num()>K)Nearest.Pop(EAllowShrinking::No);
+    }
+    if(Nearest.IsEmpty())return false;
+    if(FMath::Sqrt(Nearest[0].Key)>200.f*DragonScale()*2.f)return false;
+    int32 Away=0;float Depth=0.f;
+    for(const auto& N:Nearest)
+    {
+        const float Signed=static_cast<float>(FVector::DotProduct(Point-SurfacePositions[N.Value],SurfaceNormals[N.Value]));
+        if(Signed<-Margin){++Away;Depth=FMath::Max(Depth,-Signed);}
+    }
+    if(OutDepthCm)*OutDepthCm=Depth;
+    return Away*4>=Nearest.Num()*3;
 }
 
 float UVeyrCameraBoom::FirstContact(const FVector& Origin,const FVector& End,float Radius) const
