@@ -7,7 +7,8 @@ public class Veyr : ModuleRules
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicIncludePaths.Add(Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Intermediate", "VeyrBuild")));
         PublicDependencyModuleNames.AddRange(new string[]{"Core","CoreUObject","Engine","InputCore","Niagara","ProceduralMeshComponent"});
-        PrivateDependencyModuleNames.AddRange(new string[]{"Json","JsonUtilities","RenderCore","RHI","Slate","SlateCore","AudioMixer","AnimationCore"});
+        PrivateDependencyModuleNames.AddRange(new string[]{"Json","JsonUtilities","RenderCore","RHI","Slate","SlateCore","AudioMixer","AnimationCore","PoseSearch"});
+        // Quality goal E5: "PoseSearch" above is the runtime motion-matching module (plugin enabled in Veyr.uproject).
         RuntimeDependencies.Add("$(ProjectDir)/Content/UI/Fonts/CormorantGaramond.ttf", StagedFileType.UFS);
         RuntimeDependencies.Add("$(ProjectDir)/Content/UI/Fonts/OFL-CormorantGaramond.txt", StagedFileType.UFS);
     }

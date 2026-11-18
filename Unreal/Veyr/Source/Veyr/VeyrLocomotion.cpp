@@ -1,4 +1,5 @@
 #include "VeyrKnight.h"
+#include "VeyrBoneRoles.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrVisualDefinition.h"
 #include "Components/CapsuleComponent.h"
@@ -16,7 +17,7 @@ bool AVeyrKnight::BuildLocomotionPhaseCache()
     }
     LocomotionPoseProbe->bPreferCanonicalMesh=ImportedPresentation->bPreferCanonicalMesh;
     if(!LocomotionPoseProbe->SetVisualDefinition(CustomuseVisualDefinition,false))return false;
-    static const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
+    FName Bones[4];VeyrBoneRoles::ResolveFootPoints(ImportedPresentation,Bones); // E: bone roles (KnightB names unchanged)
     constexpr int32 Count=96;
     for(FName Clip:{FName(TEXT("Walk")),FName(TEXT("WalkTwoHand")),FName(TEXT("Run")),FName(TEXT("RunAlternate")),FName(TEXT("RunTwoHandSourced")),FName(TEXT("RunOneHandPlanted")),FName(TEXT("RunTwoHandPlanted")),FName(TEXT("RunTwoHandContiguous")),FName(TEXT("RunStopOneHandSourced")),FName(TEXT("RunStopTwoHandSourced"))})
     {
@@ -78,7 +79,7 @@ float AVeyrKnight::ClosestLocomotionPhase(FName Clip,float DesiredSpeed) const
 {
     const FLocomotionPhaseCache* Cache=LocomotionPhaseCache.Find(Clip);
     if(!Cache||!Cache->Poses.Num()||!ImportedPresentation||!ImportedPresentation->bPoseEvaluated)return 0.f;
-    static const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
+    FName Bones[4];VeyrBoneRoles::ResolveFootPoints(ImportedPresentation,Bones); // E: bone roles (KnightB names unchanged)
     FVector Current[4];for(int32 B=0;B<4;++B)Current[B]=GetActorTransform().InverseTransformPosition(ImportedPresentation->GetSocketLocation(Bones[B]));
     float Best=MAX_flt,Time=0.f;
     for(const FLocomotionPhasePose& Pose:Cache->Poses)

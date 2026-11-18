@@ -1,4 +1,5 @@
 #include "VeyrBlendProof.h"
+#include "VeyrBoneRoles.h"
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
 #include "VeyrSkeletalPresentation.h"
@@ -305,13 +306,13 @@ void FVeyrBlendProof::Sample(double Elapsed,float Dt)
     F.ActorYaw=K->GetActorRotation().Yaw;
     for(int32 Side=0;Side<2;++Side)F.FootAnchorWeight[Side]=K->GetLocomotionFootWeight(Side);
     F.Capsule=K->GetActorLocation();F.FloorZ=bMobilityProof?FloorZ:K->GetFootLocation().Z;
-    if(K->ImportedPresentation)F.HipHeight=K->ImportedPresentation->GetBoneLocation(TEXT("Hips")).Z-F.FloorZ;
+    if(K->ImportedPresentation)F.HipHeight=K->ImportedPresentation->GetBoneLocation(VeyrBoneRoles::Resolve(K->ImportedPresentation,EVeyrBoneRole::Pelvis)).Z-F.FloorZ;
     FTransform HandT,SwordT,T;
     if(P&&P->bPoseEvaluated)
     {
         bool Ok=true;
         const TCHAR* Targets[2]={TEXT("left_foot"),TEXT("right_foot")};
-        const TCHAR* Ankles[2]={TEXT("LeftFoot"),TEXT("RightFoot")};
+        const FName Ankles[2]={VeyrBoneRoles::Resolve(P,EVeyrBoneRole::LeftAnkle),VeyrBoneRoles::Resolve(P,EVeyrBoneRole::RightAnkle)};
         for(int32 S=0;S<2;++S)
         {
             if(P->GetBoneTargetWorldTransform(Targets[S],T))F.Toe[S]=T.GetLocation();else Ok=false;

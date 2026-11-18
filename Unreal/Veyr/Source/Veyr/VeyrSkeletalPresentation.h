@@ -117,6 +117,10 @@ public:
     /** Re-evaluate the current explicit pose with bounded corrective foot targets. */
     bool SetComponentSpaceFootTargets(const TArray<FTransform>& Targets,const TArray<float>& Weights);
     void ClearFootTargets();
+    /** E (Greystone): persistent bone pins (shield on the back, shield away from the face). Kept for every later
+     * sample until changed; does not re-evaluate. Returns false (with LastError) for missing bones. */
+    bool SetBonePins(const TArray<struct FVeyrBonePin>& Pins);
+    void ClearBonePins();
 
     /** Offset is applied in bone-local space: LocalOffset * BoneWorldTransform.
      * Requires a successful sample; missing/unevaluated bones fail with Identity

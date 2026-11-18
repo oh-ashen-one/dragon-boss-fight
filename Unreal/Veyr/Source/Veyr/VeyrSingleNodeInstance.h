@@ -7,6 +7,27 @@
 class UAnimSequence;
 
 /** F3 (2026-11-18): one leg of the dragon floor lock. Bones = upper, knee/elbow, end (wrist/hock), direct chain. */
+/** Quality goal E (Greystone): hold one bone at a fixed transform relative to another bone's component-space frame,
+ * blended by Weight (0 = animated pose untouched). Used to carry the shield on the back in the two-hand grip and to
+ * ease it away from the face during the drink. Children of the pinned bone follow it. */
+struct FVeyrBonePin
+{
+    FName Bone;
+    FName Anchor;
+    FTransform AnchorLocal=FTransform::Identity;
+    float Weight=0.f;
+};
+
+/** Quality goal E5 (motion matching): one inertialized switch. At the switch the proxy stores the per-bone local
+ * difference (previous published pose minus the new pose) and its velocity, then decays both to zero with a critically
+ * damped spring (Holden "dead blending" form). HalfLifeSeconds per bone group: Default, Legs, Torso. */
+struct FVeyrInertialSwitch
+{
+    float DefaultHalfLife=.10f;
+    float LegsHalfLife=.10f;
+    float TorsoHalfLife=.10f;
+};
+
 struct FVeyrLegLock
 {
     FName Bones[3];
@@ -58,6 +79,15 @@ public:
     void ClearExplicitLegLocks();
     TArray<float> GetLegLockMissCm() const;
     FString GetLegLockError() const;
+    /** E: persistent bone pins, applied after blending, foot IK and leg locks. At most eight, finite, weight [0,1]. */
+    bool SetExplicitBonePins(const TArray<FVeyrBonePin>& Pins);
+    void ClearExplicitBonePins();
+    /** E5: start an inertialized switch from the last published pose. Elapsed advances with each evaluation by
+     * DeltaSeconds passed to AdvanceInertialization (the caller owns the clock; no autonomous time). */
+    void StartInertialSwitch(const FVeyrInertialSwitch& Switch);
+    void AdvanceInertialization(float DeltaSeconds);
+    void ClearInertialization();
+    bool IsInertializing() const;
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
 private:

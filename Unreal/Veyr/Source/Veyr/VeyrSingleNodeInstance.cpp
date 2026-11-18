@@ -1,4 +1,5 @@
 #include "VeyrSingleNodeInstance.h"
+#include "VeyrBoneRoles.h"
 #include "Animation/AnimSingleNodeInstanceProxy.h"
 #include "Animation/AnimationPoseData.h"
 #include "Animation/AttributesRuntime.h"
@@ -91,6 +92,17 @@ namespace
         // Review M7: the outgoing clip's aim/flinch layer, kept for the moving transition source.
         TMap<FName,FRotator> SourceBoneRotations,PublishedBoneRotations;
         FString LegLockError;
+        // E: shield/prop pins.
+        TArray<FVeyrBonePin> BonePins;
+        // E5: inertialization state, local space per compact bone. Offsets are (previous - new) at the switch.
+        bool bInertialPending=false,bInertialActive=false;
+        FVeyrInertialSwitch InertialSwitch;
+        float InertialElapsed=0.f;
+        TArray<FVector> InertialOffsetT,InertialVelocityT;
+        TArray<FVector> InertialOffsetR,InertialVelocityR; // rotation offsets as scaled axis (radians)
+        TArray<float> InertialHalfLives;
+        FVeyrPoseSnapshot InertialPrevious,InertialPreviousPrevious;
+        float InertialSampleDt=1.f/60.f;
 
         void ApplyMirrorRepair(FPoseContext& Output){ApplyMirrorRepairIf(Output,bMirrorRepair);}
         void ApplyMirrorRepairIf(FPoseContext& Output,bool bEnabled)
@@ -112,7 +124,7 @@ namespace
         bool RebaseRootForBlend(FPoseContext& Pose)
         {
             const FBoneContainer& Bones=Pose.Pose.GetBoneContainer();
-            const int32 MeshIndex=Bones.GetReferenceSkeleton().FindBoneIndex(TEXT("VeyrRoot"));
+            const int32 MeshIndex=Bones.GetReferenceSkeleton().FindBoneIndex(VeyrBoneRoles::Resolve(Bones.GetReferenceSkeleton(),EVeyrBoneRole::Root));
             if(MeshIndex==INDEX_NONE){EvaluationError=TEXT("Root-space blend requires the canonical VeyrRoot");return false;}
             const FCompactPoseBoneIndex Root=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(MeshIndex));
             if(Root.GetInt()==INDEX_NONE||Bones.GetParentBoneIndex(Root).GetInt()!=INDEX_NONE||
@@ -142,7 +154,8 @@ namespace
                 const auto Parent=Bones.GetParentBoneIndex(I);
                 CS[I.GetInt()]=Parent.GetInt()==INDEX_NONE?Output.Pose[I]:Output.Pose[I]*CS[Parent.GetInt()];
             }
-            const TCHAR* Names[2][3]={{TEXT("LeftUpLeg"),TEXT("LeftLeg"),TEXT("LeftFoot")},{TEXT("RightUpLeg"),TEXT("RightLeg"),TEXT("RightFoot")}};
+            const FName Names[2][3]={{VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::LeftThigh),VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::LeftCalf),VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::LeftAnkle)},
+                                      {VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::RightThigh),VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::RightCalf),VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::RightAnkle)}};
             for(int32 Side=0;Side<2;++Side)
             {
                 if(FootWeights[Side]<=0.f)continue;
@@ -217,9 +230,9 @@ namespace
             const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
             if(MaskAsset.Get()==Bones.GetAsset()&&MaskBoneMap==Bones.GetBoneIndicesArray()&&LowerMask.Num()==Output.Pose.GetNumBones())return true;
             const FReferenceSkeleton& Reference=Bones.GetReferenceSkeleton();
-            const int32 Hips=Reference.FindBoneIndex(TEXT("Hips"));
-            const int32 Left=Reference.FindBoneIndex(TEXT("LeftUpLeg")),Right=Reference.FindBoneIndex(TEXT("RightUpLeg"));
-            const int32 Spine=Reference.FindBoneIndex(TEXT("Spine"));
+            const int32 Hips=Reference.FindBoneIndex(VeyrBoneRoles::Resolve(Reference,EVeyrBoneRole::Pelvis));
+            const int32 Left=Reference.FindBoneIndex(VeyrBoneRoles::Resolve(Reference,EVeyrBoneRole::LeftThigh)),Right=Reference.FindBoneIndex(VeyrBoneRoles::Resolve(Reference,EVeyrBoneRole::RightThigh));
+            const int32 Spine=Reference.FindBoneIndex(VeyrBoneRoles::Resolve(Reference,EVeyrBoneRole::Spine));
             auto DescendsFrom=[&](int32 Bone,int32 Root)
             {
                 while(Bone!=INDEX_NONE)
@@ -379,6 +392,125 @@ namespace
             return true;
         }
 
+        static void ComponentSpace(const FPoseContext& Output,TArray<FTransform>& CS)
+        {
+            const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
+            CS.SetNum(Output.Pose.GetNumBones());
+            for(FCompactPoseBoneIndex I:Output.Pose.ForEachBoneIndex())
+            {
+                const auto Parent=Bones.GetParentBoneIndex(I);
+                CS[I.GetInt()]=Parent.GetInt()==INDEX_NONE?Output.Pose[I]:Output.Pose[I]*CS[Parent.GetInt()];
+            }
+        }
+
+        bool ApplyBonePins(FPoseContext& Output)
+        {
+            if(BonePins.IsEmpty())return true;
+            const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
+            const FReferenceSkeleton& Ref=Bones.GetReferenceSkeleton();
+            TArray<FTransform> CS;ComponentSpace(Output,CS);
+            for(const FVeyrBonePin& Pin:BonePins)
+            {
+                const float W=FMath::Clamp(Pin.Weight,0.f,1.f);
+                if(W<=0.f)continue;
+                const int32 BoneMesh=Ref.FindBoneIndex(Pin.Bone),AnchorMesh=Ref.FindBoneIndex(Pin.Anchor);
+                if(BoneMesh==INDEX_NONE||AnchorMesh==INDEX_NONE){EvaluationError=TEXT("Bone pin references a missing bone");return false;}
+                const FCompactPoseBoneIndex Bone=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(BoneMesh));
+                const FCompactPoseBoneIndex Anchor=Bones.MakeCompactPoseIndex(FMeshPoseBoneIndex(AnchorMesh));
+                if(Bone.GetInt()==INDEX_NONE||Anchor.GetInt()==INDEX_NONE){EvaluationError=TEXT("Bone pin bone is not evaluated at this LOD");return false;}
+                const FTransform Target=Pin.AnchorLocal*CS[Anchor.GetInt()];
+                const FTransform& Current=CS[Bone.GetInt()];
+                FTransform Blend;
+                Blend.SetTranslation(FMath::Lerp(Current.GetTranslation(),Target.GetTranslation(),W));
+                Blend.SetRotation(FQuat::Slerp(Current.GetRotation(),Target.GetRotation(),W).GetNormalized());
+                Blend.SetScale3D(FMath::Lerp(Current.GetScale3D(),Target.GetScale3D(),W));
+                const auto Parent=Bones.GetParentBoneIndex(Bone);
+                Output.Pose[Bone]=Parent.GetInt()==INDEX_NONE?Blend:Blend.GetRelativeTransform(CS[Parent.GetInt()]);
+                Output.Pose[Bone].NormalizeRotation();
+                // Children keep their local transforms; refresh component space for any later pin.
+                ComponentSpace(Output,CS);
+            }
+            return true;
+        }
+
+        // Critically damped decay of x toward 0 with velocity v (Holden, "Spring-It-On", 2021).
+        static void DecaySpring(FVector& X,FVector& V,float HalfLife,float Dt)
+        {
+            const float Y=(4.f*0.69314718f)/FMath::Max(HalfLife,1e-4f)/2.f;
+            const FVector J1=V+X*Y;
+            const float E=FMath::Exp(-Y*Dt);
+            X=E*(X+J1*Dt);
+            V=E*(V-J1*Y*Dt);
+        }
+
+        void CaptureInertialOffsets(const FPoseContext& Output)
+        {
+            bInertialPending=false;bInertialActive=false;
+            if(!InertialPrevious.Matches(Output))return; // no compatible previous pose: plain cut
+            const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
+            const FReferenceSkeleton& Ref=Bones.GetReferenceSkeleton();
+            const int32 Num=Output.Pose.GetNumBones();
+            InertialOffsetT.SetNumZeroed(Num);InertialVelocityT.SetNumZeroed(Num);
+            InertialOffsetR.SetNumZeroed(Num);InertialVelocityR.SetNumZeroed(Num);
+            InertialHalfLives.SetNum(Num);
+            const bool HasVelocity=InertialPreviousPrevious.Matches(Output)&&InertialSampleDt>1e-4f;
+            const FName LeftThigh=VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::LeftThigh),RightThigh=VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::RightThigh);
+            const FName Spine=VeyrBoneRoles::Resolve(Ref,EVeyrBoneRole::Spine);
+            auto Under=[&](int32 Mesh,FName Root)
+            {
+                const int32 R=Ref.FindBoneIndex(Root);
+                for(int32 B=Mesh;B!=INDEX_NONE;B=Ref.GetParentIndex(B))if(B==R)return true;
+                return false;
+            };
+            for(FCompactPoseBoneIndex I:Output.Pose.ForEachBoneIndex())
+            {
+                const int32 K=I.GetInt();
+                const FTransform& Prev=InertialPrevious.LocalTransforms[K];
+                const FTransform& Now=Output.Pose[I];
+                InertialOffsetT[K]=Prev.GetTranslation()-Now.GetTranslation();
+                FQuat Q=Prev.GetRotation()*Now.GetRotation().Inverse();Q.EnforceShortestArcWith(FQuat::Identity);
+                InertialOffsetR[K]=Q.ToRotationVector();
+                if(HasVelocity)
+                {
+                    const FTransform& PP=InertialPreviousPrevious.LocalTransforms[K];
+                    InertialVelocityT[K]=(Prev.GetTranslation()-PP.GetTranslation())/InertialSampleDt;
+                    FQuat DQ=Prev.GetRotation()*PP.GetRotation().Inverse();DQ.EnforceShortestArcWith(FQuat::Identity);
+                    InertialVelocityR[K]=DQ.ToRotationVector()/InertialSampleDt;
+                }
+                const int32 Mesh=Bones.MakeMeshPoseIndex(I).GetInt();
+                InertialHalfLives[K]=(Under(Mesh,LeftThigh)||Under(Mesh,RightThigh))?InertialSwitch.LegsHalfLife:
+                    Under(Mesh,Spine)?InertialSwitch.TorsoHalfLife:InertialSwitch.DefaultHalfLife;
+            }
+            InertialElapsed=0.f;bInertialActive=true;
+        }
+
+        void ApplyInertialOffsets(FPoseContext& Output)
+        {
+            if(!bInertialActive)return;
+            if(InertialOffsetT.Num()!=Output.Pose.GetNumBones()){bInertialActive=false;return;}
+            float Remaining=0.f;
+            for(FCompactPoseBoneIndex I:Output.Pose.ForEachBoneIndex())
+            {
+                const int32 K=I.GetInt();
+                FTransform& T=Output.Pose[I];
+                T.SetTranslation(T.GetTranslation()+InertialOffsetT[K]);
+                T.SetRotation((FQuat::MakeFromRotationVector(InertialOffsetR[K])*T.GetRotation()).GetNormalized());
+                Remaining=FMath::Max(Remaining,static_cast<float>(InertialOffsetR[K].Size()));
+            }
+            if(Remaining<1e-4f&&InertialElapsed>.05f)bInertialActive=false;
+        }
+
+        void AdvanceInertial(float Dt)
+        {
+            if(!bInertialActive||Dt<=0.f)return;
+            InertialElapsed+=Dt;
+            for(int32 K=0;K<InertialOffsetT.Num();++K)
+            {
+                DecaySpring(InertialOffsetT[K],InertialVelocityT[K],InertialHalfLives[K],Dt);
+                DecaySpring(InertialOffsetR[K],InertialVelocityR[K],InertialHalfLives[K],Dt);
+            }
+        }
+
         virtual void Initialize(UAnimInstance* Instance) override
         {
             FAnimSingleNodeInstanceProxy::Initialize(Instance);
@@ -390,6 +522,8 @@ namespace
             bMirrorRepair=false;MirrorRestBones.Reset();MirrorTranslatingBones.Reset();MirrorRepairEvaluations=0;
             bTransitionMirrorRepair=bTransitionCleanup=false;RootOffsetDest=RootOffsetSource=FVector::ZeroVector;
             LegLocks.Reset();LegLockMissCm.Reset();LegLockError.Reset();
+            BonePins.Reset();bInertialPending=bInertialActive=false;InertialElapsed=0.f;
+            InertialPrevious.bValid=InertialPreviousPrevious.bValid=false;
             MaskAsset.Reset();MaskBoneMap.Reset();LowerMask.Reset();LowerWeights.Reset();
         }
 
@@ -455,6 +589,10 @@ namespace
             }
             if(!ApplyFootTargets(Output)){LastPublished.bValid=false;return true;}
             if(!ApplyLegLocks(Output)){LastPublished.bValid=false;return true;}
+            // E5: an inertialized switch carries the old pose's offset and decays it; only used by the motion matcher.
+            if(bInertialPending)CaptureInertialOffsets(Output);
+            ApplyInertialOffsets(Output);
+            if(!ApplyBonePins(Output)){LastPublished.bValid=false;return true;}
             if(Output.ContainsNaN())
             {
                 EvaluationError=TEXT("Explicit pose transition produced a non-finite pose");
@@ -633,4 +771,52 @@ TArray<float> UVeyrSingleNodeInstance::GetLegLockMissCm() const
 FString UVeyrSingleNodeInstance::GetLegLockError() const
 {
     return GetProxyOnGameThread<FVeyrSingleNodeProxy>().LegLockError;
+}
+
+bool UVeyrSingleNodeInstance::SetExplicitBonePins(const TArray<FVeyrBonePin>& Pins)
+{
+    if(!IsInGameThread()||Pins.Num()>8)return false;
+    for(const FVeyrBonePin& Pin:Pins)
+        if(Pin.Bone.IsNone()||Pin.Anchor.IsNone()||!FMath::IsFinite(Pin.Weight)||Pin.Weight<0.f||Pin.Weight>1.f||
+           Pin.AnchorLocal.ContainsNaN())return false;
+    GetProxyOnGameThread<FVeyrSingleNodeProxy>().BonePins=Pins;
+    return true;
+}
+
+void UVeyrSingleNodeInstance::ClearExplicitBonePins()
+{
+    if(!IsInGameThread())return;
+    GetProxyOnGameThread<FVeyrSingleNodeProxy>().BonePins.Reset();
+}
+
+void UVeyrSingleNodeInstance::StartInertialSwitch(const FVeyrInertialSwitch& Switch)
+{
+    if(!IsInGameThread())return;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    P.InertialSwitch=Switch;P.bInertialPending=true;
+}
+
+void UVeyrSingleNodeInstance::AdvanceInertialization(float DeltaSeconds)
+{
+    if(!IsInGameThread()||!FMath::IsFinite(DeltaSeconds)||DeltaSeconds<=0.f)return;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    // Called once per displayed frame, before that frame's sample: the last published pose is the previous frame.
+    P.InertialPreviousPrevious.CopyFrom(P.InertialPrevious);
+    P.InertialPrevious.CopyFrom(P.LastPublished);
+    P.InertialSampleDt=DeltaSeconds;
+    P.AdvanceInertial(DeltaSeconds);
+}
+
+void UVeyrSingleNodeInstance::ClearInertialization()
+{
+    if(!IsInGameThread())return;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    P.bInertialPending=P.bInertialActive=false;
+}
+
+bool UVeyrSingleNodeInstance::IsInertializing() const
+{
+    if(!IsInGameThread())return false;
+    const auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    return P.bInertialPending||P.bInertialActive;
 }

@@ -5,6 +5,8 @@
 #include "VeyrCombatTypes.h"
 #include "VeyrKnight.generated.h"
 
+class FJsonObject;
+
 class AVeyrDragon;
 class UCameraComponent;
 class UPointLightComponent;
@@ -234,6 +236,8 @@ public:
     bool GetWeaponSweep(FVector& Base,FVector& Tip);
     bool IsWeaponTrailActive() const;
     bool UsesStableWeaponPresentation() const { return bStableWeaponPresentation; }
+    bool IsGreystonePresentation() const { return bGreystoneActive; }
+    TSharedRef<FJsonObject> GreystoneEvidence() const;
     bool UsesWalkEntryBlend() const { return bWalkEntryBlend; }
     bool UsesSourcedMovementTurns() const { return bSourcedMovementTurns; }
     bool UsesBlendedTurnTrajectory() const { return bBlendTurnTrajectory; }
@@ -443,6 +447,10 @@ private:
     bool bContactCameraFocusInitialized=false;
     float ManualCameraRemaining=0.f;
     float BladeContactRadius=18.f;
+    // Quality goal E: Greystone presentation (see VeyrGreystone.h). False for the KnightB definition.
+    bool bGreystoneActive=false;
+    FString GreystoneDiagnostic;
+    void UpdateGreystoneProps();
     float CameraFloorZ = 0.f;
     float CameraObstructionHold = 0.f;
     float LockHeadBlend = 0.f;

@@ -60,3 +60,8 @@ Unreal/Veyr/Content/Audio/Fish20261102/
 # Raw Epic Paragon FX (free to use, not to redistribute; this repository is public). Copied locally by
 # tools/unreal/paragon_fx_closure.py --copy-to Unreal/Veyr/Content; never commit.
 Unreal/Veyr/Content/Paragon*/
+# Quality goal E (Greystone): Epic Paragon pack copied from the launcher VaultCache, our baked Greystone assets and
+# the GASP mannequin content are local-only (free Epic content, not redistributable in a public repository).
+Unreal/**/Content/ParagonGreystone/
+Unreal/**/Content/Characters/Greystone/
+Unreal/**/Content/Characters/UEFN_Mannequin/

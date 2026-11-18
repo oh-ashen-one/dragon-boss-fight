@@ -614,3 +614,24 @@ void UVeyrSkeletalPresentation::StepGrounding(EVeyrGroundingMode Mode,float Delt
     GroundingOffsetCm=Next;
     SetRelativeLocation(GroundingBaseLocation+FVector(0.f,0.f,GroundingOffsetCm/ParentScale));
 }
+
+bool UVeyrSkeletalPresentation::SetBonePins(const TArray<FVeyrBonePin>& Pins)
+{
+    if(!CheckReady())return false;
+    HandleExistingParallelEvaluationTask(true,true);
+    for(const FVeyrBonePin& Pin:Pins)
+        if(GetBoneIndex(Pin.Bone)==INDEX_NONE||GetBoneIndex(Pin.Anchor)==INDEX_NONE)
+            return Fail(TEXT("Bone pin references a missing bone: ")+Pin.Bone.ToString()+TEXT(" / ")+Pin.Anchor.ToString());
+    if(!CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance())->SetExplicitBonePins(Pins))
+        return Fail(TEXT("Bone pins require at most eight finite pins with weights in [0,1]"));
+    return true;
+}
+
+void UVeyrSkeletalPresentation::ClearBonePins()
+{
+    if(UVeyrSingleNodeInstance* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance()))
+    {
+        HandleExistingParallelEvaluationTask(true,true);
+        I->ClearExplicitBonePins();
+    }
+}

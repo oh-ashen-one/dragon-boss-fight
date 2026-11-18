@@ -1,4 +1,7 @@
 #include "VeyrKnight.h"
+#include "VeyrBoneRoles.h"
+#include "VeyrGreystone.h"
+#include "Dom/JsonObject.h"
 #include "VeyrLook.h"
 #include "VeyrArena.h"
 #include "VeyrGameMode.h"
@@ -247,6 +250,13 @@ void AVeyrKnight::BeginPlay()
     if(bContiguousSprint)
         CustomuseVisualDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
             TEXT("/Game/Characters/Customuse/KnightB/v047contiguous/DA_KnightB.DA_KnightB"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    // Quality goal E (opt-in trial): Greystone replaces the shown knight; -VeyrLegacyKnight always keeps KnightB.
+    if(VeyrGreystone::IsRequested())
+    {
+        if(UVeyrVisualDefinition* Greystone=LoadObject<UVeyrVisualDefinition>(nullptr,VeyrGreystone::DefinitionPath,nullptr,LOAD_Quiet|LOAD_NoWarn))
+        {CustomuseVisualDefinition=Greystone;bContiguousSprint=false;}
+        else UE_LOG(LogTemp,Warning,TEXT("VEYR_GREYSTONE_MISSING %s not found; the KnightB definition stays active"),VeyrGreystone::DefinitionPath);
+    }
     // Each completion feature keeps its "before" behind a flag (boss-fight-blueprint principle 8).
     bLockOnStrafeEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoLockOnStrafe"));
     bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
@@ -1015,7 +1025,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
             if(Exact)
             {
                 ++ContiguousExactStopEntries;
-                const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
+                FName Bones[4];VeyrBoneRoles::ResolveFootPoints(ImportedPresentation,Bones); // E: bone roles (KnightB names unchanged)
                 for(int32 I=0;I<4;++I)ContiguousEntryFeet[I]=ImportedPresentation->GetSocketLocation(Bones[I]);
             }
         }
@@ -1350,6 +1360,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
 {
     WarmedVariantTextures.Reset();
     CustomuseVisualDefinition = Definition;
+    bGreystoneActive=VeyrGreystone::IsGreystoneDefinition(Definition);GreystoneDiagnostic.Reset();
     bUsingPolishDefinition=Definition&&Definition->GetPathName().Contains(TEXT("/RuntimePolish/"));
     bApprovedNativeDefinitionActive=Definition&&(bUsingPolishDefinition||Definition->GetPathName().Contains(TEXT("/RuntimeApproved/")));
     bContiguousTrialReady=false;
@@ -1413,6 +1424,8 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
         return false;
     }
     bImportedPresentationActive = true;
+    if(!bGreystoneActive)ImportedPresentation->ClearBonePins();
+    UE_LOG(LogTemp,Display,TEXT("VEYR_KNIGHT_RIG greystone=%d definition=%s"),bGreystoneActive?1:0,*Definition->GetPathName());
     if((bLocomotionPhaseMatch||bWalkEntryBlend||bSourcedRunStart||bMatchedRunStops||bContiguousSprint)&&!BuildLocomotionPhaseCache())
     {SetPresentationDiagnostic(TEXT("Native locomotion phase cache failed"));return false;}
     if(bStableWeaponPresentation)PrepareWeaponComponents();
@@ -1529,7 +1542,9 @@ bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
     FTransform A,B;
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_base"),A)||
        !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_tip"),B))return false;
-    Base=A.GetLocation();Tip=B.GetLocation();return true;
+    Base=A.GetLocation();Tip=B.GetLocation();
+    if(bGreystoneActive)BladeContactRadius=VeyrGreystone::BladeRadiusCm(18.f); // skinned blade: no prop bounds
+    return true;
 }
 
 void AVeyrKnight::PrepareWeaponComponents()
@@ -1626,6 +1641,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     if(!bImportedPresentationActive||!ImportedPresentation||!CustomuseVisualDefinition)return;
     // Detect contacts on the sourced/blended pose, not last frame's IK result.
     ImportedPresentation->ClearFootTargets();
+    if(bGreystoneActive)UpdateGreystoneProps();
     const bool Moving=Action==EVeyrKnightAction::Ready&&IsGrounded()&&GetPlanarSpeed()>8.f&&!bLateralDodgeBlocked;
     FName Clip=Action==EVeyrKnightAction::Ready?(Moving?SelectDirectionalLocomotion(true):(bTwoHanded?FName(TEXT("IdleTwoHand")):FName(TEXT("Idle")))):ActionPresentationClip;
     float Time=Action==EVeyrKnightAction::Ready?VisualClock:ActionElapsed;
@@ -1758,7 +1774,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     if(Sampled)Sampled=UpdateLocomotionFootContacts(DeltaSeconds);
     if(Sampled&&bMeasureContiguousEntry&&Clip==FName(TEXT("RunStopTwoHandContiguous")))
     {
-        const FName Bones[]={TEXT("LeftToeBase"),TEXT("RightToeBase"),TEXT("LeftFoot"),TEXT("RightFoot")};
+        FName Bones[4];VeyrBoneRoles::ResolveFootPoints(ImportedPresentation,Bones); // E: bone roles (KnightB names unchanged)
         for(int32 I=0;I<4;++I)ContiguousStopEntryMaxErrorCm=FMath::Max(ContiguousStopEntryMaxErrorCm,
             float(FVector::Distance(ContiguousEntryFeet[I],ImportedPresentation->GetSocketLocation(Bones[I]))));
         bMeasureContiguousEntry=false;
@@ -1785,7 +1801,7 @@ bool AVeyrKnight::UpdateStanceCleanup(float DeltaSeconds)
     static constexpr float LowToeCm=7.6f,LowAnkleCm=21.2f,ClearAnkleCm=23.5f,PinSpeedCmPerSecond=130.f,PinBudgetCm=10.f,PinYawBudgetDegrees=25.f;
     const float Floor=GetFootLocation().Z;
     const TCHAR* ToeNames[2]={TEXT("left_foot"),TEXT("right_foot")};
-    const FName AnkleNames[2]={TEXT("LeftFoot"),TEXT("RightFoot")};
+    const FName AnkleNames[2]={VeyrBoneRoles::Resolve(ImportedPresentation,EVeyrBoneRole::LeftAnkle),VeyrBoneRoles::Resolve(ImportedPresentation,EVeyrBoneRole::RightAnkle)};
     TArray<FTransform> Targets;TArray<float> Weights;
     for(int32 Side=0;Side<2;++Side)
     {
@@ -1840,6 +1856,8 @@ bool AVeyrKnight::UpdateStanceCleanup(float DeltaSeconds)
 
 bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
 {
+    // E: the clean-up thresholds below are KnightB boot measurements; Greystone runs without them until re-measured.
+    if(bGreystoneActive&&!VeyrGreystone::FootCleanupEnabled())return true;
     if(bStanceCleanup)return UpdateStanceCleanup(DeltaSeconds);
     const bool Eligible=bSprintContactRevision&&IsGrounded()&&!IsLockOnStrafing()&&
         (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::RunStop);
@@ -1853,7 +1871,7 @@ bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
     // native 244 cm rig: see docs/sprint-20261101/boot-contact-calibration.json.
     const float SoleToToeMarkerCm[2]={3.6f,4.4f};
     const TCHAR* ToeNames[2]={TEXT("left_foot"),TEXT("right_foot")};
-    const FName AnkleNames[2]={TEXT("LeftFoot"),TEXT("RightFoot")};
+    const FName AnkleNames[2]={VeyrBoneRoles::Resolve(ImportedPresentation,EVeyrBoneRole::LeftAnkle),VeyrBoneRoles::Resolve(ImportedPresentation,EVeyrBoneRole::RightAnkle)};
     TArray<FTransform> Targets;TArray<float> Weights;
     for(int32 Side=0;Side<2;++Side)
     {
@@ -1945,7 +1963,8 @@ bool AVeyrKnight::CaptureBlinkEcho(int32 Index,float SourceSeconds,const FLinear
     if(!BlinkEchoMaterial)BlinkEchoMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ArtPass/Materials/M_BlinkAfterimage.M_BlinkAfterimage"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     if(!BlinkEchoMaterial){BlinkVFXDiagnostic=TEXT("Approved blink afterimage material unavailable");return false;}
     const FVeyrVisualClip* C=CustomuseVisualDefinition->Clips.Find(ActionPresentationClip);
-    if(!C||!C->WeaponMesh)return false;
+    // E: Greystone's sword and shield are skinned into the body, so the echo body carries them.
+    if(!C||(!C->WeaponMesh&&!bGreystoneActive))return false;
     const float RestoreSeconds=ImportedPresentation->CurrentTrimmedSeconds,Alpha=ImportedPresentation->CurrentTransitionAlpha;
     if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,SourceSeconds*VisualClipPlayRate(ActionPresentationClip),Alpha))return false;
     auto* Echo=BlinkEchoBodies[Index].Get();auto* WeaponEcho=BlinkEchoWeapons[Index].Get();
@@ -1957,7 +1976,7 @@ bool AVeyrKnight::CaptureBlinkEcho(int32 Index,float SourceSeconds,const FLinear
     Offset=AuthoredRootDisplacementWorld(Offset);
     if(bActionRootBlocked)Offset=FVector::ZeroVector;
     FTransform World=ImportedPresentation->GetComponentTransform();World.AddToTranslation(Offset);Echo->SetWorldTransform(World);
-    FTransform Weapon;const bool HasWeapon=ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Weapon);
+    FTransform Weapon;const bool HasWeapon=C->WeaponMesh&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Weapon);
     if(HasWeapon){Weapon.AddToTranslation(Offset);WeaponEcho->SetStaticMesh(C->WeaponMesh);WeaponEcho->SetWorldTransform(Weapon);}
     if(!BlinkEchoMaterials[Index])BlinkEchoMaterials[Index]=UMaterialInstanceDynamic::Create(BlinkEchoMaterial,this);
     auto* Material=BlinkEchoMaterials[Index].Get();
@@ -2502,4 +2521,33 @@ void AVeyrKnight::ResumeFromPauseMenu(bool bRecapture)
         bResumeCapturePending=true;ResumeCaptureRequestedFrame=GFrameCounter;
         UE_LOG(LogTemp,Display,TEXT("VEYR_MOUSE_RESUME_CAPTURE_QUEUED awaiting_slate_callback_unwind=1"));
     }
+}
+
+void AVeyrKnight::UpdateGreystoneProps()
+{
+    // E: shield on the forearm in the one-hand grip, on the back in the two-hand grip, eased through GripTo*;
+    // optionally eased away from the face during the drink. Pins persist for every later sample this frame.
+    const float Back=VeyrGreystone::ShieldBackWeight(bTwoHanded,Action==EVeyrKnightAction::GripToTwoHand,
+        Action==EVeyrKnightAction::GripToOneHand,ActionElapsed,ActionDuration);
+    const float Heal=VeyrGreystone::ShieldHealWeight(Action==EVeyrKnightAction::Heal,ActionElapsed,ActionDuration);
+    TArray<FVeyrBonePin> Pins;FString Error;
+    if(!VeyrGreystone::BuildShieldPins(CustomuseVisualDefinition,ImportedPresentation,Back,Heal,Pins,Error)||
+       !ImportedPresentation->SetBonePins(Pins))
+    {
+        const FString Message=Error.IsEmpty()?ImportedPresentation->LastError:Error;
+        if(Message!=GreystoneDiagnostic)UE_LOG(LogTemp,Warning,TEXT("VEYR_GREYSTONE_PROPS %s"),*Message);
+        GreystoneDiagnostic=Message;ImportedPresentation->ClearBonePins();
+        return;
+    }
+    GreystoneDiagnostic.Reset();
+}
+
+TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
+{
+    TSharedRef<FJsonObject> O=VeyrGreystone::PresentationEvidence(CustomuseVisualDefinition,ImportedPresentation,GetFootLocation().Z);
+    O->SetBoolField(TEXT("active"),bGreystoneActive);
+    O->SetNumberField(TEXT("bladeContactRadiusCm"),BladeContactRadius);
+    O->SetBoolField(TEXT("twoHanded"),bTwoHanded);
+    if(!GreystoneDiagnostic.IsEmpty())O->SetStringField(TEXT("diagnostic"),GreystoneDiagnostic);
+    return O;
 }
