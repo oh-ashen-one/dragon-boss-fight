@@ -2520,7 +2520,9 @@ void AVeyrReplay::DriveInputs()
         const float GoalDistance=static_cast<float>(FVector::Dist2D(Feet,Goal));
         // Use the same optional lock toggle available to a player: run around
         // the low head freely, then lock again for the measured punish range.
-        const float GoalTolerance=bHeadRoute?15.f:45.f+25.f*(Dragon->BodyScale-1.f);
+        // New knock-down timing: the 2x head is struck from within 45 cm of the stand-off (a person does not
+        // shuffle to the last 15 cm while the window runs out).
+        const float GoalTolerance=bHeadRoute?(Dragon->bLegacyKnockdown?15.f:45.f):45.f+25.f*(Dragon->BodyScale-1.f);
         bWantLock=!bHeadWaypoint&&GoalDistance<GoalTolerance;
         // New knock-down timing: close the last 2 m to the head locked on and walking, as a person would, so the
         // knight turns to the head while it arrives instead of sprinting in, playing a run-stop and turning after.
@@ -2528,7 +2530,7 @@ void AVeyrReplay::DriveInputs()
         bWantLock|=bCloseOnHead;
         const FVector StrikeTarget=bHeadRoute?(bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
         const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
-        if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
+        if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/(bCloseOnHead?60.f:160.f),bCloseOnHead?.4f:.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
         const bool bDodgeExercise=ReplayMode==TEXT("core")&&Knight->DodgedHits==0&&Dragon->Move==EVeyrDragonMove::BackStomp;
         bool bEvade=bThreat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending());

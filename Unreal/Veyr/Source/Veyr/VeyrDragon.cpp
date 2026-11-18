@@ -485,7 +485,13 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             {KnockdownFloorStart=KnockdownElapsed;EnterState(EVeyrDragonState::Exposed,PlannedExposedSeconds());}
             break;
         case EVeyrDragonState::Exposed:
-            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Rise,KnockdownRiseSeconds());
+            if(StateElapsed>=StateDuration)
+            {
+                // A long frame at the end of the lying must not push the floor time past its budget:
+                // the rise absorbs the overshoot (it then plays a touch faster).
+                const float Overshoot=bLegacyKnockdown?0.f:FMath::Max(0.f,StateElapsed-StateDuration);
+                EnterState(EVeyrDragonState::Rise,FMath::Max(KnockdownRiseSeconds()*.6f,KnockdownRiseSeconds()-Overshoot));
+            }
             break;
         case EVeyrDragonState::Rise:
             if(StateElapsed>=StateDuration)
