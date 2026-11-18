@@ -7,6 +7,7 @@
 #include "VeyrAudio.h"
 #include "VeyrArena.h"
 #include "VeyrBlendProof.h"
+#include "VeyrA123Proof.h"
 #include "VeyrShowcase.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
@@ -122,9 +123,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrStillInterval="),StillInterval))StillInterval=FMath::Clamp(StillInterval,.30f,10.f);
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!FVeyrA123Proof::IsMode(ReplayMode)&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro|footclosehits|camerahug|soleheights and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -244,6 +245,16 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         Hooks.Finish=[this](bool bOk,const FString& Reason){Finish(bOk,Reason);};
         if(!BlendProof->Begin(GetWorld(),Knight,Dragon,RunDirectory,FParse::Param(FCommandLine::Get(),TEXT("VeyrProofFloor")),Hooks))
         {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED blendproof could not begin"));return false;}
+    }
+    if(FVeyrA123Proof::IsMode(ReplayMode))
+    {
+        A123Proof=MakeShared<FVeyrA123Proof>();
+        FVeyrA123Proof::FHooks Hooks;
+        Hooks.Shot=[this](const FString& Name){CaptureClock=FMath::Max(CaptureClock,.30f);Event(Name);};
+        Hooks.Finish=[this](bool bOk,const FString& Reason){Finish(bOk,Reason);};
+        if(!A123Proof->Begin(GetWorld(),Knight,Dragon,ReplayMode,Hooks))
+        {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED %s could not begin"),*ReplayMode);return false;}
+        DurationLimit=A123Proof->DurationLimit();
     }
     if(ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&
        !(ReplayMode==TEXT("blendproof")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof")))&&!Knight->bLockedOn)Knight->ToggleLockOn();
@@ -2393,6 +2404,7 @@ bool AVeyrReplay::DriveCampInputs()
 void AVeyrReplay::DriveInputs()
 {
     if(DriveBlendProofInputs())return;
+    if(A123Proof.IsValid()){A123Proof->Drive(Elapsed,GetWorld()->GetDeltaSeconds());return;}
     if(DriveCollisionInputs())return;
     if(DriveIntegrationInputs())return;
     if(DriveStanceInputs())return;
@@ -2983,6 +2995,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     }
     if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
+    if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);
     Root->SetNumberField(TEXT("scenarioLimitGameSeconds"),DurationLimit);

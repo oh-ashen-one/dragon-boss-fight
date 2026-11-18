@@ -2196,6 +2196,8 @@ void AVeyrDragon::UpdateImportedPresentation()
         LastImportedClip=NAME_None;bImportedTransitionReady=false;
         if(!ImportedPresentation->SampleReferencePose())return;
     }
+    // A3: one eased vertical offset of the visible body; -VeyrNoDragonGrounding disables. See VeyrDragonGrounding.h.
+    ImportedPresentation->UpdateGrounding(VeyrGroundingModeFor(this));
     FTransform Head,Feet[4];
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),Head))return;
     for(int32 I=0;I<4;++I)
@@ -2836,7 +2838,10 @@ bool AVeyrDragon::SetViewOcclusion(const FVector& CameraWorld,const FVector& Foc
         Material->SetVectorParameterValue(TEXT("VeyrCameraStart"),Camera);
         Material->SetVectorParameterValue(TEXT("VeyrPlayerFocus"),Focus);
         Material->SetVectorParameterValue(TEXT("VeyrProtectedHead"),Head);
-        Material->SetScalarParameterValue(TEXT("VeyrOcclusionRadius"),FMath::Max(1.f,CameraOcclusionRadius));
+        // A2: the see-through hole was sized for the 2x dragon; scale it with the body (-VeyrLegacyCameraBoom: fixed).
+        static const bool bLegacyTunnel=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraBoom"));
+        const float TunnelScale=bLegacyTunnel?1.f:FMath::Max(.25f,static_cast<float>(GetActorScale3D().Z)*.5f);
+        Material->SetScalarParameterValue(TEXT("VeyrOcclusionRadius"),FMath::Max(1.f,CameraOcclusionRadius*TunnelScale));
         Material->SetScalarParameterValue(TEXT("VeyrProtectedHeadRadius"),FMath::Max(0.f,CameraProtectedHeadRadius));
         Material->SetScalarParameterValue(TEXT("VeyrOcclusionEnabled"),Enable?1.f:0.f);
     }
