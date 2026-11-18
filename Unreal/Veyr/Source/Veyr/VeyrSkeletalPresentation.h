@@ -167,11 +167,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxDropCm=75.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingDropRate=6.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingReleaseRate=3.f;
-    /** Ground mode tracks the support sole closely (rate 20, speed cap 300 cm/s x scale) and also raises a
+    /** Ground mode carries the support sole's motion through, eases the rest (rate 20, cap 300 cm/s x scale), and also raises a
      * sunk body (bounded by GroundingMaxDropCm). -VeyrGroundingLowerOnly restores the first rule: lower only,
      * eased at GroundingDropRate. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingTrackRate=20.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxSpeedCm=300.f;
+    /** A target change faster than this (cm/s x scale) is a hard cut: eased, not carried through. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingCutSpeedCm=1500.f;
+    float LastGroundTargetCm=0.f;bool bGroundTargetValid=false;EVeyrGroundingMode LastGroundingModeForTarget=EVeyrGroundingMode::Release;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") bool bGroundingLowerOnly=false;
     EVeyrGroundingMode LastGroundingMode=EVeyrGroundingMode::Release;
     FVeyrSoleSample LastSoleSample;

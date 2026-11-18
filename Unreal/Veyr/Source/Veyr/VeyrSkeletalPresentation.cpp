@@ -515,7 +515,7 @@ void UVeyrSkeletalPresentation::UpdateGrounding(EVeyrGroundingMode Mode)
 
 void UVeyrSkeletalPresentation::ResetGrounding()
 {
-    GroundingOffsetCm=GroundingTargetCm=0.f;LastGroundingWorldSeconds=-1.0;GroundingUpdates=0;
+    GroundingOffsetCm=GroundingTargetCm=0.f;LastGroundingWorldSeconds=-1.0;GroundingUpdates=0;bGroundTargetValid=false;
     SetRelativeLocation(GroundingBaseLocation);
 }
 
@@ -532,15 +532,21 @@ void UVeyrSkeletalPresentation::StepGrounding(EVeyrGroundingMode Mode,float Delt
         GroundingTargetCm=FMath::Clamp(GroundingOffsetCm-LastSoleSample.LowestAboveFloorCm,-Bound,bGroundingLowerOnly?0.f:Bound);
     else if(Mode==EVeyrGroundingMode::Release)GroundingTargetCm=0.f;
     // Hold keeps the last target (collapse, exposed, rise and death lie on the belly).
+    const bool bHasGroundTarget=bGroundTargetValid&&Mode==EVeyrGroundingMode::Ground&&LastGroundingModeForTarget==EVeyrGroundingMode::Ground;
     float Next=GroundingOffsetCm;
     if(Delta>0.f)
     {
         if(Mode==EVeyrGroundingMode::Ground&&!bGroundingLowerOnly)
         {
-            // Follow the support sole (a continuous curve) closely; the speed cap only shapes big catches.
-            const float Eased=FMath::FInterpTo(GroundingOffsetCm,GroundingTargetCm,Delta,GroundingTrackRate);
+            // Within a clip the target (minus the raw support sole height) is a continuous curve: carry its
+            // change straight through so a planted sole stays planted, and only ease out the remaining error
+            // (rate GroundingTrackRate, speed cap GroundingMaxSpeedCm) left by a mode change or a hard cut.
+            const float Change=bHasGroundTarget?GroundingTargetCm-LastGroundTargetCm:0.f;
+            const bool bCut=FMath::Abs(Change)>GroundingCutSpeedCm*ParentScale*Delta;
+            Next=GroundingOffsetCm+(bCut?0.f:Change);
+            const float Eased=FMath::FInterpTo(Next,GroundingTargetCm,Delta,GroundingTrackRate);
             const float Cap=GroundingMaxSpeedCm*ParentScale*Delta;
-            Next=GroundingOffsetCm+FMath::Clamp(Eased-GroundingOffsetCm,-Cap,Cap);
+            Next+=FMath::Clamp(Eased-Next,-Cap,Cap);
         }
         else
         {
@@ -548,6 +554,7 @@ void UVeyrSkeletalPresentation::StepGrounding(EVeyrGroundingMode Mode,float Delt
             Next=FMath::FInterpTo(GroundingOffsetCm,GroundingTargetCm,Delta,Rate);
         }
     }
+    if(Delta>0.f){LastGroundTargetCm=GroundingTargetCm;bGroundTargetValid=true;LastGroundingModeForTarget=Mode;}
     ++GroundingUpdates;
     if(FMath::IsNearlyEqual(Next,GroundingOffsetCm,.01f)&&Delta>0.f&&GroundingUpdates>1)return;
     GroundingOffsetCm=Next;

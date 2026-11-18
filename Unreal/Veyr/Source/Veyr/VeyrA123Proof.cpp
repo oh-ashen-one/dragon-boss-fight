@@ -207,24 +207,43 @@ void FVeyrA123Proof::UpdateSideCamera()
         SideCamera=Cam;
         if(APlayerController* PC=Cast<APlayerController>(K->GetController()))PC->SetViewTarget(Cam);
     }
-    // Side-on, lens 40 cm above the floor, far enough to hold all four feet (90 degree lens) but inside the
-    // arena: of the two flanks take the one with more room, sticky so the view does not flip.
-    const FVector Extent=D->ImportedPresentation?FVector(D->ImportedPresentation->Bounds.BoxExtent):FVector(800.f);
-    const FVector Base=D->GetActorLocation();
-    const float Want=FMath::Max(Extent.X,Extent.Y)*1.3f;
-    auto Room=[&](const FVector& Dir)
+    // Side-on at floor level on the near front paw, close enough that a few cm of float or sink reads:
+    // lens 20 cm above the floor, 450 cm x scale from the paw, 60 degree lens. Of the two flanks take the one
+    // with more room (swept against the camera channel), sticky so the view does not flip.
+    const FVector Right=D->GetActorRightVector(),Forward=D->GetActorForwardVector();
+    const float Want=450.f*Scale;
+    UVeyrSkeletalPresentation* P=D->ImportedPresentation;
+    auto PawFor=[&](float Sign)
+    {
+        static const TCHAR* Feet[4]={TEXT("bone_9"),TEXT("tripo__0_Left_Limb_3"),TEXT("tripo__1_Right_Limb_4"),TEXT("tripo__0_Right_Limb_4")};
+        FVector Best=D->GetActorLocation();double BestScore=-1e30;
+        for(const TCHAR* Name:Feet)
+        {
+            const int32 Bone=P?P->GetBoneIndex(Name):INDEX_NONE;
+            if(Bone==INDEX_NONE)continue;
+            const FVector L=P->GetBoneTransform(Bone).GetLocation();
+            const FVector R=L-D->GetActorLocation();
+            const double Score=FVector::DotProduct(R,Right)*Sign+FVector::DotProduct(R,Forward)*.5;
+            if(Score>BestScore){BestScore=Score;Best=L;}
+        }
+        return FVector(Best.X,Best.Y,D->GetActorLocation().Z);
+    };
+    auto Room=[&](const FVector& From,const FVector& Dir)
     {
         FHitResult Hit;FCollisionQueryParams Q(SCENE_QUERY_STAT(VeyrSoleSideCamera),false,D);Q.AddIgnoredActor(K);
-        const FVector From=Base+FVector(0,0,40.f),To=From+Dir*Want;
-        return W->SweepSingleByChannel(Hit,From,To,FQuat::Identity,ECC_Camera,FCollisionShape::MakeSphere(30.f),Q)?FMath::Max(0.f,Hit.Distance-60.f):Want;
+        const FVector A=From+FVector(0,0,20.f);
+        return W->SweepSingleByChannel(Hit,A,A+Dir*Want,FQuat::Identity,ECC_Camera,FCollisionShape::MakeSphere(20.f),Q)?FMath::Max(0.f,Hit.Distance-40.f):Want;
     };
-    const FVector Right=D->GetActorRightVector();
-    const float RoomRight=Room(Right),RoomLeft=Room(-Right);
+    const FVector PawRight=PawFor(1.f),PawLeft=PawFor(-1.f);
+    const float RoomRight=Room(PawRight,Right),RoomLeft=Room(PawLeft,-Right);
     if(SideSign==0.f||(SideSign>0.f?RoomRight:RoomLeft)<Want*.6f)SideSign=RoomRight>=RoomLeft?1.f:-1.f;
+    const FVector Paw=SideSign>0.f?PawRight:PawLeft;
     const float Distance=SideSign>0.f?RoomRight:RoomLeft;
-    const FVector Eye=Base+Right*SideSign*Distance+FVector(0,0,40.f);
-    Cam->SetActorLocationAndRotation(Eye,(Base+FVector(0,0,60.f*Scale)-Eye).Rotation());
-    Cam->GetCameraComponent()->SetFieldOfView(90.f);
+    // Smooth the aim point so the camera does not shake with each step.
+    SideAim=SideAimValid?FMath::VInterpTo(SideAim,Paw,1.f/30.f,4.f):Paw;SideAimValid=true;
+    const FVector Eye=SideAim+Right*SideSign*Distance+FVector(0,0,20.f);
+    Cam->SetActorLocationAndRotation(Eye,(SideAim+FVector(0,0,40.f)-Eye).Rotation());
+    Cam->GetCameraComponent()->SetFieldOfView(60.f);
     SideCameraDistanceCm=Distance;
 }
 
