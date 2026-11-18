@@ -27,12 +27,15 @@ His words, mapped to the items below. Still discussion; nothing started.
 - **Attacks**: screen shake, and "a blurred line that follows the tip of the hammer". The swing is "fluid and fast",
   not "a blocky 90 degree angle attack". (Items 19, 21: full-width smoothed trail, motion blur, blows that turn toward
   the stick and exit into movement.)
-- **Hero model** is "a much higher-quality 3D asset. There's no breaking... straight out of Elden Ring". OPEN
-  DECISION: repair our plate-armour knight, or replace it with a finished professional character (source-first rule:
-  check Fab/Paragon first).
+- **Hero model** is "a much higher-quality 3D asset. There's no breaking... straight out of Elden Ring". TO DO
+  (not started): compare the two hero models directly in Blender (mesh density, skin weights at the joints, textures,
+  how cloth or armour hides the bends) before deciding anything; the guess that his cloak hides what our plate armour
+  shows is unverified. OPEN DECISION, owner is looking at candidates: repair our knight or replace it with a finished
+  professional character. Shown to him: Paragon Greystone and Paragon Kwang (free, Epic, on Fab) and Fab's free knights.
 - **Boss room interior and lighting** "looks amazing", "almost looks candlelit"; the building outside is about the
-  same as our castle ("80%"). (Item 8, plus OPEN DECISION: relight the open courtyard with shadowed fire light, or
-  give the fight an enclosed, darker room.)
+  same as our castle ("80%"). DECIDED by the owner: keep the courtyard and relight it. The light does not have to be
+  realistic or have a visible source ("Where is this lighting coming from? There are no candles. That doesn't
+  matter. We just need the lighting to look good."). (Item 8.)
 - **Intro**: cut from walking into a letterboxed close-up of the boss. "We don't necessarily need that."
 - **Weight**: when the boss hits or moves "the camera shakes, and you could feel that he weighs a ton"; the same when
   you hit him. (Items 9, 17: shake by impact speed and distance, dust under feet, whole-spine flinch.)
