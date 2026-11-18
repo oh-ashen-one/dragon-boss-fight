@@ -2435,6 +2435,8 @@ void AVeyrReplay::DriveInputs()
         if(Dragon->bAggression)
         {
             // Walks to the spot in front of the jaws where the fight opens and never moves again.
+            // -VeyrDeathFar: never move from the entrance, so only the ranged attack can reach.
+            if(!bDeathSpotSet&&FParse::Param(FCommandLine::Get(),TEXT("VeyrDeathFar"))){DeathSpot=Feet;bDeathSpotSet=bDeathSpotReached=true;}
             if(!bDeathSpotSet){DeathSpot=Dragon->GetActorLocation()+Dragon->GetActorForwardVector()*Dragon->FrontSweet();bDeathSpotSet=true;}
             if(!bDeathSpotReached)
             {

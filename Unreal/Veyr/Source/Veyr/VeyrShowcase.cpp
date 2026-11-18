@@ -186,10 +186,13 @@ void FVeyrShowcase::FrameShot()
     FVector Best=ShotFocus+Preferred*2400.f*Sc+FVector(0,0,450.f*Sc);
     float BestScore=TNumericLimits<float>::Max(),BestFOV=60.f;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrShowcaseCamera),true,Dragon.Get());Params.AddIgnoredActor(Knight.Get());
+    // At the larger scale a long envelope (the fire breath) does not fit from 2400*scale inside the court:
+    // nearer stations are tried as well, and the widest fit that still frames everything wins on score.
+    for(int32 Station=0;Station<(Sc>1.01f?4:1);++Station)
     for(int32 I=0;I<16;++I)
     {
         const FVector Direction=Preferred.RotateAngleAxis(I*22.5f,FVector::UpVector);
-        FVector P=ShotFocus+Direction*2400.f*Sc;
+        FVector P=ShotFocus+Direction*(2400.f-350.f*Station)*Sc;
         // Camera remains inside the open court; raise it only when needed to
         // cover a full aerial envelope without looking through architecture.
         P.Z=ShotFocus.Z+(Segment==TEXT("Flight")?1000.f:450.f)*Sc;

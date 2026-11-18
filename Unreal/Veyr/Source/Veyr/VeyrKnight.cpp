@@ -246,6 +246,10 @@ void AVeyrKnight::BeginPlay()
     bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
     float RequestedRunStopBlend=0.f;
     bSprintContactRevision=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintContactRevision"));
+    // Default on (2026-11-18): sprint 4/4, running/leap 8/8 in the contact proof. -VeyrNoStanceCleanup restores the raw feet.
+    bStanceCleanup=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoStanceCleanup"))&&!bSprintContactRevision;
+    bChainFlow=FParse::Param(FCommandLine::Get(),TEXT("VeyrChainFlow"));
+    bFlightFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrFlightFraming"));
     // Mixamo downward heavy won the independent blind comparison. Keep an
     // explicit legacy switch for reproducible before/after captures.
     bSourcedTwoHandHeavy=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyTwoHandHeavy"));
@@ -426,7 +430,7 @@ void AVeyrKnight::BeginAction(EVeyrKnightAction NewAction,float Duration)
     ClearBlinkEchoes();
     if(!bStartingPrimaryStep)
     {
-        bPrimaryChainActive=false;bPrimaryAttackBuffered=false;PrimarySourceOffset=0.f;
+        bPrimaryChainActive=false;bPrimaryAttackBuffered=false;PrimarySourceOffset=0.f;bFlowTransition=false;
         if(NewAction!=EVeyrKnightAction::Ready)bPrimaryAttackHeld=false;
     }
     BlinkDirectionYaw=0.f;
@@ -596,6 +600,16 @@ float AVeyrKnight::GetPrimaryStepCost(int32 Step) const
 {
     return bTwoHanded?(Step==2?29.f:20.f):(Step==2?24.f:16.f);
 }
+float AVeyrKnight::ChainFlowCancelSeconds() const
+{
+    // The earliest moment a held one-hand chain may leave the current swing: a short follow-through
+    // after its last damage window. Without window data the swing plays out in full.
+    const FVeyrVisualClip* C=CustomuseVisualDefinition?CustomuseVisualDefinition->Clips.Find(ActionPresentationClip):nullptr;
+    if(!bChainFlow||bTwoHanded||!bPrimaryChainActive||PrimaryChainStep>=2||!C||C->DamageWindows.IsEmpty())return ActionDuration;
+    const float Rate=VisualClipPlayRate(ActionPresentationClip);
+    const float WindowEnd=static_cast<float>(C->DamageWindows.Last().Y-PrimarySourceOffset)/Rate;
+    return FMath::Clamp(WindowEnd+.14f,.2f,ActionDuration);
+}
 float AVeyrKnight::GetPrimaryFirstStepDuration() const
 {
     const float Strike=bTwoHanded?PrimarySegmentSourceStart(1)/VisualClipPlayRate(TEXT("LightCombo")):GetAttackDuration(false);
@@ -646,6 +660,14 @@ bool AVeyrKnight::StartPrimaryStep(int32 Step)
     if(SourcedFinisher)ActionPresentationClip=TEXT("HeavyFinisherTwoHandSourced");
     bStartingPrimaryStep=false;bPrimaryChainActive=true;bPrimaryAttackBuffered=false;PrimaryChainStep=Step;
     PrimarySourceOffset=Two&&!SourcedFinisher?Starts[Step]:0.f;
+    bFlowTransition=false;
+    if(bChainFlow&&!Two&&Step>0)
+    {
+        // Enter past the first frames of the wind-up (never closer than 0.2 s to the strike).
+        const float LeadIn=FMath::Clamp(GetAttackContactTime(Heavy)-.22f,0.f,.12f);
+        PrimarySourceOffset=LeadIn*VisualClipPlayRate(ActionPresentationClip);
+        ActionDuration=FMath::Max(.1f,ActionDuration-LeadIn);bFlowTransition=true;
+    }
     UE_LOG(LogTemp,Display,TEXT("VEYR_PRIMARY_STEP step=%d twoHanded=%d sourceOffset=%.3f duration=%.3f"),Step+1,Two,PrimarySourceOffset,Duration);
     return true;
 }
@@ -867,7 +889,10 @@ void AVeyrKnight::AdvanceCombat(float DeltaSeconds)
         if (Stamina <= 0.f || !IsGrounded()) FinishAction();
     }
     if(bPrimaryChainActive&&bPrimaryAttackHeld&&ActionElapsed>=FMath::Max(.10f,ActionDuration-.22f))bPrimaryAttackBuffered=true;
-    if (ActionDuration > 0.f && ActionElapsed >= ActionDuration)
+    const bool FlowCancel=bChainFlow&&!bTwoHanded&&bPrimaryChainActive&&PrimaryChainStep<2&&(bPrimaryAttackBuffered||bPrimaryAttackHeld)&&
+        ActionDuration>0.f&&ActionElapsed>=ChainFlowCancelSeconds()&&ActionElapsed<ActionDuration&&Stamina>=GetPrimaryStepCost(PrimaryChainStep+1);
+    if(FlowCancel){bPrimaryAttackBuffered=true;++ChainFlowCancels;}
+    if (ActionDuration > 0.f && (ActionElapsed >= ActionDuration||FlowCancel))
     {
         const bool ContinuePrimary=bPrimaryChainActive&&bPrimaryAttackBuffered&&PrimaryChainStep<2;
         const bool NeedsExit=bPrimaryRecovery&&bTwoHanded&&bPrimaryChainActive&&PrimaryChainStep<2;
@@ -1049,7 +1074,10 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
     CameraBoom->SetRelativeLocation(FVector(0,0,170.f-GetCapsuleComponent()->GetScaledCapsuleHalfHeight()));
     CameraBoom->SocketOffset=FVector(0,42.f,12.f);
     CameraBoom->bEnableCameraLag=false;CameraBoom->bEnableCameraRotationLag=false;
-    CombatCamera->SetFieldOfView(bThreatCameraFraming?ThreatCameraFOV:72.f+6.f*(BossScale-1.f));
+    const bool FlightNow=bFlightFraming&&IsValid(Boss)&&Boss->IsFlightHazardActive();
+    FlightFramingBlend=FMath::FInterpConstantTo(FlightFramingBlend,FlightNow?1.f:0.f,DeltaSeconds,1.f/.6f);
+    const float FlightEase=FMath::SmoothStep(0.f,1.f,FlightFramingBlend);
+    CombatCamera->SetFieldOfView(FMath::Lerp(bThreatCameraFraming?ThreatCameraFOV:72.f+6.f*(BossScale-1.f),90.f,FlightEase));
     if(Controller)
     {
         FRotator Look=Controller->GetControlRotation().GetNormalized();
@@ -1067,6 +1095,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             // does not leave the head outside the frame. No forced lock,
             // lens change or pawn rotation; manual look still takes priority.
             if(FollowFall)Focus=FMath::Lerp(Boss->GetActorLocation()+FVector(0,0,100),Focus,.7f);
+            // In flight the danger is where the jet or the landing meets the ground: lean the view there.
+            if(FlightEase>0.f)Focus=FMath::Lerp(Focus,FMath::Lerp(Focus,Boss->GetFlightHazardPoint()+FVector(0,0,150),.35f),FlightEase);
             const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
             if(Mode&&Mode->FightFeel&&Mode->FightFeel->UsesContactFraming())
             {
@@ -1112,7 +1142,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             // its full range, and neither lens nor arm length changes.
             // An airborne boss is the threat: let the lock look up at it instead of holding the boots in frame.
             // (still bounded: the knight's upper body stays visible while the jet hunts him.)
-            if(Boss->IsAirborne()&&Boss->BodyScale>1.01f)AutoLockPitchCeiling+=6.f*(BossScale-1.f);
+            if(Boss->IsAirborne()&&Boss->BodyScale>1.01f&&!bFlightFraming)AutoLockPitchCeiling+=6.f*(BossScale-1.f);
             if(bThreatFramingActive&&bThreatFitFound)Desired.Pitch=AutoLockPitchCeiling;
             Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,AutoLockPitchCeiling);
             // Avoid spinning underneath a target whose head crosses overhead.
@@ -1627,10 +1657,10 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    const float BlendSeconds=bFlowTransition&&IsAttackAction()?.17f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float Alpha=RunStartTail?FMath::Clamp((ActionElapsed-(ActionDuration-.30f))/.30f,0.f,1.f):
-        bTransitionIdleWalkEdge?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;
+        bTransitionIdleWalkEdge||(bFlowTransition&&IsAttackAction())?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;
     if(RunStartTail)
     {
         ContinuousTransitionSource=ActionPresentationClip;
@@ -1679,8 +1709,73 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     // Keep failures explicit and harmless: never substitute an attack or deal fallback damage.
 }
 
+bool AVeyrKnight::UpdateStanceCleanup(float DeltaSeconds)
+{
+    if(DeltaSeconds<=0.f||DeltaSeconds>.1f){for(auto& F:StanceFeet)F=FStanceFoot();return true;}
+    // Off the ground (jump, blink carry) or terminal: nothing is held, and whatever correction is left
+    // fades out instead of snapping.
+    const bool Eligible=IsGrounded()&&!IsTerminal();
+    // Heights are measured from the capsule base, like the contact proof. A foot counts as down while its
+    // toe and ankle are both within the proof's planted band for the idle stance (toe 7.1 cm, ankle 20.7 cm).
+    static constexpr float LowToeCm=7.6f,LowAnkleCm=21.2f,ClearAnkleCm=23.5f,PinSpeedCmPerSecond=130.f,PinBudgetCm=10.f,PinYawBudgetDegrees=25.f;
+    const float Floor=GetFootLocation().Z;
+    const TCHAR* ToeNames[2]={TEXT("left_foot"),TEXT("right_foot")};
+    const FName AnkleNames[2]={TEXT("LeftFoot"),TEXT("RightFoot")};
+    TArray<FTransform> Targets;TArray<float> Weights;
+    for(int32 Side=0;Side<2;++Side)
+    {
+        auto& F=StanceFeet[Side];FTransform Toe;
+        if(!ImportedPresentation->GetBoneTargetWorldTransform(ToeNames[Side],Toe))return false;
+        if(ImportedPresentation->GetBoneIndex(AnkleNames[Side])==INDEX_NONE)return false;
+        const FTransform Raw=ImportedPresentation->GetSocketTransform(AnkleNames[Side],RTS_World);
+        const FVector ToeAt=Toe.GetLocation(),AnkleAt=Raw.GetLocation();
+        const float ToeHeight=ToeAt.Z-Floor,AnkleHeight=AnkleAt.Z-Floor;
+        // Planar world speed of the clip's own foot this frame (before any correction).
+        const float Speed=F.bHasPrevious?static_cast<float>(FMath::Max(FVector::Dist2D(ToeAt,F.PreviousToe),FVector::Dist2D(AnkleAt,F.PreviousAnkle)))/DeltaSeconds:0.f;
+        const bool Teleport=Speed>2500.f;
+        const bool Low=Eligible&&ToeHeight<=LowToeCm&&AnkleHeight<=LowAnkleCm;
+        // The ankle is what the leg solver places, so the ankle is what is held, together with the
+        // foot's heading. The clip's own heel roll and toe pitch stay untouched.
+        const FVector2D AnkleXY(AnkleAt.X,AnkleAt.Y);
+        const float RawYaw=FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(ToeAt.Y-AnkleAt.Y),static_cast<float>(ToeAt.X-AnkleAt.X)));
+        if(Teleport||!Eligible){F.bPinned=false;if(Teleport){F.Offset=FVector2D::ZeroVector;F.YawOffset=0.f;}}
+        if(Low&&!F.bPinned&&Speed<=PinSpeedCmPerSecond&&!Teleport)
+        {
+            // Land where the foot is drawn now (clip pose plus whatever correction is still fading).
+            F.Anchor=AnkleXY+F.Offset;F.AnchorYaw=RawYaw+F.YawOffset;F.bPinned=true;++StancePins;
+        }
+        if(F.bPinned)
+        {
+            const FVector2D Wanted=F.Anchor-AnkleXY;
+            const float WantedYaw=FMath::FindDeltaAngleDegrees(RawYaw,F.AnchorYaw);
+            if(!Low||Wanted.Size()>PinBudgetCm||FMath::Abs(WantedYaw)>PinYawBudgetDegrees||Speed>200.f)F.bPinned=false;
+            else{F.Offset=Wanted;F.YawOffset=WantedYaw;}
+        }
+        // A low foot the pin cannot hold has to travel: lift it clear so it steps instead of skating.
+        const bool Travel=Low&&!F.bPinned;
+        if(Travel&&F.Lift<.01f)++StanceLifts;
+        const float LiftTarget=Travel?FMath::Max(0.f,ClearAnkleCm-AnkleHeight)+FMath::Clamp((Speed-150.f)/100.f,0.f,1.f)*5.f:0.f;
+        F.Lift=FMath::FInterpConstantTo(F.Lift,LiftTarget,DeltaSeconds,LiftTarget>F.Lift?600.f:120.f);
+        // Whatever planar correction is left fades only while the foot is clear of the floor.
+        if(!F.bPinned&&(!Low||F.Lift>2.f))
+        {
+            const float Fade=150.f*DeltaSeconds,Size=static_cast<float>(F.Offset.Size());
+            F.Offset=Size<=Fade?FVector2D::ZeroVector:F.Offset*((Size-Fade)/Size);
+            F.YawOffset=FMath::FInterpConstantTo(F.YawOffset,0.f,DeltaSeconds,240.f);
+        }
+        FTransform Target=Raw;
+        Target.SetRotation((FQuat(FVector::UpVector,FMath::DegreesToRadians(F.YawOffset))*Raw.GetRotation()).GetNormalized());
+        Target.SetLocation(AnkleAt+FVector(F.Offset.X,F.Offset.Y,F.Lift));
+        Targets.Add(Target.GetRelativeTransform(ImportedPresentation->GetComponentTransform()));
+        Weights.Add(F.Offset.SizeSquared()>.0025f||F.Lift>.05f||FMath::Abs(F.YawOffset)>.05f?1.f:0.f);
+        F.PreviousToe=ToeAt;F.PreviousAnkle=AnkleAt;F.bHasPrevious=true;
+    }
+    return ImportedPresentation->SetComponentSpaceFootTargets(Targets,Weights);
+}
+
 bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
 {
+    if(bStanceCleanup)return UpdateStanceCleanup(DeltaSeconds);
     const bool Eligible=bSprintContactRevision&&IsGrounded()&&!IsLockOnStrafing()&&
         (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::RunStop);
     if(!Eligible||DeltaSeconds<=0.f||DeltaSeconds>.1f)

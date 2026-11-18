@@ -366,6 +366,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             break;
         }
         case EVeyrDragonState::Windup:
+            UpdateFireAim(DeltaSeconds);
             if(IsWindupTracking()&&IsValid(Target)&&!Target->IsDead())
             {
                 const FName Clip=ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Active"));
@@ -420,6 +421,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 if(bAggression&&IsValid(Target)&&!Target->IsDead()&&T<=.72f)
                     AerialFireTarget=FMath::VInterpConstantTo(AerialFireTarget,Ground(Target->GetFootLocation()),DeltaSeconds,T<.48f?520.f:300.f);
             }
+            UpdateFireAim(DeltaSeconds);
             UpdateImportedPresentation();
             TryDamageTarget();
             if(StateElapsed>=StateDuration)
@@ -856,7 +858,7 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
     bJustRepositioned=false; Move=Next; ++TotalAttacks; ++StartedAttacks[MoveIndex(Move)];
     RepeatedMoveCount=Next==LastMove?RepeatedMoveCount+1:1; LastMove=Next; ++ComboCount;
     bContactConsumed=false; AttackOrigin=Ground(GetActorLocation()); AttackForward=Ground(GetActorForwardVector()).GetSafeNormal();
-    MoveStart=Ground(GetActorLocation()); MoveEnd=MoveStart;
+    MoveStart=Ground(GetActorLocation()); MoveEnd=MoveStart;FireAimPitchDegrees=0.f;
     if(bAggression&&IsValid(Target)&&BrainLog.Num()<400)
     {
         CloseBrainLogEntry(TEXT("miss"));
@@ -915,6 +917,63 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
         if(const FName* DataMove=DataMoveForEnum.Find(Move))BeginDataMove(*DataMove,true);
         else if(bDataMoveFollowsEnum)StopDataMove();
     }
+}
+
+bool AVeyrDragon::IsFlightHazardActive() const
+{
+    if(Move!=EVeyrDragonMove::FlyAway||IsDead())return false;
+    return State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||
+        (State==EVeyrDragonState::Recovery&&StateElapsed<FMath::Min(StateDuration,1.2f));
+}
+
+FVector AVeyrDragon::GetFlightHazardPoint() const
+{
+    const float T=State==EVeyrDragonState::Active?StateElapsed/FMath::Max(.01f,ActiveDuration):State==EVeyrDragonState::Windup?0.f:1.f;
+    return bAggression&&T<.75f?AerialFireTarget:MoveEnd;
+}
+
+void AVeyrDragon::UpdateFireAim(float DeltaSeconds)
+{
+    if(!bAggression||bShowcaseMode||Move!=EVeyrDragonMove::Fire||!IsValid(Target)||!bImportedTargetsValid)return;
+    // Closed loop on the jet actually leaving the mouth (it already includes the aim applied so far).
+    const FVector Aim=Target->GetFootLocation()+FVector(0,0,90.f);
+    const float Range=FMath::Max(200.f,static_cast<float>(FVector::Dist2D(Aim,ImportedMouthWorld)));
+    const float Wanted=-FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(ImportedMouthWorld.Z-Aim.Z),Range));
+    const FVector Jet=(ImportedMouthAimWorld-ImportedMouthWorld).GetSafeNormal();
+    const float Now=FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(static_cast<float>(Jet.Z),-1.f,1.f)));
+    FireAimPitchDegrees=FMath::Clamp(FireAimPitchDegrees+FMath::Clamp(Now-Wanted,-60.f*DeltaSeconds,60.f*DeltaSeconds),0.f,50.f);
+    // The committed envelope follows the aim: the band the jet sweeps at the player's range.
+    if(State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active)
+    {
+        const FVeyrDragonFootprint Band=FireAimBand();
+        if(CommittedWarning.Num()&&CommittedWarning.Last().Shape==EVeyrDangerShape::Sector&&CommittedWarning.Last().InnerRadius>1.f)CommittedWarning.Last()=Band;
+        else CommittedWarning.Add(Band);
+    }
+}
+
+FVeyrDragonFootprint AVeyrDragon::FireAimBand() const
+{
+    FVeyrDragonFootprint F;F.Shape=EVeyrDangerShape::Sector;
+    F.Origin=Ground(ImportedMouthWorld);F.Origin.Z=GetActorLocation().Z;F.Forward=Ground(GetActorForwardVector()).GetSafeNormal();
+    const float Range=IsValid(Target)?static_cast<float>(FVector::Dist2D(Target->GetFootLocation(),ImportedMouthWorld)):1000.f*BodyScale;
+    F.InnerRadius=FMath::Max(2.f,Range-450.f);F.OuterRadius=Range+450.f;F.HalfAngleDegrees=70.f;F.bDamaging=false;
+    return F;
+}
+
+TMap<FName,FRotator> AVeyrDragon::FireAimRotations(float Weight) const
+{
+    TMap<FName,FRotator> Result;
+    const FVeyrVisualBoneTarget* Neck=VisualDefinition?VisualDefinition->BoneTargets.Find(TEXT("gaze_neck")):nullptr;
+    const FVeyrVisualBoneTarget* Head=VisualDefinition?VisualDefinition->BoneTargets.Find(TEXT("head")):nullptr;
+    if(!Neck||!Head||!ImportedPresentation)return Result;
+    const float Pitch=-FMath::Clamp(FireAimPitchDegrees,0.f,50.f)*FMath::Clamp(Weight,0.f,1.f);
+    const FName Base=ImportedPresentation->GetParentBone(Neck->BoneName);
+    // Distributed curvature along the neck, the same shares as the ground bite.
+    if(Neck->BoneName!=Head->BoneName&&!Base.IsNone()&&Base!=Neck->BoneName)
+    {Result.Add(Base,FRotator(Pitch*.4f,0,0));Result.Add(Neck->BoneName,FRotator(Pitch*.4f,0,0));Result.Add(Head->BoneName,FRotator(Pitch*.2f,0,0));}
+    else if(Neck->BoneName!=Head->BoneName){Result.Add(Neck->BoneName,FRotator(Pitch*.6f,0,0));Result.Add(Head->BoneName,FRotator(Pitch*.4f,0,0));}
+    else Result.Add(Head->BoneName,FRotator(Pitch,0,0));
+    return Result;
 }
 
 bool AVeyrDragon::AntiCampArmed() const
@@ -1059,7 +1118,8 @@ void AVeyrDragon::ChooseAggressiveAttack()
     // The pocket held while the wings rest (or with the boss too hurt to fly): walk through the player.
     if(GuardPocketSeconds>=GuardPocketLimit&&!bJustRepositioned)
     {
-        GuardPocketSeconds=GuardPocketLimit-1.5f;++GuardPocketOverruns;
+        // One walk-through, then the fuse starts again: no trampling the same spot every other second.
+        GuardPocketSeconds=0.f;++GuardPocketOverruns;
         bForceOverrun=true;BeginReposition();bForceOverrun=false;return;
     }
     TArray<FBrainOption> Options;
@@ -1281,7 +1341,7 @@ void AVeyrDragon::TryDamageTarget()
         if(!bHit)return;
         // A committed warning is an absolute promise, including interpolation
         // and transition poses. Fail closed and expose any envelope miss.
-        if(!ContainsAny(CommittedWarning,Target->GetFootLocation()))
+        if(!ContainsAny(CommittedWarning,Target->GetFootLocation())&&!(Move==EVeyrDragonMove::Fire&&FireAimPitchDegrees>.01f&&ContainsPoint(FireAimBand(),Target->GetFootLocation())))
         {++WarningContainmentFailures;ImportedCombatDiagnostic=TEXT("Active contact escaped committed warning; damage suppressed");return;}
         bContactConsumed=true;++DamageContactCount;const float Before=Target->Health;
         const FVector Source=Move==EVeyrDragonMove::Fire||Move==EVeyrDragonMove::Bite?GetMouthLocation():
@@ -1982,10 +2042,12 @@ void AVeyrDragon::UpdateImportedPresentation()
     }
     LastPresentationLocation=CurrentLocation;LastPresentationYaw=CurrentYaw;bPresentationMotionInitialized=true;
     TMap<FName,FRotator> Gaze;
+    const bool GroundFire=bAggression&&!bShowcaseMode&&Move==EVeyrDragonMove::Fire&&FireAimPitchDegrees>.01f&&
+        (State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery);
     const bool GroundBite=HasGroundTargetBite()&&bBiteGroundAimReady&&Move==EVeyrDragonMove::Bite&&
         (State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery);
     if(ShowcaseOverrideClip!=FName(TEXT("Roar"))&&!IsDataOnlyMovePlaying()&&(State==EVeyrDragonState::Idle||State==EVeyrDragonState::Recovery||State==EVeyrDragonState::Reposition)&&
-       !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery)&&!GroundBite)
+       !(HasAuthoredFlight()&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Recovery)&&!GroundBite&&!GroundFire)
     {
         const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
         const FVeyrVisualBoneTarget* Neck=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
@@ -2001,6 +2063,8 @@ void AVeyrDragon::UpdateImportedPresentation()
         const float Trimmed=FMath::Clamp(StateElapsed/FMath::Max(.001f,StateDuration),0.f,1.f)*VisualClipDuration(BiteClip,0.f);
         Gaze=BiteGroundRotations(Config.StartSeconds+Trimmed,BiteGroundPitchDegrees);
     }
+    // The head comes back up over the recovery instead of snapping.
+    if(GroundFire)Gaze=FireAimRotations(State==EVeyrDragonState::Recovery?1.f-Ease(StateElapsed/FMath::Max(.01f,StateDuration)):1.f);
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
         if(Mode->FightFeel)Mode->FightFeel->AddBossFlinch(this,Gaze);
     if(!ImportedPresentation->SetComponentSpaceBoneRotations(Gaze))return;

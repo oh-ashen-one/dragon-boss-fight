@@ -40,7 +40,12 @@ if (ROOT / 'Local/ENGINE_LAUNCH_HOLD.json').exists():
     p.error('Engine launches are held after two crashes; obtain owner approval before clearing the task-local hold.')
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 run = ROOT / 'Evidence' / ('native-' + a.mode + '-' + stamp)
-run.mkdir(parents=True)
+try:
+    run.mkdir(parents=True)
+except FileExistsError:
+    # Two runs of one mode started in the same second (parallel headless runs): keep both.
+    run = run.with_name(run.name + '-' + str(os.getpid()))
+    run.mkdir(parents=True)
 project = ROOT / 'Unreal/Veyr/Veyr.uproject'
 if a.app:
     app = a.app.resolve()

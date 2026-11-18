@@ -49,6 +49,7 @@ public:
     UFUNCTION(BlueprintCallable, Category="Input") void ReleasePrimaryAttack();
     UFUNCTION(BlueprintPure, Category="Input") bool IsSprinting() const { return bSprintHeld; }
     bool UsesSprintContactRevision() const { return bSprintContactRevision; }
+    bool UsesStanceCleanup() const { return bStanceCleanup; }
     bool UsesSourcedHeavy() const { return bSourcedTwoHandHeavy; }
     bool UsesSourcedHeal() const { return bSourcedHeal; }
     bool UsesSourcedMoves() const { return bSourcedMoves; }
@@ -280,6 +281,31 @@ private:
         bool bLocked=false,bHasPrevious=false,bPivotRelease=false;
     };
     FLocomotionFootPlant LocomotionFeet[2];
+    /** Stance clean-up (-VeyrStanceCleanup): a foot that is down stays where it landed (a correction of at
+     * most StancePinBudgetCm), and a low foot that has to travel is lifted into a short step instead of
+     * skating. No stride is ever held against the clip: the pin lets go as soon as its small budget is used. */
+    struct FStanceFoot
+    {
+        FVector PreviousToe=FVector::ZeroVector,PreviousAnkle=FVector::ZeroVector;
+        FVector2D Anchor=FVector2D::ZeroVector,Offset=FVector2D::ZeroVector;
+        float Lift=0.f,AnchorYaw=0.f,YawOffset=0.f;
+        bool bPinned=false,bHasPrevious=false;
+    };
+    FStanceFoot StanceFeet[2];
+    bool bStanceCleanup=false;
+    /** One-hand chain flow (-VeyrChainFlow): a held chain cuts each swing's return-to-guard short after its
+     * strike and enters the next swing past its first frames, with a longer eased blend, so the blade keeps
+     * moving instead of resetting between blows. Timing of each strike inside its own swing is unchanged. */
+    bool bChainFlow=false;
+    /** Flight framing (-VeyrFlightFraming): while the dragon is airborne the lens widens to 90 degrees, the
+     * lock keeps the whole knight in frame and leans toward where the fire or the landing will hit. */
+    bool bFlightFraming=false;
+    float FlightFramingBlend=0.f;
+    bool bFlowTransition=false;
+    int32 ChainFlowCancels=0;
+    float ChainFlowCancelSeconds() const;
+    int32 StancePins=0,StanceLifts=0;
+    bool UpdateStanceCleanup(float DeltaSeconds);
     bool bSprintContactRevision=false;
     bool bSourcedTwoHandHeavy=false;
     bool bSourcedHeal=false;

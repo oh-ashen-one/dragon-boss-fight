@@ -18,7 +18,7 @@ PLAY_PROFILE = ['-VeyrCanonicalKnightSkin', '-VeyrStableWeaponPresentation', '-V
 
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--app', type=Path)
-p.add_argument('--engine', type=Path, help='run the editor build as a game instead of a packaged app (headless specs only)')
+p.add_argument('--engine', type=Path, help='run the editor build as a game instead of a packaged app (quick iteration; not a release check)')
 p.add_argument('--run', action='append', required=True,
                help='mode[:flag[,flag...]] e.g. victory, victory:two-handed, camp, showcase:-VeyrLegacyDragon; '
                     '"two-handed" maps to --start-two-handed, "video=N" to --video-fps N, "sound" to --with-sound, '
@@ -38,7 +38,6 @@ def run_spec(spec, delay=0.0):
     mode, _, rest = spec.partition(':')
     flags = [f for f in rest.split(',') if f]
     runtime = ['--app', str(a.app)] if a.app else ['--engine', str(a.engine)]
-    assert a.app or 'headless' in flags, 'editor-game runs are headless only'
     cmd = [sys.executable, str(ROOT / 'tools/unreal/run_native.py'), *runtime, '--gpu-slot', str(gate),
            '--mode', mode, '--slot-wait-seconds', '900']
     extra = list(PLAY_PROFILE)

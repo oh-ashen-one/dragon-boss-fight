@@ -165,6 +165,17 @@ public:
     bool IsWindupTracking() const { return WindupMayStillTrack(); }
     bool WindupMayStillTrack() const { return State==EVeyrDragonState::Windup&&WindupTrackBudget>0.f&&StateElapsed<=StateDuration-.03f; }
     int32 OverrunCount=0;
+    /** Fire aim: the neck pitches the jet down onto the player's range (the breath of a 30 ft creature leaves
+     * the mouth about 11 m up and would otherwise pass over a knight on the ground). Degrees, 0 to 50. */
+    float FireAimPitchDegrees=0.f;
+    int32 FireHits=0;
+    void UpdateFireAim(float DeltaSeconds);
+    TMap<FName,FRotator> FireAimRotations(float Weight) const;
+    FVeyrDragonFootprint FireAimBand() const;
+    /** The flight is a threat from above: true from takeoff until the landing blow has gone. */
+    bool IsFlightHazardActive() const;
+    /** Where that threat meets the ground now: the hunting jet's target, then the landing point. */
+    FVector GetFlightHazardPoint() const;
     /** Any blow of the current string really hurt the player (not rolled through). Decides the opening after it. */
     bool bStringLanded=false;
     /** Openings granted after a string the player avoided completely. */
