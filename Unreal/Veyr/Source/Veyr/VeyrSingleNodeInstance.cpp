@@ -77,6 +77,25 @@ namespace
         TMap<FName,FRotator> BoneRotations;
         TArray<FTransform> FootTargets;
         TArray<float> FootWeights;
+        bool bMirrorRepair=false;
+        TSet<FName> MirrorRestBones,MirrorTranslatingBones;
+        int32 MirrorRepairEvaluations=0;
+
+        void ApplyMirrorRepair(FPoseContext& Output)
+        {
+            if(!bMirrorRepair)return;
+            const FBoneContainer& Bones=Output.Pose.GetBoneContainer();
+            const FReferenceSkeleton& Reference=Bones.GetReferenceSkeleton();
+            for(FCompactPoseBoneIndex Index:Output.Pose.ForEachBoneIndex())
+            {
+                if(Bones.GetParentBoneIndex(Index).GetInt()==INDEX_NONE)continue;
+                const FName Name=Reference.GetBoneName(Bones.MakeMeshPoseIndex(Index).GetInt());
+                const FTransform& Rest=Bones.GetRefPoseTransform(Index);
+                if(MirrorRestBones.Contains(Name))Output.Pose[Index]=Rest;
+                else if(!MirrorTranslatingBones.Contains(Name))Output.Pose[Index].SetTranslation(Rest.GetTranslation());
+            }
+            ++MirrorRepairEvaluations;
+        }
 
         bool RebaseRootForBlend(FPoseContext& Pose)
         {
@@ -261,6 +280,7 @@ namespace
             LowerSequence=nullptr;LowerSeconds=LowerWeight=0.f;BoneRotations.Reset();
             TransitionSequence=nullptr;TransitionSeconds=0.f;
             FootTargets.Reset();FootWeights.Reset();
+            bMirrorRepair=false;MirrorRestBones.Reset();MirrorTranslatingBones.Reset();MirrorRepairEvaluations=0;
             MaskAsset.Reset();MaskBoneMap.Reset();LowerMask.Reset();LowerWeights.Reset();
         }
 
@@ -279,6 +299,7 @@ namespace
                         Output.Pose[Spine0].AddToTranslation(FVector(12.44f,-38.99f,0.f));
                 }
             }
+            ApplyMirrorRepair(Output);
             if(!ApplyLowerBody(Output)||!ApplyBoneRotations(Output))
             {
                 LastPublished.bValid=false;return true;
@@ -447,4 +468,18 @@ void UVeyrSingleNodeInstance::ClearExplicitBoneRotations()
 {
     check(IsInGameThread());
     GetProxyOnGameThread<FVeyrSingleNodeProxy>().BoneRotations.Reset();
+}
+
+void UVeyrSingleNodeInstance::SetExplicitMirrorRepair(bool bEnabled,const TArray<FName>& RestBones,const TArray<FName>& TranslatingBones)
+{
+    check(IsInGameThread());
+    auto& Proxy=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    Proxy.bMirrorRepair=bEnabled;
+    Proxy.MirrorRestBones.Reset();Proxy.MirrorRestBones.Append(RestBones);
+    Proxy.MirrorTranslatingBones.Reset();Proxy.MirrorTranslatingBones.Append(TranslatingBones);
+}
+
+int32 UVeyrSingleNodeInstance::GetMirrorRepairEvaluations() const
+{
+    return GetProxyOnGameThread<FVeyrSingleNodeProxy>().MirrorRepairEvaluations;
 }

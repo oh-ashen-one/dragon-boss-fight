@@ -31,6 +31,12 @@ public:
     /** Two component-space ankle targets, L/R. Corrective IK only; never stretches limbs. */
     bool SetExplicitFootTargets(const TArray<FTransform>& Targets,const TArray<float>& Weights);
     void ClearExplicitFootTargets();
+    /** A1 (2026-11-18): repair for clips mirrored by an older tools/dragon_refine/mirror_v2r_action.py.
+     * When enabled, the destination pose keeps every link rigid: bones in RestBones take their whole
+     * reference local transform (unpaired side bones the old tool mirrored as midline bones), every
+     * other bone except TranslatingBones takes its reference local translation. Rotations are kept. */
+    void SetExplicitMirrorRepair(bool bEnabled,const TArray<FName>& RestBones,const TArray<FName>& TranslatingBones);
+    int32 GetMirrorRepairEvaluations() const;
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
 private:
