@@ -466,7 +466,7 @@ bool UVeyrSkeletalPresentation::SetComponentSpaceBoneRotations(const TMap<FName,
     for(const auto& Entry:Rotations)
         if(GetBoneIndex(Entry.Key)==INDEX_NONE)return Fail(TEXT("Rotation modifier bone is missing: ")+Entry.Key.ToString());
     if(!CastChecked<UVeyrSingleNodeInstance>(GetSingleNodeInstance())->SetExplicitBoneRotations(Rotations))
-        return Fail(TEXT("Rotation modifiers require at most four finite bones within 20 degrees per axis and 25 degrees total"));
+        return Fail(TEXT("Rotation modifiers require at most sixteen finite bones within 20 degrees per axis and 25 degrees total"));
     return true;
 }
 

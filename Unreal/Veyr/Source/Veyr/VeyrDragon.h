@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "VeyrCombatTypes.h"
 #include "VeyrMoveData.h"
+#include "VeyrGroundContacts.h"
 #include "VeyrDragon.generated.h"
 
 class AVeyrKnight;
@@ -336,6 +337,22 @@ public:
     /** Which hard-coded move a JSON move name stands for; false = data-only. */
     static bool MapDataMoveToEnum(FName MoveName, EVeyrDragonMove& OutMove);
 
+    // ---- B4 (2026-11-18): ground contacts. -VeyrNoGroundContacts disables; see VeyrGroundContacts.h.
+    /** Fires inside the dragon tick, once per contact (feet, head, neck, body, tail, wings). */
+    FVeyrOnGroundContact OnGroundContact;
+    /** Contacts detected on the latest dragon tick. */
+    const TArray<FVeyrGroundContact>& GetGroundContactsThisFrame() const { return GroundContacts.ThisFrame(); }
+    /** Last serial issued (monotonic, 0 before the first contact). */
+    int32 GetGroundContactSerial() const { return GroundContacts.LastSerial(); }
+    /** Contacts with a serial above AfterSerial from a 64-entry ring; returns the last serial. */
+    int32 GetGroundContactsSince(int32 AfterSerial,TArray<FVeyrGroundContact>& Out) const { return GroundContacts.CopySince(AfterSerial,Out); }
+    const FVeyrGroundContactCounters& GetGroundContactCounters() const { return GroundContacts.Counters(); }
+    const FVeyrGroundContactDetector& GetGroundContactDetector() const { return GroundContacts; }
+    /** True when contacts drive the camera shake (the old hard-coded stomp/tail/landing shakes are skipped). */
+    static bool ContactsDriveShake();
+    /** Showcase rails for the feel proof: Collapse (Buckle skipped) as one segment. */
+    bool StartFeelSegment(FName Segment,FString& Error);
+
 protected:
     virtual void BeginPlay() override;
 
@@ -483,6 +500,10 @@ private:
     static constexpr float FlightSeconds = 2.4f;
 
 
+    // ---- B4 ground contacts
+    FVeyrGroundContactDetector GroundContacts;
+    float LastAirborneClock=-100.f;
+    void UpdateGroundContacts(float DeltaSeconds);
     // ---- Data-driven move layer state
     FBossMoveData MoveData;
     UPROPERTY(Transient) TArray<TObjectPtr<UCapsuleComponent>> HurtCapsules;

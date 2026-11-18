@@ -9,6 +9,7 @@ class AVeyrDragon;
 class ACameraActor;
 class FVeyrBlendProof;
 class FVeyrA123Proof;
+class FVeyrFeelProof;
 class FVeyrShowcase;
 class FJsonObject;
 class FJsonValue;
@@ -236,6 +237,7 @@ private:
     // Blend proof 2026-10-29 ("blendproof" mode): sword socket, blink foot lock and roll-attack root carry proof.
     TSharedPtr<FVeyrBlendProof> BlendProof;
     TSharedPtr<FVeyrA123Proof> A123Proof; // quality goal A1-A3 (VeyrA123Proof.h)
+    TSharedPtr<FVeyrFeelProof> FeelProof; // quality goal B4-B6 (VeyrFeelProof.h)
     TSharedPtr<FVeyrShowcase> Showcase;
     bool DriveBlendProofInputs();
     bool bCombatHealSeeking=false;
