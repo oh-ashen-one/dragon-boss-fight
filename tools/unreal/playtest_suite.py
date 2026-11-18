@@ -123,7 +123,7 @@ def run_spec(spec, delay=0.0):
             keys = ('mirroredClips', 'sweepMirroredMaxStretchCm1x', 'sweepLegacyMirroredMaxStretchCm1x', 'liveMirroredFrames',
                     'liveMirroredMaxStretchCm', 'liveMirrorRepairSamples', 'cameraFrames', 'cameraInsideFrames', 'collapseFrames',
                     'collapseInsideFrames', 'pullInEvents', 'maxLiftCm', 'maxCameraJumpCmPerFrame', 'liveGroundFrames',
-                    'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepWorstClipMedianFloatCm1x', 'sweepWorstClip',
+                    'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepBeforeIdleFloatCm', 'sweepBeforeWorstClipMedianCm', 'sweepWorstClip', 'sweepAfterPlantedWorstCm', 'sweepAfterPlantedWorstClip', 'sweepGroundClips', 'sweepClipsWithin3Cm', 'legHitsPerFoot', 'liveAnyClipMaxStretchCm',
                     'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
             record['a123'] = {k: x[k] for k in keys if k in x}
         if 'camp' in e:

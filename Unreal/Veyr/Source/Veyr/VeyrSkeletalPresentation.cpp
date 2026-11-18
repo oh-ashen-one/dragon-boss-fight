@@ -509,6 +509,18 @@ void UVeyrSkeletalPresentation::UpdateGrounding(EVeyrGroundingMode Mode)
     const double Now=World->GetTimeSeconds();
     const float Delta=LastGroundingWorldSeconds<0.0?0.f:static_cast<float>(FMath::Max(0.0,Now-LastGroundingWorldSeconds));
     LastGroundingWorldSeconds=Now;
+    StepGrounding(Mode,Delta);
+}
+
+void UVeyrSkeletalPresentation::ResetGrounding()
+{
+    GroundingOffsetCm=GroundingTargetCm=0.f;LastGroundingWorldSeconds=-1.0;GroundingUpdates=0;
+    SetRelativeLocation(GroundingBaseLocation);
+}
+
+void UVeyrSkeletalPresentation::StepGrounding(EVeyrGroundingMode Mode,float Delta)
+{
+    if(!bPoseEvaluated)return;
     LastGroundingMode=Mode;
     const USceneComponent* Parent=GetAttachParent();
     const float ParentScale=Parent?FMath::Max(.01f,static_cast<float>(Parent->GetComponentScale().Z)):1.f;

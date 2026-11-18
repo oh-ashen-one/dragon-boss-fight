@@ -32,7 +32,7 @@ public:
     /** Owns the knight's input for this tick. */
     void Drive(double Elapsed,float Dt);
     TSharedPtr<FJsonObject> Evidence() const;
-    float DurationLimit() const { return Mode==TEXT("camerahug")?240.f:180.f; }
+    float DurationLimit() const { return Mode==TEXT("camerahug")?240.f:Mode==TEXT("footclosehits")?420.f:200.f; }
 
 private:
     TWeakObjectPtr<UWorld> World;
@@ -56,6 +56,9 @@ private:
     FName SweepWorstBone;
     int32 MirroredClips=0;
     float LiveMaxStretchCm=0.f; FName LiveWorstBone; int32 LiveMirrorSamplesStart=0,LiveMirroredFrames=0,LiveFrames=0;
+    float LiveAllMaxStretchCm=0.f; FName LiveAllWorstBone;
+    int32 FootIndex=0,FootHits[4]={0,0,0,0},RegionHits[4][6]={{0}},LastSwordContacts=0;
+    double FootStart=0.0;
 
     // camerahug
     int32 CameraFrames=0,CameraInsideFrames=0,CollapseFrames=0,CollapseInsideFrames=0,PullInStart=0;
@@ -66,6 +69,10 @@ private:
 
     // soleheights
     TArray<float> LiveGroundLowest;
+    float SweepBeforeIdleMedianCm=0.f,SweepWorstPlantedAfterCm=0.f,SweepWorstBeforeMedianCm=0.f; FName SweepWorstPlantedClip;
+    int32 SweepClipsWithin3Cm=0,SweepGroundClips=0;
+    TWeakObjectPtr<class ACameraActor> SideCamera;
+    void UpdateSideCamera();
     float WorstSweepFloatCm=0.f; FName WorstSweepClip;
     int32 SoleFailures=0;
 

@@ -155,6 +155,9 @@ public:
     /** One eased vertical offset of this whole component (never a bone); see VeyrDragonGrounding.h.
      * Safe to call several times per frame: easing advances with world time only. */
     void UpdateGrounding(EVeyrGroundingMode Mode);
+    /** Same rule with an explicit time step (proof sweeps on a pose probe). */
+    void StepGrounding(EVeyrGroundingMode Mode,float DeltaSeconds);
+    void ResetGrounding();
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") bool bGroundingEnabled=true;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") float GroundingOffsetCm=0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") float GroundingTargetCm=0.f;
