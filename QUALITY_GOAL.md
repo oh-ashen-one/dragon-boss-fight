@@ -1,7 +1,18 @@
-# Veyr quality goal — 2026-11-18
+# Veyr quality goal — master prompt, 2026-11-18
+
+This file is the full brief. The short `/goal` line in `GOAL_PROMPT.md` only points here.
 
 Owner-requested goal: close the visible gap between Veyr and the reference game (Can It Code's Leshy boss fight) by
-doing everything in the 2026-11-18 block at the top of `BACKLOG.md`. The prompt that starts it is in `GOAL_PROMPT.md`.
+doing everything in the 2026-11-18 block at the top of `BACKLOG.md`.
+
+**The owner's mandate (2026-11-18):** "This is the final improvement I want to make on this, so take however long you
+need. You are in charge. Do this on your own, and the end product should be a game that is as high quality as the
+source code." The bar is the reference game itself, not our previous build. There is no deadline and no check-in is
+required: make every decision, including the ones this file marks "owner may change", and keep going until the bar in
+"Done" is met.
+
+Read first, in this order: this file; the top of `HANDOFF.md`; the top block of `BACKLOG.md`; `AGENTS.md`; the wiki page
+`dragon-boss-fight`. Then verify the live repo, build and GPU state before acting.
 
 Baseline: `main` at `79fe0bc`; planning branch `fable/owner-feedback-20261118`. Work branch:
 `fable/quality-goal-20261118`, cut from the planning branch.
@@ -26,8 +37,13 @@ the reference footage.
   150 s, medians within 15 % of 88 s (one-hand) and 73.5 s (two-hand) over 16 seeds, a passive player dies in under
   12 s. Any change that moves these is re-tuned back, never by touching hitboxes.
 - The dragon is never made smaller. It gets bigger.
-- Free assets only. No paid generation of any kind (video, audio, 3D) in this goal: where only a paid route would
-  work, record the gap and move on.
+- Store assets (characters, packs, effects) are free ones only. Nothing is bought: no asset purchases, no credit
+  top-ups, no plan changes.
+- Generation with **Higgsfield and Fish Audio is allowed** on the credits the accounts already hold (owner,
+  2026-11-18): sounds where no recording fits, and Seedance clips through Higgsfield for new dragon moves. One job at
+  a time, reviewed before the next; every job logged in the clip or audio ledger with its credit cost; at most 20
+  video clips in this goal unless the owner raises it; Seedance at 720p. Stop generating and report if an account
+  runs low rather than buying more.
 - Mixamo is for animations only, not characters. Sound comes from Freesound CC0 recordings first.
 - The new knight is Paragon: Greystone in the dark gold-trimmed skin
   (`Local/knight-candidates/greystone-owner-pick-20261118.png`).
@@ -95,9 +111,8 @@ An old/new audition page for the sounds goes on the localhost page before the bu
 | F2 | Cross-fade two running clips over 0.3-0.4 s. | No frozen-pose blend left; pops gone in film. |
 | F3 | Four-foot floor lock at runtime, feet pinned in the clips; no whole-body snap turn under planted feet. | Planted-foot slide under 5 cm per second in every ground move. |
 | F4 | Move the dragon along each clip's own root track where the clip has one. | Travel matches the clip; no slide-back at blends. |
-| F5 | No-spend pipeline upgrades: dense reader, upstream's whole-clip fit merged on a fork branch, refit existing clips. | Adopted only where a blind critic prefers the refit over the current clip. |
-
-Out of scope because it costs money: new dragon moves from new video clips (charge, leap, authored combo).
+| F5 | Pipeline upgrades: dense reader, upstream's whole-clip fit merged on a fork branch, refit existing clips. | Adopted only where a blind critic prefers the refit over the current clip. |
+| F6 | New dragon moves from new Seedance clips through Higgsfield, following the tool's own notes (first-frame start picture, full real speed, side and top views for tail and turns): a charge, a leaping strike, one authored multi-hit combo, and proper left and right turns. | Each move is in the brain with measured hit windows and root motion, passes the reach check at the shipped scale, and a blind critic prefers the fight with them. Difficulty band holds. |
 
 ## Checkpoint after every phase
 
@@ -130,6 +145,17 @@ The first clip for the owner comes from phase A, within the first few hours, not
 
 ## Done
 
-Every row above meets its "done when" or is recorded as blocked with the reason, the final build is installed, a full
-intro-to-victory film with game audio and a death film exist, the page shows reference / start / end, and the owner
-has the summary. Then merge into `main` and push.
+All of these hold:
+
+1. Every row above meets its "done when", or is recorded as blocked with the reason and what was tried.
+2. **Parity with the reference.** A final blind review by Opus critics puts our final film beside the reference
+   footage, sides labelled A and B at random, and rates six things separately: lighting and picture, hero model and
+   movement, boss animation, weight of impacts, sound, camera. The goal is met when each is rated equal or better.
+   Where one is still rated worse, go back and try a different approach; an aspect may be closed as "worse" only
+   after three genuinely different approaches, each documented with its clip and the critic's reasons. Never claim
+   parity the critics did not give, and never tune a number to pass a gate the picture does not pass.
+3. The final build is installed behind Play Veyr.app; a full intro-to-victory film with game audio and a death film
+   exist; the localhost page shows reference / start / end for every phase.
+4. `HANDOFF.md`, `BACKLOG.md`, a results document under `docs/` and the wiki are updated; superseded builds and
+   evidence are deleted; the branch is merged into `main` and pushed.
+5. The owner has a short summary: what now matches the reference, what does not and why, and what was spent.

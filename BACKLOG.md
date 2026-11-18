@@ -73,6 +73,8 @@ Opus critic, not the directing session, and the owner hears an old/new audition 
 5. **Replace the placeholder sounds**: "too many basic beeps, dings". Several cues are sine tones generated in code
    (`VeyrAudio.cpp`, `Tone(...)`); the recorded set is about 22 short files with one contact sound and one swing.
    `Data/dragon/sounds.json` is an empty stub, so no dragon move has its own timed sound and the dragon has no footsteps.
+   Owner, later on 2026-11-18: Higgsfield and Fish Audio generation is allowed on existing credits (audio, and
+   Seedance clips for new dragon moves); nothing is bought. Full terms: `QUALITY_GOAL.md`.
 6. Sources to use, in this order: real recordings (Freesound CC0, as the reference game did); the audio tracks of our
    own Seedance dragon clips (generated with audio on, already paid for) as the dragon's voice; generated effects from
    Higgsfield audio or Fish Audio where no recording fits (the owner named both; any paid generation one at a time with

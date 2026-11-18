@@ -1,17 +1,17 @@
 # Veyr quality goal — paste into a fresh /goal (2026-11-18)
 
-Current activation prompt. Goal file: `QUALITY_GOAL.md`. The playtest prompt below is closed history.
+Current activation prompt (under 4,000 characters). The full brief is the master prompt in `QUALITY_GOAL.md`. The playtest prompt below is closed history.
 
 ```text
-/goal Close the visible quality gap between Veyr and the reference boss fight by completing /Users/midir/veyr-knight-20261028/QUALITY_GOAL.md in full. Read that file, then the top of HANDOFF.md and BACKLOG.md, AGENTS.md and the wiki page dragon-boss-fight. Verify live repo, build and GPU state before acting. Work on branch fable/quality-goal-20261118 cut from fable/owner-feedback-20261118. Make every routine decision yourself; no routine questions; no deadline.
+/goal Complete the Veyr quality goal in /Users/midir/veyr-knight-20261028/QUALITY_GOAL.md in full. That file is the master prompt: read all of it first, then the top of HANDOFF.md and BACKLOG.md, AGENTS.md and the wiki page dragon-boss-fight, and verify live repo, build and GPU state before acting. Work on branch fable/quality-goal-20261118 cut from fable/owner-feedback-20261118.
 
-Phases in this order, each with the checkpoint in the goal file: A the four bugs I saw (foot mesh pinching, camera inside the dragon, dragon floating, knock-down 5 s max); B weight and sound (Freesound CC0 recordings, dragon footsteps, breathing and per-move sounds, shake and dust by impact, whole-spine hit reaction, wide weapon trail); C picture (Lumen, shadow maps, motion blur, relit courtyard that just has to look good, controls box hidden); D camera for a huge dragon and a bigger dragon (test 2.5x and 3x); E the new knight, Paragon Greystone in the dark gold-trimmed skin, with motion-matched movement and buffered rolls; F dragon animation playback (clip speed, two-clip fades, four-foot lock, root motion).
+This is the final improvement pass on this game. Take as long as it needs. You are in charge: make every decision yourself, do not ask me routine questions, and do not stop until the "Done" section of the goal file is met. The bar is the reference game in ~/leshy-bossfight-mac and its footage in ~/leshy-reference: the end product must be as high quality as that, judged by blind critics putting our final film beside his, not by comparing our new build with our old one.
 
-Fixed: hitboxes and difficulty stay in the build 17 band; the dragon never gets smaller; free assets only and no paid generation of any kind; Mixamo for animations only; keep my intro and music; never copy the reference game's files into our public repo, reimplement its techniques.
+Do the phases in the file's order: A the bugs I saw, B weight and sound, C picture, D camera and a bigger dragon, E the new knight (Paragon Greystone, dark gold-trimmed skin), F dragon animation and new dragon moves. Keep what the file says is fixed: hitboxes and difficulty, the dragon never smaller, free store assets only, my intro and music.
 
-How: you direct only. Opus and Sonnet builder subagents do all building, Opus critics gate every phase, every spawn labelled and time-boxed. Judge every phase against the reference footage in ~/leshy-reference, not against our own old build alone. Show me a clip from phase A within the first few hours, and after every phase add reference / before / after clips to the localhost page, install the build behind Play Veyr.app and send me two lines. One game or engine process at a time, through the GPU gate, nothing rendered during my 11:00-13:00 ET stream window. Every change behind a restore switch. Commit and push after each verified step; update HANDOFF, BACKLOG and the wiki; delete superseded builds you own.
+You direct; Opus and Sonnet builder subagents build; Opus critics gate every phase. Freesound recordings first for sound; Higgsfield and Fish Audio generation is allowed on existing credits, one job at a time, logged, nothing bought. One game or engine process at a time through the GPU gate; nothing rendered during my 11:00-13:00 ET stream window. Every change behind a restore switch. After every phase: regression set, reference / before / after clips on the localhost page, build installed behind Play Veyr.app, commit and push, two lines to me. If Greystone needs my Epic login, leave that one step for me and carry on.
 
-If Greystone needs my Epic login, leave that as my one step and carry on with F. Don't mark the goal complete until every row in the goal file meets its "done when" or is recorded as blocked with the reason. Then merge into main and push.
+When "Done" is met, merge into main, push, clean up, and send me the summary.
 ```
 
 ---
