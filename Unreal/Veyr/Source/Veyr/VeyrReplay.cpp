@@ -2505,7 +2505,10 @@ void AVeyrReplay::DriveInputs()
         const float GoalTolerance=bHeadRoute?15.f:45.f+25.f*(Dragon->BodyScale-1.f);
         bWantLock=!bHeadWaypoint&&GoalDistance<GoalTolerance;
         const FVector StrikeTarget=bHeadRoute?Dragon->GetHeadLocation():Dragon->GetLegLocation(TargetLeg);
-        const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
+        // Locked onto the 2x head the knight can settle about 18 degrees off its centre and wait out the whole
+        // shorter lying window; with the new knock-down timing a head strike starts within 22 degrees.
+        const float FacingNeed=bHeadRoute&&Dragon->IsHeadExposed()&&!Dragon->bLegacyKnockdown?.93f:.97f;
+        const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>FacingNeed;
         if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
         const bool bDodgeExercise=ReplayMode==TEXT("core")&&Knight->DodgedHits==0&&Dragon->Move==EVeyrDragonMove::BackStomp;

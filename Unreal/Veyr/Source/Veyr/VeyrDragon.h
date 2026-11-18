@@ -201,6 +201,9 @@ public:
     bool bLegacyKnockdown=false;
     float KnockdownFloorBudgetSeconds=4.9f; // 0.1 s under the 5 s limit: states end on frame boundaries
     float KnockdownRiseRate=1.25f;
+    /** The shorter lying window gives fewer blows; each blow to the exposed head counts this much more
+     * (the 200-damage early end is unchanged). 1 under -VeyrLegacyKnockdown. */
+    float KnockdownExposedDamageScale=2.f;
     float KnockdownBuckleSeconds(int32 Leg) const;
     float KnockdownCollapseSeconds() const;
     float KnockdownRiseSeconds() const;
