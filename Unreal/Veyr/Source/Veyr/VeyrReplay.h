@@ -59,6 +59,10 @@ private:
     FString ReplayMode, RunDirectory, OutcomeReason;
     bool bInitialized=false, bFinished=false, bFinalSaved=false, bPassed=false, bQuit=false;
     bool bPerformanceMode=false;
+    /** Null renderer (-nullrhi): numbers only. No frame can be captured, so none is requested or awaited. */
+    bool bHeadless=false;
+    /** Least time between event stills (-VeyrStillInterval=seconds). Each still stalls one frame by about 0.1 s. */
+    float StillInterval=.30f;
     bool bAwaitingNextReplayWorld=false;
     bool bLightLegContact=false, bHeavyLegContact=false, bSawRise=false, bRiseCompleted=false;
     bool bTerminalSettling=false, bAwaitingReload=false, bRestartVerification=false;
@@ -184,6 +188,8 @@ private:
     TArray<FCampZoneResult> CampResults;
     int32 CampZone=0,CampHitsAtArrival=0,CampFlightsAtArrival=0;
     float CampZoneStarted=0.f,CampHoldUntil=0.f;
+    FVector DeathSpot=FVector::ZeroVector;
+    bool bDeathSpotSet=false,bDeathSpotReached=false;
     FVector CampHoldPoint=FVector::ZeroVector;
     bool DriveCampInputs();
     FVector CampGoal(int32 Zone) const;

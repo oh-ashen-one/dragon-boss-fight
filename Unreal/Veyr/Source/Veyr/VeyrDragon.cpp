@@ -335,6 +335,7 @@ void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
             State==EVeyrDragonState::Collapse?1-Ease(StateElapsed/StateDuration):0.f;
     }
     State=Next; StateElapsed=0; StateDuration=Duration;
+    if(Next==EVeyrDragonState::Exposed)ExposedDamage=0.f;
     bFightFeelContactPlayed=false;
     bPreviousContactPoseValid=false;PreviousContacts.Reset();
     const bool Landing=Next==EVeyrDragonState::Recovery&&Move==EVeyrDragonMove::FlyAway&&HasAuthoredFlight();
@@ -365,11 +366,22 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             break;
         }
         case EVeyrDragonState::Windup:
-            if(WindupTrackBudget>0.f&&StateElapsed<=StateDuration*.75f&&IsValid(Target)&&!Target->IsDead())
+            if(IsWindupTracking()&&IsValid(Target)&&!Target->IsDead())
             {
                 const FName Clip=ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Active"));
                 float Wanted=0.f;
-                if(TrackedContactContains(Clip,Target->GetFootLocation(),&Wanted)&&!FMath::IsNearlyZero(Wanted))
+                // Aim where a moving player will be when the blow lands (bounded lead); a player
+                // who stops is aimed at where they stand. Running in a line does not outpace the
+                // coil: the answer is the roll.
+                const FVector Feet=Target->GetFootLocation();
+                const FVector Lead=Feet+Ground(Target->GetVelocity())*FMath::Min(.3f,StateDuration-StateElapsed+.1f);
+                // A player who has run clear of the whole arc is still followed: the body keeps turning the
+                // strike toward them until the blow goes, so sprinting around the dragon is not a free pass.
+                if(!TrackedContactContains(Clip,Lead,&Wanted)&&!TrackedContactContains(Clip,Feet,&Wanted))Wanted=TrackedContactNearestYaw(Clip,Lead);
+                // The turn is a late snap timed to finish as the blow goes. A player who circles with the
+                // body cannot settle back into a blind spot between the turn and the strike.
+                const float SnapSeconds=FMath::Min(FMath::Abs(Wanted),WindupTrackBudget)/(TrackRateDegreesPerSecond*PaceScale)+.06f;
+                if(!FMath::IsNearlyZero(Wanted)&&StateDuration-StateElapsed<=SnapSeconds)
                 {
                     const float Step=FMath::Min(FMath::Min(FMath::Abs(Wanted),WindupTrackBudget),TrackRateDegreesPerSecond*PaceScale*DeltaSeconds);
                     AddActorWorldRotation(FRotator(0,FMath::Sign(Wanted)*Step,0));
@@ -413,6 +425,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             if(StateElapsed>=StateDuration)
             {
                 if(Move==EVeyrDragonMove::FlyAway)SetActorLocation(MoveEnd);
+                CloseBrainLogEntry(TEXT("miss"));
                 if(TryChainAttack())break;
                 EnterState(EVeyrDragonState::Recovery,RecoveryDuration);
             }
@@ -428,9 +441,19 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 if(bAggression)
                 {
                     // A finished string leaves one honest opening; inside a string the next blow follows at once.
-                    if(ComboCount>=ComboBudget){Gap=BrainRandom.FRandRange(.85f,1.15f);ComboCount=0;RollComboBudget();}
-                    else Gap=BrainRandom.FRandRange(.2f,.45f);
-                    if(InSecondPhase())Gap*=.8f;
+                    // The opening after a string is the player's turn in both phases; only the gaps
+                    // inside a string tighten when the boss is wounded.
+                    // Whiff punish: a string the player avoided completely leaves the long opening; a string
+                    // that connected is pressed home with only a short breath. Skill buys the player's turn.
+                    if(ComboCount>=ComboBudget)
+                    {
+                        Gap=bStringLanded?BrainRandom.FRandRange(.6f,.9f):WhiffOpeningFloor()+BrainRandom.FRandRange(0.f,.3f);
+                        if(bStringLanded)WhiffStreak=0;else{++WhiffOpenings;++WhiffStreak;}
+                        ComboCount=0;bStringLanded=false;RollComboBudget();
+                    }
+                    else Gap=BrainRandom.FRandRange(.2f,.45f)*(InSecondPhase()?.8f:1.f);
+                    // An armed anti-camp answer does not wait out the opening.
+                    if(AntiCampArmed())Gap=.15f;
                 }
                 EnterState(EVeyrDragonState::Idle,Gap);
             }
@@ -451,7 +474,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 // Do not spend the whole post-punish exchange airborne merely
                 // because the flight clock expired during the downed window.
                 if(UsesPacingRevision())NextFlightAt=FMath::Max(NextFlightAt,EncounterClock+10.f);
-                StaggerProtection=1.5f; ComboCount=0; EnterState(EVeyrDragonState::Idle,bAggression?.5f:.8f);
+                StaggerProtection=1.5f; ComboCount=0; bStringLanded=false; EnterState(EVeyrDragonState::Idle,bAggression?.5f:.8f);
             }
             break;
         case EVeyrDragonState::Dead:break;
@@ -747,6 +770,12 @@ void AVeyrDragon::BeginReposition()
         const float Along=static_cast<float>(FVector::DotProduct(Offset,TurnEnd.Vector()));
         const float OffAxis=FMath::Abs(FMath::FindDeltaAngleDegrees(TurnEnd.Yaw,Offset.Rotation().Yaw));
         Stride=OffAxis>60.f?0.f:FMath::Clamp(Along-FrontSweetCm,-450.f*BodyScale,700.f*BodyScale);
+        // Inside the guard (in front of the chest, between and around the fore paws) no strike
+        // reaches. Yielding ground invites the player straight back in, so half the time the
+        // body walks over them instead: the fore legs trample through the spot and the player
+        // ends under the hips, where both stomps land.
+        if(OffAxis<=60.f&&Along>0.f&&Along<FrontSweetCm-150.f*BodyScale&&(bForceOverrun||BrainRandom.FRand()<.5f))
+        {Stride=FMath::Clamp(Along-60.f*BodyScale,0.f,700.f*BodyScale);++OverrunCount;}
         if(FMath::Abs(Stride)<60.f*BodyScale)Stride=0.f;
         ++RepositionCount;
     }
@@ -828,14 +857,26 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
     RepeatedMoveCount=Next==LastMove?RepeatedMoveCount+1:1; LastMove=Next; ++ComboCount;
     bContactConsumed=false; AttackOrigin=Ground(GetActorLocation()); AttackForward=Ground(GetActorForwardVector()).GetSafeNormal();
     MoveStart=Ground(GetActorLocation()); MoveEnd=MoveStart;
+    if(bAggression&&IsValid(Target)&&BrainLog.Num()<400)
+    {
+        CloseBrainLogEntry(TEXT("miss"));
+        const FVector Feet=Target->GetFootLocation(),Local=RigidTransform().InverseTransformPosition(Feet);
+        const FName Clip=ImportedMoveClip(Next,Next==EVeyrDragonMove::ClawSwipe?ClawLeg:ForcedStompLeg!=INDEX_NONE?ForcedStompLeg:StompLeg,TEXT("Active"));
+        float Wanted=0.f;
+        const bool Certain=Next!=EVeyrDragonMove::FlyAway&&TrackedContactContains(Clip,Feet,&Wanted);
+        BrainLogYaw0=static_cast<float>(GetActorRotation().Yaw);BrainLogMinGap=100000.f;
+        BrainLog.Add(FString::Printf(TEXT("%.1f %d %s%s at(%.0f,%.0f) spd%.0f"),EncounterClock,MoveIndex(Next),bChainedAttack?TEXT("chain "):TEXT(""),Certain?TEXT("certain"):TEXT("loose"),Local.X,Local.Y,Target->GetVelocity().Size2D())+FString::Printf(TEXT(" want%.0f"),Wanted));
+        bBrainLogOpen=true;
+    }
     switch(Move)
     {
         case EVeyrDragonMove::Fire:
             AttackOrigin=Ground(GetActorTransform().TransformPosition(FVector(470,0,0))); break;
         case EVeyrDragonMove::FlyAway:
         {
-            NextFlightAt=EncounterClock+(bAggression?26.f:20.f);bAerialFireConsumed=false;
-            UnderBodySeconds=0.f;CampSeconds=0.f;
+            // Fewer scheduled flights under aggression: the pressure stays on the ground.
+            NextFlightAt=EncounterClock+(bAggression?45.f:20.f);bAerialFireConsumed=false;
+            UnderBodySeconds=0.f;CampSeconds=0.f;GuardPocketSeconds=0.f;SpacedFlightReadyAt=EncounterClock+40.f;
             AerialFireTarget=Ground(Target->GetFootLocation());
             const FVector Side=GetActorRightVector()*(TotalAttacks%2==0?1.f:-1.f);
             MoveEnd=ClampArena(Ground(Target->GetActorLocation())+Side*900.f*BodyScale,RoamRadius()-200.f);
@@ -876,10 +917,26 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
     }
 }
 
+bool AVeyrDragon::AntiCampArmed() const
+{
+    // A nearly defeated boss stays on the ground; then nothing may wait on a takeoff that cannot come.
+    const bool FlightAvailable=!UsesFinisherRevision()||Health>MaxHealth*.25f;
+    return FlightAvailable&&(UnderBodySeconds>=UnderBodyLimit||SpacedAntiCampDue());
+}
+
+void AVeyrDragon::CloseBrainLogEntry(const TCHAR* Outcome)
+{
+    if(!bBrainLogOpen||BrainLog.IsEmpty())return;
+    bBrainLogOpen=false;
+    const FVector Local=IsValid(Target)?RigidTransform().InverseTransformPosition(Target->GetFootLocation()):FVector::ZeroVector;
+    BrainLog.Last()+=FString::Printf(TEXT(" -> %s end(%.0f,%.0f) turned%.0f gap%.0f"),Outcome,Local.X,Local.Y,
+        FMath::FindDeltaAngleDegrees(BrainLogYaw0,static_cast<float>(GetActorRotation().Yaw)),BrainLogMinGap);
+}
+
 void AVeyrDragon::RollComboBudget()
 {
     const float Roll=BrainRandom.FRand();
-    ComboBudget=InSecondPhase()?(Roll<.20f?1:Roll<.60f?2:3):(Roll<.40f?1:Roll<.82f?2:3);
+    ComboBudget=InSecondPhase()?(Roll<.15f?1:Roll<.55f?2:3):(Roll<.25f?1:Roll<.70f?2:3);
 }
 
 bool AVeyrDragon::IsPointUnderBody(const FVector& Point) const
@@ -897,6 +954,24 @@ bool AVeyrDragon::IsPointUnderBody(const FVector& Point) const
     return Local.X>MinX&&Local.X<MaxX&&FMath::Abs(Local.Y)<MaxY;
 }
 
+bool AVeyrDragon::IsPointInGuardPocket(const FVector& Point) const
+{
+    if(!bUsingCustomuseVisual||!bImportedTargetsValid||!bImportedAttackCacheReady)return false;
+    const FTransform Frame=RigidTransform();
+    const FVector Local=Frame.InverseTransformPosition(Point);
+    float MaxX=-TNumericLimits<float>::Max(),MaxY=0.f;
+    for(int32 I=0;I<4;++I)
+    {
+        const FVector Foot=Frame.InverseTransformPosition(ImportedFeetWorld[I]);
+        MaxX=FMath::Max(MaxX,static_cast<float>(Foot.X));MaxY=FMath::Max(MaxY,FMath::Abs(static_cast<float>(Foot.Y)));
+    }
+    // Near field only: from the fore paws out to the bite's centre, a little wider than the stance.
+    if(Local.X<MaxX-100.f*BodyScale||Local.X>FrontSweetCm||FMath::Abs(Local.Y)>MaxY+300.f*BodyScale)return false;
+    for(const auto& Pair:LocalAttackContacts)
+        if(Pair.Key!=ImportedMoveClip(EVeyrDragonMove::Fire,0,TEXT("Active"))&&ContainsAny(Pair.Value,Local))return false;
+    return true;
+}
+
 void AVeyrDragon::UpdateCampTimers(float DeltaSeconds)
 {
     if(!bAggression||bShowcaseMode||!IsValid(Target)||IsDead()||bEncounterStopped)return;
@@ -906,6 +981,10 @@ void AVeyrDragon::UpdateCampTimers(float DeltaSeconds)
     // Shelter under the belly: the answer is takeoff and fire, armed after UnderBodyLimit seconds.
     if(Standing&&IsPointUnderBody(Feet))UnderBodySeconds+=DeltaSeconds;
     else UnderBodySeconds=FMath::Max(0.f,UnderBodySeconds-2.f*DeltaSeconds);
+    // The same answer for the pocket no strike reaches (in front of the chest, around the fore paws):
+    // standing there to chop a leg is sheltering too, on a slightly longer fuse.
+    if(Standing&&IsPointInGuardPocket(Feet))GuardPocketSeconds+=DeltaSeconds;
+    else GuardPocketSeconds=FMath::Max(0.f,GuardPocketSeconds-DeltaSeconds);
     // Any close spot held without taking a hit: the same answer on a longer fuse.
     const bool Close=FVector::Dist2D(Feet,GetActorLocation())<900.f*BodyScale;
     if(Target->HitsTaken!=CampHitsBaseline){CampHitsBaseline=Target->HitsTaken;CampSeconds=0.f;}
@@ -970,11 +1049,18 @@ void AVeyrDragon::ChooseAggressiveAttack()
     const FVector Lead=Feet+Ground(Target->GetVelocity())*.45f;
     // A nearly defeated boss keeps its final exchange on the ground.
     const bool FlightAvailable=!UsesFinisherRevision()||Health>MaxHealth*.25f;
-    const bool AntiCamp=UnderBodySeconds>=UnderBodyLimit||CampSeconds>=CampLimit;
+    const bool AntiCamp=UnderBodySeconds>=UnderBodyLimit||SpacedAntiCampDue();
+    if(FlightAvailable&&AntiCamp&&GuardPocketSeconds>=GuardPocketLimit&&UnderBodySeconds<UnderBodyLimit&&CampSeconds<CampLimit)++GuardPocketFlights;
     if(FlightAvailable&&(EncounterClock>=NextFlightAt||AntiCamp))
     {
         if(AntiCamp)++AntiCampFlights;
         bChainedAttack=false;BeginAttack(EVeyrDragonMove::FlyAway);return;
+    }
+    // The pocket held while the wings rest (or with the boss too hurt to fly): walk through the player.
+    if(GuardPocketSeconds>=GuardPocketLimit&&!bJustRepositioned)
+    {
+        GuardPocketSeconds=GuardPocketLimit-1.5f;++GuardPocketOverruns;
+        bForceOverrun=true;BeginReposition();bForceOverrun=false;return;
     }
     TArray<FBrainOption> Options;
     GatherBrainOptions(Feet,Lead,false,Options);
@@ -997,6 +1083,8 @@ bool AVeyrDragon::TryChainAttack()
     if(!bAggression||bShowcaseMode||bEncounterStopped||!bUsingCustomuseVisual||!bImportedAttackCacheReady||
        Move==EVeyrDragonMove::FlyAway||Move==EVeyrDragonMove::Fire||ComboCount>=ComboBudget||
        !IsValid(Target)||Target->IsDead())return false;
+    // Sheltering under the belly (or camping) is answered by takeoff now, not after another string.
+    if(AntiCampArmed())return false;
     const FVector Feet=Target->GetFootLocation();
     TArray<FBrainOption> Options;
     const FVector Lead=Feet+Ground(Target->GetVelocity())*.45f;
@@ -1010,6 +1098,26 @@ bool AVeyrDragon::TryChainAttack()
     if(Options.IsEmpty())return false;
     ++CompletedAttacks[MoveIndex(Move)];++ChainCount;
     return BeginBrainOption(Options,true);
+}
+
+float AVeyrDragon::SecondsUntilStrikeReaches(const FVector& Point) const
+{
+    if(Move==EVeyrDragonMove::FlyAway||(State!=EVeyrDragonState::Windup&&State!=EVeyrDragonState::Active))return 1000.f;
+    const auto* Shapes=LocalAttackContacts.Find(ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Active")));
+    if(!Shapes)return 1000.f;
+    const FVector Local=RigidTransform().InverseTransformPosition(Point);
+    // During the first part of the coil the body may still turn onto the player: read the fan it can cover.
+    const float Fan=WindupMayStillTrack()?WindupTrackBudget:0.f;
+    float First=2.f,Last=-1.f;
+    for(const auto& Shape:*Shapes)
+        for(float Yaw:{0.f,-10.f,10.f,-20.f,20.f,-30.f,30.f})
+            if(FMath::Abs(Yaw)<=Fan+.1f&&ContainsPoint(Shape,Local.RotateAngleAxis(-Yaw,FVector::UpVector)))
+            {First=FMath::Min(First,Shape.InnerRadius);Last=FMath::Max(Last,Shape.InnerRadius);}
+    if(Last<0.f)return 1000.f;
+    const float Sample=ActiveDuration/32.f;
+    if(State==EVeyrDragonState::Windup)return FMath::Max(0.f,StateDuration-StateElapsed)+FMath::Max(0.f,First*ActiveDuration-Sample);
+    if(StateElapsed>Last*ActiveDuration+Sample)return 1000.f; // the sweep has already passed this spot
+    return FMath::Max(0.f,First*ActiveDuration-Sample-StateElapsed);
 }
 
 float AVeyrDragon::EarliestNextContactSeconds(const FVector& Point) const
@@ -1046,7 +1154,7 @@ float AVeyrDragon::EarliestNextContactSeconds(const FVector& Point) const
     {
         case EVeyrDragonState::Windup:return Remaining+ActiveDuration+AfterStrike;
         case EVeyrDragonState::Active:return Remaining+AfterStrike;
-        case EVeyrDragonState::Recovery:return Remaining+(ComboCount>=ComboBudget?.68f:.16f)+Quick;
+        case EVeyrDragonState::Recovery:return Remaining+(ComboCount>=ComboBudget?(bStringLanded?.6f:WhiffOpeningFloor()):.16f)+Quick;
         case EVeyrDragonState::Idle:return Remaining+Quick;
         case EVeyrDragonState::Reposition:return Remaining+.15f+Quick;
         case EVeyrDragonState::Buckle:return Remaining+VideoStateDuration(TEXT("Collapse"),1.f)+ExposedSeconds+Rise+.5f+Quick;
@@ -1146,6 +1254,14 @@ void AVeyrDragon::TryDamageTarget()
         else
         {
             bHit=ImportedContactHitsKnight(Contacts);
+            if(bBrainLogOpen&&State==EVeyrDragonState::Active)
+            {
+                const UCapsuleComponent* Cap=Target->GetCapsuleComponent();
+                const float KR=Cap->GetScaledCapsuleRadius(),KH=Cap->GetScaledCapsuleHalfHeight();
+                const FVector KC=Cap->GetComponentLocation(),KA=KC-FVector(0,0,KH-KR),KB=KC+FVector(0,0,KH-KR+2.f*KH*(BodyScale-1.f));
+                for(const auto& Contact:Contacts)
+                {FVector P,Q;FMath::SegmentDistToSegmentSafe(KA,KB,Contact.Start,Contact.End,P,Q);BrainLogMinGap=FMath::Min(BrainLogMinGap,static_cast<float>(FVector::Dist(P,Q))-Contact.Radius-KR);}
+            }
             // Sweep sampled bone contacts, not an unrelated proxy arc. Dense
             // bounded intermediate capsules prevent a stalled frame tunnelling.
             if(bPreviousContactPoseValid&&PreviousContacts.Num()==Contacts.Num())
@@ -1171,7 +1287,7 @@ void AVeyrDragon::TryDamageTarget()
         const FVector Source=Move==EVeyrDragonMove::Fire||Move==EVeyrDragonMove::Bite?GetMouthLocation():
             Contacts.IsEmpty()?AttackOrigin:Contacts[0].Start;
         Target->ApplyBossDamage(AttackDamage,Source,false);
-        if(Target->Health>=Before-.001f)++AvoidedContactCount;
+        if(Target->Health>=Before-.001f){++AvoidedContactCount;CloseBrainLogEntry(TEXT("rolled"));}else{bStringLanded=true;CloseBrainLogEntry(TEXT("HIT"));}
         return;
     }
     const FVeyrDragonFootprint Footprint=GetActiveFootprint();
@@ -1179,7 +1295,7 @@ void AVeyrDragon::TryDamageTarget()
     bContactConsumed=true; ++DamageContactCount;
     const float Before=Target->Health;
     Target->ApplyBossDamage(AttackDamage,Footprint.Origin,false);
-    if(Target->Health>=Before-.001f)++AvoidedContactCount;
+    if(Target->Health>=Before-.001f){++AvoidedContactCount;CloseBrainLogEntry(TEXT("rolled"));}else{bStringLanded=true;CloseBrainLogEntry(TEXT("HIT"));}
 }
 
 bool AVeyrDragon::SwordContact(const FVector& Origin,const FVector& Forward,const FVector& Point,float Radius,float& Score)
@@ -1239,6 +1355,12 @@ bool AVeyrDragon::ReceiveSwordSweep(const FVector& PreviousBase,const FVector& P
         const float Radius=(I<4?75.f:100.f)*BodyScale;
         const float D=Distance(I<4?GetLegLocation(I):GetHeadLocation());
         float SurfaceDistance=D-Radius;
+        // The solid snout keeps the knight a snout-length from the skull point; at a larger scale
+        // that is beyond the sword. The snout itself (the same capsule that blocks him) is the head.
+        if(I==4&&BodyScale>1.01f&&bUsingCustomuseVisual&&bImportedTargetsValid)
+            SurfaceDistance=FMath::Min(SurfaceDistance,FMath::Min(
+                SegmentTriangleDistance(ImportedHeadWorld,ImportedMouthWorld,CurrentBase,CurrentTip,PreviousTip),
+                SegmentTriangleDistance(ImportedHeadWorld,ImportedMouthWorld,CurrentBase,PreviousTip,PreviousBase))-Radius);
         if(I<4&&bUsingCustomuseVisual&&bAnatomicalLegContactsReady)
         {
             auto LimbDistance=[&](const FVector& A,const FVector& B)
@@ -1313,9 +1435,20 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
         if(Mode->FightFeel)Mode->FightFeel->SwordContact(this,bHeavy);
     if(Region<4)LegFlash[Region]=1;
     if(Health<=0){EnterState(EVeyrDragonState::Dead,3.4f);return;}
+    // One knock-down is a punish, not the fight: after a solid chain to the exposed head the dragon
+    // tears free and rises instead of lying still for the whole window.
+    if(bAggression&&State==EVeyrDragonState::Exposed)
+    {
+        ExposedDamage+=LastSwordDamage;
+        if(ExposedDamage>=ExposedDamageCap&&StateDuration-StateElapsed>.35f){StateDuration=StateElapsed+.35f;++ExposedCapRises;}
+    }
     if(Region<4&&CanStagger())
     {
-        LegStagger[Region]=FMath::Min(100.f,LegStagger[Region]+(bHeavy?45.f:25.f));
+        // Balance is counted per opening, not per blow: the two-hand grip already hits 1.55x harder, so its
+        // blows unbalance the leg less (L16/H28), and the lighter one-hand cuts more (L25/H45). Both grips
+        // then bring a leg down after about two good openings on it.
+        const bool bTwoHandBlow=DamageMultiplier>1.01f;
+        LegStagger[Region]=FMath::Min(100.f,LegStagger[Region]+(bAggression?(bTwoHandBlow?(bHeavy?28.f:16.f):(bHeavy?45.f:25.f)):(bHeavy?45.f:25.f)));
         if(LegStagger[Region]>=100.f){StruckLeg=Region;++CollapseCount;EnterState(EVeyrDragonState::Buckle,VideoStateDuration(FName(*FString::Printf(TEXT("Buckle%d"),Region)),.65f));}
     }
 }
@@ -1347,7 +1480,7 @@ float AVeyrDragon::GetLegContactRadius(int32 Index) const
     return Radii[FMath::Clamp(Index,0,3)]*Scale;
 }
 float AVeyrDragon::GetLegStagger(int32 Index) const {return LegStagger[FMath::Clamp(Index,0,3)];}
-float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,ExposedSeconds-StateElapsed):0.f;}
+float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,StateDuration-StateElapsed):0.f;}
 bool AVeyrDragon::IsAirborne() const
 {
     if(Move!=EVeyrDragonMove::FlyAway)return false;
@@ -1693,6 +1826,12 @@ void AVeyrDragon::UpdateSolidBody()
     }
     for(int32 I=0;I<19;++I){SolidPreviousStarts[I]=Starts[I];SolidPreviousEnds[I]=Ends[I];}
     bSolidBodyHasPose=true;
+    // Evidence: how far the grounded body (head to tail tip) stays inside the 9800 x 8800 cm court floor.
+    if(!IsAirborne()&&!bShowcaseMode)
+        for(int32 I=0;I<19;++I)
+            for(const FVector& P:{Starts[I],Ends[I]})
+                CourtOverreachCm=FMath::Max(CourtOverreachCm,FMath::Max(
+                    FMath::Abs(static_cast<float>(P.X))+Radii[I]-4900.f,FMath::Abs(static_cast<float>(P.Y))+Radii[I]-4400.f));
     // Flight/collapse/death use the same evaluated shapes. Elevated parts do
     // not leave an invisible ground wall; a fallen body remains physically solid.
 }
@@ -2131,7 +2270,7 @@ FVeyrDragonFootprint AVeyrDragon::ProjectFlameToGround(const FVeyrDragonFlameBea
         const float FloorHeight=bAllWalkableHeights?MaximumWarningFloorHeightCm:
             WarningArena.IsValid()?WarningArena->GetMaximumWalkableHeightNear(P,R):9.f;
         const float Dz=FMath::Max(0.f,FMath::Max(static_cast<float>(Radius-P.Z),
-            static_cast<float>(P.Z-(2.f*HalfHeight-Radius+FloorHeight))));
+            static_cast<float>(P.Z-(2.f*HalfHeight*BodyScale-Radius+FloorHeight))));
         if(Dz>R)continue;
         const float GroundRadius=FMath::Sqrt(FMath::Max(0.f,R*R-Dz*Dz));
         if(!Found){F.Origin=Ground(P);Found=true;}
@@ -2207,7 +2346,7 @@ bool AVeyrDragon::CacheImportedAttackWarnings()
                     F.Shape=EVeyrDangerShape::Capsule;F.Origin=Ground(C.Start);F.End=Ground(C.End);
                     // Contact is tested in 3D against the knight's capsule spine. A paw or tail passing
                     // overhead reaches a shorter distance along the floor, or none at all.
-                    const float SpineTop=static_cast<float>(Actor.GetLocation().Z)+2.f*KnightHalfHeight-KnightRadius;
+                    const float SpineTop=static_cast<float>(Actor.GetLocation().Z)+2.f*KnightHalfHeight*BodyScale-KnightRadius;
                     auto FloorReach=[&](const FVector& P)
                     {
                         const float Height=FMath::Max(0.f,static_cast<float>(P.Z)-SpineTop),Reach=C.Radius+KnightRadius;
@@ -2219,7 +2358,9 @@ bool AVeyrDragon::CacheImportedAttackWarnings()
                 for(auto& F:Tight)
                 {
                     F.Origin=Actor.InverseTransformPosition(F.Origin);F.End=Actor.InverseTransformPosition(F.End);
-                    F.Forward=Actor.InverseTransformVectorNoScale(F.Forward);F.bDamaging=false;Certain.Add(F);
+                    F.Forward=Actor.InverseTransformVectorNoScale(F.Forward);F.bDamaging=false;
+                    F.InnerRadius=I/32.f; // capsules ignore InnerRadius: it carries the strike phase of this sample
+                    Certain.Add(F);
                 }
                 for(auto& F:Sample)
                 {
@@ -2362,16 +2503,49 @@ bool AVeyrDragon::CachedContactContains(FName Clip,const FVector& WorldPoint) co
     return Shapes&&ContainsAny(*Shapes,RigidTransform().InverseTransformPosition(WorldPoint));
 }
 
+float AVeyrDragon::TrackedContactNearestYaw(FName Clip,const FVector& WorldPoint) const
+{
+    const auto* Shapes=LocalAttackContacts.Find(Clip);
+    if(!Shapes)return 0.f;
+    const FVector Local=RigidTransform().InverseTransformPosition(WorldPoint);
+    float Best=0.f,BestGap=TNumericLimits<float>::Max();
+    for(float Yaw:{0.f,-10.f,10.f,-20.f,20.f,-30.f,30.f})
+    {
+        if(FMath::Abs(Yaw)>TrackLimitDegrees+.1f)continue;
+        const FVector P=Local.RotateAngleAxis(-Yaw,FVector::UpVector);
+        float Gap=TNumericLimits<float>::Max();
+        for(const auto& Shape:*Shapes)
+            if(Shape.Shape==EVeyrDangerShape::Capsule)
+                Gap=FMath::Min(Gap,DistanceToSegment2D(P,Ground(Shape.Origin),Ground(Shape.End))-Shape.OuterRadius);
+        // Prefer the smaller turn unless a larger one is clearly closer.
+        if(Gap<BestGap-25.f){BestGap=Gap;Best=Yaw;}
+    }
+    return Best;
+}
+
 bool AVeyrDragon::TrackedContactContains(FName Clip,const FVector& WorldPoint,float* OutYawDegrees) const
 {
     const auto* Shapes=LocalAttackContacts.Find(Clip);
     if(!Shapes)return false;
     const FVector Local=RigidTransform().InverseTransformPosition(WorldPoint);
-    // Turning the body by +Yaw moves a fixed world point by -Yaw in the body frame. Smallest turn wins.
+    // Turning the body by +Yaw moves a fixed world point by -Yaw in the body frame. Smallest turn wins;
+    // when a turn is needed it continues half-way into the reach instead of stopping at its very edge.
+    float Smallest=1000.f;
     for(float Yaw:{0.f,-10.f,10.f,-20.f,20.f,-30.f,30.f})
         if(FMath::Abs(Yaw)<=TrackLimitDegrees+.1f&&ContainsAny(*Shapes,Local.RotateAngleAxis(-Yaw,FVector::UpVector)))
-        {if(OutYawDegrees)*OutYawDegrees=Yaw;return true;}
-    return false;
+        {Smallest=Yaw;break;}
+    if(Smallest>999.f)return false;
+    if(OutYawDegrees)
+    {
+        *OutYawDegrees=Smallest;
+        if(!FMath::IsNearlyZero(Smallest))
+        {
+            const float Deeper=Smallest+FMath::Sign(Smallest)*10.f;
+            if(FMath::Abs(Deeper)<=TrackLimitDegrees+.1f&&ContainsAny(*Shapes,Local.RotateAngleAxis(-Deeper,FVector::UpVector)))
+                *OutYawDegrees=Smallest+FMath::Sign(Smallest)*5.f;
+        }
+    }
+    return true;
 }
 
 TArray<FString> AVeyrDragon::BrainReachMap() const
@@ -2449,7 +2623,10 @@ bool AVeyrDragon::ImportedContactHitsKnight(const TArray<FVeyrDragonContact>& Co
     const UCapsuleComponent* Capsule=Target->GetCapsuleComponent();
     const float R=Capsule->GetScaledCapsuleRadius(),Half=Capsule->GetScaledCapsuleHalfHeight();
     const FVector Center=Capsule->GetComponentLocation(),Up=Capsule->GetUpVector();
-    const FVector A=Center-Up*(Half-R),B=Center+Up*(Half-R);
+    // Strikes were authored against a knight as tall as the creature's shin. At a larger scale the
+    // same swing passes over his head, so the struck column grows with the creature: a claw or tail
+    // that sweeps the air just above him connects exactly as it did at the original size.
+    const FVector A=Center-Up*(Half-R),B=Center+Up*(Half-R)+Up*(2.f*Half*(BodyScale-1.f));
     for(const auto& C:Contacts)
     {
         FVector P,Q;FMath::SegmentDistToSegmentSafe(A,B,C.Start,C.End,P,Q);
@@ -2464,7 +2641,7 @@ bool AVeyrDragon::FlameHitsKnight(const FVeyrDragonFlameBeam& Beam) const
     const UCapsuleComponent* Capsule=Target->GetCapsuleComponent();
     const float R=Capsule->GetScaledCapsuleRadius(),Half=Capsule->GetScaledCapsuleHalfHeight();
     const FVector A=Capsule->GetComponentLocation()-Capsule->GetUpVector()*(Half-R);
-    const FVector B=Capsule->GetComponentLocation()+Capsule->GetUpVector()*(Half-R);
+    const FVector B=Capsule->GetComponentLocation()+Capsule->GetUpVector()*(Half-R)+Capsule->GetUpVector()*(2.f*Half*(BodyScale-1.f));
     const double K=FMath::Tan(FMath::DegreesToRadians(Beam.HalfAngleDegrees));
     // Rotational symmetry reduces point-to-finite-solid-cone distance to the
     // axial/radial triangle. Minimize this convex distance along capsule spine.

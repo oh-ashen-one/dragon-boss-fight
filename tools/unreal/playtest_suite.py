@@ -17,20 +17,29 @@ ROOT = Path(__file__).resolve().parents[2]
 PLAY_PROFILE = ['-VeyrCanonicalKnightSkin', '-VeyrStableWeaponPresentation', '-VeyrWalkEntryBlend', '-VeyrReadableAutoLock']
 
 p = argparse.ArgumentParser(description=__doc__)
-p.add_argument('--app', type=Path, required=True)
+p.add_argument('--app', type=Path)
+p.add_argument('--engine', type=Path, help='run the editor build as a game instead of a packaged app (headless specs only)')
 p.add_argument('--run', action='append', required=True,
                help='mode[:flag[,flag...]] e.g. victory, victory:two-handed, camp, showcase:-VeyrLegacyDragon; '
-                    '"two-handed" maps to --start-two-handed, "video=N" to --video-fps N, "sound" to --with-sound')
+                    '"two-handed" maps to --start-two-handed, "video=N" to --video-fps N, "sound" to --with-sound, '
+                    '"headless" to a numbers-only null-renderer run that needs no GPU slot')
 p.add_argument('--label', default='suite')
+p.add_argument('--parallel', type=int, default=1, help='run this many headless specs at once (headless only)')
+p.add_argument('--busy-wait-minutes', type=float, default=40,
+               help='how long one run may stay queued while another session holds the GPU')
 a = p.parse_args()
+assert bool(a.app) != bool(a.engine), 'give exactly one of --app or --engine'
 gate = Path.home() / '.cache/gpu-slot/bin/gpu_slot.sh'
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 results = []
 crashes = 0
-for spec in a.run:
+def run_spec(spec, delay=0.0):
+    time.sleep(delay)
     mode, _, rest = spec.partition(':')
     flags = [f for f in rest.split(',') if f]
-    cmd = [sys.executable, str(ROOT / 'tools/unreal/run_native.py'), '--app', str(a.app), '--gpu-slot', str(gate),
+    runtime = ['--app', str(a.app)] if a.app else ['--engine', str(a.engine)]
+    assert a.app or 'headless' in flags, 'editor-game runs are headless only'
+    cmd = [sys.executable, str(ROOT / 'tools/unreal/run_native.py'), *runtime, '--gpu-slot', str(gate),
            '--mode', mode, '--slot-wait-seconds', '900']
     extra = list(PLAY_PROFILE)
     for flag in flags:
@@ -42,25 +51,28 @@ for spec in a.run:
             cmd += ['--video-fps', flag.split('=', 1)[1]]
         elif flag.startswith('audio='):
             cmd += ['--audio-capture-seconds', flag.split('=', 1)[1]]
+        elif flag == 'headless':
+            cmd.append('--headless')
         elif flag == 'no-profile':
             extra = []
         else:
             extra.append(flag)
     for flag in extra:
         cmd.append('--extra-arg=' + flag)
-    before = set(glob.glob(str(ROOT / 'Evidence' / ('native-' + mode + '-*'))))
     started = time.time()
     proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
     # Exit 75 is the shared GPU gate declining to launch while another session holds the GPU
-    # (nothing was started). Queue politely: wait and ask again, up to 40 minutes.
+    # (nothing was started). Queue politely: ask again every 20 s for --busy-wait-minutes.
     waits = 0
-    while proc.returncode == 75 and waits < 20:
+    while proc.returncode == 75 and time.time() - started < a.busy_wait_minutes * 60:
         waits += 1
-        print(f'    GPU busy with another session; waiting 120 s (attempt {waits})', flush=True)
-        time.sleep(120)
+        if waits % 10 == 1:
+            print(f'    GPU busy with another session; still queued (attempt {waits})', flush=True)
+        time.sleep(20)
         proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
-    new = sorted(set(glob.glob(str(ROOT / 'Evidence' / ('native-' + mode + '-*')))) - before)
-    record = {'spec': spec, 'exit': proc.returncode, 'wallSeconds': round(time.time() - started, 1),
+    # run_native.py prints its own evidence directory; parallel headless runs cannot be told apart by listing.
+    new = [line.split(':', 1)[1].strip() for line in proc.stdout.splitlines() if line.startswith('Native run:')]
+    record = {'spec': spec, 'headless': 'headless' in flags, 'exit': proc.returncode, 'wallSeconds': round(time.time() - started, 1),
               'run': new[-1] if new else None, 'tail': proc.stdout.strip().splitlines()[-1:] }
     evidence = glob.glob(new[-1] + '/unreal-*/evidence.json') if new else []
     if evidence:
@@ -79,6 +91,14 @@ for spec in a.run:
             'antiCampFlights': max([s.get('antiCampFlights', 0) for s in samples] or [0]),
             'repositionCount': max([s.get('repositionCount', 0) for s in samples] or [0]),
             'trampleCount': max([s.get('trampleCount', 0) for s in samples] or [0]),
+            'overrunCount': max([s.get('overrunCount', 0) for s in samples] or [0]),
+            'whiffOpenings': max([s.get('whiffOpenings', 0) for s in samples] or [0]),
+            'guardPocketFlights': max([s.get('guardPocketFlights', 0) for s in samples] or [0]),
+            'exposedCapRises': max([s.get('exposedCapRises', 0) for s in samples] or [0]),
+            'courtOverreachCm': max([s.get('bossCourtOverreachCm', -100000) for s in samples] or [-100000]),
+            'bossAttacks': max([s.get('bossAttacksStarted', 0) for s in samples] or [0]),
+            'bossContacts': max([s.get('bossDamageContacts', 0) for s in samples] or [0]),
+            'minPlayerHealth': min([s.get('playerHealth', 100) for s in samples] or [100]),
             'longestBossIdleSeconds': max([s.get('longestBossIdleSeconds', 0) for s in samples] or [0]),
             'warningContainmentFailures': e.get('warningContainmentFailures'),
             'moves': {m['move']: m['started'] for m in latest.get('moveCoverage', [])},
@@ -91,6 +111,11 @@ for spec in a.run:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:
             record['brainReachMap'] = e['brainReachMap']
+    return record, proc
+
+
+def report(record, proc):
+    global crashes
     results.append(record)
     print(json.dumps({k: v for k, v in record.items() if k not in ('camp', 'tail', 'brainReachMap')}), flush=True)
     for line in record.get('brainReachMap', []):
@@ -98,9 +123,21 @@ for spec in a.run:
     if 'camp' in record:
         for zone in record['camp']:
             print('   ', json.dumps(zone), flush=True)
-    if proc.returncode not in (0, 1) or not evidence:
+    if proc.returncode not in (0, 1) or not record.get('evidence'):
         crashes += 1
         print('    stderr:', proc.stderr.strip()[-600:], flush=True)
+
+
+if a.parallel > 1:
+    # Only renderer-less runs may overlap: they use no GPU and take no slot.
+    assert all('headless' in spec.partition(':')[2].split(',') for spec in a.run), '--parallel is for headless runs only'
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(a.parallel) as pool:
+        for record, proc in pool.map(lambda item: run_spec(item[1], 2.5 * (item[0] % a.parallel)), enumerate(a.run)):
+            report(record, proc)
+else:
+    for spec in a.run:
+        report(*run_spec(spec))
         if crashes >= 2:
             print('Two launches failed without evidence: stopping (never auto-relaunch).', flush=True)
             break

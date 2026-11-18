@@ -38,6 +38,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/DateTime.h"
 #include "Misc/EngineVersion.h"
+#include "Misc/App.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Guid.h"
 #include "Misc/Parse.h"
@@ -117,6 +118,8 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         if(bNextReplayWorldStarted)ReplayMode=NextReplay;
     }
     bPerformanceMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrPerformance"));
+    bHeadless=!FApp::CanEverRender();
+    if(FParse::Value(FCommandLine::Get(),TEXT("VeyrStillInterval="),StillInterval))StillInterval=FMath::Clamp(StillInterval,.30f,10.f);
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
     if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
@@ -287,6 +290,11 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetBoolField(TEXT("bossAggression"),Dragon->bAggression);O->SetBoolField(TEXT("floorTelegraph"),Dragon->bFloorTelegraph);
     O->SetNumberField(TEXT("brainSeed"),Dragon->BrainSeed);O->SetNumberField(TEXT("chainCount"),Dragon->ChainCount);
     O->SetNumberField(TEXT("trampleCount"),Dragon->TrampleCount);
+    O->SetNumberField(TEXT("overrunCount"),Dragon->OverrunCount);
+    O->SetNumberField(TEXT("whiffOpenings"),Dragon->WhiffOpenings);O->SetNumberField(TEXT("guardPocketFlights"),Dragon->GuardPocketFlights);O->SetNumberField(TEXT("guardPocketSeconds"),Dragon->GuardPocketSeconds);O->SetNumberField(TEXT("exposedCapRises"),Dragon->ExposedCapRises);
+    O->SetNumberField(TEXT("bossCourtOverreachCm"),Dragon->CourtOverreachCm);
+    O->SetNumberField(TEXT("bossAttacksStarted"),Dragon->GetTotalAttackCount());
+    O->SetNumberField(TEXT("bossDamageContacts"),Dragon->GetDamageContactCount());
     O->SetNumberField(TEXT("antiCampFlights"),Dragon->AntiCampFlights);O->SetNumberField(TEXT("repositionCount"),Dragon->RepositionCount);
     O->SetNumberField(TEXT("underBodySeconds"),Dragon->UnderBodySeconds);O->SetNumberField(TEXT("campSeconds"),Dragon->CampSeconds);
     O->SetNumberField(TEXT("longestBossIdleSeconds"),Dragon->LongestIdleSeconds);
@@ -568,7 +576,7 @@ void AVeyrReplay::Event(const FString& Name, bool bScreenshot)
     // reviewed. Keep the complete event/state JSON; the continuous video owns
     // image evidence in that mode. Low-cadence and screenshot-only runs retain
     // their named stills.
-    if(bScreenshot&&!bPerformanceMode&&VideoFPS<=15){CaptureQueue.Reset();CaptureQueue.Add(Name);PendingCaptureTriggerTime=Elapsed;}
+    if(bScreenshot&&!bPerformanceMode&&!bHeadless&&VideoFPS<=15){CaptureQueue.Reset();CaptureQueue.Add(Name);PendingCaptureTriggerTime=Elapsed;}
     UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_EVENT seconds=%.3f event=%s"),Elapsed,*Name);
 }
 
@@ -1947,6 +1955,11 @@ float AVeyrReplay::DangerContactDelay() const
         const FVeyrVisualClip& C=Dragon->VisualDefinition->Clips.FindChecked(TEXT("FlightRecovery"));
         return FMath::Max(0.f,(C.ImpactSeconds>=0.f?C.ImpactSeconds:25.f/30.f)-Dragon->GetStateElapsed());
     }
+    // Against the aggressive boss a single strike is timed to the moment its sweep arrives at the
+    // knight, not to the start of the active phase: at this size one roll no longer clears a strike zone.
+    if(Dragon->bAggression&&Dragon->Move!=EVeyrDragonMove::Fire&&Dragon->Move!=EVeyrDragonMove::FlyAway&&
+       (Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active))
+        return Dragon->SecondsUntilStrikeReaches(Knight->GetFootLocation());
     if(Dragon->State==EVeyrDragonState::Windup)return FMath::Max(0.f,Dragon->GetStateDuration()-Dragon->GetStateElapsed());
     if(Dragon->State==EVeyrDragonState::Active&&Dragon->Move==EVeyrDragonMove::FlyAway)
     {
@@ -1968,8 +1981,19 @@ float AVeyrReplay::SafeStationarySeconds(const FVector& Point) const
     {
         // The random brain cannot be predicted move by move. A competent player still knows the
         // quickest blow that can reach where they stand; use that bound and nothing more.
-        if(InWarning&&Dragon->State==EVeyrDragonState::Windup)return FMath::Max(0.f,Remaining-.15f);
-        if(InWarning&&Dragon->State==EVeyrDragonState::Active)return 0.f;
+        const bool Strike=(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active)&&
+            Dragon->Move!=EVeyrDragonMove::Fire&&Dragon->Move!=EVeyrDragonMove::FlyAway;
+        if(Strike)
+        {
+            // A committed strike either sweeps through this spot at a known moment or misses it.
+            const float Arrives=Dragon->SecondsUntilStrikeReaches(Point);
+            if(Arrives<999.f)return FMath::Max(0.f,Arrives-.15f);
+        }
+        else
+        {
+            if(InWarning&&Dragon->State==EVeyrDragonState::Windup)return FMath::Max(0.f,Remaining-.15f);
+            if(InWarning&&Dragon->State==EVeyrDragonState::Active)return 0.f;
+        }
         return FMath::Max(0.f,Dragon->EarliestNextContactSeconds(Point)-.15f);
     }
     const int32 Predicted=Dragon->PredictPositionalMove(Point);
@@ -2407,7 +2431,18 @@ void AVeyrReplay::DriveInputs()
     if(ReplayMode==TEXT("death"))
     {
         const FVector Goal=Dragon->GetHeadLocation()+Dragon->GetActorForwardVector()*120.f;
-        if(FVector::Dist2D(Feet,Goal)>70.f)Movement=(Goal-Feet).GetSafeNormal2D();
+        // A passive player: walks up in front of the head and stands, looking again every two seconds.
+        if(Dragon->bAggression)
+        {
+            // Walks to the spot in front of the jaws where the fight opens and never moves again.
+            if(!bDeathSpotSet){DeathSpot=Dragon->GetActorLocation()+Dragon->GetActorForwardVector()*Dragon->FrontSweet();bDeathSpotSet=true;}
+            if(!bDeathSpotReached)
+            {
+                if(FVector::Dist2D(Feet,DeathSpot)>70.f)Movement=(DeathSpot-Feet).GetSafeNormal2D();
+                else bDeathSpotReached=true;
+            }
+        }
+        else if(FVector::Dist2D(Feet,Goal)>70.f)Movement=(Goal-Feet).GetSafeNormal2D();
     }
     else if(Elapsed<1.4f)
     {
@@ -2461,7 +2496,8 @@ void AVeyrReplay::DriveInputs()
         // A single strike is read and rolled through at the last moment, as a practised player does.
         // Only a sustained hazard (fire sweep, the hunting jet, a landing) is walked out of early.
         const bool bSustained=Dragon->Move==EVeyrDragonMove::Fire||Dragon->Move==EVeyrDragonMove::FlyAway;
-        if(bEvade&&Dragon->bAggression&&!bSustained&&Dragon->State==EVeyrDragonState::Windup&&DangerContactDelay()>=.32f)bEvade=false;
+        // Not yet due, or a sweep that will not pass through this spot at all: keep working.
+        if(bEvade&&Dragon->bAggression&&!bSustained&&DangerContactDelay()>=.32f)bEvade=false;
         const bool bHealWindow=bCombatHealSeeking&&bAvailable&&Knight->IsGrounded()&&
             SafeStationarySeconds(Feet)>=AuthoredKnightSeconds(TEXT("Heal"),2.4f)+.10f;
         if(bDodgeExercise&&Dragon->State==EVeyrDragonState::Windup&&bThreat)
@@ -2504,11 +2540,12 @@ void AVeyrReplay::DriveInputs()
                 {
                     float Cost=Knight->GetPrimaryStepCost(0)+Reserve;
                     float Need=Knight->GetPrimaryFirstStepDuration();
-                    if(Dragon->IsHeadExposed())
+                    if(Dragon->IsHeadExposed()&&(!Dragon->bAggression||SafeTime>Knight->GetPrimaryChainDuration()+.1f))
                     {
                         Need=Knight->GetPrimaryChainDuration();Cost=0.f;
                         for(int32 Step=0;Step<3;++Step)Cost+=Knight->GetPrimaryStepCost(Step);
                     }
+                    // A late arrival at the bigger head still takes the blows that fit the window.
                     bPrimaryStart=(!bDown||Dragon->IsHeadExposed())&&Knight->Stamina>=Cost&&SafeTime>Need+.1f;
                 }
                 else
@@ -2573,8 +2610,8 @@ void AVeyrReplay::DriveInputs()
 
 void AVeyrReplay::ServiceCapture()
 {
-    if(bPerformanceMode)return;
-    if(!CaptureQueue.IsEmpty()&&CaptureClock>=.30f&&!FScreenshotRequest::IsScreenshotRequested()&&PendingVideoFile.IsEmpty())
+    if(bPerformanceMode||bHeadless)return;
+    if(!CaptureQueue.IsEmpty()&&CaptureClock>=StillInterval&&!FScreenshotRequest::IsScreenshotRequested()&&PendingVideoFile.IsEmpty())
     {
         CaptureClock=0; const FString Name=CaptureQueue[0]; CaptureQueue.RemoveAt(0);
         const FString File=FPaths::Combine(RunDirectory,FString::Printf(TEXT("frame-%04d-%s.png"),++ScreenshotIndex,*Name));
@@ -2815,6 +2852,7 @@ void AVeyrReplay::BeginTerminalVerification()
     bTerminalSettling=true;TerminalSeconds=Elapsed;TerminalClock=0;
     if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())TerminalWallSeconds=Mode->GetFightWallSeconds();
     Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
+    if(IsValid(Dragon)&&!Dragon->BrainLog.IsEmpty())FFileHelper::SaveStringArrayToFile(Dragon->BrainLog,*(RunDirectory/TEXT("brain-log.txt")));
     Event(TEXT("terminal_reached_waiting_for_pose"));SaveEvidence(false);
 }
 
@@ -2838,7 +2876,7 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
             Event(TEXT("terminal_pose_settled"));
         }
         // Leave enough time for the requested terminal screenshot to reach disk.
-        if(TerminalClock>=Settle+.9f&&!FScreenshotRequest::IsScreenshotRequested())
+        if(TerminalClock>=Settle+.9f&&CaptureQueue.IsEmpty()&&!FScreenshotRequest::IsScreenshotRequested())
         {
             ConsumeVideoWrite(true); // Include the last frame before copying restart evidence.
             bAwaitingReload=true;bTerminalSettling=false;Event(TEXT("restart_requested"),false);SaveEvidence(false);
@@ -2934,6 +2972,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(ReplayMode==TEXT("integration"))Root->SetObjectField(TEXT("integration"),IntegrationEvidence(true));
     if(ReplayMode==TEXT("collision"))Root->SetObjectField(TEXT("collision"),CollisionEvidence(true));
     if(ReplayMode==TEXT("camp"))Root->SetObjectField(TEXT("camp"),CampEvidence());
+    if(bFinal&&ReplayMode==TEXT("camp")&&IsValid(Dragon)&&!Dragon->BrainLog.IsEmpty())FFileHelper::SaveStringArrayToFile(Dragon->BrainLog,*(RunDirectory/TEXT("brain-log.txt")));
     if(bFinal&&IsValid(Dragon)&&FParse::Param(FCommandLine::Get(),TEXT("VeyrBrainMap")))
     {
         TArray<TSharedPtr<FJsonValue>> Map;
@@ -3031,7 +3070,14 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
         F->SetNumberField(TEXT("triggeredAtSeconds"),CaptureTriggerTimes[I]);F->SetField(TEXT("stateAtRequest"),CaptureStates[I]);
         Frames.Add(MakeShared<FJsonValueObject>(F));
     }
-    Root->SetArrayField(TEXT("screenshots"),Frames);Root->SetBoolField(TEXT("finalWrite"),bFinal);Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
+    Root->SetArrayField(TEXT("screenshots"),Frames);Root->SetBoolField(TEXT("finalWrite"),bFinal);
+    // Offset of the master recording against the first video frame, for muxing a film.
+    if(const AVeyrGameMode* MixMode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;MixMode&&MixMode->GetMixCaptureStartedWall()>0&&VideoStartedWallTime>0)
+    {
+        Root->SetNumberField(TEXT("audioStartVideoSeconds"),MixMode->GetMixCaptureStartedWall()-VideoStartedWallTime);
+    }
+    Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
+    Root->SetBoolField(TEXT("headlessNumbersOnly"),bHeadless);Root->SetNumberField(TEXT("stillIntervalSeconds"),StillInterval);
     LastEvidence=Root;
     FString Json;const TSharedRef<TJsonWriter<>> Writer=TJsonWriterFactory<>::Create(&Json);
     const FString File=FPaths::Combine(RunDirectory,TEXT("evidence.json"));
@@ -3050,6 +3096,10 @@ void AVeyrReplay::Tick(float DeltaSeconds)
         bFinished=true;bPassed=false;OutcomeReason=TEXT("encounter actors lost");StopVideoCapture(OutcomeReason);SaveEvidence(true);bFinalSaved=true;return;
     }
     CaptureClock+=DeltaSeconds;
+    // Film runs (-VeyrFilmIntro) play the production intro untouched before the scripted fight begins.
+    if(!bFinished&&FParse::Param(FCommandLine::Get(),TEXT("VeyrFilmIntro")))
+        if(const AVeyrGameMode* Film=GetWorld()->GetAuthGameMode<AVeyrGameMode>();Film&&Film->IsArenaIntroActive())
+        {ServiceCapture();return;}
     if(HealInspectionCamera)
     {
         if(Knight->Action!=EVeyrKnightAction::Heal&&FParse::Param(FCommandLine::Get(),TEXT("VeyrHealInspectionAngles")))
@@ -3123,7 +3173,11 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     else if(ReplayMode==TEXT("victory")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrStopAfterDeadline"))&&
         GetWorld()->GetAuthGameMode<AVeyrGameMode>()->GetFightWallSeconds()>150.)
         Finish(false,TEXT("victory attempt exceeded 150 active wall seconds; boss still alive"));
-    else if(Elapsed>DurationLimit)Finish(false,TEXT("objective timeout; inspect event history and policy"));
+    else if(Elapsed>DurationLimit)
+    {
+        if(IsValid(Dragon)&&!Dragon->BrainLog.IsEmpty())FFileHelper::SaveStringArrayToFile(Dragon->BrainLog,*(RunDirectory/TEXT("brain-log.txt")));
+        Finish(false,TEXT("objective timeout; inspect event history and policy"));
+    }
     if(!bFinished&&!bTerminalSettling&&!bAwaitingReload&&!bRestartVerification)DriveInputs();ServiceCapture();
     if(SaveClock>=(bPerformanceMode?30.f:5.f)){SaveClock=0;SaveEvidence(false);}
 }

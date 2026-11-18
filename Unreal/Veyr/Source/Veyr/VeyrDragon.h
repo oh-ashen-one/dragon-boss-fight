@@ -133,6 +133,9 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") bool IsPointUnderBody(const FVector& Point) const;
     /** Lower bound on when a new blow could land on a stationary point: what a competent player reads. */
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float EarliestNextContactSeconds(const FVector& Point) const;
+    /** When the committed strike's sweep arrives at a point (the moment a practised player rolls):
+     * seconds from now, 0 while it is on the point, a large value when it never passes there. */
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") float SecondsUntilStrikeReaches(const FVector& Point) const;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 BrainSeed=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 ChainCount=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 AntiCampFlights=0;
@@ -140,12 +143,48 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") int32 TrampleCount=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") float UnderBodySeconds=0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") float CampSeconds=0.f;
+    /** Time spent in the pocket in front of the chest and around the fore paws that no strike reaches. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") float GuardPocketSeconds=0.f;
+    bool IsPointInGuardPocket(const FVector& Point) const;
+    int32 GuardPocketFlights=0,GuardPocketOverruns=0;
+    /** Pocket and camp takeoffs are spaced out; in between the answer is to walk through the player. */
+    float SpacedFlightReadyAt=0.f;
+    bool bForceOverrun=false;
+    bool SpacedAntiCampDue() const { return (GuardPocketSeconds>=GuardPocketLimit||CampSeconds>=CampLimit)&&EncounterClock>=SpacedFlightReadyAt; }
     /** Longest unbroken Idle while the encounter was live (the passive-gap gate). */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") float LongestIdleSeconds=0.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat") float ExposedSeconds=7.f;
     /** How far the creature's origin may travel from the court centre. The court is 4900 x 4400 cm
      * to its walls; a body twice as long and wide keeps tail and wings inside by roaming less. */
     float RoamRadius() const { return 2700.f-700.f*(BodyScale-1.f); }
+    /** Distance in front of the body centre where the bite lands (measured from its clip). */
+    float FrontSweet() const { return FrontSweetCm; }
+    /** True while a wind-up may still turn the body onto the player. */
+    /** The coil turns onto the player late: a short snap just before the blow, so a player who circles with
+     * the body cannot settle back into a blind spot between the turn and the strike. The roll is the answer. */
+    bool IsWindupTracking() const { return WindupMayStillTrack(); }
+    bool WindupMayStillTrack() const { return State==EVeyrDragonState::Windup&&WindupTrackBudget>0.f&&StateElapsed<=StateDuration-.03f; }
+    int32 OverrunCount=0;
+    /** Any blow of the current string really hurt the player (not rolled through). Decides the opening after it. */
+    bool bStringLanded=false;
+    /** Openings granted after a string the player avoided completely. */
+    int32 WhiffOpenings=0;
+    /** Finished strings in a row that the player avoided completely; each one tires the dragon a little more. */
+    int32 WhiffStreak=0;
+    /** Test evidence: one line per started attack (time, move, certainty, where the player stood, outcome). */
+    TArray<FString> BrainLog;
+    void CloseBrainLogEntry(const TCHAR* Outcome);
+    bool bBrainLogOpen=false;
+    /** The takeoff answer to sheltering or camping is armed and the dragon is still strong enough to fly. */
+    bool AntiCampArmed() const;
+    float BrainLogYaw0=0.f,BrainLogMinGap=100000.f;
+    float WhiffOpeningFloor() const { return 1.35f+.25f*FMath::Min(WhiffStreak,2); }
+    /** Damage taken during the current head-exposed window, and the amount at which the dragon tears free. */
+    float ExposedDamage=0.f;
+    float ExposedDamageCap=200.f;
+    int32 ExposedCapRises=0;
+    /** Largest distance any grounded body part reached past the court floor edge; negative = always inside. */
+    float CourtOverreachCm=-100000.f;
     static float ConfiguredBodyScale();
     static float ConfiguredPaceScale();
     /** Actor pose without the creature scale: world-centimetre local frames for reach tests. */
@@ -204,6 +243,7 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") int32 GetCompletedAttackCount(EVeyrDragonMove Attack) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") int32 GetDamageContactCount() const { return DamageContactCount; }
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") int32 GetAvoidedContactCount() const { return AvoidedContactCount; }
+    int32 GetTotalAttackCount() const { return TotalAttacks; }
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetLastSwordDamage() const { return LastSwordDamage; }
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVector GetLandingLocation() const { return MoveEnd; }
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FText GetStateLabel() const;
@@ -317,11 +357,13 @@ private:
     bool CachedContactContains(FName Clip,const FVector& WorldPoint) const;
     /** Certain reach after the wind-up has turned the body by up to TrackLimitDegrees toward the player. */
     bool TrackedContactContains(FName Clip,const FVector& WorldPoint,float* OutYawDegrees=nullptr) const;
+    /** Body turn (degrees, within the tracking limit) that brings the strike's reach closest to the point. */
+    float TrackedContactNearestYaw(FName Clip,const FVector& WorldPoint) const;
 public:
     /** Lab: text map of which strike is certain at each spot around the body (evidence "brainReachMap"). */
     TArray<FString> BrainReachMap() const;
 private:
-    static constexpr float TrackLimitDegrees=30.f,TrackRateDegreesPerSecond=55.f;
+    static constexpr float TrackLimitDegrees=30.f,TrackRateDegreesPerSecond=150.f;
     float WindupTrackBudget=0.f,WindupTrackYaw=0.f;
     bool bWindupTrackPending=false;
     TArray<FVeyrDragonFootprint> CommittedWarning;
@@ -436,7 +478,7 @@ private:
     int32 ComboCount=0,ComboBudget=1,ForcedStompLeg=INDEX_NONE,CampHitsBaseline=0;
     bool bChainedAttack=false;
     float IdleRunSeconds=0.f,FrontSweetCm=600.f;
-    static constexpr float UnderBodyLimit=2.5f,CampLimit=10.f,ChainWindupScale=.85f,MinimumWindup=.45f;
+    static constexpr float UnderBodyLimit=2.5f,GuardPocketLimit=4.f,CampLimit=10.f,ChainWindupScale=.85f,MinimumWindup=.45f;
     /** Trample: a foot, shin or tail segment moving fast while the body turns or walks hurts on contact. */
     float SolidPartSpeed[19]={};
     float TrampleCooldown=0.f;

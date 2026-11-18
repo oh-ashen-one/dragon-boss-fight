@@ -53,6 +53,8 @@ public:
     UPROPERTY(BlueprintReadOnly) double VictoryWallSeconds=-1.;
     double GetFightWallSeconds() const;
     bool IsArenaIntroActive() const { return bArenaIntroActive; }
+    /** Monotonic wall time at which the test-only master recording began; 0 before it starts. */
+    double GetMixCaptureStartedWall() const { return MixCaptureStarted; }
     UFUNCTION(BlueprintCallable,Category="Veyr|Intro") bool SkipArenaIntro();
     UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") bool bArenaIntroActive=false;
     UPROPERTY(BlueprintReadOnly,Category="Veyr|Intro") bool bArenaIntroCompleted=false;

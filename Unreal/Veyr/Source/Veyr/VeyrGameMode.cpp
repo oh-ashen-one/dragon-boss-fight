@@ -44,7 +44,8 @@ void AVeyrGameMode::StartPlay()
     FString RequestedReplay;
     const bool HasReplay=FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),RequestedReplay);
     bArenaIntroActive=!bArenaIntroPreviouslySeen&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoArenaIntro"))&&
-        !FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyArena"))&&(!HasReplay||RequestedReplay.Equals(TEXT("intro"),ESearchCase::IgnoreCase));
+        !FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyArena"))&&(!HasReplay||RequestedReplay.Equals(TEXT("intro"),ESearchCase::IgnoreCase)||
+         FParse::Param(FCommandLine::Get(),TEXT("VeyrFilmIntro"))); // film: intro, then the scripted fight
     // Shipping ignores startup console execution; enforce the delivered frame cap directly.
     const FString SlotCap=FPlatformMisc::GetEnvironmentVariable(TEXT("GPU_SLOT_FPS_CAP"));
     if(GEngine)GEngine->SetMaxFPS(SlotCap==TEXT("30")?30.f:60.f);
@@ -54,7 +55,7 @@ void AVeyrGameMode::StartPlay()
     {
         if(FPaths::IsRelative(MixCaptureDirectory)||!IFileManager::Get().MakeDirectory(*MixCaptureDirectory,true))MixCaptureDirectory.Reset();
         FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioCaptureSeconds="),MixCaptureDuration);
-        MixCaptureDuration=FMath::Clamp(MixCaptureDuration,10.f,120.f);
+        MixCaptureDuration=FMath::Clamp(MixCaptureDuration,10.f,FParse::Param(FCommandLine::Get(),TEXT("VeyrFilmIntro"))?600.f:120.f);
         MixCaptureName=FString::Printf(TEXT("VeyrMix-%lld"),FDateTime::UtcNow().GetTicks());
         if(!MixCaptureDirectory.IsEmpty())
         {
@@ -135,7 +136,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
     }
     if(bArenaIntroActive)
     {
-        if(FParse::Param(FCommandLine::Get(),TEXT("VeyrCaptureIntroAudio")))StartMixCapture();
+        if(FParse::Param(FCommandLine::Get(),TEXT("VeyrCaptureIntroAudio"))||FParse::Param(FCommandLine::Get(),TEXT("VeyrFilmIntro")))StartMixCapture();
         TickArenaIntro(DeltaSeconds);
         if(bArenaIntroActive)return;
     }

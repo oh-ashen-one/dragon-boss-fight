@@ -1095,8 +1095,9 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             else bContactCameraFocusInitialized=false;
             const FVector Delta=Focus-CameraBoom->GetComponentLocation();
             FRotator Desired=Delta.Rotation();
-            // A taller creature needs the lock to look further up; the knight settles lower in the frame.
-            const float ScaleLift=16.f*(BossScale-1.f);
+            // A taller creature needs the lock to look further up, but never so far that the knight
+            // leaves the frame: at 2x the lock may crop his shins, no more.
+            const float ScaleLift=6.f*(BossScale-1.f);
             AutoLockPitchCeiling=25.f+.6f*ScaleLift;
             if(bReadableAutoLockCamera)
             {
@@ -1110,7 +1111,8 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             // Only automatic aim is constrained. Manual upward look retains
             // its full range, and neither lens nor arm length changes.
             // An airborne boss is the threat: let the lock look up at it instead of holding the boots in frame.
-            if(Boss->IsAirborne()&&Boss->BodyScale>1.01f)AutoLockPitchCeiling=FMath::Max(AutoLockPitchCeiling,50.f);
+            // (still bounded: the knight's upper body stays visible while the jet hunts him.)
+            if(Boss->IsAirborne()&&Boss->BodyScale>1.01f)AutoLockPitchCeiling+=6.f*(BossScale-1.f);
             if(bThreatFramingActive&&bThreatFitFound)Desired.Pitch=AutoLockPitchCeiling;
             Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,AutoLockPitchCeiling);
             // Avoid spinning underneath a target whose head crosses overhead.

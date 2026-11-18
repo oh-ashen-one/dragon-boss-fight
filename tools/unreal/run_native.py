@@ -24,10 +24,12 @@ p.add_argument('--video-fps', type=int, choices=range(1,61), help='Optional nati
 p.add_argument('--launch-services',action='store_true',help='Use the normal macOS app launch path; success still requires native final evidence')
 p.add_argument('--performance',action='store_true',help='Exclusive GPU lease; no screenshots/video, sparse diagnostics; audio remains enabled')
 p.add_argument('--with-sound',action='store_true',help='Enable the game audio device without recording; intro proof requires this or audio capture')
-p.add_argument('--audio-capture-seconds',type=int,choices=range(1,121),help='Record only the game master submix; enables sound and is incompatible with performance mode')
+p.add_argument('--audio-capture-seconds',type=int,choices=range(1,601),help='Record only the game master submix; enables sound and is incompatible with performance mode')
 p.add_argument('--start-two-handed', action='store_true', help='Core/victory QA uses the ordinary authored grip input before combat')
 p.add_argument('--extra-arg', action='append', default=[], help='Extra game command-line flag (repeatable), e.g. -VeyrNoWeaponGripLock for the blendproof before-run')
 p.add_argument('--no-proof-floor', action='store_true', help='blendproof only: do not apply the 25 cm checker (-VeyrProofFloor)')
+p.add_argument('--headless', action='store_true', help='Numbers only: run with the null renderer (-nullrhi). No window, no GPU use, '
+               'no frames; the shared GPU gate does not count such a process, so no slot is taken. Never valid as visual evidence')
 p.add_argument('--width', type=int, default=1280)
 p.add_argument('--height', type=int, default=720)
 a = p.parse_args()
@@ -58,12 +60,18 @@ if a.app:
         p.error('Packaged app failed dependency, payload or signature preflight; no game was launched')
     launch = ['/usr/bin/open','-g','-W','-n',str(app),'--args','/Game/Maps/VeyrArena'] if a.launch_services else [str(executable), '/Game/Maps/VeyrArena']
 else:
-    executable = a.engine / 'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor'
+    # Headless editor-game runs use the commandlet binary: with -nullrhi it opens no window and uses no GPU.
+    executable = a.engine / ('Engine/Binaries/Mac/UnrealEditor-Cmd' if a.headless else 'Engine/Binaries/Mac/UnrealEditor.app/Contents/MacOS/UnrealEditor')
     launch = [str(executable), str(project), '/Game/Maps/VeyrArena', '-game']
 if not executable.is_file():
     p.error('Runtime executable is missing')
-(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds or a.with_sound),'performanceMode':a.performance,'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
-cmd = [str(a.gpu_slot), 'perf' if a.performance else 'capture', '--label', 'veyr-' + a.mode, '--timeout', str(a.slot_wait_seconds), '--json', str(run/'gpu.json'), '--', *launch, '-windowed', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
+(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds or a.with_sound),'performanceMode':a.performance,'headlessNullRenderer':a.headless,'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
+if a.headless and (a.performance or a.video_fps or a.audio_capture_seconds or a.with_sound or a.launch_services):
+    p.error('--headless is a silent, frame-less run; it cannot be combined with media, performance or LaunchServices options')
+# Headless: a windowless process is App-Napped by macOS and its frame-limiter sleeps stretch to ~0.1 s.
+# -NSAppSleepDisabled YES (Cocoa argument domain) turns that off for this one process; no defaults are written.
+slot = [] if a.headless else [str(a.gpu_slot), 'perf' if a.performance else 'capture', '--label', 'veyr-' + a.mode, '--timeout', str(a.slot_wait_seconds), '--json', str(run/'gpu.json'), '--']
+cmd = [*slot, *launch, *(['-nullrhi', '-NSAppSleepDisabled', 'YES'] if a.headless else []), '-windowed', '-unattended', '-NoCrashReports', '-NoSound', '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)', '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-ResX='+str(a.width), '-ResY='+str(a.height), '-ForceRes', '-ExecCmds=t.MaxFPS 60,r.ScreenPercentage 100', '-VeyrReplay='+a.mode, '-VeyrEvidence='+str(run), '-VeyrReplayQuit', '-abslog='+str(run/'native.log')]
 if a.performance:
     if a.video_fps or a.audio_capture_seconds:p.error('Performance and media capture are mutually exclusive')
     cmd.remove('-NoSound');cmd.extend(['-VeyrPerformance','-ini:Engine:[Audio]:UnfocusedVolumeMultiplier=1.0'])
