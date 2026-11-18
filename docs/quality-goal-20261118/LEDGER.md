@@ -29,7 +29,8 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-18 13:20 | C picture: renderer features, relit courtyard, controls box (code in a worktree) | opus-builder, Opus 5.5 high | none | 2 h | compiles 13:40 (`fable/quality-goal-C` `a3afaa3`); never run; needs about 5 engine hours; waits |
 | 11-18 13:44 | B1-B3 sound wiring code in a worktree (on top of the weight branch) | sonnet-builder, Sonnet 5.5 high | none | 2 h | compiles 14:00 (`fable/quality-goal-Baudio` `067c6a8`): variants, contact sounds, breathing, per-move sounds, polish default; never run; waits |
 | 11-18 13:50 | D1-D2 camera for a giant (code in a worktree) | opus-builder, Opus 5.5 high | none | 2 h | compiles 14:03 (`fable/quality-goal-D` `bd9a2ce`): lock target slides chest to striking limb, mouse no longer drops the lock, camera life, framing metrics, `framing` replay; never run; waits |
-| 11-18 13:50 | F1-F4 dragon playback (tempo, cross-fades, foot lock, root tracks; code in a worktree) | opus-builder, Opus 5.5 high | none | 3 h | running |
+| 11-18 13:50 | F1-F4 dragon playback (tempo, cross-fades, foot lock, root tracks; code in a worktree) | opus-builder, Opus 5.5 high | none | 3 h | compiles 14:15 (`fable/quality-goal-F` `08a2c1f`): per-move tempo in `Data/dragon/playback.json`, two-clip fades, four-leg IK lock, root tracks for buckle/collapse/rise only; gaps: no spine twist or turn clips for aim, strikes do not travel; never run; about 3 engine hours; waits |
+| 11-18 14:16 | Code review of the weight and sound branches before engine time | opus-critic, Opus 5.5 high | none | short | running |
 
 ## Spend
 
