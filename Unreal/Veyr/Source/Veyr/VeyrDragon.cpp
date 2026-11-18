@@ -254,6 +254,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
         UpdateGaze(DeltaSeconds);
         UpdateTemporaryPresentation(DeltaSeconds);UpdateImportedPresentation();
         UpdateHurtParts();
+        UpdateGroundContacts(DeltaSeconds);
         UpdateSolidBody();
         DrawMoveDataDebug();
         return;
@@ -290,6 +291,8 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     UpdateTemporaryPresentation(DeltaSeconds);
     UpdateImportedPresentation();
     UpdateHurtParts();
+    // B4: floor contacts from the pose just evaluated (camera, dust, sound). -VeyrNoGroundContacts disables.
+    UpdateGroundContacts(DeltaSeconds);
     // Data windows read the pose just evaluated (same clock as the hard-coded contact).
     if(!bShowcaseMode)UpdateDataMove(DeltaSeconds);
     if(bShowcaseMode&&ShowcaseOverrideClip==FName(TEXT("Roar"))&&!bFightFeelContactPlayed)
@@ -308,7 +311,8 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     if(!bFightFeelContactPlayed&&GroundImpact&&Contact.bDamaging)
     {
         bFightFeelContactPlayed=true;
-        if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel)
+        // B4: with contact shake on, the feet and tail touching the floor shake the camera instead.
+        if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->FightFeel&&!ContactsDriveShake())
             Mode->FightFeel->Impact(Contact.Origin,Move==EVeyrDragonMove::FlyAway?1.f:.8f,
                 Move==EVeyrDragonMove::FlyAway?TEXT("landing"):Move==EVeyrDragonMove::BackStomp?TEXT("stomp"):TEXT("tail"));
     }

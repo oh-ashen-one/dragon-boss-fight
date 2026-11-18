@@ -7,6 +7,7 @@
 #include "VeyrAudio.h"
 #include "VeyrDragonEffects.h"
 #include "VeyrFightFeel.h"
+#include "VeyrImpactFx.h"
 #include "VeyrIdentity.h"
 #include "VeyrArenaTour.h"
 #include "VeyrSessionState.h"
@@ -94,6 +95,8 @@ void AVeyrGameMode::StartPlay()
     if(Dragon&&FightFeel)Dragon->AddTickPrerequisiteActor(FightFeel);
     DragonEffects=GetWorld()->SpawnActor<AVeyrDragonEffects>();
     if(DragonEffects)DragonEffects->Initialize(Dragon);
+    ImpactFx=GetWorld()->SpawnActor<AVeyrImpactFx>();
+    if(ImpactFx)ImpactFx->Bind(Dragon);
     UE_LOG(LogTemp,Display,TEXT("VEYR_UNREAL_ENCOUNTER_STARTED project=%s engine=%s"),FApp::GetProjectName(),*FEngineVersion::Current().ToString());
     UE_LOG(LogTemp,Display,TEXT("VEYR_SOURCE_ID %s"),VEYR_SOURCE_ID);
 }

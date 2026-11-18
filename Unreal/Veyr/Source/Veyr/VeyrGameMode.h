@@ -10,6 +10,7 @@ class AVeyrReplay;
 class AVeyrAudio;
 class AVeyrDragonEffects;
 class AVeyrFightFeel;
+class AVeyrImpactFx;
 class ACameraActor;
 
 UCLASS()
@@ -39,6 +40,8 @@ public:
     UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetHitFlashEnabled(bool bEnabled);
     UFUNCTION(BlueprintCallable, Category="Veyr|Settings") void SetHitStopEnabled(bool bEnabled);
     UPROPERTY(BlueprintReadOnly) TObjectPtr<AVeyrFightFeel> FightFeel;
+    /** B4/B5: contact dust, debris and hit bursts (presentation only). */
+    UPROPERTY(BlueprintReadOnly) TObjectPtr<AVeyrImpactFx> ImpactFx;
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") bool bUserCameraShake=true;
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") bool bUserHitFlash=true;
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") bool bUserHitStop=true;

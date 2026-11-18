@@ -1,5 +1,6 @@
 #include "VeyrDragonEffects.h"
 #include "VeyrDragon.h"
+#include "VeyrFeelTuning.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/PointLightComponent.h"
@@ -129,7 +130,7 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
     FVector Camera;FRotator View;Player->GetPlayerViewPoint(Camera,View);
     ImpactAge+=DeltaSeconds;
     if(Dragon->GetSwordContactCount()>LastSwordContacts)
-    {LastSwordContacts=Dragon->GetSwordContactCount();ImpactAge=0.f;ImpactOrigin=Dragon->LastSwordContactWorld;}
+    {LastSwordContacts=Dragon->GetSwordContactCount();ImpactOrigin=Dragon->LastSwordContactWorld;if(!VeyrFeelSwitches::HitBursts())ImpactAge=0.f;} // B5: AVeyrImpactFx owns hit bursts
     ImpactSpriteCount=ImpactAge<.28f?16:0;Impacts->SetVisibility(ImpactSpriteCount>0);
     if(ImpactSpriteCount>0)
     {
