@@ -56,3 +56,7 @@ Unreal/Veyr/Content/Audio/Overhaul/*.pcm
 # Owner-supplied music and generated vocal masters use acquisition receipts.
 Unreal/Veyr/Content/Audio/OwnerScore20261102/
 Unreal/Veyr/Content/Audio/Fish20261102/
+
+# Raw Epic Paragon FX (free to use, not to redistribute; this repository is public). Copied locally by
+# tools/unreal/paragon_fx_closure.py --copy-to Unreal/Veyr/Content; never commit.
+Unreal/Veyr/Content/Paragon*/

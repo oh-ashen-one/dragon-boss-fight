@@ -41,7 +41,9 @@ public:
     bool UsesContactFraming() const {return !bDisabled&&!bLegacy;}
     int32 GetRevision() const {return bDisabled?0:bLegacy?1:bMarkerOnlyReview?2:3;}
     /** Counters for evidence.json > feel. */
-    TSharedPtr<FJsonObject> FeelEvidence() const;
+    TSharedPtr<FJsonObject> FeelEvidence(bool bStatic=false) const;
+    /** This frame's spine flinch moves the pose enough to fake floor contacts (the dragon mutes them). */
+    bool FlinchDisplacesPose() const { return FlinchFrame==GFrameCounter&&FlinchDegreesNow>2.5f; }
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 ShakeEvents=0,HitStopEvents=0,HitFlashEvents=0,FlinchEvents=0,TrailSamples=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") float LastHitStopSeconds=0.f,LastShakeDegrees=0.f,LastShakeDistance=0.f;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 VisibleTrailSegments=0;
@@ -50,7 +52,8 @@ public:
     float MaxShakeByClass[4]={0.f,0.f,0.f,0.f};
     int32 SpineFlinches=0,MeshFlashes=0,FallbackFlashes=0,SlowTails=0,ZoomPunches=0,HurtKicks=0,RibbonFrames=0,MaxRibbonRows=0;
     mutable int32 FlinchBoneCount=0,LegCompensations=0; // filled when the chain is (re)built from the pose path
-    mutable float MaxFlinchDegrees=0.f;
+    mutable float MaxFlinchDegrees=0.f,FlinchDegreesNow=0.f;
+    mutable uint64 FlinchFrame=0;
     float MaxRibbonWidthCm=0.f;
     mutable FString FlinchDiagnostic;
     FString FlashDiagnostic,RibbonDiagnostic;
@@ -102,7 +105,7 @@ private:
     TArray<FTrailSegment> Trail;
     void RequestHitStop(float Seconds);
     void RestoreTime();
-    void StartShake(float Degrees,float Life,float Bounce,float Frequency,FName Kind,float Distance);
+    void StartShake(float Degrees,float Life,float Bounce,float Frequency,FName Kind,float Distance,bool bVaryPhase);
     void Flash(const FVector& Position,float Weight,USkeletalMeshComponent* Mesh=nullptr);
     void StartMeshFlash(USkeletalMeshComponent* Mesh,const FVector& Position,float Weight);
     void UpdateMeshFlash(float RealDelta);

@@ -248,6 +248,10 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
     bool HasValidImportedCombatPose() const {return bImportedTargetsValid&&bImportedAttackCacheReady&&MissingVisualClip.IsNone();}
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetLegLocation(int32 Index) const;
+    /** Phase D camera (VeyrDragonStrikeFocus.cpp): the chest (hurt part `chest`), and the attacking limb's live
+     * contact point during a wind-up, active window or early recovery (false when nothing is attacking). */
+    FVector GetChestLocation() const;
+    bool GetStrikeFocus(FVector& OutPoint,FName* OutLimb=nullptr) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVector GetLegKneeLocation(int32 Index) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVector GetLegHockLocation(int32 Index) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetLegContactRadius(int32 Index) const;
@@ -349,7 +353,8 @@ public:
     const FVeyrGroundContactCounters& GetGroundContactCounters() const { return GroundContacts.Counters(); }
     const FVeyrGroundContactDetector& GetGroundContactDetector() const { return GroundContacts; }
     /** True when contacts drive the camera shake (the old hard-coded stomp/tail/landing shakes are skipped). */
-    static bool ContactsDriveShake();
+    /** True when contact events (not the fixed per-move impacts) shake the camera this frame. */
+    bool ContactsDriveShake() const;
     /** Showcase rails for the feel proof: Collapse (Buckle skipped) as one segment. */
     bool StartFeelSegment(FName Segment,FString& Error);
 

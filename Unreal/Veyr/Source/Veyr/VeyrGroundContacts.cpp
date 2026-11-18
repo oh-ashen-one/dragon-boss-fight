@@ -11,6 +11,14 @@ void FVeyrGroundContactDetector::Reset()
     Frame.Reset();
 }
 
+void FVeyrGroundContactDetector::Forget()
+{
+    bool Any=false;
+    for(FSlot& S:Slots){Any|=S.bSeen;S.bSeen=false;S.PeakDown=0.f;}
+    if(Any)++Count.Resets;
+    Frame.Reset();
+}
+
 void FVeyrGroundContactDetector::BeginFrame(float GameDelta,const FVeyrContactContext& Context)
 {
     Delta=FMath::Max(0.f,GameDelta);Ctx=Context;Frame.Reset();
@@ -28,6 +36,7 @@ void FVeyrGroundContactDetector::Sample(int32 Index,FName Name,EVeyrGroundContac
     const float Clearance=static_cast<float>(LowestPoint.Z)-FloorZ;
     S.bSampledThisFrame=true;S.Name=Name;S.Part=Part;S.Leg=Leg;
     S.Point=FVector(LowestPoint.X,LowestPoint.Y,FloorZ+1.f);
+    if(Ctx.bAirborne&&Part==EVeyrGroundContactPart::Foot)S.bPendingLanding=true;
     float& Lowest=MinClearance.FindOrAdd(Ctx.StateName).FindOrAdd(Name,TNumericLimits<float>::Max());
     Lowest=FMath::Min(Lowest,Clearance);
     // First sight, or a jump no pose can make in one frame (a teleport, a mesh swap): seed, no event.
@@ -46,8 +55,10 @@ void FVeyrGroundContactDetector::Sample(int32 Index,FName Name,EVeyrGroundContac
     {
         S.bArmed=false;
         const float Speed=FMath::Max(0.f,S.PeakDown);
-        if(Speed/100.f/Scale>=P.MinSpeedMps&&S.SinceEvent>=T.MinEventInterval)Emit(S,Speed);
+        if(Ctx.bMuted)++Count.Muted;
+        else if(Speed/100.f/Scale>=P.MinSpeedMps&&S.SinceEvent>=T.MinEventInterval)Emit(S,Speed);
         else ++Count.Rejected;
+        if(!Ctx.bAirborne)S.bPendingLanding=false; // only the first touchdown after flight is the landing
     }
     else if(!S.bArmed&&Clearance>=Lift)S.bArmed=true;
     S.Clearance=Clearance;
@@ -68,17 +79,21 @@ void FVeyrGroundContactDetector::Emit(FSlot& S,float SpeedCmS)
     C.SpeedMps=SpeedCmS/100.f;C.ScaledSpeedMps=C.SpeedMps/Scale;C.GameTime=Ctx.GameTime;
     const bool bFoot=S.Part==EVeyrGroundContactPart::Foot;
     if(bFoot)
-        C.Class=Ctx.bLanding?EVeyrGroundContactClass::Landing:
+        C.Class=Ctx.bLanding&&S.bPendingLanding?EVeyrGroundContactClass::Landing:
             (Ctx.bFootStrike&&C.ScaledSpeedMps>=T.StompMinSpeed)?EVeyrGroundContactClass::Stomp:EVeyrGroundContactClass::Footfall;
     else if(S.Part==EVeyrGroundContactPart::Tail)
-        C.Class=Ctx.bTailStrike?EVeyrGroundContactClass::Stomp:EVeyrGroundContactClass::BodyFall;
+        C.Class=Ctx.bTailStrike?EVeyrGroundContactClass::Stomp:Ctx.bBodyDown?EVeyrGroundContactClass::BodyFall:EVeyrGroundContactClass::Footfall;
+    else if(S.Part==EVeyrGroundContactPart::Wing)
+        C.Class=Ctx.bBodyDown?EVeyrGroundContactClass::BodyFall:EVeyrGroundContactClass::Footfall; // a wing tip grazing in a turn
     else if(S.Part==EVeyrGroundContactPart::Head&&Ctx.bHeadStrike)C.Class=EVeyrGroundContactClass::Stomp;
-    else C.Class=EVeyrGroundContactClass::BodyFall;
+    // Head, neck or trunk: a fall when the body is going down or the touch is fast; a slow graze shakes like a step.
+    else C.Class=Ctx.bBodyDown||C.ScaledSpeedMps>=T.BodyCloudMinSpeed?EVeyrGroundContactClass::BodyFall:EVeyrGroundContactClass::Footfall;
     C.Strength=T.ClassStrength(static_cast<EVeyrFeelClass>(C.Class),C.ScaledSpeedMps);
     switch(C.Class)
     {
         case EVeyrGroundContactClass::Landing:C.DustTier=4;break;
-        case EVeyrGroundContactClass::BodyFall:C.DustTier=C.ScaledSpeedMps>=T.Shake[2].MinSpeed?3:1;break;
+        // Only a real fall throws the big cloud; a slower settle gets the ordinary medium or large dust.
+        case EVeyrGroundContactClass::BodyFall:C.DustTier=C.ScaledSpeedMps>=T.BodyCloudMinSpeed?3:C.ScaledSpeedMps<T.DustTierMaxSpeed[1]?1:2;break;
         default:C.DustTier=C.ScaledSpeedMps<T.DustTierMaxSpeed[0]?0:C.ScaledSpeedMps<T.DustTierMaxSpeed[1]?1:2;
             if(C.Class==EVeyrGroundContactClass::Stomp)C.DustTier=FMath::Max(C.DustTier,1);break;
     }
