@@ -1,4 +1,5 @@
 #include "VeyrKnight.h"
+#include "VeyrLook.h"
 #include "VeyrArena.h"
 #include "VeyrGameMode.h"
 #include "VeyrReplay.h"
@@ -208,6 +209,9 @@ UStaticMeshComponent* AVeyrKnight::CreateProxyPart(const TCHAR* Name, UStaticMes
 void AVeyrKnight::BeginPlay()
 {
     Super::BeginPlay();
+    // Phase C: no light glued to the camera. Rim lights and exposure keep him readable
+    // (VeyrArenaLighting.cpp); -VeyrLegacyRender restores the moon-bounce fill.
+    if(ReadabilityFill&&!VeyrLook::IsLegacy()){ReadabilityFill->SetIntensity(0.f);ReadabilityFill->SetVisibility(false);}
     for(UStaticMeshComponent* Part:HealFlaskParts)
     {
         if(UMaterialInstanceDynamic* Material=Part->CreateAndSetMaterialInstanceDynamic(0))

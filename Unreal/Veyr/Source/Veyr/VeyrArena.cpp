@@ -4,6 +4,7 @@
 #include "VeyrAudio.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrVisualDefinition.h"
+#include "VeyrLook.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
@@ -188,6 +189,7 @@ void AVeyrArena::BeginPlay()
     BuildOverarchingArchitecture();
     BuildInteractiveDetails();
     BuildCollision();
+    if(VeyrLook::SplitInstancesForLumen())SplitCourtInstancesForLumen();
     UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY connected court: clear fight diameter~7200cm, walkable aisles0..240cm; %d instanced groups."), Batches.Num());
     UE_LOG(LogTemp,Display,TEXT("VEYR_CONNECTED_COURT ready=%d meshes=%d/12 instances=%d diagnostic=%s"),
         bConnectedCourtAssetsReady,ConnectedCourtMeshCount,ConnectedCourtInstanceCount,*ConnectedCourtDiagnostic);
@@ -733,8 +735,19 @@ void AVeyrArena::BuildDistance()
         AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
         Light->SetRelativeLocation(P+FVector(0,0,bFortressCandidate?185.f:210.f));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(bFortressCandidate?320.f:190.f);
         Light->SetLightColor(bFortressCandidate?FLinearColor(1.f,.70f,.40f):FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(bFortressCandidate?2200.f:1000.f);Light->SetSourceRadius(bFortressCandidate?80.f:45.f);
-        Light->SetCastShadows(false);Light->SetSpecularScale(.7f);Light->RegisterComponent();
-        if(bFortressCandidate){FortressFireLights.Add(Light);FortressFireIntensities.Add(320.f);}
+        Light->SetCastShadows(false);Light->SetSpecularScale(.7f);
+        float FireCandelas=320.f;
+        if(!VeyrLook::IsLegacy())
+        {
+            // Phase C: each brazier throws a warm, shadowed pool onto the floor and
+            // washes its wall. Small source radius keeps the shadows readable.
+            FireCandelas=700.f;Light->SetIntensity(FireCandelas);
+            Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(2800.f);Light->SetSourceRadius(25.f);
+            Light->SetCastShadows(ShadowedFireCount++<VeyrLook::ShadowedFireBudget());
+            Light->SetVolumetricScatteringIntensity(2.5f);Light->SetSpecularScale(.9f);
+        }
+        Light->RegisterComponent();
+        if(bFortressCandidate||!VeyrLook::IsLegacy()){FortressFireLights.Add(Light);FortressFireIntensities.Add(FireCandelas);}
     };
     for(float Side:{-1.f,1.f})
     {
@@ -752,6 +765,7 @@ void AVeyrArena::BuildDistance()
 
 void AVeyrArena::BuildLighting()
 {
+    if(!VeyrLook::IsLegacy()){BuildRelitLighting();return;}
     auto* Moon = NewObject<UDirectionalLightComponent>(this, TEXT("PrototypeSoftMoonKey"));
     AddInstanceComponent(Moon); Moon->SetupAttachment(GetRootComponent()); Moon->SetMobility(EComponentMobility::Movable);
     // The fortress's 18m curtain walls blocked almost the entire court with
@@ -1009,8 +1023,12 @@ void AVeyrArena::DamagePropsAlongSweep(const FVector& PreviousBase,const FVector
 void AVeyrArena::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);AtmosphereClock+=DeltaSeconds;
-    for(int32 I=0;I<FortressFireLights.Num();++I)if(FortressFireLights[I])
-        FortressFireLights[I]->SetIntensity(FortressFireIntensities[I]*(.94f+.04f*FMath::Sin(AtmosphereClock*2.7f+I*1.9f)+.02f*FMath::Sin(AtmosphereClock*7.3f+I)));
+    if(VeyrLook::IsLegacy())
+    {
+        for(int32 I=0;I<FortressFireLights.Num();++I)if(FortressFireLights[I])
+            FortressFireLights[I]->SetIntensity(FortressFireIntensities[I]*(.94f+.04f*FMath::Sin(AtmosphereClock*2.7f+I*1.9f)+.02f*FMath::Sin(AtmosphereClock*7.3f+I)));
+    }
+    else TickRelitLighting(DeltaSeconds);
     auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(Mode&&Mode->Dragon&&!Mode->Dragon->IsDead())
     {
