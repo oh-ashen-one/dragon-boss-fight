@@ -2487,6 +2487,10 @@ void AVeyrReplay::DriveInputs()
         // New knock-down timing: a person runs for where the head will land the moment the leg buckles, so the
         // whole shorter lying window is attack time. Legacy timing keeps chasing the falling head.
         const bool bHeadLanding=!Dragon->bLegacyKnockdown&&(Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse);
+        // Rise head bonus (default; off with -VeyrNoRiseHeadBonus): a knight already standing at the head when the dragon starts to rise
+        // holds its spot, stays locked and swings at the head as it lifts, instead of chasing the moving head.
+        const bool bRiseHold=Dragon->bRiseHeadBonus&&Dragon->State==EVeyrDragonState::Rise&&Dragon->IsHeadBonusActive()&&
+            FVector::Dist2D(Feet,Dragon->GetPredictedDownHeadLocation())<720.f*Dragon->BodyScale*.5f+60.f;
         if(bHeadRoute)
         {
             const FVector Head=bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation();
@@ -2500,6 +2504,7 @@ void AVeyrReplay::DriveInputs()
             // Landing stand-off: the swept approach in front of the lying head measured 612 cm at scale 2.
             Goal=bHeadWaypoint?Head+Forward*200.f*Dragon->BodyScale+Right*(Side*360.f*Dragon->BodyScale):
                 bHeadLanding?FVector(Head.X,Head.Y,Feet.Z)+Forward*306.f*Dragon->BodyScale:HeadApproachGoal();
+            if(bRiseHold){bHeadWaypoint=false;Goal=Feet;}
         }
         else
         {
@@ -2526,9 +2531,9 @@ void AVeyrReplay::DriveInputs()
         bWantLock=!bHeadWaypoint&&GoalDistance<GoalTolerance;
         // New knock-down timing: close the last 2 m to the head locked on and walking, as a person would, so the
         // knight turns to the head while it arrives instead of sprinting in, playing a run-stop and turning after.
-        bCloseOnHead=bHeadRoute&&!bHeadWaypoint&&!Dragon->bLegacyKnockdown&&Dragon->State!=EVeyrDragonState::Rise&&GoalDistance<200.f;
+        bCloseOnHead=bHeadRoute&&!bHeadWaypoint&&!Dragon->bLegacyKnockdown&&(Dragon->State!=EVeyrDragonState::Rise||bRiseHold)&&GoalDistance<200.f;
         bWantLock|=bCloseOnHead;
-        const FVector StrikeTarget=bHeadRoute?(bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
+        const FVector StrikeTarget=bHeadRoute?((bHeadLanding||bRiseHold)?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
         const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
         if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/(bCloseOnHead?60.f:160.f),bCloseOnHead?.4f:.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);

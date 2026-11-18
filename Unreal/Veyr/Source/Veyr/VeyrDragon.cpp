@@ -180,7 +180,9 @@ void AVeyrDragon::BeginPlay()
     bFloorTelegraph=FParse::Param(FCommandLine::Get(),TEXT("VeyrFloorTelegraph"));
     // Owner 2026-11-18: at most 5 s on the floor; this restores the 7 s lying window and authored rates.
     bLegacyKnockdown=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyKnockdown"));
-    bRiseHeadBonus=!bLegacyKnockdown&&FParse::Param(FCommandLine::Get(),TEXT("VeyrRiseHeadBonus"));
+    // With the 5 s floor a knight starting at the rear legs reaches the head with ~1 s of lying left, so the head
+    // keeps its exposed bonus through the first 40 % of the rise. -VeyrNoRiseHeadBonus (or legacy timing) turns it off.
+    bRiseHeadBonus=!bLegacyKnockdown&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoRiseHeadBonus"));
     BodyScale=ConfiguredBodyScale();PaceScale=ConfiguredPaceScale();
     bAggression=!bLegacyPacing&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBrain"));
     SetActorScale3D(FVector(BodyScale));
