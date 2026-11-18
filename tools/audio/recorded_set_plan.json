@@ -1,0 +1,210 @@
+{
+ "Swing": {
+  "queries": [
+   "sword swing whoosh",
+   "sword swoosh",
+   "blade swish"
+  ],
+  "min": 0.2,
+  "max": 6,
+  "keep": 6
+ },
+ "HeavySwing": {
+  "queries": [
+   "heavy sword whoosh",
+   "heavy swing whoosh",
+   "big swoosh weapon",
+   "whoosh heavy",
+   "swoosh deep"
+  ],
+  "min": 0.3,
+  "max": 6,
+  "keep": 5
+ },
+ "Contact": {
+  "queries": [
+   "sword hit flesh",
+   "sword slash impact",
+   "blade stab hit"
+  ],
+  "min": 0.2,
+  "max": 6,
+  "keep": 6
+ },
+ "Guard": {
+  "queries": [
+   "sword clash",
+   "shield block metal",
+   "sword parry clang"
+  ],
+  "min": 0.2,
+  "max": 6,
+  "keep": 5
+ },
+ "ArmorHit": {
+  "queries": [
+   "armor hit impact",
+   "metal armor impact",
+   "body hit armor",
+   "metal hit impact",
+   "punch armor"
+  ],
+  "min": 0.2,
+  "max": 6,
+  "keep": 5
+ },
+ "Impact": {
+  "queries": [
+   "heavy ground impact",
+   "boulder impact thud",
+   "deep impact rumble"
+  ],
+  "min": 0.5,
+  "max": 8,
+  "keep": 6
+ },
+ "DragonStep": {
+  "queries": [
+   "giant footstep",
+   "monster footstep",
+   "heavy stomp thud"
+  ],
+  "min": 0.3,
+  "max": 8,
+  "keep": 6
+ },
+ "DragonSwing": {
+  "queries": [
+   "huge whoosh",
+   "heavy air whoosh",
+   "large swoosh",
+   "whoosh big",
+   "swoosh low heavy"
+  ],
+  "min": 0.4,
+  "max": 6,
+  "keep": 5
+ },
+ "Bite": {
+  "queries": [
+   "monster bite",
+   "jaw snap bite",
+   "crocodile bite snap"
+  ],
+  "min": 0.2,
+  "max": 5,
+  "keep": 5
+ },
+ "Breath": {
+  "queries": [
+   "fire whoosh ignite",
+   "fireball whoosh",
+   "flame burst"
+  ],
+  "min": 0.5,
+  "max": 6,
+  "keep": 5
+ },
+ "Fire": {
+  "queries": [
+   "flamethrower",
+   "fire roar flame",
+   "dragon fire breath"
+  ],
+  "min": 1.5,
+  "max": 12,
+  "keep": 5
+ },
+ "Wing": {
+  "queries": [
+   "large wing flap",
+   "big bird wing flap",
+   "heavy cloth flap"
+  ],
+  "min": 0.3,
+  "max": 8,
+  "keep": 5
+ },
+ "Roll": {
+  "queries": [
+   "armor foley",
+   "chainmail",
+   "cloth movement rustle",
+   "leather armor"
+  ],
+  "min": 0.3,
+  "max": 8,
+  "keep": 5
+ },
+ "Footstep": {
+  "queries": [
+   "footsteps stone boots",
+   "armor footsteps",
+   "footstep stone single"
+  ],
+  "min": 0.2,
+  "max": 12,
+  "keep": 6
+ },
+ "Blink": {
+  "queries": [
+   "magic whoosh",
+   "teleport whoosh",
+   "dark magic swoosh"
+  ],
+  "min": 0.3,
+  "max": 5,
+  "keep": 5
+ },
+ "Break": {
+  "queries": [
+   "stone break crumble",
+   "rock smash debris",
+   "stone crash"
+  ],
+  "min": 0.4,
+  "max": 6,
+  "keep": 5
+ },
+ "Exposed": {
+  "queries": [
+   "large body fall thud",
+   "heavy body fall",
+   "tree fall crash"
+  ],
+  "min": 0.5,
+  "max": 8,
+  "keep": 5
+ },
+ "Death": {
+  "queries": [
+   "body fall",
+   "armor fall",
+   "metal armor crash",
+   "body drop"
+  ],
+  "min": 0.4,
+  "max": 6,
+  "keep": 5
+ },
+ "Heal": {
+  "queries": [
+   "drinking gulp",
+   "potion drink",
+   "drink swallow"
+  ],
+  "min": 0.4,
+  "max": 6,
+  "keep": 4
+ },
+ "Victory": {
+  "queries": [
+   "deep gong hit",
+   "orchestral hit epic",
+   "war drum hit deep"
+  ],
+  "min": 1.0,
+  "max": 12,
+  "keep": 5
+ }
+}

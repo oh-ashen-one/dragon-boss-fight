@@ -30,6 +30,16 @@ Leshy fight) and ours: `Local/playtest-goal-review/vs.html` (`python3 serve.py 8
 
 ## B. Sound (owner: "We need better sound for sure")
 
+**Status 2026-11-18: PAUSED by the owner before anything reached the game** ("I don't want you to start anything yet. I
+still want to be discussing what we're going to be doing"). Owner's direction so far: use free Freesound recordings as
+the reference game did; Higgsfield or Fish Audio only where no recording fits. What exists, none of it wired in:
+`tools/audio/freesound_candidates.py` (public CC0 search, no account) and `tools/audio/recorded_set_plan.json` fetched
+about 100 candidate recordings for 20 cues into `Local/AudioSources20261118/` with a provenance ledger;
+`tools/audio/prepare_recorded_set.py` (uses the Earshot analysis tool in `~/.cache/earshot/venv` to drop downloads that
+do not sound like their label and to cut variants) was stopped after two cues. `VeyrAudio.cpp` is unchanged; the partial
+`Content/Audio/Recorded20261118/` folder is not loaded or staged. When this resumes it goes to builder subagents with an
+Opus critic, not the directing session, and the owner hears an old/new audition page before a build.
+
 5. **Replace the placeholder sounds**: "too many basic beeps, dings". Several cues are sine tones generated in code
    (`VeyrAudio.cpp`, `Tone(...)`); the recorded set is about 22 short files with one contact sound and one swing.
    `Data/dragon/sounds.json` is an empty stub, so no dragon move has its own timed sound and the dragon has no footsteps.
