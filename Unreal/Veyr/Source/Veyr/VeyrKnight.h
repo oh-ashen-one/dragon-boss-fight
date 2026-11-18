@@ -70,6 +70,15 @@ public:
     bool UsesThreatCameraFraming() const { return bThreatCameraFraming; }
     bool IsThreatCameraFramingActive() const { return bThreatFramingActive; }
     bool HasThreatCameraFit() const { return bThreatFitFound; }
+    /** Phase D (2026-11-18) giant-scale camera, default on; -VeyrLegacyFraming restores the old camera (VeyrGiantCamera.cpp). */
+    bool UsesGiantCamera() const { return bGiantCamera; }
+    struct FGiantCameraEvidence
+    {
+        float VerticalFov=0.f,ArmCm=0.f,PitchMax=0.f,PitchWant=0.f,FeetAngle=0.f,LensNeed=0.f;
+        float StrikeWeight=0.f,UnderBelly=0.f,LockBlend=0.f,Pace=0.f,Lean=0.f,Nod=0.f,MouseYaw=0.f,MousePitch=0.f;
+        bool bLockSolve=false,bStrikeFocus=false;
+    };
+    const FGiantCameraEvidence& GetGiantCameraEvidence() const { return GiantEvidence; }
     int32 PrimaryRecoveries=0;
     FString VariantTextureResidency() const;
     void KeepGameplayTexturesResident();
@@ -305,6 +314,27 @@ private:
      * one frame during wind-ups. Blends out with distance. */
     bool bBossNearFraming=false;
     float BossNearBlend=0.f;
+    // ---- Phase D giant camera state (VeyrGiantCamera.cpp) ----
+    bool bGiantCamera=false,bCameraLife=false,bLegacyLockMouse=false,bStrikeFraming=false,bBellyFraming=false;
+    float CameraLifeScale=1.f;
+    float GiantArmOverride=-1.f,GiantVFovOverride=-1.f,GiantPivotOverride=-1.f;
+    FRotator GiantLockRot=FRotator::ZeroRotator; bool bGiantLockRotValid=false;
+    float GiantMouseYaw=0.f,GiantMousePitch=0.f,GiantMouseIdle=10.f;
+    float GiantStrikeWeight=0.f,GiantUnderBelly=0.f,GiantLensExtra=0.f,GiantArmExtra=0.f,GiantLockBlend=0.f;
+    float LifePace=0.f,LifeLead=0.f,LifeLean=0.f,LifeLastHeading=0.f,LifeLastSpeed=0.f,LifeStopAge=10.f,LifeStopAmp=0.f;
+    FRotator LifeRotation=FRotator::ZeroRotator; FVector LifeLocation=FVector::ZeroVector;
+    FVector GiantLastCamera=FVector::ZeroVector; bool bGiantLastCameraValid=false;
+    FVector GiantLastStrike=FVector::ZeroVector; bool bGiantLastStrikeValid=false;
+    float LifeFree=0.f,LifeNod=0.f;
+    FGiantCameraEvidence GiantEvidence;
+    void InitGiantCamera();
+    /** Arm, lens and control rotation for the giant camera (replaces the legacy block of UpdateCamera). Returns the arm length. */
+    float UpdateGiantCamera(float DeltaSeconds,float FlightEase,bool bFollowFall);
+    /** D2: pace/lead/lean/nod offsets on the combat camera, after the fight-feel shake. */
+    void ApplyCameraLife(bool bShakeApplied);
+    void UpdateCameraLifeState(float DeltaSeconds);
+    static float HorizontalFovFromVertical(float VerticalDegrees,float Aspect);
+    float ViewportAspect() const;
     float FlightFramingBlend=0.f;
     bool bFlowTransition=false;
     int32 ChainFlowCancels=0;
@@ -469,6 +499,7 @@ private:
     void AdvanceCombat(float DeltaSeconds);
     void UpdateMovement(float DeltaSeconds);
     void UpdateCamera(float DeltaSeconds);
+    void UpdateLegacyCameraFraming(float DeltaSeconds,float& OutArm);
     FVector CombatAimPoint() const;
     void UpdateCameraOcclusion(float DeltaSeconds);
     void RestoreCameraOcclusion();

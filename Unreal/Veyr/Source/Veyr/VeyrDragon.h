@@ -223,6 +223,10 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
     bool HasValidImportedCombatPose() const {return bImportedTargetsValid&&bImportedAttackCacheReady&&MissingVisualClip.IsNone();}
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetLegLocation(int32 Index) const;
+    /** Phase D camera (VeyrDragonStrikeFocus.cpp): the chest (hurt part `chest`), and the attacking limb's live
+     * contact point during a wind-up, active window or early recovery (false when nothing is attacking). */
+    FVector GetChestLocation() const;
+    bool GetStrikeFocus(FVector& OutPoint,FName* OutLimb=nullptr) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVector GetLegKneeLocation(int32 Index) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVector GetLegHockLocation(int32 Index) const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") float GetLegContactRadius(int32 Index) const;

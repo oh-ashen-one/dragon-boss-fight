@@ -115,6 +115,20 @@ def run_spec(spec, delay=0.0):
                     'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepWorstClipMedianFloatCm1x', 'sweepWorstClip',
                     'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
             record['a123'] = {k: x[k] for k in keys if k in x}
+        if 'framing' in e:
+            # Quality goal D1: what the player's camera showed (VeyrFramingMeter). Goal: knight >= .95, limb >= .90.
+            x = e['framing']
+            keys = ('frames', 'knightFullyInFrameShare', 'lockedKnightFullyInFrameShare', 'headOrChestOnScreenShare',
+                    'knightMeanScreenHeightPct', 'cameraInsideBodyFrames', 'strikes', 'strikeLimbVisibleShare',
+                    'nearStrikeLimbVisibleShare', 'strikeLimbVisibleByMove', 'goalD1Met', 'giantCamera')
+            record['framing'] = {k: (round(x[k], 3) if isinstance(x.get(k), float) else x[k]) for k in keys if k in x}
+        if 'framingProof' in e:
+            record['framingPhases'] = {name: {'knight': round(p.get('knightFullyInFrameShare', 0), 3),
+                                              'headOrChest': round(p.get('headOrChestOnScreenShare', 0), 3),
+                                              'knightHeightPct': round(p.get('knightMeanScreenHeightPct', 0), 1),
+                                              'limb': p.get('strikeLimbVisibleByMove')}
+                                       for name, p in e['framingProof'].get('phases', {}).items()}
+            record['framingFlightSeen'] = e['framingProof'].get('flightSeen')
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:
@@ -125,7 +139,11 @@ def run_spec(spec, delay=0.0):
 def report(record, proc):
     global crashes
     results.append(record)
-    print(json.dumps({k: v for k, v in record.items() if k not in ('camp', 'tail', 'brainReachMap')}), flush=True)
+    print(json.dumps({k: v for k, v in record.items() if k not in ('camp', 'tail', 'brainReachMap', 'framing', 'framingPhases')}), flush=True)
+    if 'framing' in record:
+        print('    FRAMING', json.dumps(record['framing']), flush=True)
+    for name, phase in record.get('framingPhases', {}).items():
+        print('    PHASE', name, json.dumps(phase), flush=True)
     for line in record.get('brainReachMap', []):
         print('    MAP', line, flush=True)
     if 'camp' in record:

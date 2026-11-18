@@ -257,6 +257,7 @@ void AVeyrKnight::BeginPlay()
     // Opt-in only: measured on film it raised head-in-view during wind-ups from 11 % to 19 % but made the knight
     // read too small for the whole fight.
     bBossNearFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrBossNearFraming"));
+    InitGiantCamera();
     // Mixamo downward heavy won the independent blind comparison. Keep an
     // explicit legacy switch for reproducible before/after captures.
     bSourcedTwoHandHeavy=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyTwoHandHeavy"));
@@ -1078,6 +1079,33 @@ FVector AVeyrKnight::CombatAimPoint() const
 
 void AVeyrKnight::UpdateCamera(float DeltaSeconds)
 {
+    float Arm=CameraDistance;
+    // Phase D: the giant-scale camera owns arm, lens and aim unless -VeyrLegacyFraming (or the opt-in threat trial) is set.
+    if(bGiantCamera&&!bThreatCameraFraming)
+    {
+        ManualCameraRemaining=FMath::Max(0.f,ManualCameraRemaining-DeltaSeconds);
+        const bool FlightNow=bFlightFraming&&IsValid(Boss)&&Boss->IsFlightHazardActive();
+        FlightFramingBlend=FMath::FInterpConstantTo(FlightFramingBlend,FlightNow?1.f:0.f,DeltaSeconds,1.f/.6f);
+        const bool FollowFall=IsValid(Boss)&&Boss->UsesPacingRevision()&&Boss->IsDead()&&
+            Boss->GetStateElapsed()<=Boss->GetStateDuration()+1.1f;
+        Arm=UpdateGiantCamera(DeltaSeconds,FMath::SmoothStep(0.f,1.f,FlightFramingBlend),FollowFall);
+    }
+    else UpdateLegacyCameraFraming(DeltaSeconds,Arm);
+    // The spring-arm sphere sweep resolves walls and floor at steep pitch.
+    // Keeping the boots visible is deliberately not a pitch restriction.
+    CameraFloorZ=GetFootLocation().Z;
+    CameraFramingArm=FMath::Min(Arm,static_cast<float>(FVector::Distance(
+        CameraBoom->GetComponentLocation(),CombatCamera->GetComponentLocation())));
+    CameraFloorClearance=CombatCamera->GetComponentLocation().Z-CameraFloorZ;
+    bool bShakeApplied=false;
+    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(Mode->FightFeel){Mode->FightFeel->ApplyCameraShake(CombatCamera);bShakeApplied=true;}
+    if(bGiantCamera&&!bThreatCameraFraming)ApplyCameraLife(bShakeApplied);
+    UpdateCameraOcclusion(DeltaSeconds);
+}
+
+void AVeyrKnight::UpdateLegacyCameraFraming(float DeltaSeconds,float& OutArm)
+{
     const float PreviousShoulder=CameraBoom->SocketOffset.Y;
     ManualCameraRemaining=FMath::Max(0.f,ManualCameraRemaining-DeltaSeconds);
     UpdateThreatCameraOptics(DeltaSeconds,Controller?Controller->GetControlRotation():FRotator::ZeroRotator);
@@ -1191,15 +1219,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             CameraBoom->SocketOffset.Y=FMath::FInterpTo(PreviousShoulder,Shoulder,DeltaSeconds,4.f);
         }
     }
-    // The spring-arm sphere sweep resolves walls and floor at steep pitch.
-    // Keeping the boots visible is deliberately not a pitch restriction.
-    CameraFloorZ=GetFootLocation().Z;
-    CameraFramingArm=FMath::Min(Arm,static_cast<float>(FVector::Distance(
-        CameraBoom->GetComponentLocation(),CombatCamera->GetComponentLocation())));
-    CameraFloorClearance=CombatCamera->GetComponentLocation().Z-CameraFloorZ;
-    if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
-        if(Mode->FightFeel)Mode->FightFeel->ApplyCameraShake(CombatCamera);
-    UpdateCameraOcclusion(DeltaSeconds);
+    OutArm=Arm;
 }
 
 void AVeyrKnight::RestoreCameraOcclusion()
@@ -2368,8 +2388,22 @@ bool AVeyrKnight::MouseLookReady() const
 {
     return HumanInputEnabled()&&GFrameCounter>=MouseLookEnableAfterFrame&&FPlatformTime::Seconds()>=MouseLookEnableAfterTime;
 }
-void AVeyrKnight::LookYaw(float Value) { if (MouseLookReady() && FMath::Abs(Value)>.001f) { ManualCameraRemaining=1.8f; AddControllerYawInput(Value * .7f * MouseSensitivity); } }
-void AVeyrKnight::LookPitch(float Value) { if (MouseLookReady() && FMath::Abs(Value)>.001f) { ManualCameraRemaining=1.8f; AddControllerPitchInput(-Value * .6f * MouseSensitivity); } }
+void AVeyrKnight::LookYaw(float Value)
+{
+    if (!MouseLookReady() || FMath::Abs(Value)<=.001f) return;
+    // Phase D: locked on, the mouse looks around the lock instead of dropping it (-VeyrLegacyLockMouse restores the 1.8 s suspension).
+    // Same degrees per count as the controller path (PlayerController input scale 2.5).
+    if (bGiantCamera && !bThreatCameraFraming && !bLegacyLockMouse && bLockedOn && IsValid(Boss))
+    { GiantMouseYaw+=Value*.7f*MouseSensitivity*2.5f; GiantMouseIdle=0.f; return; }
+    ManualCameraRemaining=1.8f; AddControllerYawInput(Value * .7f * MouseSensitivity);
+}
+void AVeyrKnight::LookPitch(float Value)
+{
+    if (!MouseLookReady() || FMath::Abs(Value)<=.001f) return;
+    if (bGiantCamera && !bThreatCameraFraming && !bLegacyLockMouse && bLockedOn && IsValid(Boss))
+    { GiantMousePitch+=Value*.6f*MouseSensitivity*2.5f; GiantMouseIdle=0.f; return; }
+    ManualCameraRemaining=1.8f; AddControllerPitchInput(-Value * .6f * MouseSensitivity);
+}
 void AVeyrKnight::ZoomIn() { /* Fixed close framing; wheel input cannot pull away from the player. */ }
 void AVeyrKnight::ZoomOut() { /* Fixed close framing; wheel input cannot pull away from the player. */ }
 void AVeyrKnight::GuardPressed() { if (HumanInputEnabled()) SetGuard(true); }

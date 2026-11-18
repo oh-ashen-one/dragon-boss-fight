@@ -238,6 +238,8 @@ private:
     TSharedPtr<FVeyrBlendProof> BlendProof;
     TSharedPtr<FVeyrA123Proof> A123Proof; // quality goal A1-A3 (VeyrA123Proof.h)
     TSharedPtr<FVeyrFeelProof> FeelProof; // quality goal B4-B6 (VeyrFeelProof.h)
+    TSharedPtr<class FVeyrFramingProof> FramingProof; // quality goal D: fixed 60 s framing route (VeyrFramingProof.h)
+    TSharedPtr<class FVeyrFramingMeter> FramingMeter; // quality goal D: per-frame framing numbers in every fight replay
     TSharedPtr<FVeyrShowcase> Showcase;
     bool DriveBlendProofInputs();
     bool bCombatHealSeeking=false;
