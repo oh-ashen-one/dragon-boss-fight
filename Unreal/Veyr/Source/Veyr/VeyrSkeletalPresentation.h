@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "VeyrVisualDefinition.h"
+#include "VeyrDragonGrounding.h"
 #include "VeyrSkeletalPresentation.generated.h"
 
 /**
@@ -135,7 +136,54 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") FString LastError;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") TArray<FString> DefinitionErrors;
 
+    // ---- A1 (2026-11-18): mirrored-clip repair. -VeyrLegacyMirrorToe restores the old pose. ----
+    /** Sequences whose name contains this tag were written by tools/dragon_refine/mirror_v2r_action.py. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Mirror") FString MirroredSequenceTag=TEXT("_mirror");
+    /** Unpaired side bones the old mirror tool treated as midline bones: take their rest local pose. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Mirror") TArray<FName> MirroredClipRestBones;
+    /** Bones allowed to translate in mirrored clips; every other link keeps its rest length. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Mirror") TArray<FName> MirroredClipTranslatingBones;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Mirror") bool bRepairMirroredClips=true;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Mirror") bool bCurrentClipMirrorRepaired=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Mirror") int32 MirrorRepairSamples=0;
+    /** Largest change of a rigid link's length against the reference pose, in world cm (current pose). */
+    float MeasureMaxLinkStretchCm(FName& OutBone);
+
+    // ---- A3 (2026-11-18): sole heights and grounding. -VeyrNoDragonGrounding restores the old height. ----
+    /** Measure the four feet's lowest sole points against the floor under them (current pose). */
+    bool MeasureSoles(FVeyrSoleSample& Out);
+    /** One eased vertical offset of this whole component (never a bone); see VeyrDragonGrounding.h.
+     * Safe to call several times per frame: easing advances with world time only. */
+    void UpdateGrounding(EVeyrGroundingMode Mode);
+    /** Same rule with an explicit time step (proof sweeps on a pose probe). */
+    void StepGrounding(EVeyrGroundingMode Mode,float DeltaSeconds);
+    void ResetGrounding();
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") bool bGroundingEnabled=true;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") float GroundingOffsetCm=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") float GroundingTargetCm=0.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") int32 GroundingUpdates=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") FString GroundingDiagnostic;
+    /** World cm at actor scale 1; multiplied by the actor's scale. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxDropCm=75.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingDropRate=6.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingReleaseRate=3.f;
+    /** Ground mode carries the support sole's motion through, eases the rest (rate 20, cap 300 cm/s x scale), and also raises a
+     * sunk body (bounded by GroundingMaxDropCm). -VeyrGroundingLowerOnly restores the first rule: lower only,
+     * eased at GroundingDropRate. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingTrackRate=20.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxSpeedCm=300.f;
+    /** A target change faster than this (cm/s x scale) is a hard cut: eased, not carried through. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingCutSpeedCm=1500.f;
+    float LastGroundTargetCm=0.f;bool bGroundTargetValid=false;EVeyrGroundingMode LastGroundingModeForTarget=EVeyrGroundingMode::Release;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") bool bGroundingLowerOnly=false;
+    EVeyrGroundingMode LastGroundingMode=EVeyrGroundingMode::Release;
+    FVeyrSoleSample LastSoleSample;
+    const FVeyrSoleModel& GetSoleModel() const { return SoleModel; }
+
 private:
+    FVeyrSoleModel SoleModel;
+    FVector GroundingBaseLocation=FVector::ZeroVector;
+    double LastGroundingWorldSeconds=-1.0;
     bool ApplyMeshRenderPolicy(USkeletalMesh* Mesh);
     bool RefreshRenderPolicyEvidence();
     bool Fail(const FString& Reason);

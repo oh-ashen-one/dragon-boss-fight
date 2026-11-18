@@ -19,7 +19,7 @@ import urllib.parse
 
 AGENT = 'Mozilla/5.0 (Macintosh) game-sound-research'
 p = argparse.ArgumentParser(description=__doc__)
-p.add_argument('plan', type=Path, help='JSON: {cue: {"queries": [...], "min": s, "max": s, "keep": n}}')
+p.add_argument('plan', type=Path, help='JSON: {cue: {"queries": [...], "min": s, "max": s, "keep": n, "perQuery": n}}')
 p.add_argument('--out', type=Path, required=True)
 p.add_argument('--only', help='comma-separated cue names')
 a = p.parse_args()
@@ -55,6 +55,8 @@ for cue, spec in plan.items():
                '&s=' + urllib.parse.quote_plus('Downloads (most first)'))
         page = fetch(url)
         time.sleep(1.0)
+        taken = 0
+        per_query = spec.get('perQuery', 5)
         # One player block per result: the div that carries data-sound-id also carries the title,
         # the duration and the preview address.
         for block in re.findall(r'<div[^>]*class="[^"]*bw-player[^"]*"[^>]*>', page):
@@ -82,7 +84,8 @@ for cue, spec in plan.items():
                 'sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
             }
             time.sleep(0.4)
-            if len(found) >= spec['keep']:
+            taken += 1
+            if len(found) >= spec['keep'] or taken >= per_query:
                 break
     ledger[cue] = list(found.values())
     ledger_path.write_text(json.dumps(ledger, indent=1) + '\n')

@@ -7,6 +7,7 @@
 #include "VeyrAudio.h"
 #include "VeyrArena.h"
 #include "VeyrBlendProof.h"
+#include "VeyrA123Proof.h"
 #include "VeyrShowcase.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
@@ -122,9 +123,9 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrStillInterval="),StillInterval))StillInterval=FMath::Clamp(StillInterval,.30f,10.f);
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!FVeyrA123Proof::IsMode(ReplayMode)&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
-        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro and absolute evidence directory")); return false;
+        UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro|footclosehits|camerahug|soleheights and absolute evidence directory")); return false;
     }
     AVeyrGameMode* ModeActor=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(!ModeActor||!IsValid(ModeActor->Knight)||!IsValid(ModeActor->Dragon))
@@ -244,6 +245,16 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         Hooks.Finish=[this](bool bOk,const FString& Reason){Finish(bOk,Reason);};
         if(!BlendProof->Begin(GetWorld(),Knight,Dragon,RunDirectory,FParse::Param(FCommandLine::Get(),TEXT("VeyrProofFloor")),Hooks))
         {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED blendproof could not begin"));return false;}
+    }
+    if(FVeyrA123Proof::IsMode(ReplayMode))
+    {
+        A123Proof=MakeShared<FVeyrA123Proof>();
+        FVeyrA123Proof::FHooks Hooks;
+        Hooks.Shot=[this](const FString& Name){CaptureClock=FMath::Max(CaptureClock,.30f);Event(Name);};
+        Hooks.Finish=[this](bool bOk,const FString& Reason){Finish(bOk,Reason);};
+        if(!A123Proof->Begin(GetWorld(),Knight,Dragon,ReplayMode,Hooks))
+        {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED %s could not begin"),*ReplayMode);return false;}
+        DurationLimit=A123Proof->DurationLimit();
     }
     if(ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&
        !(ReplayMode==TEXT("blendproof")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof")))&&!Knight->bLockedOn)Knight->ToggleLockOn();
@@ -2408,6 +2419,7 @@ bool AVeyrReplay::DriveCampInputs()
 void AVeyrReplay::DriveInputs()
 {
     if(DriveBlendProofInputs())return;
+    if(A123Proof.IsValid()){A123Proof->Drive(Elapsed,GetWorld()->GetDeltaSeconds());return;}
     if(DriveCollisionInputs())return;
     if(DriveIntegrationInputs())return;
     if(DriveStanceInputs())return;
@@ -2471,9 +2483,12 @@ void AVeyrReplay::DriveInputs()
         const bool bHeadRoute=bDown||Dragon->State==EVeyrDragonState::Rise;
         bool bHeadWaypoint=false;
         FVector Goal;
+        // New knock-down timing: a person runs for where the head will land the moment the leg buckles, so the
+        // whole shorter lying window is attack time. Legacy timing keeps chasing the falling head.
+        const bool bHeadLanding=!Dragon->bLegacyKnockdown&&(Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse);
         if(bHeadRoute)
         {
-            const FVector Head=Dragon->GetHeadLocation();
+            const FVector Head=bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation();
             const FVector Forward=Dragon->GetActorForwardVector(),Right=Dragon->GetActorRightVector();
             const FVector Relative=Feet-Head;
             // Route beside the head, then approach the actual solid-body
@@ -2481,7 +2496,9 @@ void AVeyrReplay::DriveInputs()
             // and asked the Pawn to navigate inside the dragon.
             bHeadWaypoint=FVector::DotProduct(Relative,Forward)<150.f*Dragon->BodyScale;
             const float Side=FVector::DotProduct(Relative,Right)<0.f?-1.f:1.f;
-            Goal=bHeadWaypoint?Head+Forward*200.f*Dragon->BodyScale+Right*(Side*360.f*Dragon->BodyScale):HeadApproachGoal();
+            // Landing stand-off: the swept approach in front of the lying head measured 612 cm at scale 2.
+            Goal=bHeadWaypoint?Head+Forward*200.f*Dragon->BodyScale+Right*(Side*360.f*Dragon->BodyScale):
+                bHeadLanding?FVector(Head.X,Head.Y,Feet.Z)+Forward*306.f*Dragon->BodyScale:HeadApproachGoal();
         }
         else
         {
@@ -2504,7 +2521,7 @@ void AVeyrReplay::DriveInputs()
         // the low head freely, then lock again for the measured punish range.
         const float GoalTolerance=bHeadRoute?15.f:45.f+25.f*(Dragon->BodyScale-1.f);
         bWantLock=!bHeadWaypoint&&GoalDistance<GoalTolerance;
-        const FVector StrikeTarget=bHeadRoute?Dragon->GetHeadLocation():Dragon->GetLegLocation(TargetLeg);
+        const FVector StrikeTarget=bHeadRoute?(bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
         const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
         if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
@@ -2853,7 +2870,8 @@ void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
         {
             TInlineComponentArray<UVeyrSkeletalPresentation*> Presentations;Actor->GetComponents(Presentations);
             for(const UVeyrSkeletalPresentation* Presentation:Presentations)
-                if(Presentation->FailedRequests>0){bSuccess=false;VerifiedReason=TEXT("Native skeletal presentation recorded a failed pose request");}
+                if(Presentation->FailedRequests>0){bSuccess=false;VerifiedReason=FString::Printf(TEXT("Native skeletal presentation recorded a failed pose request (%s.%s, %d: %s)"),
+                    *Actor->GetName(),*Presentation->GetName(),Presentation->FailedRequests,*Presentation->LastError);}
         }
     }
     if(ObservedWarningContainmentFailures>0){bSuccess=false;VerifiedReason=TEXT("Bone contact escaped committed warning; damage was suppressed");}
@@ -2998,6 +3016,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     }
     if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
+    if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);
     Root->SetNumberField(TEXT("scenarioLimitGameSeconds"),DurationLimit);

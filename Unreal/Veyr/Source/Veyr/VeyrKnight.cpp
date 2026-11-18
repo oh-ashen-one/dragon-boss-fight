@@ -6,6 +6,7 @@
 #include "VeyrFightFeel.h"
 #include "VeyrDragon.h"
 #include "VeyrHUD.h"
+#include "VeyrCameraBoom.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrVisualDefinition.h"
 #include "Animation/AnimSequence.h"
@@ -56,7 +57,8 @@ AVeyrKnight::AVeyrKnight()
     Movement->bOrientRotationToMovement = true;
     Movement->MaxStepHeight = 35.f;
 
-    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Collision aware combat camera arm"));
+    // A2 (2026-11-18): dragon-aware arm; -VeyrLegacyCameraBoom restores the stock behaviour at runtime.
+    CameraBoom = CreateDefaultSubobject<UVeyrCameraBoom>(TEXT("Collision aware combat camera arm"));
     CameraBoom->SetupAttachment(GetRootComponent());
     CameraBoom->SetRelativeLocation(FVector(0, 0, 65));
     CameraBoom->TargetArmLength = CameraDistance;
