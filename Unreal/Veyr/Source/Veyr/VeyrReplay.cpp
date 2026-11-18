@@ -2870,7 +2870,8 @@ void AVeyrReplay::Finish(bool bSuccess, const FString& Reason)
         {
             TInlineComponentArray<UVeyrSkeletalPresentation*> Presentations;Actor->GetComponents(Presentations);
             for(const UVeyrSkeletalPresentation* Presentation:Presentations)
-                if(Presentation->FailedRequests>0){bSuccess=false;VerifiedReason=TEXT("Native skeletal presentation recorded a failed pose request");}
+                if(Presentation->FailedRequests>0){bSuccess=false;VerifiedReason=FString::Printf(TEXT("Native skeletal presentation recorded a failed pose request (%s.%s, %d: %s)"),
+                    *Actor->GetName(),*Presentation->GetName(),Presentation->FailedRequests,*Presentation->LastError);}
         }
     }
     if(ObservedWarningContainmentFailures>0){bSuccess=false;VerifiedReason=TEXT("Bone contact escaped committed warning; damage was suppressed");}
