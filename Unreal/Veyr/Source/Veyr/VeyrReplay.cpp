@@ -3010,6 +3010,8 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
     if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
     if(FeelProof.IsValid())Root->SetObjectField(TEXT("feelProof"),FeelProof->Evidence());
+    if(const AVeyrGameMode* FeelMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(FeelMode->FightFeel)Root->SetObjectField(TEXT("feel"),FeelMode->FightFeel->FeelEvidence(true)); // B4-B6 totals + static parts, once
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);
     Root->SetNumberField(TEXT("scenarioLimitGameSeconds"),DurationLimit);

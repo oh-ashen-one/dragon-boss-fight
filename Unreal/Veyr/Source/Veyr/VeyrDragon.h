@@ -325,7 +325,8 @@ public:
     const FVeyrGroundContactCounters& GetGroundContactCounters() const { return GroundContacts.Counters(); }
     const FVeyrGroundContactDetector& GetGroundContactDetector() const { return GroundContacts; }
     /** True when contacts drive the camera shake (the old hard-coded stomp/tail/landing shakes are skipped). */
-    static bool ContactsDriveShake();
+    /** True when contact events (not the fixed per-move impacts) shake the camera this frame. */
+    bool ContactsDriveShake() const;
     /** Showcase rails for the feel proof: Collapse (Buckle skipped) as one segment. */
     bool StartFeelSegment(FName Segment,FString& Error);
 
