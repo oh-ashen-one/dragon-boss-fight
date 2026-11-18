@@ -3,6 +3,7 @@
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
 #include "VeyrReplay.h"
+#include "VeyrLook.h"
 #include "VeyrSessionState.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -238,7 +239,8 @@ void AVeyrHUD::DrawHUD()
     const bool bTerminal=Knight->IsDead()||Dragon->IsDead();
     // Phase C3: the controls box shows for the first seconds of play, then fades;
     // it stays on the pause menu's Controls page. -VeyrKeepControls keeps it on.
-    static const bool bKeepControls=FParse::Param(FCommandLine::Get(),TEXT("VeyrKeepControls"));
+    // -VeyrLegacyRender restores all of phase C, so build 16 A/B captures keep the box too.
+    static const bool bKeepControls=FParse::Param(FCommandLine::Get(),TEXT("VeyrKeepControls"))||VeyrLook::IsLegacy();
     // Session-wide, so a restart after death does not bring the box back.
     UVeyrSessionState* Session=GetGameInstance()?GetGameInstance()->GetSubsystem<UVeyrSessionState>():nullptr;
     float& ControlsShownSeconds=Session?Session->ControlsShownSeconds:LocalControlsShownSeconds;

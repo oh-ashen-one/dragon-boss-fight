@@ -56,6 +56,9 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bFortressGateProbeReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") TMap<FName,FVector> ConnectedMeshDimensionsCm;
     UFUNCTION(BlueprintPure, Category="Environment") float GetMaximumWalkableHeightNear(const FVector& WorldPoint,float RadiusCm) const;
+    /** Phase C frame-report counters: court parts split out for Lumen, shadowed court lights now. */
+    int32 GetLumenSplitComponentCount() const { return LumenSplitParts.Num(); }
+    int32 CountShadowedCourtLights() const;
     /** GLB front is provisionally +Y after import; root verifies native orientation. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Environment") float CathedralFacingYawOffset=90.f;
 
@@ -86,7 +89,13 @@ private:
     UPROPERTY() TObjectPtr<UDirectionalLightComponent> DragonRimLight;
     UPROPERTY() TObjectPtr<UPostProcessComponent> CourtGrade;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> LumenSplitParts;
-    int32 ShadowedFireCount=0;
+    /** The twelve fortress braziers; at tier >= 2 only the ones nearest the camera keep shadows. */
+    UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> BrazierLights;
+    float BrazierShadowClock=0.f;
+    /** New look ticks every frame (rims follow the camera); the rest keeps its 30 Hz step. */
+    float SlowTickAccumulator=0.f;
+    void UpdateBrazierShadowBudget(const FVector& Camera);
+    void AimRelitRims();
     UPROPERTY() TArray<TObjectPtr<UInstancedStaticMeshComponent>> Batches;
     UPROPERTY() TMap<FName,TObjectPtr<UStaticMesh>> PolishMeshes;
     UPROPERTY() TMap<FName,TObjectPtr<UInstancedStaticMeshComponent>> PolishBatches;

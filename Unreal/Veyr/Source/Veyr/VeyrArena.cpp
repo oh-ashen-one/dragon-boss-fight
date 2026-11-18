@@ -190,6 +190,7 @@ void AVeyrArena::BeginPlay()
     BuildInteractiveDetails();
     BuildCollision();
     if(VeyrLook::SplitInstancesForLumen())SplitCourtInstancesForLumen();
+    if(!VeyrLook::IsLegacy())SetActorTickInterval(0.f);
     UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY connected court: clear fight diameter~7200cm, walkable aisles0..240cm; %d instanced groups."), Batches.Num());
     UE_LOG(LogTemp,Display,TEXT("VEYR_CONNECTED_COURT ready=%d meshes=%d/12 instances=%d diagnostic=%s"),
         bConnectedCourtAssetsReady,ConnectedCourtMeshCount,ConnectedCourtInstanceCount,*ConnectedCourtDiagnostic);
@@ -743,7 +744,8 @@ void AVeyrArena::BuildDistance()
             // washes its wall. Small source radius keeps the shadows readable.
             FireCandelas=700.f;Light->SetIntensity(FireCandelas);
             Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(2800.f);Light->SetSourceRadius(25.f);
-            Light->SetCastShadows(ShadowedFireCount++<VeyrLook::ShadowedFireBudget());
+            // At tier >= 2 the budget picks the braziers nearest the camera (UpdateBrazierShadowBudget).
+            Light->SetCastShadows(VeyrLook::ShadowedFireBudget()>=1000);BrazierLights.Add(Light);
             Light->SetVolumetricScatteringIntensity(2.5f);Light->SetSpecularScale(.9f);
         }
         Light->RegisterComponent();
@@ -1022,7 +1024,16 @@ void AVeyrArena::DamagePropsAlongSweep(const FVector& PreviousBase,const FVector
 }
 void AVeyrArena::Tick(float DeltaSeconds)
 {
-    Super::Tick(DeltaSeconds);AtmosphereClock+=DeltaSeconds;
+    Super::Tick(DeltaSeconds);
+    if(!VeyrLook::IsLegacy())
+    {
+        // Rims are aimed from the camera yaw: every frame, or highlights step during orbits.
+        AimRelitRims();
+        SlowTickAccumulator+=DeltaSeconds;
+        if(SlowTickAccumulator<1.f/30.f)return;
+        DeltaSeconds=SlowTickAccumulator;SlowTickAccumulator=0.f;
+    }
+    AtmosphereClock+=DeltaSeconds;
     if(VeyrLook::IsLegacy())
     {
         for(int32 I=0;I<FortressFireLights.Num();++I)if(FortressFireLights[I])

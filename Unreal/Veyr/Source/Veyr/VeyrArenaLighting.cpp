@@ -66,7 +66,7 @@ void AVeyrArena::BuildRelitLighting()
         Pool->SetIntensityUnits(ELightUnits::Candelas);Pool->SetIntensity(Pools[I].Candelas);
         Pool->SetLightColor(PoolColour,false);Pool->SetAttenuationRadius(2600.f);
         Pool->SetInnerConeAngle(8.f);Pool->SetOuterConeAngle(32.f);Pool->SetSourceRadius(15.f);
-        Pool->SetCastShadows(true);Pool->SetVolumetricScatteringIntensity(1.2f);Pool->SetSpecularScale(.8f);
+        Pool->SetCastShadows(VeyrLook::FloorPoolShadows());Pool->SetVolumetricScatteringIntensity(1.2f);Pool->SetSpecularScale(.8f);
         Pool->RegisterComponent();
         FortressFireLights.Add(Pool);FortressFireIntensities.Add(Pools[I].Candelas);
     }
@@ -124,13 +124,15 @@ void AVeyrArena::BuildRelitLighting()
     AddInstanceComponent(CourtGrade);CourtGrade->SetupAttachment(GetRootComponent());CourtGrade->bUnbound=true;
     FPostProcessSettings& S=CourtGrade->Settings;
     // Bounded eye adaptation in EV100 (ExtendDefaultLuminanceRange=True). Metered on the
-    // bright end of the histogram so the lit pools set exposure and the shadows stay dark;
-    // the clamp stops a dark corner lifting to grey or the fire blowing the frame out.
+    // bright end of the histogram so the lit pools set exposure and the shadows stay dark.
+    // Min stops a dark corner lifting to grey. Max must sit well above the court so the camera
+    // can stop down for the breath (25k lm, +2.6 stops on build 16): at 1 EV100 it could only go
+    // 1.6 stops darker than build 16's manual exposure; 3.5 EV100 gives about 4 stops.
     S.bOverride_AutoExposureMethod=true;S.AutoExposureMethod=AEM_Histogram;
     S.bOverride_AutoExposureApplyPhysicalCameraExposure=true;S.AutoExposureApplyPhysicalCameraExposure=false;
     S.bOverride_AutoExposureBias=true;S.AutoExposureBias=-.6f;
     S.bOverride_AutoExposureMinBrightness=true;S.AutoExposureMinBrightness=-3.5f;
-    S.bOverride_AutoExposureMaxBrightness=true;S.AutoExposureMaxBrightness=1.f;
+    S.bOverride_AutoExposureMaxBrightness=true;S.AutoExposureMaxBrightness=3.5f;
     S.bOverride_AutoExposureLowPercent=true;S.AutoExposureLowPercent=65.f;
     S.bOverride_AutoExposureHighPercent=true;S.AutoExposureHighPercent=97.f;
     S.bOverride_AutoExposureSpeedUp=true;S.AutoExposureSpeedUp=2.f;
@@ -150,7 +152,8 @@ void AVeyrArena::BuildRelitLighting()
     S.bOverride_MotionBlurPerObjectSize=true;S.MotionBlurPerObjectSize=0.f;
     CourtGrade->RegisterComponent();
     Ambient->RecaptureSky();
-    UE_LOG(LogTemp,Display,TEXT("VEYR_LOOK_COURT relit pools=%d fires=%d shadowedFires=%d"),UE_ARRAY_COUNT(Pools),FortressFireLights.Num(),FMath::Min(ShadowedFireCount,VeyrLook::ShadowedFireBudget()));
+    UE_LOG(LogTemp,Display,TEXT("VEYR_LOOK_COURT relit pools=%d poolShadows=%d fires=%d braziers=%d brazierShadowBudget=%d"),
+        UE_ARRAY_COUNT(Pools),VeyrLook::FloorPoolShadows(),FortressFireLights.Num(),BrazierLights.Num(),FMath::Min(BrazierLights.Num(),VeyrLook::ShadowedFireBudget()));
 }
 
 void AVeyrArena::SplitCourtInstancesForLumen()
@@ -195,8 +198,45 @@ void AVeyrArena::TickRelitLighting(float DeltaSeconds)
     }
     const APlayerController* PC=GetWorld()?GetWorld()->GetFirstPlayerController():nullptr;
     if(!PC||!PC->PlayerCameraManager)return;
+    BrazierShadowClock-=DeltaSeconds;
+    if(BrazierShadowClock<=0.f){BrazierShadowClock=.5f;UpdateBrazierShadowBudget(PC->PlayerCameraManager->GetCameraLocation());}
+}
+
+void AVeyrArena::AimRelitRims()
+{
+    const APlayerController* PC=GetWorld()?GetWorld()->GetFirstPlayerController():nullptr;
+    if(!PC||!PC->PlayerCameraManager)return;
     const float CameraYaw=PC->PlayerCameraManager->GetCameraRotation().Yaw;
     // A directional light's rotation is its travel direction: from behind the subject toward the camera.
     if(CharacterRim)CharacterRim->SetWorldRotation(FRotator(-25.f,CameraYaw+180.f+20.f,0));
     if(DragonRimLight)DragonRimLight->SetWorldRotation(FRotator(-30.f,CameraYaw+180.f-35.f,0));
+}
+
+void AVeyrArena::UpdateBrazierShadowBudget(const FVector& Camera)
+{
+    const int32 Budget=VeyrLook::ShadowedFireBudget();
+    if(Budget>=BrazierLights.Num())return; // tiers 0-1: every brazier keeps its shadow
+    // Rank by distance to the camera; a lit brazier gets a 20 % head start so two at
+    // nearly equal range do not swap shadows (and drop their VSM cache) every half second.
+    TArray<TPair<double,int32>> Order;
+    for(int32 I=0;I<BrazierLights.Num();++I)if(BrazierLights[I])
+    {
+        double D=FVector::DistSquared(BrazierLights[I]->GetComponentLocation(),Camera);
+        if(BrazierLights[I]->CastShadows)D*=.64;
+        Order.Emplace(D,I);
+    }
+    Order.Sort([](const TPair<double,int32>& A,const TPair<double,int32>& B){return A.Key<B.Key;});
+    for(int32 Rank=0;Rank<Order.Num();++Rank)
+    {
+        UPointLightComponent* Light=BrazierLights[Order[Rank].Value];
+        const bool bWant=Rank<Budget;
+        if(Light->CastShadows!=bWant)Light->SetCastShadows(bWant);
+    }
+}
+
+int32 AVeyrArena::CountShadowedCourtLights() const
+{
+    int32 Count=0;
+    for(const UPointLightComponent* Light:FortressFireLights)Count+=Light&&Light->CastShadows&&Light->IsVisible();
+    return Count;
 }

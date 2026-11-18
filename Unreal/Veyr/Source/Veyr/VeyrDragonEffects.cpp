@@ -36,7 +36,9 @@ AVeyrDragonEffects::AVeyrDragonEffects()
         Light->SetLightColor(FLinearColor(1.f,.23f,.025f));Light->SetVisibility(false);
         if(!VeyrLook::IsLegacy())
         {
-            Light->SetLightColor(FLinearColor(1.f,.42f,.12f));Light->SetCastShadows(I==2);
+            // Only the far light may cast a shadow, only at tier 0, and its radius is capped
+            // in Tick: a moving shadowed point light re-renders six VSM faces every frame.
+            Light->SetLightColor(FLinearColor(1.f,.42f,.12f));Light->SetCastShadows(I==2&&VeyrLook::BreathShadow());
             Light->SetSourceRadius(60.f);Light->SetVolumetricScatteringIntensity(1.5f);
         }
         FireLights.Add(Light);
@@ -235,7 +237,10 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
                 // Phase C: the breath is the strongest moving warm source in the court;
                 // it floods the paving and the dragon's underside, and the far light
                 // throws the knight's shadow away from the fire.
-                FireLights[I]->SetAttenuationRadius((1800.f+I*600.f)*FireScale);
+                // The shadowed far light stays at 20 m so its moving shadow redraws only nearby
+                // casters; the unshadowed ones carry the reach of a 2x-3x dragon's breath.
+                const float Reach=(1800.f+I*600.f)*FireScale;
+                FireLights[I]->SetAttenuationRadius(FireLights[I]->CastShadows?FMath::Min(Reach,2000.f):Reach);
                 FireLights[I]->SetIntensity((I==0?25000.f:I==1?18000.f:11000.f)*Flicker*Startup);
             }
             else

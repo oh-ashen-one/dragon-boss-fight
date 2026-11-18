@@ -1,11 +1,16 @@
 #include "VeyrLightCheck.h"
+#include "VeyrArena.h"
 #include "VeyrDragon.h"
 #include "VeyrGameMode.h"
 #include "VeyrKnight.h"
 #include "VeyrLook.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
+#include "DistanceFieldAtlas.h"
 #include "DynamicRHI.h"
+#include "EngineUtils.h"
+#include "MeshCardBuild.h"
+#include "ShaderCompiler.h"
 #include "Dom/JsonObject.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
@@ -51,9 +56,16 @@ namespace
         FString Text;const TSharedRef<TJsonWriter<>> Writer=TJsonWriterFactory<>::Create(&Text);
         FJsonSerializer::Serialize(Root,Writer);FFileHelper::SaveStringToFile(Text,*File);
     }
-    TSharedRef<FJsonObject> LookFields()
+    TSharedRef<FJsonObject> LookFields(UWorld* World)
     {
         auto O=MakeShared<FJsonObject>();
+        O->SetBoolField(TEXT("breathShadow"),VeyrLook::BreathShadow());O->SetBoolField(TEXT("poolShadows"),VeyrLook::FloorPoolShadows());
+        O->SetNumberField(TEXT("brazierShadowBudget"),VeyrLook::ShadowedFireBudget());
+        if(World)if(TActorIterator<AVeyrArena> It(World);It)
+        {
+            O->SetNumberField(TEXT("lumenSplitComponents"),It->GetLumenSplitComponentCount());
+            O->SetNumberField(TEXT("shadowedCourtLightsAtEnd"),It->CountShadowedCourtLights());
+        }
         O->SetBoolField(TEXT("legacyRender"),VeyrLook::IsLegacy());O->SetNumberField(TEXT("renderTier"),VeyrLook::RenderTier());
         O->SetBoolField(TEXT("lumenSplit"),VeyrLook::SplitInstancesForLumen());O->SetStringField(TEXT("commandLine"),FCommandLine::Get());
         if(GEngine&&GEngine->GameViewport&&GEngine->GameViewport->Viewport)
@@ -68,7 +80,9 @@ namespace
 AVeyrLightCheck::AVeyrLightCheck()
 {
     PrimaryActorTick.bCanEverTick=true;PrimaryActorTick.bTickEvenWhenPaused=true;
-    PrimaryActorTick.TickGroup=TG_PostUpdateWork;
+    // Before the camera manager updates (LevelTick: UpdateCameraManager precedes TG_PostUpdateWork),
+    // so a moved camera and its camera-cut flag land on the same rendered frame.
+    PrimaryActorTick.TickGroup=TG_PrePhysics;
 }
 
 void AVeyrLightCheck::Initialize(const FString& StillsDirectory,const FString& FrameDirectory)
@@ -83,7 +97,7 @@ void AVeyrLightCheck::Initialize(const FString& StillsDirectory,const FString& F
         {TEXT("03_dragon_front"),TEXT("Roar"),1.2f},
         {TEXT("04_under_dragon"),NAME_None,1.8f},
         {TEXT("05_fire_breath"),TEXT("Fire"),8.f},
-        {TEXT("06_knight_strike"),NAME_None,.38f},
+        {TEXT("06_knight_strike"),NAME_None,.38f,1.f},
         {TEXT("07_dragon_claw"),TEXT("Claw0"),6.f},
         {TEXT("08_collapse"),TEXT("Stagger0"),10.f},
         {TEXT("09_flight"),TEXT("Flight"),8.f},
@@ -110,33 +124,64 @@ void AVeyrLightCheck::TickFrameReport()
     if(!bFrameRecording)
     {
         // Stills runs report too: the clock then starts with the first scripted shot.
-        if(!bFighting&&StillsDir.IsEmpty())return;
+        if(!bFighting&&(StillsDir.IsEmpty()||Phase<EPhase::Hold))return;
         FrameWarmup+=Wall/1000.f;
         if(FrameWarmup<FrameWarmupSeconds)return;
-        bFrameRecording=true;FrameStartWall=Now;return;
+        bFrameRecording=true;return;
     }
-    FrameMs.Add(Wall);
+    // Pause-menu frames and the tool's own cuts and screenshot readbacks are not fight frames.
+    if(GetWorld()->IsPaused()){++SkippedPaused;return;}
+    if(FScreenshotRequest::IsScreenshotRequested())SkipFrames=FMath::Max(SkipFrames,3);
+    if(SkipFrames>0){--SkipFrames;++SkippedTool;return;}
+    FrameMs.Add(Wall);RecordedSeconds+=Wall/1000.f;
     GameMs.Add(FPlatformTime::ToMilliseconds(GGameThreadTime));
     RenderMs.Add(FPlatformTime::ToMilliseconds(GRenderThreadTime));
     GpuMs.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)));
-    if(Now-FrameStartWall>=FrameReportSeconds)WriteFrameReport();
+    if(RecordedSeconds>=FrameReportSeconds)WriteFrameReport();
 }
 
-void AVeyrLightCheck::WriteFrameReport()
+void AVeyrLightCheck::WriteFrameReport(bool bPartial)
 {
     bFrameDone=true;
-    auto Root=LookFields();
-    Root->SetNumberField(TEXT("seconds"),FrameReportSeconds);Root->SetNumberField(TEXT("frames"),FrameMs.Num());
+    auto Root=LookFields(GetWorld());
+    Root->SetStringField(TEXT("mode"),StillsDir.IsEmpty()?TEXT("fight"):TEXT("stills"));
+    Root->SetBoolField(TEXT("partial"),bPartial);
+    Root->SetNumberField(TEXT("seconds"),RecordedSeconds);Root->SetNumberField(TEXT("frames"),FrameMs.Num());
+    Root->SetNumberField(TEXT("skippedPausedFrames"),SkippedPaused);Root->SetNumberField(TEXT("skippedToolFrames"),SkippedTool);
     Root->SetObjectField(TEXT("frameMs"),Stats(FrameMs));Root->SetObjectField(TEXT("gameThreadMs"),Stats(GameMs));
     Root->SetObjectField(TEXT("renderThreadMs"),Stats(RenderMs));Root->SetObjectField(TEXT("gpuMs"),Stats(GpuMs));
     int32 Over=0;for(float V:FrameMs)Over+=V>17.5f;
     Root->SetNumberField(TEXT("framesOver17_5ms"),Over);
     Root->SetNumberField(TEXT("meanFps"),Mean(FrameMs)>0.f?1000.f/Mean(FrameMs):0.f);
-    Root->SetStringField(TEXT("note"),TEXT("wall-clock frame interval under the 60 fps cap; GPU ms is the headroom signal"));
+    Root->SetStringField(TEXT("note"),StillsDir.IsEmpty()
+        ?TEXT("wall-clock frame interval under the 60 fps cap; GPU ms is the headroom signal")
+        :TEXT("stills mode: scripted poses, not a fight; frames around cuts and screenshots are skipped"));
     SaveJson(Root,FPaths::Combine(FrameDir,TEXT("frame-report.json")));
-    UE_LOG(LogTemp,Display,TEXT("VEYR_FRAME_REPORT frames=%d meanMs=%.2f p95Ms=%.2f gpuMeanMs=%.2f gpuP95Ms=%.2f legacy=%d tier=%d"),
-        FrameMs.Num(),Mean(FrameMs),Percentile(FrameMs,.95f),Mean(GpuMs),Percentile(GpuMs,.95f),VeyrLook::IsLegacy(),VeyrLook::RenderTier());
-    MaybeQuit();
+    UE_LOG(LogTemp,Display,TEXT("VEYR_FRAME_REPORT frames=%d seconds=%.1f partial=%d meanMs=%.2f p95Ms=%.2f gpuMeanMs=%.2f gpuP95Ms=%.2f legacy=%d tier=%d"),
+        FrameMs.Num(),RecordedSeconds,bPartial,Mean(FrameMs),Percentile(FrameMs,.95f),Mean(GpuMs),Percentile(GpuMs,.95f),VeyrLook::IsLegacy(),VeyrLook::RenderTier());
+    if(!bPartial)MaybeQuit();
+}
+
+void AVeyrLightCheck::EndPlay(const EEndPlayReason::Type Reason)
+{
+    // A restart (OpenLevel) or quit before 60 s still leaves the frames measured so far.
+    if(!FrameDir.IsEmpty()&&bFrameRecording&&!bFrameDone&&FrameMs.Num()>0)WriteFrameReport(true);
+    if(!StillsDir.IsEmpty()&&Phase!=EPhase::Done&&ShotRecords.Num()>0)
+    {
+        auto Root=LookFields(GetWorld());Root->SetArrayField(TEXT("shots"),ShotRecords);Root->SetBoolField(TEXT("partial"),true);
+        SaveJson(Root,FPaths::Combine(StillsDir,TEXT("lightcheck.json")));
+    }
+    Super::EndPlay(Reason);
+}
+
+int32 AVeyrLightCheck::OutstandingBuilds(FString& What) const
+{
+    // Uncooked runs build distance fields, Lumen cards and shaders after load; cooked ones report 0.
+    const int32 Fields=GDistanceFieldAsyncQueue?GDistanceFieldAsyncQueue->GetNumOutstandingTasks():0;
+    const int32 Cards=GCardRepresentationAsyncQueue?GCardRepresentationAsyncQueue->GetNumOutstandingTasks():0;
+    const int32 Shaders=GShaderCompilingManager?GShaderCompilingManager->GetNumRemainingJobs():0;
+    What=FString::Printf(TEXT("distanceFields=%d cards=%d shaders=%d"),Fields,Cards,Shaders);
+    return Fields+Cards+Shaders;
 }
 
 void AVeyrLightCheck::PlaceActors()
@@ -199,15 +244,20 @@ bool AVeyrLightCheck::BeginShot()
 {
     if(++ShotIndex>=Shots.Num()){FinishStills();return false;}
     const FShot& Shot=Shots[ShotIndex];
-    PhaseClock=0.f;bStrikeIssued=false;bSegmentStarted=false;
+    PhaseClock=0.f;bStrikeIssued=false;bSegmentStarted=false;bPreRollDone=Shot.PreRollSeconds<=0.f;SkipFrames=FMath::Max(SkipFrames,10);
     PlaceActors();
     if(!Shot.Segment.IsNone())
     {
         FString Error;
         bSegmentStarted=Dragon->StartShowcaseSegment(Shot.Segment,Error);
-        if(!bSegmentStarted)UE_LOG(LogTemp,Warning,TEXT("VEYR_LIGHTCHECK_SEGMENT_FAILED %s %s"),*Shot.Name,*Error);
+        if(!bSegmentStarted)
+        {
+            // StartShowcaseSegment records the segment before validating it: clear it, or every
+            // later segment fails with "requires an idle rehearsal actor".
+            UE_LOG(LogTemp,Warning,TEXT("VEYR_LIGHTCHECK_SEGMENT_FAILED %s %s"),*Shot.Name,*Error);
+            Dragon->RestAfterShowcaseSegment();
+        }
     }
-    if(Shot.Name.StartsWith(TEXT("06"))){Knight->SetReplayInput(FVector::ZeroVector,true,false,false,false,false,false);bStrikeIssued=true;}
     PlaceCamera();
     VeyrLook::NotifyCameraCut(GetWorld());
     UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_SHOT_BEGIN %s segment=%s"),*Shot.Name,*Shot.Segment.ToString());
@@ -239,6 +289,21 @@ void AVeyrLightCheck::TickStills(float DeltaSeconds)
     case EPhase::WaitWorld:
         // Wait for the visual dragon to be ready, then take every input away from the brain.
         if(PhaseClock<1.5f||!PC)return;
+        {
+            FString What;
+            if(OutstandingBuilds(What)>0)
+            {
+                BuildWaitSeconds+=DeltaSeconds;
+                if(BuildWaitSeconds<600.f)
+                {
+                    if(FMath::FloorToInt(BuildWaitSeconds/5.f)!=FMath::FloorToInt((BuildWaitSeconds-DeltaSeconds)/5.f))
+                        UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_WAIT_BUILDS %.0fs %s"),BuildWaitSeconds,*What);
+                    return;
+                }
+                UE_LOG(LogTemp,Warning,TEXT("VEYR_LIGHTCHECK_BUILDS_TIMEOUT %s: stills may show partial Lumen"),*What);
+            }
+            else if(BuildWaitSeconds>0.f)UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_BUILDS_DONE after %.0fs"),BuildWaitSeconds);
+        }
         if(!Dragon->BeginShowcase()){if(PhaseClock>15.f){UE_LOG(LogTemp,Error,TEXT("VEYR_LIGHTCHECK_FAILED dragon showcase unavailable"));FinishStills();}return;}
         DragonHome=Dragon->GetActorLocation();DragonHomeRotation=Dragon->GetActorRotation();
         Camera=GetWorld()->SpawnActor<ACameraActor>();
@@ -252,6 +317,14 @@ void AVeyrLightCheck::TickStills(float DeltaSeconds)
         Phase=EPhase::Hold;return;
     case EPhase::Hold:
         PlaceCamera();
+        if(!bPreRollDone)
+        {
+            // Hold the placed pose until exposure has settled, then give the input; the hold
+            // clock (0.38 s for the strike) starts at the input.
+            if(PhaseClock<Shots[ShotIndex].PreRollSeconds)return;
+            if(Shots[ShotIndex].Name.StartsWith(TEXT("06"))){Knight->SetReplayInput(FVector::ZeroVector,true,false,false,false,false,false);bStrikeIssued=true;}
+            bPreRollDone=true;PhaseClock=0.f;return;
+        }
         if(!ReadyToCapture())return;
         PendingFile=FPaths::Combine(StillsDir,Shots[ShotIndex].Name+TEXT(".png"));
         FScreenshotRequest::RequestScreenshot(PendingFile,FParse::Param(FCommandLine::Get(),TEXT("VeyrLightCheckHUD")),false);
@@ -283,8 +356,9 @@ void AVeyrLightCheck::TickStills(float DeltaSeconds)
 void AVeyrLightCheck::FinishStills()
 {
     Phase=EPhase::Done;
-    auto Root=LookFields();
+    auto Root=LookFields(GetWorld());
     Root->SetArrayField(TEXT("shots"),ShotRecords);Root->SetNumberField(TEXT("runSeconds"),TotalClock);
+    Root->SetNumberField(TEXT("waitedForBuildsSeconds"),BuildWaitSeconds);
     Root->SetStringField(TEXT("rebuild"),TEXT("tools/unreal/lightcheck_sheet.py <this dir> [other dirs...]"));
     SaveJson(Root,FPaths::Combine(StillsDir,TEXT("lightcheck.json")));
     UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_DONE shots=%d seconds=%.1f"),ShotRecords.Num(),TotalClock);
