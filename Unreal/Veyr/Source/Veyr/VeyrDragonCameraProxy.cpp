@@ -250,8 +250,34 @@ bool FVeyrDragonTrueSkin::Skin(const UVeyrSkeletalPresentation* Presentation)
     return true;
 }
 
+// Ericson's closest point on a triangle (Real-Time Collision Detection 5.1.5): exact for degenerate (zero-area)
+// faces too. FMath::ClosestPointOnTriangleToPoint returns the query point itself for a zero-area face, which made
+// the audit report "0 cm from the skin" (inside the dragon) 22 cm off every box (-VeyrAuditEngineTriangle restores).
+static FVector VeyrClosestOnTriangle(const FVector& P,const FVector& A,const FVector& B,const FVector& C)
+{
+    const FVector AB=B-A,AC=C-A,AP=P-A;
+    const double D1=AB|AP,D2=AC|AP;if(D1<=0&&D2<=0)return A;
+    const FVector BP=P-B;const double D3=AB|BP,D4=AC|BP;if(D3>=0&&D4<=D3)return B;
+    const double VC=D1*D4-D3*D2;if(VC<=0&&D1>=0&&D3<=0){const double V=D1/FMath::Max(D1-D3,1e-12);return A+AB*V;}
+    const FVector CP=P-C;const double D5=AB|CP,D6=AC|CP;if(D6>=0&&D5<=D6)return C;
+    const double VB=D5*D2-D1*D6;if(VB<=0&&D2>=0&&D6<=0){const double W=D2/FMath::Max(D2-D6,1e-12);return A+AC*W;}
+    const double VA=D3*D6-D5*D4;if(VA<=0&&(D4-D3)>=0&&(D5-D6)>=0){const double W=(D4-D3)/FMath::Max((D4-D3)+(D5-D6),1e-12);return B+(C-B)*W;}
+    const double Sum=VA+VB+VC;
+    if(FMath::Abs(Sum)<1e-12)
+    {
+        // Zero area: nearest of the three edges.
+        auto Seg=[&](const FVector& X,const FVector& Y){return FMath::ClosestPointOnSegment(P,X,Y);};
+        const FVector E0=Seg(A,B),E1=Seg(B,C),E2=Seg(C,A);
+        const double S0=FVector::DistSquared(P,E0),S1=FVector::DistSquared(P,E1),S2=FVector::DistSquared(P,E2);
+        return S0<=S1&&S0<=S2?E0:(S1<=S2?E1:E2);
+    }
+    const double Denom=1.0/Sum;const double V=VB*Denom,W=VC*Denom;
+    return A+AB*V+AC*W;
+}
+
 float FVeyrDragonTrueSkin::NearestDistance(const FVector& P,float MaxDistance) const
 {
+    static const bool bEngine=FParse::Param(FCommandLine::Get(),TEXT("VeyrAuditEngineTriangle"));
     if(!Current)return MaxDistance;
     double Best=MaxDistance*double(MaxDistance);
     for(int32 G=0;G<GroupBounds.Num();++G)
@@ -260,7 +286,7 @@ float FVeyrDragonTrueSkin::NearestDistance(const FVector& P,float MaxDistance) c
         for(const int32 T:GroupTriangles[G])
         {
             const FVector& A=Skinned[Current->Indices[T*3]];const FVector& B=Skinned[Current->Indices[T*3+1]];const FVector& C=Skinned[Current->Indices[T*3+2]];
-            const double D=FVector::DistSquared(P,FMath::ClosestPointOnTriangleToPoint(P,A,B,C));
+            const double D=FVector::DistSquared(P,bEngine?FMath::ClosestPointOnTriangleToPoint(P,A,B,C):VeyrClosestOnTriangle(P,A,B,C));
             if(D<Best)Best=D;
         }
     }
