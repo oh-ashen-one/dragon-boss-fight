@@ -12,6 +12,8 @@ import os
 from pathlib import Path
 import socket
 import subprocess
+from engine_lock import engine_lock
+from owned_launch_budget import record_rendered_launch
 
 ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
@@ -55,7 +57,12 @@ if a.replay_start_two_handed:command.append('-VeyrReplayStartTwoHanded')
 (run/'launch.json').write_text(json.dumps({'command':command,'autoRestart':False,'rendererLimit':a.capture_slots},indent=2)+'\n')
 environment=os.environ.copy();environment['GPU_SLOT_CAPTURE_SLOTS']=str(a.capture_slots)
 print('Owned editor run:',run,flush=True)
-with (run/'launcher.log').open('w') as output:
-    result=subprocess.run(command,cwd=ROOT,env=environment,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT)
+# Machine-wide engine lock for the life of the owned editor (open -W waits for it); closing the editor releases it.
+with engine_lock('open_owned_editor '+ROOT.name,tree=ROOT) as lock:
+    environment['VEYR_ENGINE_LOCK_HELD']=os.environ['VEYR_ENGINE_LOCK_HELD']
+    with (run/'launcher.log').open('w') as output:
+        result=lock.run(command,cwd=ROOT,env=environment,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT)
+    lock.exit_code=result.returncode
+    record_rendered_launch(ROOT,'veyr-customuse-editor',run/'gpu.json',run)
 print('Owned editor exited:',result.returncode,flush=True)
 raise SystemExit(result.returncode)
