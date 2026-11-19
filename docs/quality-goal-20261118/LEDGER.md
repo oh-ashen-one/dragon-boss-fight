@@ -118,6 +118,9 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-19 17:22 | Integrated build, one-hand fast sweep | opus-builder (the picture agent) | lock | | 15 of 16 wins inside 150 s, median 90.9 s (band 74.8-101.2: in); seed 10 lost. Two-hand and passive queued |
 | 11-19 17:21 | Bigger dragon at 2.5x (fast sweep) | opus-builder (the D agent) | lock | | one-hand 14 of 16 inside 150 s, median 127.4 s (+45 %, out); two-hand 16 of 16, median 82.3 s (in); passive 7.5-9.3 s; no wall contact (+435 cm); whole dragon in frame 10-12 % of the time on the current camera |
 | 11-19 17:09 | Greystone, fast one-hand sweep | opus-builder (the E agent) | lock | | 16 of 16 wins, median 82.1 s (in); 0 unposed frames, all 1987 clip switches cross-faded, sword seat within 0.45 cm; FAIL: 15 switch types pop over 20 cm (worst Idle to Run 65.7 cm) |
+| 11-19 17:27 | Sound, second pass (`fable/quality-goal-B2sound` `9605a47`), three rendered captures | sonnet-builder (the sound agent) | lock | | loudness -30.3 to -17.5 LUFS; light hits rise 12-24 dB in the real mix; tap now agrees with the film within 1.3 dB (it had compared hits with the music alone; the real output sits a constant 9 dB under the code's arithmetic, cause not isolated). Short: true peak +0.2 dBTP, stomps alike, fire onset missing, heavy hits weak |
+| 11-19 17:40 | Blind critic: sound, capture 3 against the reference | opus-critic, Opus 5.5 high | none | short | OURS CLEARLY BETTER (see `REVIEWS.md`). The reference clip is narrated for 33 of 48 s: its -15 LUFS was the voice; level target changed to -20 LUFS, peak at or under -1 dBTP |
+| 11-19 17:42 | Sound, third pass: no clipping at the new level, heavy boss events on time and audible, stereo lean, stomp variety, fire onset | same sound agent | lock, 1 rendered | to 19:15 | running |
 
 ## Spend
 
