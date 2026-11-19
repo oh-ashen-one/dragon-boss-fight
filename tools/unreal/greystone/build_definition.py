@@ -147,6 +147,26 @@ def warp_root(src, r_k, r_n, length_n):
     return out_t, out_y, rate
 
 
+FULL_POSE = {}
+
+
+def full_pose(path):
+    """E4 (2026-11-19): Paragon's HitReact_* are additive; the sampler plays full poses only. Use a copy under our
+    Anims folder with the additive type cleared (the stored keys are his full authored hit reaction)."""
+    seq = unreal.load_asset(path)
+    if not seq or seq.get_editor_property('additive_anim_type') == unreal.AdditiveAnimationType.AAT_NONE:
+        return seq
+    dest = g.ANIMS + '/FullPose/' + seq.get_name() + '_FullPose'
+    lib = unreal.EditorAssetLibrary
+    if not lib.does_asset_exist(dest):
+        lib.duplicate_asset(path, dest)
+    copy = unreal.load_asset(dest)
+    copy.set_editor_property('additive_anim_type', unreal.AdditiveAnimationType.AAT_NONE)
+    lib.save_asset(dest, only_if_is_dirty=False)
+    FULL_POSE[path] = dest
+    return copy
+
+
 for key in native_keys:
     n = native_doc[key]
     src = knight_clips[key]
@@ -154,7 +174,7 @@ for key in native_keys:
     clip = unreal.VeyrVisualClip()
     for field in FIELDS:
         prop(clip, field, prop(src, field), True)
-    clip.set_editor_property('sequence', unreal.load_asset(n['sequence']))
+    clip.set_editor_property('sequence', full_pose(n['sequence']))
     r_k, s_k, e_k, w_k, hit_k, dur_k = knight_game(src)
     length = n['lengthSeconds']
     row = {'native': n['sequence'], 'role': role}
@@ -208,6 +228,16 @@ for key, path in g.PARAGON_EXTRA.items():
     clip.set_editor_property('sequence', unreal.load_asset(path))
     prop(clip, 'b_loop', key != 'ParagonAttackPrimaryA', True)
     clip.set_editor_property('approved_source_file', path + ' (Epic Paragon: Greystone, native)')
+    clips[key] = clip
+# E5: the jog set the motion matcher plays (keys MM_*, sequences as authored; loops loop).
+for key, (path, gate, loops) in g.JOG_SET.items():
+    seq = unreal.load_asset(path)
+    if not seq:
+        continue
+    clip = unreal.VeyrVisualClip()
+    clip.set_editor_property('sequence', seq)
+    prop(clip, 'b_loop', loops, True)
+    clip.set_editor_property('approved_source_file', path + ' (Epic Paragon: Greystone, native; motion matching ' + gate + ')')
     clips[key] = clip
 definition.set_editor_property('skeletal_mesh', shown_mesh)
 definition.set_editor_property('mesh_relative_transform', g.to_unreal(g_rel))
@@ -269,6 +299,7 @@ definition.set_editor_property('required_bone_targets', sorted(targets))
 definition.set_editor_property('required_clips', [k for k in g.KNIGHT_CLIPS if k in clips])
 definition.set_editor_property('source_sha256', g.sha256(g.package_file(g.GREYSTONE_MESH)))
 errors = [str(e) for e in definition.validate_definition(len([k for k in g.KNIGHT_CLIPS if k in clips]) == 64)]
+native_receipt['_fullPoseCopies'] = FULL_POSE
 (out / 'native-timing.json').write_text(json.dumps(native_receipt, indent=1) + '\n')
 library.save_loaded_asset(definition)
 receipt = {'definition': g.DEFINITION, 'shownMesh': shown_path, 'clips': sorted(clips), 'missingKnightKeys': [k for k in g.KNIGHT_CLIPS if k not in clips],

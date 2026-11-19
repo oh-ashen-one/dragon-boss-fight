@@ -258,20 +258,9 @@ void FVeyrMotionMatcher::RecordShownPose(const USkeletalMeshComponent* Mesh,floa
     // Keep samples at about 0.1 s spacing; the newest one becomes history next frame.
     if(RecordedRoot.IsEmpty()||RecordedRoot.Last().TimeInSeconds<=-.1f)RecordedRoot.Add(Now);
     if(!RecordedRoot.IsEmpty()&&RecordedRoot.Last().TimeInSeconds>=0.f)RecordedRoot.Last().TimeInSeconds=-Dt;
-PRAGMA_DISABLE_EXPERIMENTAL_WARNINGS
-    UE::PoseSearch::FSKMCComponentSpacePoseProvider Provider(Mesh);
-PRAGMA_ENABLE_EXPERIMENTAL_WARNINGS
-    const USkeleton* Skeleton=Provider.GetSkeletonAsset();
-    if(!Skeleton)return;
-    TArray<FBoneIndexType> Required;
-    const int32 Count=Skeleton->GetReferenceSkeleton().GetNum();
-    Required.Reserve(Count);
-    for(int32 I=0;I<Count;++I)Required.Add(static_cast<FBoneIndexType>(I));
-    History->EvaluateComponentSpace_AnyThread(Dt,Provider,false,0.f,1.f,1.f,false,false,Required,FBlendedCurve(),TConstArrayView<FName>()
-#if WITH_EDITORONLY_DATA
-        ,Mesh->GetComponentTransform()
-#endif
-    );
+    // 2026-11-19: no pose-history evaluation. UE 5.8 does not export FSKMCComponentSpacePoseProvider (link error), and
+    // the jog-set proof runs on the fallback feature table, which reads the shown pose directly (SearchFallback).
+    // A PoseSearch-database path needs an AnimGraph history node instead.
 }
 
 bool FVeyrMotionMatcher::SearchPoseSearch(UAnimInstance* AnimContext,EVeyrMotionGate Gate,FVeyrMotionChoice& Out)
@@ -308,7 +297,9 @@ bool FVeyrMotionMatcher::SearchFallback(const USkeletalMeshComponent* Mesh,EVeyr
     // Query in capsule space: x forward, y right, z up (the baker uses the same frame).
     const AActor* Owner=Mesh->GetOwner();
     if(!Owner)return false;
-    const FTransform Frame(FRotator(0.f,Sim.Yaw,0.f),Mesh->GetComponentLocation()); // sole level, like the baker's root bone
+    // The body's own facing (actor yaw), as the baker measures from the root's facing; the spring yaw only drives the
+    // predicted trajectory (2026-11-19: the spring yaw lags the actor through pivots and rotated the pose features).
+    const FTransform Frame(FRotator(0.f,Owner->GetActorRotation().Yaw,0.f),Mesh->GetComponentLocation()); // sole level, like the baker's root bone
     FVeyrMotionFeatures Q;int32 K=0;
     auto Push=[&](const FVector& V){Q.Values[K++]=V.X;Q.Values[K++]=V.Y;Q.Values[K++]=V.Z;};
     const FName Feet[2]={VeyrBoneRoles::Resolve(Mesh,EVeyrBoneRole::LeftAnkle),VeyrBoneRoles::Resolve(Mesh,EVeyrBoneRole::RightAnkle)};

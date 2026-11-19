@@ -18,6 +18,7 @@ namespace
     constexpr float PlantSpeedCmPerSecond=40.f;             // a foot the clip itself holds still
     constexpr float ReachCm=25.f;                           // held foot further than this from the clip's foot: step
     constexpr float SettleCm=6.f;                           // clip holds its foot still this far away: step to it
+    constexpr float LegReachFraction=.97f;                  // held ankle beyond this share of the leg: step
     constexpr float ReleaseSeconds=.12f;                    // blend-out time (smoothstep)
     constexpr float StepLiftMinCm=4.f, StepLiftMaxCm=10.f;  // arc for a foot released while still on the floor
 }
@@ -61,11 +62,29 @@ bool AVeyrKnight::UpdateGreystoneFootLock(float DeltaSeconds)
             // Outside a cross-fade, a clip that holds its foot still somewhere else has re-planted it there (no stale
             // anchors: the foot steps over instead of hovering where an earlier clip put it).
             const bool Replanted=!Fading&&RawSpeed<PlantSpeedCmPerSecond&&Reach>SettleCm;
-            if(Lifted||Reach>ReachCm||Replanted)
+            // v4: the no-stretch leg IK cannot reach a held ankle beyond the leg's length; the foot would then be
+            // dragged with the hip (roll exit, 2026-11-19T11:14 proof). Step instead, before the leg is straight.
+            // v5 (2026-11-19T16:24 proof): only for actions (roll, attacks: steady slide 384 -> 1.4 cm/s). In Ready
+            // locomotion the fast jog stance reaches 0.97 of the leg every step and the early release slid the foot
+            // (run steady 1.3 -> 232 cm/s), so the jog keeps the v3 rule.
+            bool OutOfLeg=false;
+            if(Action!=EVeyrKnightAction::Ready&&Action!=EVeyrKnightAction::RunStop)
+            {
+                const FName Thigh=VeyrBoneRoles::Resolve(ImportedPresentation,Side==0?EVeyrBoneRole::LeftThigh:EVeyrBoneRole::RightThigh);
+                const FName Calf=VeyrBoneRoles::Resolve(ImportedPresentation,Side==0?EVeyrBoneRole::LeftCalf:EVeyrBoneRole::RightCalf);
+                if(ImportedPresentation->GetBoneIndex(Thigh)!=INDEX_NONE&&ImportedPresentation->GetBoneIndex(Calf)!=INDEX_NONE)
+                {
+                    const FVector H=ImportedPresentation->GetBoneLocation(Thigh,EBoneSpaces::WorldSpace),K=ImportedPresentation->GetBoneLocation(Calf,EBoneSpaces::WorldSpace);
+                    const float Leg=FVector::Dist(H,K)+FVector::Dist(K,RawAnkle.GetLocation());
+                    FVector Held=F.AnchorAnkle.GetLocation();Held.Z=FMath::Max(Held.Z,RawAnkle.GetLocation().Z);
+                    OutOfLeg=FVector::Dist(H,Held)>LegReachFraction*Leg;
+                }
+            }
+            if(Lifted||Reach>ReachCm||Replanted||OutOfLeg)
             {
                 F.bReleasing=true;F.ReleaseSeconds=0.f;
                 // Clip lifts it: the offset is absorbed in the air. Still on the floor: a small step, not a slide.
-                F.ReleaseLiftCm=Lifted?0.f:FMath::Clamp(Reach*.5f,StepLiftMinCm,StepLiftMaxCm);
+                F.ReleaseLiftCm=Lifted?0.f:FMath::Clamp(FMath::Max(Reach,8.f)*.5f,StepLiftMinCm,StepLiftMaxCm);
                 F.bWasLifted=Lifted;
             }
         }

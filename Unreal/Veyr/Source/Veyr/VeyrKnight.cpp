@@ -1365,7 +1365,9 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     WarmedVariantTextures.Reset();
     CustomuseVisualDefinition = Definition;
     bGreystoneActive=VeyrGreystone::IsGreystoneDefinition(Definition);GreystoneDiagnostic.Reset();
-    bUsingPolishDefinition=Definition&&Definition->GetPathName().Contains(TEXT("/RuntimePolish/"));
+    // E4 (2026-11-19): under -VeyrGreystone his definition is the approved trial rig, so the replay completion gates
+    // (RuntimePolish/approved-native) judge the fight, not the rig name. Without the switch nothing changes.
+    bUsingPolishDefinition=Definition&&(Definition->GetPathName().Contains(TEXT("/RuntimePolish/"))||bGreystoneActive);
     bApprovedNativeDefinitionActive=Definition&&(bUsingPolishDefinition||Definition->GetPathName().Contains(TEXT("/RuntimeApproved/")));
     bContiguousTrialReady=false;
     if(bContiguousSprint&&Definition&&Definition->GetPathName()==TEXT("/Game/Characters/Customuse/KnightB/v047contiguous/DA_KnightB.DA_KnightB"))
@@ -1647,6 +1649,8 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     // Detect contacts on the sourced/blended pose, not last frame's IK result.
     ImportedPresentation->ClearFootTargets();
     if(bGreystoneActive)UpdateGreystoneProps();
+    // E5: Greystone's Ready locomotion from the motion matcher (opt-in; false = today's path shows this frame).
+    if(bGreystoneActive&&Action==EVeyrKnightAction::Ready&&IsGrounded()&&VeyrGreystone::MotionMatchEnabled()&&UpdateGreystoneMotionMatch(DeltaSeconds))return;
     const bool Moving=Action==EVeyrKnightAction::Ready&&IsGrounded()&&GetPlanarSpeed()>8.f&&!bLateralDodgeBlocked;
     FName Clip=Action==EVeyrKnightAction::Ready?(Moving?SelectDirectionalLocomotion(true):(bTwoHanded?FName(TEXT("IdleTwoHand")):FName(TEXT("Idle")))):ActionPresentationClip;
     float Time=Action==EVeyrKnightAction::Ready?VisualClock:ActionElapsed;

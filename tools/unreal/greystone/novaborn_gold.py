@@ -33,6 +33,13 @@ def is_glow(name):
     return ('emissive' in n or n.startswith('lightsword')) and 'grime' not in n and not n.startswith('ult')
 SKIP_MATERIAL = ('eye', 'hair', 'mouth', 'eyelash')
 GOLD = (1.0, 0.62, 0.20)
+# 2026-11-19 trial film: at the source glow's own luminance the gold read flat, saturated yellow, and the blade edge was
+# the brightest thing on screen. The owner's pick shows a soft amber rim. Default now: a warmer amber at a fraction of
+# the source luminance per parameter family; `--set legacyGold=true` restores the first version (same hue, same luminance).
+AMBER = (1.0, 0.42, 0.10)
+STRENGTH = (('fullbody_emissive', 0.35),   # armour and shield rim light
+            ('emissive_color', 0.12),      # sword head / weapon edge (was the brightest thing on screen)
+            ('lightsword', 0.50))          # energy blade colours (already near 1.0)
 folder = g.RUNTIME + '/Skin'
 source = unreal.load_asset(g.NOVABORN_MESH)
 assert source, 'Novaborn mesh missing: ' + g.NOVABORN_MESH
@@ -69,17 +76,22 @@ for index, slot in enumerate(slots):
         if glow:
             name = 'MI_GS_NovabornGold_' + str(index)
             path = folder + '/' + name
-            if assets.does_asset_exist(path):
-                assets.delete_asset(path)
-            mic = tools.create_asset(name, folder, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
+            # Rewrite in place when it exists: DA_Greystone references the mesh that uses these (unattended deletes of
+            # referenced assets fail, as DA_Greystone's did on 2026-11-19).
+            mic = unreal.load_asset(path) if assets.does_asset_exist(path) else \
+                tools.create_asset(name, folder, unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
             lib.set_material_instance_parent(mic, mi)
             row['gold'] = {}
+            legacy = bool(job.get('options', job).get('legacyGold'))
+            hue = GOLD if legacy else AMBER
             for n in glow:
                 r, gg, b, a = defaults[n]
                 lum = 0.2126 * r + 0.7152 * gg + 0.0722 * b
-                gold_lum = 0.2126 * GOLD[0] + 0.7152 * GOLD[1] + 0.0722 * GOLD[2]
-                k = lum / gold_lum if gold_lum else 1.0
-                value = unreal.LinearColor(GOLD[0] * k, GOLD[1] * k, GOLD[2] * k, a)
+                hue_lum = 0.2126 * hue[0] + 0.7152 * hue[1] + 0.0722 * hue[2]
+                k = lum / hue_lum if hue_lum else 1.0
+                if not legacy:
+                    k *= next((f for key, f in STRENGTH if n.lower().startswith(key)), 1.0)
+                value = unreal.LinearColor(hue[0] * k, hue[1] * k, hue[2] * k, a)
                 lib.set_material_instance_vector_parameter_value(mic, n, value)
                 row['gold'][n] = [value.r, value.g, value.b, value.a]
             lib.update_material_instance(mic)
@@ -91,9 +103,7 @@ for index, slot in enumerate(slots):
     new_slots.append(slot)
 
 mesh_path = g.RUNTIME + '/SK_Greystone_NovabornGold'
-if assets.does_asset_exist(mesh_path):
-    assets.delete_asset(mesh_path)
-mesh = assets.duplicate_asset(g.NOVABORN_MESH, mesh_path)
+mesh = unreal.load_asset(mesh_path) if assets.does_asset_exist(mesh_path) else assets.duplicate_asset(g.NOVABORN_MESH, mesh_path)
 mesh.set_editor_property('materials', new_slots)
 assets.save_loaded_asset(mesh)
 skeleton = mesh.get_editor_property('skeleton')

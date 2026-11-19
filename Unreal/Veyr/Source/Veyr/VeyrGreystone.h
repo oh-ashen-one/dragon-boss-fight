@@ -39,6 +39,10 @@ namespace VeyrGreystone
     bool FootCleanupEnabled();
     /** Greystone foot lock (default on; -VeyrGreystoneNoFootLock turns it off; -VeyrGreystoneFeet replaces it). */
     bool FootLockEnabled();
+    /** E5 motion matching on his own jog set (fallback feature table). Opt-in while unproven: -VeyrGreystoneMotionMatch
+     * or the motion proof (-VeyrGreystoneMotionProof); -VeyrGreystoneNoMotionMatch and -VeyrLegacyMotion restore the
+     * clip state machine. */
+    bool MotionMatchEnabled();
     float BladeRadiusCm(float Default);
     /** Paragon layout with Greystone's sword and shield bones. */
     bool IsGreystoneDefinition(const UVeyrVisualDefinition* Definition);

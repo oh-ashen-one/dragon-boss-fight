@@ -55,7 +55,7 @@ public:
     TSharedPtr<FJsonObject> CurrentState() const;
 
 private:
-    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack, RunningAttack, LeapAttack, PrimaryTap, RunStart, RunStartAttack, Roll };
+    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack, RunningAttack, LeapAttack, PrimaryTap, RunStart, RunStartAttack, Roll, Pivot, Circle, TurnTap, Idle, Combo, Guard };
     enum class EPhase : uint8 { Setup, PreIdle, Action, PostIdle };
     struct FDef
     {
@@ -87,7 +87,10 @@ private:
     bool bPrimaryTapProof=false;
     bool bRunStartProof=false;
     bool bGreystoneTrialProof=false; // -VeyrGreystoneTrialProof: run, attack, roll (E trial film, both rigs)
-    bool WantsUnlocked(const FDef& D) const {return bSprintProof||bRunStartProof||(bGreystoneTrialProof&&D.bSprint);}
+    bool bKnightFilm=false; // -VeyrKnightFilm: E3 arena film script (idle orbit, run past, turn-around, combo, heavy, roll, guard)
+    double CameraElapsed=0;
+    bool bGreystoneMotionProof=false; // -VeyrGreystoneMotionProof: E5 jog set (start/stop, pivot, circle, turn in place)
+    bool WantsUnlocked(const FDef& D) const {return bSprintProof||bRunStartProof||bGreystoneMotionProof||((bGreystoneTrialProof||bKnightFilm)&&D.bSprint);}
     int32 LightCountAtInput=0;
     int32 HeavyCountAtInput=0;
     float HeavyReviewSlowMo=1.f;

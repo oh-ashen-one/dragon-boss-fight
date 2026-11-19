@@ -25,6 +25,11 @@ p.add_argument('knight_run', type=Path)
 p.add_argument('greystone_run', type=Path)
 p.add_argument('--height', type=int, default=540)
 p.add_argument('--root', type=Path, default=ROOT)
+# E3 arena film (2026-11-19): runs made with -VeyrKnightFilm and --no-proof-floor; a real fight clip per rig is appended.
+p.add_argument('--fight', nargs=2, type=Path, metavar=('KNIGHT_MP4', 'GREYSTONE_MP4'),
+               help='gameplay videos of a real fight (encode_video.py output), one per rig')
+p.add_argument('--fight-start', nargs=2, type=float, default=(0.0, 0.0), metavar=('KNIGHT_S', 'GREYSTONE_S'))
+p.add_argument('--fight-seconds', type=float, default=15.0)
 a = p.parse_args()
 ffmpeg, ffprobe = shutil.which('ffmpeg'), shutil.which('ffprobe')
 assert ffmpeg and ffprobe, 'ffmpeg and ffprobe are required'
@@ -35,7 +40,7 @@ def media(run):
     assert len(unreal) == 1, f'{run}: expected one unreal-blendproof-* folder'
     evidence = json.loads((unreal[0] / 'evidence.json').read_text())
     proof = evidence['blendProof']
-    assert proof.get('greystoneTrialProof'), f'{run}: not a -VeyrGreystoneTrialProof run'
+    assert proof.get('greystoneTrialProof') or proof.get('knightFilm'), f'{run}: not a -VeyrGreystoneTrialProof or -VeyrKnightFilm run'
     rig = (evidence.get('knightRig') or {}).get('definition', 'unknown')
     return unreal[0] / 'blendproof-media', [s['name'] for s in proof['sequences']], rig, evidence.get('knightRig')
 
@@ -71,6 +76,18 @@ for index, name in enumerate(k_seq, 1):
     subprocess.run([ffmpeg, '-v', 'error', '-y', '-i', str(left), '-i', str(right), '-filter_complex', graph,
                     '-map', '[v]', '-an', '-c:v', 'libx264', '-crf', '18', str(pair)], check=True)
     pairs.append({'name': name, 'file': pair.name, 'seconds': length})
+if a.fight:
+    # Both fights cut to the same length from their own start; scaled to the same height as the pairs.
+    label = "drawtext=text='{}':x=12:y=12:fontsize=22:fontcolor=white:box=1:boxcolor=black@0.5"
+    n = a.fight_seconds
+    graph = (f'[0:v]trim=start={a.fight_start[0]}:duration={n},setpts=PTS-STARTPTS,fps=30,scale=-2:{a.height},{label.format("KnightB")}[l];'
+             f'[1:v]trim=start={a.fight_start[1]}:duration={n},setpts=PTS-STARTPTS,fps=30,scale=-2:{a.height},{label.format("Greystone")}[r];'
+             f'[l][r]hstack=inputs=2,format=yuv420p[v]')
+    pair = out / f'{len(pairs):02d}-fight.mp4'
+    subprocess.run([ffmpeg, '-v', 'error', '-y', '-i', str(a.fight[0]), '-i', str(a.fight[1]), '-filter_complex', graph,
+                    '-map', '[v]', '-an', '-c:v', 'libx264', '-crf', '18', str(pair)], check=True)
+    pairs.append({'name': 'fight', 'file': pair.name, 'seconds': duration(pair), 'sources': [str(x) for x in a.fight],
+                  'starts': list(a.fight_start)})
 made = [out / x['file'] for x in pairs if 'file' in x]
 assert made, 'no sequence had both clips'
 concat = out / 'pairs.ffconcat'

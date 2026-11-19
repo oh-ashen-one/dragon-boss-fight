@@ -32,7 +32,15 @@ options.set_editor_property('optional_skeletal_mesh', mesh)
 options.set_editor_property('extract_root_motion', True)
 registry = unreal.AssetRegistryHelpers.get_asset_registry()
 clips = {}
-for data in registry.get_assets_by_path(g.MOTION, recursive=False):
+# --set source=jogset: his own Paragon jog set (rows name the DA_Greystone key MM_<asset>, which the sampler plays).
+JOGSET = job.get('options', {}).get('source') == 'jogset'
+row_name = {}
+if JOGSET:
+    for key, (path, gate, loops) in g.JOG_SET.items():
+        if library.does_asset_exist(path):
+            clips[path] = {gate}
+            row_name[path] = key
+for data in ([] if JOGSET else registry.get_assets_by_path(g.MOTION, recursive=False)):
     name = str(data.asset_name)
     if not name.startswith('PSD_GS_'):
         continue
@@ -92,8 +100,8 @@ for path, gates in sorted(clips.items()):
             p = local(fu['root'][1]); f += [p[0], p[1]]
         for fu in future:
             v = g.qrot(g.qinv(frame[0]), g.qrot(facing(fu['root']), (1.0, 0.0, 0.0))); f += [v[0], v[1]]
-        rows.append({'clip': path, 'time': t, 'gates': sorted(gates), 'f': f})
-assert rows, 'no clips found under ' + g.MOTION
+        rows.append({'clip': row_name.get(path, path), 'time': t, 'gates': sorted(gates), 'f': f})
+assert rows, 'no clips found' + ('' if JOGSET else ' under ' + g.MOTION)
 mean = [sum(r['f'][i] for r in rows) / len(rows) for i in range(33)]
 std = [math.sqrt(sum((r['f'][i] - mean[i]) ** 2 for r in rows) / len(rows)) for i in range(33)]
 weights = [.75] * 6 + [.25] * 6 + [.5] * 9 + [1.0] * 12

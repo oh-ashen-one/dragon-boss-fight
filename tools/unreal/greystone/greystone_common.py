@@ -259,3 +259,26 @@ NATIVE_CANDIDATES = {
 TRIAL_NATIVE = ('Idle', 'Run', 'RunOneHandPlanted', 'RunStop', 'RunStopOneHandSourced', 'LightAttack')
 TRIAL_RETARGET = ('Roll',)
 RETARGET_KEYS = tuple(k for k in KNIGHT_CLIPS if k not in NATIVE)
+
+
+# E5 (2026-11-19): his own Paragon jog set for the motion matcher. Definition key MM_<asset>; gate from the name.
+def _jog_gate(name):
+    if name == 'Idle':
+        return 'Idle'
+    if name.startswith('Turn_'):
+        return 'Turn'
+    if name.startswith('Spin_') or name.endswith('_Pivot180'):
+        return 'Pivot'
+    if name.endswith('_Start'):
+        return 'Start'
+    if name.endswith('_Stop'):
+        return 'Stop'
+    return 'Loop'  # Jog_<dir> and Jog_<dir>_Circle_<side>
+
+
+_JOG_NAMES = ['Idle', 'Turn_Left_90', 'Turn_Left_180', 'Turn_Right_90', 'Turn_Right_180'] + [
+    f'Jog_{d}{s}' for d in ('Fwd', 'Bwd', 'Left', 'Right')
+    for s in ('', '_Start', '_Stop', '_Pivot180', '_Circle_Left', '_Circle_Right')]
+# key -> (asset path, gate, loops)
+JOG_SET = {'MM_' + n: (PACK + '/Characters/Heroes/Greystone/Animations/' + n, _jog_gate(n), _jog_gate(n) in ('Loop', 'Idle'))
+           for n in _JOG_NAMES}

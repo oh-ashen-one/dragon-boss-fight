@@ -463,6 +463,13 @@ private:
     FGreystoneFootLock GreystoneFeet[2];
     int32 GreystoneLockSerial=-1;
     bool UpdateGreystoneFootLock(float DeltaSeconds);
+    // E5: motion matching on Greystone's own jog set (VeyrGreystoneMotion.cpp); VeyrGreystone::MotionMatchEnabled().
+    TSharedPtr<class FVeyrMotionMatcher> GreystoneMotion;
+    bool bGreystoneMotionFailed=false;
+    FName GreystoneMotionClip;
+    float GreystoneMotionTime=0.f,GreystoneMotionAlpha=1.f,GreystoneMotionYaw=0.f;
+    int32 GreystoneMotionSwitches=0;
+    bool UpdateGreystoneMotionMatch(float DeltaSeconds);
     float CameraFloorZ = 0.f;
     float CameraObstructionHold = 0.f;
     float LockHeadBlend = 0.f;

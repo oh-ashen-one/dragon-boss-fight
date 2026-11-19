@@ -112,6 +112,34 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
         };
         return HeavyDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(HeavyDefs)-1)];
     }
+    if(bKnightFilm)
+    {
+        // E3 film (coordinator 2026-11-19): same script for KnightB and Greystone in the arena (run with --no-proof-floor).
+        // Camera 0 deg = between the knight and the dragon, looking at his front; the idle orbits once.
+        const TCHAR* RunClip=Knight.IsValid()&&Knight->UsesPlantedSprint()?TEXT("RunOneHandPlanted"):TEXT("Run");
+        static const FDef FilmDefs[]={
+            {TEXT("Film_idle_orbit"),EKind::Idle,0,false,false,8.f,0.f,TEXT("Idle"),0.f},
+            {TEXT("Film_run_past_stop"),EKind::Strafe,3,true,false,2.2f,1276.f,RunClip,0.f},
+            {TEXT("Film_turn_around"),EKind::Pivot,3,true,false,2.6f,0.f,RunClip,0.f},
+            {TEXT("Film_light_combo"),EKind::Combo,0,false,false,2.4f,0.f,TEXT("LightAttack"),35.f},
+            {TEXT("Film_heavy"),EKind::HeavyAttack,0,false,false,0.f,0.f,TEXT("HeavyAttack"),35.f},
+            {TEXT("Film_roll"),EKind::Roll,0,false,false,0.f,480.f,TEXT("Roll"),90.f},
+            {TEXT("Film_guard"),EKind::Guard,0,false,false,2.2f,0.f,TEXT("Idle"),35.f},
+        };
+        return FilmDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(FilmDefs)-1)];
+    }
+    if(bGreystoneMotionProof)
+    {
+        // E5 jog set, free movement (unlocked: facing follows input). Jog speed, no sprint. Clip keys are DA_Greystone's MM_*.
+        static const FDef MotionDefs[]={
+            {TEXT("Motion_start_stop_fwd"),EKind::Strafe,0,false,false,2.0f,900.f,TEXT("MM_Jog_Fwd"),90.f},
+            {TEXT("Motion_pivot_fwd_back"),EKind::Pivot,0,false,false,2.4f,0.f,TEXT("MM_Jog_Fwd"),90.f},
+            {TEXT("Motion_circle"),EKind::Circle,0,false,false,3.0f,0.f,TEXT("MM_Jog_Fwd"),90.f},
+            {TEXT("Motion_turn_in_place"),EKind::TurnTap,1,false,false,.12f,0.f,TEXT("MM_Idle"),90.f},
+            {TEXT("Motion_start_stop_left"),EKind::Strafe,2,false,false,1.6f,700.f,TEXT("MM_Jog_Fwd"),35.f},
+        };
+        return MotionDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(MotionDefs)-1)];
+    }
     if(bGreystoneTrialProof)
     {
         // Same four actions for the KnightB and Greystone films; pre/post idle phases give the idle.
@@ -151,7 +179,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount() const{return bGreystoneTrialProof?4:bRunStartProof?4:bPrimaryTapProof?4:bMobilityProof?8:bHeavyProof?4:bSprintProof?4:9;}
+int32 FVeyrBlendProof::DefCount() const{return bKnightFilm?7:bGreystoneMotionProof?5:bGreystoneTrialProof?4:bRunStartProof?4:bPrimaryTapProof?4:bMobilityProof?8:bHeavyProof?4:bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {
@@ -180,7 +208,9 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     bPrimaryHeavyProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrPrimaryHeavyProof"));
     bHeavyProof=bPrimaryHeavyProof||FParse::Param(FCommandLine::Get(),TEXT("VeyrHeavyProof"));
     bGreystoneTrialProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneTrialProof"));
-    if(int32(bSprintProof)+int32(bHeavyProof)+int32(bMobilityProof)+int32(bPrimaryTapProof)+int32(bRunStartProof)+int32(bGreystoneTrialProof)>1)return false;
+    bGreystoneMotionProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneMotionProof"));
+    bKnightFilm=FParse::Param(FCommandLine::Get(),TEXT("VeyrKnightFilm"));
+    if(int32(bSprintProof)+int32(bHeavyProof)+int32(bMobilityProof)+int32(bPrimaryTapProof)+int32(bRunStartProof)+int32(bGreystoneTrialProof)+int32(bGreystoneMotionProof)+int32(bKnightFilm)>1)return false;
     if(bHeavyProof&&FParse::Value(FCommandLine::Get(),TEXT("VeyrHeavyReviewSlowMo="),HeavyReviewSlowMo)&&FMath::IsFinite(HeavyReviewSlowMo))
         HeavyReviewSlowMo=FMath::Clamp(HeavyReviewSlowMo,.1f,1.f);
     else HeavyReviewSlowMo=1.f;
@@ -209,7 +239,7 @@ bool FVeyrBlendProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* I
     if(Cam&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintGameplayCamera"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrProofGameplayCamera")))
     {
         Cam->GetCameraComponent()->bConstrainAspectRatio=false;
-        Cam->GetCameraComponent()->SetFieldOfView((bHeavyProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof)?55.f:45.f);
+        Cam->GetCameraComponent()->SetFieldOfView((bHeavyProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof||bGreystoneMotionProof)?55.f:45.f);
         Camera=Cam;
         if(APlayerController* PC=Cast<APlayerController>(Knight->GetController())){PC->SetViewTarget(Cam);bCameraApplied=true;}
     }
@@ -269,11 +299,23 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
     const FVector Target=K->GetActorLocation();
     if(bSnap||!bFocusValid){Focus=Target;bFocusValid=true;}
     else Focus+=(Target-Focus)*FMath::Clamp(Dt*4.f,0.f,1.f);
-    const bool FullBody=bHeavyProof||bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof;
+    const bool FullBody=bHeavyProof||bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof||bGreystoneMotionProof;
     FVector Look(Focus.X,Focus.Y,FloorZ+(FullBody?220.f:100.f));
     const float Az=FMath::DegreesToRadians(D.CameraAzimuthDeg);
     const FVector Dir=Fwd0*FMath::Cos(Az)+Right0*FMath::Sin(Az);
-    FVector Location=Look+Dir*((bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof)?1100.f:bHeavyProof?900.f:580.f);Location.Z=FloorZ+(FullBody?240.f:190.f);
+    FVector Location=Look+Dir*((bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof||bGreystoneMotionProof)?1100.f:bHeavyProof?900.f:580.f);Location.Z=FloorZ+(FullBody?240.f:190.f);
+    if(bKnightFilm)
+    {
+        // About 4 m, chest height, slightly above the eye line; the idle sequence orbits once during its action phase.
+        float FilmAz=D.CameraAzimuthDeg;
+        if(D.Kind==EKind::Idle&&Phase==EPhase::Action&&D.ActionSeconds>0.f)
+            FilmAz+=360.f*FMath::Clamp(float((CameraElapsed-SeqPhaseStart)/D.ActionSeconds),0.f,1.f);
+        const float R=FMath::DegreesToRadians(FilmAz);
+        const FVector FilmDir=Fwd0*FMath::Cos(R)+Right0*FMath::Sin(R);
+        Look=FVector(Focus.X,Focus.Y,FloorZ+135.f);
+        Location=Look+FilmDir*420.f;Location.Z=FloorZ+175.f;
+        Cam->GetCameraComponent()->SetFieldOfView(50.f);
+    }
     // Extra inspection chapter follows the actual rendered hand, so the
     // reviewer can judge contact through the fast strike without a crop.
     if(bHeavyProof&&SeqIndex==3&&K->ImportedPresentation)
@@ -465,6 +507,38 @@ void FVeyrBlendProof::DriveAction(double Elapsed,float Dt)
         if(InAction>8.){K->ReleasePrimaryAttack();bActionTimedOut=true;EnterPhase(EPhase::PostIdle,Elapsed);}
         return;
     }
+    if(D.Kind==EKind::Idle||D.Kind==EKind::Guard)
+    {
+        if(InAction<D.ActionSeconds)
+        {
+            K->SetSprintRequested(false);K->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,D.Kind==EKind::Guard);
+            bExpectedActionSeen=true;return;
+        }
+        Neutral();EnterPhase(EPhase::PostIdle,Elapsed);return;
+    }
+    if(D.Kind==EKind::Combo)
+    {
+        // Three primary presses 0.45 s apart (the chain buffers them), then wait for Ready.
+        Neutral();
+        const int32 Want=InAction<.45?1:InAction<.9?2:3;
+        while(ActionSub<Want){K->PressPrimaryAttack();K->ReleasePrimaryAttack();++ActionSub;}
+        if(K->Action!=EVeyrKnightAction::Ready)bExpectedActionSeen=true;
+        if(InAction>=D.ActionSeconds&&K->Action==EVeyrKnightAction::Ready){EnterPhase(EPhase::PostIdle,Elapsed);return;}
+        if(InAction>8.){bActionTimedOut=true;EnterPhase(EPhase::PostIdle,Elapsed);}
+        return;
+    }
+    if(D.Kind==EKind::Pivot||D.Kind==EKind::Circle||D.Kind==EKind::TurnTap)
+    {
+        if(InAction<D.ActionSeconds)
+        {
+            FVector Dir=Fwd0;
+            if(D.Kind==EKind::Pivot)Dir=InAction<.5*D.ActionSeconds?DirVector(D):-DirVector(D);  // reverse at half time
+            if(D.Kind==EKind::Circle)Dir=Fwd0.RotateAngleAxis(float(120.0*InAction),FVector::UpVector); // 120 deg/s
+            if(D.Kind==EKind::TurnTap)Dir=-Fwd0;                                             // short tap behind
+            Input(Dir,D.bSprint);return;
+        }
+        Neutral();EnterPhase(EPhase::PostIdle,Elapsed);return;
+    }
     if(D.Kind==EKind::Strafe||D.Kind==EKind::SpeedTransition)
     {
         if(InAction<D.ActionSeconds)
@@ -516,6 +590,7 @@ void FVeyrBlendProof::Drive(double Elapsed,float Dt)
     AVeyrKnight* K=Knight.Get();AVeyrDragon* B=Dragon.Get();
     if(!bBegan||!K||!B){return;}
     B->bProofPassive=true;
+    CameraElapsed=Elapsed;
     if(bHeavyProof&&HeavyReviewSlowMo<1.f)
         UGameplayStatics::SetGlobalTimeDilation(K,bDone?1.f:HeavyReviewSlowMo);
     ApplyCamera(Dt,false);
@@ -965,6 +1040,8 @@ TSharedPtr<FJsonObject> FVeyrBlendProof::Evidence() const
     O->SetBoolField(TEXT("mobilityAttackProof"),bMobilityProof);
     O->SetBoolField(TEXT("primaryTapProof"),bPrimaryTapProof);
     O->SetBoolField(TEXT("greystoneTrialProof"),bGreystoneTrialProof);
+    O->SetBoolField(TEXT("greystoneMotionProof"),bGreystoneMotionProof);
+    O->SetBoolField(TEXT("knightFilm"),bKnightFilm);
     O->SetBoolField(TEXT("runStartProof"),bRunStartProof);
     O->SetNumberField(TEXT("heavyReviewTimeDilation"),HeavyReviewSlowMo);
     O->SetBoolField(TEXT("allPassed"),bDone&&PassedCount==DefCount());
