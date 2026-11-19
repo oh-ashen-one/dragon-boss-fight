@@ -1246,6 +1246,8 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
         // dithers away, so a camera the arm could not keep clear never shows pale back faces.
         static const bool bLegacySafety=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraSafety"));
         const UVeyrCameraBoom* SafeBoom=Cast<UVeyrCameraBoom>(CameraBoom);
+        // Camera fifth pass: the boom sets the dragon's fade itself, with this frame's lens (-VeyrCameraCollideRig: below).
+        if(SafeBoom&&SafeBoom->UsesFadeRig()&&Boss->bCameraFadeMaterials)return;
         if(!bLegacyCutThrough&&!bLegacySafety&&SafeBoom)
         {
             const float S=FMath::Max(.5f,static_cast<float>(Boss->GetActorScale3D().Z));

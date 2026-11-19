@@ -39,6 +39,12 @@ bool UVeyrCameraBoom::UpdateProxy()
 
 float UVeyrCameraBoom::RigSweep(const FVector& From,const FVector& To,float Radius) const
 {
+    const float T=RigDragonSweep(From,To,Radius);
+    return T>0.f?T*RigWorldSweep(From,From+(To-From)*T,Radius):T;
+}
+
+float UVeyrCameraBoom::RigDragonSweep(const FVector& From,const FVector& To,float Radius) const
+{
     float T=Proxy.IsValid()?Proxy.Sweep(From,To,Radius):1.f;
     // Boxes are the broad phase only: where they block, the lens sphere continues against the drawn faces themselves
     // (bent legs and the belly box claim free space). Start inside the boxes = start inside nothing known: the skin
@@ -51,9 +57,15 @@ float UVeyrCameraBoom::RigSweep(const FVector& From,const FVector& To,float Radi
         T=True.SweepSphere(From,To,Radius,T,&Steps);
         RigSkinSweeps++;RigSkinSteps+=Steps;RigSkinSweepSeconds+=FPlatformTime::Seconds()-S0;
     }
-    if(GetWorld()&&T>0.f)
+    return T;
+}
+
+float UVeyrCameraBoom::RigWorldSweep(const FVector& From,const FVector& To,float Radius) const
+{
+    float T=1.f;
+    if(GetWorld())
     {
-        const FVector End=From+(To-From)*T;
+        const FVector End=To;
         FHitResult Hit;FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrRigSweep),false,GetOwner());
         // The dragon is the proxy's job: its gameplay bodies (much fatter than the skin) must not pull the lens in.
         // -VeyrRigSweepDragonBodies restores sweeping them.
@@ -194,5 +206,120 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     BodyFraction=RigFraction;SafeFraction=RigFraction;
     if(Proxy.IsValid()&&Proxy.Contains(Lens,0.f))++ResultInsideFrames;
     LastRigLens=Lens;RigFrame=GFrameCounter;RigSkinFrame=FVeyrDragonTrueSkin::Get().SkinFrame();
+    return Lens;
+}
+
+// Camera fifth pass (2026-11-19, default; -VeyrCameraCollideRig restores the fourth-pass rig above). The camera does
+// not fight the boss for space: a steady low third-person arm that collides with the ARENA only, shortens against the
+// dragon by a bounded, eased amount, and leaves the rest to the dragon's materials (distance fade near the lens, sight
+// fade in front of the knight, back faces clipped; AVeyrDragon::SetCameraFade). Order per frame:
+//  1. Pivot at the knight's upper chest (never lifted).
+//  2. Direction: player yaw / lock-on line; pitch clamped to [-FadeDownDeg, FadeUpDeg]; turn-rate limited.
+//  3. Every positional offset (fight-feel bounce) on the desired point, before the sweeps.
+//  4. Arena: swept sphere (dragon ignored), in at once, out eased.
+//  5. Dragon: true-skin sweep, shortened (eased) to at most FadeMinArmFraction of the arm and never nearer than his
+//     capsule radius + FadeMinGapCm; the lens may then be inside the body; it stays where it is.
+//  6. View: the arm rotation; pitch lowered only as far as keeps his feet in frame.
+bool UVeyrCameraBoom::FadeRigSwitchedOn()
+{
+    const TCHAR* C=FCommandLine::Get();
+    return !FParse::Param(C,TEXT("VeyrCameraCollideRig"))&&!FParse::Param(C,TEXT("VeyrLegacyCameraBoom"))&&!FParse::Param(C,TEXT("VeyrLegacyCameraFraming"))&&
+        !FParse::Param(C,TEXT("VeyrLegacyCameraSafety"))&&!FParse::Param(C,TEXT("VeyrLegacyCameraPlacement"))&&!FParse::Param(C,TEXT("VeyrLegacyCutThrough"));
+}
+
+FVector UVeyrCameraBoom::FadeLockChest() const
+{
+    const AVeyrDragon* D=Dragon.Get();
+    if(!D)return FVector::ZeroVector;
+    const FVector Root=D->GetActorLocation(),Head=D->GetHeadLocation();
+    return FMath::Lerp(Root+FVector::UpVector*FMath::Max(0.0,(Head.Z-Root.Z)*.5),Head,.25);
+}
+
+FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
+{
+    const float S=DragonScale();
+    const float Dt=FMath::Clamp(DeltaTime,0.f,.1f);
+    FVector KB,KT;float KR=0.f;
+    if(!KnightCapsule(KB,KT,KR)){bFramedViewValid=false;return Base;}
+    if(bKnightHiddenByCamera)SetKnightHiddenByCamera(false);
+    const FVector Foot=KB-FVector::UpVector*KR,Top=KT+FVector::UpVector*KR;
+    const float R=RigLensRadiusCm;
+    // 1. Pivot.
+    const FVector Pivot(KB.X,KB.Y,FMath::Min(Foot.Z+RigPivotHeightCm,Top.Z-10.0));
+    // 2. Direction.
+    FRotator Want=GetTargetRotation();Want.Roll=0.f;Want.Normalize();
+    Want.Pitch=FMath::Clamp(static_cast<float>(Want.Pitch),-FadeDownDeg,FadeUpDeg);
+    const FQuat WantQ=Want.Quaternion();
+    if(!bRigRot){RigRot=WantQ;bRigRot=true;}
+    else
+    {
+        const float MaxTurn=RigTurnRateDegPerSec*FMath::Max(Dt,1.f/240.f);
+        const float Turn=FMath::RadiansToDegrees(static_cast<float>(RigRot.AngularDistance(WantQ)));
+        RigRot=Turn>MaxTurn?FQuat::Slerp(RigRot,WantQ,MaxTurn/Turn):WantQ;RigRot.Normalize();
+    }
+    FRotator ArmRot=RigRot.Rotator();ArmRot.Roll=0.f;
+    const float Length=FMath::Max(100.f,TargetArmLength);
+    // Upward look keeps the lens near shoulder height by raising the arm origin (arena-swept), as the knight's rule.
+    FVector Origin=Pivot;
+    if(ArmRot.Pitch>0.f)
+    {
+        const float Rad=FMath::DegreesToRadians(static_cast<float>(ArmRot.Pitch));
+        const float Raise=FMath::Max(0.f,90.f+Length*FMath::Sin(Rad)-12.f*FMath::Cos(Rad)-static_cast<float>(Pivot.Z-Foot.Z));
+        if(Raise>1.f)Origin=Pivot+FVector::UpVector*Raise*RigWorldSweep(Pivot,Pivot+FVector::UpVector*Raise,R);
+    }
+    const FQuat ArmQ=ArmRot.Quaternion();
+    // 3. Offsets on the desired point.
+    const FVector Desired=Origin-ArmQ.GetForwardVector()*Length+ArmQ.RotateVector(SocketOffset)+ArmQ.RotateVector(FeelLocalOffset);
+    const float Span=FMath::Max(1.f,static_cast<float>(FVector::Dist(Origin,Desired)));
+    // 4. Arena.
+    const float TA=RigWorldSweep(Origin,Desired,R);
+    bFadeArenaPull=TA<FadeArenaFraction-.002f;
+    if(bFadeArenaPull)FadeArenaFraction=TA;else FadeArenaFraction=FMath::Min(TA,FMath::FInterpTo(FadeArenaFraction,TA,Dt,ReleaseRate));
+    // 5. Dragon: bounded, eased shorten.
+    const float Floor=FMath::Clamp(FMath::Max(FadeMinArmFraction,(KR+FadeMinGapCm)/Span),0.f,1.f);
+    const float TD=Proxy.IsValid()?RigDragonSweep(Origin,Desired,R):1.f;
+    const float DragonTarget=TD>=.999f?1.f:FMath::Max(Floor,TD);
+    FadeDragonFraction=FMath::FInterpTo(FadeDragonFraction,DragonTarget,Dt,DragonTarget<FadeDragonFraction?FadeShortenRate:ReleaseRate);
+    const float Fraction=FMath::Min(FadeArenaFraction,FadeDragonFraction);
+    const FVector Lens=Origin+(Desired-Origin)*Fraction;
+    // 6. View: the arm rotation; his feet stay above the bottom edge (vertical half-angle from the lens).
+    FRotator VR=ArmRot;
+    {
+        const UCameraComponent* Camera=nullptr;
+        for(USceneComponent* Child:GetAttachChildren())if(const UCameraComponent* C=Cast<UCameraComponent>(Child)){Camera=C;break;}
+        const float Fov=Camera?Camera->FieldOfView:78.f;
+        const float VHalf=FMath::RadiansToDegrees(FMath::Atan(FMath::Tan(FMath::DegreesToRadians(Fov*.5f))/FMath::Max(.5f,ViewAspect())));
+        const float Horizontal=FMath::Max(50.f,static_cast<float>(FVector::Dist2D(Lens,KB)));
+        const float FeetBelow=FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(Lens.Z-(Foot.Z+10.0)),Horizontal));
+        VR.Pitch=FMath::Min(static_cast<float>(VR.Pitch),VHalf*.88f-FeetBelow);
+        VR.Pitch=FMath::Clamp(static_cast<float>(VR.Pitch),-FadeDownDeg,FadeUpDeg);
+    }
+    FQuat View=VR.Quaternion();
+    if(bSafeLastView)
+    {
+        const float MaxTurn=(RigTurnRateDegPerSec+10.f)*FMath::Max(Dt,1.f/240.f);
+        const float Turn=FMath::RadiansToDegrees(static_cast<float>(View.AngularDistance(SafeLastView)));
+        if(Turn>MaxTurn){View=FQuat::Slerp(SafeLastView,View,MaxTurn/Turn);View.Normalize();++ClampedTurns;}
+    }
+    SafeLastView=View;bSafeLastView=true;
+    FramedView=View;bFramedViewValid=true;FovBoostDeg=0.f;
+    BodyFraction=Fraction;SafeFraction=Fraction;RigFraction=Fraction;
+    // The dragon gives way: inside its volume -> every back face clipped; skin between lens and knight -> sight fade.
+    FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();
+    bFadeLensInside=bProxyTight&&True.InsideVolume(Lens);
+    bool bOccluded=false;
+    if(bProxyTight)
+        for(const float H:{.3f,.6f,.9f})
+            if(True.SegmentBlocked(Lens,FMath::Lerp(Foot,Top,H))){bOccluded=true;break;}
+    FadeSight=FMath::FInterpConstantTo(FadeSight,bOccluded?1.f:0.f,Dt,1.f/FMath::Max(.05f,FadeSightEaseSeconds));
+    FadeSightFrames+=FadeSight>.01f;FadeInsideFrames+=bFadeLensInside;FadeShortFrames+=FadeDragonFraction<.999f;
+    if(AVeyrDragon* D=Dragon.Get())
+    {
+        const float Height=static_cast<float>(Top.Z-Foot.Z);
+        bFadeApplied=D->SetCameraFade(Lens,FMath::Lerp(Foot,Top,.55f),FadeNearCm*S,FadeFarCm*S,FMath::Max(90.f,Height),
+            FMath::SmoothStep(0.f,1.f,FadeSight),FadeSightFloor,bFadeLensInside);
+    }
+    else bFadeApplied=false;
+    LastRigLens=Lens;RigFrame=GFrameCounter;RigSkinFrame=True.SkinFrame();
     return Lens;
 }

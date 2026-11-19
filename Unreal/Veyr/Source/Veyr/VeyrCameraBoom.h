@@ -110,6 +110,17 @@ public:
     /** True while the camera rule hides the knight's meshes from the viewing player (lens on top of his head). */
     bool bKnightHiddenByCamera=false;
     bool UsesRig() const { return !bLegacyBoom&&!bLegacyFraming&&!bLegacySafety&&!bLegacyPlacement; }
+    /** Camera fifth pass (2026-11-19, default): steady low arm, arena-only collision, bounded dragon shorten, the dragon
+     * fades in its materials. -VeyrCameraCollideRig restores the fourth-pass rig (lens kept outside the body). */
+    bool bCollideRig=false;
+    bool UsesFadeRig() const { return UsesRig()&&!bCollideRig; }
+    static bool FadeRigSwitchedOn();
+    float FadeDownDeg=10.f,FadeUpDeg=25.f,FadeMinArmFraction=.6f,FadeMinGapCm=120.f,FadeShortenRate=5.f;
+    float FadeNearCm=80.f,FadeFarCm=220.f,FadeSightFloor=.22f,FadeSightEaseSeconds=.2f;
+    float FadeArenaFraction=1.f,FadeDragonFraction=1.f,FadeSight=0.f;bool bFadeArenaPull=false,bFadeLensInside=false,bFadeApplied=false;
+    int32 FadeSightFrames=0,FadeInsideFrames=0,FadeShortFrames=0;uint64 FadeArenaPullFrame=0;
+    /** The lock target point the fifth-pass audit frames (dragon chest: half-way up to the head, a quarter toward it). */
+    FVector FadeLockChest() const;
     /** Camera-local offset another system wants on the lens (fight-feel bounce); added to the desired point. */
     void SetFeelLocalOffset(const FVector& Offset){FeelLocalOffset=Offset;}
     const FVeyrDragonProxy& GetProxy() const { return Proxy; }
@@ -199,6 +210,9 @@ private:
     float RigSweep(const FVector& From,const FVector& To,float Radius) const;
     void SetKnightHiddenByCamera(bool bHide);
     FVector RigArm(const FVector& Base,float DeltaTime);
+    FVector FadeArm(const FVector& Base,float DeltaTime);
+    float RigDragonSweep(const FVector& From,const FVector& To,float Radius) const;
+    float RigWorldSweep(const FVector& From,const FVector& To,float Radius) const;
     /** Fourth pass arm: returns the camera point and sets FramedView. */
     FVector SafeArm(const FVector& Origin,const FVector& Base,float DeltaTime);
     void FinishView(const FVector& Out,const FVector& Base,float DeltaTime,float ExtraLensDeg);
@@ -224,6 +238,9 @@ struct FVeyrViewAudit
     int32 OutFrameNear=0,OutFramePitchUp=0,OutFrameOverhead=0;double OutFrameDistanceSum=0;
     int32 FightFrames=0,FightRuleHidden=0,FightVisible=0,FightInFrameVisible=0,FightHalf=0,FightInside=0;float FightHiddenRun=0.f,FightLongestHidden=0.f,FightLongestRule=0.f;
     float RuleRunStart=-1.f,RuleRunLast=-1.f,LongestRuleHiddenSeconds=0.f,LongestRuleHiddenAt=0.f;int32 RuleHiddenRuns=0,RuleRunsOver1s=0;bool bRuleRunCounted=false;
+    // Fifth pass (fade rig), fight scope (dragon alive).
+    int32 FadeFrames=0,FadeLensInside=0,FadeInteriorDrawable=0,FadeKnightReadable=0,FadeKnightInFrame=0,FadeKnightTall=0,FadeLocked=0,FadeLockInFrame=0,FadePitchInBand=0,FadeSightActive=0,FadeApplied=0,FadeNearClipNoFade=0;
+    float FadeKnightMaxHeight=0.f;TArray<float> FadeLensSteps,FadeInsideSeconds,FadeUnreadableSeconds,FadeTallSeconds;
     int32 InsideHidden=0,InsideOverhead=0,InsideInRigProxy=0;float InsideLensOffsetMaxCm=0.f,InsideRigProxyMinCm=TNumericLimits<float>::Max(),InsideNearMinCm=TNumericLimits<float>::Max();
 };
 

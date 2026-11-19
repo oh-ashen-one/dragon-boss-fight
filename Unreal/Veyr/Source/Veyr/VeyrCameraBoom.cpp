@@ -1,4 +1,5 @@
 #include "VeyrCameraBoom.h"
+#include "VeyrKnight.h"
 #include "VeyrDragon.h"
 #include "VeyrSkeletalPresentation.h"
 #include "Components/CapsuleComponent.h"
@@ -25,6 +26,7 @@ void UVeyrCameraBoom::BeginPlay()
     bLegacyBoom=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraBoom"));
     bLegacyFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraFraming"));
     bLegacySafety=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraSafety"));
+    bCollideRig=!FadeRigSwitchedOn(); // -VeyrCameraCollideRig (or any older-camera switch)
     bLegacyPlacement=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraPlacement"));
     // Windowless tuning without a rebuild (defaults are the shipped values).
     const TCHAR* Cmd=FCommandLine::Get();
@@ -32,7 +34,9 @@ void UVeyrCameraBoom::BeginPlay()
     FParse::Value(Cmd,TEXT("VeyrRigShortArm="),RigShortArmCm);FParse::Value(Cmd,TEXT("VeyrRigHide="),RigHideCm);
     FParse::Value(Cmd,TEXT("VeyrRigOverUp="),RigOverheadUpCm);FParse::Value(Cmd,TEXT("VeyrRigOverBack="),RigOverheadBackCm);
     FParse::Value(Cmd,TEXT("VeyrRigOverPitch="),RigOverheadPitchDeg);FParse::Value(Cmd,TEXT("VeyrRigAssistDown="),RigAssistDownDeg);FParse::Value(Cmd,TEXT("VeyrRigMaxUp="),RigMaxUpDeg);
-    FParse::Value(Cmd,TEXT("VeyrRigFootprint="),RigFootprintCm);FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
+    FParse::Value(Cmd,TEXT("VeyrRigFootprint="),RigFootprintCm);
+    FParse::Value(Cmd,TEXT("VeyrFadeNear="),FadeNearCm);FParse::Value(Cmd,TEXT("VeyrFadeFar="),FadeFarCm);FParse::Value(Cmd,TEXT("VeyrFadeMinArm="),FadeMinArmFraction);
+    FParse::Value(Cmd,TEXT("VeyrFadeUp="),FadeUpDeg);FParse::Value(Cmd,TEXT("VeyrFadeDown="),FadeDownDeg);FParse::Value(Cmd,TEXT("VeyrFadeSightFloor="),FadeSightFloor);FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
     // Fourth pass: the knight stays inside the central 80 % of the frame; the lens may open further.
     if(!bLegacySafety){KnightScreenMargin=FMath::Max(KnightScreenMargin,.1f);MaxFovBoostDeg=FMath::Max(MaxFovBoostDeg,14.f);}
     FindDragon();
@@ -293,7 +297,11 @@ FVector UVeyrCameraBoom::BlendLocations(const FVector& DesiredArmLocation,const 
     {
         const double Start=FPlatformTime::Seconds();
         UpdateProxy();++BodyFrames;
-        const FVector Lens=RigArm(Base,DeltaTime);
+        // Fade rig only with the dragon's fade materials bound; otherwise the lens must stay outside (collide rig).
+        const AVeyrDragon* FadeDragon=Dragon.Get();
+        const bool bFade=UsesFadeRig()&&(!FadeDragon||FadeDragon->bCameraFadeMaterials);
+        const FVector Lens=bFade?FadeArm(Base,DeltaTime):RigArm(Base,DeltaTime);
+        if(bFadeArenaPull)FadeArenaPullFrame=GFrameCounter;
         const double Spent=FPlatformTime::Seconds()-Start;RigSeconds+=Spent;RigMaxSeconds=FMath::Max(RigMaxSeconds,Spent);++RigCalls;
         if(OverheadAlpha>.01f)++RigOverheadFrames;
         return Lens;
@@ -847,12 +855,12 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();A.TrueSkinSource=True.Source;
     AVeyrDragon* AuditDragon=Dragon.Get();
     const bool bTrue=AuditDragon&&AuditDragon->bUsingCustomuseVisual&&True.Skin(AuditDragon->ImportedPresentation);
-    bool bCapsule=false,bHull=false,bBehind=false,bNear=false,bInside=false;
+    bool bCapsule=false,bHull=false,bBehind=false,bNear=false,bInside=false;bool bVolumeHere=false;float NearHere=1e6f;float StepCm=-1.f;
     if(bTrue)
     {
         ++A.TrueSkinFrames;AuditOtherFrame+=RigFrame!=GFrameCounter;AuditOtherSkinFrame+=RigSkinFrame!=True.SkinFrame();
         const float NearCm=True.NearestDistance(Camera,200.f);A.MinSkinCm=FMath::Min(A.MinSkinCm,NearCm);
-        const bool bVolume=True.InsideVolume(Camera);
+        const bool bVolume=True.InsideVolume(Camera);bVolumeHere=bVolume;NearHere=NearCm;
         // The near plane (10 cm) reaches its corners about 17 cm from the eye at the widest lens: skin that close is cut open.
         bNear=NearCm<17.f;A.InsideVolume+=bVolume;A.NearClip+=bNear;
         bInside=bVolume||bNear;
@@ -886,7 +894,7 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     if(++A.SettleFrames<=3)A.bHasLast=false;
     if(A.bHasLast)
     {
-        const float Move=static_cast<float>(FVector::Dist(Camera,A.LastCamera));
+        const float Move=static_cast<float>(FVector::Dist(Camera,A.LastCamera));StepCm=Move;
         const float Turn=FMath::RadiansToDegrees(static_cast<float>(View.AngularDistance(A.LastView)));
         const bool bTeleport=FVector::Dist(KnightAt,A.LastKnight)>150.f;
         A.KnightTeleports+=bTeleport;
@@ -949,6 +957,32 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
         if(!bRuleHidden){++A.FightVisible;A.FightInFrameVisible+=InFrame>=4;}
         A.FightHiddenRun=bHidden?A.FightHiddenRun+Dt:0.f;A.FightLongestHidden=FMath::Max(A.FightLongestHidden,A.FightHiddenRun);
         if(bRuleHidden)A.FightLongestRule=FMath::Max(A.FightLongestRule,Seconds-A.RuleRunStart);
+        // Fifth pass (fade rig): the lens may be inside the body; the materials must clip every back face then.
+        if(UsesFadeRig()&&AuditDragon->bCameraFadeMaterials)
+        {
+            ++A.FadeFrames;
+            const bool bApplied=AuditDragon->CameraFadeFrame==GFrameCounter;A.FadeApplied+=bApplied;
+            A.FadeLensInside+=bVolumeHere;if(bVolumeHere)Note(A.FadeInsideSeconds,Seconds);
+            A.FadeInteriorDrawable+=bVolumeHere&&!(bApplied&&AuditDragon->bCameraFadeBackDiscardApplied);
+            A.FadeNearClipNoFade+=NearHere<17.f&&!bApplied;
+            const bool bSight=bApplied&&AuditDragon->CameraFadeSightApplied>=.5f;A.FadeSightActive+=bSight;
+            int32 Clear=0;for(const FVector& P:Points)Clear+=bTrue?!True.SegmentBlocked(Camera,P):SightClear(Camera,P,true);
+            const bool bReadable=Clear>=4||bSight;A.FadeKnightReadable+=bReadable;if(!bReadable)Note(A.FadeUnreadableSeconds,Seconds);
+            A.FadeKnightInFrame+=InFrame>=4;
+            float UF,VF,UH,VH;
+            if(ProjectToView(Foot,Camera,View,HorizontalFovDeg,Aspect,UF,VF)&&ProjectToView(KT+FVector::UpVector*KR,Camera,View,HorizontalFovDeg,Aspect,UH,VH))
+            {
+                const float Height=FMath::Abs(VH-VF)*.5f;A.FadeKnightMaxHeight=FMath::Max(A.FadeKnightMaxHeight,Height);
+                if(Height>.45f){++A.FadeKnightTall;Note(A.FadeTallSeconds,Seconds);}
+            }
+            if(const AVeyrKnight* K=Cast<AVeyrKnight>(GetOwner());K&&K->bLockedOn)
+            {
+                ++A.FadeLocked;float UL,VL;
+                A.FadeLockInFrame+=ProjectToView(FadeLockChest(),Camera,View,HorizontalFovDeg,Aspect,UL,VL)&&FMath::Abs(UL)<=1.f&&FMath::Abs(VL)<=1.f;
+            }
+            const float SteerPitch=Steer.Rotator().Pitch;A.FadePitchInBand+=SteerPitch>=-FadeDownDeg-.5f&&SteerPitch<=FadeUpDeg+.5f;
+            if(StepCm>=0.f&&FadeArenaPullFrame!=GFrameCounter&&A.FadeLensSteps.Num()<40000)A.FadeLensSteps.Add(StepCm);
+        }
     }
 }
 
@@ -991,6 +1025,21 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
     Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);N(TEXT("ruleHiddenRuns"),A.RuleHiddenRuns);N(TEXT("fightFrames"),A.FightFrames);N(TEXT("fightInsideDragonFrames"),A.FightInside);N(TEXT("fightRuleHiddenShare"),A.FightFrames?double(A.FightRuleHidden)/A.FightFrames:0.0);N(TEXT("fightKnightInFrameShareOfVisible"),A.FightVisible?double(A.FightInFrameVisible)/A.FightVisible:0.0);N(TEXT("fightHalfVisibleShare"),A.FightFrames?double(A.FightHalf)/A.FightFrames:0.0);N(TEXT("fightLongestHiddenSeconds"),A.FightLongestHidden);N(TEXT("fightLongestRuleHiddenSeconds"),A.FightLongestRule);N(TEXT("ruleHiddenRunsOver1s"),A.RuleRunsOver1s);N(TEXT("longestRuleHiddenSeconds"),A.LongestRuleHiddenSeconds);N(TEXT("longestRuleHiddenAtSeconds"),A.LongestRuleHiddenAt);N(TEXT("insideWhileHiddenFrames"),A.InsideHidden);N(TEXT("insideWhileOverheadFrames"),A.InsideOverhead);N(TEXT("insideLensInRigProxyFrames"),A.InsideInRigProxy);
     N(TEXT("insideLensOffsetFromRigMaxCm"),A.InsideLensOffsetMaxCm);N(TEXT("insideRigProxyMinDistanceCm"),A.InsideRigProxyMinCm<1e30f?A.InsideRigProxyMinCm:-1.0);N(TEXT("insideNearestSkinMinCm"),A.InsideNearMinCm<1e30f?A.InsideNearMinCm:-1.0);
     {const int32 Out=A.VisibleFrames-A.KnightInFrameVisible;N(TEXT("outOfFrameVisibleFrames"),Out);N(TEXT("outOfFrameNearFrames"),A.OutFrameNear);N(TEXT("outOfFramePitchUpFrames"),A.OutFramePitchUp);N(TEXT("outOfFrameOverheadFrames"),A.OutFrameOverhead);N(TEXT("outOfFrameMeanDistanceCm"),Out?A.OutFrameDistanceSum/Out:0.0);}Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
+    {
+        // Fifth pass (fade rig), fight scope: interior drawable = lens inside the drawn volume while the back-face clip
+        // was not applied this frame (must be 0); readable = 4 of 7 knight points clear of skin, or the sight fade on.
+        O->SetBoolField(TEXT("fadeRig"),UsesFadeRig());const double F=A.FadeFrames?double(A.FadeFrames):1.0;
+        N(TEXT("fadeFrames"),A.FadeFrames);N(TEXT("fadeAppliedShare"),A.FadeApplied/F);N(TEXT("fadeLensInsideFrames"),A.FadeLensInside);
+        N(TEXT("fadeInteriorDrawableFrames"),A.FadeInteriorDrawable);N(TEXT("fadeNearClipUnfadedFrames"),A.FadeNearClipNoFade);
+        N(TEXT("fadeKnightReadableShare"),A.FadeKnightReadable/F);N(TEXT("fadeKnightInFrameShare"),A.FadeKnightInFrame/F);
+        N(TEXT("fadeKnightTallFrames"),A.FadeKnightTall);N(TEXT("fadeKnightMaxScreenHeight"),A.FadeKnightMaxHeight);
+        N(TEXT("fadeLockedFrames"),A.FadeLocked);N(TEXT("fadeLockTargetInFrameShare"),A.FadeLocked?double(A.FadeLockInFrame)/A.FadeLocked:0.0);
+        N(TEXT("fadePitchInBandShare"),A.FadePitchInBand/F);N(TEXT("fadeSightActiveShare"),A.FadeSightActive/F);
+        TArray<float> St=A.FadeLensSteps;St.Sort();
+        N(TEXT("fadeLensStepP999Cm"),St.IsEmpty()?0.f:St[FMath::Clamp(FMath::FloorToInt(.999f*(St.Num()-1)),0,St.Num()-1)]);N(TEXT("fadeLensStepMaxCm"),St.IsEmpty()?0.f:St.Last());
+        N(TEXT("fadeRigSightFrames"),FadeSightFrames);N(TEXT("fadeRigInsideFrames"),FadeInsideFrames);N(TEXT("fadeRigShortenedFrames"),FadeShortFrames);
+        Times(TEXT("fadeInsideSeconds"),A.FadeInsideSeconds);Times(TEXT("fadeUnreadableSeconds"),A.FadeUnreadableSeconds);Times(TEXT("fadeTallSeconds"),A.FadeTallSeconds);
+    }
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);
     N(TEXT("rigOverheadFrames"),RigOverheadFrames);N(TEXT("rigHiddenFrames"),RigHiddenFrames);N(TEXT("rigPivotLiftFrames"),RigPivotLiftFrames);
     N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());N(TEXT("rigWorldHits"),RigWorldHits);N(TEXT("rigSkinSweeps"),RigSkinSweeps);N(TEXT("rigSkinStepsMean"),RigSkinSweeps?double(RigSkinSteps)/RigSkinSweeps:0.0);N(TEXT("rigSkinSweepMsPerSweep"),RigSkinSweeps?RigSkinSweepSeconds*1000.0/RigSkinSweeps:0.0);N(TEXT("auditRigOtherFrame"),AuditOtherFrame);N(TEXT("auditRigOtherSkinFrame"),AuditOtherSkinFrame);N(TEXT("rigStaleProxyFrames"),RigStaleProxyFrames);N(TEXT("rigLowOverheadFrames"),RigLowFrames);N(TEXT("rigHideUnderBodyFrames"),RigHideUnderBodyFrames);{TArray<TSharedPtr<FJsonValue>> L;for(const FString& X:RigWorldHitNames)L.Add(MakeShared<FJsonValueString>(X));O->SetArrayField(TEXT("rigWorldHitActors"),L);}N(TEXT("trueSkinMs"),FVeyrDragonTrueSkin::Get().SkinSeconds*1000.0);O->SetBoolField(TEXT("rigProxyTight"),bProxyTight);

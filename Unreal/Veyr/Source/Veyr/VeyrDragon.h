@@ -111,6 +111,13 @@ public:
     /** A2 fourth pass net: dither away the skin within Radius of the lens (no pale back faces at the near plane).
      * Reuses the camera-tunnel material with a short segment through the lens and no protected head. */
     bool SetNearLensOcclusion(const FVector& CameraWorld,const FVector& Forward,float Radius);
+    /** Camera fifth pass: the dragon gives way in its materials (RuntimePolish/Fade/*_Fade clones). Distance fade from
+     * NearCm (gone) to FarCm (solid) around Lens; sight fade (kept fraction SightFloor at Amount 1) in the capsule
+     * Lens -> Focus of SightRadius; back faces clipped where a fade acts, everywhere when bBackDiscard. False (and
+     * nothing applied) when the fade materials are not bound. */
+    bool SetCameraFade(const FVector& Lens,const FVector& Focus,float NearCm,float FarCm,float SightRadius,float Amount,float SightFloor,bool bBackDiscard);
+    /** Fade materials bound (fifth pass) and what the last SetCameraFade really applied (audit). */
+    bool bCameraFadeMaterials=false,bCameraFadeBackDiscardApplied=false;float CameraFadeSightApplied=0.f;uint64 CameraFadeFrame=0;
 
     // Owner target: a competent victory within 150 wall seconds. Health is
     // calibrated by input-only victory replays; leg stagger thresholds stay independent.

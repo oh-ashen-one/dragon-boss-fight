@@ -1,4 +1,5 @@
 #include "VeyrDragon.h"
+#include "VeyrCameraBoom.h"
 #include "VeyrGameMode.h"
 #include "VeyrFightFeel.h"
 #include "VeyrKnight.h"
@@ -2822,7 +2823,7 @@ bool AVeyrDragon::FlameHitsKnight(const FVeyrDragonFlameBeam& Beam) const
 
 void AVeyrDragon::ResetCameraOcclusionMaterials()
 {
-    bCameraOcclusionReady=false;bCameraOcclusionEnabled=false;
+    bCameraOcclusionReady=false;bCameraOcclusionEnabled=false;bCameraFadeMaterials=false;bCameraFadeBackDiscardApplied=false;
     for(int32 Slot=0;Slot<CameraOcclusionMaterials.Num();++Slot)
         if(UMaterialInstanceDynamic* Material=CameraOcclusionMaterials[Slot])
         {
@@ -2841,7 +2842,7 @@ bool AVeyrDragon::InitializeCameraOcclusionMaterials()
     bCameraOcclusionReady=false;bCameraOcclusionEnabled=false;
     if(!bUsingCustomuseVisual||!ImportedPresentation||ImportedPresentation->GetNumMaterials()<1)
     {CameraOcclusionDiagnostic=TEXT("Imported mesh has no camera-occlusion material slots");return false;}
-    TArray<UMaterialInterface*> Parents;
+    TArray<UMaterialInterface*> Parents;int32 FadeParents=0;bCameraFadeMaterials=false;
     // Validate every slot before assigning any MID. An opaque or partial
     // shader must not be reported as a functioning visibility tunnel.
     for(int32 Slot=0;Slot<ImportedPresentation->GetNumMaterials();++Slot)
@@ -2864,8 +2865,20 @@ bool AVeyrDragon::InitializeCameraOcclusionMaterials()
             CameraOcclusionDiagnostic=FString::Printf(TEXT("Camera occlusion unavailable: slot %d missing %s; camera fade disabled"),Slot,*Missing);
             UE_LOG(LogTemp,Warning,TEXT("VEYR_CAMERA_OCCLUSION_UNAVAILABLE %s"),*CameraOcclusionDiagnostic);return false;
         }
+        // Camera fifth pass: the fade clone of this material (RuntimePolish/Fade, always cooked) when the fade rig is on.
+        if(UVeyrCameraBoom::FadeRigSwitchedOn())
+        {
+            const FString Path=FString::Printf(TEXT("/Game/Characters/Customuse/RuntimePolish/Fade/%s_Fade.%s_Fade"),*Parent->GetName(),*Parent->GetName());
+            UMaterialInterface* Fade=LoadObject<UMaterialInterface>(nullptr,*Path,nullptr,LOAD_Quiet|LOAD_NoWarn);
+            float Probe=0.f;
+            if(Fade&&Fade->GetBlendMode()==BLEND_Masked&&Fade->GetScalarParameterValue(FHashedMaterialParameterInfo(TEXT("VeyrFadeNear")),Probe)&&
+               Fade->GetScalarParameterValue(FHashedMaterialParameterInfo(TEXT("VeyrBackDiscard")),Probe))
+            {Parent=Fade;++FadeParents;}
+            else UE_LOG(LogTemp,Warning,TEXT("VEYR_CAMERA_FADE_UNAVAILABLE %s"),*Path);
+        }
         Parents.Add(Parent);
     }
+    bCameraFadeMaterials=FadeParents>0&&FadeParents==Parents.Num();
     for(UMaterialInterface* Parent:Parents)
     {
         UMaterialInstanceDynamic* Material=UMaterialInstanceDynamic::Create(Parent,this);
@@ -2894,6 +2907,24 @@ bool AVeyrDragon::SetNearLensOcclusion(const FVector& CameraWorld,const FVector&
         Material->SetScalarParameterValue(TEXT("VeyrProtectedHeadRadius"),0.f);
     }
     CameraOcclusionDiagnostic=TEXT("Near-lens dither applied (A2 fourth pass)");
+    return true;
+}
+
+bool AVeyrDragon::SetCameraFade(const FVector& Lens,const FVector& Focus,float NearCm,float FarCm,float SightRadius,float Amount,float SightFloor,bool bBackDiscard)
+{
+    bCameraFadeBackDiscardApplied=false;CameraFadeSightApplied=0.f;
+    if(!bCameraFadeMaterials||!SetViewOcclusion(Lens,Focus,true)||!bCameraOcclusionEnabled)return false;
+    for(UMaterialInstanceDynamic* Material:CameraOcclusionMaterials)
+    {
+        Material->SetScalarParameterValue(TEXT("VeyrFadeNear"),FMath::Max(0.f,NearCm));
+        Material->SetScalarParameterValue(TEXT("VeyrFadeFar"),FMath::Max(NearCm+1.f,FarCm));
+        Material->SetScalarParameterValue(TEXT("VeyrSightRadius"),FMath::Max(1.f,SightRadius));
+        Material->SetScalarParameterValue(TEXT("VeyrSightAmount"),FMath::Clamp(Amount,0.f,1.f));
+        Material->SetScalarParameterValue(TEXT("VeyrSightFloor"),FMath::Clamp(SightFloor,0.f,1.f));
+        Material->SetScalarParameterValue(TEXT("VeyrBackDiscard"),bBackDiscard?1.f:0.f);
+    }
+    bCameraFadeBackDiscardApplied=bBackDiscard;CameraFadeSightApplied=FMath::Clamp(Amount,0.f,1.f);CameraFadeFrame=GFrameCounter;
+    CameraOcclusionDiagnostic=TEXT("Camera fade applied (fifth pass: distance + sight fade, back faces clipped)");
     return true;
 }
 
