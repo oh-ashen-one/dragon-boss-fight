@@ -488,7 +488,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 // F1: per-move gap shaping from playback.json, only for the short gaps inside a string (review H4:
                 // the whiff-punish and string-landed openings and the anti-camp answer stay as they were).
                 if(const FVeyrMoveTempo* T=TempoForMove(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg);T&&bInStringGap&&!AntiCampArmed())
-                    Gap=FMath::Max(.05f,Gap*T->GapScale+T->GapAdd);
+                    Gap=FMath::Max(.05f,Gap*T->GapScale*(InSecondPhase()?Playback.Phase2GapScale:1.f)+T->GapAdd);
                 EnterState(EVeyrDragonState::Idle,Gap);
             }
             break;
@@ -622,7 +622,7 @@ FName AVeyrDragon::VideoClip(FName Keyed) const
 float AVeyrDragon::VideoStateDuration(FName Keyed,float Fixed) const
 {
     const FName Clip=VideoClip(Keyed);
-    if(Clip!=Keyed){const float Tempo=TempoDuration(Clip);if(Tempo>0.f)return Tempo;} // F1
+    // F1 leaves the knock-down states to the owner's timing (KnockdownBuckle/Collapse/RiseSeconds): authored length.
     return Clip!=Keyed?VisualClipDuration(Clip,Fixed):Fixed;
 }
 
@@ -901,7 +901,8 @@ void AVeyrDragon::BaseAttackTiming(EVeyrDragonMove Attack,int32 Leg,float& Windu
             if(W>0.f&&A>0.f&&R>0.f)
             {
                 // Showcase rehearsals keep whole recoveries (their coverage gate) unless -VeyrShowcaseMoves asks for game timing.
-                const float Exit=bShowcaseMode&&!bShowcaseGameTiming?1.f:T->RecoveryExit;
+                const float Exit=bShowcaseMode&&!bShowcaseGameTiming?1.f:
+                    FMath::Clamp(T->RecoveryExit*(InSecondPhase()?Playback.Phase2RecoveryExitScale:1.f),.05f,1.f);
                 Windup=bAggression?FMath::Max(W,MinimumWindup):W;Active=A;Recovery=FMath::Max(.1f,R*Exit);
                 return;
             }
@@ -970,7 +971,8 @@ void AVeyrDragon::BeginAttack(EVeyrDragonMove Next)
     {
         // F1: a chained blow enters its own wind-up part-way (cross-faded from the strike) instead of a compressed coil.
         const float Full=WindupDuration;
-        WindupDuration=FMath::Max(FMath::Min(Full,MinimumWindup*ChainWindupScale),Full*(1.f-ChainTempo->ChainEntry));
+        const float Entry=FMath::Clamp(ChainTempo->ChainEntry+(InSecondPhase()?Playback.Phase2ChainEntryAdd:0.f),0.f,.9f);
+        WindupDuration=FMath::Max(FMath::Min(Full,MinimumWindup*ChainWindupScale),Full*(1.f-Entry));
         PhaseEntryReal=FMath::Max(0.f,Full-WindupDuration);
     }
     else if(bChainedAttack)WindupDuration=FMath::Max(MinimumWindup*ChainWindupScale,WindupDuration*ChainWindupScale);
@@ -2336,7 +2338,9 @@ void AVeyrDragon::UpdateImportedPresentation()
         const bool ByTime=Loop||AuthoredTurn||(IsDataOnlyMovePlaying()&&Clip==DataOnlyClip);
         // F1: one-shot phases follow real time through the clip's tempo map (wind-ups of chained blows start part-way).
         float Trimmed=FMath::Clamp(StateElapsed/FMath::Max(.001f,StateDuration),0.f,1.f)*Duration;
-        const bool TempoMapped=!ByTime&&!(bShowcaseMode&&!ShowcaseOverrideClip.IsNone())&&
+        // The knock-down (buckle, collapse, rise) keeps the owner's 2026-11-18 timing and the baked clip's own shape.
+        const bool KnockdownState=State==EVeyrDragonState::Buckle||State==EVeyrDragonState::Collapse||State==EVeyrDragonState::Rise;
+        const bool TempoMapped=!ByTime&&!KnockdownState&&!(bShowcaseMode&&!ShowcaseOverrideClip.IsNone())&&
             TempoTrimmedSeconds(Clip,StateElapsed+(State==EVeyrDragonState::Windup?PhaseEntryReal:0.f),Trimmed);
         if(ByTime)Trimmed=Loop&&Duration>.001f?FMath::Fmod(FMath::Max(0.f,SampleSeconds),Duration):FMath::Clamp(SampleSeconds,0.f,Duration);
         const float SequenceSeconds=Config.StartSeconds+Trimmed;

@@ -55,6 +55,12 @@ public:
     float FadeDefault=.35f,TrackRateDps=90.f,TrackLeadSeconds=.06f;
     /** Rate factor on attack phases while the boss is in phase two (the old x1.12 escalation). */
     float Phase2Rate=1.12f;
+    /** Phase two never pushes a non-hold rate past this (the 1.25 own-speed ceiling); holds take the full factor. */
+    float Phase2MaxRate=1.25f;
+    /** Phase two shortens the visible recovery instead (x this on recovery_exit). */
+    float Phase2RecoveryExitScale=.85f;
+    /** Phase two: extra in-string gap scale and extra chained wind-up skip (the 1.25 ceiling cannot carry x1.12). */
+    float Phase2GapScale=1.f,Phase2ChainEntryAdd=0.f;
     /** "compiled" (VeyrDragonPlaybackData.inl) or the loose file path that overrode it. */
     FString Source;
     FVeyrFootLockTuning FootLock;

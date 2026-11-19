@@ -50,11 +50,14 @@ CLIPS = {
 # (collapse stays off: Exposed continues the collapse in absolute clip space, so its travel would count twice)
 # in-clip travel returns to the start and their hitbox caches are actor-relative, so they stay in place.
 MOVES = {
-    'claw': dict(windup_rate=1.2, strike_rate=1.0, recovery_rate=1.2, hold_rate=3.0, recovery_exit=0.45, gap_scale=0.8, gap_add=0.0, chain_entry=0.35),
-    'stomp': dict(windup_rate=1.2, strike_rate=1.0, recovery_rate=1.2, hold_rate=3.0, recovery_exit=0.45, gap_scale=0.8, gap_add=0.0, chain_entry=0.35),
-    'tail': dict(windup_rate=1.2, strike_rate=1.0, recovery_rate=1.2, hold_rate=3.0, recovery_exit=0.5, gap_scale=0.8, gap_add=0.0, chain_entry=0.35),
-    'bite': dict(windup_rate=1.2, strike_rate=1.0, recovery_rate=1.2, hold_rate=6.0, recovery_exit=0.55, gap_scale=0.8, gap_add=0.0, chain_entry=0.3),
-    'fire': dict(windup_rate=1.2, strike_rate=1.0, recovery_rate=1.2, hold_rate=2.5, recovery_exit=0.7, gap_scale=1.0, gap_add=0.0, chain_entry=0.0),
+    # 2026-11-19 band retune (paper, F-notes section 7): rates at the 1.25 ceiling, holds x8, the longer own-speed
+    # wind-ups paid back from the recovery (recovery_exit) and the in-string gaps so that each move's
+    # wind-up+strike+recovery+gap cycle and each chained wind-up+strike match today's real seconds.
+    'claw': dict(windup_rate=1.25, strike_rate=1.25, recovery_rate=1.25, hold_rate=8.0, recovery_exit=0.35, gap_scale=0.72, gap_add=0.0, chain_entry=0.48),
+    'stomp': dict(windup_rate=1.25, strike_rate=1.25, recovery_rate=1.25, hold_rate=8.0, recovery_exit=0.25, gap_scale=0.6, gap_add=0.0, chain_entry=0.47),
+    'tail': dict(windup_rate=1.25, strike_rate=1.25, recovery_rate=1.25, hold_rate=8.0, recovery_exit=0.2, gap_scale=0.15, gap_add=0.0, chain_entry=0.5),
+    'bite': dict(windup_rate=1.25, strike_rate=1.25, recovery_rate=1.25, hold_rate=8.0, recovery_exit=0.4, gap_scale=0.7, gap_add=0.0, chain_entry=0.52),
+    'fire': dict(windup_rate=1.25, strike_rate=1.0, recovery_rate=1.25, hold_rate=8.0, recovery_exit=0.5, gap_scale=1.0, gap_add=0.0, chain_entry=0.0),
     'buckle': dict(root_track=True, rate=1.0, hold_rate=2.0),
     'collapse': dict(root_track=False, rate=1.25, hold_rate=2.0),
     'exposed': dict(rate=1.0, hold_rate=1.0),
@@ -147,7 +150,8 @@ def main():
                    'the clip\'s authored (source video) speed; 1.0 plays it as generated. Holds are source-frame spans the '
                    'fit holds still; only they may run faster than 1.25. -VeyrLegacyClipTempo restores the old timing.'),
         'version': 1,
-        'phase2_rate': 1.12,
+        'phase2_rate': 1.12, 'phase2_max_rate': 1.25, 'phase2_recovery_exit_scale': 0.5,
+        'phase2_gap_scale': 0.6, 'phase2_chain_entry_add': 0.1,
         'fades': {'default': 0.35, 'roar': 0.6, 'flight_active': 0.2, 'rise_to_idle': 0.4, 'dead': 0.35},
         'turn': {'track_rate_dps': 90.0, 'track_lead_seconds': 0.06},
         'foot_lock': {'plant_height_cm': 4.0, 'plant_speed_cms': 120.0, 'release_height_cm': 8.0, 'drag_release_cm': 30.0,

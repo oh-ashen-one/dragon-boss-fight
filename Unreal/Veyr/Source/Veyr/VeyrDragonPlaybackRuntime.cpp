@@ -31,7 +31,7 @@ const FVeyrClipPlayback* AVeyrDragon::TempoClip(FName Clip,float& OutRate,float&
     if(C)Playback.RatesFor(*C,Phase,OutRate,OutHoldRate);
     // Review H4: the wounded boss keeps its phase-two speed-up on every attack phase (fire's sweep excepted), as before.
     if(C&&!Phase.IsNone()&&InSecondPhase()&&!(C->Move==FName(TEXT("fire"))&&Phase==FName(TEXT("Active"))))
-    {OutRate*=Playback.Phase2Rate;OutHoldRate*=Playback.Phase2Rate;}
+    {OutRate=FMath::Min(OutRate*Playback.Phase2Rate,FMath::Max(OutRate,Playback.Phase2MaxRate));OutHoldRate*=Playback.Phase2Rate;}
     return C;
 }
 

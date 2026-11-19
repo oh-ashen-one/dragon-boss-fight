@@ -55,6 +55,10 @@ bool FVeyrDragonPlayback::Load(FString& OutDiagnostic)
     if(Root->TryGetObjectField(TEXT("fades"),Obj))
         for(const auto& E:(*Obj)->Values){double V=0;if(E.Value->TryGetNumber(V)){if(E.Key==TEXT("default"))FadeDefault=V;else Fades.Add(FName(*E.Key),V);}}
     Phase2Rate=FMath::Clamp(Num(Root,TEXT("phase2_rate"),1.12f),1.f,2.f);
+    Phase2MaxRate=FMath::Clamp(Num(Root,TEXT("phase2_max_rate"),1.25f),1.f,8.f);
+    Phase2RecoveryExitScale=FMath::Clamp(Num(Root,TEXT("phase2_recovery_exit_scale"),.85f),.2f,1.f);
+    Phase2GapScale=FMath::Clamp(Num(Root,TEXT("phase2_gap_scale"),1.f),0.f,1.f);
+    Phase2ChainEntryAdd=FMath::Clamp(Num(Root,TEXT("phase2_chain_entry_add"),0.f),0.f,.5f);
     if(Root->TryGetObjectField(TEXT("turn"),Obj)){TrackRateDps=Num(*Obj,TEXT("track_rate_dps"),TrackRateDps);TrackLeadSeconds=Num(*Obj,TEXT("track_lead_seconds"),TrackLeadSeconds);}
     if(Root->TryGetObjectField(TEXT("foot_lock"),Obj))
     {
