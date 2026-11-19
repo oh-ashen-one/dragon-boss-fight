@@ -11,3 +11,28 @@
 Also noted, outside the questions: the sword lying flat on the floor away from the knight's hand at moments; the fire effect is a flat pink translucent smear; dragon leg and belly textures are blurry and the claws faceted in close-up.
 
 Outcome: A2 gets a second pass (minimum distance from the knight, never inside the knight, cut-through off by default, new measured checks); the A1 clip pair is re-cut so the old clip shows the bug; the ankle and fin artifacts are investigated.
+
+## Phase A, round 2 — 2026-11-18 21:35 ET, re-cut clips (A2 from the final package 34667e83)
+
+| Item | Better side | Confidence | Passes its question | What the reviewer saw |
+|---|---|---|---|---|
+| A1 foot mesh | tie | low | no | Again no spike or sheet in either clip. In both, one front paw reads as "a toeless stump" (later traced to the left front paw's own mesh and skinning: it rides on one bone with no toe chain; not the mirrored-toe repair). A third pair, cropped on the foot at the claw clip's worst moment, now shows the old build's toe pinched out into a long sheet and the fix without it (on the page; not yet blind-reviewed) |
+| A2 camera | fix | medium | no | Not like for like (the dragon flew off in the fix run, so it never went under the belly). The old camera dithers a hole through the belly and overexposes. The fix: the tail looked see-through over the knight for a quarter second, the knight was pushed behind the HUD, and the camera jumped at 12.59 s |
+| A3 feet on the floor | fix | medium | not in every frame | The old build floats in most frames (one sole about 150 px up). The fix touches the floor in most; a few gaps remain that may be feet lifted mid-step |
+
+## Whole fight against the reference, after phase A — 2026-11-18 21:45 ET
+
+Our phase A victory film (60 s) against 51 s of the reference's fight footage, neutral names, six aspects. Full text:
+`Local/quality-goal/critic-fight-A/review.md`.
+
+| Aspect | Better | Gap | Confidence | Main reason |
+|---|---|---|---|---|
+| Picture and lighting | reference | large | high | Ours is flat grey-blue (darkest 5 % at brightness 29 against 6.7), fire casts no light, a control panel stays on screen |
+| Hero model and movement | reference | clear | medium | Our weapon reads as a ribbed rowboat; the roll looks like a sprawl |
+| Creature animation | reference | clear | medium-high | Ours has one slow tempo, a landing with no contact, no reaction to hits |
+| Weight of impacts | reference | large | high | Ours: a faint 2-3 frame glow, no shake, sparks or reaction. Theirs: dust, debris, sparks, trails |
+| Sound | reference | large | high | Ours peaks 21 dB lower, one hit sample repeats identically, a synthetic tone plays |
+| Camera | reference | clear | high | **Ours still goes inside the dragon at least six times in a real fight** (confirmed by the director on frames at film 35.5, 36.75, 73.5, 79.5 s), points at the floor once and snaps |
+
+This is the starting scoreboard: reference better on all six. It also shows the phase A camera proof was too narrow:
+the dedicated camera test measured zero inside frames while the fight film has several. A2 is reopened.
