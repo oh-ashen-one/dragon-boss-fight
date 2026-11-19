@@ -219,8 +219,10 @@ void AVeyrImpactFx::HitBurst(const FVector& At,const FVector& Out,int32 Tier,flo
         // white flash-and-dust), all sized by the blow's tier and the dragon's size.
         FVeyrFeelTuning::FEffect E=VeyrFeelTuning().Hit[Tier];
         const float Body=FMath::Sqrt(FMath::Max(.25f,BodyScale));
-        if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*1.6f*Body,FMath::Max(E.LifeSeconds,.6f)))++HitAsset[Tier];else ++HitFallback[Tier];
-        E.Cards+=6;E.CardSizeCm*=1.7f;E.CardLife=FMath::Max(E.CardLife,.45f);E.CardOpacity=1.f;E.CardSpreadCmS*=.8f;
+        if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*1.6f*Body,E.LifeSeconds))++HitAsset[Tier];else ++HitFallback[Tier];
+        // Round 3: the 1.7x, 0.45 s, opaque spark streaks lay on the floor as a white slab for half a second: streaks keep
+        // their data size and opacity and live at most 0.25 s.
+        E.Cards+=4;E.CardLife=FMath::Min(E.CardLife,.25f);
         ThrowSparks(E,At,Normal,Body);
         E.Chips=FMath::Max(E.Chips,6+4*Tier);E.ChipSizeCm=FMath::Max(E.ChipSizeCm,3.f+Tier);E.ChipSpeedCmS=FMath::Max(E.ChipSpeedCmS,360.f);
         ThrowChips(E,At,Normal,Body,0.f);
