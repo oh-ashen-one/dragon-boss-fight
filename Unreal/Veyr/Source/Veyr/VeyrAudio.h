@@ -111,7 +111,7 @@ private:
         bool bMissingLogged=false;
     };
     struct FTimedEvent { float Pos=0.f; bool bPhase=true; ECue Cue=ECue::Count; float Level=1.f; FName Where=NAME_None; uint8 Role=0; float PitchMul=1.f; };
-    struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; uint8 Role=0; float PitchMul=1.f; };
+    struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; uint8 Role=0; float PitchMul=1.f; uint8 Tilt=0; };
     struct FExpect { bool bActive=false; double Deadline=0.0; ECue Cue=ECue::Count; float Volume=1.f; ECue Second=ECue::Count; float SecondVolume=1.f; };
 
     bool bNewSet=false,bLoadedOnce=false,bLegacyCues=false;
@@ -155,6 +155,15 @@ private:
     bool bTap=false,bAudition=false,bAuditionDone=false;
     int32 TapSession=0;
     bool bFireBeamWas=false; double FireStartedAt=-100.0;
+    // Stomp policy (one switch, the default is one constant): -VeyrStompHierarchy = walking steps get a light thump scaled by strength and only
+    // attacks (stomp class, slams, claws, tail, landing, falls) get the heavy layers; -VeyrStompPass3 = the pass 3 behaviour (strong foot strikes, strength >= 0.65, play the heavy layers too).
+    static constexpr bool kStompHierarchyDefault=false;
+    bool bStompHierarchy=kStompHierarchyDefault;
+    double BackgroundDuckUntil=-100.0;   // brief duck of the small background cues (steps, breath, debris) after a head hit or a flame ignition
+    float MusicDuckTarget=.5f;           // the music duck depth: .5 normally, deeper for a head hit
+    uint8 TiltMode=0;                    // 0 random tilt, 1 dark, 2 bright (stomp layers alternate so neighbours differ in colour)
+    bool bTiltBrightNext=false;
+    int32 LastStompRecipe=-1,LastTransient=-1;
     FString TapLabel; // set around a timed-sound play: "<clip>@<phase or time>"
     FString TapDir;
     double TapT0=-1.0,TapMusicStart=-1.0,TapGainLast=-1.0;
@@ -205,7 +214,7 @@ private:
     void TickNew(float DeltaSeconds);
     /** Role: 0 any variant, 1 sharp (mid/high attack), 2 body (mid), 3 low. PitchMul scales the random pitch. */
     bool PlayCueEx(ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f,uint8 Role=0,float PitchMul=1.f);
-    void QueueCue(float Delay,ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f,uint8 Role=0,float PitchMul=1.f);
+    void QueueCue(float Delay,ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f,uint8 Role=0,float PitchMul=1.f,uint8 Tilt=0);
     void UpdatePending();
     void UpdateVoiceFollow();
     void StopCueVoices(ECue A,ECue B=ECue::Count);

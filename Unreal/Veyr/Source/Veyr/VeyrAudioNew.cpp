@@ -405,9 +405,11 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 
 
 // A per-play spectral tilt for the big bodies (stomps, falls, debris): a random low-pass split with the high part
 // scaled, so consecutive events differ in colour and not only in sample, pitch and level.
-static void TiltCopy(const TArray<int16>& In,TArray<int16>& Out,FRandomStream& Rand,float Rate)
+static void TiltCopy(const TArray<int16>& In,TArray<int16>& Out,FRandomStream& Rand,float Rate,uint8 Mode)
 {
-    const float Fc=Rand.FRandRange(450.f,3200.f),K=Rand.FRandRange(.08f,1.25f);
+    // Mode 1: dark (the highs scaled right down); mode 2: bright (the highs kept or lifted); 0: anywhere in between.
+    const float Fc=Mode==1?Rand.FRandRange(350.f,900.f):Mode==2?Rand.FRandRange(1800.f,5000.f):Rand.FRandRange(450.f,3200.f);
+    const float K=Mode==1?Rand.FRandRange(.02f,.25f):Mode==2?Rand.FRandRange(.9f,1.5f):Rand.FRandRange(.08f,1.25f);
     const float A=1.f-FMath::Exp(-2.f*PI*Fc/Rate);
     Out.SetNumUninitialized(In.Num());
     float Lp=0.f;
@@ -454,17 +456,20 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     const int32 V=C.V;const float Pitch=C.Pitch,Seconds=C.Seconds,Seconds0=C.Seconds0;
     TArray<int16> Tilted;
     const TArray<int16>* Source=&Bank.Variants[V];
-    if(!bNoVariants&&(Cue==ECue::DragonStep||Cue==ECue::Exposed||Cue==ECue::Impact||Cue==ECue::Debris))
-    {TiltCopy(Bank.Variants[V],Tilted,Rand,float(SampleRate));Source=&Tilted;}
+    if(!bNoVariants&&(Cue==ECue::DragonStep||Cue==ECue::Exposed||Cue==ECue::Impact||Cue==ECue::Debris)&&(Place!=EPlace::Flat||TiltMode!=0))
+    {TiltCopy(Bank.Variants[V],Tilted,Rand,float(SampleRate),TiltMode);Source=&Tilted;} // not on the knight's own near-field hits
     const TArray<int16>& PCM=*Source;
     float Level=C.Level;
+    // Brief duck of the small background cues after a head hit or a flame ignition, so the big moment rises out of them.
+    if(Now<BackgroundDuckUntil&&Volume<.6f&&(Cue==ECue::DragonStep||Cue==ECue::Footstep||Cue==ECue::DragonBreathIn||Cue==ECue::DragonBreathOut||Cue==ECue::Wing||Cue==ECue::Roll||Cue==ECue::Debris))
+        Level*=.35f;
     // Peak budget instead of a limiter: transients that start together (a stomp is four layers) are scaled so their peaks, if they
     // coincided, stay under about -1.5 dBFS on the recorded master. Only voices started in the last 120 ms count (their peaks are still ahead or just passed).
     float Load=0.f;
     for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0&&Now-VoiceStartTimes[I]<.12)Load+=VoicePeakAmp[I];
     const float PeakOfThis=Bank.Peaks.IsValidIndex(V)?Bank.Peaks[V]:1.f;
     float PeakAmp=Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;
-    constexpr float PeakBudget=.84f;
+    constexpr float PeakBudget=.64f; // -3.9 dBFS: the real peak sat 1.1 dB above the .84 (-1.5 dBFS) design with the music under it, so -3.9 gives about -2.8 dBFS, clear of -1 dBTP
     if(Load+PeakAmp>PeakBudget&&PeakAmp>1e-4f){Level*=FMath::Max(.35f,(PeakBudget-Load)/PeakAmp);PeakAmp=Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;}
     const bool bPeakTracked=true;(void)bPeakTracked;
     USoundWaveProcedural* Wave=NewObject<USoundWaveProcedural>(this);
@@ -516,10 +521,10 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     return true;
 }
 
-void AVeyrAudio::QueueCue(float Delay,ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff,uint8 Role,float PitchMul)
+void AVeyrAudio::QueueCue(float Delay,ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff,uint8 Role,float PitchMul,uint8 Tilt)
 {
     if(!GetWorld())return;
-    FPending P;P.At=AudioNow()+Delay;P.Cue=Cue;P.Volume=Volume;P.Place=Place;P.World=World;P.Part=Part;P.Inner=Inner;P.Falloff=Falloff;P.Role=Role;P.PitchMul=PitchMul;
+    FPending P;P.At=AudioNow()+Delay;P.Cue=Cue;P.Volume=Volume;P.Place=Place;P.World=World;P.Part=Part;P.Inner=Inner;P.Falloff=Falloff;P.Role=Role;P.PitchMul=PitchMul;P.Tilt=Tilt;
     Pending.Add(P);
 }
 
@@ -531,7 +536,9 @@ void AVeyrAudio::UpdatePending()
     {
         if(Pending[I].At>Now)continue;
         const FPending P=Pending[I];Pending.RemoveAtSwap(I);
+        TiltMode=P.Tilt;
         PlayCueEx(P.Cue,P.Volume,P.Place,P.World,P.Part,P.Inner,P.Falloff,P.Role,P.PitchMul);
+        TiltMode=0;
     }
 }
 
@@ -611,35 +618,63 @@ void AVeyrAudio::InstallMasterChain()
 void AVeyrAudio::PlayWeaponHit(int32 Weight,bool bHead)
 {
     // The knight's own sword hitting the dragon: near-field (flat, never attenuated by where the camera is), layered:
-    // a sharp mid/high attack, a body, a low thump; sized by weight class (0 light, 1 heavy), head adds a metal ring.
+    // a sharp mid/high attack, a body, a low thump; sized by weight class (0 light, 1 heavy). A hit on the downed head is the
+    // reward moment and the fullest of all: every layer up, a ring, a smash body, and the small background and the music duck briefly.
     TapEvent(bHead?TEXT("weaponHead"):Weight>0?TEXT("weaponHeavy"):TEXT("weaponLight"));
-    const float W=Weight>0?1.f:.8f;
+    const double Now=AudioNow();
+    if(bHead&&GetWorld())
+    {
+        BackgroundDuckUntil=Now+.5;
+        MusicDuckTarget=.22f;MusicDuckUntil=GetWorld()->GetTimeSeconds()+.6;
+    }
+    const float W=bHead?1.15f:Weight>0?1.f:.8f;
     PlayCueEx(ECue::Contact,W*1.4f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
-    PlayCueEx(ECue::Guard,W*(bHead?.9f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
+    PlayCueEx(ECue::Guard,W*(bHead?1.1f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
     PlayCueEx(ECue::ArmorHit,W*1.1f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
-    PlayCueEx(ECue::Impact,Weight>0||bHead?1.2f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0?1.f:1.15f);
+    PlayCueEx(ECue::Impact,bHead?1.5f:Weight>0?1.2f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0||bHead?1.f:1.15f);
     if(Weight>0||bHead)
     {
         // Heavy and head hits: a second low body and a mid thump so all three bands rise, not only the highs.
-        PlayCueEx(ECue::Exposed,.9f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.05f);
-        QueueCue(.012f,ECue::DragonStep,.7f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2,1.2f);
+        PlayCueEx(ECue::Exposed,bHead?1.1f:.9f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.05f);
+        QueueCue(.012f,ECue::DragonStep,bHead?.9f:.7f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2,1.2f);
+    }
+    if(bHead)
+    {
+        QueueCue(.02f,ECue::Guard,.8f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1,.8f);              // the ring, a little later and lower
+        QueueCue(.02f,ECue::Break,.7f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,.9f);               // a smash body
     }
 }
 
 void AVeyrAudio::PlayStompLayers(const FVector& AtIn,float S,bool bLanding)
 {
-    // A dragon foot strike or landing: a random recipe over differently shaped samples, so consecutive ones differ.
+    // An attack stomp, a slam or a landing: a random recipe over differently shaped samples. Neighbours differ by more than tilt:
+    // the colour alternates dark and bright, the recipe and the transient layer never repeat twice in a row, and the pitch moves within +-2 semitones.
     // The sound sits halfway between the contact and the body centre, so the feet's sideways offsets pan less hard.
     FVector At=AtIn;
     if(const AVeyrDragon* D=Dragon.Get())At=FMath::Lerp(AtIn,FVector(D->GetActorLocation().X,D->GetActorLocation().Y,AtIn.Z),.5f);
-    const int32 R=Rand.RandRange(0,3);
+    bTiltBrightNext=!bTiltBrightNext;
+    const uint8 Tilt=bTiltBrightNext?2:1;
+    int32 R=Rand.RandRange(0,3);
+    if(R==LastStompRecipe)R=(R+1+Rand.RandRange(0,2))%4;
+    LastStompRecipe=R;
+    int32 Tr=Rand.RandRange(0,2);
+    if(Tr==LastTransient)Tr=(Tr+1)%3;
+    LastTransient=Tr;
+    const float Semis=Rand.FRandRange(-2.f,2.f);
+    const float Pitch=FMath::Pow(2.f,Semis/12.f);
     const float Heavy=FMath::Lerp(.7f,.95f,S);
     const float Slip=Rand.FRandRange(0.f,.05f);
-    if(PlayCueEx(ECue::DragonStep,Heavy,EPlace::World,At,NAME_None,0.f,0.f,R==1||R==3?2:3))++DragonSteps;
-    if(R==0)PlayCueEx(ECue::Impact,FMath::Lerp(.6f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
-    else if(R==1)QueueCue(Slip,ECue::Exposed,FMath::Lerp(.5f,.85f,S),EPlace::World,At,NAME_None,0.f,0.f,2);
-    else if(R==2){QueueCue(.03f+Slip,ECue::DragonStep,.7f,EPlace::World,At,NAME_None,0.f,0.f,3,.8f);PlayCueEx(ECue::Impact,.55f,EPlace::World,At,NAME_None,0.f,0.f,2);}
-    else{PlayCueEx(ECue::Break,.55f,EPlace::World,At,NAME_None,0.f,0.f,3,1.1f);QueueCue(Slip,ECue::Impact,.5f,EPlace::World,At,NAME_None,0.f,0.f,2,1.15f);}
+    TiltMode=Tilt;
+    if(PlayCueEx(ECue::DragonStep,Heavy,EPlace::World,At,NAME_None,0.f,0.f,R==1||R==3?2:3,Pitch))++DragonSteps;
+    if(R==0)PlayCueEx(ECue::Impact,FMath::Lerp(.6f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,3,Pitch);
+    else if(R==1)QueueCue(Slip,ECue::Exposed,FMath::Lerp(.5f,.85f,S),EPlace::World,At,NAME_None,0.f,0.f,2,Pitch,Tilt);
+    else if(R==2){QueueCue(.03f+Slip,ECue::DragonStep,.7f,EPlace::World,At,NAME_None,0.f,0.f,3,.8f*Pitch,Tilt);PlayCueEx(ECue::Impact,.55f,EPlace::World,At,NAME_None,0.f,0.f,2,Pitch);}
+    else{PlayCueEx(ECue::Break,.55f,EPlace::World,At,NAME_None,0.f,0.f,3,1.1f*Pitch);QueueCue(Slip,ECue::Impact,.5f,EPlace::World,At,NAME_None,0.f,0.f,2,1.15f*Pitch,Tilt);}
+    TiltMode=0;
+    // A different transient layer each time: debris crackle, a break crack, or a late body.
+    if(Tr==0)QueueCue(.04f,ECue::Debris,FMath::Lerp(.5f,.95f,S),EPlace::World,At,NAME_None,0.f,0.f,1,Pitch,Tilt);
+    else if(Tr==1)QueueCue(.03f,ECue::Break,.45f,EPlace::World,At,NAME_None,0.f,0.f,1,Pitch);
+    else QueueCue(.08f,ECue::Exposed,.5f,EPlace::World,At,NAME_None,0.f,0.f,2,.9f*Pitch,Tilt);
     if(bLanding)PlayCueEx(ECue::Exposed,.9f,EPlace::World,At,NAME_None,0.f,0.f,3);
     if(S>.3f||bLanding){QueueCue(.1f,ECue::Debris,FMath::Lerp(.5f,.95f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?1:2);++DebrisSounds;}
 }
@@ -666,15 +701,21 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
     switch(C.Class)
     {
         case EVeyrGroundContactClass::Footfall:
-            if(S>=.65f)
+            // Which foot strikes are "strong": with -VeyrStompPass3 every Footfall with detector strength >= 0.65 (the speed into the floor, a curve that
+            // saturates early: about half the foot contacts of a fight reach 1.0) plays the heavy layers like an attack. With -VeyrStompHierarchy none do:
+            // a walking step is a lighter thump scaled by its strength, and only attacks (Stomp class = a foot in a strike state, slams, claws, tail, landing, falls) are heavy.
+            if(!bStompHierarchy&&S>=.65f)
             {
-                // A hard foot strike (many of them have strength 1.0): the heavy layers, not a background step.
                 TapEvent(TEXT("dragonStomp"));
                 PlayStompLayers(At,S,false);
                 break;
             }
             TapEvent(TEXT("dragonFootfall"));
-            if(PlayCueEx(ECue::DragonStep,S<.3f?.1f:FMath::Lerp(.14f,.4f,(S-.3f)/.35f),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
+            {
+                const float V=bStompHierarchy?FMath::Lerp(.1f,.5f,S):(S<.3f?.1f:FMath::Lerp(.14f,.4f,(S-.3f)/.35f));
+                if(PlayCueEx(ECue::DragonStep,V,EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
+                if(bStompHierarchy&&S>.7f)PlayCueEx(ECue::Impact,.18f,EPlace::World,At,NAME_None,0.f,0.f,3);
+            }
             break;
         case EVeyrGroundContactClass::Stomp:
             TapEvent(TEXT("dragonStomp"));
@@ -912,8 +953,12 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
         if(Beam&&!bFireBeamWas)
         {
             FireStartedAt=NowA;TapEvent(TEXT("fireIgnition"));
-            PlayCueEx(ECue::Impact,1.1f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3);
-            PlayCueEx(ECue::Debris,1.f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1,1.2f);
+            // The first flame frame: a sharp crack and a burst (mid and high), the low thump, the whoosh and then the sustained roar below.
+            // The small background and the music duck for a moment so the start rises out of them.
+            BackgroundDuckUntil=NowA+.4;MusicDuckTarget=.35f;MusicDuckUntil=GetWorld()->GetTimeSeconds()+.45;
+            PlayCueEx(ECue::Debris,1.3f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1,1.25f);
+            PlayCueEx(ECue::Break,1.f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1,1.3f);
+            PlayCueEx(ECue::Impact,1.2f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3);
             PlayCueEx(ECue::Breath,1.f,EPlace::Head);
             PlayCueEx(ECue::Fire,1.f,EPlace::Head);
         }

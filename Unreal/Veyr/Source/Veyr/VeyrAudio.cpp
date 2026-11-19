@@ -78,6 +78,8 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
         bNoMoveSounds=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonMoveSounds"));
         bContactAudio=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonContactSounds"));
         bLogCues=FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioLog"));
+        if(FParse::Param(FCommandLine::Get(),TEXT("VeyrStompHierarchy")))bStompHierarchy=true;
+        else if(FParse::Param(FCommandLine::Get(),TEXT("VeyrStompPass3")))bStompHierarchy=false;
         FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioMakeupDb="),MakeupDb);
         FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioTapOffsetDb="),TapOffsetDb);
         TapInit();
@@ -136,7 +138,7 @@ void AVeyrAudio::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     if(bAudioPolish&&Knight.IsValid()&&Dragon.IsValid())
     {
-        MusicDuckGain=FMath::FInterpTo(MusicDuckGain,GetWorld()->GetTimeSeconds()<MusicDuckUntil?.5f:1.f,DeltaSeconds,GetWorld()->GetTimeSeconds()<MusicDuckUntil?18.f:4.f);
+        MusicDuckGain=FMath::FInterpTo(MusicDuckGain,GetWorld()->GetTimeSeconds()<MusicDuckUntil?MusicDuckTarget:1.f,DeltaSeconds,GetWorld()->GetTimeSeconds()<MusicDuckUntil?18.f:4.f);
         const bool Playing=Knight->HasEnteredEncounter()&&!Knight->IsDead()&&!Dragon->IsDead();
         MusicEnvelope=FMath::FInterpTo(MusicEnvelope,Playing?1.f:0.f,DeltaSeconds,Playing?1.5f:4.f);
     }
