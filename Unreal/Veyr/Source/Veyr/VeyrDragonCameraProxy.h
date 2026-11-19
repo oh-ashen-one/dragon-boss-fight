@@ -48,6 +48,7 @@ public:
     FString Diagnostic;
     double UpdateSeconds=0.0;
 private:
+    friend class FVeyrDragonTrueSkin;
     struct FLocalBox { int32 Bone=INDEX_NONE; FTransform Local; FVector Half=FVector::ZeroVector; };
     TMap<TObjectKey<USkeletalMesh>,TArray<FLocalBox>> Table;
     TArray<FVeyrProxyWorldBox> World;
@@ -75,6 +76,10 @@ public:
     float NearestDistance(const FVector& P,float MaxDistance) const;
     /** Inside the closed skin: majority of three axis rays cross it an odd number of times. */
     bool InsideVolume(const FVector& P) const;
+    /** Refit every proxy box's extents along its bone-moved axes to the skinned vertices assigned to it (each vertex
+     * to one box of its dominant bone, chosen at rest), then grow by the proxy's margin. Exact containment: linear
+     * blend skinning moves blended vertices off their bones' rigid boxes (up to 210 cm at 2x in Collapse/Rise). */
+    bool Tighten(FVeyrDragonProxy& Proxy);
     /** Any skin triangle crossing the segment A->B. */
     bool SegmentBlocked(const FVector& A,const FVector& B) const;
     /** Proof against a proxy: worst outside distance of any vertex with the proxy's margin (should be 0) and with
@@ -89,9 +94,10 @@ private:
         FString Path; TArray<FVector3f> Positions; TArray<uint16> Bones; TArray<float> Weights; TArray<uint32> Indices;
         TArray<FName> BoneNames; TArray<FTransform> RefComp;
         TArray<int32> GroupOfTriangle; int32 GroupCount=0;
+        TArray<int32> BoxOfVertex; int32 BoxCountAssigned=-1;
     };
     TArray<FMesh> Meshes;
-    const FMesh* Current=nullptr;
+    FMesh* Current=nullptr;
     TArray<FVector> Skinned;
     TArray<FBox> GroupBounds;
     TArray<TArray<int32>> GroupTriangles;

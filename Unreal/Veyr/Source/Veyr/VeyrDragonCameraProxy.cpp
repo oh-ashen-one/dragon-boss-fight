@@ -208,7 +208,7 @@ bool FVeyrDragonTrueSkin::Skin(const UVeyrSkeletalPresentation* Presentation)
     if(Mesh!=SkinnedMesh)
     {
         Current=nullptr;const FString Path=Mesh?Mesh->GetPathName():FString();
-        for(const FMesh& M:Meshes)if(M.Path==Path){Current=&M;break;}
+        for(FMesh& M:Meshes)if(M.Path==Path){Current=&M;break;}
         SkinnedMesh=Mesh;
     }
     if(!Current)return false;
@@ -332,4 +332,54 @@ void FVeyrDragonTrueSkin::Prove(const FVeyrDragonProxy& Proxy,float& OutWorstWit
         if(Bare>OutWorstBare){OutWorstBare=Bare;}
         if(With>OutWorstWithMargin){OutWorstWithMargin=With;OutWorstPoint=P;}
     }
+}
+
+bool FVeyrDragonTrueSkin::Tighten(FVeyrDragonProxy& Proxy)
+{
+    if(!Current||!Proxy.IsValid()||Skinned.Num()!=Current->Positions.Num())return false;
+    const TArray<FVeyrDragonProxy::FLocalBox>* Local=Proxy.Resolve(Proxy.LastMesh.Get());
+    if(!Local||Local->Num()!=Proxy.World.Num())return false;
+    const int32 NV=Current->Positions.Num();
+    if(Current->BoxCountAssigned!=Local->Num())
+    {
+        // Each vertex to the box of its dominant bone that holds it at rest (nearest when none does).
+        TMap<int32,TArray<int32>> ByBone;for(int32 I=0;I<Local->Num();++I)ByBone.FindOrAdd((*Local)[I].Bone).Add(I);
+        const USkeletalMesh* Mesh=Proxy.LastMesh.Get();
+        const FReferenceSkeleton& Ref=Mesh->GetRefSkeleton();const TArray<FTransform>& L=Ref.GetRefBonePose();
+        TArray<FTransform> RefComp;RefComp.SetNum(Ref.GetNum());
+        for(int32 I=0;I<Ref.GetNum();++I){const int32 P=Ref.GetParentIndex(I);RefComp[I]=P==INDEX_NONE?L[I]:L[I]*RefComp[P];}
+        Current->BoxOfVertex.Init(INDEX_NONE,NV);
+        for(int32 V=0;V<NV;++V)
+        {
+            int32 Dom=0;for(int32 K=1;K<4;++K)if(Current->Weights[V*4+K]>Current->Weights[V*4+Dom])Dom=K;
+            const int32 Bone=Current->Bones[V*4+Dom];
+            const TArray<int32>* List=ByBone.Find(Bone);if(!List||!RefComp.IsValidIndex(Bone))continue;
+            const FVector BoneLocal=RefComp[Bone].InverseTransformPosition(FVector(Current->Positions[V]));
+            float Best=TNumericLimits<float>::Max();
+            for(const int32 I:*List)
+            {
+                const FVeyrDragonProxy::FLocalBox& B=(*Local)[I];
+                const FVector Q=B.Local.InverseTransformPosition(BoneLocal);double Sum=0;
+                for(int32 K=0;K<3;++K){const double D=FMath::Abs(Q[K])-B.Half[K];if(D>0)Sum+=D*D;}
+                if(Sum<Best){Best=static_cast<float>(Sum);Current->BoxOfVertex[V]=I;}
+            }
+        }
+        Current->BoxCountAssigned=Local->Num();
+    }
+    const int32 NB=Proxy.World.Num();
+    TArray<FVector> Lo,Hi;Lo.Init(FVector(1e30),NB);Hi.Init(FVector(-1e30),NB);
+    for(int32 V=0;V<NV;++V)
+    {
+        const int32 I=Current->BoxOfVertex[V];if(I==INDEX_NONE)continue;
+        const FVeyrProxyWorldBox& B=Proxy.World[I];const FVector D=Skinned[V]-B.Centre;
+        for(int32 K=0;K<3;++K){const double X=FVector::DotProduct(D,B.Axis[K]);Lo[I][K]=FMath::Min(Lo[I][K],X);Hi[I][K]=FMath::Max(Hi[I][K],X);}
+    }
+    for(int32 I=0;I<NB;++I)
+    {
+        if(Lo[I].X>Hi[I].X)continue; // no vertex of its own: keep the bone-moved box
+        FVeyrProxyWorldBox& B=Proxy.World[I];FVector Shift=FVector::ZeroVector;
+        for(int32 K=0;K<3;++K){Shift+=B.Axis[K]*((Lo[I][K]+Hi[I][K])*.5);B.Half[K]=(Hi[I][K]-Lo[I][K])*.5+Proxy.CurrentMargin;}
+        B.Centre+=Shift;
+    }
+    return true;
 }

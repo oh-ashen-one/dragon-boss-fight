@@ -17,12 +17,17 @@
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Misc/CommandLine.h"
 
 bool UVeyrCameraBoom::UpdateProxy()
 {
     AVeyrDragon* D=Dragon.Get();
     UVeyrSkeletalPresentation* P=D&&D->bUsingCustomuseVisual?D->ImportedPresentation.Get():nullptr;
-    return Proxy.Update(P,RigProxyMarginCm*DragonScale());
+    if(!Proxy.Update(P,RigProxyMarginCm*DragonScale()))return false;
+    // Extents follow the drawn skin this frame (-VeyrRigBoneBoxes keeps the bone-moved boxes only).
+    static const bool bBoneOnly=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigBoneBoxes"));
+    if(!bBoneOnly){FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();if(True.Skin(P))bProxyTight=True.Tighten(Proxy);}
+    return true;
 }
 
 float UVeyrCameraBoom::RigSweep(const FVector& From,const FVector& To,float Radius) const
@@ -73,6 +78,8 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     FRotator Want=Control;
     const float ControlPitch=static_cast<float>(Want.Pitch);
     Want.Pitch=FMath::Max(FMath::Min(ControlPitch,FMath::Lerp(ControlPitch,-RigAssistDownDeg,AssistS)),-RigMaxDownDeg);
+    // Looking up (lock-on at a high or flying dragon) stops where his body would leave the bottom of the frame.
+    Want.Pitch=FMath::Min(static_cast<float>(Want.Pitch),RigMaxUpDeg);
     const FQuat WantQ=Want.Quaternion();
     if(!bRigRot){RigRot=WantQ;bRigRot=true;}
     else
@@ -127,7 +134,7 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     SetKnightHiddenByCamera(bRigHide);
     if(OverS>.01f)++FramingSearches;
     // View: turn-rate limited again after the blends, never steeper than RigMaxDownDeg.
-    FRotator VR=View.Rotator();VR.Roll=0.f;VR.Pitch=FMath::Max(static_cast<float>(VR.Pitch),-RigMaxDownDeg);View=VR.Quaternion();
+    FRotator VR=View.Rotator();VR.Roll=0.f;VR.Pitch=FMath::Clamp(static_cast<float>(VR.Pitch),-RigMaxDownDeg,RigMaxUpDeg);View=VR.Quaternion();
     if(bSafeLastView)
     {
         const float MaxTurn=(RigTurnRateDegPerSec+10.f)*FMath::Max(Dt,1.f/240.f);

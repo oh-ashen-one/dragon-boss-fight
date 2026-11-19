@@ -31,7 +31,7 @@ void UVeyrCameraBoom::BeginPlay()
     FParse::Value(Cmd,TEXT("VeyrRigMargin="),RigProxyMarginCm);FParse::Value(Cmd,TEXT("VeyrRigLens="),RigLensRadiusCm);
     FParse::Value(Cmd,TEXT("VeyrRigShortArm="),RigShortArmCm);FParse::Value(Cmd,TEXT("VeyrRigHide="),RigHideCm);
     FParse::Value(Cmd,TEXT("VeyrRigOverUp="),RigOverheadUpCm);FParse::Value(Cmd,TEXT("VeyrRigOverBack="),RigOverheadBackCm);
-    FParse::Value(Cmd,TEXT("VeyrRigOverPitch="),RigOverheadPitchDeg);FParse::Value(Cmd,TEXT("VeyrRigAssistDown="),RigAssistDownDeg);
+    FParse::Value(Cmd,TEXT("VeyrRigOverPitch="),RigOverheadPitchDeg);FParse::Value(Cmd,TEXT("VeyrRigAssistDown="),RigAssistDownDeg);FParse::Value(Cmd,TEXT("VeyrRigMaxUp="),RigMaxUpDeg);
     FParse::Value(Cmd,TEXT("VeyrRigFootprint="),RigFootprintCm);FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
     // Fourth pass: the knight stays inside the central 80 % of the frame; the lens may open further.
     if(!bLegacySafety){KnightScreenMargin=FMath::Max(KnightScreenMargin,.1f);MaxFovBoostDeg=FMath::Max(MaxFovBoostDeg,14.f);}
@@ -923,6 +923,7 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     }
     A.OutsideCentre+=Centre<4;A.KnightInFrame+=InFrame>=4&&!bRuleHidden;
     if(!bRuleHidden){++A.VisibleFrames;A.KnightInFrameVisible+=InFrame>=4;}
+    if(!bRuleHidden&&InFrame<4){Note(A.OutFrameSeconds,Seconds);A.OutFrameNear+=Surface<150.f;A.OutFramePitchUp+=View.Pitch>5.f;A.OutFrameOverhead+=OverheadAlpha>.5f;A.OutFrameDistanceSum+=Surface;}
     const bool bHalf=Seen*2>=7;A.HalfVisible+=bHalf;
     const bool bHidden=Seen==0;A.FullyHidden+=bHidden;
     A.HiddenRunSeconds=bHidden?A.HiddenRunSeconds+Dt:0.f;A.LongestHiddenSeconds=FMath::Max(A.LongestHiddenSeconds,A.HiddenRunSeconds);
@@ -965,10 +966,11 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
     N(TEXT("hiddenByCameraRuleFrames"),A.HiddenByRule);N(TEXT("hiddenByCameraRuleShare"),A.Frames?static_cast<double>(A.HiddenByRule)/A.Frames:0.0);
     N(TEXT("insideKnightVisibleFrames"),A.InsideKnightVisible);
     N(TEXT("knightInFrameShareOfVisibleFrames"),A.VisibleFrames?static_cast<double>(A.KnightInFrameVisible)/A.VisibleFrames:0.0);
-    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
+    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);
+    {const int32 Out=A.VisibleFrames-A.KnightInFrameVisible;N(TEXT("outOfFrameVisibleFrames"),Out);N(TEXT("outOfFrameNearFrames"),A.OutFrameNear);N(TEXT("outOfFramePitchUpFrames"),A.OutFramePitchUp);N(TEXT("outOfFrameOverheadFrames"),A.OutFrameOverhead);N(TEXT("outOfFrameMeanDistanceCm"),Out?A.OutFrameDistanceSum/Out:0.0);}Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);
     N(TEXT("rigOverheadFrames"),RigOverheadFrames);N(TEXT("rigHiddenFrames"),RigHiddenFrames);N(TEXT("rigPivotLiftFrames"),RigPivotLiftFrames);
-    N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());
+    N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());N(TEXT("trueSkinMs"),FVeyrDragonTrueSkin::Get().SkinSeconds*1000.0);O->SetBoolField(TEXT("rigProxyTight"),bProxyTight);
     O->SetStringField(TEXT("rigProxy"),Proxy.Diagnostic);N(TEXT("rigProxyMarginCm"),RigProxyMarginCm*DragonScale());N(TEXT("rigLensRadiusCm"),RigLensRadiusCm);
     O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight, whole replay (held by the replay, survives restart); seconds are replay seconds; visible = 7 knight points inside the central 80 % with no dragon skin (shapes, interior, wings) in between; jumps = >150 cm or >12 deg in one frame, knight blinks excluded"));
     return O;
@@ -984,6 +986,8 @@ void UVeyrCameraBoom::ProveProxy(FVeyrProxyProof& P,float Seconds)
     if(!True.Skin(Pres))return;
     const double Start=FPlatformTime::Seconds();
     if(!ProofProxy.Update(Pres,RigProxyMarginCm*DragonScale()))return;
+    static const bool bBoneOnly=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigBoneBoxes"));
+    if(!bBoneOnly)True.Tighten(ProofProxy);
     const double Spent=FPlatformTime::Seconds()-Start;P.ProxySeconds+=Spent;P.ProxyMaxSeconds=FMath::Max(P.ProxyMaxSeconds,Spent);
     float With=0.f,Bare=0.f;int32 Tested=0,Outside=0;FVector Worst;
     True.Prove(ProofProxy,With,Bare,Tested,Outside,Worst);
