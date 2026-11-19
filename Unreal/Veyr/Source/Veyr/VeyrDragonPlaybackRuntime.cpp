@@ -141,7 +141,9 @@ void AVeyrDragon::InitPlayback()
     bSlowSnapTurn=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
     bInertialBlend=bTwoClipBlend&&!FParse::Param(Cmd,TEXT("VeyrCrossfadeBlend"));
-    bProcSteps=bFootLock&&!FParse::Param(Cmd,TEXT("VeyrNoProceduralSteps"));
+    // Gate 1 (round 2, 17:10): v3 stepping slid more than round 1's foot lock in turns, walk and wind-ups, so it is
+    // opt-in; the default keeps round 1's foot lock. -VeyrNoProceduralSteps stays accepted (and wins).
+    bProcSteps=bFootLock&&FParse::Param(Cmd,TEXT("VeyrDragonProceduralSteps"))&&!FParse::Param(Cmd,TEXT("VeyrNoProceduralSteps"));
     bHeadYawLimit=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoHeadYawLimit"));
     FParse::Value(Cmd,TEXT("VeyrHeadYawMaxDps="),HeadYawMaxDps);HeadYawMaxDps=FMath::Clamp(HeadYawMaxDps,60.f,2000.f);
     UE_LOG(LogTemp,Display,TEXT("VEYR_DRAGON_PLAYBACK loaded=%d tempo=%d blend=%d footlock=%d slowturn=%d roottracks=%d %s"),
