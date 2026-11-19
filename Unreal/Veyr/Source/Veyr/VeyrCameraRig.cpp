@@ -89,9 +89,9 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     FVector Pivot(KB.X,KB.Y,FMath::Min(Foot.Z+RigPivotHeightCm,Top.Z-10.0));
     if(Proxy.IsValid())
     {
-        // The boxes only flag it; the drawn skin decides: a pivot outside the closed skin by the lens radius stays
-        // (bent legs / belly boxes claim free space and lifted the view over the dragon's back). -VeyrRigProxyLift restores.
-        static const bool bProxyLift=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigProxyLift"));
+        // Optional (-VeyrRigSkinLift): let the drawn skin decide the lift. Measured worse and kept off: the unlifted
+        // pivot stays beside the leg, the lens sits on the pale toes and the hide rule rises 0 % -> 3.4-3.8 % (film 3).
+        static const bool bProxyLift=!FParse::Param(FCommandLine::Get(),TEXT("VeyrRigSkinLift"));
         const FVeyrDragonTrueSkin& TrueLift=FVeyrDragonTrueSkin::Get();
         const bool bSkinClear=!bProxyLift&&bProxyTight&&Proxy.Contains(Pivot,R)&&!TrueLift.InsideVolume(Pivot)&&TrueLift.NearestDistance(Pivot,R+1.f)>=R;
         const float Lift=bSkinClear?0.f:Proxy.FreeAbove(Pivot,R,4000.f*S);
