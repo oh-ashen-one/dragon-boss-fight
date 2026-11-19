@@ -387,8 +387,9 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
             if(F.bLocked)
             {
                 const float Drag=static_cast<float>(FVector::Dist2D(F.Pin,Anchor));
-                // Lifting in the clip releases; dragged on the floor (body turn or travel) takes an eased step instead.
-                if(Height>T.ReleaseHeightCm*S||(Height>T.PlantHeightCm*S&&Drag>T.DragReleaseCm*S))
+                // Lifting in the clip releases. Dragged near the floor (body turn or travel) always takes the lifted step:
+                // a flat release there slid the paw 30 cm along the floor in 0.12 s (TurnLeft 557 cm/s, package 5).
+                if(Height>T.ReleaseHeightCm*S)
                 {F.bLocked=false;F.bReleasing=true;F.T=0.f;F.From=F.Pin;}
                 else if(Drag>T.SlipCm*S)
                 {
