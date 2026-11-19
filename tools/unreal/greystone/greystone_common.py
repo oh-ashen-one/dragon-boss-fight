@@ -229,16 +229,16 @@ def angle_deg(q):
 GS_ANIMS = PACK + '/Characters/Heroes/Greystone/Animations/'
 NATIVE = {
     'Idle': ('Idle', 'loop'),
+    # Run* are the 580 cm/s sprint clips in game. Jog_Fwd (402 cm/s planted, world) plays at 1.44x: 0.9 s cycle.
+    # TravelMode_Fwd (996 cm/s) would play at 0.58x, a 1.84 s cycle that reads as slow motion (measured 2026-11-19).
     'Run': ('Jog_Fwd', 'loop'),
     'RunAlternate': ('Jog_Fwd', 'loop'),
     'RunOneHandPlanted': ('Jog_Fwd', 'loop'),
     'RunStop': ('Jog_Fwd_Stop', 'stop'),
     'RunStopOneHandSourced': ('Jog_Fwd_Stop', 'stop'),
-    'Backpedal': ('Jog_Bwd', 'loop'),
     'StrafeRunLeft': ('Jog_Left', 'loop'),
     'StrafeRunRight': ('Jog_Right', 'loop'),
     'LightAttack': ('Attack_PrimaryA', 'attack'),
-    'LeapAttackSourced': ('Jump_Melee', 'attack'),
     'Death': ('Death', 'oneshot'),
     'Stagger': ('HitReact_Front', 'oneshot'),
     'StaggerFront': ('HitReact_Front', 'oneshot'),
@@ -251,6 +251,9 @@ NATIVE_CANDIDATES = {
     'HeavyAttack': ['Attack_RMB', 'Ability_Q'], 'HeavyAttackAlternate': ['Attack_RMB', 'Ability_Q'],
     'StrafeLeft': ['Jog_Left'], 'StrafeRight': ['Jog_Right'], 'BackpedalStep': ['Jog_Bwd_Start'],
     'GuardBreak': ['Stun_Start'], 'RunningAttackSourced': ['Attack_PrimaryB'],
+    # Retargeted after W5 (2026-11-19): the knight's Backpedal is a 60 cm/s walk-back (Jog_Bwd would play at 0.24x);
+    # Jump_Melee is 1.07 s against the knight's 2.82 s leap with the hit at 1.10 s (outside the 0.75-1.35 rate band).
+    'Backpedal': ['Jog_Bwd', 'TravelMode_Bwd'], 'LeapAttackSourced': ['Jump_Melee'],
 }
 # E3 trial: idle, run (with stop), one attack, one roll. Only Roll is retargeted from KnightB.
 TRIAL_NATIVE = ('Idle', 'Run', 'RunOneHandPlanted', 'RunStop', 'RunStopOneHandSourced', 'LightAttack')

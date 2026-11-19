@@ -156,9 +156,13 @@ for key in native_keys:
     if role == 'loop':
         speed = n['footSpeedCmPerSecond'] * g_rel[2]
         prop(clip, 'start_seconds', 0.0, True); prop(clip, 'end_seconds', -1.0, True); prop(clip, 'b_loop', True, True)
-        prop(clip, 'gameplay_play_rate', 1.0, True)
-        if speed > 1.0:
-            prop(clip, 'nominal_speed_cm_per_second', speed, True)   # world cm/s at 244 cm; gameplay speed unchanged
+        # Keep the knight's nominal: lock-on strafe speed is derived from it (LockOnSpeedCap), so gameplay speed stays
+        # the knight's. The stride difference goes into the play rate: source advance = speed / nominal * rate
+        # = speed / Greystone's planted-foot speed, so his feet stay planted.
+        knight_nominal = prop(src, 'nominal_speed_cm_per_second') or 0.0
+        rate = min(4.0, max(0.1, knight_nominal / speed)) if knight_nominal > 1.0 and speed > 1.0 else 1.0
+        prop(clip, 'gameplay_play_rate', rate, True)
+        row.update(rate=rate)
         root, yaw = [unreal.Vector(*p) for p in n['rootSamples']], n['rootYawSamples']
         clip.set_editor_property('root_translation_samples_cm', root)
         prop(clip, 'root_yaw_samples_degrees', yaw, True); prop(clip, 'root_sample_rate', n['rootSampleRate'], True)
