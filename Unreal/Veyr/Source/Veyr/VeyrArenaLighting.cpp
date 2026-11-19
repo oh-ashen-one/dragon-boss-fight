@@ -107,7 +107,7 @@ void AVeyrArena::BuildRelitLighting()
         Gate->SetRelativeLocation(From);Gate->SetRelativeRotation((To-From).Rotation());
         Gate->SetIntensityUnits(ELightUnits::Candelas);Gate->SetIntensity(VeyrLook::Tune(TEXT("gate"),2600.f));
         Gate->SetLightColor(FLinearColor(1.f,.62f,.32f),false);Gate->SetAttenuationRadius(4200.f);
-        Gate->SetInnerConeAngle(10.f);Gate->SetOuterConeAngle(26.f);Gate->SetCastShadows(false);Gate->SetVolumetricScatteringIntensity(VeyrLook::Tune(TEXT("gatefog"),.4f));
+        Gate->SetInnerConeAngle(10.f);Gate->SetOuterConeAngle(26.f);Gate->SetCastShadows(false);Gate->SetVolumetricScatteringIntensity(VeyrLook::Tune(TEXT("gatefog"),0.f));
         Gate->RegisterComponent();
     }
     BuildDepthDressing();
