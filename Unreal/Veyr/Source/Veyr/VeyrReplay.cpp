@@ -2066,7 +2066,11 @@ void AVeyrReplay::TrackFlightWithLookInput()
        (Dragon->State!=EVeyrDragonState::Windup&&Dragon->State!=EVeyrDragonState::Active&&Dragon->State!=EVeyrDragonState::Recovery))return;
     APlayerController* PC=Cast<APlayerController>(Knight->GetController());
     if(!PC||!Knight->CombatCamera)return;
-    const FRotator Aim=(Dragon->GetHeadLocation()-Knight->CombatCamera->GetComponentLocation()).Rotation();
+    // Aim from the camera arm's pivot (on the knight), not the camera: where the camera sits after collision
+    // must not change the scripted fight. -VeyrLegacyFlightAim restores the camera origin.
+    static const bool bLegacyAim=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyFlightAim"));
+    const FVector From=bLegacyAim||!Knight->CameraBoom?Knight->CombatCamera->GetComponentLocation():Knight->CameraBoom->GetComponentLocation();
+    const FRotator Aim=(Dragon->GetHeadLocation()-From).Rotation();
     const FRotator View=PC->GetControlRotation();
     const bool Legacy=UInputSettings::GetInputSettings()->bEnableLegacyInputScales;
     const float YawScale=Legacy?PC->InputYawScale_DEPRECATED:1.f,PitchScale=Legacy?PC->InputPitchScale_DEPRECATED:1.f;
