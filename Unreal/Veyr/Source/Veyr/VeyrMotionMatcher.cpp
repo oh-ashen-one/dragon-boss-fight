@@ -323,8 +323,15 @@ bool FVeyrMotionMatcher::SearchFallback(const USkeletalMeshComponent* Mesh,EVeyr
     if(Best==INDEX_NONE)return false;
     // Current cost: the row nearest the current clip time, same clip.
     float CurrentCost=MAX_flt;
+    // Only rows that belong to the active gate count: a jog loop is never "good enough" to stay on once the gate is
+    // Idle or Stop (2026-11-19T20:21 jog-set proof: it stayed on Jog_Fwd_Circle_Left through every later sequence,
+    // because the shown pose always matches its own clip best). Looped clips wrap the clip time.
+    const uint8 GateBit=uint8(1u<<static_cast<uint8>(Gate));
+    float ClipEnd=0.f;
+    if(Current.bFromFallback)for(const auto& Row:Fallback.Rows)if(Row.Clip==Current.FallbackClip)ClipEnd=FMath::Max(ClipEnd,Row.Time);
+    const float CurrentTime=ClipEnd>0.f&&Current.Time>ClipEnd+.05f?FMath::Fmod(Current.Time,ClipEnd):Current.Time;
     if(Current.bFromFallback)for(const auto& Row:Fallback.Rows)
-        if(Row.Clip==Current.FallbackClip&&FMath::Abs(Row.Time-Current.Time)<.05f)CurrentCost=FMath::Min(CurrentCost,Fallback.Cost(Q,Row));
+        if((Row.GateMask&GateBit)&&Row.Clip==Current.FallbackClip&&FMath::Abs(Row.Time-CurrentTime)<.05f)CurrentCost=FMath::Min(CurrentCost,Fallback.Cost(Q,Row));
     Out=FVeyrMotionChoice();
     Out.FallbackClip=Fallback.Rows[Best].Clip;Out.Time=Fallback.Rows[Best].Time;Out.Cost=BestCost;Out.bFromFallback=true;
     // Reference hysteresis: switch only if the current pose is clearly worse.
