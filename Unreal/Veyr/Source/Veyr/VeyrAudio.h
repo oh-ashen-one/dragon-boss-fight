@@ -85,6 +85,8 @@ private:
     float Durations[CueCount] = {};
     double LastCueTimes[CueCount] = {};
     double VoiceEndTimes[TotalVoices] = {};
+    double VoiceStartTimes[TotalVoices] = {};
+    float VoicePeakAmp[TotalVoices] = {}; // recorded-master peak amplitude of the voice (Level x master x effects x engine factor x sample peak)
     int32 LastLight = 0, LastHeavy = 0, LastSwordContact = 0, LastHeadBonus = 0;
     int32 LastHitsTaken = 0, LastGuardedHits = 0, LastHeals = 0, LastCollapses = 0, LastFireAttacks = 0;
     EVeyrKnightAction LastSwingAction=EVeyrKnightAction::Ready;
@@ -108,7 +110,7 @@ private:
         int32 Last=-1;
         bool bMissingLogged=false;
     };
-    struct FTimedEvent { float Pos=0.f; bool bPhase=true; ECue Cue=ECue::Count; float Level=1.f; FName Where=NAME_None; };
+    struct FTimedEvent { float Pos=0.f; bool bPhase=true; ECue Cue=ECue::Count; float Level=1.f; FName Where=NAME_None; uint8 Role=0; float PitchMul=1.f; };
     struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; uint8 Role=0; float PitchMul=1.f; };
     struct FExpect { bool bActive=false; double Deadline=0.0; ECue Cue=ECue::Count; float Volume=1.f; ECue Second=ECue::Count; float SecondVolume=1.f; };
 
@@ -147,11 +149,12 @@ private:
     struct FTapItem
     {
         double T=0.0; int32 Cue=0,Variant=0; float Volume=0.f,Level=0.f,Pitch=1.f,Dist=0.f,Gain=1.f,Seconds=0.f;
-        uint8 Place=0; bool bRandom=false; FString Label;
+        uint8 Place=0; bool bRandom=false; FString Label; float Pan=0.f;
         float PeakDb=-120.f,RmsDb=-120.f,MusicRmsDb=-120.f;
     };
     bool bTap=false,bAudition=false,bAuditionDone=false;
     int32 TapSession=0;
+    bool bFireBeamWas=false; double FireStartedAt=-100.0;
     FString TapLabel; // set around a timed-sound play: "<clip>@<phase or time>"
     FString TapDir;
     double TapT0=-1.0,TapMusicStart=-1.0,TapGainLast=-1.0;

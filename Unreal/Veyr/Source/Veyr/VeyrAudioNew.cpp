@@ -113,7 +113,7 @@ void AVeyrAudio::AddVariant(ECue Cue,TArray<int16>&& S)
     // Gain brings the variant's gated RMS to the target at the default master (0.65); the peak keeps it under -1 dBFS.
     // Targets are dBFS of the RECORDED master, so the engine's measured -9 dB is divided out here; the peak keeps a single voice near -1 dBFS there.
     float Gain=TargetDb<0.f?FMath::Pow(10.f,(TargetDb-MeasuredDb)/20.f)/(.65f*EngineFactor):1.f/(.65f*EngineFactor);
-    Gain=FMath::Min(Gain,.9f/(Peak*.65f*EngineFactor));
+    Gain=FMath::Min(Gain,.55f/(Peak*.65f*EngineFactor));
     B.Variants.Add(MoveTemp(S));B.Gains.Add(Gain);B.Peaks.Add(Peak);
     B.LowShare.Add(float(El/FMath::Max(E,1e-9)));B.HighShare.Add(float(Eh/FMath::Max(E,1e-9)));B.AttackMs.Add(AttackMs);
 }
@@ -273,10 +273,10 @@ void AVeyrAudio::ParseTimedSounds(const FString& Text,const TCHAR* Origin)
         {
             const TSharedPtr<FJsonObject>* E=nullptr;
             if(!V.IsValid()||!V->TryGetObject(E)||!E||!E->IsValid()){++Bad;continue;}
-            FString CueText,WhereText;double Phase=0,Time=0,Level=1;
+            FString CueText,WhereText,RoleText;double Phase=0,Time=0,Level=1,PitchD=1;
             (*E)->TryGetStringField(TEXT("cue"),CueText);(*E)->TryGetStringField(TEXT("where"),WhereText);
-            (*E)->TryGetNumberField(TEXT("level"),Level);
-            FTimedEvent Ev;Ev.Level=float(Level);Ev.Where=WhereText.IsEmpty()?FName(TEXT("head")):FName(*WhereText);
+            (*E)->TryGetNumberField(TEXT("level"),Level);(*E)->TryGetStringField(TEXT("role"),RoleText);(*E)->TryGetNumberField(TEXT("pitch"),PitchD);
+            FTimedEvent Ev;Ev.Level=float(Level);Ev.PitchMul=float(PitchD);Ev.Role=RoleText==TEXT("sharp")?1:RoleText==TEXT("body")?2:RoleText==TEXT("low")?3:0;Ev.Where=WhereText.IsEmpty()?FName(TEXT("head")):FName(*WhereText);
             if((*E)->TryGetNumberField(TEXT("phase"),Phase)){Ev.bPhase=true;Ev.Pos=float(Phase);}
             else if((*E)->TryGetNumberField(TEXT("time"),Time)){Ev.bPhase=false;Ev.Pos=float(Time);}
             else {++Bad;continue;}
@@ -399,7 +399,7 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 
     C.Level=FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter*FMath::Pow(10.f,MakeupDb/20.f);
     // Solo peak ceiling just under full scale after the master; the master limiter deals with sums.
     if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f)
-        C.Level=FMath::Min(C.Level,.9f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)*EngineFactor));
+        C.Level=FMath::Min(C.Level,.55f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)*EngineFactor));
     return true;
 }
 
@@ -458,11 +458,15 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     {TiltCopy(Bank.Variants[V],Tilted,Rand,float(SampleRate));Source=&Tilted;}
     const TArray<int16>& PCM=*Source;
     float Level=C.Level;
+    // Peak budget instead of a limiter: transients that start together (a stomp is four layers) are scaled so their peaks, if they
+    // coincided, stay under about -1.5 dBFS on the recorded master. Only voices started in the last 120 ms count (their peaks are still ahead or just passed).
     float Load=0.f;
-    for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0)Load+=VoiceLevels[I]*MasterVolume*EffectsVolume;
-    const float Amp=Level*MasterVolume*EffectsVolume;
-    if((Load+Amp)*EngineFactor>MaxLoad)Level=FMath::Max(Level*.4f,(MaxLoad/EngineFactor-Load)/FMath::Max(.05f,MasterVolume*EffectsVolume)); // the sum of voices stays bounded before the limiter
-
+    for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0&&Now-VoiceStartTimes[I]<.12)Load+=VoicePeakAmp[I];
+    const float PeakOfThis=Bank.Peaks.IsValidIndex(V)?Bank.Peaks[V]:1.f;
+    float PeakAmp=Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;
+    constexpr float PeakBudget=.84f;
+    if(Load+PeakAmp>PeakBudget&&PeakAmp>1e-4f){Level*=FMath::Max(.35f,(PeakBudget-Load)/PeakAmp);PeakAmp=Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;}
+    const bool bPeakTracked=true;(void)bPeakTracked;
     USoundWaveProcedural* Wave=NewObject<USoundWaveProcedural>(this);
     Wave->SetSampleRate(SampleRate);Wave->NumChannels=1;Wave->Duration=Seconds0;Wave->bLooping=false;Wave->SoundGroup=SOUNDGROUP_Effects;
     Wave->QueueAudio(reinterpret_cast<const uint8*>(PCM.GetData()),PCM.Num()*sizeof(int16));
@@ -501,7 +505,7 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
         float In=Inner,Fo=Falloff;if(In<=0.f||Fo<=0.f)DefaultRadius(Cue,In,Fo);
         TapAdd(Cue,PCM,V,Volume,Level,Pitch,Place,TapPos,In,Fo,Now-TapT0);
     }
-    VoiceEndTimes[Slot]=Now+Seconds+.15;
+    VoiceEndTimes[Slot]=Now+Seconds+.15;VoiceStartTimes[Slot]=Now;VoicePeakAmp[Slot]=PeakAmp;
     VoiceCue[Slot]=Index;
     LastCueTimes[Index]=Now;
     DurationLastPlayed=Seconds;
@@ -613,19 +617,29 @@ void AVeyrAudio::PlayWeaponHit(int32 Weight,bool bHead)
     PlayCueEx(ECue::Contact,W*1.4f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
     PlayCueEx(ECue::Guard,W*(bHead?.9f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
     PlayCueEx(ECue::ArmorHit,W*1.1f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
-    PlayCueEx(ECue::Impact,Weight>0||bHead?.85f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0?1.f:1.15f);
-    if(Weight>0||bHead)QueueCue(.015f,ECue::Exposed,.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.1f);
+    PlayCueEx(ECue::Impact,Weight>0||bHead?1.2f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0?1.f:1.15f);
+    if(Weight>0||bHead)
+    {
+        // Heavy and head hits: a second low body and a mid thump so all three bands rise, not only the highs.
+        PlayCueEx(ECue::Exposed,.9f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.05f);
+        QueueCue(.012f,ECue::DragonStep,.7f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2,1.2f);
+    }
 }
 
-void AVeyrAudio::PlayStompLayers(const FVector& At,float S,bool bLanding)
+void AVeyrAudio::PlayStompLayers(const FVector& AtIn,float S,bool bLanding)
 {
     // A dragon foot strike or landing: a random recipe over differently shaped samples, so consecutive ones differ.
-    const int32 R=Rand.RandRange(0,2);
+    // The sound sits halfway between the contact and the body centre, so the feet's sideways offsets pan less hard.
+    FVector At=AtIn;
+    if(const AVeyrDragon* D=Dragon.Get())At=FMath::Lerp(AtIn,FVector(D->GetActorLocation().X,D->GetActorLocation().Y,AtIn.Z),.5f);
+    const int32 R=Rand.RandRange(0,3);
     const float Heavy=FMath::Lerp(.7f,.95f,S);
-    if(PlayCueEx(ECue::DragonStep,Heavy,EPlace::World,At,NAME_None,0.f,0.f,R==1?2:3))++DragonSteps;
+    const float Slip=Rand.FRandRange(0.f,.05f);
+    if(PlayCueEx(ECue::DragonStep,Heavy,EPlace::World,At,NAME_None,0.f,0.f,R==1||R==3?2:3))++DragonSteps;
     if(R==0)PlayCueEx(ECue::Impact,FMath::Lerp(.6f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
-    else if(R==1)PlayCueEx(ECue::Exposed,FMath::Lerp(.5f,.85f,S),EPlace::World,At,NAME_None,0.f,0.f,2);
-    else{QueueCue(.03f,ECue::DragonStep,.7f,EPlace::World,At,NAME_None,0.f,0.f,3,.8f);PlayCueEx(ECue::Impact,.55f,EPlace::World,At,NAME_None,0.f,0.f,2);}
+    else if(R==1)QueueCue(Slip,ECue::Exposed,FMath::Lerp(.5f,.85f,S),EPlace::World,At,NAME_None,0.f,0.f,2);
+    else if(R==2){QueueCue(.03f+Slip,ECue::DragonStep,.7f,EPlace::World,At,NAME_None,0.f,0.f,3,.8f);PlayCueEx(ECue::Impact,.55f,EPlace::World,At,NAME_None,0.f,0.f,2);}
+    else{PlayCueEx(ECue::Break,.55f,EPlace::World,At,NAME_None,0.f,0.f,3,1.1f);QueueCue(Slip,ECue::Impact,.5f,EPlace::World,At,NAME_None,0.f,0.f,2,1.15f);}
     if(bLanding)PlayCueEx(ECue::Exposed,.9f,EPlace::World,At,NAME_None,0.f,0.f,3);
     if(S>.3f||bLanding){QueueCue(.1f,ECue::Debris,FMath::Lerp(.5f,.95f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?1:2);++DebrisSounds;}
 }
@@ -652,9 +666,15 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
     switch(C.Class)
     {
         case EVeyrGroundContactClass::Footfall:
+            if(S>=.65f)
+            {
+                // A hard foot strike (many of them have strength 1.0): the heavy layers, not a background step.
+                TapEvent(TEXT("dragonStomp"));
+                PlayStompLayers(At,S,false);
+                break;
+            }
             TapEvent(TEXT("dragonFootfall"));
-            if(PlayCueEx(ECue::DragonStep,FMath::Lerp(.12f,.3f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
-            if(S>.5f)PlayCueEx(ECue::Impact,FMath::Lerp(.1f,.3f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
+            if(PlayCueEx(ECue::DragonStep,S<.3f?.1f:FMath::Lerp(.14f,.4f,(S-.3f)/.35f),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
             break;
         case EVeyrGroundContactClass::Stomp:
             TapEvent(TEXT("dragonStomp"));
@@ -742,7 +762,7 @@ void AVeyrAudio::UpdateTimedSounds()
             // A jump into the middle of a clip (state seeded late) must not replay what was skipped.
             if(Prev<0.f&&Now-E.Pos>(E.bPhase?.3f:.45f)){++TimedEventsSkipped;continue;}
             if(bTap)TapLabel=FString::Printf(TEXT("%s@%s%.2f"),*ClipName,E.bPhase?TEXT("p"):TEXT("t"),Now);
-            const bool bPlayed=PlayCueEx(E.Cue,E.Level,EPlace::Part,FVector::ZeroVector,E.Where);
+            const bool bPlayed=PlayCueEx(E.Cue,E.Level,EPlace::Part,FVector::ZeroVector,E.Where,0.f,0.f,E.Role,E.PitchMul);
             TapLabel.Reset();
             if(bPlayed)
             {++TimedEventsFired;if(E.Cue==ECue::DragonSwing)bSwingFromData=true;}
@@ -885,8 +905,22 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
         if(D->IsAirborne()&&WingClock<=0.f){PlayCueEx(ECue::Wing,.8f,EPlace::Head);WingClock=1.f;}
         if(RoarClock<=0.f&&D->State==EVeyrDragonState::Windup){PlayCueEx(ECue::Roar,.85f,EPlace::Head);RoarClock=17.f;}
     }
-    if(D->Move==EVeyrDragonMove::FlyAway&&D->GetActiveFlameBeam().bDamaging)
-    {if(AudioNow()-LastCueTimes[static_cast<int32>(ECue::Fire)]>3.f)PlayCueEx(ECue::Fire,1.f,EPlace::Head);}
+    // Flame: the ignition on the first frame the flame exists, then the roar re-triggered while it burns (ground fire and the flight jet alike).
+    {
+        const bool Beam=D->GetActiveFlameBeam().bDamaging;
+        const double NowA=AudioNow();
+        if(Beam&&!bFireBeamWas)
+        {
+            FireStartedAt=NowA;TapEvent(TEXT("fireIgnition"));
+            PlayCueEx(ECue::Impact,1.1f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3);
+            PlayCueEx(ECue::Debris,1.f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1,1.2f);
+            PlayCueEx(ECue::Breath,1.f,EPlace::Head);
+            PlayCueEx(ECue::Fire,1.f,EPlace::Head);
+        }
+        else if(Beam&&NowA-LastCueTimes[static_cast<int32>(ECue::Fire)]>FMath::Max(1.2f,Banks[static_cast<int32>(ECue::Fire)].Variants.IsEmpty()?1.2f:float(Banks[static_cast<int32>(ECue::Fire)].Variants[0].Num())/SampleRate-.4f))
+            PlayCueEx(ECue::Fire,1.f,EPlace::Head);
+        bFireBeamWas=Beam;
+    }
     // Fire and take-off threat calls only; no roar on every wind-up (the existing rule).
     if(bDragonLibraryLoaded&&D->State==EVeyrDragonState::Windup&&RoarClock<=0.f&&
        (D->Move==EVeyrDragonMove::Fire||D->Move==EVeyrDragonMove::FlyAway))
@@ -956,15 +990,7 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
         else if(D->State==EVeyrDragonState::Buckle)PlayCueEx(ECue::DragonPain,.8f,EPlace::Head);
         else if(D->State==EVeyrDragonState::Active)
         {
-            if(D->Move==EVeyrDragonMove::Fire)
-            {
-                // Ignition onset (low thump, crackle, whoosh) and then the sustained roar of the flame.
-                TapEvent(TEXT("fireIgnition"));
-                PlayCueEx(ECue::Impact,.8f,EPlace::Head,FVector::ZeroVector,NAME_None,0.f,0.f,3);
-                PlayCueEx(ECue::Debris,.8f,EPlace::Head,FVector::ZeroVector,NAME_None,0.f,0.f,1,1.2f);
-                QueueCue(.12f,ECue::Breath,1.f,EPlace::Head);
-                PlayCueEx(ECue::Fire,1.f,EPlace::Head);
-            }
+            if(D->Move==EVeyrDragonMove::Fire&&!D->GetActiveFlameBeam().bDamaging){} // the flame's own first frame fires the ignition below
             else if(D->Move==EVeyrDragonMove::Bite)PlayCueEx(ECue::DragonGrowl,.65f,EPlace::Head);
             else if(D->Move==EVeyrDragonMove::BackStomp)ArmExpect(2,.8f,ECue::Impact,.9f);
             else if(D->Move!=EVeyrDragonMove::FlyAway&&(bNoMoveSounds||!bSwingFromData))PlayCueEx(ECue::DragonSwing,.9f,EPlace::Body);
