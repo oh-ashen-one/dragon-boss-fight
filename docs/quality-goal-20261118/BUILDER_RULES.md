@@ -62,6 +62,13 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
 - Own only processes you started. Stop a driver script first, then SIGTERM the game and wait up to 60 s; SIGKILL only
   if it is still alive. Never relaunch automatically after two crashes: stop and report. No tool that raises an OS
   dialog. No computer-use or mouse control.
+- **Disk.** Every package leaves a 1.7 GB verified bundle in `/private/tmp`, about 3 GB of archives under `Builds/` and
+  `Local/package-*`, and (until `package.py` at the goal branch of 2026-11-19 17:35 or later is merged into your branch) a 2.9 GB stage
+  folder. On 2026-11-19 at 17:11 ET this filled the data volume and broke a package. After every successful package:
+  `python3 tools/unreal/cleanup_packages.py --keep-app <the app you run now> --report Local/cleanup-<stamp>.json --apply`
+  from your own worktree, and delete your own raw frame dumps once the film is encoded and checked. Check
+  `df -h /System/Volumes/Data` before each package; under 40 GB free, stop and clean your own artefacts first. Only your
+  own worktree and your own bundles: never anything of another session.
 - Do not delete evidence folders younger than an hour (the launch budget counts their receipts).
 - Do not touch other sessions' files, branches, worktrees or processes.
 
