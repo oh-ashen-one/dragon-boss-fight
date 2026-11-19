@@ -455,8 +455,9 @@ private:
     // -VeyrGreystoneNoFootLock restores the unlocked presentation; -VeyrGreystoneFeet keeps the KnightB clean-up.
     struct FGreystoneFootLock
     {
-        bool bLocked=false,bReleasing=false,bHasPrevious=false,bWasLifted=true;
+        bool bLocked=false,bReleasing=false,bHasPrevious=false,bWasLifted=true,bStepped=false;
         FVector Anchor=FVector::ZeroVector,PreviousRawToe=FVector::ZeroVector;
+        FTransform AnchorAnkle=FTransform::Identity; // world ankle pose held while planted (v3: rotation too)
         float ReleaseSeconds=0.f,ReleaseLiftCm=0.f,Weight=0.f;
     };
     FGreystoneFootLock GreystoneFeet[2];

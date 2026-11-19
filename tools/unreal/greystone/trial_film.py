@@ -55,8 +55,9 @@ stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 out = a.root.resolve() / 'Local/greystone' / f'trial-film-{stamp}'
 out.mkdir(parents=True)
 pairs = []
-for name in k_seq:
-    left, right = k_dir / f'{name}.mp4', g_dir / f'{name}.mp4'
+for index, name in enumerate(k_seq, 1):
+    # blendproof_encode names per-sequence media '<NN>-<name>.mp4' (NN = 1-based sequence order).
+    left, right = (d / f'{index:02d}-{name}.mp4' for d in (k_dir, g_dir))
     if not left.is_file() or not right.is_file():
         pairs.append({'name': name, 'skipped': 'missing ' + ('left' if not left.is_file() else 'right')})
         continue

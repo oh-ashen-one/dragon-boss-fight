@@ -71,9 +71,9 @@ bool AVeyrKnight::UpdateGreystoneFootLock(float DeltaSeconds)
         }
         // Engage on a foot the clip plants (low and still), or on any low foot when a cross-fade starts or runs;
         // after a stepped release the foot must have been lifted or come to rest before it can lock again.
-        if(!F.bLocked&&Low&&(RawSpeed<PlantSpeedCmPerSecond||(Fading&&F.bWasLifted)))
+        if(!F.bLocked&&Low&&(RawSpeed<PlantSpeedCmPerSecond||Fading||F.bWasLifted||F.bStepped))
         {
-            F.bLocked=true;F.bReleasing=false;F.Anchor=RawToe;F.Weight=1.f;F.bWasLifted=false;
+            F.bLocked=true;F.bReleasing=false;F.bStepped=false;F.Anchor=RawToe;F.AnchorAnkle=RawAnkle;F.Weight=1.f;F.bWasLifted=false;
         }
         if(!F.bLocked){F.Weight=0.f;Targets.Add(FTransform::Identity);Weights.Add(0.f);continue;}
         FVector Desired=F.Anchor;
@@ -84,10 +84,18 @@ bool AVeyrKnight::UpdateGreystoneFootLock(float DeltaSeconds)
             Desired=FMath::Lerp(F.Anchor,RawToe,S);
             Desired.Z=FMath::Lerp(F.Anchor.Z,RawToe.Z,S)+F.ReleaseLiftCm*FMath::Sin(PI*U);
             F.Weight=1.f-S;
-            if(U>=1.f){F.bLocked=F.bReleasing=false;F.Weight=0.f;Targets.Add(FTransform::Identity);Weights.Add(0.f);continue;}
+            if(U>=1.f){F.bLocked=F.bReleasing=false;F.bStepped=F.ReleaseLiftCm>0.f;F.Weight=0.f;Targets.Add(FTransform::Identity);Weights.Add(0.f);continue;}
+            // Release: blend the held ankle pose to the clip's (position follows the toe path above, rotation slerps).
+            FTransform Target=AnkleCS;Target.AddToTranslation(ImportedPresentation->GetComponentTransform().InverseTransformVector(Desired-RawToe));
+            const FQuat HeldCS=ImportedPresentation->GetComponentTransform().InverseTransformRotation(F.AnchorAnkle.GetRotation());
+            Target.SetRotation(FQuat::Slerp(HeldCS,AnkleCS.GetRotation(),S).GetNormalized());
+            Targets.Add(Target);Weights.Add(1.f);Any=true;continue;
         }
-        else Desired.Z=FMath::Max(F.Anchor.Z,RawToe.Z); // a held foot may roll up onto the toe, never sink
-        FTransform Target=AnkleCS;Target.AddToTranslation(ImportedPresentation->GetComponentTransform().InverseTransformVector(Desired-RawToe));
+        // Held: the whole ankle pose stays where it was planted (the proof and the eye both see the ankle swing if only
+        // the ball is pinned). It may rise with the clip (heel/toe roll lifts it), never sink.
+        const FTransform& C=ImportedPresentation->GetComponentTransform();
+        FVector HeldAnkle=F.AnchorAnkle.GetLocation();HeldAnkle.Z=FMath::Max(HeldAnkle.Z,RawAnkle.GetLocation().Z);
+        FTransform Target(C.InverseTransformRotation(F.AnchorAnkle.GetRotation()),C.InverseTransformPosition(HeldAnkle),AnkleCS.GetScale3D());
         Targets.Add(Target);Weights.Add(1.f);Any=true;
     }
     if(!Any)return true;
