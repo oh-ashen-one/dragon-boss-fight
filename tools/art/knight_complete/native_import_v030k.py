@@ -1,7 +1,7 @@
 """Headless UE 5.8 Python commandlet driver for the knight completion bank (v030k).
 
-Run (no renderer, no listener):
-  UnrealEditor-Cmd Veyr.uproject -run=pythonscript -script=<this file> -nullrhi -unattended
+Run (no renderer, no listener; every engine launch goes through the engine lock):
+  python3 tools/unreal/engine_lock.py --label knight-import -- UnrealEditor-Cmd Veyr.uproject -run=pythonscript -script=<this file> -nullrhi -unattended
     -NoZenAutoLaunch -notraceserver -DDC=(EnginePak=InstalledEnginePak,Local)
 Steps: import the hash-locked active KnightB plan into KnightB/v030k (never replaces), verify that
 every inherited v029 clip and the original guard are unchanged, then promote it into

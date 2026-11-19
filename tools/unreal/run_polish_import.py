@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from engine_lock import engine_lock
 
 ROOT = Path(__file__).resolve().parents[2]
 ENGINE = Path('/Users/Shared/Epic Games/UE_5.8')
@@ -29,9 +30,12 @@ cmd = ['/usr/sbin/taskpolicy', '-b', str(ENGINE/'Engine/Binaries/Mac/UnrealEdito
        '-notraceserver', '-NoZenAutoLaunch', '-DDC=(EnginePak=InstalledEnginePak,Local)',
        '-LocalDataCachePath='+str(project.parent/'DerivedDataCache'), '-abslog='+str(out/'engine.log')]
 (out/'command.json').write_text(json.dumps(cmd, indent=2)+'\n')
-with (out/'launcher.log').open('w') as log:
-    code = subprocess.run(cmd, env={**os.environ, 'VEYR_NATIVE_IMPORT_JOB': str(out/'job.json')}, stdin=subprocess.DEVNULL,
-                          stdout=log, stderr=subprocess.STDOUT).returncode
+with engine_lock('run_polish_import ' + ROOT.name, tree=ROOT) as lock:  # machine-wide engine lock for the commandlet's life
+    with (out/'launcher.log').open('w') as log:
+        # env is built after the lock is taken so the child inherits VEYR_ENGINE_LOCK_HELD
+        code = lock.run(cmd, env={**os.environ, 'VEYR_NATIVE_IMPORT_JOB': str(out/'job.json')}, stdin=subprocess.DEVNULL,
+                        stdout=log, stderr=subprocess.STDOUT).returncode
+    lock.exit_code = code
 result = json.loads((out/'result.json').read_text()) if (out/'result.json').exists() else {}
 print('exit', code, 'stage', result.get('stage'), 'success', result.get('success'), result.get('error', ''))
 raise SystemExit(0 if result.get('success') else 1)
