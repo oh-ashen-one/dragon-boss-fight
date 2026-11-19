@@ -86,7 +86,7 @@ def main(folders):
         cams = [s for s in size_rows if s.get('cameraSamples', 0) > 0]
         if cams:
             mean = lambda k: sum(s[k] for s in cams) / len(cams)
-            print(f"  gameplay camera: dragon bones in frame {mean('dragonBonesInFramePct'):.0f} % mean, whole dragon in frame "
+            print(f"  gameplay camera: dragon bones in frame {mean('dragonBonesInFrameMeanPct'):.0f} % mean, whole dragon in frame "
                   f"{mean('dragonWholeInFramePct'):.0f} % of the time, mostly off frame {mean('dragonMostlyOffFramePct'):.0f} %, "
                   f"screen height {mean('dragonScreenHeightMeanPct'):.0f} %")
         heads = [s.get('headDownLowestCm') for s in size_rows if s.get('headDownLowestCm', -1) >= 0]
