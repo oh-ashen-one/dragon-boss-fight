@@ -43,7 +43,7 @@ float AVeyrAudio::TargetLevelDb(ECue Cue)
         case ECue::Roll:return -20.f;          case ECue::Footstep:return -11.f;
         case ECue::Blink:return -18.f;         case ECue::Break:return -20.f;
         case ECue::Debris:return -17.f;        case ECue::Exposed:return -15.f;
-        case ECue::Death:return -15.f;         case ECue::Heal:return -16.5f;
+        case ECue::Death:return -15.f;         case ECue::Heal:return -14.f;
         case ECue::Victory:return -17.f;       case ECue::DragonBreathIn:return -15.f;
         case ECue::DragonBreathOut:return -15.f; case ECue::DragonGrowlLow:return -15.f;
         case ECue::DragonSnort:return -19.f;
@@ -347,9 +347,9 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force)
     C.Pitch=Pitch;
     C.Seconds=C.Seconds0/FMath::Max(.5f,Pitch);
     C.Level=.65f*Headroom*FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter;
-    // Solo peak ceiling about -6 dBFS after the master: a close stomp and a step at once must not clip the sum.
+    // Solo peak ceiling about -7.5 dBFS after the master: a close stomp and a step at once must not clip the sum.
     if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f&&Cue!=ECue::Roar&&Cue!=ECue::DragonGrowl&&Cue!=ECue::DragonPain&&Cue!=ECue::PlayerPain)
-        C.Level=FMath::Min(C.Level,.5f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)));
+        C.Level=FMath::Min(C.Level,.42f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)));
     return true;
 }
 
@@ -655,7 +655,7 @@ void AVeyrAudio::UpdatePresence(float DeltaSeconds)
         const ECue Cue=bBreathExhaleNext?ECue::DragonBreathOut:ECue::DragonBreathIn;
         if(PlayCueEx(Cue,Vol,EPlace::Head))
         {
-            if(bBreathExhaleNext){++BreathOuts;BreathClock=Rand.FRandRange(1.6f,2.8f)*(Move?.8f:1.f);}
+            if(bBreathExhaleNext){++BreathOuts;BreathClock=Rand.FRandRange(2.4f,3.6f)*(Move?.8f:1.f); // calm large animal: about 12 breaths a minute}
             else {++BreathIns;BreathClock=DurationLastPlayed*.9f+Rand.FRandRange(.15f,.4f);}
             bBreathExhaleNext=!bBreathExhaleNext;
         }
