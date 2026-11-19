@@ -119,7 +119,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
             {TEXT("Trial_run_1H_side"),EKind::Strafe,0,true,false,2.2f,1276.f,RunClip,90.f},
             {TEXT("Trial_primary_1H_side"),EKind::PrimaryTap,0,false,false,0.f,0.f,TEXT("LightAttack"),90.f},
             {TEXT("Trial_primary_1H_threequarter"),EKind::PrimaryTap,0,false,false,0.f,0.f,TEXT("LightAttack"),35.f},
-            {TEXT("Trial_roll_attack_1H_side"),EKind::RollAttack,0,false,false,0.f,480.f,TEXT("RollAttack"),90.f},
+            {TEXT("Trial_roll_1H_side"),EKind::Roll,0,false,false,0.f,480.f,TEXT("Roll"),90.f},
         };
         return TrialDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(TrialDefs)-1)];
     }
@@ -499,7 +499,7 @@ void FVeyrBlendProof::DriveAction(double Elapsed,float Dt)
         ActionSub=1;ActionSubStart=Elapsed;return;
     }
     Neutral();
-    if(K->Action==EVeyrKnightAction::Roll&&!bRollUpgradeIssued&&K->GetActionElapsed()>=.20f)
+    if(D.Kind==EKind::RollAttack&&K->Action==EVeyrKnightAction::Roll&&!bRollUpgradeIssued&&K->GetActionElapsed()>=.20f) // plain Roll: no upgrade
     {
         K->PressPrimaryAttack();K->ReleasePrimaryAttack();bRollUpgradeIssued=true;return;
     }

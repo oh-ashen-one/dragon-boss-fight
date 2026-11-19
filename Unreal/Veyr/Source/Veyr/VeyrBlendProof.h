@@ -55,7 +55,7 @@ public:
     TSharedPtr<FJsonObject> CurrentState() const;
 
 private:
-    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack, RunningAttack, LeapAttack, PrimaryTap, RunStart, RunStartAttack };
+    enum class EKind : uint8 { Strafe, Blink, RollAttack, SpeedTransition, HeavyAttack, RunningAttack, LeapAttack, PrimaryTap, RunStart, RunStartAttack, Roll };
     enum class EPhase : uint8 { Setup, PreIdle, Action, PostIdle };
     struct FDef
     {
