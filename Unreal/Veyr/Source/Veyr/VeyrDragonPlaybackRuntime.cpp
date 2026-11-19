@@ -140,7 +140,9 @@ void AVeyrDragon::InitPlayback()
     bFootLock=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoFootLock"));
     bSlowSnapTurn=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
-    bInertialBlend=bTwoClipBlend&&!FParse::Param(Cmd,TEXT("VeyrCrossfadeBlend"));
+    // Gate 2 (round 2, 18:05): the one-hand sweep on package 11 had a median of 50 pops per fight (22-68) against
+    // round 1's 25-47, so inertial blending is opt-in (-VeyrInertialBlend); the default keeps the two-clip fades.
+    bInertialBlend=bTwoClipBlend&&FParse::Param(Cmd,TEXT("VeyrInertialBlend"))&&!FParse::Param(Cmd,TEXT("VeyrCrossfadeBlend"));
     // Gate 1 (round 2, 17:10): v3 stepping slid more than round 1's foot lock in turns, walk and wind-ups, so it is
     // opt-in; the default keeps round 1's foot lock. -VeyrNoProceduralSteps stays accepted (and wins).
     bProcSteps=bFootLock&&FParse::Param(Cmd,TEXT("VeyrDragonProceduralSteps"))&&!FParse::Param(Cmd,TEXT("VeyrNoProceduralSteps"));

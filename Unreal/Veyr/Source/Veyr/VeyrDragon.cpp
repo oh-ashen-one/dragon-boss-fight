@@ -2217,8 +2217,12 @@ void AVeyrDragon::LimitHeadYaw(const TMap<FName,FRotator>& Gaze)
     const FVeyrVisualBoneTarget* NeckT=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
     const FName Base=NeckT?ImportedPresentation->GetParentBone(NeckT->BoneName):NAME_None;
     if(!HeadT||!NeckT||Base.IsNone())return;
+    // Round 2 sweep (package 11): Exposed still stepped 27-29 deg per 30 Hz frame (10 per fight in 4 of 16 one-hand
+    // fights), so the knock-down states are limited too; -VeyrHeadYawLimitStandingOnly restores the standing-only scope.
+    static const bool bStandingOnly=FParse::Param(FCommandLine::Get(),TEXT("VeyrHeadYawLimitStandingOnly"));
+    const bool Down=State==EVeyrDragonState::Buckle||State==EVeyrDragonState::Collapse||State==EVeyrDragonState::Exposed||State==EVeyrDragonState::Rise;
     const bool Standing=State==EVeyrDragonState::Idle||State==EVeyrDragonState::Reposition||State==EVeyrDragonState::Windup||
-        State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery;
+        State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery||(Down&&!bStandingOnly);
     auto Measure=[&](float& OutYaw)->bool
     {
         const FVector Line=ImportedPresentation->GetBoneLocation(HeadT->BoneName)-ImportedPresentation->GetBoneLocation(Base);
