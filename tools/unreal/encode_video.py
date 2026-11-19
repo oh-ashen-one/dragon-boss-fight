@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 
-def read_capture(manifest, world_index=None):
+def read_capture(manifest, world_index=None, clock="callback"):
     records = []
     for number, line in enumerate(manifest.read_text().splitlines(), 1):
         if not line.strip():
@@ -28,6 +28,11 @@ def read_capture(manifest, world_index=None):
             raise ValueError(f"Manifest line {number} is incomplete or invalid: {error}") from error
         if not isinstance(row, dict):
             raise ValueError(f"Manifest line {number} must be an object")
+        # Round 2 (2026-11-19): --clock requested stamps each frame with the time the game asked for it (its render
+        # time); the PNG pixel-callback time lags it by 0-130 ms and made ~400 uneven intervals in a 72 s film.
+        if clock == "requested" and row.get("type") == "frame" and "requestedWallSeconds" in row:
+            row["callbackWallSeconds"] = row.get("wallSeconds")
+            row["wallSeconds"] = row["requestedWallSeconds"]
         records.append(row)
     if world_index is not None:
         starts = [r for r in records if r.get("type") == "world_start" and r.get("worldIndex", 0) == world_index]
@@ -100,6 +105,8 @@ def main():
     parser.add_argument("--ffmpeg", default=shutil.which("ffmpeg"))
     parser.add_argument("--ffprobe", default=shutil.which("ffprobe"))
     parser.add_argument("--threads", type=int, choices=range(1,5), default=2, help="Bounded software encoder workers")
+    parser.add_argument("--clock", choices=("callback", "requested"), default="callback",
+                        help="Frame timestamps: PNG callback time (default) or the game's request/render time")
     parser.add_argument("--world-index", type=int, help="Export one complete world, e.g. 0 to omit automated restart verification from the film")
     args = parser.parse_args()
     if not args.ffmpeg or not args.ffprobe:
@@ -111,7 +118,7 @@ def main():
     if any(path.exists() for path in (output, concat, receipt)):
         parser.error("Output, ffconcat or receipt already exists; choose a fresh --output filename")
     try:
-        records, frames, end, observed_tail, dimensions = read_capture(manifest, args.world_index)
+        records, frames, end, observed_tail, dimensions = read_capture(manifest, args.world_index, args.clock)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     output.parent.mkdir(parents=True, exist_ok=True)
