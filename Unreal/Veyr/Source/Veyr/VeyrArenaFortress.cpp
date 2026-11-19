@@ -66,11 +66,11 @@ void AVeyrArena::FortressMuralBay(const FVector& Anchor,float Height,float Yaw,i
     Light->SetInnerConeAngle(15.f);Light->SetOuterConeAngle(80.f);Light->SetSourceRadius(80.f);Light->SetCastShadows(false);
     if(bRelit)
     {
-        Light->SetIntensity(VeyrLook::Tune(TEXT("fresco"),260.f));Light->SetLightColor(FLinearColor(1.f,.60f,.30f));Light->SetAttenuationRadius(2400.f);
+        Light->SetIntensity(VeyrLook::Tune(TEXT("fresco"),340.f));Light->SetLightColor(FLinearColor(1.f,.60f,.30f));Light->SetAttenuationRadius(2400.f);
         Light->SetInnerConeAngle(10.f);Light->SetOuterConeAngle(55.f);Light->SetSourceRadius(30.f);Light->SetVolumetricScatteringIntensity(1.5f);
     }
     Light->RegisterComponent();
-    FortressFireLights.Add(Light);FortressFireIntensities.Add(bRelit?VeyrLook::Tune(TEXT("fresco"),260.f):180.f);
+    FortressFireLights.Add(Light);FortressFireIntensities.Add(bRelit?VeyrLook::Tune(TEXT("fresco"),340.f):180.f);
     ++FortressMuralCount;++ConnectedCourtInstanceCount;++ImportedArchitecturePieces;
 }
 
