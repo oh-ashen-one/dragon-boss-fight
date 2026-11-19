@@ -313,8 +313,10 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
             FilmAz+=360.f*FMath::Clamp(float((CameraElapsed-SeqPhaseStart)/D.ActionSeconds),0.f,1.f);
         const float R=FMath::DegreesToRadians(FilmAz);
         const FVector FilmDir=Fwd0*FMath::Cos(R)+Right0*FMath::Sin(R);
-        Look=FVector(Focus.X,Focus.Y,FloorZ+135.f);
-        Location=Look+FilmDir*420.f;Location.Z=FloorZ+175.f;
+        // 2026-11-19T20:48 first take at 4.2 m cut his head off in the orbit; 7 m keeps the whole 2.4 m figure (about
+        // 60 % of the frame height) at FOV 50.
+        Look=FVector(Focus.X,Focus.Y,FloorZ+125.f);
+        Location=Look+FilmDir*700.f;Location.Z=FloorZ+165.f;
         Cam->GetCameraComponent()->SetFieldOfView(50.f);
     }
     // Extra inspection chapter follows the actual rendered hand, so the
