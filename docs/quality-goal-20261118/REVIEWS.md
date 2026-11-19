@@ -103,3 +103,28 @@ from levels, spectra, onsets and their timing against the picture.
 - Action: second passes ordered for both: the hit lands on the dragon and on the knight (struck part reacts, burst at
   the contact point, weapon rebound, visible stop), and the knight's own hits and steps are near-field and loud with a
   master level near the reference's.
+
+## Phase F blind review 1 — 2026-11-19 14:40 ET, boss animation, round 1 playback film against the reference
+
+Opus critic, sides hidden (labels J and K drawn at random; key kept outside the pack), our 72 s dragon playback round 1
+film (`veyr-dragonplayback-victory.mp4`, package `6584eee5`) against the 51 s reference fight cut. One aspect only.
+
+**Verdict: OURS CLEARLY BETTER.** Ours warns before attacks (throat glow before fire, roar pose, take-off and gliding
+landing), planted feet hold on the cobbles in the strips he looked at (medium certainty; the tracker failed on the
+repeating cobbles), it reacts to damage (belly-down, rises with dust) and moves in several ways. The reference has one
+strong slam with real weight (1.1 s lowering, 0.7 s hold, drop) and clear stance changes, but its boss never reacts to
+hits, grey hit smoke covers its head and its feet are unreadable in the dark.
+
+Our faults, worst first:
+1. Upper body snaps 60-90 degrees in about 80 ms as the fire starts (6.00-6.08 s, frames 181-183). Ruins the illusion for that moment.
+2. The knight stands inside the dragon's foot at 38.8-40.6 s; the foot never pushes him away.
+3. The camera shows only legs for most of the fight (26-57 s, 62-69 s), so head, wings and wind-ups are out of shot (camera work, in progress).
+4. Uneven frame intervals in the film (388 intervals over 50 ms, longest 139 ms): game or recorder unknown.
+5. The death fall is cut off by the end of the film.
+
+Not judged by him: exact foot slide (rests on zoomed strips), our head and wings while the camera sat at leg height,
+playback speed errors smaller than the hitching. Full text: `Local/quality-goal/review-F-blind1.md`.
+
+Consequence: round 2 keeps its targets and adds the aim snap at the start of fire (fault 1) and a film that runs
+through the whole death fall. Fault 2 is a contact rule, not animation: noted for the owner, hitboxes stay fixed.
+

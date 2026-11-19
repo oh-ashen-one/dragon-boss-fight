@@ -3210,6 +3210,13 @@ void AVeyrReplay::Tick(float DeltaSeconds)
                 bNextReplayWorldStarted=true;bAwaitingNextReplayWorld=true;
                 UGameplayStatics::OpenLevel(this,FName(*Level));
             }
+            else if(AVeyrDragon::AdvanceSweep())
+            {
+                // Seed sweep (-VeyrSeedSweep=A-B): the next seed in a fresh world of this same process (one lock hold).
+                const FString Level=UGameplayStatics::GetCurrentLevelName(this,true);
+                if(Level.IsEmpty()){if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Sweep replay map missing"));return;}
+                bAwaitingNextReplayWorld=true;UGameplayStatics::OpenLevel(this,FName(*Level));
+            }
             else if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Veyr replay completed"));
         }
         else ServiceCapture();
