@@ -5,9 +5,9 @@ usage: run_greystone.py <step> [--set key=value ...] [--project /path/to/Unreal/
 steps: load-all, rigs, native, retarget, definition, motion-db, features   (NullRHI: no window, no GPU)
        skin-sheet                                                  (renders: shared GPU slot, never while STREAMING)
 
-Rules kept (BUILDER_RULES): one engine process at a time (waits until no UnrealEditor / Veyr game is running), the
-owned launch-rate budget, Local/ENGINE_LAUNCH_HOLD.json stops everything, the started PID is recorded and only that
-PID is ever signalled. Evidence goes to a new Local/greystone/<step>-<UTC> directory.
+Rules kept (BUILDER_RULES): the machine-wide engine lock (tools/unreal/engine_lock.py) is held for exactly the
+commandlet's life, the owned launch-rate budget, Local/ENGINE_LAUNCH_HOLD.json stops everything, the started PID is
+recorded and only that PID is ever signalled (the lock forwards signals to it). Evidence goes to a new Local/greystone/<step>-<UTC> directory.
 """
 import argparse
 import datetime
@@ -68,24 +68,20 @@ job = {'step': a.step, 'reportDirectory': str(out), 'options': options, 'project
 (out / 'job.json').write_text(json.dumps(job, indent=2) + '\n')
 
 
-def engine_processes():
+def foreign_engine_processes():
+    """Hand check kept for the lock changeover: build.py / package.py / Veyr-Mac-Shipping not under the lock."""
     rows = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True).stdout.splitlines()
     hits = []
     for row in rows:
         pid, _, command = row.strip().partition(' ')
-        if ('UnrealEditor' in command or 'Veyr-Mac' in command or '/Veyr.app/' in command) and 'run_greystone.py' not in command:
+        if any(x in command for x in ('tools/unreal/build.py', 'tools/unreal/package.py', 'Veyr-Mac-Shipping')):
             hits.append((int(pid), command[:160]))
     return hits
 
 
-announced = False
-while engine_processes():
-    if not announced:
-        print('Waiting: another engine/game process is running (one at a time):', engine_processes()[:3], flush=True)
-        announced = True
-    time.sleep(30)
-from owned_launch_budget import wait_for_budget
-wait_for_budget(root)
+if rendered:  # the ten-per-hour budget counts rendered launches only
+    from owned_launch_budget import wait_for_budget
+    wait_for_budget(root)
 
 cmd = ['/usr/sbin/taskpolicy', '-b', str(ENGINE / 'Engine/Binaries/Mac/UnrealEditor-Cmd'), str(project / 'Veyr.uproject'),
        '-run=pythonscript', '-script=' + str(HERE / script), '-unattended', '-NoCrashReports', '-notraceserver',
@@ -100,20 +96,26 @@ else:
     cmd.append('-nullrhi')
 (out / 'command.json').write_text(json.dumps(cmd, indent=2) + '\n')
 print('Greystone step', a.step, '->', out, flush=True)
-with (out / 'launcher.log').open('w') as log:
-    process = subprocess.Popen(cmd, cwd=root, env={**os.environ, 'VEYR_GREYSTONE_JOB': str(out / 'job.json'), 'VEYR_GREYSTONE_PROJECT': str(project)},
-                               stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
-    (out / 'pid.json').write_text(json.dumps({'pid': process.pid, 'command': cmd[0]}) + '\n')
-    try:
-        code = process.wait()
-    except KeyboardInterrupt:
-        # Signal only the PID we started; give it 60 s to exit before anything stronger.
-        process.send_signal(signal.SIGTERM)
-        try:
-            code = process.wait(60)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            code = process.wait()
+from engine_lock import engine_lock
+# Machine-wide engine lock (BUILDER_RULES 2026-11-19) for exactly the commandlet's life; the lock forwards SIGTERM/SIGINT
+# to the child only and records its pid so an orphan is noticed.
+with engine_lock('E trial: ' + a.step, tree=root) as lock:
+    while foreign_engine_processes():  # changeover hand check; nothing of ours is started while one is listed
+        print('Waiting (holding the lock): unlocked build/package/game process running:', foreign_engine_processes()[:2], flush=True)
+        time.sleep(30)
+    started = time.time()
+    with (out / 'launcher.log').open('w') as log:
+        env = {**os.environ, 'VEYR_GREYSTONE_JOB': str(out / 'job.json'), 'VEYR_GREYSTONE_PROJECT': str(project)}
+        result_proc = lock.run(cmd, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
+    code = result_proc.returncode
+    lock.exit_code = code
+    try:  # read-only: the lock recorded our child's pid in its holder file while we still hold it
+        from engine_lock import lock_dir
+        holder = json.loads((lock_dir() / 'holder.json').read_text())
+    except (OSError, ValueError):
+        holder = {}
+    (out / 'pid.json').write_text(json.dumps({'pid': holder.get('child_pid'), 'driverPid': os.getpid(), 'args0': cmd[0],
+                                              'minutes': round((time.time() - started) / 60, 1)}) + '\n')
 result = json.loads((out / 'result.json').read_text()) if (out / 'result.json').exists() else {}
 print('exit', code, 'success', result.get('success'), result.get('error', ''), flush=True)
 sys.exit(0 if result.get('success') else 1)
