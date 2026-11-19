@@ -1181,7 +1181,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
         }
         else if(bFrameAssist&&!bLockedOn&&IsValid(Boss)&&!Boss->IsDead()&&ManualCameraRemaining<=0.f&&
-                CameraBoom&&CameraBoom->UsesFadeRig()&&Boss->bCameraFadeMaterials)
+                Cast<UVeyrCameraBoom>(CameraBoom)&&Cast<UVeyrCameraBoom>(CameraBoom)->UsesFadeRig()&&Boss->bCameraFadeMaterials)
         {
             // Steady view, unlocked, hands off the mouse: the view keeps the dragon's chest inside the middle of the
             // frame by turning (at most FrameAssistDegPerSec) only when it drifts past FrameAssistShare of the half-width.
