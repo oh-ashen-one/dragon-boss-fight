@@ -135,8 +135,9 @@ void AVeyrFightFeel::BeginPlay()
             RibbonMaterial->SetVectorParameterValue(TEXT("Tint"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?FLinearColor::White:FLinearColor(.62f,.70f,.82f));
             // B2: wider and brighter so the smear reads at fight distance.
             const bool bWide=VeyrFeelSwitches::WideTrail();
-            RibbonMaterial->SetScalarParameterValue(TEXT("Opacity"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?(bWide?1.f:.75f):(bWide?.5f:.32f));
-            RibbonMaterial->SetScalarParameterValue(TEXT("Brightness"),bWide?2.6f:1.4f);
+            RibbonMaterial->SetScalarParameterValue(TEXT("Opacity"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?(bWide?.85f:.75f):(bWide?.4f:.32f));
+            // 2.6 / opacity 1 clipped to a flat white slab under the relit court's exposure (film 20261119T205054Z): old brightness.
+            RibbonMaterial->SetScalarParameterValue(TEXT("Brightness"),1.4f);
             Ribbon->SetMaterial(0,RibbonMaterial);
             VeyrLook::FollowExposureAuto(RibbonMaterial);
             // Three edges per row: clear at the hilt side, full on a band near the tip, clear just past the tip.
