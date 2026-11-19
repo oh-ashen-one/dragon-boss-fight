@@ -2,9 +2,9 @@
 """Trial T6: the side-by-side trial film, current KnightB (left) beside Greystone (right). No engine in this script.
 
 Plan (two owned rendered launches, one at a time, only after `definition` succeeded and the editor DLL is rebuilt):
-  1. tools/unreal/run_native.py --gpu-slot ~/.cache/gpu-slot/bin/gpu_slot.sh --mode blendproof --video-fps 15 \
-         --extra-arg -VeyrGreystoneTrialProof
-  2. the same plus --extra-arg -VeyrGreystone
+  1. tools/unreal/run_native.py --engine "/Users/Shared/Epic Games/UE_5.8" --gpu-slot ~/.cache/gpu-slot/bin/gpu_slot.sh \
+         --mode blendproof --video-fps 15 --extra-arg=-VeyrGreystoneTrialProof
+  2. the same plus --extra-arg=-VeyrGreystone   (write --extra-arg=-Flag: argparse rejects a bare leading dash)
   3. tools/unreal/blendproof_encode.py <each Evidence/native-blendproof-*>   (per-sequence MP4s, data overlay)
   4. this script: trial_film.py <run 1> <run 2>  -> Local/greystone/trial-film-<UTC>/trial-film.mp4
 The -VeyrGreystoneTrialProof set is: 1.3 s idle, a one-hand run (side), the primary attack (side and three-quarter),
