@@ -194,7 +194,7 @@ private:
     FVector SafeLastRelative=FVector::ZeroVector; bool bSafeLast=false; float SafeLift=0.f; float SafeLens=0.f; float AssistAlpha=0.f; float AssistClearSeconds=0.f; bool bAssist=false; float AssistRisePitch=0.f; float SafePitch=0.f; float SafeYaw=0.f; float SwingClearSeconds=0.f; FVector SafeLastWorld=FVector::ZeroVector; FVector SafeLastAnchor=FVector::ZeroVector; float SwingPitchTarget=0.f; float SwingYawTarget=0.f;
     FQuat SafeLastView=FQuat::Identity; bool bSafeLastView=false;
     FVeyrDragonProxy Proxy,ProofProxy;FQuat RigRot=FQuat::Identity;bool bRigRot=false;float RigFraction=1.f,OverheadAlpha=0.f,OverheadClearSeconds=0.f,HideClearSeconds=0.f;
-    bool bOverhead=false,bRigHide=false,bProxyTight=false;FVector FeelLocalOffset=FVector::ZeroVector;TWeakObjectPtr<APlayerController> HiddenFromPC;
+    bool bOverhead=false,bRigHide=false,bProxyTight=false;FVector LastRigLens=FVector::ZeroVector;FVector FeelLocalOffset=FVector::ZeroVector;TWeakObjectPtr<APlayerController> HiddenFromPC;
     bool UpdateProxy();
     float RigSweep(const FVector& From,const FVector& To,float Radius) const;
     void SetKnightHiddenByCamera(bool bHide);
@@ -222,6 +222,7 @@ struct FVeyrViewAudit
     int32 TrueSkinFrames=0,InsideVolume=0,NearClip=0,HiddenByRule=0,InsideKnightVisible=0,KnightInFrameVisible=0,VisibleFrames=0,LegacyInside=0;
     float MinSkinCm=TNumericLimits<float>::Max();TArray<float> RuleHiddenSeconds,KnightInsideSeconds,OutFrameSeconds;FString TrueSkinSource;
     int32 OutFrameNear=0,OutFramePitchUp=0,OutFrameOverhead=0;double OutFrameDistanceSum=0;
+    int32 InsideHidden=0,InsideOverhead=0,InsideInRigProxy=0;float InsideLensOffsetMaxCm=0.f,InsideRigProxyMinCm=TNumericLimits<float>::Max(),InsideNearMinCm=TNumericLimits<float>::Max();
 };
 
 /** Proof that the camera proxy holds every drawn skin vertex (fourth pass), accumulated over a replay. */

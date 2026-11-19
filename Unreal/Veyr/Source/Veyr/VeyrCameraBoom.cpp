@@ -856,6 +856,13 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
         // The near plane (10 cm) reaches its corners about 17 cm from the eye at the widest lens: skin that close is cut open.
         bNear=NearCm<17.f;A.InsideVolume+=bVolume;A.NearClip+=bNear;
         bInside=bVolume||bNear;
+        if(bInside)
+        {
+            A.InsideHidden+=bKnightHiddenByCamera;A.InsideOverhead+=OverheadAlpha>.01f;
+            A.InsideLensOffsetMaxCm=FMath::Max(A.InsideLensOffsetMaxCm,static_cast<float>(FVector::Dist(Camera,LastRigLens)));
+            A.InsideNearMinCm=FMath::Min(A.InsideNearMinCm,NearCm);
+            if(Proxy.IsValid()){A.InsideInRigProxy+=Proxy.Contains(Camera,0.f);A.InsideRigProxyMinCm=FMath::Min(A.InsideRigProxyMinCm,Proxy.Distance(Camera,0.f));}
+        }
     }
     else
     {
@@ -966,7 +973,8 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
     N(TEXT("hiddenByCameraRuleFrames"),A.HiddenByRule);N(TEXT("hiddenByCameraRuleShare"),A.Frames?static_cast<double>(A.HiddenByRule)/A.Frames:0.0);
     N(TEXT("insideKnightVisibleFrames"),A.InsideKnightVisible);
     N(TEXT("knightInFrameShareOfVisibleFrames"),A.VisibleFrames?static_cast<double>(A.KnightInFrameVisible)/A.VisibleFrames:0.0);
-    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);
+    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);N(TEXT("insideWhileHiddenFrames"),A.InsideHidden);N(TEXT("insideWhileOverheadFrames"),A.InsideOverhead);N(TEXT("insideLensInRigProxyFrames"),A.InsideInRigProxy);
+    N(TEXT("insideLensOffsetFromRigMaxCm"),A.InsideLensOffsetMaxCm);N(TEXT("insideRigProxyMinDistanceCm"),A.InsideRigProxyMinCm<1e30f?A.InsideRigProxyMinCm:-1.0);N(TEXT("insideNearestSkinMinCm"),A.InsideNearMinCm<1e30f?A.InsideNearMinCm:-1.0);
     {const int32 Out=A.VisibleFrames-A.KnightInFrameVisible;N(TEXT("outOfFrameVisibleFrames"),Out);N(TEXT("outOfFrameNearFrames"),A.OutFrameNear);N(TEXT("outOfFramePitchUpFrames"),A.OutFramePitchUp);N(TEXT("outOfFrameOverheadFrames"),A.OutFrameOverhead);N(TEXT("outOfFrameMeanDistanceCm"),Out?A.OutFrameDistanceSum/Out:0.0);}Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);
     N(TEXT("rigOverheadFrames"),RigOverheadFrames);N(TEXT("rigHiddenFrames"),RigHiddenFrames);N(TEXT("rigPivotLiftFrames"),RigPivotLiftFrames);

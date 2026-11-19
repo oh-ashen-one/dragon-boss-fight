@@ -145,5 +145,6 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     FramedView=View;bFramedViewValid=true;FovBoostDeg=0.f;
     BodyFraction=RigFraction;SafeFraction=RigFraction;
     if(Proxy.IsValid()&&Proxy.Contains(Lens,0.f))++ResultInsideFrames;
+    LastRigLens=Lens;
     return Lens;
 }
