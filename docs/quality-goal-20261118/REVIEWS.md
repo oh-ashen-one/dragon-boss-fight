@@ -82,3 +82,24 @@ A fresh Opus critic, sides hidden, 10 real play frames from the second picture f
   shows the faceted mesh; a washed-out dust veil in one frame; moon-blue floor patches ending in hard edges; brazier
   bloom and small armour highlights clipping.
 - C2 ("clearly worse is not accepted") is met on this review. The faults go to the picture builder as a polish list.
+
+## Phase B, blind review 2 (2026-11-19 11:05 ET): weight of impacts and sound, with the real game audio
+
+Opus critic, sides hidden, 60 s of our phase B film against the 51 s reference film. He cannot listen; sound is judged
+from levels, spectra, onsets and their timing against the picture.
+
+- **Weight of impacts: reference clearly better.** Our stomps and falls are rated comparable to his slam (15 frames of
+  shake up to 5.8 % of frame height, dust bloom). What loses is the knight hitting the dragon: a leg hit turns the leg a
+  flat cream colour for 6 frames, no spark at the contact point, the leg does not move, the knight does not recoil; head
+  hits flash for 2 frames and the head does not move. His hit: half a second of burst with debris and 10 frames of
+  shake peaking at 5.4 %. He found no hit-stop and no zoom in either film. Our trail barely shows; our film drops a frame
+  about every 5 s. Faults in the reference: dark and far away, heavy motion blur, the boss's reaction cannot be read.
+- **Sound: reference slightly better.** Ours: weapon hits are silent in the real mix (3 dB rise at a leg hit against
+  28-36 dB in his); the mix is 15 LU quieter (-30.3 LUFS against -15.0) with a narrow range; the stomps correlate at
+  0.84-0.95 and read as one sample; the landing and the knight's steps have no clear sound; the fire breath has no
+  onset. Credit to ours: low-end weight under stomps in sync within 30 ms, probable dragon vocals in calm stretches,
+  no clipping, no pure tones. Faults in the reference: a 15 s stretch of combat with no distinct impact sounds, and
+  effects piled into a dense bed elsewhere.
+- Action: second passes ordered for both: the hit lands on the dragon and on the knight (struck part reacts, burst at
+  the contact point, weapon rebound, visible stop), and the knight's own hits and steps are near-field and loud with a
+  master level near the reference's.
