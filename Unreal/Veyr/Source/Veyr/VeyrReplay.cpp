@@ -3004,6 +3004,7 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
 
 void AVeyrReplay::SaveEvidence(bool bFinal)
 {
+    const double SaveStartSeconds=FPlatformTime::Seconds();
     TSharedPtr<FJsonObject> Root=MakeShared<FJsonObject>();
     Root->SetNumberField(TEXT("warningContainmentFailures"),ObservedWarningContainmentFailures);
     TSharedPtr<FJsonObject> Video=MakeShared<FJsonObject>();
@@ -3146,6 +3147,11 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetNumberField(TEXT("frameCount"),FrameCount); Root->SetNumberField(TEXT("meanFrameSeconds"),FrameCount?Elapsed/FrameCount:0);
     Root->SetNumberField(TEXT("maximumFrameSeconds"),MaximumFrameSeconds);
     Root->SetBoolField(TEXT("lightLegContact"),bLightLegContact);Root->SetBoolField(TEXT("heavyLegContact"),bHeavyLegContact);Root->SetBoolField(TEXT("riseObserved"),bSawRise);Root->SetBoolField(TEXT("riseCompleted"),bRiseCompleted);
+    // Periodic saves leave the growing arrays (every frame interval, samples, events) to the background write task.
+    TArray<double> AsyncIntervals;TArray<TSharedPtr<FJsonValue>> AsyncSamples,AsyncEvents;
+    if(bAsyncPeriodicSave){AsyncIntervals=WallFrameIntervals;AsyncSamples=Samples;AsyncEvents=Events;}
+    else
+    {
     TArray<TSharedPtr<FJsonValue>> WallSamples;for(double Interval:WallFrameIntervals)WallSamples.Add(MakeShared<FJsonValueNumber>(Interval));
     Root->SetArrayField(TEXT("wallFrameIntervalsSeconds"),WallSamples);
     Root->SetStringField(TEXT("wallFrameIntervalScope"),TEXT("replay actor tick intervals; includes capture and evidence I/O; excludes world reload; not GPU frame time"));
@@ -3156,7 +3162,9 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
         Root->SetNumberField(TEXT("wallFrameP95Seconds"),Sorted[FMath::FloorToInt((Sorted.Num()-1)*.95)]);
         Root->SetNumberField(TEXT("wallFrameP99Seconds"),Sorted[FMath::FloorToInt((Sorted.Num()-1)*.99)]);
     }
-    Root->SetObjectField(TEXT("latest"),Snapshot());Root->SetArrayField(TEXT("samples"),Samples);Root->SetArrayField(TEXT("events"),Events);
+    Root->SetArrayField(TEXT("samples"),Samples);Root->SetArrayField(TEXT("events"),Events);
+    }
+    Root->SetObjectField(TEXT("latest"),Snapshot());
     TArray<TSharedPtr<FJsonValue>> Frames;
     for(int32 I=0;I<CaptureFiles.Num();++I)
     {
@@ -3175,11 +3183,79 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlayback"),Dragon->PlaybackEvidence());
     Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
     Root->SetBoolField(TEXT("headlessNumbersOnly"),bHeadless);Root->SetNumberField(TEXT("stillIntervalSeconds"),StillInterval);
+    Root->SetArrayField(TEXT("evidenceSaveTimings"),EvidenceSaveTimings);
+    const double BuildSeconds=FPlatformTime::Seconds()-SaveStartSeconds;
+    const FString File=FPaths::Combine(RunDirectory,TEXT("evidence.json"));
+    // Never two writes at once: any synchronous save waits for a background write still in flight.
+    if(!bAsyncPeriodicSave&&EvidenceWriteFuture.IsValid())EvidenceWriteFuture.Wait();
+    auto RecordTiming=[this,bFinal,BuildSeconds,SaveStartSeconds](double SerializeSeconds,double WriteSeconds,int32 Bytes,bool bAsync)
+    {
+        const double GameThreadSeconds=FPlatformTime::Seconds()-SaveStartSeconds;
+        TSharedPtr<FJsonObject> T=MakeShared<FJsonObject>();
+        T->SetNumberField(TEXT("atElapsedSeconds"),Elapsed);T->SetNumberField(TEXT("nextFrameIntervalIndex"),WallFrameIntervals.Num());
+        T->SetBoolField(TEXT("final"),bFinal);T->SetBoolField(TEXT("backgroundWrite"),bAsync);
+        T->SetNumberField(TEXT("gameThreadSeconds"),GameThreadSeconds);T->SetNumberField(TEXT("buildSeconds"),BuildSeconds);
+        T->SetNumberField(TEXT("serializeSeconds"),SerializeSeconds);T->SetNumberField(TEXT("writeSeconds"),WriteSeconds);T->SetNumberField(TEXT("bytes"),Bytes);
+        if(EvidenceSaveTimings.Num()<200)EvidenceSaveTimings.Add(MakeShared<FJsonValueObject>(T));
+        UE_LOG(LogTemp,Display,TEXT("VEYR_EVIDENCE_SAVE elapsed=%.3f final=%d async=%d gameThread=%.4f build=%.4f serialize=%.4f write=%.4f bytes=%d lastFrame=%.4f"),
+            Elapsed,bFinal?1:0,bAsync?1:0,GameThreadSeconds,BuildSeconds,SerializeSeconds,WriteSeconds,Bytes,WallFrameIntervals.IsEmpty()?0.0:WallFrameIntervals.Last());
+    };
+    if(bAsyncPeriodicSave)
+    {
+        // Periodic progress save: the game thread builds only the small part and serialises it; the growing arrays are
+        // converted, serialised and written by a pool task, then renamed over the old file so a reader never sees half a file.
+        FString LightJson;const TSharedRef<TJsonWriter<>> LightWriter=TJsonWriterFactory<>::Create(&LightJson);
+        FJsonSerializer::Serialize(Root.ToSharedRef(),LightWriter);
+        const double SerializeSeconds=FPlatformTime::Seconds()-SaveStartSeconds-BuildSeconds;const int32 LightBytes=LightJson.Len();
+        EvidenceWriteFuture=Async(EAsyncExecution::ThreadPool,[File,LightJson=MoveTemp(LightJson),Intervals=MoveTemp(AsyncIntervals),SamplesCopy=MoveTemp(AsyncSamples),EventsCopy=MoveTemp(AsyncEvents)]() mutable
+        {
+            const double BackgroundStart=FPlatformTime::Seconds();
+            TSharedPtr<FJsonObject> Heavy=MakeShared<FJsonObject>();
+            TArray<TSharedPtr<FJsonValue>> WallSamples;WallSamples.Reserve(Intervals.Num());
+            for(double Interval:Intervals)WallSamples.Add(MakeShared<FJsonValueNumber>(Interval));
+            Heavy->SetArrayField(TEXT("wallFrameIntervalsSeconds"),WallSamples);
+            Heavy->SetStringField(TEXT("wallFrameIntervalScope"),TEXT("replay actor tick intervals; includes capture and evidence I/O; excludes world reload; not GPU frame time"));
+            if(!Intervals.IsEmpty())
+            {
+                TArray<double> Sorted=Intervals;Sorted.Sort();
+                Heavy->SetNumberField(TEXT("wallFrameP50Seconds"),Sorted[FMath::FloorToInt((Sorted.Num()-1)*.50)]);
+                Heavy->SetNumberField(TEXT("wallFrameP95Seconds"),Sorted[FMath::FloorToInt((Sorted.Num()-1)*.95)]);
+                Heavy->SetNumberField(TEXT("wallFrameP99Seconds"),Sorted[FMath::FloorToInt((Sorted.Num()-1)*.99)]);
+            }
+            Heavy->SetArrayField(TEXT("samples"),SamplesCopy);Heavy->SetArrayField(TEXT("events"),EventsCopy);
+            FString HeavyJson;const TSharedRef<TJsonWriter<>> HeavyWriter=TJsonWriterFactory<>::Create(&HeavyJson);
+            int32 LastBrace=INDEX_NONE,FirstBrace=INDEX_NONE;
+            if(FJsonSerializer::Serialize(Heavy.ToSharedRef(),HeavyWriter)&&LightJson.FindLastChar(TEXT('}'),LastBrace)&&HeavyJson.FindChar(TEXT('{'),FirstBrace))
+            {
+                // Splice the two top-level objects into one: light body, comma, heavy body.
+                FString Joined=LightJson.Left(LastBrace);Joined.TrimEndInline();Joined+=TEXT(",\n");Joined+=HeavyJson.Mid(FirstBrace+1);
+                const double SerializeDone=FPlatformTime::Seconds();
+                if(!FFileHelper::SaveStringToFile(Joined,*(File+TEXT(".bg.tmp")))||!IFileManager::Get().Move(*File,*(File+TEXT(".bg.tmp")),true))
+                    UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_EVIDENCE_WRITE_FAILED %s"),*File);
+                UE_LOG(LogTemp,Display,TEXT("VEYR_EVIDENCE_SAVE_BG serialize=%.4f write=%.4f bytes=%d"),SerializeDone-BackgroundStart,FPlatformTime::Seconds()-SerializeDone,Joined.Len());
+            }
+            else UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_EVIDENCE_WRITE_FAILED %s (background serialise)"),*File);
+        });
+        RecordTiming(SerializeSeconds,0.0,LightBytes,true);
+        return;
+    }
     LastEvidence=Root;
     FString Json;const TSharedRef<TJsonWriter<>> Writer=TJsonWriterFactory<>::Create(&Json);
-    const FString File=FPaths::Combine(RunDirectory,TEXT("evidence.json"));
-    if(!FJsonSerializer::Serialize(Root.ToSharedRef(),Writer)||!FFileHelper::SaveStringToFile(Json,*(File+TEXT(".tmp")))||!IFileManager::Get().Move(*File,*(File+TEXT(".tmp")),true))
+    const double SerializeStart=FPlatformTime::Seconds();
+    const bool bSerialized=FJsonSerializer::Serialize(Root.ToSharedRef(),Writer);
+    const double SerializeSeconds=FPlatformTime::Seconds()-SerializeStart;
+    const double WriteStart=FPlatformTime::Seconds();
+    if(!bSerialized||!FFileHelper::SaveStringToFile(Json,*(File+TEXT(".tmp")))||!IFileManager::Get().Move(*File,*(File+TEXT(".tmp")),true))
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_EVIDENCE_WRITE_FAILED %s"),*File);
+    RecordTiming(SerializeSeconds,FPlatformTime::Seconds()-WriteStart,Json.Len(),false);
+}
+
+void AVeyrReplay::SaveEvidencePeriodic()
+{
+    static const bool bLegacy=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyEvidenceSave"));
+    if(bLegacy){SaveEvidence(false);return;}
+    if(EvidenceWriteFuture.IsValid()&&!EvidenceWriteFuture.IsReady())return; // previous background write still running
+    bAsyncPeriodicSave=true;SaveEvidence(false);bAsyncPeriodicSave=false;
 }
 
 void AVeyrReplay::Tick(float DeltaSeconds)
@@ -3243,19 +3319,19 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     if(ReplayMode==TEXT("environment"))
     {
         TickEnvironmentTour();ServiceCapture();
-        if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+        if(SaveClock>=5.f){SaveClock=0;SaveEvidencePeriodic();}return;
     }
     if(ReplayMode==TEXT("intro"))
     {
         TickArenaIntroProof();ServiceCapture();
         if(Elapsed>DurationLimit&&!bFinished)Finish(false,TEXT("Intro/handoff proof timeout"));
-        if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+        if(SaveClock>=5.f){SaveClock=0;SaveEvidencePeriodic();}return;
     }
     if(IsShowcase()&&Showcase.IsValid())
     {
         Showcase->Tick(DeltaSeconds,Elapsed);
         if(!bFinished&&Elapsed>DurationLimit)Finish(false,TEXT("every-move showcase timeout"));
-        ServiceCapture();if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+        ServiceCapture();if(SaveClock>=5.f){SaveClock=0;SaveEvidencePeriodic();}return;
     }
     if(bTerminalSettling||bAwaitingReload||bRestartVerification)AdvanceRestart(DeltaSeconds);
     else if(ReplayMode==TEXT("death")&&Knight->IsDead())BeginTerminalVerification();
@@ -3284,7 +3360,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
         Finish(false,TEXT("objective timeout; inspect event history and policy"));
     }
     if(!bFinished&&!bTerminalSettling&&!bAwaitingReload&&!bRestartVerification)DriveInputs();ServiceCapture();
-    if(SaveClock>=(bPerformanceMode?30.f:5.f)){SaveClock=0;SaveEvidence(false);}
+    if(SaveClock>=(bPerformanceMode?30.f:5.f)){SaveClock=0;SaveEvidencePeriodic();}
 }
 
 void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
