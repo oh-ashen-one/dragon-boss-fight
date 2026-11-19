@@ -13,11 +13,13 @@ import tempfile
 from audit_bundle import repair_copy
 from metal_preflight import verify_metal_toolchain
 from engine_lock import engine_lock
+from stage_prune import remove_owned_stage
 
 ROOT = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('--engine', required=True, type=Path)
 p.add_argument('--configuration',choices=['Development','Shipping'],default='Development')
+p.add_argument('--keep-stage',action='store_true',help='keep the ~3 GB /private/tmp/veyr-stage-* folder after a successful package (it is always kept on failure)')
 a = p.parse_args()
 if (ROOT / 'Local/ENGINE_LAUNCH_HOLD.json').exists():
     p.error('Engine launches are held after two crashes; obtain owner approval before clearing the task-local hold.')
@@ -67,8 +69,13 @@ if uat_success:
         except (OSError, ValueError, KeyError) as error:
             repairs.append({'sourceApp':str(app), 'packagingSucceeded':False, 'error':str(error)})
 success = uat_success and bool(repairs) and all(item['packagingSucceeded'] for item in repairs)
+# The stage is only an input to repair_copy; the verified runtime app and signed zip are separate copies.
+# Remove it after a fully verified success only (kept on any failure for diagnosis).
+stage_removed = False
+if success and not a.keep_stage and all(Path(x).exists() for x in (item['signature']['verifiedRuntimeApp'] for item in repairs)):
+    stage_removed = remove_owned_stage(stage_base, project.parent)
 receipt = {'configuration':a.configuration,'packagingSucceeded':success, 'uatSucceeded':uat_success, 'uatExitCode':result.returncode,
-           'stagingDirectory':str(stage_base),
+           'stagingDirectory':str(stage_base), 'stageRemoved':stage_removed,
            'exitCode':0 if success else result.returncode or 1,
            'originalArchives':[str(x) for x in apps], 'bundleRepairs':repairs,
            'apps':[item['signature']['verifiedRuntimeApp'] for item in repairs if item['packagingSucceeded']],
