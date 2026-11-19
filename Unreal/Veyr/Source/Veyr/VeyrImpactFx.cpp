@@ -7,6 +7,8 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "NiagaraComponent.h"
@@ -222,10 +224,17 @@ void AVeyrImpactFx::HitBurst(const FVector& At,const FVector& Out,int32 Tier,flo
         ThrowSparks(E,At,Normal,Body);
         E.Chips=FMath::Max(E.Chips,6+4*Tier);E.ChipSizeCm=FMath::Max(E.ChipSizeCm,3.f+Tier);E.ChipSpeedCmS=FMath::Max(E.ChipSpeedCmS,360.f);
         ThrowChips(E,At,Normal,Body,0.f);
-        FVeyrFeelTuning::FEffect Burst=VeyrFeelTuning().Dust[0];
-        Burst.Cards=5+2*Tier;Burst.CardSizeCm=90.f+40.f*Tier;Burst.CardLife=.5f;Burst.CardOpacity=.9f;
-        Burst.CardRiseCmS=40.f;Burst.CardSpreadCmS=120.f+40.f*Tier;
-        SpawnDustCards(Burst,At+Normal*12.f*Body,Body,1.f,false);++HitSmoke;++ContactBursts;
+        // The pale dust-card puff (90+40 tier cm, opacity .9) drew a flat white slab on heavy hits under the new exposure,
+        // held through the stop (films 20261119T205054Z and T224519Z): only with -VeyrContactPuff.
+        static const bool bPuff=FParse::Param(FCommandLine::Get(),TEXT("VeyrContactPuff"));
+        if(bPuff)
+        {
+            FVeyrFeelTuning::FEffect Burst=VeyrFeelTuning().Dust[0];
+            Burst.Cards=5+2*Tier;Burst.CardSizeCm=90.f+40.f*Tier;Burst.CardLife=.5f;Burst.CardOpacity=.9f;
+            Burst.CardRiseCmS=40.f;Burst.CardSpreadCmS=120.f+40.f*Tier;
+            SpawnDustCards(Burst,At+Normal*12.f*Body,Body,1.f,false);++HitSmoke;
+        }
+        ++ContactBursts;
         return;
     }
     const FVeyrFeelTuning::FEffect& E=VeyrFeelTuning().Hit[Tier];
