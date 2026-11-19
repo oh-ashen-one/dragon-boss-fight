@@ -202,13 +202,17 @@ void AVeyrDragon::ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight)
     if(Dest){const FVeyrMoveTempo* T=Playback.MoveTempo(*Dest);if(!T||!T->bRootTrack||Dest->TrackCm.IsEmpty())Dest=nullptr;}
     const FTransform& Comp=ImportedPresentation->GetComponentTransform();
     auto ToWorld=[&](const FVector2D& D){FVector W=Comp.TransformVector(FVector(D.X,D.Y,0.f));W.Z=0.f;return W;};
-    FVector Delta=FVector::ZeroVector;
+    FVector Delta=FVector::ZeroVector,InstPart=FVector::ZeroVector;
+    const bool Restart=Dest&&TrackStem==Dest->Stem&&SequenceSeconds<TrackLastBaked-.05f;
+    if(!TrackInstStem.IsNone()&&(Restart||!((Dest&&Dest->Stem==TrackInstStem)||(bFadeActive&&FadeTrackStem==TrackInstStem))))CloseTrackInstance();
+    if(Dest&&TrackInstStem.IsNone()){TrackInstStem=Dest->Stem;TrackInstKey=PlaybackStatKey(Clip);TrackInstExpected=TrackInstApplied=FVector::ZeroVector;}
     if(Dest)
     {
         // New stem, or the same clip restarted: the track starts again from here.
         if(TrackStem!=Dest->Stem||SequenceSeconds<TrackLastBaked-.05f){TrackStem=Dest->Stem;TrackEntryBaked=TrackLastBaked=SequenceSeconds;}
         const FVector2D Now=Dest->TrackAt(SequenceSeconds),Last=Dest->TrackAt(TrackLastBaked),Entry=Dest->TrackAt(TrackEntryBaked);
         Delta+=ToWorld(Now-Last)*Weight;
+        if(Dest->Stem==TrackInstStem){TrackInstExpected+=ToWorld(Now-Last);InstPart+=ToWorld(Now-Last)*Weight;}
         DestOffset=FVector(Now.X-Entry.X,Now.Y-Entry.Y,0.f);
         TrackLastBaked=SequenceSeconds;
         FPlaybackStat& S=PlaybackStats.FindOrAdd(PlaybackStatKey(Clip));
@@ -222,6 +226,7 @@ void AVeyrDragon::ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight)
         {
             const FVector2D Now=Src->TrackAt(FadeSourceSeconds),Last=Src->TrackAt(FadeTrackLastBaked),Entry=Src->TrackAt(FadeTrackEntryBaked);
             Delta+=ToWorld(Now-Last)*(1.f-Weight);
+            if(FadeTrackStem==TrackInstStem){TrackInstExpected+=ToWorld(Now-Last)*(Dest&&Dest->Stem==TrackInstStem?0.f:1.f);InstPart+=ToWorld(Now-Last)*(1.f-Weight);}
             SourceOffset=FVector(Now.X-Entry.X,Now.Y-Entry.Y,0.f);
             FadeTrackLastBaked=FadeSourceSeconds;
         }
@@ -231,10 +236,27 @@ void AVeyrDragon::ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight)
         FVector Next=GetActorLocation()+Delta;
         const FVector Clamped=ClampArena(Next,RoamRadius());Next.X=Clamped.X;Next.Y=Clamped.Y;
         TrackTravelWorld+=Next-GetActorLocation();
+        // The arena clamp scales what was asked for; the instance's share is scaled the same way.
+        const double Asked=Delta.SizeSquared2D();
+        if(Asked>1.e-6)TrackInstApplied+=InstPart*static_cast<float>(FVector::DotProduct(Next-GetActorLocation(),Delta)/Asked);
         if(Dest)PlaybackStats.FindOrAdd(PlaybackStatKey(Clip)).TravelWorld+=Next-GetActorLocation();
         SetActorLocation(Next);
     }
     ImportedPresentation->SetRootOffsets(DestOffset,SourceOffset);
+}
+
+void AVeyrDragon::CloseTrackInstance()
+{
+    if(TrackInstStem.IsNone())return;
+    FPlaybackStat& S=PlaybackStats.FindOrAdd(TrackInstKey);
+    const float Expected=static_cast<float>(TrackInstExpected.Size2D()),Applied=static_cast<float>(TrackInstApplied.Size2D());
+    if(Expected>5.f*BodyScale)
+    {
+        const float Ratio=Applied/Expected;
+        ++S.TrackInstances;S.TrackNetExpectedCm+=Expected;S.TrackNetAppliedCm+=Applied;
+        S.TrackMinRatio=S.TrackMinRatio<0.f?Ratio:FMath::Min(S.TrackMinRatio,Ratio);S.TrackMaxRatio=FMath::Max(S.TrackMaxRatio,Ratio);
+    }
+    TrackInstStem=NAME_None;
 }
 
 void AVeyrDragon::UpdatePoseDeltaStat()
@@ -480,6 +502,8 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
         C->SetObjectField(TEXT("feet"),Feet);C->SetNumberField(TEXT("worstPlantedSlideCmPerSec"),MoveWorst);
         C->SetNumberField(TEXT("steps"),S.Steps);C->SetNumberField(TEXT("slips"),S.Slips);C->SetNumberField(TEXT("maxIkMissCm"),S.MaxIkMissCm);
         C->SetNumberField(TEXT("travelWorldCm"),S.TravelWorld.Size2D());C->SetNumberField(TEXT("trackPathWorldCm"),S.TrackLengthCm);
+        C->SetNumberField(TEXT("trackInstances"),S.TrackInstances);C->SetNumberField(TEXT("trackNetExpectedCm"),S.TrackNetExpectedCm);
+        C->SetNumberField(TEXT("trackNetAppliedCm"),S.TrackNetAppliedCm);C->SetNumberField(TEXT("trackMinRatio"),S.TrackMinRatio);C->SetNumberField(TEXT("trackMaxRatio"),S.TrackMaxRatio);
         C->SetNumberField(TEXT("poseFrames"),S.PoseFrames);C->SetNumberField(TEXT("pops"),S.Pops);C->SetNumberField(TEXT("popsInBlend"),S.PopsInBlend);
         C->SetNumberField(TEXT("maxPopRatio"),S.MaxPopRatio);C->SetNumberField(TEXT("maxPopRatioInBlend"),S.MaxPopRatioInBlend);
         C->SetStringField(TEXT("worstPopBone"),S.WorstPopBone.ToString());

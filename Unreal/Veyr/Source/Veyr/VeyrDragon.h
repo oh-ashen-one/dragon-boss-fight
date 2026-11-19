@@ -413,6 +413,8 @@ private:
     FName LastSampledClip=NAME_None;
     // F4 root tracks
     FName TrackStem=NAME_None,FadeTrackStem=NAME_None;
+    FName TrackInstStem=NAME_None,TrackInstKey=NAME_None;FVector TrackInstExpected=FVector::ZeroVector,TrackInstApplied=FVector::ZeroVector;
+    void CloseTrackInstance();
     float TrackEntryBaked=0.f,TrackLastBaked=0.f,FadeTrackEntryBaked=0.f,FadeTrackLastBaked=0.f;
     FVector TrackTravelWorld=FVector::ZeroVector;
     void ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight);
@@ -446,6 +448,8 @@ private:
         FVector TravelWorld=FVector::ZeroVector;double TrackLengthCm=0;
         // Blend pops: one-frame pose-delta spikes (a bone's speed jumps past PopRatio x both neighbouring frames).
         int32 Pops=0,PopsInBlend=0,PoseFrames=0;float MaxPopRatio=0.f,MaxPopRatioInBlend=0.f;FName WorstPopBone;
+        // Root-track instances: the clip's own net track (entry to exit) against the actor's applied share of it.
+        int32 TrackInstances=0;double TrackNetExpectedCm=0,TrackNetAppliedCm=0;float TrackMinRatio=-1.f,TrackMaxRatio=-1.f;
     };
     TMap<FName,FPlaybackStat> PlaybackStats;
     FName PlaybackStatKey(FName Clip) const;
