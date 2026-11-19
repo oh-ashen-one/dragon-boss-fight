@@ -4,6 +4,7 @@
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrGameMode.h"
 #include "VeyrFightFeel.h"
+#include "VeyrFeelTuning.h"
 #include "VeyrAudio.h"
 #include "VeyrArena.h"
 #include "VeyrBlendProof.h"
@@ -2985,7 +2986,15 @@ void AVeyrReplay::AdvanceRestart(float DeltaSeconds)
         Finish(true,ReplayMode+TEXT(" terminal pose, resource reset, movement and primary attack after restart verified"));
 }
 
-void AVeyrReplay::SaveEvidence(bool bFinal)
+void AVeyrReplay::SaveInterimEvidence()
+{
+    // The full file carries every 0.25 s sample and event (55 MB at two minutes); rewriting it on the game thread
+    // every 5 s held whole frames, up to 0.4 s late in a film. During a film the interim write leaves those arrays out.
+    const bool bFilming=VideoFPS>0&&!bVideoStopped&&VideoStartedWallTime>0;
+    SaveEvidence(false,bFilming&&VeyrFeelSwitches::FilmEvidence());
+}
+
+void AVeyrReplay::SaveEvidence(bool bFinal,bool bSlim)
 {
     TSharedPtr<FJsonObject> Root=MakeShared<FJsonObject>();
     Root->SetNumberField(TEXT("warningContainmentFailures"),ObservedWarningContainmentFailures);
@@ -3127,7 +3136,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     Root->SetNumberField(TEXT("maximumFrameSeconds"),MaximumFrameSeconds);
     Root->SetBoolField(TEXT("lightLegContact"),bLightLegContact);Root->SetBoolField(TEXT("heavyLegContact"),bHeavyLegContact);Root->SetBoolField(TEXT("riseObserved"),bSawRise);Root->SetBoolField(TEXT("riseCompleted"),bRiseCompleted);
     TArray<TSharedPtr<FJsonValue>> WallSamples;for(double Interval:WallFrameIntervals)WallSamples.Add(MakeShared<FJsonValueNumber>(Interval));
-    Root->SetArrayField(TEXT("wallFrameIntervalsSeconds"),WallSamples);
+    if(!bSlim)Root->SetArrayField(TEXT("wallFrameIntervalsSeconds"),WallSamples);
     Root->SetStringField(TEXT("wallFrameIntervalScope"),TEXT("replay actor tick intervals; includes capture and evidence I/O; excludes world reload; not GPU frame time"));
     if(!WallFrameIntervals.IsEmpty())
     {
@@ -3136,7 +3145,9 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
         Root->SetNumberField(TEXT("wallFrameP95Seconds"),Sorted[FMath::FloorToInt((Sorted.Num()-1)*.95)]);
         Root->SetNumberField(TEXT("wallFrameP99Seconds"),Sorted[FMath::FloorToInt((Sorted.Num()-1)*.99)]);
     }
-    Root->SetObjectField(TEXT("latest"),Snapshot());Root->SetArrayField(TEXT("samples"),Samples);Root->SetArrayField(TEXT("events"),Events);
+    Root->SetObjectField(TEXT("latest"),Snapshot());
+    if(!bSlim){Root->SetArrayField(TEXT("samples"),Samples);Root->SetArrayField(TEXT("events"),Events);}
+    else{Root->SetBoolField(TEXT("interimSlim"),true);Root->SetNumberField(TEXT("sampleCount"),Samples.Num());Root->SetNumberField(TEXT("eventCount"),Events.Num());}
     TArray<TSharedPtr<FJsonValue>> Frames;
     for(int32 I=0;I<CaptureFiles.Num();++I)
     {
@@ -3153,7 +3164,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     }
     Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
     Root->SetBoolField(TEXT("headlessNumbersOnly"),bHeadless);Root->SetNumberField(TEXT("stillIntervalSeconds"),StillInterval);
-    LastEvidence=Root;
+    if(!bSlim)LastEvidence=Root; // a restart resumes from a full record
     FString Json;const TSharedRef<TJsonWriter<>> Writer=TJsonWriterFactory<>::Create(&Json);
     const FString File=FPaths::Combine(RunDirectory,TEXT("evidence.json"));
     if(!FJsonSerializer::Serialize(Root.ToSharedRef(),Writer)||!FFileHelper::SaveStringToFile(Json,*(File+TEXT(".tmp")))||!IFileManager::Get().Move(*File,*(File+TEXT(".tmp")),true))
@@ -3213,19 +3224,19 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     if(ReplayMode==TEXT("environment"))
     {
         TickEnvironmentTour();ServiceCapture();
-        if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+        if(SaveClock>=5.f){SaveClock=0;SaveInterimEvidence();}return;
     }
     if(ReplayMode==TEXT("intro"))
     {
         TickArenaIntroProof();ServiceCapture();
         if(Elapsed>DurationLimit&&!bFinished)Finish(false,TEXT("Intro/handoff proof timeout"));
-        if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+        if(SaveClock>=5.f){SaveClock=0;SaveInterimEvidence();}return;
     }
     if(IsShowcase()&&Showcase.IsValid())
     {
         Showcase->Tick(DeltaSeconds,Elapsed);
         if(!bFinished&&Elapsed>DurationLimit)Finish(false,TEXT("every-move showcase timeout"));
-        ServiceCapture();if(SaveClock>=5.f){SaveClock=0;SaveEvidence(false);}return;
+        ServiceCapture();if(SaveClock>=5.f){SaveClock=0;SaveInterimEvidence();}return;
     }
     if(bTerminalSettling||bAwaitingReload||bRestartVerification)AdvanceRestart(DeltaSeconds);
     else if(ReplayMode==TEXT("death")&&Knight->IsDead())BeginTerminalVerification();
@@ -3254,7 +3265,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
         Finish(false,TEXT("objective timeout; inspect event history and policy"));
     }
     if(!bFinished&&!bTerminalSettling&&!bAwaitingReload&&!bRestartVerification)DriveInputs();ServiceCapture();
-    if(SaveClock>=(bPerformanceMode?30.f:5.f)){SaveClock=0;SaveEvidence(false);}
+    if(SaveClock>=(bPerformanceMode?30.f:5.f)){SaveClock=0;SaveInterimEvidence();}
 }
 
 void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)

@@ -26,6 +26,13 @@ namespace VeyrFeelSwitches
     bool RefHitStop();       // -VeyrLegacyHitStop (55/95 ms at 0.05 again)
     bool LatePunch();        // -VeyrLegacyPunchOrder (punch before the arm's lens boost, which could open it back up)
     bool DownFlinch();       // -VeyrLegacyDownFlinch (only the small head nudge while the dragon is down)
+    // B2 impact (2026-11-19): the blow lands on the dragon and on the knight, not only in the camera.
+    bool StrikeReact();      // -VeyrLegacyStrikeReact (no fast snap of the struck leg/head, no body rock)
+    bool StopHold();         // -VeyrLegacyStopHold (65/150 ms stops with the shake and punch running through them)
+    bool ContactBurst();     // -VeyrLegacyContactBurst (the B4 burst and the wide flat mesh tint)
+    bool KnightRecoil();     // -VeyrNoKnightRecoil (no rebound lean of the knight on contact)
+    bool WideTrail();        // -VeyrLegacyTrailWidth (the B6 ribbon width and brightness)
+    bool FilmEvidence();     // -VeyrLegacyFilmEvidence (full evidence.json rewritten every 5 s during a film)
 }
 
 enum class EVeyrFeelClass : uint8 { Footfall=0, Stomp=1, BodyFall=2, Landing=3, Count=4 };
@@ -84,6 +91,15 @@ struct FVeyrFeelTuning
      *  12 deg: at 30 the downed head swung out of the scripted knight's reach and one-hand fights ran 140 s instead of 93. */
     float FlinchDownCapDegrees=12.f;
     float FlashPeak=1.f,FlashPeakGain=1.2f,FlashRadiusCm=40.f,FlashRadiusGainCm=45.f,FlashFade=.07f,FlashLife=.3f;
+    // B2 struck-part reaction (degrees, x weight W 0.3-1, x size): a fast snap and return, 0.03 s up, ~0.25 s back.
+    float StrikeLegMin=5.f,StrikeLegGain=9.f,StrikeHeadMin=10.f,StrikeHeadGain=16.f,StrikeBodyMin=1.f,StrikeBodyGain=2.5f;
+    float StrikeSnapSeconds=.03f,StrikeHz=2.2f,StrikeDecaySeconds=.075f,StrikeLifeSeconds=.4f;
+    // B2 contact flash: small and hot around the blade's contact point instead of a tint over the whole limb.
+    float ContactFlashRadiusCm=18.f,ContactFlashRadiusGainCm=18.f,ContactFlashPeakScale=1.6f,ContactFlashFade=.035f,ContactFlashLife=.14f;
+    // B2 hit stop as filmed at 30 fps: at least two film frames on a light blow, five on a heavy one; shake and punch hold.
+    float StopHoldLight=.1f,StopHoldHeavy=.17f;
+    // B2 knight rebound lean (degrees) on contact.
+    float RecoilLight=1.5f,RecoilHeavy=5.f;
 
     // Knight
     float TrailLife=.22f,TrailBaseFraction=.2f;

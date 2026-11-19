@@ -187,8 +187,26 @@ void AVeyrImpactFx::HitBurst(const FVector& At,const FVector& Out,int32 Tier,flo
 {
     if(!VeyrFeelSwitches::HitBursts())return;
     Tier=FMath::Clamp(Tier,0,2);
-    const FVeyrFeelTuning::FEffect& E=VeyrFeelTuning().Hit[Tier];
     const FVector Normal=Out.IsNearlyZero()?FVector::UpVector:Out.GetSafeNormal();
+    if(VeyrFeelSwitches::ContactBurst())
+    {
+        // B2: every blow, legs included, throws a burst that lasts about half a second at the blade's contact point:
+        // the spark asset larger, spark cards that live 0.45 s, debris specks, and a short pale burst (the reference's
+        // white flash-and-dust), all sized by the blow's tier and the dragon's size.
+        FVeyrFeelTuning::FEffect E=VeyrFeelTuning().Hit[Tier];
+        const float Body=FMath::Sqrt(FMath::Max(.25f,BodyScale));
+        if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*1.6f*Body,FMath::Max(E.LifeSeconds,.6f)))++HitAsset[Tier];else ++HitFallback[Tier];
+        E.Cards+=6;E.CardSizeCm*=1.7f;E.CardLife=FMath::Max(E.CardLife,.45f);E.CardOpacity=1.f;E.CardSpreadCmS*=.8f;
+        ThrowSparks(E,At,Normal,Body);
+        E.Chips=FMath::Max(E.Chips,6+4*Tier);E.ChipSizeCm=FMath::Max(E.ChipSizeCm,3.f+Tier);E.ChipSpeedCmS=FMath::Max(E.ChipSpeedCmS,360.f);
+        ThrowChips(E,At,Normal,Body,0.f);
+        FVeyrFeelTuning::FEffect Burst=VeyrFeelTuning().Dust[0];
+        Burst.Cards=5+2*Tier;Burst.CardSizeCm=90.f+40.f*Tier;Burst.CardLife=.5f;Burst.CardOpacity=.9f;
+        Burst.CardRiseCmS=40.f;Burst.CardSpreadCmS=120.f+40.f*Tier;
+        SpawnDustCards(Burst,At+Normal*12.f*Body,Body,1.f,false);++HitSmoke;++ContactBursts;
+        return;
+    }
+    const FVeyrFeelTuning::FEffect& E=VeyrFeelTuning().Hit[Tier];
     if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*FMath::Sqrt(FMath::Max(.25f,BodyScale)),E.LifeSeconds))
     {++HitAsset[Tier];if(E.bCardsWithAsset)ThrowSparks(E,At,Normal,1.f);}
     else{ThrowSparks(E,At,Normal,1.f);++HitFallback[Tier];}

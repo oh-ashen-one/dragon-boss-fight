@@ -72,6 +72,12 @@ namespace VeyrFeelSwitches
     bool RefHitStop(){static const bool B=!Off(TEXT("VeyrLegacyHitStop"));return B;}
     bool LatePunch(){static const bool B=ZoomPunch()&&!Off(TEXT("VeyrLegacyPunchOrder"));return B;}
     bool DownFlinch(){static const bool B=SpineFlinch()&&!Off(TEXT("VeyrLegacyDownFlinch"));return B;}
+    bool StrikeReact(){static const bool B=SpineFlinch()&&!Off(TEXT("VeyrLegacyStrikeReact"));return B;}
+    bool StopHold(){static const bool B=RefHitStop()&&!Off(TEXT("VeyrLegacyStopHold"));return B;}
+    bool ContactBurst(){static const bool B=HitBursts()&&!Off(TEXT("VeyrLegacyContactBurst"));return B;}
+    bool KnightRecoil(){static const bool B=!Off(TEXT("VeyrNoKnightRecoil"));return B;}
+    bool WideTrail(){static const bool B=RibbonTrail()&&!Off(TEXT("VeyrLegacyTrailWidth"));return B;}
+    bool FilmEvidence(){static const bool B=!Off(TEXT("VeyrLegacyFilmEvidence"));return B;}
 }
 
 FVeyrFeelTuning::FVeyrFeelTuning()
@@ -140,6 +146,8 @@ bool FVeyrFeelTuning::LoadFromFile(const FString& File)
     if(const TSharedPtr<FJsonObject> H=Obj(Root,TEXT("hit_stop")))
     {
         Num(H,TEXT("light_s"),HitStopLight);Num(H,TEXT("heavy_s"),HitStopHeavy);Num(H,TEXT("dilation"),HitStopDilation);
+        Num(H,TEXT("hold_light_s"),StopHoldLight);Num(H,TEXT("hold_heavy_s"),StopHoldHeavy);
+        StopHoldLight=FMath::Clamp(StopHoldLight,0.f,.25f);StopHoldHeavy=FMath::Clamp(StopHoldHeavy,0.f,.25f);
         HitStopLight=FMath::Clamp(HitStopLight,0.f,.25f);HitStopHeavy=FMath::Clamp(HitStopHeavy,0.f,.25f);HitStopDilation=FMath::Clamp(HitStopDilation,.01f,1.f);
     }
     if(const TSharedPtr<FJsonObject> F=Obj(Root,TEXT("flinch")))
@@ -152,6 +160,15 @@ bool FVeyrFeelTuning::LoadFromFile(const FString& File)
         Num(F,TEXT("snap_s"),FlinchSnapSeconds);Num(F,TEXT("hz"),FlinchHz);Num(F,TEXT("damping"),FlinchDamping);Num(F,TEXT("life_s"),FlinchLifeSeconds);
         Num(F,TEXT("flash_peak"),FlashPeak);Num(F,TEXT("flash_peak_gain"),FlashPeakGain);Num(F,TEXT("flash_radius_cm"),FlashRadiusCm);
         Num(F,TEXT("flash_radius_gain_cm"),FlashRadiusGainCm);Num(F,TEXT("flash_fade_s"),FlashFade);Num(F,TEXT("flash_life_s"),FlashLife);
+        Num(F,TEXT("strike_leg_min_deg"),StrikeLegMin);Num(F,TEXT("strike_leg_gain_deg"),StrikeLegGain);
+        Num(F,TEXT("strike_head_min_deg"),StrikeHeadMin);Num(F,TEXT("strike_head_gain_deg"),StrikeHeadGain);
+        Num(F,TEXT("strike_body_min_deg"),StrikeBodyMin);Num(F,TEXT("strike_body_gain_deg"),StrikeBodyGain);
+        Num(F,TEXT("strike_snap_s"),StrikeSnapSeconds);Num(F,TEXT("strike_hz"),StrikeHz);
+        Num(F,TEXT("strike_decay_s"),StrikeDecaySeconds);Num(F,TEXT("strike_life_s"),StrikeLifeSeconds);
+        Num(F,TEXT("contact_flash_radius_cm"),ContactFlashRadiusCm);Num(F,TEXT("contact_flash_radius_gain_cm"),ContactFlashRadiusGainCm);
+        Num(F,TEXT("contact_flash_peak_scale"),ContactFlashPeakScale);Num(F,TEXT("contact_flash_fade_s"),ContactFlashFade);
+        Num(F,TEXT("contact_flash_life_s"),ContactFlashLife);
+        StrikeSnapSeconds=FMath::Clamp(StrikeSnapSeconds,.005f,.2f);StrikeDecaySeconds=FMath::Clamp(StrikeDecaySeconds,.01f,.5f);
         FlinchDamping=FMath::Clamp(FlinchDamping,.05f,.95f);FlinchHz=FMath::Clamp(FlinchHz,.5f,8.f);
     }
     if(const TSharedPtr<FJsonObject> K=Obj(Root,TEXT("knight")))
@@ -161,6 +178,7 @@ bool FVeyrFeelTuning::LoadFromFile(const FString& File)
         Num(K,TEXT("punch_heavy"),PunchHeavy);Num(K,TEXT("punch_light"),PunchLight);Num(K,TEXT("punch_s"),PunchSeconds);
         Num(K,TEXT("kick_min_deg"),KickMin);Num(K,TEXT("kick_gain_deg"),KickGain);Num(K,TEXT("kick_s"),KickSeconds);
         Num(K,TEXT("hurt_min"),HurtMin);Num(K,TEXT("hurt_gain"),HurtGain);
+        Num(K,TEXT("recoil_light_deg"),RecoilLight);Num(K,TEXT("recoil_heavy_deg"),RecoilHeavy);
         TrailLife=FMath::Clamp(TrailLife,.03f,.4f);SlowTailFrom=FMath::Clamp(SlowTailFrom,.1f,1.f);
     }
     ReadEffects(Root,TEXT("dust"),Dust);

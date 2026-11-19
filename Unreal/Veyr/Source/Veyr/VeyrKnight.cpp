@@ -1588,6 +1588,13 @@ void AVeyrKnight::UpdateEquippedWeapon()
     BoatWeapon->SetWorldTransform(FTransform(Grip.GetRotation(),Grip.GetLocation(),FVector::OneVector));
 }
 
+void AVeyrKnight::AddHitRecoil(const FVector& AwayWorld,float Degrees)
+{
+    const FVector Away=AwayWorld.GetSafeNormal2D();
+    if(Away.IsNearlyZero()||Degrees<=0.f)return;
+    HitRecoilAway=Away;HitRecoilDegrees=Degrees;HitRecoilAge=0.f;MaxHitRecoilDegrees=FMath::Max(MaxHitRecoilDegrees,Degrees);
+}
+
 void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
 {
     if(!bImportedPresentationActive||!ImportedPresentation||!CustomuseVisualDefinition)return;
@@ -1642,7 +1649,18 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     PresentationLowerWeight=PresentationLowerTime=PresentationJumpPhase=0.f;
     const float DesiredRollYaw=IsRollPrefix()?FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw):0.f;
     PresentationRollYaw=FMath::RInterpTo(FRotator(0,PresentationRollYaw,0),FRotator(0,DesiredRollYaw,0),DeltaSeconds,20.f).Yaw;
-    ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*CustomuseVisualDefinition->MeshRelativeTransform.GetRotation());
+    FQuat Recoil=FQuat::Identity;
+    HitRecoilAge+=DeltaSeconds; // game clock: the hit stop holds the blade, the rebound follows it
+    if(HitRecoilAge<.4f&&HitRecoilDegrees>0.f)
+    {
+        // Snap back in 40 ms, then a damped spring home (one small rebound).
+        const float A=HitRecoilAge<.04f?1.f-FMath::Square(1.f-HitRecoilAge/.04f):
+            FMath::Exp(-(HitRecoilAge-.04f)/.08f)*FMath::Cos(2.f*PI*2.2f*(HitRecoilAge-.04f));
+        const FVector Away=GetActorQuat().UnrotateVector(HitRecoilAway).GetSafeNormal2D();
+        const FVector Axis=FVector::CrossProduct(FVector::UpVector,Away);
+        if(!Axis.IsNearlyZero())Recoil=FQuat(Axis.GetSafeNormal(),FMath::DegreesToRadians(HitRecoilDegrees*A));
+    }
+    ImportedPresentation->SetRelativeRotation(Recoil*FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*CustomuseVisualDefinition->MeshRelativeTransform.GetRotation());
     RequestedPresentationClip=Clip;
     const bool Restarted=Action!=EVeyrKnightAction::Ready&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
     if(Clip!=PresentationTransitionClip||Restarted)

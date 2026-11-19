@@ -30,6 +30,11 @@ class VEYR_API AVeyrKnight : public ACharacter
 public:
     AVeyrKnight();
     virtual void Tick(float DeltaSeconds) override;
+    /** B2 (presentation only): the blade bounces back off the hide; a lean of the mesh away from the contact
+     *  (degrees), springing home in about a quarter second. No effect on the capsule, actions or damage windows. */
+    void AddHitRecoil(const FVector& AwayWorld,float Degrees);
+    float HitRecoilAge=10.f,HitRecoilDegrees=0.f,MaxHitRecoilDegrees=0.f;
+    FVector HitRecoilAway=FVector::ForwardVector;
     // Owner removed jumping; also reject inherited/Blueprint jump requests.
     virtual bool CanJumpInternal_Implementation() const override { return false; }
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;

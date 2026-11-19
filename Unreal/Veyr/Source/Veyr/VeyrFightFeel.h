@@ -59,6 +59,10 @@ public:
     int32 SpineFlinches=0,MeshFlashes=0,FallbackFlashes=0,SlowTails=0,ZoomPunches=0,HurtKicks=0,RibbonFrames=0,MaxRibbonRows=0;
     mutable int32 FlinchBoneCount=0,LegCompensations=0; // filled when the chain is (re)built from the pose path
     mutable float MaxFlinchDegrees=0.f,FlinchDegreesNow=0.f;
+    // B2 struck-part reaction evidence: blows by region (legs 0-3, head 4, other parts 5) and the largest snap.
+    int32 HeldStopTicks=0,StrikeEvents=0,StrikesByRegion[6]={0,0,0,0,0,0},KnightRecoils=0,ContactFlashes=0;
+    mutable float MaxStrikeDegrees=0.f,MaxStrikeLegDegrees=0.f,MaxStrikeHeadDegrees=0.f,MaxStrikeBodyDegrees=0.f;
+    mutable int32 StrikeBonesApplied=0;
     mutable uint64 FlinchFrame=0;
     float MaxRibbonWidthCm=0.f;
     mutable FString FlinchDiagnostic;
@@ -96,6 +100,14 @@ private:
     struct FChainBone { FName Bone; float Share=0.f; };
     mutable TWeakObjectPtr<const UObject> ChainMesh;
     mutable TArray<FChainBone> Chain;      // head first; signed shares (tail and leg roots negative)
+    // B2: the struck part's own snap. Spine bones (head first, shares summing to 1), each leg's two top bones
+    // (only that leg hangs below them), and the bone that carries all four legs (the whole-body rock).
+    mutable TArray<FChainBone> StrikeSpine;
+    mutable FName LegTop[4],LegMid[4],BodyBone;
+    struct FStrike { int32 Region=-1; FVector Blow=FVector::ForwardVector; float Weight=0.f,Size=1.f,Age=10.f; };
+    FStrike Strikes[4]; int32 NextStrike=0;
+    void AddStrikes(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotations,bool bDown) const;
+    float MeshFlashLife=.3f,MeshFlashFade=.07f;
     void BuildChain(AVeyrDragon* Boss) const;
     // B6 ribbon
     static constexpr int32 RibbonMaxSamples=24,RibbonSub=4,RibbonMaxRows=(RibbonMaxSamples-1)*RibbonSub+1;
