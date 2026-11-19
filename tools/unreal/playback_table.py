@@ -38,7 +38,8 @@ def main(argv):
         for k, c in d.get('clips', {}).items():
             q = pooled.setdefault(k, {'real': 0., 'source': 0., 'realNH': 0., 'sourceNH': 0., 'maxRate': 0., 'slide': 0.,
                                        'steps': 0, 'slips': 0, 'pops': 0, 'popsInBlend': 0, 'popRatio': 0., 'popBone': '',
-                                       'travel': 0., 'track': 0., 'blends': {}, 'frames': 0, 'planted': 0.})
+                                       'travel': 0., 'track': 0., 'blends': {}, 'frames': 0, 'planted': 0.,
+                                       'inst': 0, 'netExp': 0., 'netApp': 0., 'rmin': None, 'rmax': None})
             rs = c.get('realSeconds', 0); q['real'] += rs; q['source'] += c.get('meanSourceRate', 0) * rs
             rn = rs if c.get('meanSourceRateOutsideHolds', 0) else 0
             # meanSourceRateOutsideHolds is per-file; weight by realSeconds (approximation for pooling)
@@ -52,6 +53,10 @@ def main(argv):
             if c.get('maxPopRatio', 0) > q['popRatio']:
                 q['popRatio'] = c.get('maxPopRatio', 0); q['popBone'] = c.get('worstPopBone', '')
             q['travel'] += c.get('travelWorldCm', 0); q['track'] += c.get('trackPathWorldCm', 0)
+            if c.get('trackInstances', 0):
+                q['inst'] += c['trackInstances']; q['netExp'] += c['trackNetExpectedCm']; q['netApp'] += c['trackNetAppliedCm']
+                q['rmin'] = c['trackMinRatio'] if q['rmin'] is None else min(q['rmin'], c['trackMinRatio'])
+                q['rmax'] = c['trackMaxRatio'] if q['rmax'] is None else max(q['rmax'], c['trackMaxRatio'])
             for b, n in c.get('blends', {}).items():
                 q['blends'][b] = q['blends'].get(b, 0) + n
     for t in tops:
@@ -66,10 +71,13 @@ def main(argv):
         rows[k] = {'rate': round(rate, 3), 'rateOutsideHolds': round(rnh, 3), 'maxFrameRateOutsideHolds': round(q['maxRate'], 3),
                    'slideCmPerSec': round(q['slide'], 2), 'plantedSeconds': round(q['planted'], 2), 'steps': q['steps'],
                    'slips': q['slips'], 'pops': q['pops'], 'popsInBlend': q['popsInBlend'], 'maxPopRatio': round(q['popRatio'], 2),
-                   'popBone': q['popBone'], 'travelCm': round(q['travel'], 1), 'trackCm': round(q['track'], 1), 'blends': q['blends']}
+                   'popBone': q['popBone'], 'travelCm': round(q['travel'], 1), 'trackCm': round(q['track'], 1), 'blends': q['blends'],
+                   'trackInstances': q['inst'], 'trackNetExpectedCm': round(q['netExp'], 1), 'trackNetAppliedCm': round(q['netApp'], 1),
+                   'trackRatioMin': q['rmin'], 'trackRatioMax': q['rmax']}
         print('%-22s %6.3f %6.3f %6.3f %7.2f %6.1f %5d %5d %4d/%-4d %6.2f %8.1f %8.1f  %s' % (k, rate, rnh, q['maxRate'], q['slide'],
               q['planted'], q['steps'], q['slips'], q['popsInBlend'], q['pops'], q['popRatio'], q['travel'], q['track'],
-              ','.join('%s:%d' % kv for kv in sorted(q['blends'].items()))))
+              ','.join('%s:%d' % kv for kv in sorted(q['blends'].items()))) +
+              ('  track %d inst net %.0f/%.0f cm ratio %.2f-%.2f' % (q['inst'], q['netApp'], q['netExp'], q['rmin'], q['rmax']) if q['inst'] else ''))
     if out:
         Path(out).write_text(json.dumps({'files': tops, 'clips': rows}, indent=1) + '\n')
 

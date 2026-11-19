@@ -322,20 +322,32 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         const float Dt=FootLockClock<0.f?0.f:FMath::Max(0.f,Clock-FootLockClock);
         if(Dt>0.f||FootLockClock<0.f)FootLockClock=Clock;
         FPlaybackStat& Stat=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
+        const FVector ActorNow=GetActorLocation();const FQuat ActorQuatNow=GetActorQuat();
+        const FVector PivotPrev=bFootLockActorPrev?FootLockActorPrev:ActorNow;
+        const FQuat TurnDelta=bFootLockActorPrev?ActorQuatNow*FootLockActorQuatPrev.Inverse():FQuat::Identity;
+        FootLockActorPrev=ActorNow;FootLockActorQuatPrev=ActorQuatNow;bFootLockActorPrev=true;
         for(int32 L=0;L<4&&Dt>0.f;++L)
         {
             FFootLockFoot& F=LockFeet[L];
             const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
-            if(Anim.SoleAboveFloorCm[L]<Playback.FootLock.PlantHeightCm*BodyScale&&F.bHasPrev)
+            // Same "planted" as the lock's gate: low and still in the clip with the body's turn removed.
+            const FVector Predicted=PivotPrev+TurnDelta.RotateVector(F.PrevTip-PivotPrev);
+            const bool Slow=F.bHasPrev&&FVector::Dist2D(Anchor,Predicted)/Dt<Playback.FootLock.PlantSpeedCms*BodyScale;
+            if(Anim.SoleAboveFloorCm[L]<Playback.FootLock.PlantHeightCm*BodyScale&&F.bHasPrev&&Slow)
             {Stat.PlantedSeconds[L]+=Dt;Stat.AnimatedSlideCm[L]+=FVector::Dist2D(Anchor,F.PrevTip);}
             F.PrevTip=Anchor;F.bHasPrev=true;
         }
         return;
     }
     // A teleport (showcase placement, restart) is not motion: drop the pins and the slide history at once.
-    const FVector ActorNow=GetActorLocation();
+    const FVector ActorNow=GetActorLocation();const FQuat ActorQuatNow=GetActorQuat();
     const bool Teleported=bFootLockActorPrev&&FVector::Dist2D(ActorNow,FootLockActorPrev)>250.f*BodyScale;
-    FootLockActorPrev=ActorNow;bFootLockActorPrev=true;
+    // The plant test removes the body's TURN from the foot's world motion (rotate last frame's foot about last frame's
+    // pivot by the actor's yaw change) but keeps its travel: a paw still in the clip under a turning body counts as
+    // planted, and so does an in-place walk paw that stays put on the floor while the actor walks over it.
+    const FVector PivotPrev=bFootLockActorPrev?FootLockActorPrev:ActorNow;
+    const FQuat TurnDelta=bFootLockActorPrev?ActorQuatNow*FootLockActorQuatPrev.Inverse():FQuat::Identity;
+    FootLockActorPrev=ActorNow;FootLockActorQuatPrev=ActorQuatNow;bFootLockActorPrev=true;
     if(Teleported)
     {
         ++FootLockTeleports;ResetFootLock();
@@ -367,18 +379,16 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
         const float Height=Anim.SoleAboveFloorCm[L];
         if(ReleaseOnly&&(F.bLocked||F.bStepping)){F.bLocked=F.bStepping=false;F.bReleasing=true;F.T=0.f;F.From=F.Target;}
-        // The plant test uses the CLIP's foot speed (component space): a body turn or travel under a planted paw must
-        // not stop it planting (world speed did, so turning feet were never pinned and slid with the body).
-        const FVector Local=ImportedPresentation->GetComponentTransform().InverseTransformPosition(Anchor);
-        const float LocalSpeed=F.bHasPrevLocal&&Dt>0.f?static_cast<float>(FVector::Dist2D(Local,F.PrevLocal))*ImportedPresentation->GetComponentScale().X/Dt:0.f;
-        if(Dt>0.f||!F.bHasPrevLocal){F.PrevLocal=Local;F.bHasPrevLocal=true;}
+        // Foot speed with the body's turn removed (see above). World speed kept turning paws from ever planting.
+        const FVector Predicted=PivotPrev+TurnDelta.RotateVector(F.PrevTip-PivotPrev);
         if(Dt>0.f)
         {
-            const float Speed=LocalSpeed;
+            const float Speed=F.bHasPrev?static_cast<float>(FVector::Dist2D(Anchor,Predicted))/Dt:0.f;
             if(F.bLocked)
             {
                 const float Drag=static_cast<float>(FVector::Dist2D(F.Pin,Anchor));
-                if(Height>T.ReleaseHeightCm*S||(Height>2.f*S&&Drag>T.DragReleaseCm*S))
+                // Lifting in the clip releases; dragged on the floor (body turn or travel) takes an eased step instead.
+                if(Height>T.ReleaseHeightCm*S||(Height>T.PlantHeightCm*S&&Drag>T.DragReleaseCm*S))
                 {F.bLocked=false;F.bReleasing=true;F.T=0.f;F.From=F.Pin;}
                 else if(Drag>T.SlipCm*S)
                 {
@@ -398,10 +408,13 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
                 if(F.T>=1.f)F.bReleasing=false;
             }
             // A foot plants only when it is low AND slow in the clip (bFading only marks evidence).
-            if(!ReleaseOnly&&!F.bLocked&&!F.bStepping&&Height<T.PlantHeightCm*S&&Speed<T.PlantSpeedCms*S)
+            const bool Slow=Speed<T.PlantSpeedCms*S;
+            if(!ReleaseOnly&&!F.bLocked&&!F.bStepping&&!F.bReleasing&&Height<T.PlantHeightCm*S&&Slow)
             {F.bLocked=true;F.bReleasing=false;F.Pin=Anchor;}
             // Planted = low in the clip and not in a lock step (a stepping paw is lifted on purpose).
-            F.bLowNow=!ReleaseOnly&&!F.bStepping&&Height<T.PlantHeightCm*S;
+            // The gate's "planted" = low AND still in the clip (with the turn removed): a paw the clip sweeps along the
+            // floor is a moving paw, not a planted one. Lock steps are excluded (lifted on purpose).
+            F.bLowNow=!ReleaseOnly&&!F.bStepping&&Height<T.PlantHeightCm*S&&(Slow||F.bLocked);
             if(F.bLowNow&&F.bHasPrev)
             {Stat.PlantedSeconds[L]+=Dt;Stat.AnimatedSlideCm[L]+=FVector::Dist2D(Anchor,F.PrevTip);}
             F.PrevTip=Anchor;F.bHasPrev=true;

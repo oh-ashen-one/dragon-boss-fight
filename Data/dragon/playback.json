@@ -22,7 +22,7 @@
   "plant_speed_cms": 120.0,
   "release_height_cm": 8.0,
   "drag_release_cm": 30.0,
-  "slip_cm": 70.0,
+  "slip_cm": 30.0,
   "release_seconds": 0.12,
   "step_seconds": 0.3,
   "step_lift_cm": 18.0

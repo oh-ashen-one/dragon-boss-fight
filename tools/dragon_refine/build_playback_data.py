@@ -155,7 +155,7 @@ def main():
         'fades': {'default': 0.35, 'roar': 0.6, 'flight_active': 0.2, 'rise_to_idle': 0.4, 'dead': 0.35},
         'turn': {'track_rate_dps': 90.0, 'track_lead_seconds': 0.06},
         'foot_lock': {'plant_height_cm': 4.0, 'plant_speed_cms': 120.0, 'release_height_cm': 8.0, 'drag_release_cm': 30.0,
-                      'slip_cm': 70.0, 'release_seconds': 0.12, 'step_seconds': 0.3, 'step_lift_cm': 18.0},
+                      'slip_cm': 30.0, 'release_seconds': 0.12, 'step_seconds': 0.3, 'step_lift_cm': 18.0},
         'moves': MOVES,
         'clips': clips,
     }
