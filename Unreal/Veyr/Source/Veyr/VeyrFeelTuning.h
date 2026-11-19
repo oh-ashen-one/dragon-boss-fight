@@ -80,8 +80,9 @@ struct FVeyrFeelTuning
     float FlinchRockMin=5.f,FlinchRockMax=21.f,FlinchTwistMin=4.f,FlinchTwistMax=18.f,FlinchCapDegrees=34.f;
     float FlinchHeadPart=1.25f,FlinchNeckPart=1.1f,FlinchLegPart=.5f,FlinchBodyShare=.18f,FlinchTailShare=.35f;
     float FlinchSnapSeconds=.04f,FlinchHz=2.f,FlinchDamping=.45f,FlinchLifeSeconds=1.f;
-    /** Down on the floor the same blow swings the head and neck sideways along the floor (no pitch into it), capped here. */
-    float FlinchDownCapDegrees=30.f;
+    /** Down on the floor the same blow swings the head and neck sideways along the floor (no pitch into it), capped here.
+     *  12 deg: at 30 the downed head swung out of the scripted knight's reach and one-hand fights ran 140 s instead of 93. */
+    float FlinchDownCapDegrees=12.f;
     float FlashPeak=1.f,FlashPeakGain=1.2f,FlashRadiusCm=40.f,FlashRadiusGainCm=45.f,FlashFade=.07f,FlashLife=.3f;
 
     // Knight
