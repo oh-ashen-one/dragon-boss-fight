@@ -67,3 +67,18 @@ against the installed build on the same route.
   dust that whites out the screen. The old build's one win: hero and floor read better in the mid-tones.
 - Action: a second, structural pass (floor that reflects, real highlights, visible sources with pools and falloff, depth
   dressing, thin lit dust, warm up-light and breath light on the dragon, less motion blur).
+
+## Phase C, blind review 2 (2026-11-19 09:00 ET): lighting and picture after the structural pass
+
+A fresh Opus critic, sides hidden, 10 real play frames from the second picture film against 10 reference fight frames.
+
+- **Verdict: ours slightly better.** His reasons: our knight reads among the dragon's limbs with armour highlights where
+  the reference hero is a black cut-out; cool moonlight against orange braziers where the reference is one warm brown;
+  our dust and debris take the scene's light where his smoke is a flat grey sprite; his motion blur smears whole frames,
+  ours stays crisp; our braziers cast shadow streaks and light the dragon from below where his windows are flat cards.
+  He credits the reference with the more cohesive interior mood when nothing is happening.
+- Faults he found in ours, most costly first: foreground cobbles crushed to blue-black in some frames (44 % of one frame
+  at luma 12 or below); a pale pinkish fill with no source on the dragon's legs and tail that makes them look plastic and
+  shows the faceted mesh; a washed-out dust veil in one frame; moon-blue floor patches ending in hard edges; brazier
+  bloom and small armour highlights clipping.
+- C2 ("clearly worse is not accepted") is met on this review. The faults go to the picture builder as a polish list.
