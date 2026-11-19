@@ -369,6 +369,31 @@ void FVeyrA123Proof::Live(double Elapsed,float Dt)
                 if(Elapsed-LastShot>1.0&&Hooks.Shot){LastShot=Elapsed;Hooks.Shot(TEXT("camera_inside_")+Shape.ToString());}
             }
             else if(Elapsed-LastShot>6.0&&Hooks.Shot){LastShot=Elapsed;Hooks.Shot(FString::Printf(TEXT("hug_waypoint_%d"),WaypointIndex));}
+            {
+                // The knight in the actual view: inside his capsule, distance to it, whole capsule on screen,
+                // any dragon on screen, the capsule taller than 45 % of the frame, hidden behind the dragon.
+                FVector KB,KT;float KR=0.f;
+                if(B->KnightCapsule(KB,KT,KR))
+                {
+                    const float Surface=FMath::PointDistToSegment(Cam,KB,KT)-KR;
+                    MinCameraToKnightCm=FMath::Min(MinCameraToKnightCm,Surface);
+                    if(Surface<10.f)++KnightCapsuleInsideFrames;
+                    const FQuat View=K->CombatCamera->GetComponentQuat();
+                    const float Fov=K->CombatCamera->FieldOfView,Aspect=B->ViewAspect();
+                    const FVector Right=View.GetRightVector(),Bottom=KB-FVector::UpVector*KR,Top=KT+FVector::UpVector*KR,Mid=(KB+KT)*.5;
+                    bool bWhole=true;float VB=-2.f,VT=2.f,U=0.f,V=0.f;
+                    const FVector Points[4]={Bottom,Top,Mid+Right*KR,Mid-Right*KR};
+                    for(int32 I=0;I<4;++I)
+                    {
+                        if(!B->ProjectToView(Points[I],Cam,View,Fov,Aspect,U,V)||FMath::Abs(U)>1.f||FMath::Abs(V)>1.f)bWhole=false;
+                        if(I==0)VB=V;else if(I==1)VT=V;
+                    }
+                    KnightWholeFrames+=bWhole?1:0;
+                    if((FMath::Clamp(VT,-1.f,1.f)-FMath::Clamp(VB,-1.f,1.f))*.5f>.45f)++KnightTallFrames;
+                    if(B->IsDragonOnScreen(Cam,View,Fov,Aspect))++DragonOnScreenFrames;
+                    if(!B->IsKnightInSight(Cam))++KnightOccludedFrames;
+                }
+            }
             MaxLiftCm=FMath::Max(MaxLiftCm,B->LiftCm);MinFraction=FMath::Min(MinFraction,B->BodyFraction);
             const FVector Rel=Cam-K->GetActorLocation();
             if(bHasLastCamera)MaxCameraJumpCm=FMath::Max(MaxCameraJumpCm,static_cast<float>(FVector::Dist(Rel,LastCameraRelative)));
@@ -400,9 +425,13 @@ void FVeyrA123Proof::Finalize(double Elapsed)
     }
     else if(Mode==TEXT("camerahug"))
     {
-        bPassed=CameraFrames>300&&CameraInsideFrames==0;
-        Reason=FString::Printf(TEXT("camera inside the dragon in %d of %d frames: capsule %d, back-face %d (collapse/exposed %d of %d; conservative hull %d)"),
-            CameraInsideFrames,CameraFrames,CapsuleInsideFrames,BackFaceFrames,CollapseInsideFrames,CollapseFrames,HullInsideFrames);
+        const float Whole=CameraFrames>0?static_cast<float>(KnightWholeFrames)/CameraFrames:0.f;
+        const float DragonShare=CameraFrames>0?static_cast<float>(DragonOnScreenFrames)/CameraFrames:0.f;
+        // Second pass: also never inside the knight, and the whole knight on screen in at least 95 % of frames.
+        bPassed=CameraFrames>300&&CameraInsideFrames==0&&KnightCapsuleInsideFrames==0&&Whole>=.95f;
+        Reason=FString::Printf(TEXT("camera inside the dragon in %d of %d frames: capsule %d, back-face %d (collapse/exposed %d of %d; conservative hull %d); inside the knight %d, nearest %.0f cm; knight whole on screen %.1f %%, dragon on screen %.1f %%, knight taller than 45 %% of the frame %d, knight hidden by the dragon %d"),
+            CameraInsideFrames,CameraFrames,CapsuleInsideFrames,BackFaceFrames,CollapseInsideFrames,CollapseFrames,HullInsideFrames,
+            KnightCapsuleInsideFrames,MinCameraToKnightCm<1e8f?MinCameraToKnightCm:-1.f,Whole*100.f,DragonShare*100.f,KnightTallFrames,KnightOccludedFrames);
     }
     else
     {
@@ -454,6 +483,18 @@ TSharedPtr<FJsonObject> FVeyrA123Proof::Evidence() const
         O->SetNumberField(TEXT("collapseFrames"),CollapseFrames);O->SetNumberField(TEXT("collapseInsideFrames"),CollapseInsideFrames);
         O->SetNumberField(TEXT("maxLiftCm"),MaxLiftCm);O->SetNumberField(TEXT("minBodyFraction"),MinFraction);
         O->SetNumberField(TEXT("maxCameraJumpCmPerFrame"),MaxCameraJumpCm);
+        O->SetNumberField(TEXT("knightCapsuleInsideFrames"),KnightCapsuleInsideFrames);
+        O->SetNumberField(TEXT("minCameraToKnightCm"),MinCameraToKnightCm<1e8f?MinCameraToKnightCm:-1.f);
+        O->SetNumberField(TEXT("knightWholeOnScreenShare"),CameraFrames>0?static_cast<double>(KnightWholeFrames)/CameraFrames:0.0);
+        O->SetNumberField(TEXT("dragonOnScreenShare"),CameraFrames>0?static_cast<double>(DragonOnScreenFrames)/CameraFrames:0.0);
+        O->SetNumberField(TEXT("knightTallerThan45PctFrames"),KnightTallFrames);
+        O->SetNumberField(TEXT("knightHiddenByDragonFrames"),KnightOccludedFrames);
+        if(const UVeyrCameraBoom* FB=Knight.IsValid()?Cast<UVeyrCameraBoom>(Knight->CameraBoom):nullptr)
+        {
+            O->SetBoolField(TEXT("legacyCameraFraming"),FB->bLegacyFraming);O->SetNumberField(TEXT("framingSearches"),FB->FramingSearches);
+            O->SetNumberField(TEXT("framingFallbackFrames"),FB->FramingFallbackFrames);O->SetNumberField(TEXT("viewTurnFrames"),FB->ViewTurnFrames);
+        }
+        O->SetBoolField(TEXT("legacyCutThrough"),FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCutThrough")));
         const UVeyrCameraBoom* B=Knight.IsValid()?Cast<UVeyrCameraBoom>(Knight->CameraBoom):nullptr;
         O->SetNumberField(TEXT("pullInEvents"),B?B->PullInEvents-PullInStart:0);
         O->SetNumberField(TEXT("boomShapes"),B?B->ShapeCount:0);

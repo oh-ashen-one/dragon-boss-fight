@@ -2083,7 +2083,11 @@ void AVeyrReplay::TrackFlightWithLookInput()
        (Dragon->State!=EVeyrDragonState::Windup&&Dragon->State!=EVeyrDragonState::Active&&Dragon->State!=EVeyrDragonState::Recovery))return;
     APlayerController* PC=Cast<APlayerController>(Knight->GetController());
     if(!PC||!Knight->CombatCamera)return;
-    const FRotator Aim=(Dragon->GetHeadLocation()-Knight->CombatCamera->GetComponentLocation()).Rotation();
+    // Aim from the camera arm's pivot (on the knight), not the camera: where the camera sits after collision
+    // must not change the scripted fight. -VeyrLegacyFlightAim restores the camera origin.
+    static const bool bLegacyAim=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyFlightAim"));
+    const FVector From=bLegacyAim||!Knight->CameraBoom?Knight->CombatCamera->GetComponentLocation():Knight->CameraBoom->GetComponentLocation();
+    const FRotator Aim=(Dragon->GetHeadLocation()-From).Rotation();
     const FRotator View=PC->GetControlRotation();
     const bool Legacy=UInputSettings::GetInputSettings()->bEnableLegacyInputScales;
     const float YawScale=Legacy?PC->InputYawScale_DEPRECATED:1.f,PitchScale=Legacy?PC->InputPitchScale_DEPRECATED:1.f;
@@ -2473,6 +2477,7 @@ void AVeyrReplay::DriveInputs()
     FVector Movement=FVector::ZeroVector;
     bool bLight=false,bHeavy=false,bRoll=false,bHeal=false,bJump=false;
     bool bWantLock=true;
+    bool bCloseOnHead=false;
     bool bPrimaryStart=false;
     const bool PrimaryVictory=ReplayMode==TEXT("victory");
     const bool PrimaryCore=ReplayMode==TEXT("core")&&bVictoryStartTwoHandedRequested;
@@ -2517,6 +2522,10 @@ void AVeyrReplay::DriveInputs()
         // New knock-down timing: a person runs for where the head will land the moment the leg buckles, so the
         // whole shorter lying window is attack time. Legacy timing keeps chasing the falling head.
         const bool bHeadLanding=!Dragon->bLegacyKnockdown&&(Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse);
+        // Rise head bonus (default; off with -VeyrNoRiseHeadBonus): a knight already standing at the head when the dragon starts to rise
+        // holds its spot, stays locked and swings at the head as it lifts, instead of chasing the moving head.
+        const bool bRiseHold=Dragon->bRiseHeadBonus&&Dragon->State==EVeyrDragonState::Rise&&Dragon->IsHeadBonusActive()&&
+            FVector::Dist2D(Feet,Dragon->GetPredictedDownHeadLocation())<720.f*Dragon->BodyScale*.5f+60.f;
         if(bHeadRoute)
         {
             const FVector Head=bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation();
@@ -2530,6 +2539,7 @@ void AVeyrReplay::DriveInputs()
             // Landing stand-off: the swept approach in front of the lying head measured 612 cm at scale 2.
             Goal=bHeadWaypoint?Head+Forward*200.f*Dragon->BodyScale+Right*(Side*360.f*Dragon->BodyScale):
                 bHeadLanding?FVector(Head.X,Head.Y,Feet.Z)+Forward*306.f*Dragon->BodyScale:HeadApproachGoal();
+            if(bRiseHold){bHeadWaypoint=false;Goal=Feet;}
         }
         else
         {
@@ -2550,11 +2560,17 @@ void AVeyrReplay::DriveInputs()
         const float GoalDistance=static_cast<float>(FVector::Dist2D(Feet,Goal));
         // Use the same optional lock toggle available to a player: run around
         // the low head freely, then lock again for the measured punish range.
-        const float GoalTolerance=bHeadRoute?15.f:45.f+25.f*(Dragon->BodyScale-1.f);
+        // New knock-down timing: the 2x head is struck from within 45 cm of the stand-off (a person does not
+        // shuffle to the last 15 cm while the window runs out).
+        const float GoalTolerance=bHeadRoute?(Dragon->bLegacyKnockdown?15.f:45.f):45.f+25.f*(Dragon->BodyScale-1.f);
         bWantLock=!bHeadWaypoint&&GoalDistance<GoalTolerance;
+        // New knock-down timing: close the last 2 m to the head locked on and walking, as a person would, so the
+        // knight turns to the head while it arrives instead of sprinting in, playing a run-stop and turning after.
+        bCloseOnHead=bHeadRoute&&!bHeadWaypoint&&!Dragon->bLegacyKnockdown&&(Dragon->State!=EVeyrDragonState::Rise||bRiseHold)&&GoalDistance<200.f;
+        bWantLock|=bCloseOnHead;
         const FVector StrikeTarget=bHeadRoute?(bHeadLanding?Dragon->GetPredictedDownHeadLocation():Dragon->GetHeadLocation()):Dragon->GetLegLocation(TargetLeg);
         const bool FacingStrike=FVector::DotProduct(Knight->GetActorForwardVector(),(StrikeTarget-Feet).GetSafeNormal2D())>.97f;
-        if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/160.f,.2f,1.f);
+        if(GoalDistance>GoalTolerance)Movement=(Goal-Feet).GetSafeNormal2D()*FMath::Clamp(GoalDistance/(bCloseOnHead?60.f:160.f),bCloseOnHead?.4f:.2f,1.f);
         const bool bThreat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
         const bool bDodgeExercise=ReplayMode==TEXT("core")&&Knight->DodgedHits==0&&Dragon->Move==EVeyrDragonMove::BackStomp;
         bool bEvade=bThreat&&(Dragon->State==EVeyrDragonState::Windup||Dragon->State==EVeyrDragonState::Active||LandingDangerPending());
@@ -2596,22 +2612,25 @@ void AVeyrReplay::DriveInputs()
         }
         else if(bAvailable&&Knight->IsGrounded())
         {
-            if(!bHeadWaypoint&&GoalDistance<GoalTolerance&&FacingStrike&&!Dragon->IsAirborne()&&Dragon->State!=EVeyrDragonState::Rise&&Dragon->State!=EVeyrDragonState::Reposition)
+            if(!bHeadWaypoint&&GoalDistance<GoalTolerance&&FacingStrike&&!Dragon->IsAirborne()&&(Dragon->State!=EVeyrDragonState::Rise||Dragon->IsHeadBonusActive())&&Dragon->State!=EVeyrDragonState::Reposition)
             {
                 Movement=FVector::ZeroVector;
-                const float SafeTime=Dragon->IsHeadExposed()?Remaining-.1f:SafeStationarySeconds(Feet);
+                const float SafeTime=Dragon->IsHeadExposed()?(Dragon->bRiseHeadBonus?Dragon->GetHeadBonusRemaining():Remaining)-.1f:Dragon->IsHeadBonusActive()?Dragon->GetHeadBonusRemaining()-.1f:SafeStationarySeconds(Feet);
                 const float Reserve=bDown?0.f:18.f;
                 if(PrimaryVictory)
                 {
                     float Cost=Knight->GetPrimaryStepCost(0)+Reserve;
                     float Need=Knight->GetPrimaryFirstStepDuration();
-                    if(Dragon->IsHeadExposed()&&(!Dragon->bAggression||SafeTime>Knight->GetPrimaryChainDuration()+.1f))
+                    // Under the head bonus a person swings when the first blow lands inside the window, not only
+                    // when the whole swing fits in it.
+                    if(Dragon->bRiseHeadBonus&&Dragon->IsHeadBonusActive())Need=FMath::Min(Need,Knight->GetAttackContactTime(false)+.05f);
+                    if(Dragon->IsHeadBonusActive()&&(!Dragon->bAggression||SafeTime>Knight->GetPrimaryChainDuration()+.1f))
                     {
                         Need=Knight->GetPrimaryChainDuration();Cost=0.f;
                         for(int32 Step=0;Step<3;++Step)Cost+=Knight->GetPrimaryStepCost(Step);
                     }
                     // A late arrival at the bigger head still takes the blows that fit the window.
-                    bPrimaryStart=(!bDown||Dragon->IsHeadExposed())&&Knight->Stamina>=Cost&&SafeTime>Need+.1f;
+                    bPrimaryStart=(!bDown||Dragon->IsHeadBonusActive())&&Knight->Stamina>=Cost&&SafeTime>Need+.1f;
                 }
                 else
                 {
@@ -2623,7 +2642,7 @@ void AVeyrReplay::DriveInputs()
                     // encounter through repeated lights while waiting for an
                     // opening as long as the entire recovery animation.
                     const float HeavyOpening=bNeedHeavy?Knight->GetAttackContactTime(true)+.05f:Knight->GetAttackDuration(true);
-                    bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>HeavyOpening&&(!bDown||Dragon->IsHeadExposed());
+                    bHeavy=!bNeedLight&&Knight->Stamina>=38.f+Reserve&&SafeTime>HeavyOpening&&(!bDown||Dragon->IsHeadBonusActive());
                     const float LightOpening=PrimaryCore?Knight->GetPrimaryFirstStepDuration():Knight->GetAttackDuration(false);
                     bLight=!bNeedHeavy&&!bDown&&!bHeavy&&Knight->Stamina>=22.f+Reserve&&SafeTime>LightOpening;
                 }
@@ -2641,9 +2660,10 @@ void AVeyrReplay::DriveInputs()
         const int32 Step=Knight->GetPrimaryChainStep();
         const bool Active=Step!=INDEX_NONE;
         const bool Threat=Contains(Dragon->GetWarningFootprints(),Feet,65.f);
-        const bool DownTransition=Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse||Dragon->State==EVeyrDragonState::Rise;
-        const float Safe=Dragon->IsHeadExposed()?Dragon->GetHeadWindowRemaining()-.1f:SafeStationarySeconds(Feet);
-        float RemainingCost=Dragon->IsHeadExposed()?0.f:18.f;
+        const bool DownTransition=(Dragon->State==EVeyrDragonState::Buckle||Dragon->State==EVeyrDragonState::Collapse||Dragon->State==EVeyrDragonState::Rise)&&!Dragon->IsHeadBonusActive();
+        const float Safe=Dragon->IsHeadExposed()?(Dragon->bRiseHeadBonus?Dragon->GetHeadBonusRemaining():Dragon->GetHeadWindowRemaining())-.1f:
+            Dragon->IsHeadBonusActive()?Dragon->GetHeadBonusRemaining()-.1f:SafeStationarySeconds(Feet);
+        float RemainingCost=Dragon->IsHeadBonusActive()?0.f:18.f;
         for(int32 Next=Step+1;Next<3;++Next)RemainingCost+=Knight->GetPrimaryStepCost(Next);
         const bool Hold=Active&&Step<2&&!Threat&&!bCombatHealSeeking&&!Dragon->IsAirborne()&&!DownTransition&&
             Knight->Stamina>=RemainingCost&&Safe>Knight->GetPrimaryChainRemainingSeconds()+.1f;
@@ -2668,7 +2688,7 @@ void AVeyrReplay::DriveInputs()
         // LightCombo's first segment; the standalone light is a legacy lab path.
         Knight->PressPrimaryAttack();Knight->ReleasePrimaryAttack();bLight=false;
     }
-    Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!bHeal);
+    Knight->SetSprintRequested(!Movement.IsNearlyZero()&&!bHeal&&!(bCloseOnHead&&!bRoll));
     Knight->SetReplayInput(Movement,bLight,bHeavy,bRoll,bHeal,bJump,false);
     TrackFlightWithLookInput();
 }

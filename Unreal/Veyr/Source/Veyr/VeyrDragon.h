@@ -203,6 +203,14 @@ public:
     bool bLegacyKnockdown=false;
     float KnockdownFloorBudgetSeconds=4.9f; // 0.1 s under the 5 s limit: states end on frame boundaries
     float KnockdownRiseRate=1.25f;
+    /** Lever (b), band pass: the head keeps its exposed bonus through the first part of the rise while it is
+     * still low. Off by default until measured; -VeyrRiseHeadBonus turns it on (new knock-down timing only). */
+    bool bRiseHeadBonus=false;
+    float RiseHeadBonusFraction=.4f;
+    /** Exposed, or (lever b) the low first part of the rise: blows to the head take the exposed bonus. */
+    UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadBonusActive() const;
+    /** Seconds left of the head bonus (Exposed remaining plus the rise share when lever b is on). */
+    float GetHeadBonusRemaining() const;
     /** Where the head lies during Exposed, in actor space per unit of BodyScale. Measured on build A
      * (2026-11-18, 8 fights, scale 2: 1390 cm ahead, 88 cm left, 287 cm up); refreshed from every Exposed frame. */
     FVector DownHeadLocalPerScale=FVector(695.f,-44.f,143.5f);
