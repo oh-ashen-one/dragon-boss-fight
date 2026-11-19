@@ -57,6 +57,12 @@ public:
     bool SetExplicitLegLocks(const TArray<FVeyrLegLock>& Locks);
     void ClearExplicitLegLocks();
     TArray<float> GetLegLockMissCm() const;
+    /** Round 2: inertial blending. The owner's clock (seconds) for this frame's evaluations. */
+    void SetExplicitInertialClock(float Seconds);
+    /** The next evaluation's destination takes the displayed pose and velocity as an offset that decays over Seconds. */
+    bool BeginExplicitInertialTransition(float Seconds,float DestinationRate);
+    bool IsExplicitInertialActive() const;
+    void GetExplicitInertialStats(int32& OutStarts,float& OutMaxDegrees,float& OutMaxCm) const;
     FString GetLegLockError() const;
 protected:
     virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;

@@ -91,6 +91,128 @@ namespace
         // Review M7: the outgoing clip's aim/flinch layer, kept for the moving transition source.
         TMap<FName,FRotator> SourceBoneRotations,PublishedBoneRotations;
         FString LegLockError;
+        // Round 2 (2026-11-19): inertial blending. One clip plays; at a switch the displayed pose and velocity minus
+        // the incoming clip's pose and velocity become a per-bone offset that decays to zero (quintic, zero offset,
+        // velocity and acceleration at the end) over InertialSeconds. Restarting mid-decay starts from the displayed pose.
+        float InertialClock=-1.f,FrameClock=-1.f,PrevFrameClock=-1.f;
+        TArray<FTransform> FrameLocal,PrevFrameLocal;
+        TArray<FBoneIndexType> FrameBoneMap;
+        bool bInertialPending=false,bInertialActive=false;
+        float InertialSeconds=.35f,InertialDestRate=1.f,InertialStart=0.f;
+        TArray<FVector> InertialR0,InertialW0,InertialT0,InertialV0;
+        int32 InertialStarts=0;float InertialMaxDegrees=0.f,InertialMaxCm=0.f;
+
+        static FVector QuatLog(const FQuat& Q)
+        {
+            FQuat P=Q.GetNormalized();if(P.W<0.f)P=-P;
+            const FVector Axis(P.X,P.Y,P.Z);const double Sin=Axis.Size();
+            if(Sin<1.e-8)return Axis*2.;
+            return Axis/Sin*(2.*FMath::Atan2(Sin,static_cast<double>(P.W)));
+        }
+        static FQuat QuatExp(const FVector& R)
+        {
+            const double Angle=R.Size();
+            return Angle<1.e-8?FQuat::Identity:FQuat(R/Angle,Angle);
+        }
+        /** Quintic offset decay with x(T)=x'(T)=x''(T)=0 (Bollo, inertialization). */
+        static FVector Decay(const FVector& X0,const FVector& V0,float T,float Time)
+        {
+            if(Time>=T)return FVector::ZeroVector;
+            const double T2=T*T,T3=T2*T,T4=T3*T,T5=T4*T;
+            const FVector A0=(-8.*V0*T-20.*X0)/T2;
+            const FVector A=-(3.*A0*T2+12.*V0*T+20.*X0)/(2.*T3);
+            const FVector B=(3.*A0*T2+16.*V0*T+30.*X0)/(2.*T4);
+            const FVector C=-(A0*T2+6.*V0*T+12.*X0)/(2.*T5);
+            const double t=Time,t2=t*t,t3=t2*t;
+            return X0+V0*t+A0*(.5*t2)+A*t3+B*(t3*t)+C*(t3*t2);
+        }
+        /** Destination local pose before blending, at another time of its own sequence (for its velocity). */
+        bool SampleDestinationAt(FPoseContext& Pose,float Seconds)
+        {
+            UAnimSequence* Sequence=Cast<UAnimSequence>(CurrentAsset);
+            if(!Sequence)return false;
+            FAnimationPoseData Data(Pose);
+            Sequence->GetAnimationPose(Data,FAnimExtractContext(static_cast<double>(FMath::Clamp(Seconds,0.f,Sequence->GetPlayLength())),false));
+            ApplySpine0Fix(Pose);ApplyMirrorRepair(Pose);ApplyRootOffset(Pose,RootOffsetDest);
+            if(!ApplyLowerBody(Pose)||!ApplyBoneRotations(Pose))return false;
+            return !Pose.ContainsNaN();
+        }
+        void BeginInertial(const FPoseContext& Output)
+        {
+            bInertialPending=false;bInertialActive=false;
+            const int32 N=Output.Pose.GetNumBones();
+            if(FrameLocal.Num()!=N||FrameBoneMap!=Output.Pose.GetBoneContainer().GetBoneIndicesArray()||InertialClock<0.f||FrameClock<0.f)return;
+            const bool bVelocity=PrevFrameLocal.Num()==N&&FrameClock-PrevFrameClock>1.e-4f;
+            const float SourceDt=bVelocity?FrameClock-PrevFrameClock:1.f;
+            const float Ahead=FMath::Max(0.f,InertialClock-FrameClock);
+            // Destination velocity: its own sequence one 60 Hz frame later (or earlier at the end).
+            FPoseContext Next(Output);
+            UAnimSequence* Sequence=Cast<UAnimSequence>(CurrentAsset);
+            const float Now=GetCurrentTime();
+            const float Step=(1.f/60.f)*FMath::Max(.05f,InertialDestRate);
+            const float Sign=Sequence&&Now+Step>Sequence->GetPlayLength()?-1.f:1.f;
+            const bool bDestVelocity=Sequence&&SampleDestinationAt(Next,Now+Sign*Step);
+            EvaluationError.Reset();
+            InertialR0.SetNumUninitialized(N);InertialW0.SetNumUninitialized(N);InertialT0.SetNumUninitialized(N);InertialV0.SetNumUninitialized(N);
+            for(FCompactPoseBoneIndex I:Output.Pose.ForEachBoneIndex())
+            {
+                const int32 B=I.GetInt();
+                const FTransform& Cur=FrameLocal[B];
+                FVector W=FVector::ZeroVector,V=FVector::ZeroVector;
+                if(bVelocity)
+                {
+                    const FTransform& Prev=PrevFrameLocal[B];
+                    W=QuatLog(Cur.GetRotation()*Prev.GetRotation().Inverse())/SourceDt;
+                    V=(Cur.GetTranslation()-Prev.GetTranslation())/SourceDt;
+                }
+                // Displayed pose carried forward to this frame at its own velocity.
+                const FQuat SourceQ=(QuatExp(W*Ahead)*Cur.GetRotation()).GetNormalized();
+                const FVector SourceT=Cur.GetTranslation()+V*Ahead;
+                const FTransform& Dst=Output.Pose[I];
+                FVector DW=FVector::ZeroVector,DV=FVector::ZeroVector;
+                if(bDestVelocity)
+                {
+                    const float Dt=1.f/60.f;
+                    const FTransform& D1=Next.Pose[I];
+                    DW=QuatLog(D1.GetRotation()*Dst.GetRotation().Inverse())/(Sign*Dt);
+                    DV=(D1.GetTranslation()-Dst.GetTranslation())/(Sign*Dt);
+                }
+                InertialR0[B]=QuatLog(SourceQ*Dst.GetRotation().Inverse());
+                InertialT0[B]=SourceT-Dst.GetTranslation();
+                // Bounded velocity mismatch: continuity at the switch without flinging long chains.
+                InertialW0[B]=(W-DW).GetClampedToMaxSize(12.);
+                InertialV0[B]=(V-DV).GetClampedToMaxSize(600.);
+                InertialMaxDegrees=FMath::Max(InertialMaxDegrees,FMath::RadiansToDegrees(static_cast<float>(InertialR0[B].Size())));
+                if(Bones_HasParent(Output,I))InertialMaxCm=FMath::Max(InertialMaxCm,static_cast<float>(InertialT0[B].Size()));
+            }
+            InertialStart=InertialClock;bInertialActive=true;++InertialStarts;
+        }
+        static bool Bones_HasParent(const FPoseContext& Pose,FCompactPoseBoneIndex I)
+        {
+            return Pose.Pose.GetBoneContainer().GetParentBoneIndex(I).GetInt()!=INDEX_NONE;
+        }
+        void ApplyInertial(FPoseContext& Output)
+        {
+            if(bInertialPending)BeginInertial(Output);
+            if(!bInertialActive)return;
+            const float Time=FMath::Max(0.f,InertialClock-InertialStart);
+            if(Time>=InertialSeconds||InertialR0.Num()!=Output.Pose.GetNumBones()){bInertialActive=false;return;}
+            for(FCompactPoseBoneIndex I:Output.Pose.ForEachBoneIndex())
+            {
+                const int32 B=I.GetInt();
+                FTransform& Dst=Output.Pose[I];
+                Dst.SetRotation((QuatExp(Decay(InertialR0[B],InertialW0[B],InertialSeconds,Time))*Dst.GetRotation()).GetNormalized());
+                Dst.AddToTranslation(Decay(InertialT0[B],InertialV0[B],InertialSeconds,Time));
+            }
+        }
+        void PublishFrame(const FPoseContext& Output)
+        {
+            if(InertialClock<0.f)return;
+            if(InertialClock>FrameClock+1.e-5f||FrameLocal.Num()!=Output.Pose.GetNumBones())
+            {PrevFrameLocal=MoveTemp(FrameLocal);PrevFrameClock=FrameClock;}
+            FrameLocal=Output.Pose.GetBones();FrameClock=InertialClock;
+            FrameBoneMap=Output.Pose.GetBoneContainer().GetBoneIndicesArray();
+        }
 
         void ApplyMirrorRepair(FPoseContext& Output){ApplyMirrorRepairIf(Output,bMirrorRepair);}
         void ApplyMirrorRepairIf(FPoseContext& Output,bool bEnabled)
@@ -391,6 +513,8 @@ namespace
             bTransitionMirrorRepair=bTransitionCleanup=false;RootOffsetDest=RootOffsetSource=FVector::ZeroVector;
             LegLocks.Reset();LegLockMissCm.Reset();LegLockError.Reset();
             MaskAsset.Reset();MaskBoneMap.Reset();LowerMask.Reset();LowerWeights.Reset();
+            InertialClock=FrameClock=PrevFrameClock=-1.f;FrameLocal.Reset();PrevFrameLocal.Reset();FrameBoneMap.Reset();
+            bInertialPending=bInertialActive=false;InertialStarts=0;InertialMaxDegrees=InertialMaxCm=0.f;
         }
 
         virtual bool Evaluate(FPoseContext& Output) override
@@ -453,6 +577,8 @@ namespace
                     FAnimationRuntime::BlendTwoPosesTogetherInPlace(DestinationData,SourceData,Alpha);
                 }
             }
+            ApplyInertial(Output);
+            if(!EvaluationError.IsEmpty()){LastPublished.bValid=false;return true;}
             if(!ApplyFootTargets(Output)){LastPublished.bValid=false;return true;}
             if(!ApplyLegLocks(Output)){LastPublished.bValid=false;return true;}
             if(Output.ContainsNaN())
@@ -464,6 +590,7 @@ namespace
             // Capture AFTER blending so an interrupted transition starts from
             // the current blended pose, not the previous clip's endpoint.
             LastPublished.Capture(Output);
+            PublishFrame(Output);
             PublishedBoneRotations=BoneRotations;
             return true;
         }
@@ -633,4 +760,31 @@ TArray<float> UVeyrSingleNodeInstance::GetLegLockMissCm() const
 FString UVeyrSingleNodeInstance::GetLegLockError() const
 {
     return GetProxyOnGameThread<FVeyrSingleNodeProxy>().LegLockError;
+}
+
+void UVeyrSingleNodeInstance::SetExplicitInertialClock(float Seconds)
+{
+    if(!IsInGameThread()||!FMath::IsFinite(Seconds))return;
+    GetProxyOnGameThread<FVeyrSingleNodeProxy>().InertialClock=Seconds;
+}
+
+bool UVeyrSingleNodeInstance::BeginExplicitInertialTransition(float Seconds,float DestinationRate)
+{
+    if(!IsInGameThread()||!FMath::IsFinite(Seconds)||Seconds<.05f||!FMath::IsFinite(DestinationRate))return false;
+    auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    if(P.InertialClock<0.f||P.FrameClock<0.f)return false;
+    P.bInertialPending=true;P.InertialSeconds=Seconds;P.InertialDestRate=FMath::Clamp(DestinationRate,.05f,8.f);
+    return true;
+}
+
+bool UVeyrSingleNodeInstance::IsExplicitInertialActive() const
+{
+    const auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    return P.bInertialPending||P.bInertialActive;
+}
+
+void UVeyrSingleNodeInstance::GetExplicitInertialStats(int32& OutStarts,float& OutMaxDegrees,float& OutMaxCm) const
+{
+    const auto& P=GetProxyOnGameThread<FVeyrSingleNodeProxy>();
+    OutStarts=P.InertialStarts;OutMaxDegrees=P.InertialMaxDegrees;OutMaxCm=P.InertialMaxCm;
 }

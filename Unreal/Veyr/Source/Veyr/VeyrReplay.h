@@ -37,6 +37,10 @@ public:
     bool IsShowcase() const { return ReplayMode==TEXT("showcase"); }
     bool IsPresentationOnly() const { return IsShowcase()||ReplayMode==TEXT("environment"); }
     static bool GetPendingRestartRequest(FString& OutMode, FString& OutEvidenceDirectory);
+    /** -VeyrBatchSeeds=4,5,6: brain seed of the current batch fight. Depends only on a process-static
+     *  index that advances after a fight's final evidence save, so a fight's restart-verification
+     *  world keeps its seed. False when the flag is absent or malformed. */
+    static bool BatchBrainSeed(int32& OutSeed);
     virtual void Tick(float DeltaSeconds) override;
 protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -215,6 +219,8 @@ private:
     void Finish(bool bSuccess, const FString& Reason);
     void BeginTerminalVerification();
     void AdvanceRestart(float DeltaSeconds);
+    /** After a batch fight's final save: advance the static index and open a fresh world. False when no seed remains. */
+    bool OpenNextBatchFight();
     FVector EscapeDirection() const;
     FVector GuardDamageSource() const;
     FVector HeadApproachGoal(FName* OutBlocker=nullptr,float* OutSweepDistance=nullptr) const;

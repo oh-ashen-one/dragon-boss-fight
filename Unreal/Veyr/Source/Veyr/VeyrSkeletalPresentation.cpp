@@ -379,6 +379,28 @@ FString UVeyrSkeletalPresentation::GetLegLockError() const
     return I?I->GetLegLockError():FString();
 }
 
+void UVeyrSkeletalPresentation::SetInertialClock(float Seconds)
+{
+    if(!IsInGameThread())return;
+    HandleExistingParallelEvaluationTask(true,true);
+    if(auto* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance()))I->SetExplicitInertialClock(Seconds);
+}
+
+bool UVeyrSkeletalPresentation::BeginInertialTransition(float Seconds,float DestinationRate)
+{
+    if(!IsInGameThread()||!bPoseEvaluated)return false;
+    HandleExistingParallelEvaluationTask(true,true);
+    auto* I=Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance());
+    return I&&I->BeginExplicitInertialTransition(Seconds,DestinationRate);
+}
+
+void UVeyrSkeletalPresentation::GetInertialStats(int32& OutStarts,float& OutMaxDegrees,float& OutMaxCm) const
+{
+    OutStarts=0;OutMaxDegrees=OutMaxCm=0.f;
+    if(const auto* I=Cast<UVeyrSingleNodeInstance>(const_cast<UVeyrSkeletalPresentation*>(this)->GetSingleNodeInstance()))
+        I->GetExplicitInertialStats(OutStarts,OutMaxDegrees,OutMaxCm);
+}
+
 bool UVeyrSkeletalPresentation::BeginTransition()
 {
     if(!IsInGameThread())return false;

@@ -18,6 +18,8 @@ runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
 p.add_argument('--mode', choices=['core','death','victory','camp','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment','intro','footclosehits','camerahug','soleheights','feel','lightcheck'], required=True)
 p.add_argument('--next-mode',choices=['environment','showcase','healing','death'],help='One additional scenario in a fresh world, using the same owned renderer process')
+p.add_argument('--batch-seeds',help='Headless victory/death only: comma list of dragon brain seeds (e.g. 4,5,6); one fresh-world fight per seed '
+               'in this one process and one engine-lock hold. A lost fight is a valid data point; exit 1 only when a fight is missing or unfinished')
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--wait-for-stream-end',action='store_true',help='Keep this single owned request waiting while the shared streaming flag exists; still acquire the normal GPU gate afterward')
 p.add_argument('--video-fps', type=int, choices=range(1,61), help='Optional native capture cadence; adds measurable overhead')
@@ -34,6 +36,14 @@ p.add_argument('--frame-report', action='store_true', help='Phase C: 60 s frame-
 p.add_argument('--width', type=int, default=1280)
 p.add_argument('--height', type=int, default=720)
 a = p.parse_args()
+batch_seeds=[]
+if a.batch_seeds is not None:
+    try:batch_seeds=[int(x) for x in a.batch_seeds.split(',')]
+    except ValueError:p.error('--batch-seeds takes comma-separated integers, e.g. 4,5,6')
+    if not 1<=len(batch_seeds)<=16:p.error('--batch-seeds takes 1 to 16 seeds')
+    if not a.headless or a.mode not in ('victory','death'):p.error('--batch-seeds needs --headless and --mode victory or death')
+    if a.next_mode:p.error('--batch-seeds cannot be combined with --next-mode')
+    if any(x.startswith('-VeyrBrainSeed=') or x.startswith('-VeyrBatchSeeds=') for x in a.extra_arg):p.error('--batch-seeds sets the brain seed of every fight; drop -VeyrBrainSeed from --extra-arg')
 if a.mode=='intro' and not(a.with_sound or a.audio_capture_seconds):p.error('Intro proof requires --with-sound or --audio-capture-seconds; NoSound playback counters are not valid audio evidence')
 if not 30 <= a.slot_wait_seconds <= 3600:
     p.error('--slot-wait-seconds must be between 30 and 3600')
@@ -92,6 +102,8 @@ if a.next_mode:
     if a.next_mode==a.mode:p.error('Use distinct modes for a two-scenario run')
     if a.performance or a.audio_capture_seconds:p.error('Performance/audio measurements require a single scenario')
     cmd.append('-VeyrReplayNext='+a.next_mode)
+if batch_seeds:
+    cmd.append('-VeyrBatchSeeds='+','.join(str(x) for x in batch_seeds))
 if a.mode=='blendproof' and not a.no_proof_floor:
     cmd.append('-VeyrProofFloor')
 for extra in a.extra_arg:
@@ -141,6 +153,26 @@ if a.mode=='lightcheck':
     print('Lightcheck stills:',len(shots),'breath report:',(run/'stills'/'breath-report.json').exists(),flush=True)
     raise SystemExit(0 if len(shots)==14 and not json.loads(check.read_text()).get('partial') else 1)
 results = list(run.glob('unreal-*/evidence.json'))
+if batch_seeds:
+    # One fresh world (and evidence folder) per seed; a restart-verification world reuses its fight's folder.
+    if len(results)!=len(batch_seeds):
+        print('Batch: expected',len(batch_seeds),'fight evidence files, found',len(results),flush=True)
+        raise SystemExit(1)
+    evidence=sorted(((json.loads(p.read_text()),p) for p in results),key=lambda item:item[0].get('batchSeedIndex',-1))
+    bad=[]
+    if [d.get('mode') for d,_ in evidence]!=[a.mode]*len(batch_seeds):bad.append('recorded scenarios differ from the requested run')
+    if len({d.get('sourceId') for d,_ in evidence})!=1:bad.append('source identity changed during the run')
+    if [d.get('batchSeedIndex') for d,_ in evidence]!=list(range(len(batch_seeds))):bad.append('batch indices are not 0..N-1')
+    for d,path in evidence:
+        index=d.get('batchSeedIndex')
+        seed=batch_seeds[index] if isinstance(index,int) and 0<=index<len(batch_seeds) else None
+        print('Scenario:',d.get('mode'),'seed='+str(seed),'dragonBrainSeed='+str(d.get('dragonBrainSeed')),d.get('passed'),
+              'terminalWallSeconds='+str(d.get('terminalWallSeconds')),d.get('reason'),path.parent.name,flush=True)
+        if d.get('batchSeeds')!=batch_seeds:bad.append(path.parent.name+': batchSeeds differ from the request')
+        if d.get('dragonBrainSeed')!=seed:bad.append(path.parent.name+': dragon used seed '+str(d.get('dragonBrainSeed'))+', not '+str(seed))
+        if not(d.get('finalWrite') and d.get('finished')):bad.append(path.parent.name+': fight unfinished or no final evidence write')
+    for reason in bad:print('Batch problem:',reason,flush=True)
+    raise SystemExit(1 if bad else 0)
 expected=[a.mode]+([a.next_mode] if a.next_mode else [])
 if len(results) != len(expected):raise SystemExit('Expected one completed evidence file per requested scenario')
 evidence=[json.loads(p.read_text()) for p in results]

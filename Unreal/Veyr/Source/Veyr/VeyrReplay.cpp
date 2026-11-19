@@ -55,6 +55,23 @@ namespace
     // Optional two-scenario QA run: reload a fresh world in this owned process
     // instead of cold-starting another renderer. Never carries gameplay state.
     bool bNextReplayWorldStarted=false;
+    // Optional seed batch (-VeyrBatchSeeds=4,5,6): several fresh fights in this owned process,
+    // one dragon brain seed each. The index survives OpenLevel and advances only after a fight's
+    // final evidence save, so restart-verification reloads keep their fight's seed.
+    int32 BatchSeedIndex=0;
+    bool ParseBatchSeeds(TArray<int32>& Out)
+    {
+        Out.Reset();FString Raw;
+        if(!FParse::Value(FCommandLine::Get(),TEXT("VeyrBatchSeeds="),Raw,false))return false;
+        TArray<FString> Parts;Raw.ParseIntoArray(Parts,TEXT(","),true);
+        for(FString& Part:Parts)
+        {
+            Part.TrimStartAndEndInline();
+            if(!Part.IsNumeric()){Out.Reset();return false;}
+            Out.Add(FCString::Atoi(*Part));
+        }
+        return Out.Num()>0;
+    }
     TArray<TSharedPtr<FJsonValue>> VectorJson(const FVector& V)
     {
         return { MakeShared<FJsonValueNumber>(V.X), MakeShared<FJsonValueNumber>(V.Y), MakeShared<FJsonValueNumber>(V.Z) };
@@ -105,6 +122,28 @@ bool AVeyrReplay::GetPendingRestartRequest(FString& OutMode,FString& OutEvidence
     if(!PendingRestartEvidence.IsValid()||PendingRestartDirectory.IsEmpty())return false;
     OutMode=PendingRestartEvidence->GetStringField(TEXT("mode"));
     OutEvidenceDirectory=PendingRestartDirectory;
+    return true;
+}
+
+bool AVeyrReplay::BatchBrainSeed(int32& OutSeed)
+{
+    TArray<int32> Seeds;
+    if(!ParseBatchSeeds(Seeds))return false;
+    OutSeed=Seeds[FMath::Clamp(BatchSeedIndex,0,Seeds.Num()-1)];
+    return true;
+}
+
+bool AVeyrReplay::OpenNextBatchFight()
+{
+    TArray<int32> Seeds;
+    if(!ParseBatchSeeds(Seeds)||BatchSeedIndex+1>=Seeds.Num())return false;
+    const FString Level=UGameplayStatics::GetCurrentLevelName(this,true);
+    if(Level.IsEmpty()){UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_BATCH_MAP_MISSING index=%d"),BatchSeedIndex);return false;}
+    // The next fight must start fresh: never resume the previous fight's restart evidence.
+    PendingRestartEvidence.Reset();PendingRestartDirectory.Reset();
+    ++BatchSeedIndex;bAwaitingNextReplayWorld=true;
+    UE_LOG(LogTemp,Display,TEXT("VEYR_REPLAY_BATCH_NEXT index=%d seed=%d count=%d"),BatchSeedIndex,Seeds[BatchSeedIndex],Seeds.Num());
+    UGameplayStatics::OpenLevel(this,FName(*Level));
     return true;
 }
 
@@ -3159,6 +3198,17 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(FightPlayback.IsValid()){Root->SetObjectField(TEXT("dragonPlayback"),FightPlayback);if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlaybackAfterRestart"),Dragon->PlaybackEvidence());}
     else if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlayback"),Dragon->PlaybackEvidence());
     Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
+    {
+        TArray<int32> BatchSeeds;
+        if(ParseBatchSeeds(BatchSeeds))
+        {
+            TArray<TSharedPtr<FJsonValue>> SeedValues;
+            for(const int32 Seed:BatchSeeds)SeedValues.Add(MakeShared<FJsonValueNumber>(Seed));
+            Root->SetArrayField(TEXT("batchSeeds"),SeedValues);Root->SetNumberField(TEXT("batchSeedIndex"),BatchSeedIndex);
+            Root->SetNumberField(TEXT("batchSeed"),BatchSeeds[FMath::Clamp(BatchSeedIndex,0,BatchSeeds.Num()-1)]);
+        }
+        if(IsValid(Dragon))Root->SetNumberField(TEXT("dragonBrainSeed"),Dragon->BrainSeed);
+    }
     Root->SetBoolField(TEXT("headlessNumbersOnly"),bHeadless);Root->SetNumberField(TEXT("stillIntervalSeconds"),StillInterval);
     LastEvidence=Root;
     FString Json;const TSharedRef<TJsonWriter<>> Writer=TJsonWriterFactory<>::Create(&Json);
@@ -3201,6 +3251,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
         if(FinishClock>3.f)
         {
             StopVideoCapture(TEXT("replay completed"));SaveEvidence(true);bFinalSaved=true;
+            if(OpenNextBatchFight())return;
             FString Next;
             if(!bNextReplayWorldStarted&&FParse::Value(FCommandLine::Get(),TEXT("VeyrReplayNext="),Next))
             {
@@ -3271,7 +3322,7 @@ void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
     if(EndPlayReason==EEndPlayReason::EndPlayInEditor||EndPlayReason==EEndPlayReason::Quit)
     {
         PendingRestartEvidence.Reset();PendingRestartDirectory.Reset();
-        bAwaitingReload=false;
+        bAwaitingReload=false;BatchSeedIndex=0;
     }
     StopVideoCapture(bAwaitingReload?TEXT("world reload"):TEXT("world ended"));
     if(bInitialized&&!bFinalSaved&&!bAwaitingReload)

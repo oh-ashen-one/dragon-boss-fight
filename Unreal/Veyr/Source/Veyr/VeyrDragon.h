@@ -396,6 +396,9 @@ private:
     float TempoWalkBaseSpeed() const;
     float TempoWalkRate() const;
     bool bClipTempo=false,bTwoClipBlend=false,bFootLock=false,bSlowSnapTurn=false,bRootTracks=false;
+    /** Round 2: inertial blending at clip switches (-VeyrCrossfadeBlend restores the F2 two-clip fade). */
+    bool bInertialBlend=false;
+    float InertialStartedClock=-100.f,InertialBlendSeconds=.35f;
     float PhaseEntryReal=0.f,WalkStrideSpeedCm=0.f;
     const FVeyrClipPlayback* TempoClip(FName Clip,float& OutRate,float& OutHoldRate) const;
     /** Real seconds of the clip's whole trim at its playback rate; negative when the clip has no tempo data. */

@@ -2,6 +2,7 @@
 #include "VeyrGameMode.h"
 #include "VeyrFightFeel.h"
 #include "VeyrKnight.h"
+#include "VeyrReplay.h"
 #include "VeyrArena.h"
 #include "VeyrVisualDefinition.h"
 #include "Animation/AnimSequence.h"
@@ -188,7 +189,8 @@ void AVeyrDragon::BeginPlay()
     bAggression=!bLegacyPacing&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBrain"));
     SetActorScale3D(FVector(BodyScale));
     FString ReplayName;
-    if(!FParse::Value(FCommandLine::Get(),TEXT("VeyrBrainSeed="),BrainSeed))
+    // Round 2: -VeyrBatchSeeds runs several headless fights in one process, one seed per fresh world.
+    if(!AVeyrReplay::BatchBrainSeed(BrainSeed)&&!FParse::Value(FCommandLine::Get(),TEXT("VeyrBrainSeed="),BrainSeed))
         BrainSeed=FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayName)?20261117:static_cast<int32>(FPlatformTime::Cycles64()&0x7fffffff);
     BrainRandom.Initialize(BrainSeed);RollComboBudget();
     // Owner 2026-11-05: about 30% more health than the 650 baseline; tuned with the aggression pass.
@@ -2170,6 +2172,7 @@ void AVeyrDragon::UpdateImportedPresentation()
 {
     if(!bUsingCustomuseVisual||!VisualDefinition||!ImportedPresentation)return;
     bImportedTargetsValid=false;
+    if(bInertialBlend)ImportedPresentation->SetInertialClock(Clock);
     const FVector CurrentLocation=GetActorLocation();
     const float CurrentYaw=GetActorRotation().Yaw;
     if(bPresentationMotionInitialized&&State==EVeyrDragonState::Reposition)
@@ -2325,6 +2328,18 @@ void AVeyrDragon::UpdateImportedPresentation()
                     FadeTrackStem=TrackStem;FadeTrackEntryBaked=TrackEntryBaked;FadeTrackLastBaked=TrackLastBaked;
                     BlendKind=TEXT("moving");
                 }
+            }
+            // Round 2: one clip plays; the displayed pose and velocity decay into it as an offset (no cross-fade).
+            if(bInertialBlend&&bImportedTransitionReady)
+            {
+                const float Rate=Config.bLoop||AuthoredTurn?1.f:FMath::Clamp(Duration/FMath::Max(.05f,StateDuration),.2f,4.f);
+                const float Seconds=FMath::Clamp(ImportedTransitionSeconds,.3f,.4f);
+                if(ImportedPresentation->BeginInertialTransition(Seconds,Rate))
+                {
+                    bImportedTransitionReady=false;bFadeActive=false;BlendKind=TEXT("inertial");
+                    InertialStartedClock=Clock;InertialBlendSeconds=Seconds;
+                }
+                else BlendKind+=TEXT("NoInertial");
             }
             PlaybackStats.FindOrAdd(PlaybackStatKey(Clip)).Blends.FindOrAdd(BlendKind)++;
             ImportedTransitionStarted=Clock;LastImportedClip=Clip;LastImportedState=State;

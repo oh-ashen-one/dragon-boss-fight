@@ -5,6 +5,8 @@
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrVisualDefinition.h"
 #include "Animation/AnimSequence.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Dom/JsonObject.h"
 
 namespace
@@ -138,6 +140,7 @@ void AVeyrDragon::InitPlayback()
     bFootLock=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoFootLock"));
     bSlowSnapTurn=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
+    bInertialBlend=bTwoClipBlend&&!FParse::Param(Cmd,TEXT("VeyrCrossfadeBlend"));
     UE_LOG(LogTemp,Display,TEXT("VEYR_DRAGON_PLAYBACK loaded=%d tempo=%d blend=%d footlock=%d slowturn=%d roottracks=%d %s"),
         Loaded?1:0,bClipTempo?1:0,bTwoClipBlend?1:0,bFootLock?1:0,bSlowSnapTurn?1:0,bRootTracks?1:0,*PlaybackDiagnostic);
 }
@@ -174,13 +177,22 @@ float AVeyrDragon::PlaybackPhaseCeiling(FName Clip) const
     FName Phase;
     const FVeyrClipPlayback* C=bClipTempo&&Playback.bLoaded?Playback.Find(Clip,Phase):nullptr;
     const FVeyrMoveTempo* T=C?Playback.MoveTempo(*C):nullptr;
-    if(!T||Phase!=FName(TEXT("Recovery"))||(bShowcaseMode&&!bShowcaseGameTiming))return 1.f;
     const FVeyrVisualClip* Config=VisualDefinition?VisualDefinition->Clips.Find(Clip):nullptr;
+    if(!C||!Config||!Config->Sequence)return 1.f;
+    const float End=Config->EndSeconds<0.f?Config->Sequence->GetPlayLength():Config->EndSeconds;
+    const float Length=FMath::Max(.001f,End-Config->StartSeconds);
+    // Round 2: a clip that ends in a held span shows its last pose from the hold's first frame on (holds play at
+    // hold_rate, so the frozen tail can pass between two sampled frames). -VeyrLegacyShowcaseCeiling restores 1.0.
+    float Ceiling=1.f;
+    static const bool bLegacyCeiling=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyShowcaseCeiling"));
+    if(!bLegacyCeiling&&C->InHold(C->SourceFrameAt(End)))
+        for(float S=End;S>Config->StartSeconds;S-=1.f/C->OutFps)
+            if(!C->InHold(C->SourceFrameAt(S))){Ceiling=FMath::Clamp((S-Config->StartSeconds)/Length,.5f,1.f);break;}
+    if(!T||Phase!=FName(TEXT("Recovery"))||(bShowcaseMode&&!bShowcaseGameTiming))return Ceiling;
     const float Full=TempoDuration(Clip);
     float Trimmed=0.f;
-    if(!Config||!Config->Sequence||Full<=0.f||!TempoTrimmedSeconds(Clip,Full*T->RecoveryExit,Trimmed))return 1.f;
-    const float End=Config->EndSeconds<0.f?Config->Sequence->GetPlayLength():Config->EndSeconds;
-    return FMath::Clamp(Trimmed/FMath::Max(.001f,End-Config->StartSeconds),0.f,1.f);
+    if(Full<=0.f||!TempoTrimmedSeconds(Clip,Full*T->RecoveryExit,Trimmed))return Ceiling;
+    return FMath::Min(Ceiling,FMath::Clamp(Trimmed/Length,0.f,1.f));
 }
 
 FName AVeyrDragon::PlaybackStatKey(FName Clip) const
@@ -298,7 +310,8 @@ void AVeyrDragon::UpdatePoseDeltaStat()
     for(int32 B=0;B<Cs.Num();++B)PosePrevCs[B]=Cs[B].GetLocation();
     PoseSpeed2=MoveTemp(PoseSpeed1);PoseSpeed1=MoveTemp(Speed);PoseClock=Clock;
     PoseKey1=PlaybackStatKey(LastImportedClip);
-    bPoseBlend1=bImportedTransitionReady&&Clock-ImportedTransitionStarted<ImportedTransitionSeconds+1.f/30.f;
+    bPoseBlend1=(bImportedTransitionReady&&Clock-ImportedTransitionStarted<ImportedTransitionSeconds+1.f/30.f)||
+        (bInertialBlend&&Clock-InertialStartedClock<InertialBlendSeconds+1.f/30.f);
 }
 
 void AVeyrDragon::ResetFootLock()
@@ -491,6 +504,9 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("trackTravelWorldCm"),TrackTravelWorld.Size2D());
     O->SetNumberField(TEXT("footLockTeleports"),FootLockTeleports);O->SetNumberField(TEXT("footLockEaseOuts"),FootLockEaseOuts);
     O->SetNumberField(TEXT("footLockReachSteps"),FootLockReachSteps);
+    O->SetBoolField(TEXT("inertialBlend"),bInertialBlend);
+    if(ImportedPresentation){int32 Starts=0;float Deg=0.f,Cm=0.f;ImportedPresentation->GetInertialStats(Starts,Deg,Cm);
+        O->SetNumberField(TEXT("inertialStarts"),Starts);O->SetNumberField(TEXT("inertialMaxOffsetDegrees"),Deg);O->SetNumberField(TEXT("inertialMaxOffsetCm"),Cm);}
     O->SetStringField(TEXT("dragonSkin"),ImportedPresentation?ImportedPresentation->SkinDiagnostic:FString(TEXT("no presentation")));
     float WorstRate=0.f,WorstSlide=0.f,WorstPop=0.f;FString WorstRateKey,WorstSlideKey,WorstPopKey;int32 Pops=0,PopsInBlend=0;
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();

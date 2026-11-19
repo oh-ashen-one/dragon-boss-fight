@@ -76,6 +76,10 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category="Veyr|Presentation")
     bool BeginTransition();
+    /** Round 2: inertial blending (see UVeyrSingleNodeInstance). The clock is the owner's per-frame seconds. */
+    void SetInertialClock(float Seconds);
+    bool BeginInertialTransition(float Seconds,float DestinationRate);
+    void GetInertialStats(int32& OutStarts,float& OutMaxDegrees,float& OutMaxCm) const;
 
     /** Alpha 0 reproduces the frozen source exactly; 1 is the unblended target.
      * Alpha < 1 requires BeginTransition. Missing clips still fail at any alpha.
