@@ -24,8 +24,9 @@ subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', a.film, '-vn', '-ac', '1', 
 w = wave.open(str(tmp / 'a.wav')); sr = w.getframerate()
 real = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(float) / 32768
 # luma per frame
-pr = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'csv=p=0', a.film], capture_output=True, text=True)
-num, den = pr.stdout.strip().split('/'); fps = float(num) / float(den)
+pt = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'frame=pts_time', '-of', 'csv=p=0', a.film], capture_output=True, text=True).stdout.split()
+ft = np.array([float(v.strip(',')) for v in pt if v.strip(',') not in ('', 'N/A')])
+fps = (len(ft) - 1) / (ft[-1] - ft[0]) if len(ft) > 2 else 30.0
 raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', a.film, '-vf', 'scale=64:36,format=gray', '-f', 'rawvideo', '-'], capture_output=True).stdout
 frames = np.frombuffer(raw, dtype=np.uint8).reshape(-1, 36 * 64).astype(float)
 luma = frames.mean(1); dluma = np.diff(luma, prepend=luma[0])
@@ -71,9 +72,9 @@ for kind in a.kinds.split(','):
         e = env(seg, 480)
         if len(e) < 4: continue
         j = int(np.argmax(np.diff(np.log(e))) + 1); ta = (i0 + j * 480) / sr
-        f0 = max(int((t - .2) * fps), 1); f1 = min(int((t + .2) * fps) + 1, len(dluma))
+        f0 = max(int(np.searchsorted(ft, t - .2)), 1); f1 = min(int(np.searchsorted(ft, t + .2)) + 1, len(dluma))
         if f1 - f0 < 2: continue
-        jf = f0 + int(np.argmax(dluma[f0:f1])); tp = jf / fps
+        jf = f0 + int(np.argmax(dluma[f0:f1])); tp = ft[jf]
         if dluma[jf] < 3: continue  # no visible flash
         rr.append(r_); offs.append((ta - tp) * 1000)
     if not rr: print(f'{kind:14} {len(ev):4}  (no usable events)'); continue

@@ -132,7 +132,7 @@ private:
     FName TimedClipKey=NAME_None; float TimedLastPhase=-1.f,TimedLastTime=-1.f; bool bSwingFromData=false;
     float BreathClock=3.f,GrowlClock=9.f; bool bBreathExhaleNext=false,bPresenceCalm=true;
     float FootClock[2]={0.f,0.f};
-    float MaxLoad=6.f,MakeupDb=0.f; // MakeupDb: -VeyrAudioMakeupDb=<dB> on all effects (calibration against a real capture)
+    float MaxLoad=6.f,MakeupDb=9.f; // MakeupDb +9: the engine plays our voices about 9 dB under the arithmetic (measured on two captures, flat and spatial alike); -VeyrAudioMakeupDb=<dB> overrides // MakeupDb: -VeyrAudioMakeupDb=<dB> on all effects (calibration against a real capture)
     float DurationLastPlayed=0.f;
 
     void LoadNewSet();
@@ -165,7 +165,7 @@ private:
     FTapFrame TapNow;
     struct FTapEvent { FString Kind; double T=0.0; };
     TArray<FTapEvent> TapEvents;
-    float TapOffsetDb=0.f;   // -VeyrAudioTapOffsetDb: what the real output differs from the model (measured on a capture)
+    float TapOffsetDb=-9.f; // the same measured engine factor, so the tap shows what the player hears   // -VeyrAudioTapOffsetDb: what the real output differs from the model (measured on a capture)
     void TapEvent(const TCHAR* Kind);
     void PlayWeaponHit(int32 Weight,bool bHead);
     void PlayStompLayers(const FVector& At,float S,bool bLanding);

@@ -609,9 +609,9 @@ void AVeyrAudio::PlayWeaponHit(int32 Weight,bool bHead)
     // a sharp mid/high attack, a body, a low thump; sized by weight class (0 light, 1 heavy), head adds a metal ring.
     TapEvent(bHead?TEXT("weaponHead"):Weight>0?TEXT("weaponHeavy"):TEXT("weaponLight"));
     const float W=Weight>0?1.f:.8f;
-    PlayCueEx(ECue::Contact,W,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
+    PlayCueEx(ECue::Contact,W*1.4f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
     PlayCueEx(ECue::Guard,W*(bHead?.9f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
-    PlayCueEx(ECue::ArmorHit,W*.8f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
+    PlayCueEx(ECue::ArmorHit,W*1.1f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
     PlayCueEx(ECue::Impact,Weight>0||bHead?.85f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0?1.f:1.15f);
     if(Weight>0||bHead)QueueCue(.015f,ECue::Exposed,.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.1f);
 }
@@ -652,7 +652,7 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
     {
         case EVeyrGroundContactClass::Footfall:
             TapEvent(TEXT("dragonFootfall"));
-            if(PlayCueEx(ECue::DragonStep,FMath::Lerp(.22f,.5f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
+            if(PlayCueEx(ECue::DragonStep,FMath::Lerp(.12f,.3f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
             if(S>.5f)PlayCueEx(ECue::Impact,FMath::Lerp(.1f,.3f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
             break;
         case EVeyrGroundContactClass::Stomp:
