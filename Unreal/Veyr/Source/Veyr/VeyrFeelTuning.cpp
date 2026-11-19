@@ -44,6 +44,8 @@ namespace
         Int(F,TEXT("cards"),E.Cards);Num(F,TEXT("size_cm"),E.CardSizeCm);Num(F,TEXT("life_s"),E.CardLife);Num(F,TEXT("opacity"),E.CardOpacity);
         Num(F,TEXT("rise_cm_s"),E.CardRiseCmS);Num(F,TEXT("spread_cm_s"),E.CardSpreadCmS);Int(F,TEXT("chips"),E.Chips);
         Num(F,TEXT("chip_cm"),E.ChipSizeCm);Num(F,TEXT("chip_speed_cm_s"),E.ChipSpeedCmS);
+        O->TryGetBoolField(TEXT("cards_with_asset"),E.bCardsWithAsset);
+        Int(O,TEXT("smoke_tier"),E.SmokeTier);Num(O,TEXT("smoke_scale"),E.SmokeScale);
     }
     template<int32 N> void ReadEffects(const TSharedPtr<FJsonObject>& Root,const TCHAR* Key,FVeyrFeelTuning::FEffect (&Out)[N])
     {
@@ -69,16 +71,32 @@ namespace VeyrFeelSwitches
 
 FVeyrFeelTuning::FVeyrFeelTuning()
 {
-    // Same numbers as Data/dragon/ground_fx.json. Systems stay empty here: without the copied Paragon
-    // content each tier draws the project's own cards and chips (the documented fallback).
-    Dust[0]=MakeEffect(2,55.f,.9f,.22f,30.f,55.f,0,3.f,220.f);      // small: walking footfall
-    Dust[1]=MakeEffect(4,90.f,1.3f,.30f,40.f,90.f,4,3.5f,280.f);    // medium: a heavy step
-    Dust[2]=MakeEffect(6,140.f,1.8f,.36f,45.f,140.f,10,4.f,360.f);  // large: stomp, tail slam
-    Dust[3]=MakeEffect(8,230.f,2.6f,.40f,50.f,190.f,22,5.f,420.f);  // body fall: cloud and debris
-    Dust[4]=MakeEffect(10,260.f,2.8f,.42f,55.f,230.f,26,5.f,480.f); // landing
+    // Same numbers and asset paths as Data/dragon/ground_fx.json (packaged builds do not stage Data/, as with
+    // moves.json). A path that is not in the cooked content falls back to the project's own cards and chips.
+    // Tuned by eye at 2x against the reference's paw dust (2026-11-18): pale cards drawn with the asset.
+    Dust[0]=MakeEffect(3,130.f,1.f,.30f,30.f,55.f,0,3.f,220.f);      // small: walking footfall
+    Dust[1]=MakeEffect(5,220.f,1.5f,.38f,40.f,90.f,6,4.f,280.f);     // medium: a heavy step
+    Dust[2]=MakeEffect(7,330.f,2.f,.44f,45.f,140.f,12,5.f,360.f);    // large: stomp, tail slam
+    Dust[3]=MakeEffect(10,520.f,2.8f,.50f,50.f,190.f,24,7.f,420.f);  // body fall: cloud and debris
+    Dust[4]=MakeEffect(12,600.f,3.f,.52f,55.f,230.f,28,7.f,480.f);   // landing
+    for(FEffect& E:Dust)E.bCardsWithAsset=true;
     Hit[0]=MakeEffect(10,9.f,.20f,.85f,0.f,520.f,0,0.f,0.f);        // light blow: sparks
     Hit[1]=MakeEffect(16,12.f,.26f,.90f,0.f,640.f,4,2.5f,300.f);    // heavy blow
     Hit[2]=MakeEffect(24,15.f,.32f,.95f,0.f,780.f,8,3.f,380.f);     // heavy two-hand / exposed head
+    auto System=[](FEffect& E,const TCHAR* Path,float Scale,float Life){E.System=Path;E.Scale=Scale;E.LifeSeconds=Life;};
+    // The Greystone ground smash lit the whole court orange (a fire burst, not dust): body falls and landings use
+    // the grey Terra dust impact, larger.
+    System(Dust[0],TEXT("/Game/ParagonRampage/FX/Particles/Abilities/Lunge/FX/P_Rampage_Jumpdust"),1.5f,.9f);
+    System(Dust[1],TEXT("/Game/ParagonRampage/FX/Particles/Abilities/Ultimate/FX/P_Rampage_Footstep_Enraged"),2.5f,1.3f);
+    System(Dust[2],TEXT("/Game/ParagonTerra/FX/Particles/Terra/Abilities/DoubleSweep/FX/P_Terra_DoubleSweep_DustImpact"),3.5f,1.8f);
+    System(Dust[3],TEXT("/Game/ParagonTerra/FX/Particles/Terra/Abilities/DoubleSweep/FX/P_Terra_DoubleSweep_DustImpact"),6.f,2.6f);
+    System(Dust[4],TEXT("/Game/ParagonTerra/FX/Particles/Terra/Abilities/DoubleSweep/FX/P_Terra_DoubleSweep_DustImpact"),7.f,2.8f);
+    System(Hit[0],TEXT("/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/Primary/FX/P_Greystone_Primary_Sparks"),1.f,.4f);
+    System(Hit[1],TEXT("/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/Primary/FX/P_Greystone_Primary_Impact"),1.3f,.6f);
+    System(Hit[2],TEXT("/Game/ParagonTerra/FX/Particles/Terra/Abilities/Balance/FX/P_Terra_Boom_Impacted"),1.6f,.8f);
+    // Each blow also throws a pale puff of the matching dust (the reference's hits hang a cloud for a second).
+    for(int32 I=0;I<3;++I){Hit[I].SmokeTier=I;Hit[I].SmokeScale=.45f+.1f*I+(I==2?.05f:0.f);}
+    DebrisMesh=TEXT("/Game/ParagonRampage/FX/Meshes/Debris/SM_Rampage_Rock_FragA");
 }
 
 bool FVeyrFeelTuning::LoadFromFile(const FString& File)
@@ -96,7 +114,7 @@ bool FVeyrFeelTuning::LoadFromFile(const FString& File)
         const TArray<TSharedPtr<FJsonValue>>* Tiers=nullptr;
         if(C->TryGetArrayField(TEXT("dust_tier_max_speed"),Tiers)&&Tiers&&Tiers->Num()>=2)
         {DustTierMaxSpeed[0]=(*Tiers)[0]->AsNumber();DustTierMaxSpeed[1]=FMath::Max(DustTierMaxSpeed[0],static_cast<float>((*Tiers)[1]->AsNumber()));}
-        Num(C,TEXT("stomp_min_speed"),StompMinSpeed);Num(C,TEXT("landing_window_s"),LandingWindowSeconds);
+        Num(C,TEXT("stomp_min_speed"),StompMinSpeed);Num(C,TEXT("body_cloud_min_speed"),BodyCloudMinSpeed);Num(C,TEXT("landing_window_s"),LandingWindowSeconds);
         Num(C,TEXT("peak_time_constant_s"),PeakTimeConstant);Num(C,TEXT("min_event_interval_s"),MinEventInterval);
     }
     if(const TSharedPtr<FJsonObject> S=Obj(Root,TEXT("shake")))
@@ -168,7 +186,10 @@ const FVeyrFeelTuning& VeyrFeelTuning()
     if(!bTried)
     {
         bTried=true;
-        const FString File=FPaths::Combine(FBossMoveData::ResolveDirectory(),TEXT("ground_fx.json"));
+        // -VeyrFeelData=<file> (tuning by eye without a rebuild), else beside moves.json.
+        FString File;
+        if(!FParse::Value(FCommandLine::Get(),TEXT("VeyrFeelData="),File)||File.IsEmpty())
+            File=FPaths::Combine(FBossMoveData::ResolveDirectory(),TEXT("ground_fx.json"));
         Tuning.LoadFromFile(File);
         UE_LOG(LogTemp,Display,TEXT("VEYR_FEEL_TUNING %s"),*Tuning.Diagnostic);
     }

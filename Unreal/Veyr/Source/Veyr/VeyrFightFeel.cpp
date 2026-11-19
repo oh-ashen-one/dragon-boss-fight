@@ -124,14 +124,17 @@ void AVeyrFightFeel::BeginPlay()
             RibbonMaterial=UMaterialInstanceDynamic::Create(Parent,this);
             // The authored trail takes its colour from the vertices; the flat fallback needs the cool tint itself.
             RibbonMaterial->SetVectorParameterValue(TEXT("Tint"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?FLinearColor::White:FLinearColor(.62f,.70f,.82f));
-            RibbonMaterial->SetScalarParameterValue(TEXT("Opacity"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?.9f:.32f);
+            RibbonMaterial->SetScalarParameterValue(TEXT("Opacity"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?.75f:.32f);
+            RibbonMaterial->SetScalarParameterValue(TEXT("Brightness"),1.4f);
             Ribbon->SetMaterial(0,RibbonMaterial);
-            const int32 Verts=RibbonMaxRows*2;
+            // Three edges per row: clear at the hilt side, full on a band near the tip, clear just past the tip.
+            const int32 Verts=RibbonMaxRows*3;
             RibbonVerts.Init(FVector::ZeroVector,Verts);RibbonNormals.Init(FVector::UpVector,Verts);
             RibbonColors.Init(FLinearColor(1.f,1.f,1.f,0.f),Verts);RibbonUVs.Init(FVector2D::ZeroVector,Verts);
             RibbonTangents.Init(FProcMeshTangent(),Verts);
             RibbonTris.Reserve((RibbonMaxRows-1)*6);
-            for(int32 R=1;R<RibbonMaxRows;++R){const int32 A=(R-1)*2,B=R*2;RibbonTris.Append({A,B,A+1,A+1,B,B+1});}
+            for(int32 R=1;R<RibbonMaxRows;++R)
+                for(int32 E=0;E<2;++E){const int32 A=(R-1)*3+E,B=R*3+E;RibbonTris.Append({A,B,A+1,A+1,B,B+1});}
             bRibbonReady=true;
         }
         else RibbonDiagnostic+=TEXT("; no material: legacy trail");
@@ -254,14 +257,14 @@ void AVeyrFightFeel::RequestHitStop(float Seconds)
     UE_LOG(LogTemp,Display,TEXT("VEYR_HIT_STOP seconds=%.3f"),LastHitStopSeconds);
 }
 
-void AVeyrFightFeel::StartShake(float Degrees,float Life,float Bounce,float Frequency,FName Kind,float Distance)
+void AVeyrFightFeel::StartShake(float Degrees,float Life,float Bounce,float Frequency,FName Kind,float Distance,bool bVaryPhase)
 {
     const float Remaining=ShakeAmplitude*FMath::Square(FMath::Clamp(1.f-ShakeAge/FMath::Max(.01f,ShakeLife),0.f,1.f));
     if(Degrees<=.005f||Degrees<Remaining)return;
     ShakeAmplitude=Degrees;ShakeLife=FMath::Max(.05f,Life);ShakeAge=0.f;ShakeBounce=Bounce;ShakeFrequency=Frequency;
-    // Deterministic phases per event: comparable replay captures without touching any RNG.
+    // Contact shakes get deterministic phases per event (no RNG); the fixed impacts keep the base's zero phase.
     const float K=ShakeEvents*1.618034f;
-    ShakePhase=FVector(FMath::Frac(K)*6.283f,FMath::Frac(K*1.37f)*6.283f,FMath::Frac(K*1.91f)*6.283f);
+    ShakePhase=bVaryPhase?FVector(FMath::Frac(K)*6.283f,FMath::Frac(K*1.37f)*6.283f,FMath::Frac(K*1.91f)*6.283f):FVector::ZeroVector;
     LastShakeDegrees=Degrees;LastShakeDistance=Distance;++ShakeEvents;
     UE_LOG(LogTemp,Display,TEXT("VEYR_CAMERA_SHAKE kind=%s distance=%.1f degrees=%.3f life=%.2f bounce=%.1f"),*Kind.ToString(),Distance,Degrees,ShakeLife,Bounce);
 }
@@ -274,9 +277,10 @@ void AVeyrFightFeel::Impact(const FVector& Position,float Weight,FName Kind)
     if(Mode->Replay&&Mode->Replay->IsPresentationOnly())
         if(auto* PC=Cast<APlayerController>(Mode->Knight->GetController())){FRotator Rotation;PC->GetPlayerViewPoint(Listener,Rotation);}
     const float Distance=FVector::Distance(Listener,Position);
+    LastShakeDistance=Distance; // as the base: every impact call, accepted or not
     const float Falloff=FMath::Square(FMath::Clamp(1.f-Distance/5000.f,0.f,1.f));
     const float W=FMath::Clamp(Weight,0.f,1.f);
-    StartShake(FMath::Lerp(.25f,1.65f,W)*Falloff,FMath::Lerp(.18f,.5f,W),0.f,1.f,Kind,Distance);
+    StartShake(FMath::Lerp(.25f,1.65f,W)*Falloff,FMath::Lerp(.18f,.5f,W),0.f,1.f,Kind,Distance,false);
 }
 
 void AVeyrFightFeel::ContactImpact(AVeyrDragon* Dragon,const FVeyrGroundContact& Contact)
@@ -295,7 +299,7 @@ void AVeyrFightFeel::ContactImpact(AVeyrDragon* Dragon,const FVeyrGroundContact&
     // Heavier classes shake slower: a ton landing rolls the view, a footfall ticks it.
     static const float Frequency[4]={1.15f,.85f,.65f,.6f};
     static const FName Kinds[4]={TEXT("contact_footfall"),TEXT("contact_stomp"),TEXT("contact_body_fall"),TEXT("contact_landing")};
-    StartShake(Degrees,Life,Bounce,Frequency[C],Kinds[C],Distance);
+    StartShake(Degrees,Life,Bounce,Frequency[C],Kinds[C],Distance,true);
 }
 
 void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
@@ -515,13 +519,16 @@ void AVeyrFightFeel::BuildChain(AVeyrDragon* Boss) const
 
 void AVeyrFightFeel::AddBossFlinch(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotations) const
 {
+    FlinchDegreesNow=0.f;FlinchFrame=GFrameCounter;
     if(bDisabled||!Boss||!Boss->VisualDefinition||Boss->IsDead()||Boss->IsAirborne())return;
-    if(!bLegacy&&VeyrFeelSwitches::SpineFlinch())
+    // Down on the floor (buckle, collapse, exposed head, rise) a whole-spine rock would push the head and chest
+    // through the floor or bounce them off it: there only the small head-and-neck nudge plays.
+    const bool bDown=Boss->State==EVeyrDragonState::Buckle||Boss->State==EVeyrDragonState::Collapse||
+        Boss->State==EVeyrDragonState::Exposed||Boss->State==EVeyrDragonState::Rise;
+    const USkeletalMesh* Asset=Boss->ImportedPresentation?Boss->ImportedPresentation->GetSkeletalMeshAsset():nullptr;
+    if(Asset&&ChainMesh.Get()!=Asset&&!bLegacy&&VeyrFeelSwitches::SpineFlinch())BuildChain(Boss);
+    if(!bLegacy&&VeyrFeelSwitches::SpineFlinch()&&!bDown&&Asset&&!Chain.IsEmpty())
     {
-        const USkeletalMesh* Asset=Boss->ImportedPresentation?Boss->ImportedPresentation->GetSkeletalMeshAsset():nullptr;
-        if(!Asset)return;
-        if(ChainMesh.Get()!=Asset)BuildChain(Boss);
-        if(Chain.IsEmpty())return;
         const FVeyrFeelTuning& T=VeyrFeelTuning();
         // Snap up in the first 40 ms, then an under-damped spring home (2 Hz, damping .45: one rebound, ~0.6 s).
         const double Zeta=T.FlinchDamping,Om=2.0*PI*T.FlinchHz,Root=FMath::Sqrt(1.0-Zeta*Zeta),Wd=Om*Root;
@@ -538,7 +545,7 @@ void AVeyrFightFeel::AddBossFlinch(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotat
         if(!Any)return;
         const float Size=FMath::Min(static_cast<float>(Total.Size()),T.FlinchCapDegrees);
         if(Size<.01f)return;
-        MaxFlinchDegrees=FMath::Max(MaxFlinchDegrees,Size);
+        MaxFlinchDegrees=FMath::Max(MaxFlinchDegrees,Size);FlinchDegreesNow=Size;
         // World rotation vector into the mesh's component space (what the proxy's deltas are in).
         const FVector Axis=Boss->ImportedPresentation->GetComponentQuat().UnrotateVector(Total.GetSafeNormal());
         for(const FChainBone& B:Chain)
@@ -596,7 +603,8 @@ void AVeyrFightFeel::UpdateRibbon(AVeyrKnight* Player,float GameDelta)
         if(bRibbonVisible){Ribbon->SetVisibility(false);bRibbonVisible=false;}
         return;
     }
-    const FLinearColor Cool(.62f,.70f,.82f),Warm(1.f,.80f,.52f);
+    // Pale, as the reference's hammer smear: white for light swings, a warm white for heavy ones.
+    const FLinearColor Cool(.86f,.90f,.98f),Warm(1.f,.92f,.78f);
     for(int32 R=0;R<RibbonMaxRows;++R)
     {
         FVector Inner,Outer;float Alpha=0.f;FLinearColor Colour=Cool;
@@ -612,15 +620,18 @@ void AVeyrFightFeel::UpdateRibbon(AVeyrKnight* Player,float GameDelta)
             Alpha=FMath::Pow(1.f-Age,1.6f)*FMath::Lerp(B.Strength,C.Strength,U)*(R==Rows-1?.35f:1.f);
             Colour=(B.bHeavy||C.bHeavy)?Warm:Cool;
         }
-        else{Inner=RibbonVerts[(Rows-1)*2];Outer=RibbonVerts[(Rows-1)*2+1];}
-        RibbonVerts[R*2]=Inner;RibbonVerts[R*2+1]=Outer;
-        // Fainter toward the hilt: a smear that reads strongest at the edge that moved most.
-        RibbonColors[R*2]=FLinearColor(Colour.R,Colour.G,Colour.B,Alpha*.45f);RibbonColors[R*2+1]=FLinearColor(Colour.R,Colour.G,Colour.B,Alpha);
+        else{Inner=RibbonVerts[(Rows-1)*3];Outer=RibbonVerts[(Rows-1)*3+2]-(RibbonVerts[(Rows-1)*3+2]-Inner)*(.08f/1.08f);}
+        // Clear at the hilt side, a full band where the weapon head travels, clear again just past the tip: a soft
+        // smear like the reference hammer's, never a flat slab with a hard outer edge.
+        const FVector Band=FMath::Lerp(Inner,Outer,.72f),Past=Outer+(Outer-Inner)*.08f;
+        RibbonVerts[R*3]=Inner;RibbonVerts[R*3+1]=Band;RibbonVerts[R*3+2]=Past;
+        RibbonColors[R*3]=FLinearColor(Colour.R,Colour.G,Colour.B,0.f);RibbonColors[R*3+1]=FLinearColor(Colour.R,Colour.G,Colour.B,Alpha);
+        RibbonColors[R*3+2]=FLinearColor(Colour.R,Colour.G,Colour.B,0.f);
         const float V=Rows>1?static_cast<float>(FMath::Min(R,Rows-1))/(Rows-1):0.f;
-        RibbonUVs[R*2]=FVector2D(V,0.f);RibbonUVs[R*2+1]=FVector2D(V,1.f);
-        const FVector Along=R>0?RibbonVerts[R*2]-RibbonVerts[(R-1)*2]:FVector::ForwardVector;
+        RibbonUVs[R*3]=FVector2D(V,0.f);RibbonUVs[R*3+1]=FVector2D(V,.5f);RibbonUVs[R*3+2]=FVector2D(V,1.f);
+        const FVector Along=R>0?RibbonVerts[R*3]-RibbonVerts[(R-1)*3]:FVector::ForwardVector;
         const FVector Normal=FVector::CrossProduct(Outer-Inner,Along).GetSafeNormal();
-        RibbonNormals[R*2]=RibbonNormals[R*2+1]=Normal.IsNearlyZero()?FVector::UpVector:Normal;
+        RibbonNormals[R*3]=RibbonNormals[R*3+1]=RibbonNormals[R*3+2]=Normal.IsNearlyZero()?FVector::UpVector:Normal;
     }
     if(!bRibbonCreated)
     {
@@ -670,10 +681,13 @@ void AVeyrFightFeel::UpdateWeaponTrail(AVeyrKnight* Player,float GameDelta)
     WeaponTrail->MarkRenderStateDirty();
 }
 
-TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence() const
+TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence(bool bStatic) const
 {
+    // bStatic: also the parts that do not change per sample (switches, tuning, clearances, asset lists); written once at the root.
     TSharedPtr<FJsonObject> F=MakeShared<FJsonObject>();
     const FVeyrFeelTuning& T=VeyrFeelTuning();
+    if(bStatic)
+    {
     TSharedPtr<FJsonObject> S=MakeShared<FJsonObject>();
     S->SetBoolField(TEXT("groundContacts"),VeyrFeelSwitches::GroundContacts());S->SetBoolField(TEXT("weightShake"),VeyrFeelSwitches::WeightShake());
     S->SetBoolField(TEXT("contactDust"),VeyrFeelSwitches::ContactDust());S->SetBoolField(TEXT("spineFlinch"),VeyrFeelSwitches::SpineFlinch());
@@ -682,6 +696,7 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence() const
     S->SetBoolField(TEXT("zoomPunch"),VeyrFeelSwitches::ZoomPunch());S->SetBoolField(TEXT("hurtKick"),VeyrFeelSwitches::HurtKick());
     F->SetObjectField(TEXT("switches"),S);
     F->SetStringField(TEXT("tuning"),T.Diagnostic);
+    }
     static const TCHAR* Classes[4]={TEXT("footfall"),TEXT("stomp"),TEXT("bodyFall"),TEXT("landing")};
     TSharedPtr<FJsonObject> Shakes=MakeShared<FJsonObject>(),MaxShake=MakeShared<FJsonObject>();
     for(int32 I=0;I<4;++I){Shakes->SetNumberField(Classes[I],ShakesByClass[I]);MaxShake->SetNumberField(Classes[I],MaxShakeByClass[I]);}
@@ -709,14 +724,18 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence() const
         G->SetNumberField(TEXT("total"),C.Total);G->SetNumberField(TEXT("rejectedSlow"),C.Rejected);
         G->SetObjectField(TEXT("byPart"),ByPart);G->SetObjectField(TEXT("byClass"),ByClass);G->SetObjectField(TEXT("byDustTier"),ByTier);G->SetObjectField(TEXT("feet"),Feet);
         G->SetNumberField(TEXT("maxSpeedMps"),C.MaxSpeedMps);G->SetNumberField(TEXT("maxScaledSpeedMps"),C.MaxScaledSpeedMps);
-        TSharedPtr<FJsonObject> Clear=MakeShared<FJsonObject>();
-        for(const auto& State:Mode->Dragon->GetGroundContactDetector().MinClearanceByState())
+        G->SetNumberField(TEXT("mutedByFlinch"),C.Muted);G->SetNumberField(TEXT("poseGaps"),C.Resets);
+        if(bStatic)
         {
-            TSharedPtr<FJsonObject> P=MakeShared<FJsonObject>();
-            for(const auto& Part:State.Value)P->SetNumberField(Part.Key.ToString(),FMath::RoundToFloat(Part.Value*10.f)/10.f);
-            Clear->SetObjectField(State.Key.ToString(),P);
+            TSharedPtr<FJsonObject> Clear=MakeShared<FJsonObject>();
+            for(const auto& State:Mode->Dragon->GetGroundContactDetector().MinClearanceByState())
+            {
+                TSharedPtr<FJsonObject> P=MakeShared<FJsonObject>();
+                for(const auto& Part:State.Value)P->SetNumberField(Part.Key.ToString(),FMath::RoundToFloat(Part.Value*10.f)/10.f);
+                Clear->SetObjectField(State.Key.ToString(),P);
+            }
+            G->SetObjectField(TEXT("minClearanceCmByState"),Clear);
         }
-        G->SetObjectField(TEXT("minClearanceCmByState"),Clear);
         F->SetObjectField(TEXT("contacts"),G);
     }
     if(Mode&&Mode->ImpactFx)
@@ -729,11 +748,14 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence() const
         TSharedPtr<FJsonObject> H=MakeShared<FJsonObject>();
         for(int32 I=0;I<3;++I){TSharedPtr<FJsonObject> E=MakeShared<FJsonObject>();E->SetNumberField(TEXT("asset"),X->HitAsset[I]);E->SetNumberField(TEXT("fallback"),X->HitFallback[I]);H->SetObjectField(FString::FromInt(I),E);}
         F->SetObjectField(TEXT("hitBurstsByTier"),H);
-        F->SetNumberField(TEXT("debrisChips"),X->ChipsThrown);F->SetNumberField(TEXT("dustCards"),X->CardsSpawned);
+        F->SetNumberField(TEXT("debrisChips"),X->ChipsThrown);F->SetNumberField(TEXT("hitSmoke"),X->HitSmoke);F->SetNumberField(TEXT("dustCards"),X->CardsSpawned);
         F->SetNumberField(TEXT("dustCardsMaxLive"),X->MaxLiveCards);F->SetNumberField(TEXT("cloudsMerged"),X->SkippedMerged);
-        F->SetStringField(TEXT("effects"),X->Diagnostic);
-        TArray<TSharedPtr<FJsonValue>> Missing;for(const FString& M:X->MissingSystems)Missing.Add(MakeShared<FJsonValueString>(M));
-        F->SetArrayField(TEXT("missingSystems"),Missing);
+        if(bStatic)
+        {
+            F->SetStringField(TEXT("effects"),X->Diagnostic);
+            TArray<TSharedPtr<FJsonValue>> Missing;for(const FString& M:X->MissingSystems)Missing.Add(MakeShared<FJsonValueString>(M));
+            F->SetArrayField(TEXT("missingSystems"),Missing);
+        }
     }
     return F;
 }

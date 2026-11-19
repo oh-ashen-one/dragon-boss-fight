@@ -178,6 +178,11 @@ void AVeyrDragon::BeginPlay()
     bVideoBite=!bLegacyDragon;
     if(UsesPacingRevision())NextFlightAt=20.f;
     bFloorTelegraph=FParse::Param(FCommandLine::Get(),TEXT("VeyrFloorTelegraph"));
+    // Owner 2026-11-18: at most 5 s on the floor; this restores the 7 s lying window and authored rates.
+    bLegacyKnockdown=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyKnockdown"));
+    // With the 5 s floor a knight starting at the rear legs reaches the head with ~1 s of lying left, so the head
+    // keeps its exposed bonus through the first 40 % of the rise. -VeyrNoRiseHeadBonus (or legacy timing) turns it off.
+    bRiseHeadBonus=!bLegacyKnockdown&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoRiseHeadBonus"));
     BodyScale=ConfiguredBodyScale();PaceScale=ConfiguredPaceScale();
     bAggression=!bLegacyPacing&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBrain"));
     SetActorScale3D(FVector(BodyScale));
@@ -261,6 +266,15 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     }
     Clock+=DeltaSeconds; EncounterClock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
     StaggerProtection=FMath::Max(0.f,StaggerProtection-DeltaSeconds);
+    if(State==EVeyrDragonState::Exposed&&bUsingCustomuseVisual&&BodyScale>0.f)
+        DownHeadLocalPerScale=GetActorQuat().UnrotateVector(GetHeadLocation()-GetActorLocation())/BodyScale;
+    if(bKnockdownActive||bKnockdownAwaitAct)
+    {
+        KnockdownElapsed+=DeltaSeconds;
+        // Able to act again: the post-rise wait has run out (or something else took over).
+        if(bKnockdownAwaitAct&&(State!=EVeyrDragonState::Idle||StateElapsed>=StateDuration))
+        {bKnockdownAwaitAct=false;if(State!=EVeyrDragonState::Dead)KnockdownActSeconds.Add(KnockdownElapsed);}
+    }
     for(float& Flash:LegFlash)Flash=FMath::Max(0.f,Flash-DeltaSeconds*4.f);
     if(!IsDead()&&IsValid(Target)&&Target->IsDead()&&!bEncounterStopped)
     {
@@ -338,6 +352,8 @@ void AVeyrDragon::EnterState(EVeyrDragonState Next,float Duration)
         DeathStartBuckle=State==EVeyrDragonState::Buckle?Ease(StateElapsed/StateDuration):
             State==EVeyrDragonState::Collapse?1-Ease(StateElapsed/StateDuration):0.f;
     }
+    if(Next==EVeyrDragonState::Dead){bKnockdownActive=false;bKnockdownAwaitAct=false;}
+    if(Next==EVeyrDragonState::Buckle){bKnockdownActive=true;bKnockdownAwaitAct=false;KnockdownElapsed=0.f;KnockdownFloorStart=-1.f;}
     State=Next; StateElapsed=0; StateDuration=Duration;
     if(Next==EVeyrDragonState::Exposed)ExposedDamage=0.f;
     bFightFeelContactPlayed=false;
@@ -468,13 +484,20 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
             }
             break;
         case EVeyrDragonState::Buckle:
-            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Collapse,VideoStateDuration(TEXT("Collapse"),1.f));
+            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Collapse,KnockdownCollapseSeconds());
             break;
         case EVeyrDragonState::Collapse:
-            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Exposed,ExposedSeconds);
+            if(StateElapsed>=StateDuration)
+            {KnockdownFloorStart=KnockdownElapsed;EnterState(EVeyrDragonState::Exposed,PlannedExposedSeconds());}
             break;
         case EVeyrDragonState::Exposed:
-            if(StateElapsed>=StateDuration)EnterState(EVeyrDragonState::Rise,VideoStateDuration(TEXT("Rise"),2.f));
+            if(StateElapsed>=StateDuration)
+            {
+                // A long frame at the end of the lying must not push the floor time past its budget:
+                // the rise absorbs the overshoot (it then plays a touch faster).
+                const float Overshoot=bLegacyKnockdown?0.f:FMath::Max(0.f,StateElapsed-StateDuration);
+                EnterState(EVeyrDragonState::Rise,FMath::Max(KnockdownRiseSeconds()*.6f,KnockdownRiseSeconds()-Overshoot));
+            }
             break;
         case EVeyrDragonState::Rise:
             if(StateElapsed>=StateDuration)
@@ -483,7 +506,12 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 // Do not spend the whole post-punish exchange airborne merely
                 // because the flight clock expired during the downed window.
                 if(UsesPacingRevision())NextFlightAt=FMath::Max(NextFlightAt,EncounterClock+10.f);
-                StaggerProtection=1.5f; ComboCount=0; bStringLanded=false; EnterState(EVeyrDragonState::Idle,bAggression?.5f:.8f);
+                if(bKnockdownActive)
+                {
+                    bKnockdownActive=false;bKnockdownAwaitAct=true;KnockdownStandSeconds.Add(KnockdownElapsed);
+                    if(KnockdownFloorStart>=0.f)KnockdownFloorSeconds.Add(KnockdownElapsed-KnockdownFloorStart);
+                }
+                StaggerProtection=1.5f; ComboCount=0; bStringLanded=false; EnterState(EVeyrDragonState::Idle,PostRiseIdleSeconds());
             }
             break;
         case EVeyrDragonState::Dead:break;
@@ -1216,7 +1244,7 @@ float AVeyrDragon::EarliestNextContactSeconds(const FVector& Point) const
     const float Remaining=FMath::Max(0.f,StateDuration-StateElapsed);
     const bool MayChain=bAggression&&ComboCount<ComboBudget&&Move!=EVeyrDragonMove::FlyAway&&Move!=EVeyrDragonMove::Fire;
     const float AfterStrike=MayChain?Quick*ChainWindupScale:RecoveryDuration+.2f+Quick;
-    const float Rise=VideoStateDuration(TEXT("Rise"),2.f);
+    const float Rise=KnockdownRiseSeconds();
     switch(State)
     {
         case EVeyrDragonState::Windup:return Remaining+ActiveDuration+AfterStrike;
@@ -1224,8 +1252,8 @@ float AVeyrDragon::EarliestNextContactSeconds(const FVector& Point) const
         case EVeyrDragonState::Recovery:return Remaining+(ComboCount>=ComboBudget?(bStringLanded?.6f:WhiffOpeningFloor()):.16f)+Quick;
         case EVeyrDragonState::Idle:return Remaining+Quick;
         case EVeyrDragonState::Reposition:return Remaining+.15f+Quick;
-        case EVeyrDragonState::Buckle:return Remaining+VideoStateDuration(TEXT("Collapse"),1.f)+ExposedSeconds+Rise+.5f+Quick;
-        case EVeyrDragonState::Collapse:return Remaining+ExposedSeconds+Rise+.5f+Quick;
+        case EVeyrDragonState::Buckle:return Remaining+KnockdownCollapseSeconds()+PlannedExposedSeconds()+Rise+.5f+Quick;
+        case EVeyrDragonState::Collapse:return Remaining+PlannedExposedSeconds()+Rise+.5f+Quick;
         case EVeyrDragonState::Exposed:return Remaining+Rise+.5f+Quick;
         case EVeyrDragonState::Rise:return Remaining+.5f+Quick;
         default:return 1000.f;
@@ -1489,13 +1517,13 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
     AcceptedSwings.Add(SwingId); RecentSwings.Add(SwingId);
     if(RecentSwings.Num()>512){AcceptedSwings.Remove(RecentSwings[0]);RecentSwings.RemoveAt(0);}
     LastHitRegion=Region; ++SwordContactCount;
-    LastSwordDamage=Region<4?(bHeavy?72.f:34.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?270.f:125.f):(bHeavy?85.f:44.f);
+    LastSwordDamage=Region<4?(bHeavy?72.f:34.f):Region==5?(bHeavy?65.f:30.f):IsHeadBonusActive()?(bHeavy?270.f:125.f):(bHeavy?85.f:44.f);
     if(UsesPacingRevision())
-        LastSwordDamage=Region<4?(bHeavy?85.f:45.f):Region==5?(bHeavy?65.f:30.f):IsHeadExposed()?(bHeavy?120.f:65.f):(bHeavy?85.f:44.f);
+        LastSwordDamage=Region<4?(bHeavy?85.f:45.f):Region==5?(bHeavy?65.f:30.f):IsHeadBonusActive()?(bHeavy?120.f:65.f):(bHeavy?85.f:44.f);
     LastSwordDamage*=FMath::Clamp(DamageMultiplier,1.f,1.55f);
     // boxes.json body-part share (wings 0.5, tail 0.7); 1 for every hard-coded region.
     LastSwordDamage*=FMath::Clamp(PartDamageScale,0.f,2.f);
-    if(Region==4&&IsHeadExposed())++HeadBonusHitCount;
+    if(Region==4&&IsHeadBonusActive())++HeadBonusHitCount;
     // A player trading blows is fighting, not sheltering: the slow anti-camp fuse backs off.
     CampSeconds=FMath::Max(0.f,CampSeconds-4.f);
     Health=FMath::Max(0.f,Health-LastSwordDamage);
@@ -1517,7 +1545,7 @@ void AVeyrDragon::ApplySwordRegion(int32 Region,bool bHeavy,int32 SwingId,float 
         // then bring a leg down after about two good openings on it.
         const bool bTwoHandBlow=DamageMultiplier>1.01f;
         LegStagger[Region]=FMath::Min(100.f,LegStagger[Region]+(bAggression?(bTwoHandBlow?(bHeavy?28.f:16.f):(bHeavy?45.f:25.f)):(bHeavy?45.f:25.f)));
-        if(LegStagger[Region]>=100.f){StruckLeg=Region;++CollapseCount;EnterState(EVeyrDragonState::Buckle,VideoStateDuration(FName(*FString::Printf(TEXT("Buckle%d"),Region)),.65f));}
+        if(LegStagger[Region]>=100.f){StruckLeg=Region;++CollapseCount;EnterState(EVeyrDragonState::Buckle,KnockdownBuckleSeconds(Region));}
     }
 }
 
@@ -1548,7 +1576,57 @@ float AVeyrDragon::GetLegContactRadius(int32 Index) const
     return Radii[FMath::Clamp(Index,0,3)]*Scale;
 }
 float AVeyrDragon::GetLegStagger(int32 Index) const {return LegStagger[FMath::Clamp(Index,0,3)];}
+bool AVeyrDragon::IsHeadBonusActive() const
+{
+    return IsHeadExposed()||(bRiseHeadBonus&&State==EVeyrDragonState::Rise&&StateElapsed<StateDuration*RiseHeadBonusFraction);
+}
+
+float AVeyrDragon::GetHeadBonusRemaining() const
+{
+    const float Remaining=FMath::Max(0.f,StateDuration-StateElapsed);
+    if(IsHeadExposed())return Remaining+(bRiseHeadBonus?KnockdownRiseSeconds()*RiseHeadBonusFraction:0.f);
+    return IsHeadBonusActive()?FMath::Max(0.f,StateDuration*RiseHeadBonusFraction-StateElapsed):0.f;
+}
+
 float AVeyrDragon::GetHeadWindowRemaining() const {return IsHeadExposed()?FMath::Max(0.f,StateDuration-StateElapsed):0.f;}
+
+float AVeyrDragon::KnockdownBuckleSeconds(int32 Leg) const
+{
+    const float Authored=VideoStateDuration(FName(*FString::Printf(TEXT("Buckle%d"),FMath::Clamp(Leg,0,3))),.65f);
+    return Authored;
+}
+
+float AVeyrDragon::KnockdownCollapseSeconds() const
+{
+    const float Authored=VideoStateDuration(TEXT("Collapse"),1.f);
+    return Authored;
+}
+
+float AVeyrDragon::KnockdownRiseSeconds() const
+{
+    const float Authored=VideoStateDuration(TEXT("Rise"),2.f);
+    return bLegacyKnockdown?Authored:Authored/KnockdownRiseRate;
+}
+
+float AVeyrDragon::PlannedExposedSeconds() const
+{
+    if(bLegacyKnockdown)return ExposedSeconds;
+    if(State==EVeyrDragonState::Exposed)return StateDuration;
+    return FMath::Clamp(KnockdownFloorBudgetSeconds-KnockdownRiseSeconds(),.35f,ExposedSeconds);
+}
+
+float AVeyrDragon::GetKnockdownRemaining() const
+{
+    const float Remaining=FMath::Max(0.f,StateDuration-StateElapsed);
+    switch(State)
+    {
+        case EVeyrDragonState::Buckle:return Remaining+KnockdownCollapseSeconds()+PlannedExposedSeconds()+KnockdownRiseSeconds();
+        case EVeyrDragonState::Collapse:return Remaining+PlannedExposedSeconds()+KnockdownRiseSeconds();
+        case EVeyrDragonState::Exposed:return Remaining+KnockdownRiseSeconds();
+        case EVeyrDragonState::Rise:return Remaining;
+        default:return 0.f;
+    }
+}
 bool AVeyrDragon::IsAirborne() const
 {
     if(Move!=EVeyrDragonMove::FlyAway)return false;

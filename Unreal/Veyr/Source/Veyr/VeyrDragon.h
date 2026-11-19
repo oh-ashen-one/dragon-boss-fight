@@ -195,6 +195,39 @@ public:
     float ExposedDamage=0.f;
     float ExposedDamageCap=200.f;
     int32 ExposedCapRises=0;
+    /** Owner 2026-11-18: "He should only be on the floor for 5 seconds maximum." Floor time runs from the body
+     * reaching the floor (start of Exposed) to standing again (end of Rise). The rise plays 1.25x and the lying
+     * window is what is left of the 5 s; buckle and fall keep their authored speed.
+     * -VeyrLegacyKnockdown restores the 7 s lying window and the authored rise. */
+    bool bLegacyKnockdown=false;
+    float KnockdownFloorBudgetSeconds=4.9f; // 0.1 s under the 5 s limit: states end on frame boundaries
+    float KnockdownRiseRate=1.25f;
+    /** Lever (b), band pass: the head keeps its exposed bonus through the first part of the rise while it is
+     * still low. Off by default until measured; -VeyrRiseHeadBonus turns it on (new knock-down timing only). */
+    bool bRiseHeadBonus=false;
+    float RiseHeadBonusFraction=.4f;
+    /** Exposed, or (lever b) the low first part of the rise: blows to the head take the exposed bonus. */
+    UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadBonusActive() const;
+    /** Seconds left of the head bonus (Exposed remaining plus the rise share when lever b is on). */
+    float GetHeadBonusRemaining() const;
+    /** Where the head lies during Exposed, in actor space per unit of BodyScale. Measured on build A
+     * (2026-11-18, 8 fights, scale 2: 1390 cm ahead, 88 cm left, 287 cm up); refreshed from every Exposed frame. */
+    FVector DownHeadLocalPerScale=FVector(695.f,-44.f,143.5f);
+    /** Where the head will lie once the fall ends (valid from the buckle on); the scripted player heads there. */
+    FVector GetPredictedDownHeadLocation() const { return GetActorLocation()+GetActorQuat().RotateVector(DownHeadLocalPerScale*BodyScale); }
+    float KnockdownBuckleSeconds(int32 Leg) const;
+    float KnockdownCollapseSeconds() const;
+    float KnockdownRiseSeconds() const;
+    float PostRiseIdleSeconds() const { return bAggression?.5f:.8f; }
+    /** Lying window of a knock-down (fitted to the floor budget, never above ExposedSeconds). */
+    float PlannedExposedSeconds() const;
+    /** Time left until the dragon is standing again (end of Rise); 0 when it is not knocked down. */
+    float GetKnockdownRemaining() const;
+    /** Evidence per knock-down that ended standing: floor time (Exposed start to Rise end), buckle start to
+     * Rise end, and buckle start to the end of the post-rise wait. */
+    TArray<float> KnockdownFloorSeconds, KnockdownStandSeconds, KnockdownActSeconds;
+    float KnockdownElapsed=0.f, KnockdownFloorStart=-1.f;
+    bool bKnockdownActive=false, bKnockdownAwaitAct=false;
     /** Largest distance any grounded body part reached past the court floor edge; negative = always inside. */
     float CourtOverreachCm=-100000.f;
     static float ConfiguredBodyScale();
@@ -324,7 +357,8 @@ public:
     const FVeyrGroundContactCounters& GetGroundContactCounters() const { return GroundContacts.Counters(); }
     const FVeyrGroundContactDetector& GetGroundContactDetector() const { return GroundContacts; }
     /** True when contacts drive the camera shake (the old hard-coded stomp/tail/landing shakes are skipped). */
-    static bool ContactsDriveShake();
+    /** True when contact events (not the fixed per-move impacts) shake the camera this frame. */
+    bool ContactsDriveShake() const;
     /** Showcase rails for the feel proof: Collapse (Buckle skipped) as one segment. */
     bool StartFeelSegment(FName Segment,FString& Error);
 

@@ -18,6 +18,9 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
 
 ## Machine and process rules (the owner enforces these)
 
+- Before starting any UnrealBuildTool build (also a compile-check in your own worktree), check that no other
+  UnrealBuildTool, `build.py` or `package.py` process is running and wait until none is; use `-WaitMutex`, never
+  `-NoMutex`; throttle worktree compile-checks with `-MaxParallelActions=6`.
 - **One game or engine process at a time on this machine for this goal, windowless (`-nullrhi`, commandlets, cooks)
   included.** Never run fights in parallel (`--parallel` stays 1). Before any launch, check that no `Veyr-Mac-Shipping`
   or `UnrealEditor` process of ours is running. Your brief says whether you hold the engine; if it does not, you may
@@ -26,6 +29,10 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
   in the background (`open -g`), never fullscreen, never focused.
 - **No rendered launch while `~/.cache/gpu-slot/STREAMING` exists** (the owner's 11:00-13:00 ET stream window). Never
   remove that file and never set `GPU_SLOT_STREAMING_SLOTS`. Use that time for code, builds and windowless runs.
+- **Never signal a process by name pattern** (`pkill`, `killall`, `pgrep ... | xargs kill`). Other sessions on this
+  machine run their own engines and their own `gpu_slot` captures (for example a Unity project). Record the PID of
+  every process you start, at launch, and signal only those PIDs after checking `ps -o pid,ppid,command -p <pid>`
+  shows it is yours. On 2026-11-18 a builder's broad pattern hit another session's `gpu_slot` capture.
 - Own only processes you started. Stop a driver script first, then SIGTERM the game and wait up to 60 s; SIGKILL only
   if it is still alive. Never relaunch automatically after two crashes: stop and report. No tool that raises an OS
   dialog. No computer-use or mouse control.
@@ -41,8 +48,8 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
 - Free store assets only. No paid generation unless your brief names it. Never use Higgsfield.
 - Never print, log or commit credential values. Run `gitleaks protect --staged --no-banner` before every commit.
   Character content, raw third-party assets and anything under `Local/` stay out of git (the repo is public).
-- Commit small, verified steps on the goal branch and push. End commit messages with
-  `Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>`. Never push or merge `main`. Leave the pre-existing
+- Commit small, verified steps on the goal branch and push. End commit messages with the
+  co-author line your own session instructions give you (it names the model that actually wrote the change). Never push or merge `main`. Leave the pre-existing
   unstaged deletion of `Local/knight-review-20261028/critique-round2.md` alone.
 - Look at your own evidence: open the frames or the film sheet and say what you saw. A passing number with a
   wrong-looking frame is a failure.

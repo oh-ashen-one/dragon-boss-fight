@@ -4,7 +4,8 @@
 /**
  * B4-B6 (2026-11-18): one table for the weight layer: contact thresholds, shake by class, flinch, trail,
  * camera punches and the effect assets. Read once from Data/dragon/ground_fx.json beside moves.json; the
- * compiled defaults below are the same numbers, so a packaged build without Data/ behaves identically.
+ * compiled defaults carry the same numbers and asset paths for packaged builds (Data/ is not staged). The
+ * assets are loaded by path, so they appear in a package only when their folders are in DirectoriesToAlwaysCook.
  * Switches restore the old behaviour piece by piece; -VeyrLegacyFeel restores all of it.
  */
 namespace VeyrFeelSwitches
@@ -35,12 +36,17 @@ struct FVeyrFeelTuning
         // Fallback cards when System is empty or fails to load.
         int32 Cards=3; float CardSizeCm=60.f, CardLife=1.1f, CardOpacity=.32f, CardRiseCmS=35.f, CardSpreadCmS=70.f;
         int32 Chips=0; float ChipSizeCm=4.f, ChipSpeedCmS=320.f;
+        /** Draw the cards as well as the asset (the asset alone is a hero-sized puff under a dragon foot). */
+        bool bCardsWithAsset=false;
+        /** Hit bursts: a puff of the dust cards of this tier at the hit point (-1 none), sized by SmokeScale. */
+        int32 SmokeTier=-1; float SmokeScale=1.f;
     };
 
     // Contacts (cm and m/s at 1x; multiplied by BodyScale at run time)
     FPart Foot,Head{14.f,45.f,1.f},Neck{14.f,45.f,1.f},Body{14.f,45.f,1.f},Tail{10.f,35.f,1.2f},Wing{10.f,45.f,1.4f};
     float DustTierMaxSpeed[2]={1.2f,3.5f};
     float StompMinSpeed=1.f;
+    float BodyCloudMinSpeed=2.f;      // a body fall at least this fast (m/s at 1x) throws the body cloud
     float LandingWindowSeconds=1.2f;
     float PeakTimeConstant=.08f;
     float MinEventInterval=.12f;
@@ -59,10 +65,10 @@ struct FVeyrFeelTuning
     float FlinchRockMin=5.f,FlinchRockMax=21.f,FlinchTwistMin=4.f,FlinchTwistMax=18.f,FlinchCapDegrees=34.f;
     float FlinchHeadPart=1.25f,FlinchNeckPart=1.1f,FlinchLegPart=.5f,FlinchBodyShare=.18f,FlinchTailShare=.35f;
     float FlinchSnapSeconds=.04f,FlinchHz=2.f,FlinchDamping=.45f,FlinchLifeSeconds=1.f;
-    float FlashPeak=1.8f,FlashPeakGain=2.2f,FlashRadiusCm=85.f,FlashRadiusGainCm=90.f,FlashFade=.07f,FlashLife=.3f;
+    float FlashPeak=1.f,FlashPeakGain=1.2f,FlashRadiusCm=40.f,FlashRadiusGainCm=45.f,FlashFade=.07f,FlashLife=.3f;
 
     // Knight
-    float TrailLife=.11f,TrailBaseFraction=.0f;
+    float TrailLife=.22f,TrailBaseFraction=.2f;
     float SlowTailSeconds=.32f,SlowTailFrom=.3f;
     float PunchHeavy=.085f,PunchLight=.0f,PunchSeconds=.3f;
     float KickMin=4.f,KickGain=6.f,KickSeconds=.45f,HurtMin=.55f,HurtGain=.45f;
@@ -72,8 +78,8 @@ struct FVeyrFeelTuning
     FEffect Hit[3];
     FString DebrisMesh;
     // Fallback card look (the project's smoke and ember materials).
-    FLinearColor DustTint=FLinearColor(.52f,.46f,.39f),ChipTint=FLinearColor(.07f,.065f,.06f),SparkTint=FLinearColor(1.f,.80f,.50f);
-    float DustBrightness=.32f,SparkBrightness=4.f;
+    FLinearColor DustTint=FLinearColor(.80f,.77f,.72f),ChipTint=FLinearColor(.07f,.065f,.06f),SparkTint=FLinearColor(1.f,.80f,.50f);
+    float DustBrightness=.85f,SparkBrightness=4.f;
 
     FString SourceFile,Diagnostic;
     bool bLoadedFromFile=false;

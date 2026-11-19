@@ -38,6 +38,7 @@ public:
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 HitAsset[3]={0,0,0};
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 HitFallback[3]={0,0,0};
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 ChipsThrown=0;
+    UPROPERTY(VisibleAnywhere,Category="Evidence") int32 HitSmoke=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 CardsSpawned=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 MaxLiveCards=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 SkippedMerged=0;

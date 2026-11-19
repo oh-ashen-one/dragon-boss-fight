@@ -155,6 +155,9 @@ public:
     /** One eased vertical offset of this whole component (never a bone); see VeyrDragonGrounding.h.
      * Safe to call several times per frame: easing advances with world time only. */
     void UpdateGrounding(EVeyrGroundingMode Mode);
+    /** Same rule with an explicit time step (proof sweeps on a pose probe). */
+    void StepGrounding(EVeyrGroundingMode Mode,float DeltaSeconds);
+    void ResetGrounding();
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") bool bGroundingEnabled=true;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") float GroundingOffsetCm=0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") float GroundingTargetCm=0.f;
@@ -164,6 +167,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxDropCm=75.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingDropRate=6.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingReleaseRate=3.f;
+    /** Ground mode carries the support sole's motion through, eases the rest (rate 20, cap 300 cm/s x scale), and also raises a
+     * sunk body (bounded by GroundingMaxDropCm). -VeyrGroundingLowerOnly restores the first rule: lower only,
+     * eased at GroundingDropRate. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingTrackRate=20.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingMaxSpeedCm=300.f;
+    /** A target change faster than this (cm/s x scale) is a hard cut: eased, not carried through. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation|Grounding") float GroundingCutSpeedCm=1500.f;
+    float LastGroundTargetCm=0.f;bool bGroundTargetValid=false;EVeyrGroundingMode LastGroundingModeForTarget=EVeyrGroundingMode::Release;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation|Grounding") bool bGroundingLowerOnly=false;
     EVeyrGroundingMode LastGroundingMode=EVeyrGroundingMode::Release;
     FVeyrSoleSample LastSoleSample;
     const FVeyrSoleModel& GetSoleModel() const { return SoleModel; }

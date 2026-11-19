@@ -143,6 +143,7 @@ bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDef
     SetRelativeTransform(InDefinition->MeshRelativeTransform);
     bRepairMirroredClips=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyMirrorToe"));
     bGroundingEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonGrounding"));
+    bGroundingLowerOnly=FParse::Param(FCommandLine::Get(),TEXT("VeyrGroundingLowerOnly"));
     GroundingBaseLocation=InDefinition->MeshRelativeTransform.GetLocation();
     GroundingOffsetCm=GroundingTargetCm=0.f;LastGroundingWorldSeconds=-1.0;
     SoleModel=FVeyrSoleModel();
@@ -509,17 +510,51 @@ void UVeyrSkeletalPresentation::UpdateGrounding(EVeyrGroundingMode Mode)
     const double Now=World->GetTimeSeconds();
     const float Delta=LastGroundingWorldSeconds<0.0?0.f:static_cast<float>(FMath::Max(0.0,Now-LastGroundingWorldSeconds));
     LastGroundingWorldSeconds=Now;
+    StepGrounding(Mode,Delta);
+}
+
+void UVeyrSkeletalPresentation::ResetGrounding()
+{
+    GroundingOffsetCm=GroundingTargetCm=0.f;LastGroundingWorldSeconds=-1.0;GroundingUpdates=0;bGroundTargetValid=false;
+    SetRelativeLocation(GroundingBaseLocation);
+}
+
+void UVeyrSkeletalPresentation::StepGrounding(EVeyrGroundingMode Mode,float Delta)
+{
+    if(!bPoseEvaluated)return;
     LastGroundingMode=Mode;
     const USceneComponent* Parent=GetAttachParent();
     const float ParentScale=Parent?FMath::Max(.01f,static_cast<float>(Parent->GetComponentScale().Z)):1.f;
     // Measure with the offset already applied, so the target is the offset that would put the lowest
-    // sole on the floor. It only ever lowers the body (target <= 0) and by a bounded amount.
+    // sole on the floor, bounded either way (lower only under -VeyrGroundingLowerOnly).
+    const float Bound=GroundingMaxDropCm*ParentScale;
     if(Mode==EVeyrGroundingMode::Ground&&MeasureSoles(LastSoleSample))
-        GroundingTargetCm=FMath::Clamp(GroundingOffsetCm-LastSoleSample.LowestAboveFloorCm,-GroundingMaxDropCm*ParentScale,0.f);
+        GroundingTargetCm=FMath::Clamp(GroundingOffsetCm-LastSoleSample.LowestAboveFloorCm,-Bound,bGroundingLowerOnly?0.f:Bound);
     else if(Mode==EVeyrGroundingMode::Release)GroundingTargetCm=0.f;
     // Hold keeps the last target (collapse, exposed, rise and death lie on the belly).
-    const float Rate=GroundingTargetCm<GroundingOffsetCm?GroundingDropRate:GroundingReleaseRate;
-    const float Next=Delta>0.f?FMath::FInterpTo(GroundingOffsetCm,GroundingTargetCm,Delta,Rate):GroundingOffsetCm;
+    const bool bHasGroundTarget=bGroundTargetValid&&Mode==EVeyrGroundingMode::Ground&&LastGroundingModeForTarget==EVeyrGroundingMode::Ground;
+    float Next=GroundingOffsetCm;
+    if(Delta>0.f)
+    {
+        if(Mode==EVeyrGroundingMode::Ground&&!bGroundingLowerOnly)
+        {
+            // Within a clip the target (minus the raw support sole height) is a continuous curve: carry its
+            // change straight through so a planted sole stays planted, and only ease out the remaining error
+            // (rate GroundingTrackRate, speed cap GroundingMaxSpeedCm) left by a mode change or a hard cut.
+            const float Change=bHasGroundTarget?GroundingTargetCm-LastGroundTargetCm:0.f;
+            const bool bCut=FMath::Abs(Change)>GroundingCutSpeedCm*ParentScale*Delta;
+            Next=GroundingOffsetCm+(bCut?0.f:Change);
+            const float Eased=FMath::FInterpTo(Next,GroundingTargetCm,Delta,GroundingTrackRate);
+            const float Cap=GroundingMaxSpeedCm*ParentScale*Delta;
+            Next+=FMath::Clamp(Eased-Next,-Cap,Cap);
+        }
+        else
+        {
+            const float Rate=GroundingTargetCm<GroundingOffsetCm?GroundingDropRate:GroundingReleaseRate;
+            Next=FMath::FInterpTo(GroundingOffsetCm,GroundingTargetCm,Delta,Rate);
+        }
+    }
+    if(Delta>0.f){LastGroundTargetCm=GroundingTargetCm;bGroundTargetValid=true;LastGroundingModeForTarget=Mode;}
     ++GroundingUpdates;
     if(FMath::IsNearlyEqual(Next,GroundingOffsetCm,.01f)&&Delta>0.f&&GroundingUpdates>1)return;
     GroundingOffsetCm=Next;

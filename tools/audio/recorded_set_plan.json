@@ -3,11 +3,16 @@
   "queries": [
    "sword swing whoosh",
    "sword swoosh",
-   "blade swish"
+   "blade swish",
+   "sword whoosh fast",
+   "sword swing",
+   "katana swing",
+   "weapon swing air"
   ],
   "min": 0.2,
   "max": 6,
-  "keep": 6
+  "keep": 14,
+  "perQuery": 4
  },
  "HeavySwing": {
   "queries": [
@@ -15,31 +20,70 @@
    "heavy swing whoosh",
    "big swoosh weapon",
    "whoosh heavy",
-   "swoosh deep"
+   "swoosh deep",
+   "great sword swing",
+   "axe swing whoosh",
+   "hammer swing whoosh",
+   "club swing whoosh",
+   "sword swing heavy",
+   "swing whoosh",
+   "staff swing",
+   "whoosh"
   ],
   "min": 0.3,
   "max": 6,
-  "keep": 5
+  "keep": 26,
+  "perQuery": 5
  },
  "Contact": {
   "queries": [
    "sword hit flesh",
    "sword slash impact",
-   "blade stab hit"
+   "blade stab hit",
+   "sword hit",
+   "melee hit impact",
+   "slash flesh",
+   "sword stab body",
+   "knife stab",
+   "flesh hit",
+   "stab",
+   "slash",
+   "sword hit body",
+   "blade hit",
+   "sword slash hit",
+   "slashing flesh",
+   "cut flesh",
+   "meat hit"
   ],
   "min": 0.2,
   "max": 6,
-  "keep": 6
+  "keep": 40,
+  "perQuery": 5
  },
  "Guard": {
   "queries": [
    "sword clash",
    "shield block metal",
-   "sword parry clang"
+   "sword parry clang",
+   "metal clang",
+   "sword block",
+   "shield hit",
+   "blade clash",
+   "sword clang",
+   "metal hit",
+   "clang",
+   "metal parry",
+   "sword on shield",
+   "metal sword hit",
+   "swords",
+   "blade parry",
+   "weapon clash",
+   "metal impact clang"
   ],
   "min": 0.2,
   "max": 6,
-  "keep": 5
+  "keep": 55,
+  "perQuery": 5
  },
  "ArmorHit": {
   "queries": [
@@ -47,31 +91,97 @@
    "metal armor impact",
    "body hit armor",
    "metal hit impact",
-   "punch armor"
+   "punch armor",
+   "armor hit",
+   "knight armor hit",
+   "plate armor impact",
+   "metal clank hit",
+   "hit metal thud",
+   "armor clank",
+   "metal armor hit",
+   "shield hit",
+   "metal clang hit",
+   "heavy metal impact",
+   "armor",
+   "plate clank",
+   "metal thud",
+   "punch metal"
   ],
   "min": 0.2,
   "max": 6,
-  "keep": 5
+  "keep": 55,
+  "perQuery": 5
  },
  "Impact": {
   "queries": [
    "heavy ground impact",
    "boulder impact thud",
-   "deep impact rumble"
+   "deep impact rumble",
+   "stone impact heavy",
+   "heavy thud ground",
+   "earth thump",
+   "boom thud deep",
+   "rock slam ground",
+   "ground slam",
+   "heavy stomp impact",
+   "boom",
+   "big thud",
+   "rock thud",
+   "stone thud",
+   "heavy hit ground",
+   "bass impact",
+   "cinematic impact",
+   "sub drop",
+   "explosion distant",
+   "earthquake rumble",
+   "door slam",
+   "trailer hit",
+   "deep boom",
+   "low impact"
   ],
-  "min": 0.5,
+  "min": 0.6,
   "max": 8,
-  "keep": 6
+  "keep": 55,
+  "perQuery": 5
  },
  "DragonStep": {
   "queries": [
    "giant footstep",
    "monster footstep",
-   "heavy stomp thud"
+   "heavy stomp thud",
+   "elephant footstep",
+   "dinosaur footstep",
+   "giant stomp",
+   "stomp ground heavy",
+   "heavy footstep earth",
+   "monster stomp",
+   "boom impact low",
+   "kick drum deep hit",
+   "stomp thud",
+   "heavy boots stomp",
+   "troll footstep",
+   "ogre footsteps",
+   "mammoth",
+   "heavy door slam stone",
+   "earth thump",
+   "stone slab thud",
+   "boom hit",
+   "big thud",
+   "footstep heavy",
+   "stomping",
+   "dinosaur step",
+   "t-rex",
+   "cinematic boom",
+   "heavy impact thud",
+   "giant thump",
+   "low thud",
+   "stomp earth",
+   "bass drop short"
   ],
   "min": 0.3,
   "max": 8,
-  "keep": 6
+  "keep": 55,
+  "perQuery": 5
  },
  "DragonSwing": {
   "queries": [
@@ -79,132 +189,496 @@
    "heavy air whoosh",
    "large swoosh",
    "whoosh big",
-   "swoosh low heavy"
+   "swoosh low heavy",
+   "tail whoosh",
+   "huge swoosh low",
+   "large whoosh",
+   "massive whoosh",
+   "giant whoosh",
+   "whoosh low",
+   "wind whoosh heavy",
+   "air whoosh big",
+   "tail swish",
+   "big whoosh",
+   "whoosh heavy deep",
+   "whoosh slow",
+   "large swing",
+   "giant swing",
+   "wind blast",
+   "fast air rush"
   ],
   "min": 0.4,
   "max": 6,
-  "keep": 5
+  "keep": 40,
+  "perQuery": 5
  },
  "Bite": {
   "queries": [
    "monster bite",
    "jaw snap bite",
-   "crocodile bite snap"
+   "crocodile bite snap",
+   "animal bite snap",
+   "jaw snap",
+   "crocodile snap",
+   "dog snap bite",
+   "monster bite crunch",
+   "beast snap",
+   "chomp",
+   "jaw clack",
+   "teeth snap",
+   "bite crunch",
+   "animal chomp",
+   "jaw",
+   "chomp bite",
+   "snap",
+   "bite snap animal",
+   "monster chomp",
+   "shark bite",
+   "bear bite",
+   "dog bite",
+   "bone crunch"
   ],
   "min": 0.2,
   "max": 5,
-  "keep": 5
+  "keep": 40,
+  "perQuery": 5
  },
  "Breath": {
   "queries": [
    "fire whoosh ignite",
    "fireball whoosh",
-   "flame burst"
+   "flame burst",
+   "fire ignite whoosh",
+   "flame whoosh burst",
+   "fire burst",
+   "fireball",
+   "fire ignition",
+   "torch whoosh",
+   "gas ignite whoosh",
+   "fire explosion small"
   ],
   "min": 0.5,
   "max": 6,
-  "keep": 5
+  "keep": 26,
+  "perQuery": 5
  },
  "Fire": {
   "queries": [
    "flamethrower",
    "fire roar flame",
-   "dragon fire breath"
+   "dragon fire breath",
+   "fire roar loop",
+   "fire loop",
+   "dragon fire",
+   "flame roar",
+   "fire blast roar",
+   "campfire roar",
+   "blowtorch",
+   "gas burner",
+   "bonfire roar",
+   "fire whoosh loop"
   ],
   "min": 1.5,
-  "max": 12,
-  "keep": 5
+  "max": 14,
+  "keep": 26,
+  "perQuery": 5
  },
  "Wing": {
   "queries": [
    "large wing flap",
    "big bird wing flap",
-   "heavy cloth flap"
+   "heavy cloth flap",
+   "wing flap",
+   "bird wings flap",
+   "bat wings flap",
+   "sail flap",
+   "large cloth flap whoosh",
+   "flap",
+   "wings flapping",
+   "cloth flap",
+   "flag flapping",
+   "umbrella open",
+   "bird takeoff",
+   "wing",
+   "flapping",
+   "bird wings",
+   "large bird flap",
+   "sheet flap",
+   "tarp flap",
+   "wing beat"
   ],
   "min": 0.3,
   "max": 8,
-  "keep": 5
+  "keep": 55,
+  "perQuery": 5
  },
  "Roll": {
   "queries": [
    "armor foley",
    "chainmail",
    "cloth movement rustle",
-   "leather armor"
+   "leather armor",
+   "armor rustle",
+   "roll on ground foley",
+   "dodge roll",
+   "leather movement foley",
+   "cloth rustle quick",
+   "clothing rustle",
+   "jacket movement",
+   "body roll floor",
+   "armor clank walk",
+   "chain mail",
+   "fabric swish",
+   "leather creak",
+   "sword scabbard",
+   "foley cloth movement",
+   "body movement",
+   "shirt rustle",
+   "armor movement"
   ],
   "min": 0.3,
   "max": 8,
-  "keep": 5
+  "keep": 40,
+  "perQuery": 5
  },
  "Footstep": {
   "queries": [
    "footsteps stone boots",
    "armor footsteps",
-   "footstep stone single"
+   "footstep stone single",
+   "footstep stone",
+   "boot footstep concrete",
+   "footsteps echo stone",
+   "footstep armor",
+   "knight footsteps",
+   "footstep gravel boot",
+   "footsteps",
+   "boots",
+   "walking stone",
+   "footstep"
   ],
   "min": 0.2,
   "max": 12,
-  "keep": 6
+  "keep": 30,
+  "perQuery": 5
  },
  "Blink": {
   "queries": [
    "magic whoosh",
    "teleport whoosh",
-   "dark magic swoosh"
+   "dark magic swoosh",
+   "dash whoosh",
+   "swoosh air fast",
+   "teleport",
+   "whoosh",
+   "magic swoosh",
+   "air rush"
   ],
   "min": 0.3,
   "max": 5,
-  "keep": 5
+  "keep": 26,
+  "perQuery": 5
  },
  "Break": {
   "queries": [
    "stone break crumble",
    "rock smash debris",
-   "stone crash"
+   "stone crash",
+   "rock debris falling",
+   "stone rubble",
+   "gravel fall",
+   "stone crumble",
+   "rocks falling",
+   "stone smash",
+   "rock crumble",
+   "wall collapse",
+   "brick break",
+   "concrete break",
+   "boulder crack"
   ],
   "min": 0.4,
-  "max": 6,
-  "keep": 5
+  "max": 8,
+  "keep": 26,
+  "perQuery": 5
  },
  "Exposed": {
   "queries": [
    "large body fall thud",
    "heavy body fall",
-   "tree fall crash"
+   "tree fall crash",
+   "elephant fall",
+   "heavy thud ground",
+   "boulder drop",
+   "giant fall impact",
+   "body falls",
+   "heavy fall",
+   "fall thud",
+   "collapse",
+   "dinosaur",
+   "crash thud ground",
+   "big fall",
+   "crash ground",
+   "heavy crash",
+   "falling rock"
   ],
   "min": 0.5,
   "max": 8,
-  "keep": 5
+  "keep": 55,
+  "perQuery": 5
  },
  "Death": {
   "queries": [
    "body fall",
    "armor fall",
    "metal armor crash",
-   "body drop"
+   "body drop",
+   "knight falls armor",
+   "heavy fall armor clatter",
+   "armor collapse",
+   "body falls ground"
   ],
   "min": 0.4,
   "max": 6,
-  "keep": 5
+  "keep": 14,
+  "perQuery": 4
  },
  "Heal": {
   "queries": [
    "drinking gulp",
    "potion drink",
-   "drink swallow"
+   "drink swallow",
+   "gulp swallow",
+   "drinking water gulp",
+   "swallow",
+   "drinking",
+   "drink",
+   "chug",
+   "gulping",
+   "swallow water"
   ],
   "min": 0.4,
   "max": 6,
-  "keep": 4
+  "keep": 26,
+  "perQuery": 5
  },
  "Victory": {
   "queries": [
    "deep gong hit",
    "orchestral hit epic",
-   "war drum hit deep"
+   "war drum hit deep",
+   "taiko drum hit",
+   "timpani hit",
+   "cinematic boom hit",
+   "low brass hit",
+   "deep drum hit",
+   "boom",
+   "drum hit",
+   "hit cinematic",
+   "impact boom",
+   "bass hit",
+   "war drum"
   ],
   "min": 1.0,
   "max": 12,
-  "keep": 5
+  "keep": 26,
+  "perQuery": 5
+ },
+ "DragonBreathIn": {
+  "queries": [
+   "large animal breathing",
+   "horse breathing",
+   "bull breathing",
+   "heavy animal breath",
+   "elephant breathing",
+   "whale blow breath",
+   "lion breathing",
+   "rhino breathing",
+   "inhale deep",
+   "deep breath in",
+   "dog breathing",
+   "cow breathing",
+   "animal breathing",
+   "wind inhale",
+   "exhale",
+   "sigh",
+   "animal sigh",
+   "blowing air",
+   "big exhale",
+   "bear breathing",
+   "monster breathing",
+   "creature breathing",
+   "dragon breathing",
+   "lion exhale",
+   "heavy breathing slow",
+   "cow breathing heavy",
+   "horse breath",
+   "bull breath",
+   "elephant",
+   "camel",
+   "buffalo",
+   "ox breathing",
+   "horse",
+   "cow",
+   "bull",
+   "hippo",
+   "rhino",
+   "walrus",
+   "sea lion",
+   "seal breathing",
+   "whale",
+   "pig breathing",
+   "tiger breathing",
+   "bear",
+   "animal",
+   "creature breath",
+   "monster breath"
+  ],
+  "min": 0.8,
+  "max": 12,
+  "keep": 130,
+  "perQuery": 6,
+  "exclude": [
+   "169931",
+   "146769",
+   "717167",
+   "242907",
+   "689885"
+  ]
+ },
+ "DragonBreathOut": {
+  "queries": [
+   "horse snort",
+   "bull snort",
+   "animal exhale heavy",
+   "large animal exhale",
+   "whale breath",
+   "animal snort",
+   "exhale deep",
+   "deep breath out",
+   "dog breathing",
+   "cow breathing",
+   "animal breathing",
+   "wind exhale",
+   "exhale",
+   "sigh",
+   "animal sigh",
+   "horse breathing",
+   "blowing air",
+   "big exhale",
+   "bear breathing",
+   "monster breathing",
+   "creature breathing",
+   "dragon breathing",
+   "lion exhale",
+   "heavy breathing slow",
+   "cow snort",
+   "horse blow",
+   "bull exhale",
+   "elephant breath",
+   "camel",
+   "buffalo",
+   "ox breathing",
+   "horse",
+   "cow",
+   "bull",
+   "hippo",
+   "rhino",
+   "walrus",
+   "sea lion",
+   "seal breathing",
+   "whale",
+   "pig breathing",
+   "tiger breathing",
+   "bear",
+   "animal",
+   "creature breath",
+   "monster breath"
+  ],
+  "min": 0.5,
+  "max": 12,
+  "keep": 130,
+  "perQuery": 6,
+  "exclude": [
+   "233149",
+   "622731",
+   "717167",
+   "169931",
+   "146769",
+   "485684",
+   "336539",
+   "812294"
+  ]
+ },
+ "DragonGrowlLow": {
+  "queries": [
+   "lion growl low",
+   "bear growl",
+   "tiger growl",
+   "large animal growl",
+   "crocodile growl",
+   "monster growl low",
+   "elephant rumble",
+   "big cat growl",
+   "growl",
+   "dog growl",
+   "wolf growl",
+   "beast growl",
+   "animal rumble",
+   "cat growl",
+   "roar low"
+  ],
+  "min": 0.8,
+  "max": 8,
+  "keep": 26,
+  "perQuery": 5,
+  "exclude": [
+   "811790"
+  ]
+ },
+ "DragonSnort": {
+  "queries": [
+   "horse snort",
+   "bull snort",
+   "pig snort",
+   "animal snort",
+   "rhino snort",
+   "camel grunt",
+   "snort",
+   "exhale nose",
+   "sniff",
+   "horse",
+   "pig grunt",
+   "cow"
+  ],
+  "min": 0.3,
+  "max": 5,
+  "keep": 26,
+  "perQuery": 5
+ },
+ "Debris": {
+  "queries": [
+   "stone debris falling",
+   "rock rubble crash",
+   "dirt debris",
+   "small rocks fall",
+   "gravel crash",
+   "rubble",
+   "rocks tumble",
+   "stone pieces",
+   "gravel",
+   "rock slide",
+   "stones falling",
+   "brick fall",
+   "rock fall",
+   "stones drop",
+   "pebbles",
+   "rocks tumbling",
+   "avalanche",
+   "small rubble"
+  ],
+  "min": 0.2,
+  "max": 6,
+  "keep": 55,
+  "perQuery": 5
  }
 }
