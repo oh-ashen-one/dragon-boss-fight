@@ -26,7 +26,13 @@ bool UVeyrCameraBoom::UpdateProxy()
     if(!Proxy.Update(P,RigProxyMarginCm*DragonScale()))return false;
     // Extents follow the drawn skin this frame (-VeyrRigBoneBoxes keeps the bone-moved boxes only).
     static const bool bBoneOnly=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigBoneBoxes"));
-    if(!bBoneOnly){FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();if(True.Skin(P))bProxyTight=True.Tighten(Proxy);}
+    if(!bBoneOnly)
+    {
+        FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();
+        bProxyTight=True.Skin(P)&&True.Tighten(Proxy);
+        // A frame the skin cannot be read (pose not yet evaluated, mesh swap): last frame's tight boxes, never the rigid ones.
+        if(bProxyTight)LastTightProxy=Proxy;else if(LastTightProxy.IsValid()){Proxy=LastTightProxy;++RigStaleProxyFrames;}
+    }
     return true;
 }
 
@@ -116,8 +122,25 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     OverheadAlpha=FMath::FInterpConstantTo(OverheadAlpha,bOverhead?1.f:0.f,Dt,4.f);
     const float OverS=FMath::SmoothStep(0.f,1.f,OverheadAlpha);
     const FVector Back=FRotator(0.f,static_cast<float>(ArmRot.Yaw),0.f).Vector();
-    const FVector OverDesired=FVector(Pivot.X,Pivot.Y,FMath::Max(Pivot.Z,Top.Z+static_cast<double>(RigOverheadUpCm)))-Back*RigOverheadBackCm;
-    FRotator OverRot(FMath::Min(static_cast<float>(ArmRot.Pitch),RigOverheadPitchDeg),static_cast<float>(ArmRot.Yaw),0.f);
+    const FVector HighDesired=FVector(Pivot.X,Pivot.Y,FMath::Max(Pivot.Z,Top.Z+static_cast<double>(RigOverheadUpCm)))-Back*RigOverheadBackCm;
+    // Under the belly the over-the-head point is inside the body: the same fixed point at hip height, looking level,
+    // fits under it. Chosen once when the short arm starts (longer free sweep wins), switched only when the chosen
+    // one is blocked and the other is not (-VeyrRigNoLowOverhead keeps the head-high point only).
+    static const bool bNoLow=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigNoLowOverhead"));
+    const FVector LowDesired=FVector(Pivot.X,Pivot.Y,Foot.Z+110.0)-Back*(RigOverheadBackCm*1.3f);
+    if(!bNoLow&&bOverhead)
+    {
+        const float HighFree=RigSweep(Pivot,HighDesired,R)*static_cast<float>(FVector::Dist(Pivot,HighDesired));
+        const float LowFree=RigSweep(Pivot,LowDesired,R)*static_cast<float>(FVector::Dist(Pivot,LowDesired));
+        if(OverheadAlpha<=.01f)bOverLow=LowFree>HighFree+40.f;
+        else if(bOverLow&&LowFree<80.f&&HighFree>160.f)bOverLow=false;
+        else if(!bOverLow&&HighFree<80.f&&LowFree>160.f)bOverLow=true;
+    }
+    if(!bOverhead&&OverheadAlpha<=.01f)bOverLow=false;
+    OverLowAlpha=FMath::FInterpConstantTo(OverLowAlpha,bOverLow?1.f:0.f,Dt,4.f);
+    const float LowS=FMath::SmoothStep(0.f,1.f,OverLowAlpha);RigLowFrames+=LowS>.5f;
+    const FVector OverDesired=FMath::Lerp(HighDesired,LowDesired,LowS);
+    FRotator OverRot(FMath::Lerp(FMath::Min(static_cast<float>(ArmRot.Pitch),RigOverheadPitchDeg),5.f,LowS),static_cast<float>(ArmRot.Yaw),0.f);
     FQuat View=FQuat::Slerp(ArmQ,OverRot.Quaternion(),OverS);View.Normalize();
     // c. Every positional offset goes on the desired point, before the sweep.
     const FVector From=FMath::Lerp(Origin,Pivot,OverS);
@@ -134,6 +157,7 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     else if(bRigHide&&Gap<=RigHideCm+30.f)HideClearSeconds=0.f;
     if(bRigHide)
     {
+        RigHideUnderBodyFrames+=Proxy.IsValid()&&Proxy.UnderBody(Top,4000.f*S,0.f);
         Lens=FVector(KB.X,KB.Y,Top.Z+15.0);
         if(Proxy.IsValid()&&Proxy.Contains(Lens,R))Lens.Z+=Proxy.FreeAbove(Lens,R,4000.f*S);
         ++RigHiddenFrames;
@@ -152,6 +176,6 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     FramedView=View;bFramedViewValid=true;FovBoostDeg=0.f;
     BodyFraction=RigFraction;SafeFraction=RigFraction;
     if(Proxy.IsValid()&&Proxy.Contains(Lens,0.f))++ResultInsideFrames;
-    LastRigLens=Lens;
+    LastRigLens=Lens;RigFrame=GFrameCounter;RigSkinFrame=FVeyrDragonTrueSkin::Get().SkinFrame();
     return Lens;
 }

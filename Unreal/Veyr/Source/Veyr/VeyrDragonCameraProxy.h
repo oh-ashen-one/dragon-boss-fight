@@ -88,6 +88,7 @@ public:
     int32 VertexCount() const { return Current?Current->Positions.Num():0; }
     int32 TriangleCount() const { return Current?Current->Indices.Num()/3:0; }
     double SkinSeconds=0.0;
+    uint64 SkinFrame() const { return SkinnedFrame; }
 private:
     struct FMesh
     {
@@ -98,7 +99,7 @@ private:
     };
     TArray<FMesh> Meshes;
     FMesh* Current=nullptr;
-    TArray<FVector> Skinned;
+    TArray<FVector> Skinned,PrevSkinned;uint64 PrevSkinnedFrame=0;
     TArray<FBox> GroupBounds;
     TArray<TArray<int32>> GroupTriangles;
     uint64 SkinnedFrame=0; const USkeletalMesh* SkinnedMesh=nullptr;

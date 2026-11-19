@@ -850,7 +850,7 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     bool bCapsule=false,bHull=false,bBehind=false,bNear=false,bInside=false;
     if(bTrue)
     {
-        ++A.TrueSkinFrames;
+        ++A.TrueSkinFrames;AuditOtherFrame+=RigFrame!=GFrameCounter;AuditOtherSkinFrame+=RigSkinFrame!=True.SkinFrame();
         const float NearCm=True.NearestDistance(Camera,200.f);A.MinSkinCm=FMath::Min(A.MinSkinCm,NearCm);
         const bool bVolume=True.InsideVolume(Camera);
         // The near plane (10 cm) reaches its corners about 17 cm from the eye at the widest lens: skin that close is cut open.
@@ -978,7 +978,7 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
     {const int32 Out=A.VisibleFrames-A.KnightInFrameVisible;N(TEXT("outOfFrameVisibleFrames"),Out);N(TEXT("outOfFrameNearFrames"),A.OutFrameNear);N(TEXT("outOfFramePitchUpFrames"),A.OutFramePitchUp);N(TEXT("outOfFrameOverheadFrames"),A.OutFrameOverhead);N(TEXT("outOfFrameMeanDistanceCm"),Out?A.OutFrameDistanceSum/Out:0.0);}Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);
     N(TEXT("rigOverheadFrames"),RigOverheadFrames);N(TEXT("rigHiddenFrames"),RigHiddenFrames);N(TEXT("rigPivotLiftFrames"),RigPivotLiftFrames);
-    N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());N(TEXT("rigWorldHits"),RigWorldHits);{TArray<TSharedPtr<FJsonValue>> L;for(const FString& X:RigWorldHitNames)L.Add(MakeShared<FJsonValueString>(X));O->SetArrayField(TEXT("rigWorldHitActors"),L);}N(TEXT("trueSkinMs"),FVeyrDragonTrueSkin::Get().SkinSeconds*1000.0);O->SetBoolField(TEXT("rigProxyTight"),bProxyTight);
+    N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());N(TEXT("rigWorldHits"),RigWorldHits);N(TEXT("auditRigOtherFrame"),AuditOtherFrame);N(TEXT("auditRigOtherSkinFrame"),AuditOtherSkinFrame);N(TEXT("rigStaleProxyFrames"),RigStaleProxyFrames);N(TEXT("rigLowOverheadFrames"),RigLowFrames);N(TEXT("rigHideUnderBodyFrames"),RigHideUnderBodyFrames);{TArray<TSharedPtr<FJsonValue>> L;for(const FString& X:RigWorldHitNames)L.Add(MakeShared<FJsonValueString>(X));O->SetArrayField(TEXT("rigWorldHitActors"),L);}N(TEXT("trueSkinMs"),FVeyrDragonTrueSkin::Get().SkinSeconds*1000.0);O->SetBoolField(TEXT("rigProxyTight"),bProxyTight);
     O->SetStringField(TEXT("rigProxy"),Proxy.Diagnostic);N(TEXT("rigProxyMarginCm"),RigProxyMarginCm*DragonScale());N(TEXT("rigLensRadiusCm"),RigLensRadiusCm);
     O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight, whole replay (held by the replay, survives restart); seconds are replay seconds; visible = 7 knight points inside the central 80 % with no dragon skin (shapes, interior, wings) in between; jumps = >150 cm or >12 deg in one frame, knight blinks excluded"));
     return O;

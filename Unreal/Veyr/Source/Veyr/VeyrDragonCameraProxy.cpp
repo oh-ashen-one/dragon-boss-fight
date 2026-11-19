@@ -207,7 +207,7 @@ bool FVeyrDragonTrueSkin::Skin(const UVeyrSkeletalPresentation* Presentation)
     const double Start=FPlatformTime::Seconds();
     if(Mesh!=SkinnedMesh)
     {
-        Current=nullptr;const FString Path=Mesh?Mesh->GetPathName():FString();
+        Current=nullptr;PrevSkinned.Reset();Skinned.Reset();const FString Path=Mesh?Mesh->GetPathName():FString();
         for(FMesh& M:Meshes)if(M.Path==Path){Current=&M;break;}
         SkinnedMesh=Mesh;
     }
@@ -223,6 +223,8 @@ bool FVeyrDragonTrueSkin::Skin(const UVeyrSkeletalPresentation* Presentation)
     for(int32 I=0;I<Ref.GetNum();++I)
         M[I]=FMatrix44f(RefComp[I].ToMatrixWithScale().Inverse()*(Pose.IsValidIndex(I)?Pose[I]:RefComp[I]).ToMatrixWithScale()*ComponentM);
     const int32 NV=Current->Positions.Num();
+    if(Skinned.Num()==NV&&SkinnedFrame!=GFrameCounter){Swap(Skinned,PrevSkinned);PrevSkinnedFrame=SkinnedFrame;}
+    else PrevSkinned.Reset();
     Skinned.SetNumUninitialized(NV);
     for(int32 V=0;V<NV;++V)
     {
@@ -374,6 +376,15 @@ bool FVeyrDragonTrueSkin::Tighten(FVeyrDragonProxy& Proxy)
         for(int32 K=0;K<3;++K){const double X=FVector::DotProduct(D,B.Axis[K]);Lo[I][K]=FMath::Min(Lo[I][K],X);Hi[I][K]=FMath::Max(Hi[I][K],X);}
     };
     for(int32 V=0;V<NV;++V){const int32 I=Current->BoxOfVertex[V];if(I!=INDEX_NONE)Grow(I,Skinned[V]);}
+    // The lens is placed and the skin drawn up to a frame apart: hold last frame's skin and its constant-velocity
+    // next frame too (-VeyrRigOneFrameSkin keeps this frame only).
+    static const bool bOneFrame=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigOneFrameSkin"));
+    if(!bOneFrame&&PrevSkinned.Num()==NV&&SkinnedFrame-PrevSkinnedFrame<=2)
+        for(int32 V=0;V<NV;++V)
+        {
+            const int32 I=Current->BoxOfVertex[V];if(I==INDEX_NONE)continue;
+            Grow(I,PrevSkinned[V]);Grow(I,Skinned[V]*2.0-PrevSkinned[V]);
+        }
     // Whole triangles: a box holding all three corners holds the face (boxes are convex), so a face stretched
     // between two bones' boxes can never leave a gap the lens fits through (seen: lens 34 cm off the proxy, 0 cm off skin).
     const TArray<uint32>& Idx=Current->Indices;
