@@ -2559,9 +2559,16 @@ void AVeyrKnight::UpdateGreystoneProps()
     GreystoneDiagnostic.Reset();
 }
 
+AVeyrKnight::FGreystoneMonitor& AVeyrKnight::GreystoneMonitorShared() const
+{
+    static FGreystoneMonitor Monitor;static const AVeyrKnight* Owner=nullptr;
+    if(Owner!=this){Owner=this;for(bool& V:Monitor.bValid)V=false;Monitor.LastClip=NAME_None;Monitor.SinceSwitch=100;}
+    return Monitor;
+}
+
 void AVeyrKnight::MonitorGreystoneFrame()
 {
-    FGreystoneMonitor& M=GreystoneMonitor;
+    FGreystoneMonitor& M=GreystoneMonitorShared();
     UVeyrSkeletalPresentation* P=ImportedPresentation;
     ++M.Frames;
     if(!P->bPoseEvaluated){++M.UnposedFrames;return;}
@@ -2615,7 +2622,7 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
     if(!GreystoneDiagnostic.IsEmpty())O->SetStringField(TEXT("diagnostic"),GreystoneDiagnostic);
     if(bGreystoneActive)
     {
-        const FGreystoneMonitor& M=GreystoneMonitor;TSharedRef<FJsonObject> F=MakeShared<FJsonObject>();
+        const FGreystoneMonitor& M=GreystoneMonitorShared();TSharedRef<FJsonObject> F=MakeShared<FJsonObject>();
         F->SetNumberField(TEXT("frames"),M.Frames);F->SetNumberField(TEXT("unposedFrames"),M.UnposedFrames);
         F->SetNumberField(TEXT("fallbackFrames"),M.FallbackFrames);F->SetNumberField(TEXT("switches"),M.Switches);
         F->SetNumberField(TEXT("crossFadedSwitches"),M.CrossFaded);F->SetNumberField(TEXT("maxSwitchPopCm"),M.MaxPopCm);
