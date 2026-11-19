@@ -43,6 +43,10 @@ void AVeyrGameMode::StartPlay()
 {
     Super::StartPlay();
     VeyrLook::ApplyRenderer();
+    // Windowless sweeps: -VeyrFastSim with the null renderer steps the game at a fixed 1/60 s as fast as the CPU
+    // allows (about ten times real time). Never active in a rendered run; off by default.
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrFastSim"))&&FParse::Param(FCommandLine::Get(),TEXT("nullrhi")))
+    {FApp::SetUseFixedTimeStep(true);FApp::SetFixedDeltaTime(1./60.);UE_LOG(LogTemp,Display,TEXT("VEYR_FAST_SIM fixed step 1/60 s"));}
     UVeyrSessionState* Session=GetGameInstance()?GetGameInstance()->GetSubsystem<UVeyrSessionState>():nullptr;
     bArenaIntroPreviouslySeen=Session&&Session->bArenaIntroSeen;
     FString RequestedReplay;
@@ -163,7 +167,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         if(Dragon->IsDead()&&VictorySeconds<0)
         {
             VictorySeconds=EncounterSeconds;
-            FightClock.Finish(FPlatformTime::Seconds(),false);VictoryWallSeconds=GetFightWallSeconds();
+            FightClock.Finish(FightNow(),false);VictoryWallSeconds=GetFightWallSeconds();
             UE_LOG(LogTemp,Display,TEXT("VEYR_UNREAL_VICTORY game_seconds=%.3f active_wall_seconds=%.3f"),VictorySeconds,VictoryWallSeconds);
         }
     }
@@ -172,7 +176,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
 void AVeyrGameMode::SampleFightClock()
 {
     if(bArenaIntroActive||(Replay&&Replay->IsPresentationOnly()))return;
-    FightClock.Sample(FPlatformTime::Seconds(),Knight&&Knight->HasEnteredEncounter(),UGameplayStatics::IsGamePaused(this));
+    FightClock.Sample(FightNow(),Knight&&Knight->HasEnteredEncounter(),UGameplayStatics::IsGamePaused(this));
 }
 
 void AVeyrGameMode::StartArenaIntro()
@@ -232,9 +236,16 @@ void AVeyrGameMode::StartMixCapture()
     UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_CAPTURE_START wall=%.6f world=%.6f intro=%d"),MixCaptureStarted,GetWorld()->GetTimeSeconds(),bArenaIntroActive);
 }
 
+double AVeyrGameMode::FightNow()
+{
+    // -VeyrFastSim (windowless sweeps only): the engine steps a fixed 1/60 s as fast as it can, so the fight clock
+    // reads the engine's stepped clock, which equals wall time in normal play. Without the switch: wall time as before.
+    return FApp::UseFixedTimeStep()&&FParse::Param(FCommandLine::Get(),TEXT("VeyrFastSim"))?FApp::GetCurrentTime():FPlatformTime::Seconds();
+}
+
 double AVeyrGameMode::GetFightWallSeconds() const
 {
-    return FightClock.Seconds(FPlatformTime::Seconds(),UGameplayStatics::IsGamePaused(this));
+    return FightClock.Seconds(FightNow(),UGameplayStatics::IsGamePaused(this));
 }
 
 bool AVeyrGameMode::StartNativeValidation(const FString& Mode,const FString& EvidenceDirectory)

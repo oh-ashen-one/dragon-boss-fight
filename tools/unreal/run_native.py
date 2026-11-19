@@ -174,6 +174,11 @@ if batch_seeds:
     for reason in bad:print('Batch problem:',reason,flush=True)
     raise SystemExit(1 if bad else 0)
 expected=[a.mode]+([a.next_mode] if a.next_mode else [])
+# Seed sweep (-VeyrSeedSweep=A-B): one evidence folder per seed in one process (a next mode, if any, runs the sweep).
+for extra in a.extra_arg:
+    if extra.startswith('-VeyrSeedSweep='):
+        first,last=(int(v) for v in extra.split('=',1)[1].split('-'))
+        expected=[a.mode]+[a.next_mode]*(last-first+1) if a.next_mode else [a.mode]*(last-first+1)
 if len(results) != len(expected):raise SystemExit('Expected one completed evidence file per requested scenario')
 evidence=[json.loads(p.read_text()) for p in results]
 if sorted(d.get('mode','') for d in evidence)!=sorted(expected):raise SystemExit('Recorded scenarios differ from the requested run')

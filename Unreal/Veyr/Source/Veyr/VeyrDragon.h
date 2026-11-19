@@ -232,6 +232,10 @@ public:
     /** Largest distance any grounded body part reached past the court floor edge; negative = always inside. */
     float CourtOverreachCm=-100000.f;
     static float ConfiguredBodyScale();
+    /** Windowless seed sweep (-VeyrSeedSweep=A-B, indices into 20261117,1,2..63): the seed for this world. */
+    static bool SweepSeed(int32& OutSeed);
+    /** Moves the sweep to its next seed; false when the sweep is done or absent. */
+    static bool AdvanceSweep();
     static float ConfiguredPaceScale();
     /** Actor pose without the creature scale: world-centimetre local frames for reach tests. */
     FTransform RigidTransform() const { return FTransform(GetActorQuat(),GetActorLocation()); }

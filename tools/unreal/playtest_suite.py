@@ -22,8 +22,7 @@ p.add_argument('--engine', type=Path, help='run the editor build as a game inste
 p.add_argument('--run', action='append', required=True,
                help='mode[:flag[,flag...]] e.g. victory, victory:two-handed, camp, showcase:-VeyrLegacyDragon; '
                     '"two-handed" maps to --start-two-handed, "video=N" to --video-fps N, "sound" to --with-sound, '
-                    '"headless" to a numbers-only null-renderer run that needs no GPU slot, '
-                    '"seeds=4/5/6" (headless victory/death) to one process fighting once per brain seed; one record per fight')
+                    '"headless" to a numbers-only null-renderer run that needs no GPU slot')
 p.add_argument('--label', default='suite')
 p.add_argument('--parallel', type=int, default=1, help='run this many headless specs at once (headless only)')
 p.add_argument('--busy-wait-minutes', type=float, default=40,
@@ -38,7 +37,6 @@ def run_spec(spec, delay=0.0):
     time.sleep(delay)
     mode, _, rest = spec.partition(':')
     flags = [f for f in rest.split(',') if f]
-    batch = []
     runtime = ['--app', str(a.app)] if a.app else ['--engine', str(a.engine)]
     cmd = [sys.executable, str(ROOT / 'tools/unreal/run_native.py'), *runtime, '--gpu-slot', str(gate),
            '--mode', mode, '--slot-wait-seconds', '900']
@@ -54,9 +52,6 @@ def run_spec(spec, delay=0.0):
             cmd += ['--audio-capture-seconds', flag.split('=', 1)[1]]
         elif flag == 'headless':
             cmd.append('--headless')
-        elif flag.startswith('seeds='):
-            batch = [x for x in flag.split('=', 1)[1].split('/') if x]
-            cmd += ['--batch-seeds', ','.join(batch)]
         elif flag == 'no-profile':
             extra = []
         else:
@@ -79,9 +74,19 @@ def run_spec(spec, delay=0.0):
     record = {'spec': spec, 'headless': 'headless' in flags, 'exit': proc.returncode, 'wallSeconds': round(time.time() - started, 1),
               'run': new[-1] if new else None, 'tail': proc.stdout.strip().splitlines()[-1:] }
     evidence = glob.glob(new[-1] + '/unreal-*/evidence.json') if new else []
-
-    def fill(record, path):
-        e = json.loads(Path(path).read_text())
+    if len(evidence) > 1:
+        # Seed sweep (-VeyrSeedSweep=A-B) or a next mode: one line per fight; tools/unreal/band_summary.py gives the band.
+        record['fights'] = []
+        for path in sorted(evidence):
+            f = json.loads(Path(path).read_text())
+            combat = [s for s in f.get('samples', []) if s.get('replayStage') == 'combat'] or f.get('samples', [])
+            record['fights'].append({'mode': f.get('mode'), 'passed': f.get('passed'),
+                                     'seed': next((s.get('brainSeed') for s in combat if s.get('brainSeed') is not None), None),
+                                     'terminalWallSeconds': f.get('terminalWallSeconds'),
+                                     'hitsTaken': max([s.get('hitsTaken', 0) for s in combat] or [0]),
+                                     'evidence': path})
+    if evidence:
+        e = json.loads(Path(evidence[-1]).read_text())
         latest = e.get('latest', {})
         samples = e.get('samples', [])
         record.update({
@@ -121,7 +126,7 @@ def run_spec(spec, delay=0.0):
             'meanFrameSeconds': e.get('meanFrameSeconds'), 'wallFrameP95Seconds': e.get('wallFrameP95Seconds'),
             'bodyScale': latest.get('bossBodyScale'), 'pace': latest.get('bossPaceScale'),
             'aggression': latest.get('bossAggression'), 'floorTelegraph': latest.get('floorTelegraph'),
-            'evidence': path,
+            'evidence': evidence[-1],
         })
         if 'a123' in e:
             # Quality goal A1-A3 proof modes (footclosehits / camerahug / soleheights).
@@ -135,21 +140,6 @@ def run_spec(spec, delay=0.0):
                     'knightTallerThan45PctFrames', 'knightHiddenByDragonFrames', 'legacyCameraFraming', 'framingSearches',
                     'framingFallbackFrames', 'viewTurnFrames', 'legacyCutThrough')
             record['a123'] = {k: x[k] for k in keys if k in x}
-        if 'dragonPlayback' in e:
-            # Quality goal F1-F4: switches, worst source rate outside holds, worst planted-foot slide, per-clip rate/slide.
-            x = e['dragonPlayback']
-            keys = ('clipTempo', 'twoClipBlend', 'footLock', 'slowSnapTurn', 'rootTracks', 'worstFrameSourceRateOutsideHolds',
-                    'worstRateClip', 'worstPlantedSlideCmPerSec', 'worstSlideClip', 'gateRateAtMost1_25', 'gateSlideUnder5',
-                    'walkStrideSpeedCmPerSec', 'trackTravelWorldCm', 'footLockDiagnostic', 'poseDeltaPops',
-                    'poseDeltaPopsInBlend', 'worstPopRatio', 'worstPopClipBone', 'gateNoBlendPops')
-            record['playback'] = {k: x[k] for k in keys if k in x}
-            record['playback']['clips'] = {k: {'rate': round(c.get('meanSourceRateOutsideHolds', 0), 3),
-                                               'slide': round(c.get('worstPlantedSlideCmPerSec', 0), 2),
-                                               'steps': c.get('steps', 0), 'blends': c.get('blends', {}),
-                                               'pops': c.get('pops', 0), 'popsInBlend': c.get('popsInBlend', 0),
-                                               'travel': round(c.get('travelWorldCm', 0), 1),
-                                               'track': round(c.get('trackPathWorldCm', 0), 1)}
-                                           for k, c in x.get('clips', {}).items()}
         if 'audio' in latest:
             # Quality goal B1-B3: which cues fired (counts by cue, dragon contacts/breaths/timed sounds, knight steps).
             au = latest['audio']
@@ -174,43 +164,19 @@ def run_spec(spec, delay=0.0):
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:
             record['brainReachMap'] = e['brainReachMap']
-
-    if not batch:
-        if evidence:
-            fill(record, evidence[-1])
-        return [record], proc
-    # Seed batch: one record per requested fight, spec rewritten to name its seed so existing
-    # parsers that read -VeyrBrainSeed=<n> from the spec keep working. 'wallSeconds' is the whole process.
-    by_index = {}
-    for path in evidence:
-        try:
-            by_index[json.loads(Path(path).read_text()).get('batchSeedIndex')] = path
-        except (OSError, ValueError):
-            pass
-    flag = next(f for f in flags if f.startswith('seeds='))
-    records = []
-    for index, seed in enumerate(batch):
-        per = dict(record)
-        per['spec'] = spec.replace(flag, '-VeyrBrainSeed=' + seed)
-        per.update({'batchIndex': index, 'batchSeed': int(seed) if seed.lstrip('-').isdigit() else seed, 'batchSize': len(batch)})
-        if index in by_index:
-            fill(per, by_index[index])
-        records.append(per)
-    return records, proc
+    return record, proc
 
 
-def report(records, proc):
+def report(record, proc):
     global crashes
-    for record in records:
-        results.append(record)
-        print(json.dumps({k: v for k, v in record.items() if k not in ('camp', 'tail', 'brainReachMap')}), flush=True)
-        for line in record.get('brainReachMap', []):
-            print('    MAP', line, flush=True)
-        if 'camp' in record:
-            for zone in record['camp']:
-                print('   ', json.dumps(zone), flush=True)
-    # One process is one launch: a batch with missing fights counts as one failed launch, not one per fight.
-    if proc.returncode not in (0, 1) or not all(record.get('evidence') for record in records):
+    results.append(record)
+    print(json.dumps({k: v for k, v in record.items() if k not in ('camp', 'tail', 'brainReachMap')}), flush=True)
+    for line in record.get('brainReachMap', []):
+        print('    MAP', line, flush=True)
+    if 'camp' in record:
+        for zone in record['camp']:
+            print('   ', json.dumps(zone), flush=True)
+    if proc.returncode not in (0, 1) or not record.get('evidence'):
         crashes += 1
         print('    stderr:', proc.stderr.strip()[-600:], flush=True)
 
@@ -220,8 +186,8 @@ if a.parallel > 1:
     assert all('headless' in spec.partition(':')[2].split(',') for spec in a.run), '--parallel is for headless runs only'
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(a.parallel) as pool:
-        for records, proc in pool.map(lambda item: run_spec(item[1], 2.5 * (item[0] % a.parallel)), enumerate(a.run)):
-            report(records, proc)
+        for record, proc in pool.map(lambda item: run_spec(item[1], 2.5 * (item[0] % a.parallel)), enumerate(a.run)):
+            report(record, proc)
 else:
     for spec in a.run:
         report(*run_spec(spec))
