@@ -277,7 +277,7 @@ class LaunchBudgetTests(unittest.TestCase):
         self.assertGreater(time.time() - start, 0.8)
         a.wait(timeout=30)
 
-    def test_budget_full_blocks_until_slot_frees_but_not_the_lock(self):
+    def test_ten_receipts_fill_the_budget_and_do_not_take_the_lock(self):
         now = time.time()
         for i in range(10):
             receipt(self.main / 'Evidence' / f'native-core-{i}', now - 3590 + i)  # oldest ages out in ~10 s
