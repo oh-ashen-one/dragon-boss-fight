@@ -368,11 +368,24 @@ bool FVeyrDragonTrueSkin::Tighten(FVeyrDragonProxy& Proxy)
     }
     const int32 NB=Proxy.World.Num();
     TArray<FVector> Lo,Hi;Lo.Init(FVector(1e30),NB);Hi.Init(FVector(-1e30),NB);
-    for(int32 V=0;V<NV;++V)
+    auto Grow=[&](int32 I,const FVector& P)
     {
-        const int32 I=Current->BoxOfVertex[V];if(I==INDEX_NONE)continue;
-        const FVeyrProxyWorldBox& B=Proxy.World[I];const FVector D=Skinned[V]-B.Centre;
+        const FVeyrProxyWorldBox& B=Proxy.World[I];const FVector D=P-B.Centre;
         for(int32 K=0;K<3;++K){const double X=FVector::DotProduct(D,B.Axis[K]);Lo[I][K]=FMath::Min(Lo[I][K],X);Hi[I][K]=FMath::Max(Hi[I][K],X);}
+    };
+    for(int32 V=0;V<NV;++V){const int32 I=Current->BoxOfVertex[V];if(I!=INDEX_NONE)Grow(I,Skinned[V]);}
+    // Whole triangles: a box holding all three corners holds the face (boxes are convex), so a face stretched
+    // between two bones' boxes can never leave a gap the lens fits through (seen: lens 34 cm off the proxy, 0 cm off skin).
+    const TArray<uint32>& Idx=Current->Indices;
+    for(int32 T=0;T+2<Idx.Num();T+=3)
+    {
+        const int32 A0=Idx[T],A1=Idx[T+1],A2=Idx[T+2];
+        if(A0>=NV||A1>=NV||A2>=NV)continue;
+        const int32 I=Current->BoxOfVertex[A0]!=INDEX_NONE?Current->BoxOfVertex[A0]:(Current->BoxOfVertex[A1]!=INDEX_NONE?Current->BoxOfVertex[A1]:Current->BoxOfVertex[A2]);
+        if(I==INDEX_NONE)continue;
+        const int32 I1=Current->BoxOfVertex[A1],I2=Current->BoxOfVertex[A2];
+        if(I1==I&&I2==I)continue; // already inside from the vertex pass
+        Grow(I,Skinned[A0]);Grow(I,Skinned[A1]);Grow(I,Skinned[A2]);
     }
     for(int32 I=0;I<NB;++I)
     {

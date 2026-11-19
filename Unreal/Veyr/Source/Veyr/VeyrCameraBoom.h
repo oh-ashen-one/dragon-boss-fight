@@ -103,7 +103,7 @@ public:
      * (VeyrDragonCameraProxy). -VeyrLegacyCameraPlacement restores the fifth-pass arm (SafeArm). Distances in cm;
      * the proxy margin and footprint scale with the dragon (x DragonScale()), the rest is knight/lens-sized. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Rig") bool bLegacyPlacement=false;
-    float RigProxyMarginCm=10.f,RigLensRadiusCm=27.f,RigPivotHeightCm=170.f,RigShortArmCm=60.f,RigHideCm=25.f;
+    float RigProxyMarginCm=3.f,RigLensRadiusCm=22.f,RigPivotHeightCm=170.f,RigShortArmCm=60.f,RigHideCm=14.f;
     float RigOverheadUpCm=70.f,RigOverheadBackCm=220.f,RigOverheadPitchDeg=-30.f,RigAssistDownDeg=30.f,RigMaxDownDeg=35.f,RigMaxUpDeg=15.f;
     float RigTurnRateDegPerSec=220.f,RigFootprintCm=60.f;
     int32 RigPivotLiftFrames=0,RigHiddenFrames=0,RigOverheadFrames=0,RigCalls=0;double RigSeconds=0.0,RigMaxSeconds=0.0;
@@ -194,7 +194,7 @@ private:
     FVector SafeLastRelative=FVector::ZeroVector; bool bSafeLast=false; float SafeLift=0.f; float SafeLens=0.f; float AssistAlpha=0.f; float AssistClearSeconds=0.f; bool bAssist=false; float AssistRisePitch=0.f; float SafePitch=0.f; float SafeYaw=0.f; float SwingClearSeconds=0.f; FVector SafeLastWorld=FVector::ZeroVector; FVector SafeLastAnchor=FVector::ZeroVector; float SwingPitchTarget=0.f; float SwingYawTarget=0.f;
     FQuat SafeLastView=FQuat::Identity; bool bSafeLastView=false;
     FVeyrDragonProxy Proxy,ProofProxy;FQuat RigRot=FQuat::Identity;bool bRigRot=false;float RigFraction=1.f,OverheadAlpha=0.f,OverheadClearSeconds=0.f,HideClearSeconds=0.f;
-    bool bOverhead=false,bRigHide=false,bProxyTight=false;FVector LastRigLens=FVector::ZeroVector;FVector FeelLocalOffset=FVector::ZeroVector;TWeakObjectPtr<APlayerController> HiddenFromPC;
+    bool bOverhead=false,bRigHide=false,bProxyTight=false;FVector LastRigLens=FVector::ZeroVector;mutable int32 RigWorldHits=0;mutable TArray<FString> RigWorldHitNames;FVector FeelLocalOffset=FVector::ZeroVector;TWeakObjectPtr<APlayerController> HiddenFromPC;
     bool UpdateProxy();
     float RigSweep(const FVector& From,const FVector& To,float Radius) const;
     void SetKnightHiddenByCamera(bool bHide);

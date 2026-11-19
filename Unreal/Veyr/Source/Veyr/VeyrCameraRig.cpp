@@ -37,8 +37,15 @@ float UVeyrCameraBoom::RigSweep(const FVector& From,const FVector& To,float Radi
     {
         const FVector End=From+(To-From)*T;
         FHitResult Hit;FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrRigSweep),false,GetOwner());
+        // The dragon is the proxy's job: its gameplay bodies (much fatter than the skin) must not pull the lens in.
+        // -VeyrRigSweepDragonBodies restores sweeping them.
+        static const bool bSweepDragon=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigSweepDragonBodies"));
+        if(!bSweepDragon)if(AActor* D=Dragon.Get()){Params.AddIgnoredActor(D);TArray<AActor*> Attached;D->GetAttachedActors(Attached,true,true);Params.AddIgnoredActors(Attached);}
         if(GetWorld()->SweepSingleByChannel(Hit,From,End,FQuat::Identity,ProbeChannel,FCollisionShape::MakeSphere(Radius),Params))
-            T*=FMath::Max(0.f,Hit.Time-.002f);
+        {
+            T*=FMath::Max(0.f,Hit.Time-.002f);++RigWorldHits;
+            if(RigWorldHitNames.Num()<12&&Hit.GetActor())RigWorldHitNames.AddUnique(Hit.GetActor()->GetClass()->GetName()+TEXT(":")+(Hit.GetComponent()?Hit.GetComponent()->GetName():FString()));
+        }
     }
     return T;
 }
