@@ -75,6 +75,13 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-19 06:55 | Blind critic: lighting and picture, ours against the reference and new against old, from real play frames | opus-critic, Opus 5.5 high | none | short | running |
 | 11-19 06:58 | Dragon playback slot (own speed with retune, two-clip fades, foot lock, root tracks, skin-fix import), windowless first | opus-builder (the playback agent) | lock | 4 h | running |
 | 11-19 06:05-06:25 | Camera rewrite builder stalled twice waiting on its own watchers (90 minutes lost); restarted with foreground-only runs. Tool fault found by the weight builder: windowless runs waited on the rendered-launch budget; fixed in the builders' trees | director | | | noted |
+| 11-19 07:10 | Blind critic 1 on lighting | opus-critic | none | | reference clearly better; new clearly better than old (see `REVIEWS.md`) |
+| 11-19 07:14 | Picture, second pass, structural (reflecting floor, real highlights, visible sources, depth dressing, thin lit dust, underlight on the dragon, less blur) | opus-builder (the picture agent) | lock | 3 h | film 2 done 08:49 (`veyr-picture-victory.mp4`); highlights at 200+ in 11 of 12 frames |
+| 11-19 09:00 | Blind critic 2 on lighting (fresh critic) | opus-critic | none | | OURS SLIGHTLY BETTER (see `REVIEWS.md`). Polish list sent (dark cobbles near the camera, plastic fill on the dragon's legs, hard-edged moon patches, bloom clipping) |
+| 11-19 08:15 | Camera rewrite, first result | opus-builder (the camera4 agent) | lock | | hard guarantee holds windowless: 0 frames inside the dragon, 0 inside the visible knight, shell proven over 380 million vertex tests; an audit bug (zero-area faces) had inflated earlier counts. Knight hidden by the camera rule 7-8.5 %: continued |
+| 11-19 09:22 | Camera rewrite, final candidate package 12 (`867bdaeb`) | same | lock | to 10:45 | seed 1: hidden by rule 0.0 %, in frame 98.1 %, 0 / 0 inside; default seed about 3.4 %; remaining seeds, two-hand film and regression running |
+| 11-19 10:20 | Greystone trial film | opus-builder (the E agent) | lock | | built but unusable as the owner clip (tiny silhouettes on the test stage in the old light). Found and fixed a socket-name clash that turned his corrected feet 140 degrees. Foot lock passes 1 of 4 sequences. Next: windowless E4 (every action on Greystone in scripted fights), amber glow, motion matcher on his jog set; real arena film after 13:00 on top of the new light and camera |
+| 11-19 09:46 | Director error: stopped the Greystone builder believing it stalled (it was fixing its film script); restarted at once, nothing lost | director | | | noted |
 
 ## Spend
 
