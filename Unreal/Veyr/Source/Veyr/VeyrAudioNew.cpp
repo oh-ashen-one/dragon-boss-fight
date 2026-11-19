@@ -307,6 +307,44 @@ void AVeyrAudio::UpdateVoiceFollow()
     }
 }
 
+void AVeyrAudio::DefaultRadius(ECue Cue,float& Inner,float& Falloff)
+{
+    switch(Cue)
+    {
+        case ECue::DragonStep:case ECue::Exposed:case ECue::Impact:case ECue::Debris:Inner=1500.f;Falloff=13000.f;break;
+        case ECue::DragonSwing:case ECue::Bite:Inner=1100.f;Falloff=10000.f;break;
+        case ECue::DragonBreathIn:case ECue::DragonBreathOut:case ECue::DragonSnort:Inner=800.f;Falloff=7000.f;break;
+        case ECue::DragonGrowlLow:Inner=1000.f;Falloff=10000.f;break;
+        case ECue::Footstep:case ECue::Roll:Inner=600.f;Falloff=5000.f;break;
+        default:Inner=900.f;Falloff=9000.f;break;
+    }
+}
+
+bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force)
+{
+    const int32 Index=static_cast<int32>(Cue);
+    FCueBank& Bank=Banks[Index];
+    if(Bank.Variants.IsEmpty())return false;
+    int32 V=0;
+    if(Force>=0)V=FMath::Min(Force,Bank.Variants.Num()-1);
+    else if(!bNoVariants&&Bank.Variants.Num()>1){do{V=Rand.RandRange(0,Bank.Variants.Num()-1);}while(V==Bank.Last);}
+    Bank.Last=V;
+    C.V=V;
+    C.Seconds0=float(Bank.Variants[V].Num())/SampleRate;
+    const bool bVocal=IsVocal(Cue);
+    float Pitch=1.f,LevelJitter=1.f;
+    if(!bVocal&&!bNoVariants&&Force<0)
+    {
+        Pitch=1.f+Rand.FRandRange(-.05f,.05f);
+        LevelJitter=FMath::Pow(10.f,Rand.FRandRange(-1.5f,1.5f)/20.f);
+    }
+    if(Cue==ECue::DragonStep||Cue==ECue::Exposed)Pitch*=FMath::Lerp(1.07f,.9f,FMath::Clamp(Volume,0.f,1.f)); // heavier = lower
+    C.Pitch=Pitch;
+    C.Seconds=C.Seconds0/FMath::Max(.5f,Pitch);
+    C.Level=.65f*Headroom*FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter;
+    return true;
+}
+
 bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff)
 {
     if(!GetWorld()||MasterVolume<=0.f||!FMath::IsFinite(MasterVolume))return false;
@@ -338,27 +376,11 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     UAudioComponent* Voice=Voices[Slot];
     if(!IsValid(Voice))return false;
 
-    // Variant: never the one played last.
-    int32 V=0;
-    if(!bNoVariants&&Bank.Variants.Num()>1)
-    {
-        do{V=Rand.RandRange(0,Bank.Variants.Num()-1);}while(V==Bank.Last);
-    }
-    Bank.Last=V;
+    FChosen C;
+    if(!PickVariant(Cue,Volume,C))return false; // never the variant played last; random pitch and level off vocal cues
+    const int32 V=C.V;const float Pitch=C.Pitch,Seconds=C.Seconds,Seconds0=C.Seconds0;
     const TArray<int16>& PCM=Bank.Variants[V];
-    const float Seconds0=float(PCM.Num())/SampleRate;
-
-    const bool bVocal=IsVocal(Cue);
-    float Pitch=1.f,LevelJitter=1.f;
-    if(!bVocal&&!bNoVariants)
-    {
-        Pitch=1.f+Rand.FRandRange(-.05f,.05f);
-        LevelJitter=FMath::Pow(10.f,Rand.FRandRange(-1.5f,1.5f)/20.f);
-    }
-    if(Cue==ECue::DragonStep||Cue==ECue::Exposed)Pitch*=FMath::Lerp(1.07f,.9f,FMath::Clamp(Volume,0.f,1.f)); // heavier = lower
-    const float Seconds=Seconds0/FMath::Max(.5f,Pitch);
-
-    float Level=.65f*Headroom*FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter;
+    float Level=C.Level;
     float Load=0.f;
     for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0)Load+=VoiceLevels[I];
     if(Load+Level>MaxLoad)Level=FMath::Max(Level*.4f,MaxLoad-Load); // limiter-safe headroom: the sum of voices stays bounded
@@ -387,24 +409,20 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
             case EPlace::Part:if(!ResolvePart(Part,P))P=Dragon->GetMouthLocation();VoiceFollowMode[Slot]=3;VoicePart[Slot]=Part;break;
             default:break;
         }
-        if(Inner<=0.f||Falloff<=0.f)
-        {
-            switch(Cue)
-            {
-                case ECue::DragonStep:case ECue::Exposed:case ECue::Impact:case ECue::Debris:Inner=1500.f;Falloff=13000.f;break;
-                case ECue::DragonSwing:case ECue::Bite:Inner=1100.f;Falloff=10000.f;break;
-                case ECue::DragonBreathIn:case ECue::DragonBreathOut:case ECue::DragonSnort:Inner=800.f;Falloff=7000.f;break;
-                case ECue::DragonGrowlLow:Inner=1000.f;Falloff=10000.f;break;
-                case ECue::Footstep:case ECue::Roll:Inner=600.f;Falloff=5000.f;break;
-                default:Inner=900.f;Falloff=9000.f;break;
-            }
-        }
+        if(Inner<=0.f||Falloff<=0.f)DefaultRadius(Cue,Inner,Falloff);
         Voice->bAllowSpatialization=true;Voice->bOverrideAttenuation=true;
         Voice->SetWorldLocation(P);
         Voice->AttenuationOverrides.bAttenuate=true;Voice->AttenuationOverrides.bSpatialize=true;
         Voice->AttenuationOverrides.AttenuationShapeExtents=FVector(Inner,0,0);Voice->AttenuationOverrides.FalloffDistance=Falloff;
     }
     Voice->Play();
+    if(bTap&&!bAudition)
+    {
+        FVector TapPos=World;
+        if(Place!=EPlace::Flat&&Dragon.IsValid())TapPos=Voice->GetComponentLocation();
+        float In=Inner,Fo=Falloff;if(In<=0.f||Fo<=0.f)DefaultRadius(Cue,In,Fo);
+        TapAdd(Cue,PCM,V,Volume,Level,Pitch,Place,TapPos,In,Fo,Now-TapT0);
+    }
     VoiceEndTimes[Slot]=Now+Seconds+.15;
     VoiceCue[Slot]=Index;
     LastCueTimes[Index]=Now;

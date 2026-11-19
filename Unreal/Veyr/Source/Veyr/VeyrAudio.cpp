@@ -78,6 +78,7 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
         bNoMoveSounds=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonMoveSounds"));
         bContactAudio=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonContactSounds"));
         bLogCues=FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioLog"));
+        TapInit();
         if(!bLegacyCues&&!bNewSet)UE_LOG(LogTemp,Error,TEXT("VEYR_AUDIO_NEW_SET_MISSING Content/Audio/Recorded20261118 not found: playing the PREVIOUS sounds (evidence audio.newSet=false)"));
     }
     bAudioPolish=bNewSet?!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoAudioPolish")):FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioPolish"));
@@ -139,6 +140,8 @@ void AVeyrAudio::Tick(float DeltaSeconds)
     }
     ExpireVoices();
     UpdateBeds();
+    TapTick();
+    if(bAudition&&!bAuditionDone&&bInitialized){bAuditionDone=true;TapAudition();}
     if (!bInitialized || bTerminal) return;
     if(bNewSet){TickNew(DeltaSeconds);return;}
     const AVeyrKnight* K = Knight.Get();
@@ -303,6 +306,7 @@ void AVeyrAudio::PlayCue(ECue Cue, float Volume)
     }
     Voice->SetPitchMultiplier(Cue==ECue::Footstep||Cue==ECue::Roll||Cue==ECue::Contact?.96f+.08f*FMath::Frac(CuesStarted*.618034f):1.f);
     Voice->Play();
+    if(bTap)TapAdd(Cue,Samples[Index],0,Volume,VoiceLevels[Slot],Voice->PitchMultiplier,Voice->bAllowSpatialization?EPlace::World:EPlace::Flat,Voice->GetComponentLocation(),900.f,9000.f,Now-TapT0);
     // Procedural FIFO underflow pads silence; explicitly stop instead of relying on EOF.
     VoiceEndTimes[Slot] = Now + Durations[Index] + .15;
     LastCueTimes[Index] = Now;
@@ -338,6 +342,7 @@ void AVeyrAudio::StopVoices()
 void AVeyrAudio::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     bInitialized = false;
+    FlushTap();
     StopVoices();
     if (Knight.IsValid()) RemoveTickPrerequisiteActor(Knight.Get());
     if (Dragon.IsValid()) RemoveTickPrerequisiteActor(Dragon.Get());
