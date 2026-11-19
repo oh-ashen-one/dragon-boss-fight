@@ -130,7 +130,7 @@ private:
     FName TimedClipKey=NAME_None; float TimedLastPhase=-1.f,TimedLastTime=-1.f; bool bSwingFromData=false;
     float BreathClock=3.f,GrowlClock=9.f; bool bBreathExhaleNext=false,bPresenceCalm=true;
     float FootClock[2]={0.f,0.f};
-    float Headroom=.85f,MaxLoad=3.6f;
+    float Headroom=1.3f,MaxLoad=5.5f;
     float DurationLastPlayed=0.f;
 
     void LoadNewSet();
@@ -146,6 +146,7 @@ private:
         float PeakDb=-120.f,RmsDb=-120.f,MusicRmsDb=-120.f;
     };
     bool bTap=false,bAudition=false,bAuditionDone=false;
+    int32 TapSession=0;
     FString TapDir;
     double TapT0=-1.0,TapMusicStart=-1.0,TapGainLast=-1.0;
     TArray<float> TapFx,TapBeds;                 // interleaved stereo, 48 kHz
@@ -153,6 +154,11 @@ private:
     struct FTapGain { double T; float Music,Ambience; };
     TArray<FTapGain> TapGains;
     static float TypicalVolume(int32 Cue);
+    struct FTapContact { double T=0.0; float GameT=0.f,HandledGameT=0.f,Strength=0.f,SpeedMps=0.f; int32 Serial=0,Part=0,Class=0,Leg=-1,ItemFrom=0,ItemTo=0; };
+    struct FTapFrame { double T=0.0; float GameT=0.f,Dt=0.f,KneeL=-1.f,KneeR=-1.f,Speed=0.f,D[4]={-1.f,-1.f,-1.f,-1.f}; };
+    TArray<FTapContact> TapContacts;
+    TArray<FTapFrame> TapTrace;
+    FTapFrame TapNow;
     void TapInit();
     void TapTick();
     void TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Volume,float Level,float Pitch,EPlace Place,const FVector& Pos,float Inner,float Falloff,double T,bool bRandom=false);

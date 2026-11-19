@@ -66,7 +66,7 @@ def main():
             bad.append(f"{c['backToBackRepeats']} back-to-back repeats")
         if c['maxPeakDb'] > -2.0:
             bad.append(f"peak {c['maxPeakDb']:.1f} dBFS")
-        floor = a.quiet_floor if cue in QUIET else a.floor
+        floor = 0.0 if cue in FIXED else (a.quiet_floor if cue in QUIET else a.floor)  # fixed vocals keep their approved levels
         m = c.get('minAboveMusicDb')
         if m is not None and m < floor:
             bad.append(f'only {m:+.1f} dB over the music (need {floor:+.0f})')

@@ -36,16 +36,16 @@ float AVeyrAudio::TargetLevelDb(ECue Cue)
     {
         case ECue::Swing:return -11.f;         case ECue::HeavySwing:return -10.5f;
         case ECue::Contact:return -20.f;       case ECue::Guard:return -20.f;
-        case ECue::ArmorHit:return -15.f;      case ECue::Impact:return -18.f;
+        case ECue::ArmorHit:return -15.f;      case ECue::Impact:return -15.f;
         case ECue::DragonStep:return -13.f;    case ECue::DragonSwing:return -12.f;
-        case ECue::Bite:return -16.f;          case ECue::Breath:return -19.f;
-        case ECue::Fire:return -19.f;          case ECue::Wing:return -16.f;
-        case ECue::Roll:return -20.f;          case ECue::Footstep:return -18.f;
+        case ECue::Bite:return -16.f;          case ECue::Breath:return -17.f;
+        case ECue::Fire:return -17.f;          case ECue::Wing:return -14.5f;
+        case ECue::Roll:return -20.f;          case ECue::Footstep:return -13.f;
         case ECue::Blink:return -18.f;         case ECue::Break:return -20.f;
         case ECue::Debris:return -17.f;        case ECue::Exposed:return -15.f;
         case ECue::Death:return -15.f;         case ECue::Heal:return -19.f;
-        case ECue::Victory:return -17.f;       case ECue::DragonBreathIn:return -20.f;
-        case ECue::DragonBreathOut:return -20.f; case ECue::DragonGrowlLow:return -17.f;
+        case ECue::Victory:return -17.f;       case ECue::DragonBreathIn:return -15.f;
+        case ECue::DragonBreathOut:return -15.f; case ECue::DragonGrowlLow:return -17.f;
         case ECue::DragonSnort:return -19.f;
         default:return 0.f; // 0 = leave at the file's own level (the three roar files and the pain cue)
     }
@@ -514,6 +514,18 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
     const float S=FMath::Clamp(C.Strength,0.f,1.f);
     const FVector At=C.World;
     ++ContactsHandled[static_cast<int32>(C.Class)];
+    const int32 ItemFrom=TapItems.Num();
+    struct FRecord
+    {
+        AVeyrAudio* A;const FVeyrGroundContact& C;int32 From;
+        ~FRecord()
+        {
+            if(!A->bTap||A->bAudition||!A->GetWorld())return;
+            FTapContact R;R.T=A->AudioNow()-A->TapT0;R.GameT=C.GameTime;R.HandledGameT=A->GetWorld()->GetTimeSeconds();R.Strength=C.Strength;R.SpeedMps=C.SpeedMps;
+            R.Serial=C.Serial;R.Part=static_cast<int32>(C.Part);R.Class=static_cast<int32>(C.Class);R.Leg=C.Leg;R.ItemFrom=From;R.ItemTo=A->TapItems.Num();
+            A->TapContacts.Add(R);
+        }
+    } Record{this,C,ItemFrom};
     switch(C.Class)
     {
         case EVeyrGroundContactClass::Footfall:
@@ -632,7 +644,7 @@ void AVeyrAudio::UpdatePresence(float DeltaSeconds)
     BreathClock-=DeltaSeconds;GrowlClock-=DeltaSeconds;
     if(BreathClock<=0.f)
     {
-        const float Vol=Move?.6f:Rec?.62f:.5f;
+        const float Vol=Move?.85f:Rec?.9f:.75f;
         const ECue Cue=bBreathExhaleNext?ECue::DragonBreathOut:ECue::DragonBreathIn;
         if(PlayCueEx(Cue,Vol,EPlace::Head))
         {
@@ -657,6 +669,14 @@ void AVeyrAudio::UpdateKnightFeet(float DeltaSeconds,float Speed)
     const AVeyrKnight* K=Knight.Get();
     if(!K)return;
     FootClock[0]-=DeltaSeconds;FootClock[1]-=DeltaSeconds;
+    if(bTap&&!bAudition&&K->ImportedPresentation)
+        for(int32 Side=0;Side<2;++Side)
+        {
+            FTransform F;
+            if(K->ImportedPresentation->GetBoneTargetWorldTransform(Side==0?TEXT("left_foot"):TEXT("right_foot"),F))
+                (Side==0?TapNow.KneeL:TapNow.KneeR)=F.GetLocation().Z-K->GetFootLocation().Z;
+        }
+    TapNow.Speed=Speed;
     if(bAudioPolish&&K->ImportedPresentation)
     {
         for(int32 Side=0;Side<2;++Side)
@@ -805,6 +825,15 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
     HandleContacts();
     UpdateExpectations();
     UpdatePresence(DeltaSeconds);
+    if(bTap&&!bAudition)
+    {
+        TapNow.T=AudioNow()-TapT0;TapNow.GameT=GetWorld()->GetTimeSeconds();TapNow.Dt=DeltaSeconds;
+        const FVeyrGroundContactDetector& Det=D->GetGroundContactDetector();
+        for(int32 I=0;I<FVeyrGroundContactDetector::MaxSlots;++I)
+            if(const FVeyrGroundContactDetector::FSlot* Sl=Det.GetSlot(I))
+                for(int32 L=0;L<4;++L)if(Sl->Name==FName(*FString::Printf(TEXT("foot%d"),L)))TapNow.D[L]=Sl->Clearance;
+        TapTrace.Add(TapNow);
+    }
     SnapshotCounters();
 }
 

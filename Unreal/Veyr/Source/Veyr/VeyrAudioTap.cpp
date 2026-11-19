@@ -30,7 +30,8 @@
 namespace
 {
     constexpr int32 TapRate=48000;
-    constexpr double TapMaxSeconds=600.0;
+    constexpr double TapMaxSeconds=900.0;
+    int32 GTapSession=0; // a replay can restart the world (the audio actor is rebuilt): one file set per session
     float ToDb(double X){return float(20.0*std::log10(FMath::Max(X,1e-6)));}
 }
 
@@ -41,6 +42,7 @@ void AVeyrAudio::TapInit()
     if(!IFileManager::Get().MakeDirectory(*Dir,true))return;
     TapDir=Dir;bTap=true;
     bAudition=bNewSet&&FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioAudition"));
+    TapSession=++GTapSession;
     TapT0=AudioNow();TapMusicStart=-1.0;TapGainLast=-1.0;
     TapFx.Reset();TapBeds.Reset();TapItems.Reset();TapGains.Reset();
     UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_TAP dir=%s audition=%d"),*TapDir,bAudition?1:0);
@@ -144,16 +146,16 @@ void AVeyrAudio::TapAudition()
         {
             FChosen C;PickVariant(Cue,Volume,C,V);
             TapAdd(Cue,B.Variants[V],V,Volume,C.Level,C.Pitch,P,Pos,In,Fo,T);
-            T+=C.Seconds+.3;
+            T+=C.Seconds+.2;
         }
         T+=.5;
         B.Last=-1;
         const float Gap=(Cue==ECue::PlayerPain||Cue==ECue::DragonGrowl||Cue==ECue::DragonPain)?2.2f:(Cue==ECue::DragonGrowlLow||Cue==ECue::DragonSnort)?1.7f:.45f;
-        for(int32 D=0;D<2*N+4;++D)
+        for(int32 D=0;D<FMath::Min(2*N+4,N+3);++D)
         {
             FChosen C;if(!PickVariant(Cue,Volume,C))break;
             TapAdd(Cue,B.Variants[C.V],C.V,Volume,C.Level,C.Pitch,P,Pos,In,Fo,T,true);
-            T+=FMath::Max(C.Seconds+.15f,Gap);
+            T+=C.Seconds+.15f; (void)Gap;
         }
         T+=1.0;
     }
@@ -167,7 +169,7 @@ void AVeyrAudio::TapAudition()
 void AVeyrAudio::FlushTap()
 {
     if(!bTap||bAudition)return;
-    TapWrite(TEXT("VeyrTap"));
+    TapWrite(FString::Printf(TEXT("VeyrTap-%d"),TapSession));
 }
 
 void AVeyrAudio::TapWrite(const FString& Stem)
@@ -265,6 +267,31 @@ void AVeyrAudio::TapWrite(const FString& Stem)
     Root->SetNumberField(TEXT("bedsRmsDbOverAll"),Frames>0?ToDb(std::sqrt(SumBed/(Frames*2.0))):-120.0);
     Root->SetNumberField(TEXT("musicStartSeconds"),TapMusicStart);
     Root->SetObjectField(TEXT("cues"),Cues);Root->SetArrayField(TEXT("items"),Items);
+    {
+        TArray<TSharedPtr<FJsonValue>> Cs;
+        for(const FTapContact& C:TapContacts)
+        {
+            TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();
+            O->SetNumberField(TEXT("t"),C.T);O->SetNumberField(TEXT("gameTime"),C.GameT);O->SetNumberField(TEXT("handledGameTime"),C.HandledGameT);
+            O->SetNumberField(TEXT("serial"),C.Serial);O->SetNumberField(TEXT("part"),C.Part);O->SetNumberField(TEXT("class"),C.Class);O->SetNumberField(TEXT("leg"),C.Leg);
+            O->SetNumberField(TEXT("strength"),C.Strength);O->SetNumberField(TEXT("speedMps"),C.SpeedMps);O->SetNumberField(TEXT("itemFrom"),C.ItemFrom);O->SetNumberField(TEXT("itemTo"),C.ItemTo);
+            Cs.Add(MakeShared<FJsonValueObject>(O));
+        }
+        Root->SetArrayField(TEXT("contacts"),Cs);
+        // Per-frame trace (columns): time, game time, dt, knight foot heights (cm above the floor), knight speed, dragon sole clearances (cm).
+        TSharedRef<FJsonObject> Tr=MakeShared<FJsonObject>();
+        auto Col=[&](const TCHAR* Name,TFunction<double(const FTapFrame&)> F)
+        {
+            TArray<TSharedPtr<FJsonValue>> A;A.Reserve(TapTrace.Num());
+            for(const FTapFrame& T:TapTrace)A.Add(MakeShared<FJsonValueNumber>(FMath::RoundToDouble(F(T)*1000.0)/1000.0));
+            Tr->SetArrayField(Name,A);
+        };
+        Col(TEXT("t"),[](const FTapFrame& T){return T.T;});Col(TEXT("gameT"),[](const FTapFrame& T){return double(T.GameT);});Col(TEXT("dt"),[](const FTapFrame& T){return double(T.Dt);});
+        Col(TEXT("kneeL"),[](const FTapFrame& T){return double(T.KneeL);});Col(TEXT("kneeR"),[](const FTapFrame& T){return double(T.KneeR);});Col(TEXT("speed"),[](const FTapFrame& T){return double(T.Speed);});
+        Col(TEXT("foot0"),[](const FTapFrame& T){return double(T.D[0]);});Col(TEXT("foot1"),[](const FTapFrame& T){return double(T.D[1]);});
+        Col(TEXT("foot2"),[](const FTapFrame& T){return double(T.D[2]);});Col(TEXT("foot3"),[](const FTapFrame& T){return double(T.D[3]);});
+        Root->SetObjectField(TEXT("trace"),Tr);
+    }
     FString Out;
     TSharedRef<TJsonWriter<TCHAR,TPrettyJsonPrintPolicy<TCHAR>>> Writer=TJsonWriterFactory<TCHAR,TPrettyJsonPrintPolicy<TCHAR>>::Create(&Out);
     FJsonSerializer::Serialize(Root,Writer);
