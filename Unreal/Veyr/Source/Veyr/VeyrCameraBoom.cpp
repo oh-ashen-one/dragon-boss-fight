@@ -693,121 +693,82 @@ void UVeyrCameraBoom::UpdateDesiredArmLocation(bool bDoTrace,bool bDoLocationLag
 
 FVector UVeyrCameraBoom::SafeArm(const FVector& Origin0,const FVector& Base,float DeltaTime)
 {
+    // A2 fifth pass: a steady third-person arm. Direction from the player's yaw/pitch only (plus an eased, sticky
+    // rise while the knight is in the dragon's footprint); the lens is ALWAYS the swept pull-in result (instant in,
+    // eased out). All smoothing happens on the desired arm before the sweep, never after it.
     const float S=DragonScale();
     FVector KB,KT;float KR=0.f;const bool bKnight=KnightCapsule(KB,KT,KR);
-    // Clearance of the lens from the skin: the near plane plus a margin, growing with the dragon.
-    const float Clear=FMath::Max(ProbeSize+10.f,20.f*S);
+    // Near plane plus margin, plus room for the fight-feel bounce that moves the lens off the socket.
+    const float Clear=FMath::Max(ProbeSize+10.f,20.f*S)+20.f*S;
     auto Blocked=[&](const FVector& P){return IsPointInsideBareDragon(P,Clear)||IsPointBehindSkin(P,0.f)||NearestSkinCm(P)<Clear;};
-    // 1. The pivot (the knight's shoulder) pressed into the body: raise it a little until it is clear.
+    // 1. Pivot inside the body set (the dragon fell on him, he stands in the claws): straight up to the nearest free point.
     FVector Origin=Origin0;
     if(Blocked(Origin))
     {
         ++PivotLiftFrames;
-        for(int32 K=1;K<=6;++K){const FVector P=Origin0+FVector::UpVector*15.f*S*K;if(!Blocked(P)){Origin=P;break;}}
+        for(int32 K=1;K<=24;++K){const FVector P=Origin0+FVector::UpVector*15.f*S*K;if(!Blocked(P)){Origin=P;break;}}
     }
-    // 2. The arm swept as a sphere against the full body: the first blocked step (or a wing crossed) ends it.
-    const float Length=static_cast<float>(FVector::Dist(Origin,Base));
+    // 2. Footprint assist: the knight close to the skin -> ease (0.5 s) the arm up to a 30 deg down-look (never past
+    // 35) and 20 % longer; sticky, released after 1 s clear.
+    const bool bNearBody=bKnight&&NearestSkinCm(FMath::Lerp(KB,KT,.5f))<250.f*S;
+    if(bNearBody){AssistClearSeconds=0.f;bAssist=true;}
+    else if(bAssist&&(AssistClearSeconds+=DeltaTime)>1.f)bAssist=false;
+    AssistAlpha=FMath::FInterpConstantTo(AssistAlpha,bAssist?1.f:0.f,DeltaTime,2.f);
+    const FRotator Control=GetTargetRotation();
+    const float DownLook=-Control.Pitch;
+    const float AssistDown=FMath::Min(35.f,FMath::Max(DownLook,FMath::Lerp(DownLook,30.f,AssistAlpha)));
+    AssistRisePitch=FMath::Max(0.f,AssistDown-DownLook);
+    FVector Dir=Base-Origin0;const float BaseLength=static_cast<float>(Dir.Size());
+    FRotator ArmRot=Dir.Rotation();ArmRot.Pitch=FMath::Min(ArmRot.Pitch+AssistRisePitch,70.f);
+    const float Length=BaseLength*(1.f+.2f*AssistAlpha);
+    // 3. Sweep from the pivot: the first blocked step (or a wing crossed) ends the free arm.
     FBox Body(ForceInit);const bool bSurface=EnsureSurface();
     if(bSurface){Body=SurfaceBounds;if(WingBounds.IsValid)Body+=WingBounds;Body=Body.ExpandBy(Clear+100.f*S);}
-    auto Sweep=[&](const FVector& End,float StepCm=0.f)
+    auto Sweep=[&](const FVector& From,const FVector& To)
     {
-        // Quick reject: the arm nowhere near the skinned body or wings (shapes stay inside those boxes).
-        FBox Arm(ForceInit);Arm+=Origin;Arm+=End;
-        if(Length<=1.f||(bSurface&&!Body.Intersect(Arm)))return 1.f;
-        const int32 Steps=FMath::Clamp(FMath::CeilToInt(Length/(StepCm>0.f?StepCm:FMath::Max(8.f,6.f*S))),1,128);
-        FVector Previous=Origin;
+        const float L=static_cast<float>(FVector::Dist(From,To));
+        FBox Arm(ForceInit);Arm+=From;Arm+=To;
+        if(L<=1.f||(bSurface&&!Body.Intersect(Arm)))return 1.f;
+        const int32 Steps=FMath::Clamp(FMath::CeilToInt(L/FMath::Max(8.f,6.f*S)),1,160);
+        FVector Previous=From;
         for(int32 I=1;I<=Steps;++I)
         {
-            const FVector P=FMath::Lerp(Origin,End,static_cast<float>(I)/Steps);
+            const FVector P=FMath::Lerp(From,To,static_cast<float>(I)/Steps);
             if(Blocked(P)||CrossesWing(Previous,P))return static_cast<float>(I-1)/Steps;
             Previous=P;
         }
         return 1.f;
     };
-    // A short arm swings up about the pivot (12-36 deg) before it gives up length: over the body behind the
-    // knight rather than into his back. The swing eases; the length pulls in at once.
-    // A blocked arm swings about the pivot (up first, then round the knight) to the first swing that is clear for
-    // most of its length with the knight in sight; the swing eases, the length pulls in at once. Sticky: the
-    // swing in use is kept while it still works.
-    auto Swung=[&](float Pitch,float Yaw){FRotator R=(Base-Origin).Rotation();R.Pitch=FMath::Min(R.Pitch+Pitch,60.f);R.Yaw+=Yaw;return Origin+R.Vector()*Length;};
-    FVector KChest=Origin,KHelm=Origin;if(bKnight){KChest=FMath::Lerp(KB,KT,.6f);KHelm=KT;}
-    auto SeesFrom=[&](const FVector& P)
-    {
-        if(!bKnight)return true;
-        for(const FVector& T:{KChest,KHelm})if(!SightClear(P,T+(P-T).GetSafeNormal()*(KR+5.f),true))return false;
-        return true;
-    };
-    auto Good=[&](float Pitch,float Yaw)
-    {
-        const FVector E=Swung(Pitch,Yaw);const float T=Sweep(E,30.f*S);
-        return T>=.6f&&SeesFrom(FMath::Lerp(Origin,E,T));
-    };
-    if(!Good(SwingPitchTarget,SwingYawTarget))
-    {
-        // Up first (the view tilts down by the same angle, so the knight keeps his place on screen), never past
-        // a view pitch of -38 deg; round him only when no rise works.
-        static const float Options[][2]={{0,0},{12,0},{24,0},{36,0},{0,30},{0,-30},{20,30},{20,-30},{0,60},{0,-60}};
-        const float MaxRise=FMath::Max(0.f,GetTargetRotation().Pitch+38.f);
-        bool bFound=false;
-        for(const auto& O:Options)if(O[0]<=MaxRise&&Good(O[0],O[1])){SwingPitchTarget=O[0];SwingYawTarget=O[1];bFound=true;break;}
-        if(!bFound){SwingPitchTarget=FMath::Min(12.f,MaxRise);SwingYawTarget=0.f;++SightPullFails;}
-    }
-    else if(SwingPitchTarget!=0.f||SwingYawTarget!=0.f)
-    {
-        // Drift back to the player's own arm once it has been clear for a second (no flapping).
-        SwingClearSeconds=Good(0.f,0.f)?SwingClearSeconds+DeltaTime:0.f;
-        if(SwingClearSeconds>1.f){SwingPitchTarget=0.f;SwingYawTarget=0.f;SwingClearSeconds=0.f;}
-    }
-    SafePitch=FMath::FInterpTo(SafePitch,SwingPitchTarget,DeltaTime,3.f);
-    SafeYaw=FMath::FInterpTo(SafeYaw,SwingYawTarget,DeltaTime,2.5f);
-    const FVector End=Swung(SafePitch,SafeYaw);
-    float Target=Sweep(End);
-    // Never closer to the knight than his own body plus room for the near plane.
-    if(bKnight&&Length>1.f)Target=FMath::Max(Target,FMath::Min(1.f,(KR+140.f)/Length));
-    // The knight in sight from there (chest and helmet, to his capsule): otherwise come in along the arm
-    // until he is, so a claw or the neck between lens and knight never hides him.
-    if(bKnight&&Length>1.f)
-    {
-        const FVector Chest=FMath::Lerp(KB,KT,.6f),Helm=KT;
-        auto Sees=[&](float F)
+    FVector End=Origin+ArmRot.Vector()*Length;
+    float Target=Sweep(Origin,End);
+    // No room behind him (the lens would sit in his shoulder): the whole arm moves straight up, through free
+    // space, to the first height that leaves the lens clear of his body.
+    if(bKnight&&Target*Length<KR+80.f)
+        for(int32 K=1;K<=16;++K)
         {
-            const FVector P=FMath::Lerp(Origin,End,F);
-            for(const FVector& T:{Chest,Helm})if(!SightClear(P,T+(P-T).GetSafeNormal()*(KR+5.f),true))return false;
-            return true;
-        };
-        if(!Sees(Target))
-        {
-            const float Floor=FMath::Min(1.f,(KR+140.f)/Length);
-            float Found=-1.f;
-            for(const float K:{.85f,.7f,.55f,.4f,.25f}){const float F=FMath::Max(Floor,Target*K);if(Sees(F)){Found=F;break;}if(F<=Floor)break;}
-            if(Found>0.f)Target=Found;else ++SightPullFails;
+            const FVector Up=Origin+FVector::UpVector*15.f*S*K;
+            if(Blocked(Up))break;
+            const FVector E=Up+ArmRot.Vector()*Length;const float T=Sweep(Up,E);
+            if(T*Length>=KR+80.f||K==16){Origin=Up;End=E;Target=T;++PivotLiftFrames;break;}
         }
-    }
-    // Instant pull-in, eased release.
+    // Instant in, eased out (any fraction up to Target lies on the swept free segment).
     if(Target<SafeFraction){if(SafeFraction>=.999f&&Target<.999f)++PullInEvents;SafeFraction=Target;}
     else SafeFraction=FMath::Min(Target,FMath::FInterpTo(SafeFraction,Target,DeltaTime,ReleaseRate));
     const FVector Pulled=FMath::Lerp(Origin,End,SafeFraction);
-    // 3. A short arm rises slightly (only through clear space) and widens the lens.
-    const float Short=FMath::Clamp(1.f-SafeFraction/.55f,0.f,1.f);
-    float WantLift=ShortArmLiftCm*S*Short;
-    if(WantLift>1.f)
-        for(int32 K=1;K<=8;++K)
-            if(Blocked(Pulled+FVector::UpVector*WantLift*K/8.f)){WantLift*=(K-1)/8.f;break;}
-    SafeLift=FMath::FInterpTo(SafeLift,WantLift,DeltaTime,WantLift>SafeLift?6.f:3.f);
-    SafeLens=FMath::FInterpTo(SafeLens,ShortArmLensDeg*Short,DeltaTime,5.f);
-    FVector Result=Pulled+FVector::UpVector*SafeLift;
-    if(SafeLift>1.f&&Blocked(Result))Result=Pulled;
-    // 4. No pops: at most MaxMoveCmPerFrame relative to the knight per frame (a blink still carries the camera).
-    // World space: the knight's own run counts too; only a knight blink (over 150 cm) carries the camera along.
-    const FVector Anchor=bKnight?KB:Origin;
-    if(bSafeLast)
+    // 4. Short arm (under KR+140): the lens rises over his head (only through free space) and the lens widens.
+    const float Reach=SafeFraction*Length;
+    const float Short=bKnight?FMath::Clamp(1.f-(Reach-KR)/140.f,0.f,1.f):0.f;
+    float WantLift=0.f;
+    if(Short>0.f&&bKnight)WantLift=FMath::Max(0.f,static_cast<float>(KT.Z+KR+60.f*S-Pulled.Z))*Short+ShortArmLiftCm*S*Short*.5f;
+    SafeLift=WantLift>SafeLift?WantLift:FMath::FInterpTo(SafeLift,WantLift,DeltaTime,3.f); // up at once (out of his head), down eased
+    float Lift=SafeLift;
+    if(Lift>1.f)
     {
-        FVector Previous=SafeLastWorld;const FVector Carried=Anchor-SafeLastAnchor;
-        if(Carried.Size()>150.f)Previous+=Carried;
-        const FVector Delta=Result-Previous;
-        if(Delta.Size()>MaxMoveCmPerFrame){Result=Previous+Delta.GetClampedToMaxSize(MaxMoveCmPerFrame);++ClampedMoves;}
+        const int32 Steps=FMath::Clamp(FMath::CeilToInt(Lift/FMath::Max(8.f,6.f*S)),1,64);
+        for(int32 I=1;I<=Steps;++I)if(Blocked(Pulled+FVector::UpVector*Lift*I/Steps)){Lift*=static_cast<float>(I-1)/Steps;break;}
     }
-    SafeLastRelative=Result-Anchor;SafeLastWorld=Result;SafeLastAnchor=Anchor;bSafeLast=true;
+    SafeLens=FMath::FInterpTo(SafeLens,ShortArmLensDeg*Short,DeltaTime,5.f);
+    const FVector Result=Pulled+FVector::UpVector*Lift;
     if(IsPointInsideBareDragon(Result,10.f))++ResultInsideFrames;
     FinishView(Result,Base,DeltaTime,SafeLens);
     return Result;
@@ -815,9 +776,10 @@ FVector UVeyrCameraBoom::SafeArm(const FVector& Origin0,const FVector& Base,floa
 
 void UVeyrCameraBoom::FinishView(const FVector& Out,const FVector& Base,float DeltaTime,float ExtraLensDeg)
 {
-    // The view turns with the swung arm (about the same pivot), keeping the knight where he was on screen.
-    FRotator Swing=GetTargetRotation();Swing.Pitch=FMath::Max(Swing.Pitch-SafePitch,-38.f);Swing.Yaw+=SafeYaw;
-    const FQuat ArmView=Swing.Quaternion();
+    // The view follows the player's rotation, tilted down by the footprint rise (same pivot: the knight keeps
+    // his place on screen); framing corrections ease; the turn rate is capped; never steeper than 38 deg down.
+    FRotator Steady=GetTargetRotation();Steady.Pitch=FMath::Max(Steady.Pitch-AssistRisePitch,-35.f);
+    const FQuat ArmView=Steady.Quaternion();
     const FVector F0=ArmView.GetForwardVector();
     FVector KB,KT;float KR=0.f;
     FVector LookAt=Base+F0*1500.0;
@@ -829,15 +791,15 @@ void UVeyrCameraBoom::FinishView(const FVector& Out,const FVector& Base,float De
     const FQuat View=FrameView(Out,ArmView,LookAt,Fov+ExtraLensDeg,Boost);
     Boost=FMath::Min(MaxFovBoostDeg,Boost+ExtraLensDeg);
     const FQuat Correction=View*ArmView.Inverse();
-    ViewCorrection=bViewCorrectionValid?FQuat::Slerp(ViewCorrection,Correction,FMath::Clamp(DeltaTime*10.f,0.f,1.f)):Correction;
+    ViewCorrection=bViewCorrectionValid?FQuat::Slerp(ViewCorrection,Correction,FMath::Clamp(DeltaTime*6.f,0.f,1.f)):Correction;
     ViewCorrection.Normalize();bViewCorrectionValid=true;
     FramedView=ViewCorrection*ArmView;
-    if(!KnightWholeInView(Out,FramedView,Fov+FMath::Max(FovBoostDeg,Boost))){ViewCorrection=Correction;ViewCorrection.Normalize();FramedView=View;}
-    // No pops: at most MaxTurnDegPerFrame of turn per frame.
+    FRotator Clamped=FramedView.Rotator();if(Clamped.Pitch<-38.f){Clamped.Pitch=-38.f;FramedView=Clamped.Quaternion();}
     if(bSafeLastView)
     {
+        const float MaxTurn=FMath::Max(.5f,MaxTurnRateDegPerSec*FMath::Max(DeltaTime,1.f/120.f));
         const float Turn=FMath::RadiansToDegrees(static_cast<float>(FramedView.AngularDistance(SafeLastView)));
-        if(Turn>MaxTurnDegPerFrame){FramedView=FQuat::Slerp(SafeLastView,FramedView,MaxTurnDegPerFrame/Turn);FramedView.Normalize();++ClampedTurns;}
+        if(Turn>MaxTurn){FramedView=FQuat::Slerp(SafeLastView,FramedView,MaxTurn/Turn);FramedView.Normalize();++ClampedTurns;}
     }
     SafeLastView=FramedView;bSafeLastView=true;
     FramedLookAt=LookAt;bFramedViewValid=true;
@@ -851,6 +813,14 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     if(bLegacyBoom)RefreshShapes(); // the stock arm does not refresh the shapes itself
     const float Dt=A.LastSeconds>=0.f?FMath::Max(0.f,Seconds-A.LastSeconds):0.f;A.LastSeconds=Seconds;
     ++A.Frames;
+    if(A.SampleGapCm<0.f&&EnsureSurface())
+    {
+        // Density of the live skin samples the sweep keeps clear of: the largest nearest-neighbour gap.
+        float Gap=0.f;TArray<TPair<double,int32>,TInlineAllocator<13>> Near;
+        const TArray<FVector> Points=SurfacePositions;
+        for(int32 I=0;I<Points.Num();I+=1){NearestSkin(Points[I],2,Near,false);if(Near.Num()==2)Gap=FMath::Max(Gap,static_cast<float>(FMath::Sqrt(Near[1].Key)));}
+        A.SampleGapCm=Gap;
+    }
     auto Note=[](TArray<float>& L,float T){if(L.Num()<60&&(L.IsEmpty()||T-L.Last()>.5f))L.Add(T);};
     FVector KB,KT;float KR=0.f;const bool bKnight=KnightCapsule(KB,KT,KR);
     const bool bCapsule=IsPointInsideSolidCapsule(Camera,0.f);
@@ -865,6 +835,9 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     if(Pitch<-40.f){++A.SteepFrames;Note(A.SteepSeconds,Seconds);}
     // Pops: camera movement and turn per frame (a knight blink is counted apart).
     const FVector KnightAt=bKnight?KB:Camera;
+    // Steering: the view without the camera's own fight-feel shake/kick rotation (applied on the lens, not the arm).
+    FQuat Steer=View;
+    for(USceneComponent* Child:GetAttachChildren())if(const UCameraComponent* C=Cast<UCameraComponent>(Child)){Steer=View*C->GetRelativeRotation().Quaternion().Inverse();break;}
     // A gap in the audited frames is a cut away from the knight's camera (intro, restart): not a pop.
     if(A.bHasLast&&Dt>.25f){++A.Cuts;A.bHasLast=false;A.SettleFrames=0;}
     // The first frames after the intro hands over (or after a cut) are the cut itself, not a pop.
@@ -875,6 +848,8 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
         const float Turn=FMath::RadiansToDegrees(static_cast<float>(View.AngularDistance(A.LastView)));
         const bool bTeleport=FVector::Dist(KnightAt,A.LastKnight)>150.f;
         A.KnightTeleports+=bTeleport;
+        if(Dt>0.f&&A.TurnRates.Num()<20000)A.TurnRates.Add(Turn/Dt);
+        if(Dt>0.f&&A.SteerRates.Num()<20000)A.SteerRates.Add(FMath::RadiansToDegrees(static_cast<float>(Steer.AngularDistance(A.LastSteer)))/Dt);
         if(!bTeleport)
         {
             A.MaxMoveCm=FMath::Max(A.MaxMoveCm,Move);A.MaxTurnDeg=FMath::Max(A.MaxTurnDeg,Turn);
@@ -886,7 +861,7 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
             }
         }
     }
-    A.LastCamera=Camera;A.LastView=View;A.LastKnight=KnightAt;A.bHasLast=true;
+    A.LastCamera=Camera;A.LastView=View;A.LastKnight=KnightAt;A.LastSteer=Steer;A.bHasLast=true;
     if(!bKnight)return;
     const float Surface=FMath::PointDistToSegment(Camera,KB,KT)-KR;
     A.MinCameraToKnightCm=FMath::Min(A.MinCameraToKnightCm,Surface);A.InsideKnight+=Surface<10.f;
@@ -897,15 +872,17 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     const FVector Foot=KB-FVector::UpVector*KR,Head=KT+FVector::UpVector*KR*.6f;
     const FVector Points[7]={FMath::Lerp(Foot,Head,.05f),FMath::Lerp(Foot,Head,.3f),FMath::Lerp(Foot,Head,.55f),FMath::Lerp(Foot,Head,.8f),Head,
         FMath::Lerp(Foot,Head,.5f)+Right*KR*.8f,FMath::Lerp(Foot,Head,.5f)-Right*KR*.8f};
-    int32 Seen=0,Centre=0;
+    int32 Seen=0,Centre=0,InFrame=0;
     for(const FVector& P:Points)
     {
         float U,V;
-        if(!ProjectToView(P,Camera,View,HorizontalFovDeg,Aspect,U,V)||FMath::Abs(U)>.8f||FMath::Abs(V)>.8f)continue;
+        if(!ProjectToView(P,Camera,View,HorizontalFovDeg,Aspect,U,V))continue;
+        if(FMath::Abs(U)<=1.f&&FMath::Abs(V)<=1.f)++InFrame;
+        if(FMath::Abs(U)>.8f||FMath::Abs(V)>.8f)continue;
         ++Centre;
         if(SightClear(Camera,P,true))++Seen;
     }
-    A.OutsideCentre+=Centre<4;
+    A.OutsideCentre+=Centre<4;A.KnightInFrame+=InFrame>=4;
     const bool bHalf=Seen*2>=7;A.HalfVisible+=bHalf;
     const bool bHidden=Seen==0;A.FullyHidden+=bHidden;
     A.HiddenRunSeconds=bHidden?A.HiddenRunSeconds+Dt:0.f;A.LongestHiddenSeconds=FMath::Max(A.LongestHiddenSeconds,A.HiddenRunSeconds);
@@ -930,7 +907,17 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
     N(TEXT("clampedMoves"),ClampedMoves);N(TEXT("sightPullFails"),SightPullFails);N(TEXT("clampedTurns"),ClampedTurns);N(TEXT("pivotLiftFrames"),PivotLiftFrames);N(TEXT("pullInEvents"),PullInEvents);
     O->SetBoolField(TEXT("legacyCameraSafety"),bLegacySafety);O->SetBoolField(TEXT("legacyCameraFraming"),bLegacyFraming);O->SetBoolField(TEXT("legacyCameraBoom"),bLegacyBoom);
     auto Times=[&](const TCHAR* K,const TArray<float>& V){TArray<TSharedPtr<FJsonValue>> L;for(float T:V)L.Add(MakeShared<FJsonValueNumber>(FMath::RoundToFloat(T*100.f)/100.f));O->SetArrayField(K,L);};
-    Times(TEXT("insideSeconds"),A.InsideSeconds);Times(TEXT("hiddenSeconds"),A.HiddenSeconds);Times(TEXT("jumpSeconds"),A.JumpSeconds);Times(TEXT("steepSeconds"),A.SteepSeconds);Times(TEXT("jumpDetail_t_move_knightMove_turn_dt_inside_fromPivot"),A.JumpDetail);N(TEXT("viewCuts"),A.Cuts);
+    Times(TEXT("insideSeconds"),A.InsideSeconds);Times(TEXT("hiddenSeconds"),A.HiddenSeconds);Times(TEXT("jumpSeconds"),A.JumpSeconds);Times(TEXT("steepSeconds"),A.SteepSeconds);Times(TEXT("jumpDetail_t_move_knightMove_turn_dt_inside_fromPivot"),A.JumpDetail);
+    {
+        TArray<float> R=A.TurnRates;R.Sort();
+        auto Q=[&](float F){return R.IsEmpty()?0.f:R[FMath::Clamp(FMath::FloorToInt(F*(R.Num()-1)),0,R.Num()-1)];};
+        int32 Over=0;for(float X:R)Over+=X>240.f;
+        TArray<float> SR=A.SteerRates;SR.Sort();int32 SOver=0;for(float X:SR)SOver+=X>240.f;
+        N(TEXT("steerRateP99DegPerSec"),SR.IsEmpty()?0.f:SR[FMath::Clamp(FMath::FloorToInt(.99f*(SR.Num()-1)),0,SR.Num()-1)]);N(TEXT("steerRateMaxDegPerSec"),SR.IsEmpty()?0.f:SR.Last());N(TEXT("steerRateOver240Frames"),SOver);
+        N(TEXT("turnRateP50DegPerSec"),Q(.5f));N(TEXT("turnRateP99DegPerSec"),Q(.99f));N(TEXT("turnRateMaxDegPerSec"),Q(1.f));N(TEXT("turnRateOver240Frames"),Over);
+        N(TEXT("knightInFrameShare"),A.Frames?static_cast<double>(A.KnightInFrame)/A.Frames:0.0);
+        N(TEXT("maxDownLookDeg"),-A.MinPitchDeg);N(TEXT("resultInsideFrames"),ResultInsideFrames);N(TEXT("skinSamples"),SurfacePositions.Num());N(TEXT("skinSampleMaxGapCm"),A.SampleGapCm);
+    }N(TEXT("viewCuts"),A.Cuts);
     O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight, whole replay (held by the replay, survives restart); seconds are replay seconds; visible = 7 knight points inside the central 80 % with no dragon skin (shapes, interior, wings) in between; jumps = >150 cm or >12 deg in one frame, knight blinks excluded"));
     return O;
 }

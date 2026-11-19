@@ -90,6 +90,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") float SafeFraction=1.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 ClampedMoves=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 SightPullFails=0;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float MaxTurnRateDegPerSec=220.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 ClampedTurns=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 PivotLiftFrames=0;
     /** Radius (cm x dragon scale) around the lens inside which the dragon dithers away (last-resort net). */
@@ -169,7 +170,7 @@ private:
     /** View that keeps the knight whole in frame from Camera, starting from the arm's view; boost in degrees. */
     FQuat FrameView(const FVector& Camera,const FQuat& ArmView,const FVector& LookAt,float Fov,float& OutBoost) const;
     FVector LastFramedRelative=FVector::ZeroVector; bool bLastFramed=false; bool bLastSolved=false;
-    FVector SafeLastRelative=FVector::ZeroVector; bool bSafeLast=false; float SafeLift=0.f; float SafeLens=0.f; float SafePitch=0.f; float SafeYaw=0.f; float SwingClearSeconds=0.f; FVector SafeLastWorld=FVector::ZeroVector; FVector SafeLastAnchor=FVector::ZeroVector; float SwingPitchTarget=0.f; float SwingYawTarget=0.f;
+    FVector SafeLastRelative=FVector::ZeroVector; bool bSafeLast=false; float SafeLift=0.f; float SafeLens=0.f; float AssistAlpha=0.f; float AssistClearSeconds=0.f; bool bAssist=false; float AssistRisePitch=0.f; float SafePitch=0.f; float SafeYaw=0.f; float SwingClearSeconds=0.f; FVector SafeLastWorld=FVector::ZeroVector; FVector SafeLastAnchor=FVector::ZeroVector; float SwingPitchTarget=0.f; float SwingYawTarget=0.f;
     FQuat SafeLastView=FQuat::Identity; bool bSafeLastView=false;
     /** Fourth pass arm: returns the camera point and sets FramedView. */
     FVector SafeArm(const FVector& Origin,const FVector& Base,float DeltaTime);
@@ -189,5 +190,5 @@ struct FVeyrViewAudit
     float HiddenRunSeconds=0.f,LongestHiddenSeconds=0.f,MinCameraToKnightCm=TNumericLimits<float>::Max(),MinPitchDeg=90.f;
     float MaxMoveCm=0.f,MaxTurnDeg=0.f,LastSeconds=-1.f;
     FVector LastCamera=FVector::ZeroVector,LastKnight=FVector::ZeroVector;FQuat LastView=FQuat::Identity;bool bHasLast=false;
-    TArray<float> InsideSeconds,HiddenSeconds,JumpSeconds,SteepSeconds,JumpDetail; int32 Cuts=0,SettleFrames=0;
+    TArray<float> InsideSeconds,HiddenSeconds,JumpSeconds,SteepSeconds,JumpDetail,TurnRates,SteerRates; FQuat LastSteer=FQuat::Identity; int32 Cuts=0,SettleFrames=0,KnightInFrame=0; float SampleGapCm=-1.f;
 };

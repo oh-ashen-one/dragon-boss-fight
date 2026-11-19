@@ -147,7 +147,10 @@ def run_spec(spec, delay=0.0):
                 'knightFullyHiddenFrames', 'longestHiddenSeconds', 'knightOutsideCentreFrames', 'moveJumpFrames',
                 'turnJumpFrames', 'knightTeleportFrames', 'maxMoveCmPerFrame', 'maxTurnDegPerFrame', 'steepPitchFrames',
                 'minPitchDeg', 'minCameraToKnightCm', 'clampedMoves', 'clampedTurns', 'pivotLiftFrames', 'insideSeconds',
-                'hiddenSeconds', 'jumpSeconds', 'steepSeconds', 'legacyCameraSafety') if k in x}
+                'hiddenSeconds', 'jumpSeconds', 'steepSeconds', 'legacyCameraSafety', 'viewCuts', 'turnRateP50DegPerSec',
+                'turnRateP99DegPerSec', 'turnRateMaxDegPerSec', 'turnRateOver240Frames', 'knightInFrameShare', 'maxDownLookDeg',
+                'resultInsideFrames', 'skinSamples', 'skinSampleMaxGapCm', 'steerRateP99DegPerSec', 'steerRateMaxDegPerSec',
+                'steerRateOver240Frames') if k in x}
         frames_dir = Path(evidence[-1]).parent / 'native-video'
         if (frames_dir / 'frames.jsonl').exists():
             # Film-side camera check (inside_mesh_frames.py: salmon interior + pale facets), on the captured PNGs.
