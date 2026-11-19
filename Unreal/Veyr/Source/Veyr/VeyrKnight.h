@@ -91,7 +91,7 @@ public:
     void TryLeapAttack();
     int32 RunningAttacks=0,LeapingAttacks=0;
     float PreferredHeavyStandOffCm() const;
-    float GetLocomotionFootWeight(int32 Side) const { return Side>=0&&Side<2?LocomotionFeet[Side].Weight:0.f; }
+    float GetLocomotionFootWeight(int32 Side) const { return Side<0||Side>1?0.f:bGreystoneActive?GreystoneFeet[Side].Weight:LocomotionFeet[Side].Weight; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsChangingGrip() const { return Action==EVeyrKnightAction::GripToTwoHand||Action==EVeyrKnightAction::GripToOneHand; }
     /** Elapsed trimmed source seconds, including a primary-combo segment offset. */
     UFUNCTION(BlueprintPure, Category="Combat") float GetActionSourceSeconds() const;
@@ -451,6 +451,17 @@ private:
     bool bGreystoneActive=false;
     FString GreystoneDiagnostic;
     void UpdateGreystoneProps();
+    // E (2026-11-19): Greystone foot lock (VeyrGreystoneFootLock.cpp). On by default under -VeyrGreystone;
+    // -VeyrGreystoneNoFootLock restores the unlocked presentation; -VeyrGreystoneFeet keeps the KnightB clean-up.
+    struct FGreystoneFootLock
+    {
+        bool bLocked=false,bReleasing=false,bHasPrevious=false,bWasLifted=true;
+        FVector Anchor=FVector::ZeroVector,PreviousRawToe=FVector::ZeroVector;
+        float ReleaseSeconds=0.f,ReleaseLiftCm=0.f,Weight=0.f;
+    };
+    FGreystoneFootLock GreystoneFeet[2];
+    int32 GreystoneLockSerial=-1;
+    bool UpdateGreystoneFootLock(float DeltaSeconds);
     float CameraFloorZ = 0.f;
     float CameraObstructionHold = 0.f;
     float LockHeadBlend = 0.f;

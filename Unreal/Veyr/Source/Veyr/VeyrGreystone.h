@@ -37,6 +37,8 @@ namespace VeyrGreystone
     bool IsRequested();
     bool IsLegacyMotionForced();
     bool FootCleanupEnabled();
+    /** Greystone foot lock (default on; -VeyrGreystoneNoFootLock turns it off; -VeyrGreystoneFeet replaces it). */
+    bool FootLockEnabled();
     float BladeRadiusCm(float Default);
     /** Paragon layout with Greystone's sword and shield bones. */
     bool IsGreystoneDefinition(const UVeyrVisualDefinition* Definition);

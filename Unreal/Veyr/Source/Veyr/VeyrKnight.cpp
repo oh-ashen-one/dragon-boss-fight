@@ -1862,7 +1862,8 @@ bool AVeyrKnight::UpdateStanceCleanup(float DeltaSeconds)
 bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
 {
     // E: the clean-up thresholds below are KnightB boot measurements; Greystone runs without them until re-measured.
-    if(bGreystoneActive&&!VeyrGreystone::FootCleanupEnabled())return true;
+    if(bGreystoneActive&&!VeyrGreystone::FootCleanupEnabled())
+        return VeyrGreystone::FootLockEnabled()?UpdateGreystoneFootLock(DeltaSeconds):true;
     if(bStanceCleanup)return UpdateStanceCleanup(DeltaSeconds);
     const bool Eligible=bSprintContactRevision&&IsGrounded()&&!IsLockOnStrafing()&&
         (Action==EVeyrKnightAction::Ready||Action==EVeyrKnightAction::RunStop);

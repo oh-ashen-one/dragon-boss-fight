@@ -13,6 +13,7 @@ bool VeyrGreystone::IsLegacyKnightForced(){return FParse::Param(FCommandLine::Ge
 bool VeyrGreystone::IsRequested(){return FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystone"))&&!IsLegacyKnightForced();}
 bool VeyrGreystone::IsLegacyMotionForced(){return FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyMotion"));}
 bool VeyrGreystone::FootCleanupEnabled(){return FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneFeet"));}
+bool VeyrGreystone::FootLockEnabled(){return !FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneNoFootLock"));}
 
 float VeyrGreystone::BladeRadiusCm(float Default)
 {
@@ -85,6 +86,7 @@ TSharedRef<FJsonObject> VeyrGreystone::PresentationEvidence(const UVeyrVisualDef
     O->SetBoolField(TEXT("legacyKnightForced"),IsLegacyKnightForced());
     O->SetBoolField(TEXT("legacyMotionForced"),IsLegacyMotionForced());
     O->SetBoolField(TEXT("footCleanup"),!Active||FootCleanupEnabled());
+    O->SetBoolField(TEXT("footLock"),Active&&!FootCleanupEnabled()&&FootLockEnabled());
     if(!Definition)return O;
     O->SetStringField(TEXT("definition"),Definition->GetPathName());
     O->SetNumberField(TEXT("meshScale"),Definition->MeshRelativeTransform.GetScale3D().Z);
