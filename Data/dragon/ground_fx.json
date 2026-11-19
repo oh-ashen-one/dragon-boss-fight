@@ -58,9 +58,9 @@
    "min_speed": 0.8,
    "full_speed": 6,
    "amp_min": 0.5,
-   "amp_max": 1.2,
+   "amp_max": 1.4,
    "life_min": 0.32,
-   "life_max": 0.6,
+   "life_max": 0.75,
    "bounce_cm": 4
   },
   "body_fall": {
@@ -92,10 +92,10 @@
    0.4
   ],
   "sword": {
-   "amp_min": 0.55,
-   "amp_gain": 0.95,
-   "life_min": 0.28,
-   "life_gain": 0.3
+   "amp_min": 0.6,
+   "amp_gain": 1.1,
+   "life_min": 0.3,
+   "life_gain": 0.45
   }
  },
  "flinch": {
