@@ -143,9 +143,11 @@ def run_spec(spec, delay=0.0):
             x = e['cameraAudit']
             record['cameraAudit'] = {k: x[k] for k in (
                 'frames', 'insideDragonFrames', 'insideCapsuleFrames', 'insideHullFrames', 'behindSkinFrames',
-                'skinWithin10cmFrames', 'insideKnightFrames', 'knightWholeOnScreenShare', 'dragonBetweenPartlyFrames',
-                'dragonCoversKnightFrames', 'longestCoveredRunFrames', 'steepPitchFrames', 'minPitchDeg',
-                'minCameraToKnightCm', 'insideSeconds', 'coveredSeconds', 'steepSeconds', 'safetySnaps', 'framingFallbackFrames', 'legacyCameraSafety') if k in x}
+                'skinWithin10cmFrames', 'insideKnightFrames', 'knightWholeOnScreenShare', 'knightHalfVisibleShare',
+                'knightFullyHiddenFrames', 'longestHiddenSeconds', 'knightOutsideCentreFrames', 'moveJumpFrames',
+                'turnJumpFrames', 'knightTeleportFrames', 'maxMoveCmPerFrame', 'maxTurnDegPerFrame', 'steepPitchFrames',
+                'minPitchDeg', 'minCameraToKnightCm', 'clampedMoves', 'clampedTurns', 'pivotLiftFrames', 'insideSeconds',
+                'hiddenSeconds', 'jumpSeconds', 'steepSeconds', 'legacyCameraSafety') if k in x}
         frames_dir = Path(evidence[-1]).parent / 'native-video'
         if (frames_dir / 'frames.jsonl').exists():
             # Film-side camera check (inside_mesh_frames.py: salmon interior + pale facets), on the captured PNGs.

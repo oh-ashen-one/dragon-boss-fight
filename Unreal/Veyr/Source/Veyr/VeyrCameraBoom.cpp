@@ -23,6 +23,8 @@ void UVeyrCameraBoom::BeginPlay()
     bLegacyBoom=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraBoom"));
     bLegacyFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraFraming"));
     bLegacySafety=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraSafety"));
+    // Fourth pass: the knight stays inside the central 80 % of the frame; the lens may open further.
+    if(!bLegacySafety){KnightScreenMargin=FMath::Max(KnightScreenMargin,.1f);MaxFovBoostDeg=FMath::Max(MaxFovBoostDeg,14.f);}
     FindDragon();
 }
 
@@ -280,6 +282,7 @@ FVector UVeyrCameraBoom::BlendLocations(const FVector& DesiredArmLocation,const 
     RefreshShapes();
     if(Shapes.IsEmpty()){BodyFraction=1.f;LiftCm=0.f;bLastSolved=false;return Base;}
     ++BodyFrames;
+    if(!bLegacySafety&&!bLegacyFraming)return SafeArm(PreviousArmOrigin,Base,DeltaTime);
     const float S=DragonScale();
     const float Probe=FMath::Max(ProbeSize,10.f);
     const FVector Origin=PreviousArmOrigin;
@@ -482,7 +485,9 @@ FVector UVeyrCameraBoom::FrameKnight(const FVector& Origin,const FVector& Base,c
     if(!KnightCapsule(KB,KT,KR)){bLastSolved=false;return Proposed;}
     const FVector Foot=KB-FVector::UpVector*KR;
     const float S=DragonScale();
-    const FQuat ArmView=GetTargetRotation().Quaternion();
+    // The view turns with the swung arm (about the same pivot), keeping the knight where he was on screen.
+    FRotator Swing=GetTargetRotation();Swing.Pitch=FMath::Max(Swing.Pitch-SafePitch,-38.f);Swing.Yaw+=SafeYaw;
+    const FQuat ArmView=Swing.Quaternion();
     const FVector F0=ArmView.GetForwardVector();
     // What the arm's view looks at (the locked dragon or the player's aim), far enough past the knight.
     const FVector Mid=(KB+KT)*.5;
@@ -686,10 +691,167 @@ void UVeyrCameraBoom::UpdateDesiredArmLocation(bool bDoTrace,bool bDoLocationLag
     }
 }
 
-void UVeyrCameraBoom::AuditView(const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Seconds)
+FVector UVeyrCameraBoom::SafeArm(const FVector& Origin0,const FVector& Base,float DeltaTime)
 {
-    if(bLegacyBoom)RefreshDragonShapes(); // the stock arm does not refresh the shapes itself
-    FViewAudit& A=ViewAudit;++A.Frames;
+    const float S=DragonScale();
+    FVector KB,KT;float KR=0.f;const bool bKnight=KnightCapsule(KB,KT,KR);
+    // Clearance of the lens from the skin: the near plane plus a margin, growing with the dragon.
+    const float Clear=FMath::Max(ProbeSize+10.f,20.f*S);
+    auto Blocked=[&](const FVector& P){return IsPointInsideBareDragon(P,Clear)||IsPointBehindSkin(P,0.f)||NearestSkinCm(P)<Clear;};
+    // 1. The pivot (the knight's shoulder) pressed into the body: raise it a little until it is clear.
+    FVector Origin=Origin0;
+    if(Blocked(Origin))
+    {
+        ++PivotLiftFrames;
+        for(int32 K=1;K<=6;++K){const FVector P=Origin0+FVector::UpVector*15.f*S*K;if(!Blocked(P)){Origin=P;break;}}
+    }
+    // 2. The arm swept as a sphere against the full body: the first blocked step (or a wing crossed) ends it.
+    const float Length=static_cast<float>(FVector::Dist(Origin,Base));
+    FBox Body(ForceInit);const bool bSurface=EnsureSurface();
+    if(bSurface){Body=SurfaceBounds;if(WingBounds.IsValid)Body+=WingBounds;Body=Body.ExpandBy(Clear+100.f*S);}
+    auto Sweep=[&](const FVector& End,float StepCm=0.f)
+    {
+        // Quick reject: the arm nowhere near the skinned body or wings (shapes stay inside those boxes).
+        FBox Arm(ForceInit);Arm+=Origin;Arm+=End;
+        if(Length<=1.f||(bSurface&&!Body.Intersect(Arm)))return 1.f;
+        const int32 Steps=FMath::Clamp(FMath::CeilToInt(Length/(StepCm>0.f?StepCm:FMath::Max(8.f,6.f*S))),1,128);
+        FVector Previous=Origin;
+        for(int32 I=1;I<=Steps;++I)
+        {
+            const FVector P=FMath::Lerp(Origin,End,static_cast<float>(I)/Steps);
+            if(Blocked(P)||CrossesWing(Previous,P))return static_cast<float>(I-1)/Steps;
+            Previous=P;
+        }
+        return 1.f;
+    };
+    // A short arm swings up about the pivot (12-36 deg) before it gives up length: over the body behind the
+    // knight rather than into his back. The swing eases; the length pulls in at once.
+    // A blocked arm swings about the pivot (up first, then round the knight) to the first swing that is clear for
+    // most of its length with the knight in sight; the swing eases, the length pulls in at once. Sticky: the
+    // swing in use is kept while it still works.
+    auto Swung=[&](float Pitch,float Yaw){FRotator R=(Base-Origin).Rotation();R.Pitch=FMath::Min(R.Pitch+Pitch,60.f);R.Yaw+=Yaw;return Origin+R.Vector()*Length;};
+    FVector KChest=Origin,KHelm=Origin;if(bKnight){KChest=FMath::Lerp(KB,KT,.6f);KHelm=KT;}
+    auto SeesFrom=[&](const FVector& P)
+    {
+        if(!bKnight)return true;
+        for(const FVector& T:{KChest,KHelm})if(!SightClear(P,T+(P-T).GetSafeNormal()*(KR+5.f),true))return false;
+        return true;
+    };
+    auto Good=[&](float Pitch,float Yaw)
+    {
+        const FVector E=Swung(Pitch,Yaw);const float T=Sweep(E,30.f*S);
+        return T>=.6f&&SeesFrom(FMath::Lerp(Origin,E,T));
+    };
+    if(!Good(SwingPitchTarget,SwingYawTarget))
+    {
+        // Up first (the view tilts down by the same angle, so the knight keeps his place on screen), never past
+        // a view pitch of -38 deg; round him only when no rise works.
+        static const float Options[][2]={{0,0},{12,0},{24,0},{36,0},{0,30},{0,-30},{20,30},{20,-30},{0,60},{0,-60}};
+        const float MaxRise=FMath::Max(0.f,GetTargetRotation().Pitch+38.f);
+        bool bFound=false;
+        for(const auto& O:Options)if(O[0]<=MaxRise&&Good(O[0],O[1])){SwingPitchTarget=O[0];SwingYawTarget=O[1];bFound=true;break;}
+        if(!bFound){SwingPitchTarget=FMath::Min(12.f,MaxRise);SwingYawTarget=0.f;++SightPullFails;}
+    }
+    else if(SwingPitchTarget!=0.f||SwingYawTarget!=0.f)
+    {
+        // Drift back to the player's own arm once it has been clear for a second (no flapping).
+        SwingClearSeconds=Good(0.f,0.f)?SwingClearSeconds+DeltaTime:0.f;
+        if(SwingClearSeconds>1.f){SwingPitchTarget=0.f;SwingYawTarget=0.f;SwingClearSeconds=0.f;}
+    }
+    SafePitch=FMath::FInterpTo(SafePitch,SwingPitchTarget,DeltaTime,3.f);
+    SafeYaw=FMath::FInterpTo(SafeYaw,SwingYawTarget,DeltaTime,2.5f);
+    const FVector End=Swung(SafePitch,SafeYaw);
+    float Target=Sweep(End);
+    // Never closer to the knight than his own body plus room for the near plane.
+    if(bKnight&&Length>1.f)Target=FMath::Max(Target,FMath::Min(1.f,(KR+140.f)/Length));
+    // The knight in sight from there (chest and helmet, to his capsule): otherwise come in along the arm
+    // until he is, so a claw or the neck between lens and knight never hides him.
+    if(bKnight&&Length>1.f)
+    {
+        const FVector Chest=FMath::Lerp(KB,KT,.6f),Helm=KT;
+        auto Sees=[&](float F)
+        {
+            const FVector P=FMath::Lerp(Origin,End,F);
+            for(const FVector& T:{Chest,Helm})if(!SightClear(P,T+(P-T).GetSafeNormal()*(KR+5.f),true))return false;
+            return true;
+        };
+        if(!Sees(Target))
+        {
+            const float Floor=FMath::Min(1.f,(KR+140.f)/Length);
+            float Found=-1.f;
+            for(const float K:{.85f,.7f,.55f,.4f,.25f}){const float F=FMath::Max(Floor,Target*K);if(Sees(F)){Found=F;break;}if(F<=Floor)break;}
+            if(Found>0.f)Target=Found;else ++SightPullFails;
+        }
+    }
+    // Instant pull-in, eased release.
+    if(Target<SafeFraction){if(SafeFraction>=.999f&&Target<.999f)++PullInEvents;SafeFraction=Target;}
+    else SafeFraction=FMath::Min(Target,FMath::FInterpTo(SafeFraction,Target,DeltaTime,ReleaseRate));
+    const FVector Pulled=FMath::Lerp(Origin,End,SafeFraction);
+    // 3. A short arm rises slightly (only through clear space) and widens the lens.
+    const float Short=FMath::Clamp(1.f-SafeFraction/.55f,0.f,1.f);
+    float WantLift=ShortArmLiftCm*S*Short;
+    if(WantLift>1.f)
+        for(int32 K=1;K<=8;++K)
+            if(Blocked(Pulled+FVector::UpVector*WantLift*K/8.f)){WantLift*=(K-1)/8.f;break;}
+    SafeLift=FMath::FInterpTo(SafeLift,WantLift,DeltaTime,WantLift>SafeLift?6.f:3.f);
+    SafeLens=FMath::FInterpTo(SafeLens,ShortArmLensDeg*Short,DeltaTime,5.f);
+    FVector Result=Pulled+FVector::UpVector*SafeLift;
+    if(SafeLift>1.f&&Blocked(Result))Result=Pulled;
+    // 4. No pops: at most MaxMoveCmPerFrame relative to the knight per frame (a blink still carries the camera).
+    // World space: the knight's own run counts too; only a knight blink (over 150 cm) carries the camera along.
+    const FVector Anchor=bKnight?KB:Origin;
+    if(bSafeLast)
+    {
+        FVector Previous=SafeLastWorld;const FVector Carried=Anchor-SafeLastAnchor;
+        if(Carried.Size()>150.f)Previous+=Carried;
+        const FVector Delta=Result-Previous;
+        if(Delta.Size()>MaxMoveCmPerFrame){Result=Previous+Delta.GetClampedToMaxSize(MaxMoveCmPerFrame);++ClampedMoves;}
+    }
+    SafeLastRelative=Result-Anchor;SafeLastWorld=Result;SafeLastAnchor=Anchor;bSafeLast=true;
+    if(IsPointInsideBareDragon(Result,10.f))++ResultInsideFrames;
+    FinishView(Result,Base,DeltaTime,SafeLens);
+    return Result;
+}
+
+void UVeyrCameraBoom::FinishView(const FVector& Out,const FVector& Base,float DeltaTime,float ExtraLensDeg)
+{
+    // The view turns with the swung arm (about the same pivot), keeping the knight where he was on screen.
+    FRotator Swing=GetTargetRotation();Swing.Pitch=FMath::Max(Swing.Pitch-SafePitch,-38.f);Swing.Yaw+=SafeYaw;
+    const FQuat ArmView=Swing.Quaternion();
+    const FVector F0=ArmView.GetForwardVector();
+    FVector KB,KT;float KR=0.f;
+    FVector LookAt=Base+F0*1500.0;
+    if(KnightCapsule(KB,KT,KR)){const FVector Mid=(KB+KT)*.5;LookAt=Base+F0*(FMath::Max(0.0,FVector::DotProduct(Mid-Base,F0))+1500.0);}
+    const UCameraComponent* Camera=nullptr;
+    for(USceneComponent* Child:GetAttachChildren())if(const UCameraComponent* C=Cast<UCameraComponent>(Child)){Camera=C;break;}
+    const float Fov=!Camera?72.f:FMath::IsNearlyEqual(Camera->FieldOfView,AppliedFov,.01f)?Camera->FieldOfView-AppliedFovBoost:Camera->FieldOfView;
+    float Boost=0.f;
+    const FQuat View=FrameView(Out,ArmView,LookAt,Fov+ExtraLensDeg,Boost);
+    Boost=FMath::Min(MaxFovBoostDeg,Boost+ExtraLensDeg);
+    const FQuat Correction=View*ArmView.Inverse();
+    ViewCorrection=bViewCorrectionValid?FQuat::Slerp(ViewCorrection,Correction,FMath::Clamp(DeltaTime*10.f,0.f,1.f)):Correction;
+    ViewCorrection.Normalize();bViewCorrectionValid=true;
+    FramedView=ViewCorrection*ArmView;
+    if(!KnightWholeInView(Out,FramedView,Fov+FMath::Max(FovBoostDeg,Boost))){ViewCorrection=Correction;ViewCorrection.Normalize();FramedView=View;}
+    // No pops: at most MaxTurnDegPerFrame of turn per frame.
+    if(bSafeLastView)
+    {
+        const float Turn=FMath::RadiansToDegrees(static_cast<float>(FramedView.AngularDistance(SafeLastView)));
+        if(Turn>MaxTurnDegPerFrame){FramedView=FQuat::Slerp(SafeLastView,FramedView,MaxTurnDegPerFrame/Turn);FramedView.Normalize();++ClampedTurns;}
+    }
+    SafeLastView=FramedView;bSafeLastView=true;
+    FramedLookAt=LookAt;bFramedViewValid=true;
+    FovBoostDeg=FMath::FInterpTo(FovBoostDeg,Boost,DeltaTime,4.f);
+    if(FramedView.AngularDistance(ArmView)>FMath::DegreesToRadians(2.f))++ViewTurnFrames;
+}
+
+void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Seconds)
+{
+    FindDragon();
+    if(bLegacyBoom)RefreshShapes(); // the stock arm does not refresh the shapes itself
+    const float Dt=A.LastSeconds>=0.f?FMath::Max(0.f,Seconds-A.LastSeconds):0.f;A.LastSeconds=Seconds;
+    ++A.Frames;
+    auto Note=[](TArray<float>& L,float T){if(L.Num()<60&&(L.IsEmpty()||T-L.Last()>.5f))L.Add(T);};
     FVector KB,KT;float KR=0.f;const bool bKnight=KnightCapsule(KB,KT,KR);
     const bool bCapsule=IsPointInsideSolidCapsule(Camera,0.f);
     const bool bHull=IsPointInsideBareDragon(Camera,10.f);
@@ -698,38 +860,77 @@ void UVeyrCameraBoom::AuditView(const FVector& Camera,const FQuat& View,float Ho
     const bool bInside=bCapsule||bHull||bBehind;
     A.InsideCapsule+=bCapsule;A.InsideHull+=bHull;A.BehindSkin+=bBehind;A.NearSkin+=bNear;A.InsideAny+=bInside;
     A.InsideRun=bInside?A.InsideRun+1:0;A.LongestInsideRun=FMath::Max(A.LongestInsideRun,A.InsideRun);
-    if(bInside&&A.InsideSeconds.Num()<40&&(A.InsideSeconds.IsEmpty()||Seconds-A.InsideSeconds.Last()>.5f))A.InsideSeconds.Add(Seconds);
+    if(bInside)Note(A.InsideSeconds,Seconds);
     const float Pitch=View.Rotator().Pitch;A.MinPitchDeg=FMath::Min(A.MinPitchDeg,Pitch);
-    if(Pitch<-40.f){++A.SteepFrames;if(A.SteepSeconds.Num()<40&&(A.SteepSeconds.IsEmpty()||Seconds-A.SteepSeconds.Last()>.5f))A.SteepSeconds.Add(Seconds);}
+    if(Pitch<-40.f){++A.SteepFrames;Note(A.SteepSeconds,Seconds);}
+    // Pops: camera movement and turn per frame (a knight blink is counted apart).
+    const FVector KnightAt=bKnight?KB:Camera;
+    // A gap in the audited frames is a cut away from the knight's camera (intro, restart): not a pop.
+    if(A.bHasLast&&Dt>.25f){++A.Cuts;A.bHasLast=false;A.SettleFrames=0;}
+    // The first frames after the intro hands over (or after a cut) are the cut itself, not a pop.
+    if(++A.SettleFrames<=3)A.bHasLast=false;
+    if(A.bHasLast)
+    {
+        const float Move=static_cast<float>(FVector::Dist(Camera,A.LastCamera));
+        const float Turn=FMath::RadiansToDegrees(static_cast<float>(View.AngularDistance(A.LastView)));
+        const bool bTeleport=FVector::Dist(KnightAt,A.LastKnight)>150.f;
+        A.KnightTeleports+=bTeleport;
+        if(!bTeleport)
+        {
+            A.MaxMoveCm=FMath::Max(A.MaxMoveCm,Move);A.MaxTurnDeg=FMath::Max(A.MaxTurnDeg,Turn);
+            if(Move>150.f||Turn>12.f)
+            {
+                if(Move>150.f)++A.MoveJumps;if(Turn>12.f)++A.TurnJumps;Note(A.JumpSeconds,Seconds);
+                if(A.JumpDetail.Num()<200)A.JumpDetail.Append({Seconds,Move,static_cast<float>(FVector::Dist(KnightAt,A.LastKnight)),Turn,Dt,
+                    static_cast<float>(IsPointInsideBareDragon(Camera,10.f)),static_cast<float>(FVector::Dist(Camera,GetComponentLocation()))});
+            }
+        }
+    }
+    A.LastCamera=Camera;A.LastView=View;A.LastKnight=KnightAt;A.bHasLast=true;
     if(!bKnight)return;
     const float Surface=FMath::PointDistToSegment(Camera,KB,KT)-KR;
     A.MinCameraToKnightCm=FMath::Min(A.MinCameraToKnightCm,Surface);A.InsideKnight+=Surface<10.f;
     A.KnightWhole+=KnightWholeInView(Camera,View,HorizontalFovDeg);
-    // Dragon skin between the camera and the knight (exact shapes plus the marched interior), to his capsule.
-    int32 Blocked=0;
-    for(const FVector& T:{FMath::Lerp(KB,KT,.6f),KT,FMath::Lerp(KB,KT,.15f)})
-        Blocked+=!SightClear(Camera,T+(Camera-T).GetSafeNormal()*(KR+5.f),true);
-    A.SightPartlyBlocked+=Blocked>0;A.SightBlocked+=Blocked>=2;
-    A.BlockedRun=Blocked>=2?A.BlockedRun+1:0;A.LongestBlockedRun=FMath::Max(A.LongestBlockedRun,A.BlockedRun);
-    if(Blocked>=2&&A.BlockedSeconds.Num()<40&&(A.BlockedSeconds.IsEmpty()||Seconds-A.BlockedSeconds.Last()>.5f))A.BlockedSeconds.Add(Seconds);
+    // How much of the knight the player sees: 7 points on his body, each inside the central 80 % of the frame
+    // with no dragon skin (shapes, interior, wings) between it and the lens.
+    const float Aspect=ViewAspect();const FVector Right=View.GetRightVector();
+    const FVector Foot=KB-FVector::UpVector*KR,Head=KT+FVector::UpVector*KR*.6f;
+    const FVector Points[7]={FMath::Lerp(Foot,Head,.05f),FMath::Lerp(Foot,Head,.3f),FMath::Lerp(Foot,Head,.55f),FMath::Lerp(Foot,Head,.8f),Head,
+        FMath::Lerp(Foot,Head,.5f)+Right*KR*.8f,FMath::Lerp(Foot,Head,.5f)-Right*KR*.8f};
+    int32 Seen=0,Centre=0;
+    for(const FVector& P:Points)
+    {
+        float U,V;
+        if(!ProjectToView(P,Camera,View,HorizontalFovDeg,Aspect,U,V)||FMath::Abs(U)>.8f||FMath::Abs(V)>.8f)continue;
+        ++Centre;
+        if(SightClear(Camera,P,true))++Seen;
+    }
+    A.OutsideCentre+=Centre<4;
+    const bool bHalf=Seen*2>=7;A.HalfVisible+=bHalf;
+    const bool bHidden=Seen==0;A.FullyHidden+=bHidden;
+    A.HiddenRunSeconds=bHidden?A.HiddenRunSeconds+Dt:0.f;A.LongestHiddenSeconds=FMath::Max(A.LongestHiddenSeconds,A.HiddenRunSeconds);
+    if(!bHalf)Note(A.HiddenSeconds,Seconds);
 }
 
-TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson() const
+TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) const
 {
-    const FViewAudit& A=ViewAudit;
     TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
     auto N=[&](const TCHAR* K,double V){O->SetNumberField(K,V);};
     N(TEXT("frames"),A.Frames);N(TEXT("insideDragonFrames"),A.InsideAny);N(TEXT("insideCapsuleFrames"),A.InsideCapsule);
     N(TEXT("insideHullFrames"),A.InsideHull);N(TEXT("behindSkinFrames"),A.BehindSkin);N(TEXT("skinWithin10cmFrames"),A.NearSkin);
     N(TEXT("longestInsideRunFrames"),A.LongestInsideRun);N(TEXT("insideKnightFrames"),A.InsideKnight);
     N(TEXT("knightWholeOnScreenShare"),A.Frames?static_cast<double>(A.KnightWhole)/A.Frames:0.0);
-    N(TEXT("dragonBetweenPartlyFrames"),A.SightPartlyBlocked);N(TEXT("dragonCoversKnightFrames"),A.SightBlocked);
-    N(TEXT("longestCoveredRunFrames"),A.LongestBlockedRun);N(TEXT("steepPitchFrames"),A.SteepFrames);
-    N(TEXT("minPitchDeg"),A.MinPitchDeg);N(TEXT("minCameraToKnightCm"),A.MinCameraToKnightCm<1e30f?A.MinCameraToKnightCm:-1.0);
-    N(TEXT("framingSearches"),FramingSearches);N(TEXT("safetySnaps"),SafetySnaps);N(TEXT("framingFallbackFrames"),FramingFallbackFrames);
+    N(TEXT("knightHalfVisibleShare"),A.Frames?static_cast<double>(A.HalfVisible)/A.Frames:0.0);
+    N(TEXT("knightFullyHiddenFrames"),A.FullyHidden);N(TEXT("longestHiddenSeconds"),A.LongestHiddenSeconds);
+    N(TEXT("knightOutsideCentreFrames"),A.OutsideCentre);
+    N(TEXT("moveJumpFrames"),A.MoveJumps);N(TEXT("turnJumpFrames"),A.TurnJumps);N(TEXT("knightTeleportFrames"),A.KnightTeleports);
+    N(TEXT("maxMoveCmPerFrame"),A.MaxMoveCm);N(TEXT("maxTurnDegPerFrame"),A.MaxTurnDeg);
+    N(TEXT("steepPitchFrames"),A.SteepFrames);N(TEXT("minPitchDeg"),A.MinPitchDeg);
+    N(TEXT("minCameraToKnightCm"),A.MinCameraToKnightCm<1e30f?A.MinCameraToKnightCm:-1.0);
+    N(TEXT("clampedMoves"),ClampedMoves);N(TEXT("sightPullFails"),SightPullFails);N(TEXT("clampedTurns"),ClampedTurns);N(TEXT("pivotLiftFrames"),PivotLiftFrames);N(TEXT("pullInEvents"),PullInEvents);
     O->SetBoolField(TEXT("legacyCameraSafety"),bLegacySafety);O->SetBoolField(TEXT("legacyCameraFraming"),bLegacyFraming);O->SetBoolField(TEXT("legacyCameraBoom"),bLegacyBoom);
     auto Times=[&](const TCHAR* K,const TArray<float>& V){TArray<TSharedPtr<FJsonValue>> L;for(float T:V)L.Add(MakeShared<FJsonValueNumber>(FMath::RoundToFloat(T*100.f)/100.f));O->SetArrayField(K,L);};
-    Times(TEXT("insideSeconds"),A.InsideSeconds);Times(TEXT("coveredSeconds"),A.BlockedSeconds);Times(TEXT("steepSeconds"),A.SteepSeconds);
-    O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight; seconds are replay seconds; dragon skin = solid capsules, hull spheres and the back-face test (dense skin samples), marched every 40 cm to the knight's capsule"));
+    Times(TEXT("insideSeconds"),A.InsideSeconds);Times(TEXT("hiddenSeconds"),A.HiddenSeconds);Times(TEXT("jumpSeconds"),A.JumpSeconds);Times(TEXT("steepSeconds"),A.SteepSeconds);Times(TEXT("jumpDetail_t_move_knightMove_turn_dt_inside_fromPivot"),A.JumpDetail);N(TEXT("viewCuts"),A.Cuts);
+    O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight, whole replay (held by the replay, survives restart); seconds are replay seconds; visible = 7 knight points inside the central 80 % with no dragon skin (shapes, interior, wings) in between; jumps = >150 cm or >12 deg in one frame, knight blinks excluded"));
     return O;
 }

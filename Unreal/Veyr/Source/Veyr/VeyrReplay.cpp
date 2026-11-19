@@ -52,6 +52,8 @@ namespace
 {
     // Test-only evidence survives OpenLevel. No actor pointers or encounter state are retained.
     TSharedPtr<FJsonObject> PendingRestartEvidence;
+    // A2 fourth pass: the whole-replay camera audit, kept across the restart's OpenLevel (no actor pointers).
+    TSharedPtr<FVeyrViewAudit> GCameraAudit;
     FString PendingRestartDirectory;
     double RestartRequestedWallTime=0;
     // Optional two-scenario QA run: reload a fresh world in this owned process
@@ -3052,7 +3054,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
     if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
-    if(IsValid(Knight))if(const UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))Root->SetObjectField(TEXT("cameraAudit"),Boom->AuditJson());
+    if(IsValid(Knight)&&GCameraAudit.IsValid())if(const UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))Root->SetObjectField(TEXT("cameraAudit"),Boom->AuditJson(*GCameraAudit));
     if(FeelProof.IsValid())Root->SetObjectField(TEXT("feelProof"),FeelProof->Evidence());
     if(const AVeyrGameMode* FeelMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
         if(FeelMode->FightFeel)Root->SetObjectField(TEXT("feel"),FeelMode->FightFeel->FeelEvidence(true)); // B4-B6 totals + static parts, once
@@ -3211,11 +3213,12 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     SampleClock+=DeltaSeconds;SaveClock+=DeltaSeconds;Observe();
     // A2 third pass: audit the camera the player sees, every frame, in every mode (own cameras excluded).
     if(UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))
-        if(const APlayerController* ViewPC=Cast<APlayerController>(Knight->GetController());ViewPC&&ViewPC->GetViewTarget()==Knight&&ViewPC->PlayerCameraManager)
+        if(const APlayerController* ViewPC=GetWorld()->GetFirstPlayerController();ViewPC&&ViewPC->GetViewTarget()==Knight&&ViewPC->PlayerCameraManager)
         {
             // The rendered point of view (the camera manager's last update), not the arm's request.
             const APlayerCameraManager* View=ViewPC->PlayerCameraManager;
-            Boom->AuditView(View->GetCameraLocation(),View->GetCameraRotation().Quaternion(),View->GetFOVAngle(),static_cast<float>(Elapsed));
+            if(!GCameraAudit.IsValid())GCameraAudit=MakeShared<FVeyrViewAudit>();
+            Boom->AuditView(*GCameraAudit,View->GetCameraLocation(),View->GetCameraRotation().Quaternion(),View->GetFOVAngle(),static_cast<float>(Elapsed));
         }
     if(SampleClock>=(bPerformanceMode?5.f:.25f)){SampleClock=0;Samples.Add(MakeShared<FJsonValueObject>(Snapshot()));}
     if(ReplayMode==TEXT("environment"))

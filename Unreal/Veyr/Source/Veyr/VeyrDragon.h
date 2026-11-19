@@ -108,6 +108,9 @@ public:
     /** World centimetres. Changes only this actor's transient material instances. */
     UFUNCTION(BlueprintCallable, Category="Presentation|Camera")
     bool SetViewOcclusion(const FVector& CameraWorld,const FVector& FocusWorld,bool bEnabled);
+    /** A2 fourth pass net: dither away the skin within Radius of the lens (no pale back faces at the near plane).
+     * Reuses the camera-tunnel material with a short segment through the lens and no protected head. */
+    bool SetNearLensOcclusion(const FVector& CameraWorld,const FVector& Forward,float Radius);
 
     // Owner target: a competent victory within 150 wall seconds. Health is
     // calibrated by input-only victory replays; leg stagger thresholds stay independent.

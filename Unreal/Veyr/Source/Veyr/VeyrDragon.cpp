@@ -2884,6 +2884,19 @@ bool AVeyrDragon::InitializeCameraOcclusionMaterials()
     return true;
 }
 
+bool AVeyrDragon::SetNearLensOcclusion(const FVector& CameraWorld,const FVector& Forward,float Radius)
+{
+    const FVector F=Forward.GetSafeNormal();
+    if(F.IsNearlyZero()||!SetViewOcclusion(CameraWorld-F*Radius,CameraWorld+F*Radius,true)||!bCameraOcclusionEnabled)return false;
+    for(UMaterialInstanceDynamic* Material:CameraOcclusionMaterials)
+    {
+        Material->SetScalarParameterValue(TEXT("VeyrOcclusionRadius"),FMath::Max(1.f,Radius));
+        Material->SetScalarParameterValue(TEXT("VeyrProtectedHeadRadius"),0.f);
+    }
+    CameraOcclusionDiagnostic=TEXT("Near-lens dither applied (A2 fourth pass)");
+    return true;
+}
+
 bool AVeyrDragon::SetViewOcclusion(const FVector& CameraWorld,const FVector& FocusWorld,bool bEnabled)
 {
     auto Disable=[&]()

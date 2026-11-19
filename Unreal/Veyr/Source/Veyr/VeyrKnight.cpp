@@ -1217,6 +1217,8 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
     CameraResolvedDistance = FVector::Distance(CameraBoom->GetComponentLocation(), CombatCamera->GetComponentLocation());
     if (CameraResolvedDistance < 180.f) CameraSeverelyCompressedSeconds += DeltaSeconds;
     APlayerController* Player = Cast<APlayerController>(Controller);
+    // Replays drive the knight with a bot while the player's controller watches him: that view needs it too.
+    if (!Player) if (APlayerController* Viewer = GetWorld()->GetFirstPlayerController(); Viewer && Viewer->GetViewTarget() == this) Player = Viewer;
     if (Player != OcclusionController.Get()) RestoreCameraOcclusion();
     if (!Player || !Player->IsLocalController() || !IsValid(Boss)) { RestoreCameraOcclusion(); return; }
     OcclusionController = Player;
@@ -1240,7 +1242,16 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
         // sight instead (owner: "you can sometimes see through it ... That should never happen!").
         // -VeyrLegacyCutThrough restores the dithered cut-through.
         static const bool bLegacyCutThrough=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCutThrough"));
-        Boss->SetViewOcclusion(CombatCamera->GetComponentLocation(),Focus,bLegacyCutThrough);
+        // A2 fourth pass (-VeyrLegacyCameraSafety restores): the skin nearer the lens than 60 cm x dragon scale
+        // dithers away, so a camera the arm could not keep clear never shows pale back faces.
+        static const bool bLegacySafety=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraSafety"));
+        const UVeyrCameraBoom* SafeBoom=Cast<UVeyrCameraBoom>(CameraBoom);
+        if(!bLegacyCutThrough&&!bLegacySafety&&SafeBoom)
+        {
+            const float S=FMath::Max(.5f,static_cast<float>(Boss->GetActorScale3D().Z));
+            Boss->SetNearLensOcclusion(CombatCamera->GetComponentLocation(),CombatCamera->GetForwardVector(),SafeBoom->NearLensDitherCm*S);
+        }
+        else Boss->SetViewOcclusion(CombatCamera->GetComponentLocation(),Focus,bLegacyCutThrough);
         return;
     }
 

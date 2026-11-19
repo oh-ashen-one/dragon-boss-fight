@@ -77,7 +77,7 @@ def interior_share(rgb):
 
 def frames(path, fps, w=W, h=H):
     if Path(path).is_dir():
-        yield from native_frames(Path(path), fps, w, h)
+        yield from native_frames(Path(path).resolve(), fps, w, h)
         return
     cmd = ['ffmpeg', '-v', 'error', '-i', str(path), '-vf', f'fps={fps},scale={w}:{h}', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
