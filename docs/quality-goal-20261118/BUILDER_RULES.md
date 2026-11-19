@@ -33,6 +33,15 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
   Keep holds short: no single run holds the lock longer than about 6 minutes unless the reason is in your notes file
   (a release after more than 6 minutes is logged as a "long hold" in `~/.cache/veyr-engine/history.jsonl`). Prefer
   cooked, packaged builds over the uncooked editor binary for checks: the editor rebuilds assets while it holds the lock.
+- **Bands run as fast sweeps, in few lock holds.** `-VeyrFastSim` (windowless only, fixed 1/60 s steps, about ten times
+  real time) with `-VeyrSeedSweep=0-15` runs the 16 band seeds in one launch of about 4-5 minutes:
+  `playtest_suite.py --app <app> --run 'victory:headless,-VeyrFastSim,-VeyrSeedSweep=0-15'`, the same with `two-handed`,
+  and `--run 'death:headless,-VeyrFastSim,-VeyrSeedSweep=0-3'`; summary with `tools/unreal/band_summary.py --per-seed`.
+  A fast sweep is a distribution, not a seed-for-seed replay of real time (measured 2026-11-19 on 4 seeds: median 92.9 s
+  fast against 85.0 s real, per-seed results differ), so use it to compare builds (old against new on the same package
+  and mode) and for retune loops. The acceptance band of the final integrated build is run once at real time. Never run
+  a 32-fight band at real time on a work branch; never more than 4 real-time windowless fights in one lock hold; keep at
+  most one ticket in the lock queue at a time.
 - **Build in your own worktree.** A builder with a worktree first runs
   `python3 tools/unreal/clone_private_content.py --from /Users/midir/veyr-knight-20261028 --to <your worktree>` (APFS
   clones of the git-ignored Content and Config: Characters, Paragon, ArtPass, some audio; it also seeds
