@@ -67,6 +67,10 @@ bool FVeyrDragonPlayback::Load(FString& OutDiagnostic)
         L.ReleaseHeightCm=Num(O,TEXT("release_height_cm"),L.ReleaseHeightCm);L.DragReleaseCm=Num(O,TEXT("drag_release_cm"),L.DragReleaseCm);
         L.SlipCm=Num(O,TEXT("slip_cm"),L.SlipCm);L.ReleaseSeconds=Num(O,TEXT("release_seconds"),L.ReleaseSeconds);
         L.StepSeconds=Num(O,TEXT("step_seconds"),L.StepSeconds);L.StepLiftCm=Num(O,TEXT("step_lift_cm"),L.StepLiftCm);
+        L.ProcStepSeconds=FMath::Clamp(Num(O,TEXT("proc_step_seconds"),L.ProcStepSeconds),.1f,.5f);
+        L.StepTriggerCm=FMath::Clamp(Num(O,TEXT("step_trigger_cm"),L.StepTriggerCm),2.f,60.f);
+        L.StepLeadSeconds=FMath::Clamp(Num(O,TEXT("step_lead_seconds"),L.StepLeadSeconds),0.f,.6f);
+        L.CarryDps=FMath::Clamp(Num(O,TEXT("carry_dps"),L.CarryDps),10.f,360.f);
     }
     if(Root->TryGetObjectField(TEXT("moves"),Obj))
         for(const auto& E:(*Obj)->Values)

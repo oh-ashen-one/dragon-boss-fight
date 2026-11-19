@@ -269,6 +269,7 @@ void AVeyrDragon::Tick(float DeltaSeconds)
     }
     Clock+=DeltaSeconds; EncounterClock+=DeltaSeconds; StateElapsed+=DeltaSeconds;
     StaggerProtection=FMath::Max(0.f,StaggerProtection-DeltaSeconds);
+    if(State!=EVeyrDragonState::Windup)WindupAimVisual=FMath::FInterpConstantTo(WindupAimVisual,0.f,DeltaSeconds,60.f);
     if(State==EVeyrDragonState::Exposed&&bUsingCustomuseVisual&&BodyScale>0.f)
         DownHeadLocalPerScale=GetActorQuat().UnrotateVector(GetHeadLocation()-GetActorLocation())/BodyScale;
     if(bKnockdownActive||bKnockdownAwaitAct)
@@ -406,7 +407,8 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 // body cannot settle back into a blind spot between the turn and the strike.
                 // F3: -VeyrLegacySnapTurn keeps the 195 deg/s snap; the default turns at the data rate (90 deg/s),
                 // starting earlier, and planted feet step through the floor lock instead of skating.
-                const float SnapRate=SnapTrackRate();
+                // Round 2: the body turns no faster than its stepping feet can carry (the neck aims first, below).
+                const float SnapRate=bProcSteps?FMath::Min(SnapTrackRate(),Playback.FootLock.CarryDps):SnapTrackRate();
                 const float SnapSeconds=FMath::Min(FMath::Abs(Wanted),WindupTrackBudget)/SnapRate+(bSlowSnapTurn?Playback.TrackLeadSeconds:.06f);
                 if(!FMath::IsNearlyZero(Wanted)&&StateDuration-StateElapsed<=SnapSeconds)
                 {
@@ -418,6 +420,17 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 }
             }
             else if(bWindupTrackPending){bWindupTrackPending=false;if(Move==EVeyrDragonMove::Fire)CommitImportedWarning();}
+            {
+                // Round 2: spine/neck-first aim. The head leads the remaining wind-up turn (visual only; the damage
+                // envelope follows the body as before).
+                float AimWanted=0.f;
+                if(bProcSteps&&State==EVeyrDragonState::Windup&&IsWindupTracking()&&IsValid(Target)&&!Target->IsDead()&&Move!=EVeyrDragonMove::Fire)
+                {
+                    const FVector Dir=GetActorQuat().UnrotateVector(Target->GetFootLocation()-GetActorLocation());
+                    AimWanted=FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(Dir.Y,Dir.X))),-14.f,14.f);
+                }
+                WindupAimVisual=FMath::FInterpConstantTo(WindupAimVisual,AimWanted,DeltaSeconds,80.f);
+            }
             if(StateElapsed>=StateDuration)
             {
                 EnterState(EVeyrDragonState::Active,ActiveDuration);
@@ -2212,9 +2225,26 @@ void AVeyrDragon::UpdateImportedPresentation()
         Gaze=BiteGroundRotations(Config.StartSeconds+Trimmed,BiteGroundPitchDegrees);
     }
     // The head comes back up over the recovery instead of snapping.
+    if(bProcSteps&&!GroundBite&&!GroundFire&&FMath::Abs(WindupAimVisual)>.05f&&
+       (State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery))
+    {
+        const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
+        const FVeyrVisualBoneTarget* Neck=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
+        const bool SeparateNeck=Neck&&Head&&Neck->BoneName!=Head->BoneName;
+        if(SeparateNeck)Gaze.FindOrAdd(Neck->BoneName).Yaw+=WindupAimVisual*.6f;
+        if(Head)Gaze.FindOrAdd(Head->BoneName).Yaw+=WindupAimVisual*(SeparateNeck?.4f:1.f);
+    }
     if(GroundFire)Gaze=FireAimRotations(State==EVeyrDragonState::Recovery?1.f-Ease(StateElapsed/FMath::Max(.01f,StateDuration)):1.f);
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
         if(Mode->FightFeel)Mode->FightFeel->AddBossFlinch(this,Gaze);
+    if(bProcSteps)
+        for(auto& E:Gaze)
+        {
+            // Round 2: the added aim never pushes a bone past the proxy's bounds (20 deg per axis, 25 deg total).
+            FRotator& R=E.Value;R.Pitch=FMath::Clamp(R.Pitch,-19.5f,19.5f);R.Yaw=FMath::Clamp(R.Yaw,-19.5f,19.5f);R.Roll=FMath::Clamp(R.Roll,-19.5f,19.5f);
+            const float Deg=FMath::RadiansToDegrees(R.Quaternion().GetAngle());
+            if(Deg>24.f)R=FQuat::Slerp(FQuat::Identity,R.Quaternion(),24.f/Deg).Rotator();
+        }
     if(bFootLock)ImportedPresentation->ClearLegLocks(); // F3: the animated pose is measured unlocked every frame
     if(!ImportedPresentation->SetComponentSpaceBoneRotations(Gaze))return;
     FString Name;

@@ -398,6 +398,11 @@ private:
     bool bClipTempo=false,bTwoClipBlend=false,bFootLock=false,bSlowSnapTurn=false,bRootTracks=false;
     /** Round 2: inertial blending at clip switches (-VeyrCrossfadeBlend restores the F2 two-clip fade). */
     bool bInertialBlend=false;
+    float YawPrevHead=0.f,YawPrevBody=0.f,YawPrevClock=-1.f;bool bYawPrev=false;
+    /** Round 2: procedural stepping and spine/neck-first wind-up aim (-VeyrNoProceduralSteps restores round 1). */
+    bool bProcSteps=false;
+    int32 ProcStepCount=0,ProcStepPairs=0,ProcStepLastLeg=-1;
+    float WindupAimVisual=0.f;
     float InertialStartedClock=-100.f,InertialBlendSeconds=.35f;
     float PhaseEntryReal=0.f,WalkStrideSpeedCm=0.f;
     const FVeyrClipPlayback* TempoClip(FName Clip,float& OutRate,float& OutHoldRate) const;
@@ -430,6 +435,9 @@ private:
         FVector LastBend=FVector(1,0,0);
         FVector PrevAny=FVector::ZeroVector;bool bHasPrevAny=false,bLowNow=false;
         FVector PrevLocal=FVector::ZeroVector;bool bHasPrevLocal=false;
+        // Round 2 procedural stepping.
+        bool bStartStep=false,bReachMiss=false,bProcStep=false;
+        FVector Lead=FVector::ZeroVector;
     };
     FFootLockFoot LockFeet[4];
     float FootLockClock=-1.f;
@@ -451,6 +459,8 @@ private:
         FVector TravelWorld=FVector::ZeroVector;double TrackLengthCm=0;
         // Blend pops: one-frame pose-delta spikes (a bone's speed jumps past PopRatio x both neighbouring frames).
         int32 Pops=0,PopsInBlend=0,PoseFrames=0;float MaxPopRatio=0.f,MaxPopRatioInBlend=0.f;FName WorstPopBone;
+        // Round 2 (critic, 2026-11-19): world yaw of the neck->head line and of the body, degrees per 1/30 s.
+        int32 YawSteps=0;float MaxHeadYawPer30=0.f,MaxBodyYawPer30=0.f;
         // Root-track instances: the clip's own net track (entry to exit) against the actor's applied share of it.
         int32 TrackInstances=0;double TrackNetExpectedCm=0,TrackNetAppliedCm=0;float TrackMinRatio=-1.f,TrackMaxRatio=-1.f;
     };

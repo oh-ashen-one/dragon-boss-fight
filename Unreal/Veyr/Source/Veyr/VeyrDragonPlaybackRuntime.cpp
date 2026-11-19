@@ -141,6 +141,7 @@ void AVeyrDragon::InitPlayback()
     bSlowSnapTurn=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
     bInertialBlend=bTwoClipBlend&&!FParse::Param(Cmd,TEXT("VeyrCrossfadeBlend"));
+    bProcSteps=bFootLock&&!FParse::Param(Cmd,TEXT("VeyrNoProceduralSteps"));
     UE_LOG(LogTemp,Display,TEXT("VEYR_DRAGON_PLAYBACK loaded=%d tempo=%d blend=%d footlock=%d slowturn=%d roottracks=%d %s"),
         Loaded?1:0,bClipTempo?1:0,bTwoClipBlend?1:0,bFootLock?1:0,bSlowSnapTurn?1:0,bRootTracks?1:0,*PlaybackDiagnostic);
 }
@@ -283,6 +284,28 @@ void AVeyrDragon::UpdatePoseDeltaStat()
     const float Dt=PoseClock<0.f?0.f:Clock-PoseClock;
     if(PoseClock>=0.f&&Dt<1.e-4f)return;
     const float Scale=ImportedPresentation->GetComponentScale().X;
+    {
+        // Yaw steps: a head or body turn of more than 20 degrees within one 30 Hz frame (600 deg/s) is a snap.
+        const FVeyrVisualBoneTarget* HeadT=VisualDefinition?VisualDefinition->BoneTargets.Find(TEXT("head")):nullptr;
+        const FVeyrVisualBoneTarget* NeckT=VisualDefinition?VisualDefinition->BoneTargets.Find(TEXT("gaze_neck")):nullptr;
+        const FName Base=NeckT?ImportedPresentation->GetParentBone(NeckT->BoneName):NAME_None;
+        if(HeadT&&!Base.IsNone()&&State!=EVeyrDragonState::Dead)
+        {
+            const FVector Line=ImportedPresentation->GetBoneLocation(HeadT->BoneName)-ImportedPresentation->GetBoneLocation(Base);
+            const float HeadYaw=FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(Line.Y),static_cast<float>(Line.X)));
+            const float BodyYaw=GetActorRotation().Yaw;
+            const float YDt=YawPrevClock<0.f?0.f:Clock-YawPrevClock;
+            if(bYawPrev&&YDt>1.e-4f&&FVector2D(Line.X,Line.Y).Size()>20.f*BodyScale)
+            {
+                const float H=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevHead,HeadYaw))*(1.f/30.f)/YDt;
+                const float B=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevBody,BodyYaw))*(1.f/30.f)/YDt;
+                FPlaybackStat& St=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
+                St.MaxHeadYawPer30=FMath::Max(St.MaxHeadYawPer30,H);St.MaxBodyYawPer30=FMath::Max(St.MaxBodyYawPer30,B);
+                if(H>20.f||B>20.f)++St.YawSteps;
+            }
+            if(YDt>1.e-4f||!bYawPrev){YawPrevHead=HeadYaw;YawPrevBody=BodyYaw;YawPrevClock=Clock;bYawPrev=true;}
+        }
+    }
     TArray<float> Speed;
     if(PosePrevCs.Num()==Cs.Num()&&Dt>0.f)
     {
@@ -384,6 +407,37 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
     FPlaybackStat& Stat=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
     TArray<FVeyrLegLock> Locks;Locks.SetNum(4);
     bool AnyWeight=false;
+    if(bProcSteps&&Dt>0.f&&!ReleaseOnly)
+    {
+        // Round 2: one foot at a time in gait order (HL, FL, HR, FR); a second foot only on the diagonal and only when
+        // it is far out. Never two on one side. Side = L&1 (FL 0, FR 1, HL 2, HR 3).
+        static const int32 Gait[4]={2,0,3,1};static const int32 Diagonal[4]={3,2,1,0};
+        int32 Stepping=0,SteppingLeg=-1;bool SideBusy[2]={false,false};
+        for(int32 L=0;L<4;++L){LockFeet[L].bStartStep=false;if(LockFeet[L].bStepping){++Stepping;SteppingLeg=L;SideBusy[L&1]=true;}}
+        int32 NextGait=0;for(int32 G=0;G<4;++G)if(Gait[G]==ProcStepLastLeg)NextGait=Gait[(G+1)%4];
+        int32 Best=-1;float BestScore=0.f;
+        for(int32 L=0;L<4&&Stepping<2;++L)
+        {
+            FFootLockFoot& F=LockFeet[L];
+            if(!F.bLocked||SideBusy[L&1])continue;
+            const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
+            if(Anim.SoleAboveFloorCm[L]>T.ReleaseHeightCm*S)continue; // the clip lifts it itself
+            const float Err=static_cast<float>(FVector::Dist2D(Anchor,F.Pin))/(T.StepTriggerCm*S);
+            if(Err<1.f&&!F.bReachMiss)continue;
+            if(Stepping==1&&(L!=Diagonal[SteppingLeg]||(Err<1.5f&&!F.bReachMiss)))continue;
+            const float Score=Err+(F.bReachMiss?10.f:0.f)+(L==NextGait?.35f:0.f);
+            if(Score>BestScore){BestScore=Score;Best=L;}
+        }
+        if(Best>=0){LockFeet[Best].bStartStep=true;if(Stepping==1)++ProcStepPairs;}
+        for(int32 L=0;L<4;++L)
+        {
+            // The foot's drift: where the clip puts it moves with the body (turn and travel); land ahead of it.
+            FFootLockFoot& F=LockFeet[L];
+            const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
+            const FVector Vel=F.bHasPrev?(Anchor-F.PrevTip)/Dt:FVector::ZeroVector;
+            F.Lead=(FVector(Vel.X,Vel.Y,0.)*T.StepLeadSeconds).GetClampedToMaxSize(T.StepTriggerCm*S*2.f);
+        }
+    }
     for(int32 L=0;L<4;++L)
     {
         FFootLockFoot& F=LockFeet[L];
@@ -397,7 +451,14 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         if(Dt>0.f)
         {
             const float Speed=F.bHasPrev?static_cast<float>(FVector::Dist2D(Anchor,Predicted))/Dt:0.f;
-            if(F.bLocked)
+            if(F.bLocked&&bProcSteps)
+            {
+                if(Height>T.ReleaseHeightCm*S){F.bLocked=false;F.bReleasing=true;F.T=0.f;F.From=F.Pin;}
+                else if(F.bStartStep)
+                {F.bLocked=false;F.bStepping=true;F.bProcStep=true;F.T=0.f;F.From=F.Pin;++Stat.Steps;++ProcStepCount;ProcStepLastLeg=L;}
+                F.bStartStep=F.bReachMiss=false;
+            }
+            else if(F.bLocked)
             {
                 const float Drag=static_cast<float>(FVector::Dist2D(F.Pin,Anchor));
                 // Lifting in the clip releases. Dragged near the floor (body turn or travel) always takes the lifted step:
@@ -413,8 +474,13 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
             }
             else if(F.bStepping)
             {
-                F.T+=Dt/FMath::Max(.05f,T.StepSeconds);
-                if(F.T>=1.f){F.bStepping=false;F.bLocked=Height<T.PlantHeightCm*S;F.Pin=Anchor;}
+                F.T+=Dt/FMath::Max(.05f,F.bProcStep?T.ProcStepSeconds:T.StepSeconds);
+                if(F.T>=1.f)
+                {
+                    F.bStepping=false;F.bLocked=Height<T.PlantHeightCm*S;
+                    // A procedural step plants where it landed (its lead included), so the drift has room again.
+                    F.Pin=F.bProcStep?FVector(Anchor.X+F.Lead.X,Anchor.Y+F.Lead.Y,Anchor.Z):Anchor;F.bProcStep=false;
+                }
             }
             else if(F.bReleasing)
             {
@@ -422,7 +488,7 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
                 if(F.T>=1.f)F.bReleasing=false;
             }
             // A foot plants only when it is low AND slow in the clip (bFading only marks evidence).
-            const bool Slow=Speed<T.PlantSpeedCms*S;
+            const bool Slow=Speed<T.PlantSpeedCms*S||bProcSteps; // round 2: a low paw plants; drift is stepped out
             if(!ReleaseOnly&&!F.bLocked&&!F.bStepping&&!F.bReleasing&&Height<T.PlantHeightCm*S&&Slow)
             {F.bLocked=true;F.bReleasing=false;F.Pin=Anchor;}
             // Planted = low in the clip and not in a lock step (a stepping paw is lifted on purpose).
@@ -438,7 +504,8 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         else if(F.bStepping)
         {
             const float U=SmoothStep01(F.T);
-            Goal=FMath::Lerp(F.From,Anchor,U);Goal.Z=Anchor.Z+FMath::Sin(PI*FMath::Clamp(F.T,0.f,1.f))*T.StepLiftCm*S;Weight=1.f;
+            const FVector Land=F.bProcStep?Anchor+F.Lead:Anchor;
+            Goal=FMath::Lerp(F.From,Land,U);Goal.Z=Anchor.Z+FMath::Sin(PI*FMath::Clamp(F.T,0.f,1.f))*T.StepLiftCm*S;Weight=1.f;
         }
         else if(F.bReleasing){Goal=FMath::Lerp(F.From,Anchor,SmoothStep01(F.T));Goal.Z=Anchor.Z;Weight=1.f;}
         F.Target=Goal;F.Weight=Weight;AnyWeight|=Weight>0.f&&!Goal.Equals(Anchor,.05);
@@ -475,7 +542,8 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
             if(F.bLocked&&!F.PrevDrawn.IsZero()){Stat.DrawnSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevDrawn);Stat.LockedSeconds[L]+=Dt;}
             // Out of reach: the leg cannot hold the pin any more (a fast turn swings the hip away), so the drawn paw is
             // being dragged. Step now from where the paw really is instead of sliding it until the drag threshold.
-            if(F.bLocked&&FVector::Dist2D(Drawn,F.Pin)>3.f*BodyScale)
+            if(F.bLocked&&bProcSteps&&FVector::Dist2D(Drawn,F.Pin)>3.f*BodyScale)F.bReachMiss=true; // stepped next frame
+            else if(F.bLocked&&FVector::Dist2D(Drawn,F.Pin)>3.f*BodyScale)
             {F.bLocked=false;F.bStepping=true;F.T=0.f;F.From=FVector(Drawn.X,Drawn.Y,F.Pin.Z);++Stat.Steps;++FootLockReachSteps;}
             F.PrevDrawn=F.bLocked?Drawn:FVector::ZeroVector;
         }
@@ -505,9 +573,12 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("footLockTeleports"),FootLockTeleports);O->SetNumberField(TEXT("footLockEaseOuts"),FootLockEaseOuts);
     O->SetNumberField(TEXT("footLockReachSteps"),FootLockReachSteps);
     O->SetBoolField(TEXT("inertialBlend"),bInertialBlend);
+    O->SetBoolField(TEXT("proceduralSteps"),bProcSteps);O->SetNumberField(TEXT("proceduralStepCount"),ProcStepCount);
+    O->SetNumberField(TEXT("proceduralStepDiagonalPairs"),ProcStepPairs);O->SetNumberField(TEXT("stepCarryDps"),Playback.FootLock.CarryDps);
     if(ImportedPresentation){int32 Starts=0;float Deg=0.f,Cm=0.f;ImportedPresentation->GetInertialStats(Starts,Deg,Cm);
         O->SetNumberField(TEXT("inertialStarts"),Starts);O->SetNumberField(TEXT("inertialMaxOffsetDegrees"),Deg);O->SetNumberField(TEXT("inertialMaxOffsetCm"),Cm);}
     O->SetStringField(TEXT("dragonSkin"),ImportedPresentation?ImportedPresentation->SkinDiagnostic:FString(TEXT("no presentation")));
+    int32 YawSteps=0;float WorstYaw=0.f;FString WorstYawKey;
     float WorstRate=0.f,WorstSlide=0.f,WorstPop=0.f;FString WorstRateKey,WorstSlideKey,WorstPopKey;int32 Pops=0,PopsInBlend=0;
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();
     for(const auto& E:PlaybackStats)
@@ -541,6 +612,8 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
         C->SetNumberField(TEXT("trackNetAppliedCm"),S.TrackNetAppliedCm);C->SetNumberField(TEXT("trackMinRatio"),S.TrackMinRatio);C->SetNumberField(TEXT("trackMaxRatio"),S.TrackMaxRatio);
         C->SetNumberField(TEXT("poseFrames"),S.PoseFrames);C->SetNumberField(TEXT("pops"),S.Pops);C->SetNumberField(TEXT("popsInBlend"),S.PopsInBlend);
         C->SetNumberField(TEXT("maxPopRatio"),S.MaxPopRatio);C->SetNumberField(TEXT("maxPopRatioInBlend"),S.MaxPopRatioInBlend);
+        C->SetNumberField(TEXT("yawSteps"),S.YawSteps);C->SetNumberField(TEXT("maxHeadYawDegPer30Hz"),S.MaxHeadYawPer30);C->SetNumberField(TEXT("maxBodyYawDegPer30Hz"),S.MaxBodyYawPer30);
+        YawSteps+=S.YawSteps;if(S.MaxHeadYawPer30>WorstYaw){WorstYaw=S.MaxHeadYawPer30;WorstYawKey=E.Key.ToString();}
         C->SetStringField(TEXT("worstPopBone"),S.WorstPopBone.ToString());
         Pops+=S.Pops;PopsInBlend+=S.PopsInBlend;
         if(S.MaxPopRatio>WorstPop){WorstPop=S.MaxPopRatio;WorstPopKey=E.Key.ToString()+TEXT(" ")+S.WorstPopBone.ToString();}
@@ -554,6 +627,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("poseDeltaPops"),Pops);O->SetNumberField(TEXT("poseDeltaPopsInBlend"),PopsInBlend);
     O->SetNumberField(TEXT("worstPopRatio"),WorstPop);O->SetStringField(TEXT("worstPopClipBone"),WorstPopKey);
     O->SetBoolField(TEXT("gateNoBlendPops"),PopsInBlend==0);
+    O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
     O->SetBoolField(TEXT("gateRateAtMost1_25"),WorstRate<=1.25f+.02f);O->SetBoolField(TEXT("gateSlideUnder5"),WorstSlide<5.f);
     return O;
 }

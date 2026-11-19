@@ -41,6 +41,10 @@ struct FVeyrFootLockTuning
 {
     float PlantHeightCm=4.f,PlantSpeedCms=120.f,ReleaseHeightCm=8.f,DragReleaseCm=30.f,SlipCm=70.f;
     float ReleaseSeconds=.12f,StepSeconds=.3f,StepLiftCm=18.f;
+    /** Round 2 procedural stepping: a planted foot whose clip position drifts past TriggerCm from its pin takes a
+     * lift-arc-plant step of ProcStepSeconds, landing LeadSeconds ahead of its drift; one foot at a time (a diagonal
+     * pair when both are far). Wind-up aim turns no faster than CarryDps. */
+    float ProcStepSeconds=.24f,StepTriggerCm=12.f,StepLeadSeconds=.2f,CarryDps=60.f;
 };
 
 class FVeyrDragonPlayback
