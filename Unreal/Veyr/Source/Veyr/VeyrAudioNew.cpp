@@ -38,21 +38,21 @@ float AVeyrAudio::TargetLevelDb(ECue Cue)
     // the dragon's calm) stay low: the loudness range comes from the difference.
     switch(Cue)
     {
-        case ECue::Swing:return -9.f;          case ECue::HeavySwing:return -7.f;
-        case ECue::Contact:return -9.f;        case ECue::Guard:return -8.f;
-        case ECue::ArmorHit:return -8.f;       case ECue::Impact:return -8.f;
-        case ECue::DragonStep:return -9.f;     case ECue::DragonSwing:return -9.f;
-        case ECue::Bite:return -9.f;           case ECue::Breath:return -15.f;
-        case ECue::Fire:return -11.f;          case ECue::Wing:return -13.f;
-        case ECue::Roll:return -14.f;          case ECue::Footstep:return -10.f;
-        case ECue::Blink:return -13.f;         case ECue::Break:return -10.f;
-        case ECue::Debris:return -14.f;        case ECue::Exposed:return -8.f;
-        case ECue::Death:return -8.f;          case ECue::Heal:return -13.f;
-        case ECue::Victory:return -9.f;        case ECue::DragonBreathIn:return -18.f;
-        case ECue::DragonBreathOut:return -18.f; case ECue::DragonGrowlLow:return -12.f;
-        case ECue::DragonSnort:return -15.f;
-        case ECue::Roar:return -9.f;           case ECue::DragonGrowl:return -12.f;
-        case ECue::DragonPain:return -12.f;    case ECue::PlayerPain:return -9.f;
+        case ECue::Swing:return -10.f;         case ECue::HeavySwing:return -8.f;
+        case ECue::Contact:return -5.f;        case ECue::Guard:return -6.f;
+        case ECue::ArmorHit:return -5.f;       case ECue::Impact:return -5.f;
+        case ECue::DragonStep:return -6.f;     case ECue::DragonSwing:return -7.f;
+        case ECue::Bite:return -7.f;           case ECue::Breath:return -15.f;
+        case ECue::Fire:return -11.f;          case ECue::Wing:return -15.f;
+        case ECue::Roll:return -16.f;          case ECue::Footstep:return -9.f;
+        case ECue::Blink:return -15.f;         case ECue::Break:return -9.f;
+        case ECue::Debris:return -12.f;        case ECue::Exposed:return -5.f;
+        case ECue::Death:return -8.f;          case ECue::Heal:return -15.f;
+        case ECue::Victory:return -10.f;       case ECue::DragonBreathIn:return -22.f;
+        case ECue::DragonBreathOut:return -22.f; case ECue::DragonGrowlLow:return -14.f;
+        case ECue::DragonSnort:return -18.f;
+        case ECue::Roar:return -8.f;           case ECue::DragonGrowl:return -11.f;
+        case ECue::DragonPain:return -11.f;    case ECue::PlayerPain:return -8.f;
         default:return 0.f;
     }
 }
@@ -402,6 +402,21 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 
     return true;
 }
 
+// A per-play spectral tilt for the big bodies (stomps, falls, debris): a random low-pass split with the high part
+// scaled, so consecutive events differ in colour and not only in sample, pitch and level.
+static void TiltCopy(const TArray<int16>& In,TArray<int16>& Out,FRandomStream& Rand,float Rate)
+{
+    const float Fc=Rand.FRandRange(450.f,3200.f),K=Rand.FRandRange(.08f,1.25f);
+    const float A=1.f-FMath::Exp(-2.f*PI*Fc/Rate);
+    Out.SetNumUninitialized(In.Num());
+    float Lp=0.f;
+    for(int32 I=0;I<In.Num();++I)
+    {
+        const float X=In[I];Lp+=A*(X-Lp);
+        Out[I]=int16(FMath::Clamp(Lp+K*(X-Lp),-32767.f,32767.f));
+    }
+}
+
 bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff,uint8 Role,float PitchMul)
 {
     if(!GetWorld()||MasterVolume<=0.f||!FMath::IsFinite(MasterVolume))return false;
@@ -436,7 +451,11 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     FChosen C;
     if(!PickVariant(Cue,Volume,C,-1,Role,PitchMul))return false; // never the variant played last; random pitch and level off vocal cues
     const int32 V=C.V;const float Pitch=C.Pitch,Seconds=C.Seconds,Seconds0=C.Seconds0;
-    const TArray<int16>& PCM=Bank.Variants[V];
+    TArray<int16> Tilted;
+    const TArray<int16>* Source=&Bank.Variants[V];
+    if(!bNoVariants&&(Cue==ECue::DragonStep||Cue==ECue::Exposed||Cue==ECue::Impact||Cue==ECue::Debris))
+    {TiltCopy(Bank.Variants[V],Tilted,Rand,float(SampleRate));Source=&Tilted;}
+    const TArray<int16>& PCM=*Source;
     float Level=C.Level;
     float Load=0.f;
     for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0)Load+=VoiceLevels[I]*MasterVolume*EffectsVolume;
@@ -590,7 +609,7 @@ void AVeyrAudio::PlayWeaponHit(int32 Weight,bool bHead)
     // a sharp mid/high attack, a body, a low thump; sized by weight class (0 light, 1 heavy), head adds a metal ring.
     TapEvent(bHead?TEXT("weaponHead"):Weight>0?TEXT("weaponHeavy"):TEXT("weaponLight"));
     const float W=Weight>0?1.f:.8f;
-    PlayCueEx(ECue::Contact,W*1.2f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
+    PlayCueEx(ECue::Contact,W,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
     PlayCueEx(ECue::Guard,W*(bHead?.9f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
     PlayCueEx(ECue::ArmorHit,W*.8f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
     PlayCueEx(ECue::Impact,Weight>0||bHead?.85f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0?1.f:1.15f);
@@ -601,7 +620,7 @@ void AVeyrAudio::PlayStompLayers(const FVector& At,float S,bool bLanding)
 {
     // A dragon foot strike or landing: a random recipe over differently shaped samples, so consecutive ones differ.
     const int32 R=Rand.RandRange(0,2);
-    const float Heavy=FMath::Lerp(.75f,1.f,S);
+    const float Heavy=FMath::Lerp(.7f,.95f,S);
     if(PlayCueEx(ECue::DragonStep,Heavy,EPlace::World,At,NAME_None,0.f,0.f,R==1?2:3))++DragonSteps;
     if(R==0)PlayCueEx(ECue::Impact,FMath::Lerp(.6f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
     else if(R==1)PlayCueEx(ECue::Exposed,FMath::Lerp(.5f,.85f,S),EPlace::World,At,NAME_None,0.f,0.f,2);
@@ -633,8 +652,8 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
     {
         case EVeyrGroundContactClass::Footfall:
             TapEvent(TEXT("dragonFootfall"));
-            if(PlayCueEx(ECue::DragonStep,FMath::Lerp(.5f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
-            if(S>.5f)PlayCueEx(ECue::Impact,FMath::Lerp(.2f,.5f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
+            if(PlayCueEx(ECue::DragonStep,FMath::Lerp(.22f,.5f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
+            if(S>.5f)PlayCueEx(ECue::Impact,FMath::Lerp(.1f,.3f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
             break;
         case EVeyrGroundContactClass::Stomp:
             TapEvent(TEXT("dragonStomp"));
@@ -751,7 +770,7 @@ void AVeyrAudio::UpdatePresence(float DeltaSeconds)
     BreathClock-=DeltaSeconds;GrowlClock-=DeltaSeconds;
     if(BreathClock<=0.f)
     {
-        const float Vol=Move?.85f:Rec?.9f:.75f;
+        const float Vol=Move?.9f:Rec?.95f:.8f;
         const ECue Cue=bBreathExhaleNext?ECue::DragonBreathOut:ECue::DragonBreathIn;
         if(PlayCueEx(Cue,Vol,EPlace::Head))
         {
@@ -795,7 +814,7 @@ void AVeyrAudio::UpdateKnightFeet(float DeltaSeconds,float Speed)
             const bool Near=K->IsGrounded()&&Height<Limit;
             if(Near&&!bFootNearFloor[Side]&&Speed>60.f&&FootClock[Side]<=0.f)
             {
-                const float Vol=FMath::Lerp(.7f,1.1f,FMath::Clamp((Speed-60.f)/500.f,0.f,1.f));
+                const float Vol=FMath::Lerp(.45f,.8f,FMath::Clamp((Speed-60.f)/500.f,0.f,1.f));
                 TapEvent(TEXT("knightStep"));
                 // Near-field: the knight's own footsteps are not attenuated by the camera.
                 if(PlayCueEx(ECue::Footstep,Vol,EPlace::Flat))++KnightSteps;
