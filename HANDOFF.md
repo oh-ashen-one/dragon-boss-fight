@@ -1,3 +1,17 @@
+# Quality goal — paused by the owner on 2026-11-18 at about 23:30 ET, not finished
+
+Read `docs/quality-goal-20261118/RESULTS.md` first (what is installed, what is measured, what is known wrong, what is
+written but never run), then `QUALITY_GOAL.md` (the brief), `docs/quality-goal-20261118/LEDGER.md` (every step) and
+`docs/quality-goal-20261118/BUILDER_RULES.md`. Branch `fable/quality-goal-20261118`, pushed, not merged into `main`.
+
+- Installed: `~/Applications/Veyr/a20c600691d1` (source `956518d5`): phase A fixes (5 s knock-down, feet on the floor,
+  mirrored-toe repair, collision camera) plus the weight effects (dust, shake, hit reaction, trail).
+- Open bug in it: the camera can still look through the dragon when it is knocked down beside the knight.
+- Waiting for engine time, in order: camera third pass, sound, picture, giant camera and size, new knight (Greystone),
+  dragon playback. Each is on its own `fable/quality-goal-*` branch with worktrees under `~/veyr-quality-*`.
+- Do not resume without the owner's word. One game or engine process at a time; the session model directs, builders
+  build.
+
 # Planning with the owner — 2026-11-18, after the playtest goal closed. NOTHING IS STARTED.
 
 Branch **`fable/owner-feedback-20261118`** (pushed; `main` + backlog and audio-tool commits only, no game code changed).
