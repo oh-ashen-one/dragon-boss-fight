@@ -121,6 +121,13 @@ void AVeyrLightCheck::TickFrameReport()
     if(bFrameDone||!Knight)return;
     const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     const bool bFighting=Knight->HasEnteredEncounter()&&Mode&&!Mode->IsArenaIntroActive();
+    TraceClock+=Wall/1000.f;
+    if(TraceClock>=NextTraceSample)
+    {
+        NextTraceSample=TraceClock+.1f;
+        const TCHAR* PhaseName=Mode&&Mode->IsArenaIntroActive()?TEXT("intro"):bFighting?TEXT("fight"):TEXT("other");
+        ExposureTrace.Add(FString::Printf(TEXT("%.2f,%s,%.5f,%.5f,%.3f"),TraceClock,PhaseName,VeyrLook::LastExposure(),VeyrLook::LastSceneLuminance(),VeyrLook::FxExposureGain()));
+    }
     if(!bFrameRecording)
     {
         // Stills runs report too: the clock then starts with the first scripted shot.
@@ -134,6 +141,7 @@ void AVeyrLightCheck::TickFrameReport()
     if(FScreenshotRequest::IsScreenshotRequested())SkipFrames=FMath::Max(SkipFrames,3);
     if(SkipFrames>0){--SkipFrames;++SkippedTool;return;}
     FrameMs.Add(Wall);RecordedSeconds+=Wall/1000.f;
+    if(VeyrLook::LastExposure()>0.f)ExposureFrames.Add(VeyrLook::LastExposure());
     GameMs.Add(FPlatformTime::ToMilliseconds(GGameThreadTime));
     RenderMs.Add(FPlatformTime::ToMilliseconds(GRenderThreadTime));
     GpuMs.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)));
@@ -153,6 +161,20 @@ void AVeyrLightCheck::WriteFrameReport(bool bPartial)
     int32 Over=0;for(float V:FrameMs)Over+=V>17.5f;
     Root->SetNumberField(TEXT("framesOver17_5ms"),Over);
     Root->SetNumberField(TEXT("meanFps"),Mean(FrameMs)>0.f?1000.f/Mean(FrameMs):0.f);
+    // Exposure over the recorded frames, and its range in stops (build 16 manual exposure = 0.833).
+    Root->SetObjectField(TEXT("exposure"),Stats(ExposureFrames));
+    {
+        float Lo=0.f,Hi=0.f;
+        if(ExposureFrames.Num()){Lo=Percentile(ExposureFrames,.05f);Hi=Percentile(ExposureFrames,.95f);}
+        Root->SetNumberField(TEXT("exposureStopsP5toP95"),Lo>0.f?FMath::Log2(Hi/Lo):0.f);
+        Root->SetNumberField(TEXT("fxExposureLock"),VeyrLook::FxExposureLock());
+    }
+    Root->SetStringField(TEXT("exposureTrace"),TEXT("exposure-trace.csv"));
+    {
+        FString Csv=TEXT("seconds,phase,exposure,sceneLuminance,fxGain\n");
+        for(const FString& Line:ExposureTrace)Csv+=Line+TEXT("\n");
+        FFileHelper::SaveStringToFile(Csv,*FPaths::Combine(FrameDir,TEXT("exposure-trace.csv")));
+    }
     Root->SetStringField(TEXT("note"),StillsDir.IsEmpty()
         ?TEXT("wall-clock frame interval under the 60 fps cap; GPU ms is the headroom signal")
         :TEXT("stills mode: scripted poses, not a fight; frames around cuts and screenshots are skipped"));
@@ -333,7 +355,8 @@ void AVeyrLightCheck::TickStills(float DeltaSeconds)
             Row->SetStringField(TEXT("shot"),Shots[ShotIndex].Name);Row->SetStringField(TEXT("file"),FPaths::GetCleanFilename(PendingFile));
             Row->SetStringField(TEXT("segment"),Shots[ShotIndex].Segment.ToString());Row->SetBoolField(TEXT("segmentStarted"),bSegmentStarted);
             Row->SetNumberField(TEXT("dragonState"),static_cast<int32>(Dragon->State));Row->SetNumberField(TEXT("stateElapsed"),Dragon->GetStateElapsed());
-            Row->SetNumberField(TEXT("holdSeconds"),PhaseClock);Row->SetNumberField(TEXT("runSeconds"),TotalClock);
+            Row->SetNumberField(TEXT("holdSeconds"),PhaseClock);
+            Row->SetNumberField(TEXT("exposure"),VeyrLook::LastExposure());Row->SetNumberField(TEXT("fxGain"),VeyrLook::FxExposureGain());Row->SetNumberField(TEXT("runSeconds"),TotalClock);
             ShotRecords.Add(MakeShared<FJsonValueObject>(Row));
         }
         UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_CAPTURE %s state=%d elapsed=%.2f"),*Shots[ShotIndex].Name,static_cast<int32>(Dragon->State),Dragon->GetStateElapsed());

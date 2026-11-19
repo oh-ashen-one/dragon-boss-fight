@@ -1,5 +1,6 @@
 #include "VeyrImpactFx.h"
 #include "VeyrDragon.h"
+#include "VeyrLook.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Engine/StaticMesh.h"
@@ -75,12 +76,14 @@ void AVeyrImpactFx::BeginPlay()
         UMaterialInstanceDynamic* Dust=UMaterialInstanceDynamic::Create(SmokeMaterial,this);
         Dust->SetVectorParameterValue(TEXT("Tint"),T.DustTint);Dust->SetScalarParameterValue(TEXT("Brightness"),T.DustBrightness);
         ConfigureIsm(DustCards,Plane,Dust,CardCount,4);
+        VeyrLook::FollowExposureAuto(Dust);
     }
     if(Plane&&EmberMaterial)
     {
         UMaterialInstanceDynamic* Spark=UMaterialInstanceDynamic::Create(EmberMaterial,this);
         Spark->SetVectorParameterValue(TEXT("Tint"),T.SparkTint);Spark->SetScalarParameterValue(TEXT("Brightness"),T.SparkBrightness);
         ConfigureIsm(SparkStreaks,Plane,Spark,SparkCount,4);
+        VeyrLook::FollowExposureAuto(Spark);
     }
     if(!T.DebrisMesh.IsEmpty())
         if(UStaticMesh* Rock=LoadObject<UStaticMesh>(nullptr,*ObjectPath(T.DebrisMesh),nullptr,LOAD_Quiet|LOAD_NoWarn))ChipMesh=Rock;
@@ -123,10 +126,15 @@ void AVeyrImpactFx::BeginPlay()
             Component->SetupAttachment(GetRootComponent());Component->SetUsingAbsoluteLocation(true);
             Component->SetUsingAbsoluteRotation(true);Component->SetUsingAbsoluteScale(true);
             Component->RegisterComponent();
+            // Unlit sparks and flares were tuned under manual exposure; lit smoke follows the court's light.
+            VeyrLook::FollowExposureOnComponent(Component,this,ExposureMids);
             Components.Add(Component);ComponentAge.Add(100.f);ComponentLife.Add(0.f);++Pools[P].Num;
         }
         Pools[P].bAsset=Pools[P].Num>0;
     }
+    for(const TPair<UMaterialInterface*,UMaterialInstanceDynamic*>& Pair:ExposureMids)if(Pair.Value)ExposureMidRefs.Add(Pair.Value);
+    // Small moving shadow casters redraw their VSM pages every frame; dropped with the other shadow steps.
+    if(VeyrLook::RenderTier()>=2)DebrisChips->SetCastShadow(false);
     Diagnostic=FString::Printf(TEXT("%d effect systems loaded, %d missing (fallback cards); tuning: %s"),
         LoadedSystems.Num(),MissingSystems.Num(),*T.Diagnostic);
     UE_LOG(LogTemp,Display,TEXT("VEYR_IMPACT_FX %s"),*Diagnostic);

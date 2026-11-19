@@ -147,7 +147,7 @@ void AVeyrArena::BuildRelitLighting()
     S.bOverride_ColorGainShadows=true;S.ColorGainShadows=FVector4(.93f,.97f,1.08f,1.f);
     S.bOverride_ColorGainHighlights=true;S.ColorGainHighlights=FVector4(1.06f,1.f,.92f,1.f);
     S.bOverride_FilmToe=true;S.FilmToe=.60f;
-    S.bOverride_MotionBlurAmount=true;S.MotionBlurAmount=.35f;
+    S.bOverride_MotionBlurAmount=true;S.MotionBlurAmount=VeyrLook::MotionBlur()?.35f:0.f; // -VeyrNoMotionBlur
     S.bOverride_MotionBlurMax=true;S.MotionBlurMax=3.f;
     S.bOverride_MotionBlurPerObjectSize=true;S.MotionBlurPerObjectSize=0.f;
     CourtGrade->RegisterComponent();

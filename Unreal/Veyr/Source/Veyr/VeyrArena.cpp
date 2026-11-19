@@ -710,6 +710,10 @@ void AVeyrArena::BuildDistance()
     UStaticMesh* FlamePlane=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Plane.Plane"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     UMaterialInterface* FlameMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/FX/v3/M_VeyrBreathFlame.M_VeyrBreathFlame"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     UInstancedStaticMeshComponent* FlameCards=nullptr;
+    // New look: the unlit flame cards hold their tuned screen brightness under auto exposure (VeyrLook).
+    if(FlameMaterial&&VeyrLook::FxExposureLock()>0.f)
+        if(UMaterialInstanceDynamic* Follow=UMaterialInstanceDynamic::Create(FlameMaterial,this))
+            if(VeyrLook::FollowExposureAuto(Follow)>0){Materials.Add(Follow);FlameMaterial=Follow;}
     if(FlamePlane&&FlameMaterial)
     {
         FlameCards=MakeBatch(TEXT("CourtBrazierAtlasFlames"),FlamePlane,FlameMaterial);

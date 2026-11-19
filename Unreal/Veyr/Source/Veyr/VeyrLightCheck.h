@@ -44,7 +44,10 @@ private:
     double LastWall=0.0;
     /** Frames left out of the report: paused, or the frames around a cut or a screenshot. */
     int32 SkipFrames=0, SkippedPaused=0, SkippedTool=0;
-    TArray<float> FrameMs, GameMs, RenderMs, GpuMs;
+    TArray<float> FrameMs, GameMs, RenderMs, GpuMs, ExposureFrames;
+    /** 10 Hz exposure trace from spawn (intro included) to the report: t, phase, exposure, luminance. */
+    TArray<FString> ExposureTrace;
+    float TraceClock=0.f, NextTraceSample=0.f;
     void TickStills(float DeltaSeconds);
     void TickFrameReport();
     void WriteFrameReport(bool bPartial=false);

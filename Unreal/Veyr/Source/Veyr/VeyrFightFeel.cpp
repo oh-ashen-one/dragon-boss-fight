@@ -4,6 +4,7 @@
 #include "VeyrDragon.h"
 #include "VeyrImpactFx.h"
 #include "VeyrFeelTuning.h"
+#include "VeyrLook.h"
 #include "VeyrVisualDefinition.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrReplay.h"
@@ -94,6 +95,7 @@ void AVeyrFightFeel::BeginPlay()
         UMaterialInstanceDynamic* Material=UMaterialInstanceDynamic::Create(Parent,this);
         Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(.55f,.68f,.82f));
         Material->SetScalarParameterValue(TEXT("Brightness"),.85f);WeaponTrail->SetMaterial(0,Material);
+        VeyrLook::FollowExposureAuto(Material);
     }
     for(int32 I=0;I<24;++I)WeaponTrail->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
     if(UMaterialInterface* Parent=HitMarker->GetMaterial(0))
@@ -101,6 +103,7 @@ void AVeyrFightFeel::BeginPlay()
         auto* Material=UMaterialInstanceDynamic::Create(Parent,this);
         Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.86f,.58f));
         Material->SetScalarParameterValue(TEXT("Brightness"),4.f);HitMarker->SetMaterial(0,Material);
+        VeyrLook::FollowExposureAuto(Material);
     }
     HitMarker->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
     // B5: the flash on the dragon's own mesh. The authored overlay lights a radius around the blow; the
@@ -127,6 +130,7 @@ void AVeyrFightFeel::BeginPlay()
             RibbonMaterial->SetScalarParameterValue(TEXT("Opacity"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?.75f:.32f);
             RibbonMaterial->SetScalarParameterValue(TEXT("Brightness"),1.4f);
             Ribbon->SetMaterial(0,RibbonMaterial);
+            VeyrLook::FollowExposureAuto(RibbonMaterial);
             // Three edges per row: clear at the hilt side, full on a band near the tip, clear just past the tip.
             const int32 Verts=RibbonMaxRows*3;
             RibbonVerts.Init(FVector::ZeroVector,Verts);RibbonNormals.Init(FVector::UpVector,Verts);
@@ -397,7 +401,8 @@ void AVeyrFightFeel::UpdateMeshFlash(float RealDelta)
         if(OverlayMesh->GetOverlayMaterial()==MeshFlashMaterial)OverlayMesh->SetOverlayMaterial(nullptr);
         OverlayMesh.Reset();return;
     }
-    const float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,T.FlashFade));
+    // Additive and unlit: scaled with the exposure so a flash in a dark corner does not clip to white.
+    const float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,T.FlashFade))*VeyrLook::FxExposureGain();
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Intensity"),I);
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Opacity"),FMath::Clamp(.09f*I,0.f,.45f)); // the afterimage fallback's only control
 }
