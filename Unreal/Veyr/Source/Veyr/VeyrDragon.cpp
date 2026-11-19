@@ -161,6 +161,33 @@ float AVeyrDragon::ConfiguredBodyScale()
     return FMath::Clamp(Scale,.5f,3.f);
 }
 
+namespace
+{
+    int32 GSweepCursor=INDEX_NONE-1,GSweepLast=INDEX_NONE;
+    void ParseSweep()
+    {
+        if(GSweepCursor!=INDEX_NONE-1)return;
+        GSweepCursor=INDEX_NONE;FString Range,A,B;
+        if(FParse::Value(FCommandLine::Get(),TEXT("VeyrSeedSweep="),Range)&&Range.Split(TEXT("-"),&A,&B))
+        {GSweepCursor=FMath::Clamp(FCString::Atoi(*A),0,63);GSweepLast=FMath::Clamp(FCString::Atoi(*B),GSweepCursor,63);}
+    }
+}
+
+bool AVeyrDragon::SweepSeed(int32& OutSeed)
+{
+    ParseSweep();
+    if(GSweepCursor<0)return false;
+    OutSeed=GSweepCursor==0?20261117:GSweepCursor; // the band seeds: the replay default, then 1, 2, 3...
+    return true;
+}
+
+bool AVeyrDragon::AdvanceSweep()
+{
+    ParseSweep();
+    if(GSweepCursor<0||GSweepCursor>=GSweepLast)return false;
+    ++GSweepCursor;return true;
+}
+
 float AVeyrDragon::ConfiguredPaceScale()
 {
     // Owner 2026-11-05: movement reads as about 0.75x; 1/0.75 = 1.33.
@@ -187,7 +214,7 @@ void AVeyrDragon::BeginPlay()
     bAggression=!bLegacyPacing&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBrain"));
     SetActorScale3D(FVector(BodyScale));
     FString ReplayName;
-    if(!FParse::Value(FCommandLine::Get(),TEXT("VeyrBrainSeed="),BrainSeed))
+    if(!SweepSeed(BrainSeed)&&!FParse::Value(FCommandLine::Get(),TEXT("VeyrBrainSeed="),BrainSeed))
         BrainSeed=FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),ReplayName)?20261117:static_cast<int32>(FPlatformTime::Cycles64()&0x7fffffff);
     BrainRandom.Initialize(BrainSeed);RollComboBudget();
     // Owner 2026-11-05: about 30% more health than the 650 baseline; tuned with the aggression pass.
