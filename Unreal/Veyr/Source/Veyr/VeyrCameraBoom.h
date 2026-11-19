@@ -117,6 +117,8 @@ public:
     static bool FadeRigSwitchedOn();
     float FadeDownDeg=10.f,FadeUpDeg=25.f,FadeMinArmFraction=.6f,FadeMinGapCm=120.f,FadeShortenRate=5.f;
     float FadeNearCm=80.f,FadeFarCm=220.f,FadeSightFloor=.22f,FadeSightEaseSeconds=.2f,FadeMaxStepCm=36.f,FadeCutCm=600.f;int32 FadeStepLimitedFrames=0;
+    /** 6b dragon framing (2026-11-19): eased view lift toward the head/torso. -VeyrNoDragonFraming turns it off. */
+    bool bDragonFraming=true;FRotator FadeDragonLift=FRotator::ZeroRotator;int32 FadeDragonLiftFrames=0;
     float FadeArenaFraction=1.f,FadeDragonFraction=1.f,FadeSight=0.f;bool bFadeArenaPull=false,bFadeLensInside=false,bFadeApplied=false;
     int32 FadeSightFrames=0,FadeInsideFrames=0,FadeShortFrames=0;uint64 FadeArenaPullFrame=0;
     /** The lock target point the fifth-pass audit frames (dragon chest: half-way up to the head, a quarter toward it). */

@@ -307,6 +307,49 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
         const float FeetBelow=FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(Lens.Z-(Foot.Z+10.0)),Horizontal));
         VR.Pitch=FMath::Min(static_cast<float>(VR.Pitch),VHalf*.88f-FeetBelow);
         VR.Pitch=FMath::Clamp(static_cast<float>(VR.Pitch),-FadeDownDeg,FadeUpDeg);
+        // 6b. The dragon in shot: if no head/torso point is inside the frame, lift the view (pitch first, then a bounded
+        //     yaw) toward the nearest one while his feet stay inside the bottom edge (knight in the lower part of the
+        //     frame). Eased; the pitch band and the turn clamp still apply. -VeyrNoDragonFraming turns it off.
+        const AVeyrDragon* FD=Dragon.Get();
+        FRotator LiftTarget=FRotator::ZeroRotator;
+        if(bDragonFraming&&FD&&!FD->IsDead())
+        {
+            const float HalfH=Fov*.5f,Aspect=ViewAspect();
+            TArray<FVector,TInlineAllocator<8>> Pts;Pts.Add(FD->GetHeadLocation());
+            FVector Chest,NeckBase,Pelvis;
+            if(FD->GetTorsoLocations(Chest,NeckBase,Pelvis))
+            {
+                const FVector Down=-FVector::UpVector*180.f*S;const FVector Mid=(Chest+Pelvis)*.5;
+                Pts.Append({Chest,NeckBase,Pelvis,Mid,Chest+Down,Pelvis+Down,Mid+Down});
+            }
+            auto AnyIn=[&](const FRotator& R,float M){const FQuat Q=R.Quaternion();for(const FVector& P:Pts){float U,V;if(ProjectToView(P,Lens,Q,HalfH*2.f,Aspect,U,V)&&FMath::Abs(U)<=M&&FMath::Abs(V)<=M)return true;}return false;};
+            const bool bInBare=AnyIn(VR,.85f),bIn=bInBare||AnyIn(VR+FadeDragonLift,.92f);
+            if(bInBare)LiftTarget=FRotator::ZeroRotator; // in shot without help: settle back
+            else if(!bIn)
+            {
+                const float PitchMax=FMath::Min(FadeUpDeg,VHalf*.95f-FeetBelow);
+                float Best=TNumericLimits<float>::Max();
+                for(const FVector& P:Pts)
+                {
+                    const FRotator To=(P-Lens).Rotation();
+                    const float DYaw=FMath::FindDeltaAngleDegrees(static_cast<float>(VR.Yaw),static_cast<float>(To.Yaw));
+                    const float YawNeed=FMath::Sign(DYaw)*FMath::Max(0.f,FMath::Abs(DYaw)-HalfH*.8f);
+                    const float PitchNeed=FMath::Max(0.f,static_cast<float>(To.Pitch)-VHalf*.8f-static_cast<float>(VR.Pitch));
+                    if(FMath::Abs(YawNeed)>HalfH*.6f||VR.Pitch+PitchNeed>PitchMax+.01f)continue;
+                    const float Cost=PitchNeed+FMath::Abs(YawNeed)*1.5f;
+                    if(Cost<Best){Best=Cost;LiftTarget=FRotator(PitchNeed,YawNeed,0.f);}
+                }
+                if(Best==TNumericLimits<float>::Max())LiftTarget=FadeDragonLift; // nothing reachable: hold
+            }
+            else LiftTarget=FadeDragonLift; // in shot only with the lift: hold it
+            LiftTarget.Pitch=FMath::Min(static_cast<float>(LiftTarget.Pitch),FMath::Max(0.f,FMath::Min(FadeUpDeg,VHalf*.95f-FeetBelow)-static_cast<float>(VR.Pitch)));
+        }
+        FadeDragonLift=FMath::RInterpTo(FadeDragonLift,LiftTarget,Dt,LiftTarget.IsNearlyZero()?1.5f:5.f);
+        FadeDragonLiftFrames+=!FadeDragonLift.IsNearlyZero(.5f);
+        const float PitchBeforeLift=static_cast<float>(VR.Pitch);
+        VR+=FadeDragonLift;
+        VR.Pitch=FMath::Min(static_cast<float>(VR.Pitch),FMath::Max(PitchBeforeLift,VHalf*.95f-FeetBelow));
+        VR.Pitch=FMath::Clamp(static_cast<float>(VR.Pitch),-FadeDownDeg,FadeUpDeg);
     }
     FQuat View=VR.Quaternion();
     if(bSafeLastView)

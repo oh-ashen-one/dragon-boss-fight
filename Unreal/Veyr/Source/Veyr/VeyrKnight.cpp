@@ -249,6 +249,8 @@ void AVeyrKnight::BeginPlay()
             TEXT("/Game/Characters/Customuse/KnightB/v047contiguous/DA_KnightB.DA_KnightB"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     // Each completion feature keeps its "before" behind a flag (boss-fight-blueprint principle 8).
     bLockOnStrafeEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoLockOnStrafe"));
+    bLockMouseOffset=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyLockMouseHold"));
+    bLockMoveFollowsCamera=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyLockMoveBasis"));
     bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
     float RequestedRunStopBlend=0.f;
     bSprintContactRevision=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintContactRevision"));
@@ -572,7 +574,7 @@ void AVeyrKnight::TryDirectionalBlink()
     FVector Direction=MoveIntent.GetSafeNormal2D();
     if(!bReplayControlled)
     {
-        const float Yaw=bLockedOn&&IsValid(Boss)?(Boss->GetActorLocation()-GetActorLocation()).Rotation().Yaw:
+        const float Yaw=bLockedOn&&IsValid(Boss)?LockedMoveYaw():
             Controller?Controller->GetControlRotation().Yaw:GetActorRotation().Yaw;
         const FRotationMatrix Basis(FRotator(0,Yaw,0));
         Direction=(Basis.GetUnitAxis(EAxis::X)*(float(bForwardHeld)-float(bBackHeld))+
@@ -756,7 +758,7 @@ void AVeyrKnight::SetGuard(bool bHeld)
         BeginAction(EVeyrKnightAction::Guard, 0.f);
 }
 
-void AVeyrKnight::ToggleLockOn() { if (!IsTerminal() && IsValid(Boss)) bLockedOn = !bLockedOn; }
+void AVeyrKnight::ToggleLockOn() { if (!IsTerminal() && IsValid(Boss)) {bLockedOn = !bLockedOn;LockLookOffset=LockOffsetApplied=FRotator::ZeroRotator;LockOffsetHold=0.f;} }
 
 void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnblockable)
 {
@@ -827,7 +829,7 @@ void AVeyrKnight::Tick(float DeltaSeconds)
     BlinkCooldownRemaining=FMath::Max(0.f,BlinkCooldownRemaining-DeltaSeconds);
     RegenDelay = FMath::Max(0.f, RegenDelay - DeltaSeconds);
     DamageGrace = FMath::Max(0.f, DamageGrace - DeltaSeconds);
-    const float FacingYaw=bLockedOn&&IsValid(Boss)?(Boss->GetActorLocation()-GetActorLocation()).Rotation().Yaw:
+    const float FacingYaw=bLockedOn&&IsValid(Boss)?LockedMoveYaw():
         Controller?Controller->GetControlRotation().Yaw:GetActorRotation().Yaw;
     const FRotator ViewYaw(0.f,FacingYaw,0.f);
     MoveIntent = bReplayControlled ? ReplayMove.GetClampedToMaxSize(1.f) :
@@ -1178,6 +1180,14 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             Desired.Pitch=FMath::Clamp(Desired.Pitch,-35.f,AutoLockPitchCeiling);
             // Avoid spinning underneath a target whose head crosses overhead.
             if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;
+            if(bLockMouseOffset)
+            {
+                LockOffsetHold=FMath::Max(0.f,LockOffsetHold-DeltaSeconds);
+                if(LockOffsetHold<=0.f)LockLookOffset=FMath::RInterpTo(LockLookOffset,FRotator::ZeroRotator,DeltaSeconds,2.5f);
+                // The bend is immediate (the player's hand), the lock's own tracking keeps its pace.
+                Look+=LockLookOffset-LockOffsetApplied;LockOffsetApplied=LockLookOffset;
+                Desired+=LockLookOffset;
+            }
             Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
         }
         else if(bFrameAssist&&!bLockedOn&&IsValid(Boss)&&!Boss->IsDead()&&ManualCameraRemaining<=0.f&&
@@ -2409,8 +2419,25 @@ bool AVeyrKnight::MouseLookReady() const
 {
     return HumanInputEnabled()&&GFrameCounter>=MouseLookEnableAfterFrame&&FPlatformTime::Seconds()>=MouseLookEnableAfterTime;
 }
-void AVeyrKnight::LookYaw(float Value) { if (MouseLookReady() && FMath::Abs(Value)>.001f) { ManualCameraRemaining=1.8f; AddControllerYawInput(Value * .7f * MouseSensitivity); } }
-void AVeyrKnight::LookPitch(float Value) { if (MouseLookReady() && FMath::Abs(Value)>.001f) { ManualCameraRemaining=1.8f; AddControllerPitchInput(-Value * .6f * MouseSensitivity); } }
+void AVeyrKnight::LookYaw(float Value)
+{
+    if(!MouseLookReady()||FMath::Abs(Value)<=.001f)return;
+    if(bLockMouseOffset&&bLockedOn&&IsValid(Boss)&&!Boss->IsDead())
+    {LockLookOffset.Yaw=FMath::Clamp(static_cast<float>(LockLookOffset.Yaw)+Value*.7f*MouseSensitivity,-60.f,60.f);LockOffsetHold=.5f;return;}
+    ManualCameraRemaining=1.8f;AddControllerYawInput(Value*.7f*MouseSensitivity);
+}
+void AVeyrKnight::LookPitch(float Value)
+{
+    if(!MouseLookReady()||FMath::Abs(Value)<=.001f)return;
+    if(bLockMouseOffset&&bLockedOn&&IsValid(Boss)&&!Boss->IsDead())
+    {LockLookOffset.Pitch=FMath::Clamp(static_cast<float>(LockLookOffset.Pitch)-Value*.6f*MouseSensitivity,-20.f,20.f);LockOffsetHold=.5f;return;}
+    ManualCameraRemaining=1.8f;AddControllerPitchInput(-Value*.6f*MouseSensitivity);
+}
+float AVeyrKnight::LockedMoveYaw() const
+{
+    if(bLockMoveFollowsCamera&&CombatCamera)return static_cast<float>(CombatCamera->GetComponentRotation().Yaw);
+    return static_cast<float>((Boss->GetActorLocation()-GetActorLocation()).Rotation().Yaw);
+}
 void AVeyrKnight::ZoomIn() { /* Fixed close framing; wheel input cannot pull away from the player. */ }
 void AVeyrKnight::ZoomOut() { /* Fixed close framing; wheel input cannot pull away from the player. */ }
 void AVeyrKnight::GuardPressed() { if (HumanInputEnabled()) SetGuard(true); }

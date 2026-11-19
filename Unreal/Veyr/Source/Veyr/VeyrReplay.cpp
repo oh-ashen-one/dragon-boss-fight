@@ -3199,7 +3199,11 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     {
         if(bAwaitingNextReplayWorld)return;
         FinishClock+=DeltaSeconds;
-        if(FinishClock>3.f)
+        // Round 2 (critic 2026-11-19, ported from e076cca): a filmed run holds until the death fall has settled
+        // (-VeyrShortFinishHold: 3 s).
+        static const bool bShortHold=FParse::Param(FCommandLine::Get(),TEXT("VeyrShortFinishHold"));
+        const float Hold=VideoFPS>0&&!bVideoStopped&&!bShortHold?7.5f:3.f;
+        if(FinishClock>Hold)
         {
             StopVideoCapture(TEXT("replay completed"));SaveEvidence(true);bFinalSaved=true;
             FString Next;

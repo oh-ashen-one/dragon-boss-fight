@@ -16,6 +16,7 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('run', type=Path)
 p.add_argument('--output', type=Path, required=True)
 p.add_argument('--world-index', type=int, default=0)
+p.add_argument('--clock', choices=('callback', 'requested'), default='callback', help='passed to encode_video.py')
 a = p.parse_args()
 run = a.run.resolve(strict=True)
 manifest = run / 'native-video' / 'frames.jsonl'
@@ -27,7 +28,7 @@ assert not a.output.exists(), 'refusing to overwrite the output'
 silent = a.output.with_suffix('.silent.mp4')
 if not silent.exists():
     subprocess.run([sys.executable, str(Path(__file__).with_name('encode_video.py')), str(manifest),
-                    '--world-index', str(a.world_index), '--output', str(silent), '--threads', '4'], check=True)
+                    '--world-index', str(a.world_index), '--output', str(silent), '--threads', '4', '--clock', a.clock], check=True)
 first = next(json.loads(line) for line in manifest.read_text().splitlines()
              if line.strip() and json.loads(line).get('type') == 'frame' and json.loads(line).get('worldIndex', 0) == a.world_index)
 # A run that restarts the world after its ending leaves one recording per world. Their file names carry the

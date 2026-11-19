@@ -2951,6 +2951,7 @@ bool AVeyrDragon::SetCameraFade(const FVector& Lens,const FVector& Focus,float N
         Material->SetScalarParameterValue(TEXT("VeyrBackDiscard"),bBackDiscard?1.f:0.f);
     }
     bCameraFadeBackDiscardApplied=bBackDiscard;CameraFadeSightApplied=FMath::Clamp(Amount,0.f,1.f);CameraFadeFrame=GFrameCounter;
+    CameraFadeLens=Lens;CameraFadeFocus=Focus;CameraFadeFarCm=FMath::Max(NearCm+1.f,FarCm);CameraFadeSightRadius=FMath::Max(1.f,SightRadius);
     CameraOcclusionDiagnostic=TEXT("Camera fade applied (fifth pass: distance + sight fade, back faces clipped)");
     return true;
 }
@@ -3009,4 +3010,18 @@ bool AVeyrDragon::GetTorsoLocations(FVector& Chest,FVector& NeckBase,FVector& Pe
     if(!bSolidBodyReady||!ImportedPresentation||SolidChestBone.IsNone()||SolidPelvisBone.IsNone()||SolidNeckBaseBone.IsNone())return false;
     auto Bone=[&](FName Name,FVector& Out){const int32 I=ImportedPresentation->GetBoneIndex(Name);if(I==INDEX_NONE)return false;Out=ImportedPresentation->GetBoneTransform(I).GetLocation();return true;};
     return Bone(SolidChestBone,Chest)&&Bone(SolidNeckBaseBone,NeckBase)&&Bone(SolidPelvisBone,Pelvis);
+}
+
+bool AVeyrDragon::CameraFadeCovers(const FVector& P,float PadCm) const
+{
+    // Same regions as the fade material: within FadeFar of the lens, or inside the lens-to-knight sight capsule while
+    // the sight fade is on. Padded by the caller's radius (a flash's reach).
+    if(!bCameraFadeMaterials||GFrameCounter>CameraFadeFrame+2)return false;
+    if(FVector::Dist(P,CameraFadeLens)<CameraFadeFarCm+PadCm)return true;
+    if(CameraFadeSightApplied<=.01f)return false;
+    const FVector Seg=CameraFadeFocus-CameraFadeLens;const double L=Seg.Size();
+    if(L<1.0)return false;
+    const double Along=FVector::DotProduct(P-CameraFadeLens,Seg/L);
+    if(Along<=0.0||Along>=L)return false;
+    return FVector::Dist(P,CameraFadeLens+Seg/L*Along)<CameraFadeSightRadius+PadCm;
 }

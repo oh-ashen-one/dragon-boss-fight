@@ -38,7 +38,7 @@ void UVeyrCameraBoom::BeginPlay()
     FParse::Value(Cmd,TEXT("VeyrRigOverPitch="),RigOverheadPitchDeg);FParse::Value(Cmd,TEXT("VeyrRigAssistDown="),RigAssistDownDeg);FParse::Value(Cmd,TEXT("VeyrRigMaxUp="),RigMaxUpDeg);
     FParse::Value(Cmd,TEXT("VeyrRigFootprint="),RigFootprintCm);
     FParse::Value(Cmd,TEXT("VeyrFadeNear="),FadeNearCm);FParse::Value(Cmd,TEXT("VeyrFadeFar="),FadeFarCm);FParse::Value(Cmd,TEXT("VeyrFadeMinArm="),FadeMinArmFraction);
-    FParse::Value(Cmd,TEXT("VeyrFadeUp="),FadeUpDeg);FParse::Value(Cmd,TEXT("VeyrFadeDown="),FadeDownDeg);FParse::Value(Cmd,TEXT("VeyrFadeSightFloor="),FadeSightFloor);FParse::Value(Cmd,TEXT("VeyrFadeMaxStep="),FadeMaxStepCm);if(FParse::Param(Cmd,TEXT("VeyrFadeNoStepLimit")))FadeMaxStepCm=0.f;FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
+    FParse::Value(Cmd,TEXT("VeyrFadeUp="),FadeUpDeg);FParse::Value(Cmd,TEXT("VeyrFadeDown="),FadeDownDeg);FParse::Value(Cmd,TEXT("VeyrFadeSightFloor="),FadeSightFloor);FParse::Value(Cmd,TEXT("VeyrFadeMaxStep="),FadeMaxStepCm);if(FParse::Param(Cmd,TEXT("VeyrFadeNoStepLimit")))FadeMaxStepCm=0.f;bDragonFraming=!FParse::Param(Cmd,TEXT("VeyrNoDragonFraming"));FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
     // Fourth pass: the knight stays inside the central 80 % of the frame; the lens may open further.
     if(!bLegacySafety){KnightScreenMargin=FMath::Max(KnightScreenMargin,.1f);MaxFovBoostDeg=FMath::Max(MaxFovBoostDeg,14.f);}
     FindDragon();
@@ -1075,7 +1075,7 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
         N(TEXT("fadeRigSightFrames"),FadeSightFrames);N(TEXT("fadeRigInsideFrames"),FadeInsideFrames);N(TEXT("fadeRigShortenedFrames"),FadeShortFrames);
         Times(TEXT("fadeInsideSeconds"),A.FadeInsideSeconds);Times(TEXT("fadeUnreadableSeconds"),A.FadeUnreadableSeconds);Times(TEXT("fadeTallSeconds"),A.FadeTallSeconds);
         N(TEXT("fadeDragonInFrameShare"),A.FadeFrames?double(A.FadeDragonVisible)/A.FadeFrames:0.0);N(TEXT("fadeDragonHeadInFrameShare"),A.FadeFrames?double(A.FadeDragonHeadVisible)/A.FadeFrames:0.0);
-        N(TEXT("fadeJumpsOver40Cm"),A.FadeJumps);N(TEXT("fadeCuts"),A.FadeCuts);N(TEXT("fadeStepLimitedFrames"),FadeStepLimitedFrames);
+        N(TEXT("fadeJumpsOver40Cm"),A.FadeJumps);N(TEXT("fadeCuts"),A.FadeCuts);N(TEXT("fadeStepLimitedFrames"),FadeStepLimitedFrames);N(TEXT("fadeDragonLiftFrames"),FadeDragonLiftFrames);
         Times(TEXT("fadeDragonOutSeconds"),A.FadeDragonOutSeconds);Times(TEXT("fadeJumpSeconds"),A.FadeJumpSeconds);
     }
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);

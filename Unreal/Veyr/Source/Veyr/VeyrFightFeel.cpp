@@ -496,10 +496,17 @@ void AVeyrFightFeel::StartMeshFlash(USkeletalMeshComponent* Mesh,const FVector& 
     // Only take the overlay slot when nobody else uses it, and give it back when done.
     if(Mesh->GetOverlayMaterial()&&Mesh->GetOverlayMaterial()!=MeshFlashMaterial)return;
     const FVeyrFeelTuning& T=VeyrFeelTuning();
+    // Camera fifth pass: the overlay ignores the fade mask, so on a thinned (faded) part it drew a cream ghost.
+    // A faded part does not flash; the contact light still does. -VeyrFlashOverFade restores the old order.
+    static const bool bFlashOverFade=FParse::Param(FCommandLine::Get(),TEXT("VeyrFlashOverFade"));
+    if(!bFlashOverFade)
+        if(const AVeyrDragon* D=Cast<AVeyrDragon>(Mesh->GetOwner()))
+            if(D->CameraFadeCovers(Position,(T.FlashRadiusCm+T.FlashRadiusGainCm*Weight)*FMath::Sqrt(FMath::Max(.25f,static_cast<float>(Mesh->GetComponentScale().GetAbsMax())))))
+            {++MeshFlashesSkippedForFade;return;}
     if(OverlayMesh.IsValid()&&OverlayMesh.Get()!=Mesh&&OverlayMesh->GetOverlayMaterial()==MeshFlashMaterial)OverlayMesh->SetOverlayMaterial(nullptr);
     OverlayMesh=Mesh;Mesh->SetOverlayMaterial(MeshFlashMaterial);
     const float Scale=FMath::Max(.25f,static_cast<float>(Mesh->GetComponentScale().GetAbsMax()));
-    MeshFlashMaterial->SetVectorParameterValue(TEXT("HitPos"),FLinearColor(Position.X,Position.Y,Position.Z,0.f));
+    MeshFlashMaterial->SetVectorParameterValue(TEXT("HitPos"),FLinearColor(Position.X,Position.Y,Position.Z,0.f));MeshFlashHitPos=Position;
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Radius"),(T.FlashRadiusCm+T.FlashRadiusGainCm*Weight)*FMath::Sqrt(Scale));
     MeshFlashMaterial->SetVectorParameterValue(TEXT("FlashColor"),FLinearColor(1.f,.82f,.6f));
     MeshFlashMaterial->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.78f,.55f));
@@ -512,6 +519,10 @@ void AVeyrFightFeel::UpdateMeshFlash(float RealDelta)
     if(!MeshFlashMaterial||!OverlayMesh.IsValid())return;
     MeshFlashAge+=RealDelta;
     const FVeyrFeelTuning& T=VeyrFeelTuning();
+    static const bool bFlashOverFade=FParse::Param(FCommandLine::Get(),TEXT("VeyrFlashOverFade"));
+    if(!bFlashOverFade)
+        if(const AVeyrDragon* D=Cast<AVeyrDragon>(OverlayMesh->GetOwner()))
+            if(D->CameraFadeCovers(MeshFlashHitPos,0.f))MeshFlashAge=T.FlashLife;
     if(MeshFlashAge>=T.FlashLife)
     {
         if(OverlayMesh->GetOverlayMaterial()==MeshFlashMaterial)OverlayMesh->SetOverlayMaterial(nullptr);
@@ -851,7 +862,7 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence(bool bStatic) const
     F->SetNumberField(TEXT("flinches"),FlinchEvents);F->SetNumberField(TEXT("spineFlinches"),SpineFlinches);
     F->SetNumberField(TEXT("maxFlinchDegrees"),MaxFlinchDegrees);F->SetNumberField(TEXT("flinchBones"),FlinchBoneCount);
     F->SetNumberField(TEXT("flinchLegRootsHeld"),LegCompensations);F->SetStringField(TEXT("flinchChain"),FlinchDiagnostic);
-    F->SetNumberField(TEXT("meshFlashes"),MeshFlashes);F->SetStringField(TEXT("meshFlash"),FlashDiagnostic);
+    F->SetNumberField(TEXT("meshFlashes"),MeshFlashes);F->SetNumberField(TEXT("meshFlashesSkippedForFade"),MeshFlashesSkippedForFade);F->SetStringField(TEXT("meshFlash"),FlashDiagnostic);
     F->SetNumberField(TEXT("hitStops"),HitStopEvents);F->SetNumberField(TEXT("slowTails"),SlowTails);
     F->SetNumberField(TEXT("zoomPunches"),ZoomPunches);F->SetNumberField(TEXT("hurtKicks"),HurtKicks);
     F->SetObjectField(TEXT("imageShift"),ImageShiftEvidence());

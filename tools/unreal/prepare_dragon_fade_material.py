@@ -8,7 +8,7 @@ Job: env VEYR_FADE_JOB=<json> with {"report": "<dir under Local/>"}.
 For every tunnel material the runtime dragon can bind (the polish definition's CameraOcclusionMaterial and the
 slot materials of its skeletal meshes), a clone <Name>_Fade goes to /Game/Characters/Customuse/RuntimePolish/Fade
 (always cooked). The clone keeps the source PBR graph; only the tunnel Custom node's code and inputs change and its
-output bypasses the temporal dither (own screen-space ordered noise: a stable stipple, no smear). Sources are never
+output bypasses the temporal dither (own screen-space interleaved noise, stepped with the TAA frame index). Sources are never
 modified. The knight definition's materials are only inspected (blend mode, two-sided, parameters).
 
 Mask (all world cm): 1 = keep, 0 = clip.
@@ -47,7 +47,7 @@ if (SightAmount > 0.0 && lengthSquared > 1.0)
     {
         float radius = max(SightRadius, 1.0);
         float radial = length(toLens - seg * (along / segmentLength));
-        float inCapsule = 1.0 - smoothstep(radius * 0.75, radius, radial);
+        float inCapsule = 1.0 - smoothstep(radius * 0.55, radius, radial);
         float knightEnd = smoothstep(0.0, radius * 0.35, segmentLength - along);
         keep = min(keep, lerp(1.0, SightFloor, saturate(SightAmount) * inCapsule * knightEnd));
     }
@@ -56,6 +56,9 @@ if (SightAmount > 0.0 && lengthSquared > 1.0)
 if (Parameters.TwoSidedSign < 0.0 && (BackDiscard > 0.0 || keep < 0.999)) return 0.0;
 if (keep >= 0.999) return 1.0;
 float2 pixel = Parameters.SvPosition.xy;
+// Interleaved gradient noise stepped with TAA's own frame index (as DitherTemporalAA does), so the history
+// resolves the stipple into an even thinning instead of a fixed pattern that sparkles on moving skin.
+pixel += 5.588238 * View.TemporalAAParams.x;
 float noise = frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
 return keep > noise ? 1.0 : 0.0;
 '''.strip()

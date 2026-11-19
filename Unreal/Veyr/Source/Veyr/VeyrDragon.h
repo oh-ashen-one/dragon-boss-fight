@@ -116,6 +116,9 @@ public:
      * Lens -> Focus of SightRadius; back faces clipped where a fade acts, everywhere when bBackDiscard. False (and
      * nothing applied) when the fade materials are not bound. */
     bool SetCameraFade(const FVector& Lens,const FVector& Focus,float NearCm,float FarCm,float SightRadius,float Amount,float SightFloor,bool bBackDiscard);
+    /** True while the camera fade thins the body at P (padded by PadCm): a hit flash there must not draw over the fade. */
+    bool CameraFadeCovers(const FVector& P,float PadCm) const;
+    FVector CameraFadeLens=FVector::ZeroVector,CameraFadeFocus=FVector::ZeroVector;float CameraFadeFarCm=0.f,CameraFadeSightRadius=0.f;
     /** Fade materials bound (fifth pass) and what the last SetCameraFade really applied (audit). */
     bool bCameraFadeMaterials=false,bCameraFadeBackDiscardApplied=false;float CameraFadeSightApplied=0.f;uint64 CameraFadeFrame=0;
 

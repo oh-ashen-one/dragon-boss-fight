@@ -414,6 +414,13 @@ private:
     FVector ContactCameraFocus=FVector::ZeroVector;
     bool bContactCameraFocusInitialized=false;
     float ManualCameraRemaining=0.f;
+    /** D1 (2026-11-19): while locked, the mouse bends the lock (offset that eases back after LockOffsetHoldSeconds)
+     * instead of suspending it for 1.8 s. -VeyrLegacyLockMouseHold restores the suspension. */
+    bool bLockMouseOffset=true;FRotator LockLookOffset=FRotator::ZeroRotator,LockOffsetApplied=FRotator::ZeroRotator;float LockOffsetHold=0.f;
+    /** D2 (2026-11-19): while locked, movement keys follow the camera's yaw, not the line to the dragon.
+     * -VeyrLegacyLockMoveBasis restores the dragon line. */
+    bool bLockMoveFollowsCamera=true;
+    float LockedMoveYaw() const;
     float BladeContactRadius=18.f;
     float CameraFloorZ = 0.f;
     float CameraObstructionHold = 0.f;
