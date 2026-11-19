@@ -923,7 +923,7 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     }
     A.OutsideCentre+=Centre<4;A.KnightInFrame+=InFrame>=4&&!bRuleHidden;
     if(!bRuleHidden){++A.VisibleFrames;A.KnightInFrameVisible+=InFrame>=4;}
-    if(!bRuleHidden&&InFrame<4){Note(A.OutFrameSeconds,Seconds);A.OutFrameNear+=Surface<150.f;A.OutFramePitchUp+=View.Pitch>5.f;A.OutFrameOverhead+=OverheadAlpha>.5f;A.OutFrameDistanceSum+=Surface;}
+    if(!bRuleHidden&&InFrame<4){Note(A.OutFrameSeconds,Seconds);A.OutFrameNear+=Surface<150.f;A.OutFramePitchUp+=View.Rotator().Pitch>5.0;A.OutFrameOverhead+=OverheadAlpha>.5f;A.OutFrameDistanceSum+=Surface;}
     const bool bHalf=Seen*2>=7;A.HalfVisible+=bHalf;
     const bool bHidden=Seen==0;A.FullyHidden+=bHidden;
     A.HiddenRunSeconds=bHidden?A.HiddenRunSeconds+Dt:0.f;A.LongestHiddenSeconds=FMath::Max(A.LongestHiddenSeconds,A.HiddenRunSeconds);
