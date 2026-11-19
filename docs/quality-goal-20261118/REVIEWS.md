@@ -156,3 +156,19 @@ needs ears (whether the sounds please, whether the low end booms). Full text: `L
 
 Consequence: a short third pass on the three faults plus stomp variety and the fire onset, then the sound branch merges.
 
+## Sound blind review 4 — 2026-11-19 18:35 ET, second pass against third pass (our own two mixes)
+
+Opus critic, sides hidden, 80 s of each of our two sound captures (`veyr-b2sound-victory3.mp4`, pass 2, `9605a47`;
+`veyr-b2sound-victory4.mp4`, pass 3, `a68f67d`).
+
+**Verdict: PASS 2 SLIGHTLY BETTER.** Pass 2 keeps a clear order of events (13.4 dB from the loudest kind to the
+quietest; pass 3: 7.0 dB). In pass 3 the knight's footsteps are louder than the dragon's walking steps, slams stand
+only 4 dB over walking steps, and weapon hits are buried (2-8 kHz peak -27.3 dB against -18.1). Pass 3 wins on headroom
+(no full-scale samples; pass 2 clips at +0.2 dBTP) and on a centred image (pass 2 leans right by 2.8 dB). Neither mix
+turns the low end into a continuous rumble. In both, low thumps play while the dragon flies, the landing is quieter
+than an ordinary slam, and the hit sound starts 150-185 ms after the flash (to be settled on the game clock). Full
+text: `Local/quality-goal/review-S-blind4-passes.md`.
+
+Consequence: pass 4 = pass 2's hierarchy and hit clarity with pass 3's headroom and balance, then a fresh blind review
+against the reference before the sound branch merges.
+
