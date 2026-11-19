@@ -44,6 +44,7 @@ import time
 ENV_TOKEN = 'VEYR_ENGINE_LOCK_HELD'
 EXIT_TIMEOUT = 75
 DEFAULT_WAIT = 7200
+LONG_HOLD_SECONDS = float(os.environ.get('VEYR_ENGINE_LONG_HOLD_SECONDS') or 360)  # a hold longer than this is logged as a long hold
 ANNOUNCE_EVERY = 60.0
 POLL = 0.25
 
@@ -103,9 +104,9 @@ def describe_holder(holder, now=None):
     now = time.time() if now is None else now
     if not holder:
         return 'unknown holder'
-    held = now - holder.get('started', now)
+    held = max(0, int(now - holder.get('started', now)))
     return (f"pid {holder.get('pid')} label '{holder.get('label')}' tree {holder.get('tree')} "
-            f"held {held / 60:.1f} min, command: {' '.join(holder.get('command') or [])[:200]}")
+            f"held for {held // 60}m{held % 60:02d}s, command: {' '.join(holder.get('command') or [])[:200]}")
 
 
 def _write_json_atomic(path, data):
@@ -299,6 +300,10 @@ class EngineLock:
                 (lock_dir() / 'holder.json').unlink()
         self._history({'label': self.label, 'tree': self.tree, 'pid': os.getpid(), 'waitedSeconds': round(self.waited, 1),
                        'heldSeconds': round(held, 1), 'exitCode': self.exit_code})
+        if held > LONG_HOLD_SECONDS:
+            self._history({'event': 'long hold', 'label': self.label, 'tree': self.tree, 'heldSeconds': round(held, 1)})
+            if not self.quiet:
+                print(f"engine_lock: long hold: '{self.label}' held the engine lock for {held:.0f}s ({held / 60:.1f} min)", file=sys.stderr, flush=True)
         self._close_fd()
 
     def _close_fd(self):
