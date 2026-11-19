@@ -101,7 +101,13 @@ void AVeyrLightCheck::Initialize(const FString& StillsDirectory,const FString& F
         {TEXT("07_dragon_claw"),TEXT("Claw0"),6.f},
         {TEXT("08_collapse"),TEXT("Stagger0"),10.f},
         {TEXT("09_flight"),TEXT("Flight"),8.f},
-        {TEXT("10_dark_corner"),NAME_None,1.8f}};
+        {TEXT("10_dark_corner"),NAME_None,1.8f},
+        // Gameplay views (review 2026-11-19): the combat camera's place behind the knight, looking at the dragon,
+        // with the knight 8, 15 and 25 m in front of the forelegs, and among the feet.
+        {TEXT("11_play_8m"),NAME_None,1.8f},
+        {TEXT("12_play_15m"),NAME_None,1.8f},
+        {TEXT("13_play_25m"),NAME_None,1.8f},
+        {TEXT("14_play_feet"),NAME_None,1.8f}};
     LastWall=FPlatformTime::Seconds();
     UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_BEGIN stills=%s frames=%s legacy=%d tier=%d"),*StillsDir,*FrameDir,VeyrLook::IsLegacy(),VeyrLook::RenderTier());
 }
@@ -221,6 +227,20 @@ void AVeyrLightCheck::PlaceActors()
         Position=Leg+(Out.IsNearlyZero()?FVector(-1,0,0):Out)*280.f;Position.Z=KnightZ;
         Facing=(Leg-Position).GetSafeNormal2D().Rotation();
     }
+    else if(Shot.Name.StartsWith(TEXT("11"))||Shot.Name.StartsWith(TEXT("12"))||Shot.Name.StartsWith(TEXT("13"))||Shot.Name.StartsWith(TEXT("14")))
+    {
+        const FVector Front=(Dragon->GetLegLocation(0)+Dragon->GetLegLocation(1))*.5f;
+        FVector Out=(Front-Dragon->GetActorLocation()).GetSafeNormal2D();if(Out.IsNearlyZero())Out=FVector(-1,0,0);
+        const float Metres=Shot.Name.StartsWith(TEXT("11"))?8.f:Shot.Name.StartsWith(TEXT("12"))?15.f:25.f;
+        if(Shot.Name.StartsWith(TEXT("14")))
+        {
+            FVector Under=FVector::ZeroVector;for(int32 I=0;I<4;++I)Under+=Dragon->GetLegLocation(I)*.25f;
+            Position=FMath::Lerp(Under,Front,.55f);
+        }
+        else Position=Front+Out*Metres*100.f;
+        Position.Z=KnightZ;
+        Facing=(Dragon->GetActorLocation()-Position).GetSafeNormal2D().Rotation();
+    }
     else if(Shot.Name.StartsWith(TEXT("10")))
     {
         // Away from every brazier and floor pool: the readability test.
@@ -258,6 +278,12 @@ void AVeyrLightCheck::PlaceCamera()
         At=Head+DF*650.f+DR*520.f;At.Z=K.Z+90.f;Look=Head;Fov=66.f;
     }
     else if(Name.StartsWith(TEXT("09"))){At=K-KF*300.f+FVector(0,0,110);Look=Head;Fov=80.f;}
+    else if(Name.StartsWith(TEXT("11"))||Name.StartsWith(TEXT("12"))||Name.StartsWith(TEXT("13"))||Name.StartsWith(TEXT("14")))
+    {
+        // Combat-camera stand-in: 4.5 m behind and 2 m above the knight, aimed between him and the dragon.
+        At=K-KF*450.f+FVector(0,0,200);Look=FMath::Lerp(K+FVector(0,0,120),D+FVector(0,0,300),.35f);Fov=75.f;
+        if(Name.StartsWith(TEXT("14"))){At=K-KF*350.f+FVector(0,0,150);Look=K+KF*400.f+FVector(0,0,180);}
+    }
     Camera->GetCameraComponent()->SetFieldOfView(Fov);
     Camera->SetActorLocationAndRotation(At,(Look-At).Rotation());
 }

@@ -87,7 +87,9 @@ void AVeyrFightFeel::BeginPlay()
     bMarkerOnlyReview=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelMarkerOnly"));
     // Channel 1 already belongs to the knight, sword, cup and dragon.
     // Reuse it without changing receivers or the dragon-only rim channel 2.
-    HitFlash->SetLightingChannels(bLegacy,!bLegacy,false);
+    // Relit court: the dragon leaves channel 1 (the knight's key and rim), so the contact light also uses
+    // channel 2 to keep lighting the dragon's skin.
+    HitFlash->SetLightingChannels(bLegacy,!bLegacy,!bLegacy&&!VeyrLook::IsLegacy());
     HitFlash->SetIndirectLightingIntensity(bLegacy?1.f:0.f);
     LastRealTime=GetWorld()->GetRealTimeSeconds();
     if(UMaterialInterface* Parent=WeaponTrail->GetMaterial(0))
@@ -402,7 +404,11 @@ void AVeyrFightFeel::UpdateMeshFlash(float RealDelta)
         OverlayMesh.Reset();return;
     }
     // Additive and unlit: scaled with the exposure so a flash in a dark corner does not clip to white.
-    const float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,T.FlashFade))*VeyrLook::FxExposureGain();
+    float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,T.FlashFade))*VeyrLook::FxExposureGain();
+    // Relit court: the additive peak is capped in display terms (intensity x exposure), so the hit leg flashes
+    // warm instead of clipping to white at 2-6x build 16's exposure. -VeyrTune=flashcap= (display units).
+    static const float FlashCap=VeyrLook::Tune(TEXT("flashcap"),.55f);
+    if(VeyrLook::FxExposureLock()>0.f&&VeyrLook::LastExposure()>0.f)I=FMath::Min(I,FlashCap/VeyrLook::LastExposure());
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Intensity"),I);
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Opacity"),FMath::Clamp(.09f*I,0.f,.45f)); // the afterimage fallback's only control
 }

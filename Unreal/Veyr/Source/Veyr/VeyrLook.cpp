@@ -30,9 +30,11 @@ namespace
     };
     TSharedPtr<FVeyrExposureProbe,ESPMode::ThreadSafe> GExposureProbe;
 
-    struct FFollower { TWeakObjectPtr<UMaterialInstanceDynamic> Mid; FName Param; float Base=0.f; };
+    // Lock < 0: the global -VeyrFxExposureLock. Dust uses a stronger lock of its own (see VeyrImpactFx).
+    struct FFollower { TWeakObjectPtr<UMaterialInstanceDynamic> Mid; FName Param; float Base=0.f; float Lock=-1.f; };
     TArray<FFollower> GFollowers;
     float GAppliedGain=1.f;
+    float GainOf(const FFollower& F){return F.Lock<0.f?GAppliedGain:VeyrLook::FxExposureGainFor(F.Lock);}
 
     void ApplyFollowers(UWorld* World,ELevelTick,float)
     {
@@ -41,7 +43,7 @@ namespace
         if(FMath::Abs(Gain/GAppliedGain-1.f)<.02f)return;
         GAppliedGain=Gain;
         GFollowers.RemoveAll([](const FFollower& F){return !F.Mid.IsValid();});
-        for(const FFollower& F:GFollowers)F.Mid->SetScalarParameterValue(F.Param,F.Base*Gain);
+        for(const FFollower& F:GFollowers)F.Mid->SetScalarParameterValue(F.Param,F.Base*GainOf(F));
     }
 
     void SetCVar(const TCHAR* Name,const TCHAR* Value)
@@ -171,24 +173,27 @@ float VeyrLook::FxExposureLock()
     return IsLegacy()?0.f:Lock;
 }
 
-float VeyrLook::FxExposureGain()
+float VeyrLook::FxExposureGain(){return FxExposureGainFor(FxExposureLock());}
+
+float VeyrLook::FxExposureGainFor(float Lock)
 {
-    const float Lock=FxExposureLock(),Exposure=LastExposure();
+    const float Exposure=LastExposure();
+    if(FxExposureLock()<=0.f)return 1.f;
     if(Lock<=0.f||Exposure<=0.f)return 1.f;
     // Build 16: AEM_Manual, bias 0 -> 1/1.2. -VeyrFxRefExposure= moves the point the FX were tuned at.
     static const float Reference=[]{float R=1.f/1.2f;FParse::Value(FCommandLine::Get(),TEXT("VeyrFxRefExposure="),R);return FMath::Max(.001f,R);}();
     return FMath::Clamp(FMath::Pow(Reference/Exposure,Lock),1.f/16.f,16.f);
 }
 
-void VeyrLook::FollowExposure(UMaterialInstanceDynamic* Mid,FName Param,float Base)
+void VeyrLook::FollowExposure(UMaterialInstanceDynamic* Mid,FName Param,float Base,float Lock)
 {
     if(!Mid||FxExposureLock()<=0.f)return;
-    for(FFollower& F:GFollowers)if(F.Mid.Get()==Mid&&F.Param==Param){F.Base=Base;Mid->SetScalarParameterValue(Param,Base*GAppliedGain);return;}
-    GFollowers.Add({Mid,Param,Base});
-    Mid->SetScalarParameterValue(Param,Base*GAppliedGain);
+    for(FFollower& F:GFollowers)if(F.Mid.Get()==Mid&&F.Param==Param){F.Base=Base;F.Lock=Lock;Mid->SetScalarParameterValue(Param,Base*GainOf(F));return;}
+    const FFollower& Added=GFollowers[GFollowers.Add({Mid,Param,Base,Lock})];
+    Mid->SetScalarParameterValue(Param,Base*GainOf(Added));
 }
 
-int32 VeyrLook::FollowExposureAuto(UMaterialInstanceDynamic* Mid)
+int32 VeyrLook::FollowExposureAuto(UMaterialInstanceDynamic* Mid,float Lock)
 {
     if(!Mid||FxExposureLock()<=0.f||!Mid->GetShadingModels().IsUnlit())return 0;
     TArray<FMaterialParameterInfo> Infos;TArray<FGuid> Ids;
@@ -201,7 +206,7 @@ int32 VeyrLook::FollowExposureAuto(UMaterialInstanceDynamic* Mid)
         if(Name.Contains(TEXT("power"))||Name.Contains(TEXT("exponent")))continue; // shape, not strength
         float Base=0.f;
         if(!Mid->GetScalarParameterValue(FHashedMaterialParameterInfo(Info),Base))continue;
-        FollowExposure(Mid,Info.Name,Base);++Count;Names+=Info.Name.ToString()+TEXT(" ");
+        FollowExposure(Mid,Info.Name,Base,Lock);++Count;Names+=Info.Name.ToString()+TEXT(" ");
     }
     UE_LOG(LogTemp,Display,TEXT("VEYR_LOOK_FX_FOLLOW %s params=%d %s"),*GetNameSafe(Mid->Parent),Count,*Names);
     return Count;

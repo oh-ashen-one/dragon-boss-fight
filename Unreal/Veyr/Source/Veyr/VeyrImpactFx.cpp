@@ -74,9 +74,19 @@ void AVeyrImpactFx::BeginPlay()
     if(Plane&&SmokeMaterial)
     {
         UMaterialInstanceDynamic* Dust=UMaterialInstanceDynamic::Create(SmokeMaterial,this);
-        Dust->SetVectorParameterValue(TEXT("Tint"),T.DustTint);Dust->SetScalarParameterValue(TEXT("Brightness"),T.DustBrightness);
+        // The cards are unlit, so in the relit court they do not pick up the light around them: under the
+        // night exposure (2-6x build 16's) a half-locked follow left them a bright cool-white cloud. Relit:
+        // darkened toward the court's warm firelit stone and held close to build 16's on-screen brightness.
+        // -VeyrTune=dustlevel=,dustlock= move both; -VeyrLegacyRender keeps the original tint.
+        FLinearColor DustTint=T.DustTint;float DustLock=-1.f;
+        if(!VeyrLook::IsLegacy())
+        {
+            DustTint=DustTint*FLinearColor(.78f,.64f,.50f)*VeyrLook::Tune(TEXT("dustlevel"),.75f);DustTint.A=T.DustTint.A;
+            DustLock=VeyrLook::Tune(TEXT("dustlock"),.9f);
+        }
+        Dust->SetVectorParameterValue(TEXT("Tint"),DustTint);Dust->SetScalarParameterValue(TEXT("Brightness"),T.DustBrightness);
         ConfigureIsm(DustCards,Plane,Dust,CardCount,4);
-        VeyrLook::FollowExposureAuto(Dust);
+        VeyrLook::FollowExposureAuto(Dust,DustLock);
     }
     if(Plane&&EmberMaterial)
     {

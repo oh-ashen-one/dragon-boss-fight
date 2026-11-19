@@ -15,6 +15,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
+#include "VeyrDragon.h"
 #include "GameFramework/PlayerController.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
@@ -57,6 +59,25 @@ void AVeyrArena::BuildRelitLighting()
     DragonRimLight->SetIntensity(VeyrLook::Tune(TEXT("drim"),7.f));DragonRimLight->SetLightColor(FLinearColor(.48f,.67f,1.f),false);DragonRimLight->SetCastShadows(false);
     DragonRimLight->SetSpecularScale(.9f);DragonRimLight->SetAffectGlobalIllumination(false);DragonRimLight->SetVolumetricScatteringIntensity(0.f);
     DragonRimLight->RegisterComponent();
+
+    // Subject keys (review 2026-11-19: "the boss and the hero are the best-lit things in the frame"). The rims
+    // alone left a black shape with a thin edge. Each key lights only its subject (no visible source needed):
+    // channel 2 = dragon, channel 1 = knight and props once the dragon leaves channel 1 (SplitDragonLightingChannel).
+    // Re-aimed every tick from the camera side and high, so scales, horns, membranes and armour plates read in
+    // every view. Unshadowed: no VSM pages, the form comes from the normals. -VeyrNoSubjectKeys turns both off.
+    if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoSubjectKeys")))
+    {
+        DragonKeyLight=MakeDirectional(TEXT("RelitDragonKey"));
+        DragonKeyLight->LightingChannels.bChannel0=false;DragonKeyLight->LightingChannels.bChannel1=false;DragonKeyLight->LightingChannels.bChannel2=true;
+        DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),6.f));DragonKeyLight->SetLightColor(FLinearColor(.80f,.87f,1.f),false);DragonKeyLight->SetCastShadows(false);
+        DragonKeyLight->SetLightSourceAngle(8.f);DragonKeyLight->SetSpecularScale(.7f);DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
+        DragonKeyLight->RegisterComponent();
+        KnightKeyLight=MakeDirectional(TEXT("RelitKnightKey"));
+        KnightKeyLight->LightingChannels.bChannel0=false;KnightKeyLight->LightingChannels.bChannel1=true;KnightKeyLight->LightingChannels.bChannel2=false;
+        KnightKeyLight->SetIntensity(VeyrLook::Tune(TEXT("kkey"),4.f));KnightKeyLight->SetLightColor(FLinearColor(1.f,.87f,.72f),false);KnightKeyLight->SetCastShadows(false);
+        KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(.9f);KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
+        KnightKeyLight->RegisterComponent();
+    }
 
     const float PoolScale=VeyrLook::Tune(TEXT("pool"),2.f);
     for(int32 I=0;I<UE_ARRAY_COUNT(Pools);++I)
@@ -213,6 +234,26 @@ void AVeyrArena::AimRelitRims()
     // A directional light's rotation is its travel direction: from behind the subject toward the camera.
     if(CharacterRim)CharacterRim->SetWorldRotation(FRotator(-25.f,CameraYaw+180.f+20.f,0));
     if(DragonRimLight)DragonRimLight->SetWorldRotation(FRotator(-30.f,CameraYaw+180.f-35.f,0));
+    // Keys travel away from the camera side: dragon from high front-left, knight from front-right, lower.
+    static const float DragonKeyPitch=VeyrLook::Tune(TEXT("dkeypitch"),-48.f),DragonKeyYaw=VeyrLook::Tune(TEXT("dkeyyaw"),32.f);
+    static const float KnightKeyPitch=VeyrLook::Tune(TEXT("kkeypitch"),-32.f),KnightKeyYaw=VeyrLook::Tune(TEXT("kkeyyaw"),-38.f);
+    if(DragonKeyLight)DragonKeyLight->SetWorldRotation(FRotator(DragonKeyPitch,CameraYaw+DragonKeyYaw,0));
+    if(KnightKeyLight)KnightKeyLight->SetWorldRotation(FRotator(KnightKeyPitch,CameraYaw+KnightKeyYaw,0));
+    if(KnightKeyLight&&!ChannelSplitDragon.IsValid())SplitDragonLightingChannel();
+}
+
+void AVeyrArena::SplitDragonLightingChannel()
+{
+    // Channel 1 was "knight, props and dragon". With a knight-only key the dragon must leave it; it keeps
+    // channel 0 (the court) and channel 2 (its rim and key). The contact flash adds channel 2 (VeyrFightFeel).
+    if(TActorIterator<AVeyrDragon> It(GetWorld());It)
+    {
+        TArray<UPrimitiveComponent*> Parts;It->GetComponents(Parts);
+        for(UPrimitiveComponent* Part:Parts)if(Part&&Part->LightingChannels.bChannel1)
+            Part->SetLightingChannels(Part->LightingChannels.bChannel0,false,true);
+        ChannelSplitDragon=*It;
+        UE_LOG(LogTemp,Display,TEXT("VEYR_LOOK_DRAGON_CHANNELS split=%d parts"),Parts.Num());
+    }
 }
 
 void AVeyrArena::UpdateBrazierShadowBudget(const FVector& Camera)

@@ -44,11 +44,13 @@ namespace VeyrLook
     float FxExposureLock();
     /** Multiplier for unlit FX emissive, clamped to [1/16, 16]; 1 when the lock is 0 or exposure unknown. */
     float FxExposureGain();
+    /** Same as FxExposureGain() with an explicit lock (0..1) instead of the global one; 1 when following is off. */
+    float FxExposureGainFor(float Lock);
     /** Registers one scalar of a dynamic material: it is set to Base * FxExposureGain() after each world tick. */
-    void FollowExposure(UMaterialInstanceDynamic* Mid,FName Param,float Base);
+    void FollowExposure(UMaterialInstanceDynamic* Mid,FName Param,float Base,float Lock=-1.f);
     /** Unlit materials only: registers every scalar whose name reads as emissive strength
      *  (emiss, intens, bright, glow, hdr). Returns how many were registered. */
-    int32 FollowExposureAuto(UMaterialInstanceDynamic* Mid);
+    int32 FollowExposureAuto(UMaterialInstanceDynamic* Mid,float Lock=-1.f);
     /** For a component whose materials are not ours (Paragon Cascade): each unlit slot becomes a dynamic
      *  material that follows exposure. Shared per source material through Cache. Returns slots wired. */
     int32 FollowExposureOnComponent(UPrimitiveComponent* Component,UObject* Outer,TMap<UMaterialInterface*,UMaterialInstanceDynamic*>& Cache);

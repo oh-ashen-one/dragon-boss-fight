@@ -135,7 +135,7 @@ if a.mode=='lightcheck':
     check=run/'stills'/'lightcheck.json'
     shots=json.loads(check.read_text()).get('shots',[]) if check.exists() else []
     print('Lightcheck stills:',len(shots),'breath report:',(run/'stills'/'breath-report.json').exists(),flush=True)
-    raise SystemExit(0 if len(shots)==10 and not json.loads(check.read_text()).get('partial') else 1)
+    raise SystemExit(0 if len(shots)==14 and not json.loads(check.read_text()).get('partial') else 1)
 results = list(run.glob('unreal-*/evidence.json'))
 expected=[a.mode]+([a.next_mode] if a.next_mode else [])
 if len(results) != len(expected):raise SystemExit('Expected one completed evidence file per requested scenario')

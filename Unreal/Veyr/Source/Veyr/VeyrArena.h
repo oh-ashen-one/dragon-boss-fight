@@ -87,6 +87,11 @@ private:
     TArray<float> FortressFireIntensities;
     UPROPERTY() TObjectPtr<UDirectionalLightComponent> CharacterRim;
     UPROPERTY() TObjectPtr<UDirectionalLightComponent> DragonRimLight;
+    /** Relit subject keys (2026-11-19 review): camera-relative, unshadowed, by lighting channel only. */
+    UPROPERTY() TObjectPtr<UDirectionalLightComponent> DragonKeyLight;
+    UPROPERTY() TObjectPtr<UDirectionalLightComponent> KnightKeyLight;
+    TWeakObjectPtr<AActor> ChannelSplitDragon;
+    void SplitDragonLightingChannel();
     UPROPERTY() TObjectPtr<UPostProcessComponent> CourtGrade;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> LumenSplitParts;
     /** The twelve fortress braziers; at tier >= 2 only the ones nearest the camera keep shadows. */
