@@ -170,6 +170,7 @@ private:
     TMap<FName,ESourceMode> CueSource;
     FString SourcesDiagnostic;
     bool bBodyDownHeard=false;
+    int32 GeneratedFiles=0;
     double LastLandingHeard=-100.0;
     TArray<FVeyrGroundContact> ContactScratch;
     void SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNormalize);

@@ -176,6 +176,11 @@ void AVeyrAudio::LoadNewSet()
         {BedPCM[0]=MoveTemp(Score);BedSampleRates[0]=48000;BedChannels[0]=2;bOwnerScoreLoaded=true;}
     }
     LoadCueSources();
+    {
+        TArray<FString> G;IFileManager::Get().FindFiles(G,*(FPaths::ProjectContentDir()/TEXT("Audio/Recorded20261118/*_g*.pcm")),true,false);
+        GeneratedFiles=G.Num();
+        if(G.IsEmpty())UE_LOG(LogTemp,Warning,TEXT("VEYR_AUDIO_GENERATED_MISSING no <Cue>_g<n>.pcm supplement in Audio/Recorded20261118 (git-ignored; restore per docs/audio-20261118/README.md); playing the recorded takes only"));
+    }
     const FString Dir=FPaths::ProjectContentDir()/TEXT("Audio/Recorded20261118");
     int32 Loaded=0;TArray<FString> Missing;
     for(int32 I=0;I<CueCount;++I)
@@ -847,6 +852,7 @@ TSharedRef<FJsonObject> AVeyrAudio::AudioSetupEvidence() const
     O->SetBoolField(TEXT("dragonMoveSounds"),!bNoMoveSounds);
     O->SetBoolField(TEXT("dragonContactSounds"),ContactAudioActive());
     O->SetNumberField(TEXT("samplesLoaded"),RecordedCuesLoaded);
+    O->SetNumberField(TEXT("generatedFiles"),GeneratedFiles);
     TSharedRef<FJsonObject> Variants=MakeShared<FJsonObject>();
     for(int32 I=0;I<CueCount;++I)if(Banks[I].Variants.Num()>0)Variants->SetNumberField(CueName(I),Banks[I].Variants.Num());
     O->SetObjectField(TEXT("variantsLoaded"),Variants);
