@@ -30,9 +30,14 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
   between launches, not inside them. A suite takes the lock once per run, not once per suite. Never run fights in
   parallel (`--parallel` stays 1). Do not edit, kill or delete `~/.cache/veyr-engine/`; if a holder looks dead,
   `--status` says so.
+  Keep holds short: no single run holds the lock longer than about 6 minutes unless the reason is in your notes file
+  (a release after more than 6 minutes is logged as a "long hold" in `~/.cache/veyr-engine/history.jsonl`). Prefer
+  cooked, packaged builds over the uncooked editor binary for checks: the editor rebuilds assets while it holds the lock.
 - **Build in your own worktree.** A builder with a worktree first runs
   `python3 tools/unreal/clone_private_content.py --from /Users/midir/veyr-knight-20261028 --to <your worktree>` (APFS
-  clones of the git-ignored Content and Config: Characters, Paragon, ArtPass, some audio; no extra disk), then builds and
+  clones of the git-ignored Content and Config: Characters, Paragon, ArtPass, some audio; it also seeds
+  `Unreal/Veyr/DerivedDataCache`, which you must do before your first run, or the first editor run rebuilds every static
+  mesh while holding the lock; no extra disk, `--no-ddc` skips it), then builds and
   packages from its own worktree. Nobody builds or packages in another builder's tree. Throttle compile-checks with `-MaxParallelActions=6`; use `-WaitMutex`, never
   `-NoMutex`.
 - Rendered launches only through the GPU gate (`run_native.py` / `playtest_suite.py` do this), 60 fps cap, windowed and
