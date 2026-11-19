@@ -1646,6 +1646,7 @@ void AVeyrKnight::UpdateEquippedWeapon()
 void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
 {
     if(!bImportedPresentationActive||!ImportedPresentation||!CustomuseVisualDefinition)return;
+    if(bGreystoneActive)MonitorGreystoneFrame(); // the pose shown last frame, before this frame's sample
     // Detect contacts on the sourced/blended pose, not last frame's IK result.
     ImportedPresentation->ClearFootTargets();
     if(bGreystoneActive)UpdateGreystoneProps();
@@ -2558,6 +2559,53 @@ void AVeyrKnight::UpdateGreystoneProps()
     GreystoneDiagnostic.Reset();
 }
 
+void AVeyrKnight::MonitorGreystoneFrame()
+{
+    FGreystoneMonitor& M=GreystoneMonitor;
+    UVeyrSkeletalPresentation* P=ImportedPresentation;
+    ++M.Frames;
+    if(!P->bPoseEvaluated){++M.UnposedFrames;return;}
+    if(bPresentationUsingFallback)++M.FallbackFrames;
+    // Points relative to the capsule: weapon hand, both toes.
+    FTransform T[3];const TCHAR* Names[3]={TEXT("weapon_hand"),TEXT("left_foot"),TEXT("right_foot")};
+    bool Ok=true;for(int32 I=0;I<3;++I)Ok&=P->GetBoneTargetWorldTransform(Names[I],T[I]);
+    for(int32 F=0;F<3;++F){for(int32 I=0;I<3;++I)M.P[F][I]=M.P[F+1][I];M.bValid[F]=M.bValid[F+1];}
+    const FVector C=GetActorLocation();
+    for(int32 I=0;I<3;++I)M.P[3][I]=Ok?T[I].GetLocation()-C:FVector::ZeroVector;
+    M.bValid[3]=Ok;
+    const FName Clip=RequestedPresentationClip;
+    if(!M.LastClip.IsNone()&&Clip!=M.LastClip)
+    {
+        ++M.Switches;M.SinceSwitch=0;M.SwitchFrom=M.LastClip;M.SwitchTo=Clip;
+        if(bPresentationTransitionActive||GreystoneMotionAlpha<1.f)++M.CrossFaded;
+    }
+    else ++M.SinceSwitch;
+    M.LastClip=Clip;
+    // Pop at the middle frame (index 2) of the last four, within 3 frames after a switch (switch_jumps.py rule).
+    if(M.SinceSwitch<=4&&M.bValid[0]&&M.bValid[1]&&M.bValid[2]&&M.bValid[3])
+        for(int32 I=0;I<3;++I)
+        {
+            const FVector S0=M.P[1][I]-M.P[0][I],S1=M.P[2][I]-M.P[1][I],S2=M.P[3][I]-M.P[2][I];
+            const float Pop=FMath::Min(FVector::Dist(S1,S0),FVector::Dist(S1,S2));
+            if(Pop>M.MaxPopCm){M.MaxPopCm=Pop;M.MaxPopAt=FString::Printf(TEXT("%s->%s %s"),*M.SwitchFrom.ToString(),*M.SwitchTo.ToString(),Names[I]);}
+            if(Pop>20.f){float& W=M.PopOver20.FindOrAdd(M.SwitchFrom.ToString()+TEXT("->")+M.SwitchTo.ToString());W=FMath::Max(W,Pop);}
+        }
+    // Sword seat: hand_r to sword_bottom distance against the bind pose.
+    const FName Hand=VeyrBoneRoles::Resolve(P,EVeyrBoneRole::RightHand);
+    const int32 HandIndex=P->GetBoneIndex(Hand),SwordIndex=P->GetBoneIndex(VeyrGreystone::SwordBottomBone);
+    if(HandIndex!=INDEX_NONE&&SwordIndex!=INDEX_NONE)
+    {
+        if(M.BindGripCm<0.f)
+        {
+            const FReferenceSkeleton& Ref=P->GetSkeletalMeshAsset()->GetRefSkeleton();
+            auto Global=[&](int32 B){FTransform X=FTransform::Identity;while(B!=INDEX_NONE){X=X*Ref.GetRefBonePose()[B];B=Ref.GetParentIndex(B);}return X;};
+            M.BindGripCm=FVector::Dist(Global(HandIndex).GetLocation(),Global(SwordIndex).GetLocation())*P->GetComponentScale().X;
+        }
+        const float Dev=FMath::Abs(FVector::Dist(P->GetBoneLocation(Hand),P->GetBoneLocation(VeyrGreystone::SwordBottomBone))-M.BindGripCm);
+        if(Dev>M.MaxGripDeviationCm){M.MaxGripDeviationCm=Dev;M.MaxGripClip=Clip.ToString();}
+    }
+}
+
 TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
 {
     TSharedRef<FJsonObject> O=VeyrGreystone::PresentationEvidence(CustomuseVisualDefinition,ImportedPresentation,GetFootLocation().Z);
@@ -2565,5 +2613,17 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
     O->SetNumberField(TEXT("bladeContactRadiusCm"),BladeContactRadius);
     O->SetBoolField(TEXT("twoHanded"),bTwoHanded);
     if(!GreystoneDiagnostic.IsEmpty())O->SetStringField(TEXT("diagnostic"),GreystoneDiagnostic);
+    if(bGreystoneActive)
+    {
+        const FGreystoneMonitor& M=GreystoneMonitor;TSharedRef<FJsonObject> F=MakeShared<FJsonObject>();
+        F->SetNumberField(TEXT("frames"),M.Frames);F->SetNumberField(TEXT("unposedFrames"),M.UnposedFrames);
+        F->SetNumberField(TEXT("fallbackFrames"),M.FallbackFrames);F->SetNumberField(TEXT("switches"),M.Switches);
+        F->SetNumberField(TEXT("crossFadedSwitches"),M.CrossFaded);F->SetNumberField(TEXT("maxSwitchPopCm"),M.MaxPopCm);
+        F->SetStringField(TEXT("maxSwitchPopAt"),M.MaxPopAt);F->SetNumberField(TEXT("bindGripCm"),M.BindGripCm);
+        F->SetNumberField(TEXT("maxGripDeviationCm"),M.MaxGripDeviationCm);F->SetStringField(TEXT("maxGripClip"),M.MaxGripClip);
+        TSharedRef<FJsonObject> Over=MakeShared<FJsonObject>();for(const auto& It:M.PopOver20)Over->SetNumberField(It.Key,It.Value);
+        F->SetObjectField(TEXT("switchPopsOver20Cm"),Over);
+        O->SetObjectField(TEXT("frameMonitor"),F);
+    }
     return O;
 }

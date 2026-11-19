@@ -470,6 +470,15 @@ private:
     float GreystoneMotionTime=0.f,GreystoneMotionAlpha=1.f,GreystoneMotionYaw=0.f;
     int32 GreystoneMotionSwitches=0;
     bool UpdateGreystoneMotionMatch(float DeltaSeconds);
+    // E4 frame monitor (Greystone only, every frame of every scenario): clip-switch pops, cross-fades, unposed frames and
+    // the sword's seat in the hand. Reported in GreystoneEvidence()["frameMonitor"].
+    struct FGreystoneMonitor
+    {
+        FVector P[4][3];bool bValid[4]={false,false,false,false};int32 SinceSwitch=100;FName LastClip;FName SwitchFrom,SwitchTo;
+        int32 Frames=0,Switches=0,CrossFaded=0,UnposedFrames=0,FallbackFrames=0;float MaxPopCm=0.f,MaxGripDeviationCm=0.f,BindGripCm=-1.f;
+        FString MaxPopAt,MaxGripClip;TMap<FString,float> PopOver20;
+    } GreystoneMonitor;
+    void MonitorGreystoneFrame();
     float CameraFloorZ = 0.f;
     float CameraObstructionHold = 0.f;
     float LockHeadBlend = 0.f;
