@@ -11,6 +11,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/GameViewportClient.h"
 #include "GameFramework/Character.h"
+#include "HAL/PlatformTime.h"
+#include "Engine/SkeletalMesh.h"
 
 UVeyrCameraBoom::UVeyrCameraBoom()
 {
@@ -23,6 +25,14 @@ void UVeyrCameraBoom::BeginPlay()
     bLegacyBoom=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraBoom"));
     bLegacyFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraFraming"));
     bLegacySafety=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraSafety"));
+    bLegacyPlacement=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraPlacement"));
+    // Windowless tuning without a rebuild (defaults are the shipped values).
+    const TCHAR* Cmd=FCommandLine::Get();
+    FParse::Value(Cmd,TEXT("VeyrRigMargin="),RigProxyMarginCm);FParse::Value(Cmd,TEXT("VeyrRigLens="),RigLensRadiusCm);
+    FParse::Value(Cmd,TEXT("VeyrRigShortArm="),RigShortArmCm);FParse::Value(Cmd,TEXT("VeyrRigHide="),RigHideCm);
+    FParse::Value(Cmd,TEXT("VeyrRigOverUp="),RigOverheadUpCm);FParse::Value(Cmd,TEXT("VeyrRigOverBack="),RigOverheadBackCm);
+    FParse::Value(Cmd,TEXT("VeyrRigOverPitch="),RigOverheadPitchDeg);FParse::Value(Cmd,TEXT("VeyrRigAssistDown="),RigAssistDownDeg);
+    FParse::Value(Cmd,TEXT("VeyrRigFootprint="),RigFootprintCm);FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
     // Fourth pass: the knight stays inside the central 80 % of the frame; the lens may open further.
     if(!bLegacySafety){KnightScreenMargin=FMath::Max(KnightScreenMargin,.1f);MaxFovBoostDeg=FMath::Max(MaxFovBoostDeg,14.f);}
     FindDragon();
@@ -279,6 +289,16 @@ FVector UVeyrCameraBoom::BlendLocations(const FVector& DesiredArmLocation,const 
     bFramedViewValid=false;
     if(bLegacyBoom)return Base;
     FindDragon();
+    if(UsesRig())
+    {
+        const double Start=FPlatformTime::Seconds();
+        UpdateProxy();++BodyFrames;
+        const FVector Lens=RigArm(Base,DeltaTime);
+        const double Spent=FPlatformTime::Seconds()-Start;RigSeconds+=Spent;RigMaxSeconds=FMath::Max(RigMaxSeconds,Spent);++RigCalls;
+        if(OverheadAlpha>.01f)++RigOverheadFrames;
+        return Lens;
+    }
+    if(bKnightHiddenByCamera)SetKnightHiddenByCamera(false);
     RefreshShapes();
     if(Shapes.IsEmpty()){BodyFraction=1.f;LiftCm=0.f;bLastSolved=false;return Base;}
     ++BodyFrames;
@@ -823,11 +843,26 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     }
     auto Note=[](TArray<float>& L,float T){if(L.Num()<60&&(L.IsEmpty()||T-L.Last()>.5f))L.Add(T);};
     FVector KB,KT;float KR=0.f;const bool bKnight=KnightCapsule(KB,KT,KR);
-    const bool bCapsule=IsPointInsideSolidCapsule(Camera,0.f);
-    const bool bHull=IsPointInsideBareDragon(Camera,10.f);
-    const bool bBehind=IsPointBehindSkin(Camera,10.f);
-    const bool bNear=NearestSkinCm(Camera)<10.f;
-    const bool bInside=bCapsule||bHull||bBehind;
+    // Fourth pass: the drawn skin itself (every LOD0 triangle, skinned this frame), never the proxy or the hull.
+    FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();A.TrueSkinSource=True.Source;
+    AVeyrDragon* AuditDragon=Dragon.Get();
+    const bool bTrue=AuditDragon&&AuditDragon->bUsingCustomuseVisual&&True.Skin(AuditDragon->ImportedPresentation);
+    bool bCapsule=false,bHull=false,bBehind=false,bNear=false,bInside=false;
+    if(bTrue)
+    {
+        ++A.TrueSkinFrames;
+        const float NearCm=True.NearestDistance(Camera,200.f);A.MinSkinCm=FMath::Min(A.MinSkinCm,NearCm);
+        const bool bVolume=True.InsideVolume(Camera);
+        // The near plane (10 cm) reaches its corners about 17 cm from the eye at the widest lens: skin that close is cut open.
+        bNear=NearCm<17.f;A.InsideVolume+=bVolume;A.NearClip+=bNear;
+        bInside=bVolume||bNear;
+    }
+    else
+    {
+        if(Shapes.IsEmpty())RefreshShapes();
+        bCapsule=IsPointInsideSolidCapsule(Camera,0.f);bHull=IsPointInsideBareDragon(Camera,10.f);bBehind=IsPointBehindSkin(Camera,10.f);
+        bNear=NearestSkinCm(Camera)<10.f;bInside=bCapsule||bHull||bBehind;A.LegacyInside+=bInside;
+    }
     A.InsideCapsule+=bCapsule;A.InsideHull+=bHull;A.BehindSkin+=bBehind;A.NearSkin+=bNear;A.InsideAny+=bInside;
     A.InsideRun=bInside?A.InsideRun+1:0;A.LongestInsideRun=FMath::Max(A.LongestInsideRun,A.InsideRun);
     if(bInside)Note(A.InsideSeconds,Seconds);
@@ -865,6 +900,9 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     if(!bKnight)return;
     const float Surface=FMath::PointDistToSegment(Camera,KB,KT)-KR;
     A.MinCameraToKnightCm=FMath::Min(A.MinCameraToKnightCm,Surface);A.InsideKnight+=Surface<10.f;
+    const bool bRuleHidden=bKnightHiddenByCamera;
+    A.HiddenByRule+=bRuleHidden;if(bRuleHidden)Note(A.RuleHiddenSeconds,Seconds);
+    if(Surface<10.f&&!bRuleHidden){++A.InsideKnightVisible;Note(A.KnightInsideSeconds,Seconds);}
     A.KnightWhole+=KnightWholeInView(Camera,View,HorizontalFovDeg);
     // How much of the knight the player sees: 7 points on his body, each inside the central 80 % of the frame
     // with no dragon skin (shapes, interior, wings) between it and the lens.
@@ -880,9 +918,11 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
         if(FMath::Abs(U)<=1.f&&FMath::Abs(V)<=1.f)++InFrame;
         if(FMath::Abs(U)>.8f||FMath::Abs(V)>.8f)continue;
         ++Centre;
-        if(SightClear(Camera,P,true))++Seen;
+        if(bRuleHidden)continue;
+        if(bTrue?!True.SegmentBlocked(Camera,P):SightClear(Camera,P,true))++Seen;
     }
-    A.OutsideCentre+=Centre<4;A.KnightInFrame+=InFrame>=4;
+    A.OutsideCentre+=Centre<4;A.KnightInFrame+=InFrame>=4&&!bRuleHidden;
+    if(!bRuleHidden){++A.VisibleFrames;A.KnightInFrameVisible+=InFrame>=4;}
     const bool bHalf=Seen*2>=7;A.HalfVisible+=bHalf;
     const bool bHidden=Seen==0;A.FullyHidden+=bHidden;
     A.HiddenRunSeconds=bHidden?A.HiddenRunSeconds+Dt:0.f;A.LongestHiddenSeconds=FMath::Max(A.LongestHiddenSeconds,A.HiddenRunSeconds);
@@ -918,6 +958,56 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
         N(TEXT("knightInFrameShare"),A.Frames?static_cast<double>(A.KnightInFrame)/A.Frames:0.0);
         N(TEXT("maxDownLookDeg"),-A.MinPitchDeg);N(TEXT("resultInsideFrames"),ResultInsideFrames);N(TEXT("skinSamples"),SurfacePositions.Num());N(TEXT("skinSampleMaxGapCm"),A.SampleGapCm);
     }N(TEXT("viewCuts"),A.Cuts);
+    // Fourth pass fields: inside = inside the drawn skin's volume or skin within 17 cm of the eye (true skin).
+    O->SetStringField(TEXT("trueSkin"),A.TrueSkinSource);N(TEXT("trueSkinFrames"),A.TrueSkinFrames);
+    N(TEXT("insideVolumeFrames"),A.InsideVolume);N(TEXT("skinWithin17cmFrames"),A.NearClip);N(TEXT("legacyShapeInsideFrames"),A.LegacyInside);
+    N(TEXT("minSkinDistanceCm"),A.MinSkinCm<1e30f?A.MinSkinCm:-1.0);
+    N(TEXT("hiddenByCameraRuleFrames"),A.HiddenByRule);N(TEXT("hiddenByCameraRuleShare"),A.Frames?static_cast<double>(A.HiddenByRule)/A.Frames:0.0);
+    N(TEXT("insideKnightVisibleFrames"),A.InsideKnightVisible);
+    N(TEXT("knightInFrameShareOfVisibleFrames"),A.VisibleFrames?static_cast<double>(A.KnightInFrameVisible)/A.VisibleFrames:0.0);
+    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
+    O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);
+    N(TEXT("rigOverheadFrames"),RigOverheadFrames);N(TEXT("rigHiddenFrames"),RigHiddenFrames);N(TEXT("rigPivotLiftFrames"),RigPivotLiftFrames);
+    N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());
+    O->SetStringField(TEXT("rigProxy"),Proxy.Diagnostic);N(TEXT("rigProxyMarginCm"),RigProxyMarginCm*DragonScale());N(TEXT("rigLensRadiusCm"),RigLensRadiusCm);
     O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight, whole replay (held by the replay, survives restart); seconds are replay seconds; visible = 7 knight points inside the central 80 % with no dragon skin (shapes, interior, wings) in between; jumps = >150 cm or >12 deg in one frame, knight blinks excluded"));
+    return O;
+}
+
+void UVeyrCameraBoom::ProveProxy(FVeyrProxyProof& P,float Seconds)
+{
+    FindDragon();
+    AVeyrDragon* D=Dragon.Get();
+    UVeyrSkeletalPresentation* Pres=D&&D->bUsingCustomuseVisual?D->ImportedPresentation.Get():nullptr;
+    if(!Pres)return;
+    FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();
+    if(!True.Skin(Pres))return;
+    const double Start=FPlatformTime::Seconds();
+    if(!ProofProxy.Update(Pres,RigProxyMarginCm*DragonScale()))return;
+    const double Spent=FPlatformTime::Seconds()-Start;P.ProxySeconds+=Spent;P.ProxyMaxSeconds=FMath::Max(P.ProxyMaxSeconds,Spent);
+    float With=0.f,Bare=0.f;int32 Tested=0,Outside=0;FVector Worst;
+    True.Prove(ProofProxy,With,Bare,Tested,Outside,Worst);
+    ++P.Frames;P.Vertices+=Tested;P.OutsideVertices+=Outside;P.FramesWithOutside+=Outside>0;P.MarginCm=ProofProxy.Margin();P.MaxBoxes=FMath::Max(P.MaxBoxes,ProofProxy.BoxCount());
+    const FString Clip=Pres->CurrentClip.ToString();
+    float& ClipBare=P.BareByClip.FindOrAdd(Clip);ClipBare=FMath::Max(ClipBare,Bare);
+    ++P.FramesByMesh.FindOrAdd(Pres->GetSkeletalMeshAsset()?Pres->GetSkeletalMeshAsset()->GetName():FString());
+    if(Bare>P.WorstBareCm){P.WorstBareCm=Bare;}
+    if(With>P.WorstWithMarginCm||(P.WorstAtSeconds<0.f&&Bare>=P.WorstBareCm))
+    {P.WorstWithMarginCm=FMath::Max(P.WorstWithMarginCm,With);P.WorstAtSeconds=Seconds;P.WorstClip=Clip;P.WorstMesh=Pres->GetSkeletalMeshAsset()?Pres->GetSkeletalMeshAsset()->GetName():FString();P.WorstPoint=Worst;}
+}
+
+TSharedPtr<FJsonObject> UVeyrCameraBoom::ProofJson(const FVeyrProxyProof& P) const
+{
+    TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
+    auto N=[&](const TCHAR* K,double V){O->SetNumberField(K,V);};
+    N(TEXT("frames"),P.Frames);N(TEXT("verticesTested"),static_cast<double>(P.Vertices));N(TEXT("outsideVertices"),static_cast<double>(P.OutsideVertices));
+    N(TEXT("framesWithOutside"),P.FramesWithOutside);N(TEXT("worstOutsideWithMarginCm"),P.WorstWithMarginCm);
+    N(TEXT("marginNeededCm"),P.WorstBareCm);N(TEXT("marginCm"),P.MarginCm);N(TEXT("proxyBoxes"),P.MaxBoxes);
+    N(TEXT("proxyUpdateMeanMs"),P.Frames?P.ProxySeconds*1000.0/P.Frames:0.0);N(TEXT("proxyUpdateMaxMs"),P.ProxyMaxSeconds*1000.0);
+    N(TEXT("worstAtSeconds"),P.WorstAtSeconds);O->SetStringField(TEXT("worstClip"),P.WorstClip);O->SetStringField(TEXT("worstMesh"),P.WorstMesh);
+    O->SetStringField(TEXT("trueSkin"),FVeyrDragonTrueSkin::Get().Source);
+    TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();for(const auto& C:P.BareByClip)Clips->SetNumberField(C.Key,C.Value);O->SetObjectField(TEXT("marginNeededByClipCm"),Clips);
+    TSharedPtr<FJsonObject> Meshes=MakeShared<FJsonObject>();for(const auto& C:P.FramesByMesh)Meshes->SetNumberField(C.Key,C.Value);O->SetObjectField(TEXT("framesByMesh"),Meshes);
+    O->SetStringField(TEXT("scope"),TEXT("every LOD0 vertex of the current dragon mesh, skinned with the engine's linear blend each audited frame, tested against the proxy boxes grown by the margin; marginNeeded = worst distance outside the bare boxes"));
     return O;
 }

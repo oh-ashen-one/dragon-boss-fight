@@ -2,10 +2,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "VeyrDragonGrounding.h"
+#include "VeyrDragonCameraProxy.h"
 #include "VeyrCameraBoom.generated.h"
 
 class AVeyrDragon;
+class APlayerController;
 struct FVeyrViewAudit;
+struct FVeyrProxyProof;
 
 /**
  * A2 (2026-11-18): the knight's camera arm, aware of the dragon's body.
@@ -96,6 +99,24 @@ public:
     /** Radius (cm x dragon scale) around the lens inside which the dragon dithers away (last-resort net). */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float NearLensDitherCm=60.f;
 
+    /** Camera fourth pass (2026-11-19, default): one placement module (VeyrCameraRig.cpp) on a fitted body proxy
+     * (VeyrDragonCameraProxy). -VeyrLegacyCameraPlacement restores the fifth-pass arm (SafeArm). Distances in cm;
+     * the proxy margin and footprint scale with the dragon (x DragonScale()), the rest is knight/lens-sized. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Rig") bool bLegacyPlacement=false;
+    float RigProxyMarginCm=10.f,RigLensRadiusCm=27.f,RigPivotHeightCm=170.f,RigShortArmCm=60.f,RigHideCm=25.f;
+    float RigOverheadUpCm=70.f,RigOverheadBackCm=220.f,RigOverheadPitchDeg=-30.f,RigAssistDownDeg=30.f,RigMaxDownDeg=35.f;
+    float RigTurnRateDegPerSec=220.f,RigFootprintCm=60.f;
+    int32 RigPivotLiftFrames=0,RigHiddenFrames=0,RigOverheadFrames=0,RigCalls=0;double RigSeconds=0.0,RigMaxSeconds=0.0;
+    /** True while the camera rule hides the knight's meshes from the viewing player (lens on top of his head). */
+    bool bKnightHiddenByCamera=false;
+    bool UsesRig() const { return !bLegacyBoom&&!bLegacyFraming&&!bLegacySafety&&!bLegacyPlacement; }
+    /** Camera-local offset another system wants on the lens (fight-feel bounce); added to the desired point. */
+    void SetFeelLocalOffset(const FVector& Offset){FeelLocalOffset=Offset;}
+    const FVeyrDragonProxy& GetProxy() const { return Proxy; }
+    /** Proof that the proxy encloses the drawn skin, this frame (true skin from the exported file). */
+    void ProveProxy(FVeyrProxyProof& Proof,float Seconds);
+    TSharedPtr<class FJsonObject> ProofJson(const FVeyrProxyProof& Proof) const;
+
     /** Audit of the camera the player sees; the replay owns the counters so they survive a restart. */
     void AuditView(FVeyrViewAudit& Audit,const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Seconds);
     TSharedPtr<class FJsonObject> AuditJson(const FVeyrViewAudit& Audit) const;
@@ -172,6 +193,12 @@ private:
     FVector LastFramedRelative=FVector::ZeroVector; bool bLastFramed=false; bool bLastSolved=false;
     FVector SafeLastRelative=FVector::ZeroVector; bool bSafeLast=false; float SafeLift=0.f; float SafeLens=0.f; float AssistAlpha=0.f; float AssistClearSeconds=0.f; bool bAssist=false; float AssistRisePitch=0.f; float SafePitch=0.f; float SafeYaw=0.f; float SwingClearSeconds=0.f; FVector SafeLastWorld=FVector::ZeroVector; FVector SafeLastAnchor=FVector::ZeroVector; float SwingPitchTarget=0.f; float SwingYawTarget=0.f;
     FQuat SafeLastView=FQuat::Identity; bool bSafeLastView=false;
+    FVeyrDragonProxy Proxy,ProofProxy;FQuat RigRot=FQuat::Identity;bool bRigRot=false;float RigFraction=1.f,OverheadAlpha=0.f,OverheadClearSeconds=0.f,HideClearSeconds=0.f;
+    bool bOverhead=false,bRigHide=false;FVector FeelLocalOffset=FVector::ZeroVector;TWeakObjectPtr<APlayerController> HiddenFromPC;
+    bool UpdateProxy();
+    float RigSweep(const FVector& From,const FVector& To,float Radius) const;
+    void SetKnightHiddenByCamera(bool bHide);
+    FVector RigArm(const FVector& Base,float DeltaTime);
     /** Fourth pass arm: returns the camera point and sets FramedView. */
     FVector SafeArm(const FVector& Origin,const FVector& Base,float DeltaTime);
     void FinishView(const FVector& Out,const FVector& Base,float DeltaTime,float ExtraLensDeg);
@@ -191,4 +218,16 @@ struct FVeyrViewAudit
     float MaxMoveCm=0.f,MaxTurnDeg=0.f,LastSeconds=-1.f;
     FVector LastCamera=FVector::ZeroVector,LastKnight=FVector::ZeroVector;FQuat LastView=FQuat::Identity;bool bHasLast=false;
     TArray<float> InsideSeconds,HiddenSeconds,JumpSeconds,SteepSeconds,JumpDetail,TurnRates,SteerRates; FQuat LastSteer=FQuat::Identity; int32 Cuts=0,SettleFrames=0,KnightInFrame=0; float SampleGapCm=-1.f;
+    // Fourth pass: true-skin tests and the camera rule.
+    int32 TrueSkinFrames=0,InsideVolume=0,NearClip=0,HiddenByRule=0,InsideKnightVisible=0,KnightInFrameVisible=0,VisibleFrames=0,LegacyInside=0;
+    float MinSkinCm=TNumericLimits<float>::Max();TArray<float> RuleHiddenSeconds,KnightInsideSeconds;FString TrueSkinSource;
+};
+
+/** Proof that the camera proxy holds every drawn skin vertex (fourth pass), accumulated over a replay. */
+struct FVeyrProxyProof
+{
+    int32 Frames=0,FramesWithOutside=0;int64 Vertices=0,OutsideVertices=0;
+    float WorstWithMarginCm=0.f,WorstBareCm=0.f,WorstAtSeconds=-1.f,MarginCm=0.f;FString WorstClip,WorstMesh;FVector WorstPoint=FVector::ZeroVector;
+    double ProxySeconds=0.0,ProxyMaxSeconds=0.0;int32 MaxBoxes=0;
+    TMap<FString,float> BareByClip;TMap<FString,int32> FramesByMesh;
 };

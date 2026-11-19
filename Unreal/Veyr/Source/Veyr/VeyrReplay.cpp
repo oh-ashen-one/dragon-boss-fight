@@ -54,6 +54,7 @@ namespace
     TSharedPtr<FJsonObject> PendingRestartEvidence;
     // A2 fourth pass: the whole-replay camera audit, kept across the restart's OpenLevel (no actor pointers).
     TSharedPtr<FVeyrViewAudit> GCameraAudit;
+    TSharedPtr<FVeyrProxyProof> GProxyProof;
     FString PendingRestartDirectory;
     double RestartRequestedWallTime=0;
     // Optional two-scenario QA run: reload a fresh world in this owned process
@@ -163,6 +164,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         if(APlayerController* PC=Cast<APlayerController>(Knight->GetController()))PC->SetViewTarget(EnvironmentCamera);
     }
     if(Knight->CameraBoom)AddTickPrerequisiteComponent(Knight->CameraBoom);
+    if(!CameraAuditHandle.IsValid())CameraAuditHandle=FWorldDelegates::OnWorldPostActorTick.AddUObject(this,&AVeyrReplay::AuditCameraAfterTick);
     if(ReplayMode==TEXT("collision"))Knight->GetCapsuleComponent()->OnComponentHit.AddDynamic(this,&AVeyrReplay::ObserveCollisionHit);
     // A new/restarted world never inherits a pending guard trial or readiness latch.
     bGuardRechargeLatched=false;bRearGuardArmed=false;GuardRechargeCount=0;
@@ -3055,6 +3057,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
     if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
     if(IsValid(Knight)&&GCameraAudit.IsValid())if(const UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))Root->SetObjectField(TEXT("cameraAudit"),Boom->AuditJson(*GCameraAudit));
+    if(IsValid(Knight)&&GProxyProof.IsValid())if(const UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))Root->SetObjectField(TEXT("cameraProxyProof"),Boom->ProofJson(*GProxyProof));
     if(FeelProof.IsValid())Root->SetObjectField(TEXT("feelProof"),FeelProof->Evidence());
     if(const AVeyrGameMode* FeelMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
         if(FeelMode->FightFeel)Root->SetObjectField(TEXT("feel"),FeelMode->FightFeel->FeelEvidence(true)); // B4-B6 totals + static parts, once
@@ -3211,8 +3214,10 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     }
     Elapsed+=DeltaSeconds;++FrameCount;MaximumFrameSeconds=FMath::Max(MaximumFrameSeconds,DeltaSeconds);
     SampleClock+=DeltaSeconds;SaveClock+=DeltaSeconds;Observe();
-    // A2 third pass: audit the camera the player sees, every frame, in every mode (own cameras excluded).
-    if(UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))
+    // A2 third pass: audit the camera the player sees, every frame, in every mode (own cameras excluded). Fourth pass:
+    // done in AuditCameraAfterTick, after this frame's camera manager update (-VeyrLegacyCameraPlacement keeps it here).
+    static const bool bLegacyAuditTiming=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraPlacement"));
+    if(bLegacyAuditTiming)if(UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))
         if(const APlayerController* ViewPC=GetWorld()->GetFirstPlayerController();ViewPC&&ViewPC->GetViewTarget()==Knight&&ViewPC->PlayerCameraManager)
         {
             // The rendered point of view (the camera manager's last update), not the arm's request.
@@ -3268,8 +3273,26 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     if(SaveClock>=(bPerformanceMode?30.f:5.f)){SaveClock=0;SaveEvidence(false);}
 }
 
+void AVeyrReplay::AuditCameraAfterTick(UWorld* World,ELevelTick TickType,float DeltaSeconds)
+{
+    if(World!=GetWorld()||!bInitialized||bFinished||!IsValid(Knight))return;
+    UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom);
+    if(!Boom)return;
+    static const bool bNoProof=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoCameraProxyProof"));
+    if(!bNoProof){if(!GProxyProof.IsValid())GProxyProof=MakeShared<FVeyrProxyProof>();Boom->ProveProxy(*GProxyProof,Elapsed);}
+    static const bool bLegacyAuditTiming=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraPlacement"));
+    if(bLegacyAuditTiming)return;
+    if(const APlayerController* ViewPC=World->GetFirstPlayerController();ViewPC&&ViewPC->GetViewTarget()==Knight&&ViewPC->PlayerCameraManager)
+    {
+        const APlayerCameraManager* View=ViewPC->PlayerCameraManager;
+        if(!GCameraAudit.IsValid())GCameraAudit=MakeShared<FVeyrViewAudit>();
+        Boom->AuditView(*GCameraAudit,View->GetCameraLocation(),View->GetCameraRotation().Quaternion(),View->GetFOVAngle(),Elapsed);
+    }
+}
+
 void AVeyrReplay::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    if(CameraAuditHandle.IsValid()){FWorldDelegates::OnWorldPostActorTick.Remove(CameraAuditHandle);CameraAuditHandle.Reset();}
     if(Showcase.IsValid())Showcase->End();
     if(IsValid(Knight)&&Knight->GetCapsuleComponent())Knight->GetCapsuleComponent()->OnComponentHit.RemoveDynamic(this,&AVeyrReplay::ObserveCollisionHit);
     if(EndPlayReason==EEndPlayReason::EndPlayInEditor||EndPlayReason==EEndPlayReason::Quit)

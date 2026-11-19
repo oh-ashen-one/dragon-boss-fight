@@ -42,6 +42,9 @@ public:
     virtual void Tick(float DeltaSeconds) override;
 protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+    /** Camera fourth pass: audit after the camera manager's update (same frame as the drawn pose), plus the proxy proof. */
+    void AuditCameraAfterTick(UWorld* World,ELevelTick TickType,float DeltaSeconds);
+    FDelegateHandle CameraAuditHandle;
 private:
     UPROPERTY() TObjectPtr<AVeyrKnight> Knight;
     UPROPERTY() TObjectPtr<AVeyrDragon> Dragon;

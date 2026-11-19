@@ -9,6 +9,7 @@
 #include "VeyrReplay.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
+#include "VeyrCameraBoom.h"
 #include "Components/SceneComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -325,6 +326,11 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
         const float Side=static_cast<float>(FVector::DotProduct(KickFrom.GetSafeNormal2D(),Right));
         Rotation+=FRotator(.45f*KickAmp*KE,-Side*KickAmp*KE,-Side*.6f*KickAmp*KE);
     }
+    // Camera fourth pass: the bounce is a positional offset, so it goes on the arm's DESIRED point before the arm's
+    // sweep (VeyrCameraRig.cpp); only rotation and lens are applied on the camera itself. -VeyrLegacyCameraPlacement
+    // restores the offset on the camera socket.
+    if(UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Camera->GetAttachParent());Boom&&Boom->UsesRig())
+    {Boom->SetFeelLocalOffset(Location-CameraBaseLocation);Location=CameraBaseLocation;}
     Camera->SetRelativeRotation(Rotation);
     if(ShakeBounce>0.f||!Camera->GetRelativeLocation().Equals(Location,.01f))Camera->SetRelativeLocation(Location);
     FPostProcessSettings& PP=Camera->PostProcessSettings;

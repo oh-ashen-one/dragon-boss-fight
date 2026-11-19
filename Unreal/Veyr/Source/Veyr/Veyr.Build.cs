@@ -10,5 +10,9 @@ public class Veyr : ModuleRules
         PrivateDependencyModuleNames.AddRange(new string[]{"Json","JsonUtilities","RenderCore","RHI","Slate","SlateCore","AudioMixer","AnimationCore"});
         RuntimeDependencies.Add("$(ProjectDir)/Content/UI/Fonts/CormorantGaramond.ttf", StagedFileType.UFS);
         RuntimeDependencies.Add("$(ProjectDir)/Content/UI/Fonts/OFL-CormorantGaramond.txt", StagedFileType.UFS);
+        // Camera fourth pass: the drawn dragon skin for the camera audit and proxy proof (private, git-ignored; written by
+        // the VeyrCameraProxyExport commandlet). Staged only where it exists; without it the audit says so.
+        string TrueSkin = Path.Combine(ModuleDirectory, "..", "..", "Content", "Characters", "Customuse", "CameraProxy", "DragonTrueSkin.bin");
+        if (File.Exists(TrueSkin)) RuntimeDependencies.Add("$(ProjectDir)/Content/Characters/Customuse/CameraProxy/DragonTrueSkin.bin", StagedFileType.UFS);
     }
 }
