@@ -5,6 +5,7 @@
 #include "VeyrCameraBoom.generated.h"
 
 class AVeyrDragon;
+struct FVeyrViewAudit;
 
 /**
  * A2 (2026-11-18): the knight's camera arm, aware of the dragon's body.
@@ -78,17 +79,25 @@ public:
     /** Frames where neither the straight, swung nor fast ease was clean and the camera jumped to its placement. */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 SafetySnaps=0;
 
-    /** Per-frame audit of the camera the player actually sees (replays call AuditView every frame in every mode). */
-    struct FViewAudit
-    {
-        int32 Frames=0,InsideAny=0,InsideCapsule=0,InsideHull=0,BehindSkin=0,NearSkin=0,InsideKnight=0,KnightWhole=0,
-            SightPartlyBlocked=0,SightBlocked=0,SteepFrames=0,LongestInsideRun=0,LongestBlockedRun=0,InsideRun=0,BlockedRun=0;
-        float MinCameraToKnightCm=TNumericLimits<float>::Max(),MinPitchDeg=90.f;
-        TArray<float> InsideSeconds,BlockedSeconds,SteepSeconds;
-    };
-    FViewAudit ViewAudit;
-    void AuditView(const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Seconds);
-    TSharedPtr<class FJsonObject> AuditJson() const;
+    /** Fourth pass (2026-11-19, default; -VeyrLegacyCameraSafety restores the second pass): the stock arm swept as a
+     * sphere against the full body (interior and wings), slight lift and wider lens when it gets short, at most
+     * MaxMoveCmPerFrame of movement and MaxTurnDegPerFrame of turn per frame. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float MaxMoveCmPerFrame=140.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float MaxTurnDegPerFrame=11.f;
+    /** Lift (cm x dragon scale) and extra lens (deg) at the shortest arm. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float ShortArmLiftCm=60.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float ShortArmLensDeg=12.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") float SafeFraction=1.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 ClampedMoves=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 SightPullFails=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 ClampedTurns=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 PivotLiftFrames=0;
+    /** Radius (cm x dragon scale) around the lens inside which the dragon dithers away (last-resort net). */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float NearLensDitherCm=60.f;
+
+    /** Audit of the camera the player sees; the replay owns the counters so they survive a restart. */
+    void AuditView(FVeyrViewAudit& Audit,const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Seconds);
+    TSharedPtr<class FJsonObject> AuditJson(const FVeyrViewAudit& Audit) const;
     /** Inside the bare body shapes or behind the skin (interior). */
     bool IsPointInsideBody(const FVector& Point,float Margin) const;
     /** No skin between A and B: bare shapes (exact) plus the interior marched every ~40 cm. */
@@ -160,8 +169,25 @@ private:
     /** View that keeps the knight whole in frame from Camera, starting from the arm's view; boost in degrees. */
     FQuat FrameView(const FVector& Camera,const FQuat& ArmView,const FVector& LookAt,float Fov,float& OutBoost) const;
     FVector LastFramedRelative=FVector::ZeroVector; bool bLastFramed=false; bool bLastSolved=false;
+    FVector SafeLastRelative=FVector::ZeroVector; bool bSafeLast=false; float SafeLift=0.f; float SafeLens=0.f; float SafePitch=0.f; float SafeYaw=0.f; float SwingClearSeconds=0.f; FVector SafeLastWorld=FVector::ZeroVector; FVector SafeLastAnchor=FVector::ZeroVector; float SwingPitchTarget=0.f; float SwingYawTarget=0.f;
+    FQuat SafeLastView=FQuat::Identity; bool bSafeLastView=false;
+    /** Fourth pass arm: returns the camera point and sets FramedView. */
+    FVector SafeArm(const FVector& Origin,const FVector& Base,float DeltaTime);
+    void FinishView(const FVector& Out,const FVector& Base,float DeltaTime,float ExtraLensDeg);
     int32 StickyCandidate=INDEX_NONE;
     FQuat FramedView=FQuat::Identity; bool bFramedViewValid=false; FVector FramedLookAt=FVector::ZeroVector;
     float AppliedFovBoost=0.f,AppliedFov=0.f;
     FQuat ViewCorrection=FQuat::Identity; bool bViewCorrectionValid=false;
+};
+
+/** Whole-replay camera audit (VeyrCameraBoom::AuditView), held by the replay so a restart keeps it. */
+struct FVeyrViewAudit
+{
+    int32 Frames=0,InsideAny=0,InsideCapsule=0,InsideHull=0,BehindSkin=0,NearSkin=0,InsideKnight=0,KnightWhole=0;
+    int32 HalfVisible=0,FullyHidden=0,MoveJumps=0,TurnJumps=0,KnightTeleports=0,LongestInsideRun=0,InsideRun=0;
+    int32 SteepFrames=0,OutsideCentre=0;
+    float HiddenRunSeconds=0.f,LongestHiddenSeconds=0.f,MinCameraToKnightCm=TNumericLimits<float>::Max(),MinPitchDeg=90.f;
+    float MaxMoveCm=0.f,MaxTurnDeg=0.f,LastSeconds=-1.f;
+    FVector LastCamera=FVector::ZeroVector,LastKnight=FVector::ZeroVector;FQuat LastView=FQuat::Identity;bool bHasLast=false;
+    TArray<float> InsideSeconds,HiddenSeconds,JumpSeconds,SteepSeconds,JumpDetail; int32 Cuts=0,SettleFrames=0;
 };

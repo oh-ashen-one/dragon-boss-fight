@@ -4,6 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "VeyrReplay.generated.h"
 
+struct FVeyrViewAudit;
+
 class AVeyrKnight;
 class AVeyrDragon;
 class ACameraActor;
