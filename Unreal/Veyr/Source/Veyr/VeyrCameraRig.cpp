@@ -231,6 +231,8 @@ FVector UVeyrCameraBoom::FadeLockChest() const
 {
     const AVeyrDragon* D=Dragon.Get();
     if(!D)return FVector::ZeroVector;
+    FVector Chest,NeckBase,Pelvis;
+    if(D->GetTorsoLocations(Chest,NeckBase,Pelvis))return Chest;
     const FVector Root=D->GetActorLocation(),Head=D->GetHeadLocation();
     return FMath::Lerp(Root+FVector::UpVector*FMath::Max(0.0,(Head.Z-Root.Z)*.5),Head,.25);
 }
@@ -281,7 +283,19 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
     const float DragonTarget=TD>=.999f?1.f:FMath::Max(Floor,TD);
     FadeDragonFraction=FMath::FInterpTo(FadeDragonFraction,DragonTarget,Dt,DragonTarget<FadeDragonFraction?FadeShortenRate:ReleaseRate);
     const float Fraction=FMath::Min(FadeArenaFraction,FadeDragonFraction);
-    const FVector Lens=Origin+(Desired-Origin)*Fraction;
+    FVector Lens=Origin+(Desired-Origin)*Fraction;
+    // 5b. Steady: the lens moves at most FadeMaxStepCm a frame (a blink, a knock-back, a turn); the arena still wins,
+    //     and a jump over FadeCutCm (restart) is a cut. -VeyrFadeNoStepLimit restores the unlimited lens.
+    if(FadeMaxStepCm>0.f&&!bFadeArenaPull&&RigFrame+1==GFrameCounter)
+    {
+        const FVector Step=Lens-LastRigLens;const float StepLen=static_cast<float>(Step.Size());
+        const float MaxStep=FadeMaxStepCm*FMath::Clamp(Dt*60.f,1.f,2.f);
+        if(StepLen>MaxStep&&StepLen<FadeCutCm)
+        {
+            const FVector Limited=LastRigLens+Step*(MaxStep/StepLen);
+            if(RigWorldSweep(Origin,Limited,R)>=.999f){Lens=Limited;++FadeStepLimitedFrames;}
+        }
+    }
     // 6. View: the arm rotation; his feet stay above the bottom edge (vertical half-angle from the lens).
     FRotator VR=ArmRot;
     {

@@ -2976,3 +2976,10 @@ bool AVeyrDragon::SetViewOcclusion(const FVector& CameraWorld,const FVector& Foc
         TEXT("Camera occlusion disabled; transient MIDs remain bound");
     return true;
 }
+
+bool AVeyrDragon::GetTorsoLocations(FVector& Chest,FVector& NeckBase,FVector& Pelvis) const
+{
+    if(!bSolidBodyReady||!ImportedPresentation||SolidChestBone.IsNone()||SolidPelvisBone.IsNone()||SolidNeckBaseBone.IsNone())return false;
+    auto Bone=[&](FName Name,FVector& Out){const int32 I=ImportedPresentation->GetBoneIndex(Name);if(I==INDEX_NONE)return false;Out=ImportedPresentation->GetBoneTransform(I).GetLocation();return true;};
+    return Bone(SolidChestBone,Chest)&&Bone(SolidNeckBaseBone,NeckBase)&&Bone(SolidPelvisBone,Pelvis);
+}

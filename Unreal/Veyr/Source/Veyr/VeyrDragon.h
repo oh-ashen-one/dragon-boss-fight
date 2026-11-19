@@ -263,6 +263,8 @@ public:
     bool IsShowcase() const { return bShowcaseMode; }
     UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadExposed() const { return State == EVeyrDragonState::Exposed; }
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetHeadLocation() const;
+    /** Torso points for camera framing (chest, neck base, pelvis bones of the drawn body); false before the body is ready. */
+    bool GetTorsoLocations(FVector& Chest,FVector& NeckBase,FVector& Pelvis) const;
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetMouthLocation() const;
     bool HasValidImportedCombatPose() const {return bImportedTargetsValid&&bImportedAttackCacheReady&&MissingVisualClip.IsNone();}
     UFUNCTION(BlueprintPure, Category="Combat") FVector GetLegLocation(int32 Index) const;
