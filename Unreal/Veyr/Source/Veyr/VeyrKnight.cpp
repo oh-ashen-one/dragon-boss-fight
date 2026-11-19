@@ -258,6 +258,8 @@ void AVeyrKnight::BeginPlay()
     bChainFlow=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoChainFlow"));
     // Default on (2026-11-18); -VeyrNoFlightFraming restores the fixed lens in flight.
     bFlightFraming=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoFlightFraming"));
+    bFrameAssist=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoFrameAssist"));
+    FParse::Value(FCommandLine::Get(),TEXT("VeyrFrameAssistRate="),FrameAssistDegPerSec);
     // Opt-in only: measured on film it raised head-in-view during wind-ups from 11 % to 19 % but made the knight
     // read too small for the whole fight.
     bBossNearFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrBossNearFraming"));
@@ -1177,6 +1179,24 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             // Avoid spinning underneath a target whose head crosses overhead.
             if(Delta.Size2D()<120.f)Desired.Yaw=Look.Yaw;
             Look=FMath::RInterpConstantTo(Look,FMath::RInterpTo(Look,Desired,DeltaSeconds,3.5f),DeltaSeconds,85.f);
+        }
+        else if(bFrameAssist&&!bLockedOn&&IsValid(Boss)&&!Boss->IsDead()&&ManualCameraRemaining<=0.f&&
+                CameraBoom&&CameraBoom->UsesFadeRig()&&Boss->bCameraFadeMaterials)
+        {
+            // Steady view, unlocked, hands off the mouse: the view keeps the dragon's chest inside the middle of the
+            // frame by turning (at most FrameAssistDegPerSec) only when it drifts past FrameAssistShare of the half-width.
+            // Pitch is the player's. -VeyrNoFrameAssist turns it off.
+            FVector Chest,NeckBase,Pelvis;
+            if(!Boss->GetTorsoLocations(Chest,NeckBase,Pelvis))Chest=Boss->GetHeadLocation();
+            const FVector To=Chest-CameraBoom->GetComponentLocation();
+            if(To.Size2D()>150.f)
+            {
+                const float HalfH=CombatCamera->FieldOfView*.5f;
+                const float Error=FMath::FindDeltaAngleDegrees(static_cast<float>(Look.Yaw),static_cast<float>(To.Rotation().Yaw));
+                const float Allowed=HalfH*FrameAssistShare;
+                if(FMath::Abs(Error)>Allowed)
+                    Look.Yaw+=FMath::Sign(Error)*FMath::Min(FMath::Abs(Error)-Allowed,FrameAssistDegPerSec*DeltaSeconds);
+            }
         }
         // While the dragon is in the air, looking up (by lock or by hand) stops at 40 degrees and the lens
         // opens a little further past 24, so the knight's head and shoulders stay in the bottom of the frame.

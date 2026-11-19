@@ -1008,7 +1008,12 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
                 auto In=[&](const FVector& P){float U,V;return ProjectToView(P,Camera,View,HorizontalFovDeg,Aspect,U,V)&&FMath::Abs(U)<=1.f&&FMath::Abs(V)<=1.f;};
                 const bool bHead=In(AuditDragon->GetHeadLocation());
                 FVector Chest,NeckBase,Pelvis;bool bTorso=false;
-                if(AuditDragon->GetTorsoLocations(Chest,NeckBase,Pelvis))bTorso=In(Chest)||In(NeckBase)||In(Pelvis);
+                if(AuditDragon->GetTorsoLocations(Chest,NeckBase,Pelvis))
+                {
+                    // Bones and the belly underneath them (the body's measured half-depth ~2 m at the shipped size).
+                    const FVector Down=-FVector::UpVector*180.f*DragonScale();
+                    bTorso=In(Chest)||In(NeckBase)||In(Pelvis)||In((Chest+Pelvis)*.5)||In(Chest+Down)||In(Pelvis+Down)||In((Chest+Pelvis)*.5+Down);
+                }
                 A.FadeDragonHeadVisible+=bHead;A.FadeDragonVisible+=bHead||bTorso;
                 if(!bHead&&!bTorso)Note(A.FadeDragonOutSeconds,Seconds);
             }

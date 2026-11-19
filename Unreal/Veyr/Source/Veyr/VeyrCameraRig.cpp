@@ -289,7 +289,7 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
     if(FadeMaxStepCm>0.f&&!bFadeArenaPull&&RigFrame+1==GFrameCounter)
     {
         const FVector Step=Lens-LastRigLens;const float StepLen=static_cast<float>(Step.Size());
-        const float MaxStep=FadeMaxStepCm*FMath::Clamp(Dt*60.f,1.f,2.f);
+        const float MaxStep=FadeMaxStepCm;
         if(StepLen>MaxStep&&StepLen<FadeCutCm)
         {
             const FVector Limited=LastRigLens+Step*(MaxStep/StepLen);

@@ -300,6 +300,9 @@ private:
     /** Flight framing (default on, -VeyrNoFlightFraming restores): while the dragon is airborne the lens widens to 90 degrees, the
      * lock keeps the whole knight in frame and leans toward where the fire or the landing will hit. */
     bool bFlightFraming=false;
+    /** Camera fifth pass (2026-11-19): unlocked and hands off the mouse, the steady view turns to keep the dragon's chest
+     * in the frame. -VeyrNoFrameAssist turns it off. */
+    bool bFrameAssist=true;float FrameAssistDegPerSec=70.f,FrameAssistShare=.55f;
     /** Near-boss framing (opt-in, -VeyrBossNearFraming): close to the
      * 30 ft dragon the arm lengthens and the lens widens a little so its head and the knight's feet fit
      * one frame during wind-ups. Blends out with distance. */
