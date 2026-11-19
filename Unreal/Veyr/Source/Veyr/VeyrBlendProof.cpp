@@ -125,6 +125,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
             {TEXT("Film_heavy"),EKind::HeavyAttack,0,false,false,0.f,0.f,TEXT("HeavyAttack"),35.f},
             {TEXT("Film_roll"),EKind::Roll,0,false,false,0.f,480.f,TEXT("Roll"),90.f},
             {TEXT("Film_guard"),EKind::Guard,0,false,false,2.2f,0.f,TEXT("Idle"),35.f},
+            {TEXT("Film_hit_reaction"),EKind::Hit,0,false,false,0.f,0.f,TEXT("StaggerFront"),35.f},
         };
         return FilmDefs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(FilmDefs)-1)];
     }
@@ -179,7 +180,7 @@ const FVeyrBlendProof::FDef& FVeyrBlendProof::Def(int32 Index) const
     };
     return Defs[FMath::Clamp(Index,0,UE_ARRAY_COUNT(Defs)-1)];
 }
-int32 FVeyrBlendProof::DefCount() const{return bKnightFilm?7:bGreystoneMotionProof?5:bGreystoneTrialProof?4:bRunStartProof?4:bPrimaryTapProof?4:bMobilityProof?8:bHeavyProof?4:bSprintProof?4:9;}
+int32 FVeyrBlendProof::DefCount() const{return bKnightFilm?8:bGreystoneMotionProof?5:bGreystoneTrialProof?4:bRunStartProof?4:bPrimaryTapProof?4:bMobilityProof?8:bHeavyProof?4:bSprintProof?4:9;}
 
 void FVeyrBlendProof::Input(const FVector& Dir,bool bSprint) const
 {
@@ -515,6 +516,17 @@ void FVeyrBlendProof::DriveAction(double Elapsed,float Dt)
             bExpectedActionSeen=true;return;
         }
         Neutral();EnterPhase(EPhase::PostIdle,Elapsed);return;
+    }
+    if(D.Kind==EKind::Hit)
+    {
+        // Film only: one light boss hit from the front (the knight's own damage path, so his stagger clip plays).
+        Neutral();
+        if(!bActionIssued&&K->Action==EVeyrKnightAction::Ready)
+        {K->ApplyBossDamage(8.f,K->GetActorLocation()+Fwd0*300.f);bActionIssued=true;return;}
+        if(K->Action!=EVeyrKnightAction::Ready)bExpectedActionSeen=true;
+        if(bExpectedActionSeen&&K->Action==EVeyrKnightAction::Ready){EnterPhase(EPhase::PostIdle,Elapsed);return;}
+        if(InAction>4.){bActionTimedOut=true;EnterPhase(EPhase::PostIdle,Elapsed);}
+        return;
     }
     if(D.Kind==EKind::Combo)
     {
