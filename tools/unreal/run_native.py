@@ -129,6 +129,11 @@ if result.returncode:
     raise SystemExit(result.returncode)
 results = list(run.glob('unreal-*/evidence.json'))
 expected=[a.mode]+([a.next_mode] if a.next_mode else [])
+# D3 seed sweep (-VeyrSeedSweep=A-B): one evidence folder per seed, all of the requested mode, in one process.
+for extra in a.extra_arg:
+    if extra.startswith('-VeyrSeedSweep='):
+        first,last=(int(v) for v in extra.split('=',1)[1].split('-'))
+        expected=[a.mode]*(last-first+1)
 if len(results) != len(expected):raise SystemExit('Expected one completed evidence file per requested scenario')
 evidence=[json.loads(p.read_text()) for p in results]
 if sorted(d.get('mode','') for d in evidence)!=sorted(expected):raise SystemExit('Recorded scenarios differ from the requested run')

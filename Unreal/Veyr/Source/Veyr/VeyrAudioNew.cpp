@@ -14,6 +14,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformTime.h"
 #include "Dom/JsonObject.h"
@@ -344,6 +345,12 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force)
         LevelJitter=FMath::Pow(10.f,Rand.FRandRange(-1.5f,1.5f)/20.f);
     }
     if(Cue==ECue::DragonStep||Cue==ECue::Exposed)Pitch*=FMath::Lerp(1.07f,.9f,FMath::Clamp(Volume,0.f,1.f)); // heavier = lower
+    // D3: a bigger creature sounds lower. 1.0 at the 2x default; (2/scale)^0.2 is 0.96 at 2.5x and 0.92 at 3x.
+    // -VeyrNoSizePitch restores weight-only pitch.
+    static const float SizePitch=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoSizePitch"))?1.f:
+        FMath::Pow(2.f/FMath::Max(.5f,AVeyrDragon::ConfiguredBodyScale()),.2f);
+    if(Cue==ECue::DragonStep||Cue==ECue::DragonSwing||Cue==ECue::Exposed||Cue==ECue::DragonGrowlLow||Cue==ECue::DragonSnort||
+       Cue==ECue::DragonBreathIn||Cue==ECue::DragonBreathOut||Cue==ECue::Wing||Cue==ECue::Fire||Cue==ECue::Bite||Cue==ECue::DragonGrowl||Cue==ECue::DragonPain||Cue==ECue::Roar)Pitch*=SizePitch;
     C.Pitch=Pitch;
     C.Seconds=C.Seconds0/FMath::Max(.5f,Pitch);
     C.Level=.65f*Headroom*FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter;

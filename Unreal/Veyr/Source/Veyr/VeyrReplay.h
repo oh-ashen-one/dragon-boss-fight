@@ -15,6 +15,7 @@ class FJsonObject;
 class FJsonValue;
 class UPrimitiveComponent;
 enum class EVeyrDragonMove : uint8;
+struct FVeyrSizeMeter;
 
 /** Value-only result: no UObject or replay-owned pointers cross the worker boundary. */
 struct FVeyrVideoWriteResult
@@ -43,6 +44,8 @@ protected:
 private:
     UPROPERTY() TObjectPtr<AVeyrKnight> Knight;
     UPROPERTY() TObjectPtr<AVeyrDragon> Dragon;
+    TSharedPtr<FVeyrSizeMeter> SizeMeter;
+    bool bSizeMeterFrozen=false;
     UPROPERTY() TObjectPtr<ACameraActor> HealInspectionCamera;
     int32 HealInspectionView=0;
     UPROPERTY() TObjectPtr<ACameraActor> EnvironmentCamera;

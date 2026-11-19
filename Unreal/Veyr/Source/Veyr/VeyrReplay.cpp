@@ -45,6 +45,7 @@
 #include "Misc/Guid.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "VeyrSizeMeter.h"
 
 namespace
 {
@@ -225,6 +226,14 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         }
     }
     bInitialized=true; bQuit=FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayQuit"));
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrSizeMeter")))
+    {
+        // A restart world (victory/death verification) keeps the fight's meter and stops measuring.
+        static TSharedPtr<FVeyrSizeMeter> FightMeter;
+        bSizeMeterFrozen=bRestartVerification&&FightMeter.IsValid();
+        if(!bSizeMeterFrozen)FightMeter=MakeShared<FVeyrSizeMeter>();
+        SizeMeter=FightMeter;
+    }
     LastWallFrameTime=FPlatformTime::Seconds();
     StartedWallTime=LastWallFrameTime;
     DurationLimit=ReplayMode==TEXT("intro")?50.f:ReplayMode==TEXT("blendproof")?420.f:ReplayMode==TEXT("lockon")?180.f:ReplayMode==TEXT("collision")?540.f:ReplayMode==TEXT("integration")?300.f:ReplayMode==TEXT("victory")?480.f:ReplayMode==TEXT("camp")?420.f:ReplayMode==TEXT("death")?120.f:(ReplayMode==TEXT("avoidance")||ReplayMode==TEXT("stance"))?240.f:bLegIsolation?120.f:180.f;
@@ -3146,6 +3155,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
         Frames.Add(MakeShared<FJsonValueObject>(F));
     }
     Root->SetArrayField(TEXT("screenshots"),Frames);Root->SetBoolField(TEXT("finalWrite"),bFinal);
+    if(SizeMeter)Root->SetObjectField(TEXT("dragonSize"),SizeMeter->ToJson());
     // Offset of the master recording against the first video frame, for muxing a film.
     if(const AVeyrGameMode* MixMode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;MixMode&&MixMode->GetMixCaptureStartedWall()>0&&VideoStartedWallTime>0)
     {
@@ -3202,6 +3212,13 @@ void AVeyrReplay::Tick(float DeltaSeconds)
                 bNextReplayWorldStarted=true;bAwaitingNextReplayWorld=true;
                 UGameplayStatics::OpenLevel(this,FName(*Level));
             }
+            else if(AVeyrDragon::AdvanceSweep())
+            {
+                // D3 seed sweep: the next seed in a fresh world of this same process (one engine-lock hold).
+                const FString Level=UGameplayStatics::GetCurrentLevelName(this,true);
+                if(Level.IsEmpty()){if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Sweep replay map missing"));return;}
+                bAwaitingNextReplayWorld=true;UGameplayStatics::OpenLevel(this,FName(*Level));
+            }
             else if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Veyr replay completed"));
         }
         else ServiceCapture();
@@ -3209,6 +3226,7 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     }
     Elapsed+=DeltaSeconds;++FrameCount;MaximumFrameSeconds=FMath::Max(MaximumFrameSeconds,DeltaSeconds);
     SampleClock+=DeltaSeconds;SaveClock+=DeltaSeconds;Observe();
+    if(SizeMeter&&!bSizeMeterFrozen)SizeMeter->Tick(GetWorld(),Dragon,Knight,DeltaSeconds);
     if(SampleClock>=(bPerformanceMode?5.f:.25f)){SampleClock=0;Samples.Add(MakeShared<FJsonValueObject>(Snapshot()));}
     if(ReplayMode==TEXT("environment"))
     {
