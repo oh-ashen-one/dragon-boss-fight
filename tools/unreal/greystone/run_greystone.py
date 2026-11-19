@@ -28,6 +28,7 @@ STEPS = {
     'load-all': ('load_all.py', False),
     'rigs': ('make_rigs.py', False),
     'native': ('measure_native.py', False),
+    'compare': ('compare_clips.py', False),
     'skin': ('novaborn_gold.py', False),
     'retarget': ('retarget_clips.py', False),
     'definition': ('build_definition.py', False),

@@ -1503,6 +1503,7 @@ bool AVeyrKnight::GetWeaponSocketWorld(FTransform& Out)
     // Round 2 (2026-10-29): WeaponSocket is a root child in the shared skeleton, so engine pose blends move the
     // hand and the sword independently. While a transition blends, place the sword from the right hand with a
     // hand-space grip interpolated between the source and target clips' own grips (hand slip = grip difference only).
+    if(!CustomuseVisualDefinition||!CustomuseVisualDefinition->BoneTargets.Contains(TEXT("weapon_socket")))return false; // E: Greystone
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Out))return false;
     if(!bWeaponGripLockEnabled||!bWeaponGripBlendActive)return true;
     FTransform Hand;
@@ -1929,8 +1930,14 @@ bool AVeyrKnight::UpdateLocomotionFootContacts(float DeltaSeconds)
 
 bool AVeyrKnight::GetProofWeaponWorld(FTransform& Out) const
 {
-    if(!BoatWeapon||!BoatWeapon->GetStaticMesh()||!BoatWeapon->IsVisible())return false;
-    Out=BoatWeapon->GetComponentTransform();return true;
+    if(BoatWeapon&&BoatWeapon->GetStaticMesh()&&BoatWeapon->IsVisible()){Out=BoatWeapon->GetComponentTransform();return true;}
+    // E: Greystone's sword is skinned into his mesh (sword_bottom under hand_r); the probe reads that bone.
+    if(ImportedPresentation&&ImportedPresentation->bPoseEvaluated&&VeyrGreystone::IsGreystoneDefinition(CustomuseVisualDefinition))
+    {
+        const int32 Index=ImportedPresentation->GetBoneIndex(VeyrGreystone::SwordBottomBone);
+        if(Index!=INDEX_NONE){Out=ImportedPresentation->GetBoneTransform(Index);return true;}
+    }
+    return false;
 }
 
 bool AVeyrKnight::GetProofRollAttackTimes(float& OutRollPrefixEnd,float& OutStrikeEnd) const

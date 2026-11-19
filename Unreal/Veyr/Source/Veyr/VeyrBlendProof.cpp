@@ -1,5 +1,6 @@
 #include "VeyrBlendProof.h"
 #include "VeyrBoneRoles.h"
+#include "VeyrGreystone.h"
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
 #include "VeyrSkeletalPresentation.h"
@@ -344,9 +345,11 @@ void FVeyrBlendProof::Sample(double Elapsed,float Dt)
     if(F.bBlend&&P&&GripReference.IsValid())
     {
         FTransform ReferenceHand,ReferenceSocket;
+        // E: Greystone has no weapon_socket target; his skinned sword bone is the authored grip.
+        const int32 SwordBone=VeyrGreystone::IsGreystoneDefinition(GripReference->VisualDefinition)?GripReference->GetBoneIndex(VeyrGreystone::SwordBottomBone):INDEX_NONE;
+        auto ReferenceSword=[&](FTransform& Out){if(SwordBone==INDEX_NONE)return GripReference->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Out);Out=GripReference->GetBoneTransform(SwordBone);return true;};
         if(GripReference->SampleClipTime(F.Clip,P->CurrentTrimmedSeconds)&&
-           GripReference->GetBoneTargetWorldTransform(TEXT("weapon_hand"),ReferenceHand)&&
-           GripReference->GetBoneTargetWorldTransform(TEXT("weapon_socket"),ReferenceSocket))
+           GripReference->GetBoneTargetWorldTransform(TEXT("weapon_hand"),ReferenceHand)&&ReferenceSword(ReferenceSocket))
         {
             F.AuthoredGripTarget=ReferenceHand.GetRotation().UnrotateVector(ReferenceSocket.GetLocation()-ReferenceHand.GetLocation());
             F.bAuthoredGripValid=true;

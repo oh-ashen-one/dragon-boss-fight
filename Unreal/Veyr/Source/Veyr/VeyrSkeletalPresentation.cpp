@@ -1,5 +1,6 @@
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrSingleNodeInstance.h"
+#include "VeyrGreystone.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Engine/SkeletalMesh.h"
@@ -135,6 +136,21 @@ bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDef
     if(!DefinitionErrors.IsEmpty())return Fail(FString::Join(DefinitionErrors,TEXT("; ")));
 #if WITH_EDITOR
     if(InDefinition->SkeletalMesh->IsCompiling())return Fail(TEXT("Skeletal mesh compilation is still in progress"));
+    // E (2026-11-19): in an editor-game run the Greystone clips' compressed data is still being fetched/built when the
+    // trial starts (Idle, Run, Walk failed for ~4 s, so the pose froze and the proof measured nothing). Finish it
+    // once, synchronously, here. Editor builds and the Greystone definition only: cooked games and KnightB unchanged.
+    if(VeyrGreystone::IsGreystoneDefinition(InDefinition))
+    {
+        int32 Waited=0;const double Start=FPlatformTime::Seconds();
+        for(const auto& Entry:InDefinition->Clips)
+            if(UAnimSequence* Sequence=Entry.Value.Sequence.Get();Sequence&&!Sequence->IsCompressedDataValid())
+            {
+                Sequence->WaitOnExistingCompression(true);
+                if(!Sequence->IsCompressedDataValid())Sequence->CacheDerivedDataForCurrentPlatform();
+                ++Waited;
+            }
+        UE_LOG(LogTemp,Display,TEXT("VEYR_GREYSTONE_CLIP_WARM waited=%d seconds=%.2f"),Waited,FPlatformTime::Seconds()-Start);
+    }
 #endif
     HandleExistingParallelEvaluationTask(true,true);
     VisualDefinition=InDefinition;
@@ -501,7 +517,16 @@ bool UVeyrSkeletalPresentation::GetBoneTargetWorldTransform(FName TargetName, FT
     if(!bPoseEvaluated)return Fail(TEXT("Bone target requested without a successful current pose sample: ")+TargetName.ToString());
     if(!CheckReady())return false;
     const FVeyrVisualBoneTarget* Target=VisualDefinition->BoneTargets.Find(TargetName);
-    if(!Target)return Fail(TEXT("Bone target definition is missing: ")+TargetName.ToString());
+    if(!Target)
+    {
+        // E (2026-11-19): a definition without this key (Greystone has no weapon_socket: his sword is skinned) is a
+        // query miss. Fail() would clear bPoseEvaluated and stop every later transition; the pose itself is fine.
+        // KnightB defines every key it asks for, so its behaviour is unchanged.
+        const FString Reason=TEXT("Bone target definition is missing: ")+TargetName.ToString();
+        if(LastError!=Reason)UE_LOG(LogTemp,Display,TEXT("VEYR_SKELETAL_PRESENTATION_TARGET_MISSING %s (pose kept)"),*TargetName.ToString());
+        LastError=Reason;
+        return false;
+    }
     const int32 Index=GetBoneIndex(Target->BoneName);
     if(Index==INDEX_NONE||!GetComponentSpaceTransforms().IsValidIndex(Index)||!RequiredBones.Contains(static_cast<FBoneIndexType>(Index)))
         return Fail(TEXT("Target bone was not evaluated at LOD0: ")+Target->BoneName.ToString());
