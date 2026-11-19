@@ -43,7 +43,7 @@ void AVeyrArena::BuildRelitLighting()
     auto* Moon=MakeDirectional(TEXT("RelitColdMoonKey"));
     Moon->SetRelativeRotation(FRotator(VeyrLook::Tune(TEXT("moonpitch"),-34.f),VeyrLook::Tune(TEXT("moonyaw"),-155.f),0));Moon->SetForwardShadingPriority(1);
     Moon->SetIntensity(VeyrLook::Tune(TEXT("moon"),.5f));Moon->SetLightColor(MoonColour,false);Moon->SetCastShadows(true);
-    Moon->SetLightSourceAngle(1.5f);Moon->SetSpecularScale(VeyrLook::Tune(TEXT("moonspec"),1.6f));Moon->SetVolumetricScatteringIntensity(1.f);
+    Moon->SetLightSourceAngle(VeyrLook::Tune(TEXT("moonangle"),4.f)); // blind review 2: hard stencil edges on the moon patchesMoon->SetSpecularScale(VeyrLook::Tune(TEXT("moonspec"),1.3f));Moon->SetVolumetricScatteringIntensity(1.f);
     Moon->RegisterComponent();
 
     // Rims re-aimed every tick (TickRelitLighting) to shine from behind the subject
@@ -69,13 +69,14 @@ void AVeyrArena::BuildRelitLighting()
     {
         DragonKeyLight=MakeDirectional(TEXT("RelitDragonKey"));
         DragonKeyLight->LightingChannels.bChannel0=false;DragonKeyLight->LightingChannels.bChannel1=false;DragonKeyLight->LightingChannels.bChannel2=true;
-        DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),3.f));DragonKeyLight->SetLightColor(FLinearColor(.80f,.87f,1.f),false);DragonKeyLight->SetCastShadows(false);
-        DragonKeyLight->SetLightSourceAngle(8.f);DragonKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("dkeyspec"),.9f));DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
+        // Blind review 2: a pale pink flat fill on legs and tail. Cooler, from higher, harder: tops and backs lit, flanks fall off.
+        DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),2.4f));DragonKeyLight->SetLightColor(FLinearColor(.66f,.78f,1.f),false);DragonKeyLight->SetCastShadows(false);
+        DragonKeyLight->SetLightSourceAngle(2.f);DragonKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("dkeyspec"),.9f));DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
         DragonKeyLight->RegisterComponent();
         KnightKeyLight=MakeDirectional(TEXT("RelitKnightKey"));
         KnightKeyLight->LightingChannels.bChannel0=false;KnightKeyLight->LightingChannels.bChannel1=true;KnightKeyLight->LightingChannels.bChannel2=false;
         KnightKeyLight->SetIntensity(VeyrLook::Tune(TEXT("kkey"),4.f));KnightKeyLight->SetLightColor(FLinearColor(1.f,.87f,.72f),false);KnightKeyLight->SetCastShadows(false);
-        KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("kkeyspec"),2.f));KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
+        KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("kkeyspec"),1.5f));KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
         KnightKeyLight->RegisterComponent();
     }
 
@@ -96,7 +97,7 @@ void AVeyrArena::BuildRelitLighting()
     DragonBellyLight->LightingChannels.bChannel0=false;DragonBellyLight->LightingChannels.bChannel1=false;DragonBellyLight->LightingChannels.bChannel2=true;
     BellyBase=VeyrLook::Tune(TEXT("belly"),180.f);BellyBreath=VeyrLook::Tune(TEXT("bellybreath"),2200.f);BellyLevel=BellyBase;
     DragonBellyLight->SetIntensityUnits(ELightUnits::Candelas);DragonBellyLight->SetIntensity(BellyBase);
-    DragonBellyLight->SetLightColor(FLinearColor(1.f,.55f,.25f),false);DragonBellyLight->SetAttenuationRadius(2200.f);
+    DragonBellyLight->SetLightColor(FLinearColor(1.f,.55f,.25f),false);DragonBellyLight->SetAttenuationRadius(VeyrLook::Tune(TEXT("bellyradius"),1500.f));
     DragonBellyLight->SetSourceRadius(120.f);DragonBellyLight->SetCastShadows(false);DragonBellyLight->SetAffectGlobalIllumination(false);
     DragonBellyLight->SetVolumetricScatteringIntensity(0.f);DragonBellyLight->RegisterComponent();
     // Focal gate behind the dragon's usual ground (east gatehouse): a brighter warm niche the eye goes to.
@@ -193,9 +194,9 @@ void AVeyrArena::BuildRelitLighting()
     S.bOverride_AutoExposureSpeedDown=true;S.AutoExposureSpeedDown=1.2f;
     S.bOverride_HistogramLogMin=true;S.HistogramLogMin=-8.f;
     S.bOverride_HistogramLogMax=true;S.HistogramLogMax=8.f;
-    S.bOverride_LocalExposureHighlightContrastScale=true;S.LocalExposureHighlightContrastScale=VeyrLook::Tune(TEXT("lehc"),1.f);
+    S.bOverride_LocalExposureHighlightContrastScale=true;S.LocalExposureHighlightContrastScale=VeyrLook::Tune(TEXT("lehc"),.9f);
     S.bOverride_LocalExposureShadowContrastScale=true;S.LocalExposureShadowContrastScale=VeyrLook::Tune(TEXT("lesc"),.8f);
-    S.bOverride_BloomIntensity=true;S.BloomIntensity=VeyrLook::Tune(TEXT("bloom"),.75f);
+    S.bOverride_BloomIntensity=true;S.BloomIntensity=VeyrLook::Tune(TEXT("bloom"),.6f);
     S.bOverride_VignetteIntensity=true;S.VignetteIntensity=VeyrLook::Tune(TEXT("vignette"),.38f);
     S.bOverride_ColorContrast=true;const float Contrast=VeyrLook::Tune(TEXT("contrast"),1.18f);S.ColorContrast=FVector4(Contrast,Contrast,Contrast,1.f);
     S.bOverride_ColorSaturation=true;const float Saturation=VeyrLook::Tune(TEXT("sat"),.95f);S.ColorSaturation=FVector4(Saturation,Saturation,Saturation,1.f);
@@ -267,7 +268,7 @@ void AVeyrArena::AimRelitRims()
     if(CharacterRim)CharacterRim->SetWorldRotation(FRotator(-25.f,CameraYaw+180.f+20.f,0));
     if(DragonRimLight)DragonRimLight->SetWorldRotation(FRotator(-30.f,CameraYaw+180.f-35.f,0));
     // Keys travel away from the camera side: dragon from high front-left, knight from front-right, lower.
-    static const float DragonKeyPitch=VeyrLook::Tune(TEXT("dkeypitch"),-48.f),DragonKeyYaw=VeyrLook::Tune(TEXT("dkeyyaw"),32.f);
+    static const float DragonKeyPitch=VeyrLook::Tune(TEXT("dkeypitch"),-62.f),DragonKeyYaw=VeyrLook::Tune(TEXT("dkeyyaw"),32.f);
     static const float KnightKeyPitch=VeyrLook::Tune(TEXT("kkeypitch"),-32.f),KnightKeyYaw=VeyrLook::Tune(TEXT("kkeyyaw"),-38.f);
     if(DragonKeyLight)DragonKeyLight->SetWorldRotation(FRotator(DragonKeyPitch,CameraYaw+DragonKeyYaw,0));
     if(KnightKeyLight)KnightKeyLight->SetWorldRotation(FRotator(KnightKeyPitch,CameraYaw+KnightKeyYaw,0));
@@ -275,7 +276,16 @@ void AVeyrArena::AimRelitRims()
     if(FloorFillLight)
     {
         const FVector Eye=PC->PlayerCameraManager->GetCameraLocation();
-        FloorFillLight->SetWorldLocationAndRotation(Eye+FVector(0,0,500.f),FRotator(-72.f,CameraYaw,0));
+        // Blind review 2: near cobbles still crushed in low/close and high-looking-down views. Aim at the floor
+        // 3.5 m ahead of the camera (the bottom third of the frame) and hold a constant illuminance there
+        // (`floorfilllux`), so it fills the dragon's shadow under the hero whatever the camera height.
+        const FVector Ahead=FRotator(0,CameraYaw,0).Vector();
+        const FVector Target(Eye.X+Ahead.X*350.f,Eye.Y+Ahead.Y*350.f,0.f);
+        const FVector From=Eye+FVector(0,0,500.f)-Ahead*150.f;
+        static const float Lux=VeyrLook::Tune(TEXT("floorfilllux"),.9f);
+        const float Metres=FVector::Dist(From,Target)/100.f;
+        FloorFillLight->SetWorldLocationAndRotation(From,(Target-From).Rotation());
+        FloorFillLight->SetIntensity(FMath::Clamp(Lux*Metres*Metres,15.f,140.f));
     }
     if(DragonBellyLight)
         if(const AVeyrDragon* Dragon=Cast<AVeyrDragon>(ChannelSplitDragon.Get()))

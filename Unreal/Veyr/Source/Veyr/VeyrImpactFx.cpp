@@ -196,7 +196,7 @@ void AVeyrImpactFx::OnContact(AVeyrDragon* Dragon,const FVeyrGroundContact& C)
     const float Strength=FMath::Lerp(.75f,1.25f,C.Strength);
     // Blind review 1: "dust is an opaque grey slab that hides the boss". Relit: smaller, shorter-lived clouds
     // and thinner cards (-VeyrTune=dustscale=,dustlife=,dustalpha=).
-    static const float DustScale=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustscale"),.45f);
+    static const float DustScale=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustscale"),.38f);
     static const float DustLife=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustlife"),.7f);
     if(SpawnAsset(Tier,C.World,Facing,E.Scale*Scale*Strength*DustScale,E.LifeSeconds*DustLife))
     {++DustAsset[Tier];if(E.bCardsWithAsset)SpawnDustCards(E,C.World,Scale,Strength,Tier>=3);}
@@ -234,7 +234,7 @@ void AVeyrImpactFx::SpawnDustCards(const FVeyrFeelTuning::FEffect& E,const FVect
         const float Spread=E.CardSpreadCmS*Scale*Strength*(bRing?.8f+.4f*Rand():.35f+.65f*Rand());
         C.P=At+Dir*(E.CardSizeCm*.15f*Scale)+FVector(0,0,E.CardSizeCm*.25f*Scale);
         C.V=Dir*Spread+FVector(0,0,E.CardRiseCmS*Scale*(.6f+.8f*Rand()));
-        static const float CardThin=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustalpha"),.4f);
+        static const float CardThin=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustalpha"),.3f);
         static const float CardSize=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustsize"),.8f);
         static const float CardLife=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustlife"),.7f);
         C.Size=E.CardSizeCm*Scale*Strength*CardSize*(.7f+.5f*Rand());C.Grow=C.Size*(bRing?1.6f:1.1f);
