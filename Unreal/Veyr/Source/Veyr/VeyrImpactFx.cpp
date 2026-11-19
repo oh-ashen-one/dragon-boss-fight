@@ -1,5 +1,6 @@
 #include "VeyrImpactFx.h"
 #include "VeyrDragon.h"
+#include "VeyrLook.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Engine/StaticMesh.h"
@@ -73,14 +74,26 @@ void AVeyrImpactFx::BeginPlay()
     if(Plane&&SmokeMaterial)
     {
         UMaterialInstanceDynamic* Dust=UMaterialInstanceDynamic::Create(SmokeMaterial,this);
-        Dust->SetVectorParameterValue(TEXT("Tint"),T.DustTint);Dust->SetScalarParameterValue(TEXT("Brightness"),T.DustBrightness);
+        // The cards are unlit, so in the relit court they do not pick up the light around them: under the
+        // night exposure (2-6x build 16's) a half-locked follow left them a bright cool-white cloud. Relit:
+        // darkened toward the court's warm firelit stone and held close to build 16's on-screen brightness.
+        // -VeyrTune=dustlevel=,dustlock= move both; -VeyrLegacyRender keeps the original tint.
+        FLinearColor DustTint=T.DustTint;float DustLock=-1.f;
+        if(!VeyrLook::IsLegacy())
+        {
+            DustTint=DustTint*FLinearColor(.78f,.64f,.50f)*VeyrLook::Tune(TEXT("dustlevel"),.75f);DustTint.A=T.DustTint.A;
+            DustLock=VeyrLook::Tune(TEXT("dustlock"),.9f);
+        }
+        Dust->SetVectorParameterValue(TEXT("Tint"),DustTint);Dust->SetScalarParameterValue(TEXT("Brightness"),T.DustBrightness);
         ConfigureIsm(DustCards,Plane,Dust,CardCount,4);
+        VeyrLook::FollowExposureAuto(Dust,DustLock);
     }
     if(Plane&&EmberMaterial)
     {
         UMaterialInstanceDynamic* Spark=UMaterialInstanceDynamic::Create(EmberMaterial,this);
         Spark->SetVectorParameterValue(TEXT("Tint"),T.SparkTint);Spark->SetScalarParameterValue(TEXT("Brightness"),T.SparkBrightness);
         ConfigureIsm(SparkStreaks,Plane,Spark,SparkCount,4);
+        VeyrLook::FollowExposureAuto(Spark);
     }
     if(!T.DebrisMesh.IsEmpty())
         if(UStaticMesh* Rock=LoadObject<UStaticMesh>(nullptr,*ObjectPath(T.DebrisMesh),nullptr,LOAD_Quiet|LOAD_NoWarn))ChipMesh=Rock;
@@ -123,10 +136,15 @@ void AVeyrImpactFx::BeginPlay()
             Component->SetupAttachment(GetRootComponent());Component->SetUsingAbsoluteLocation(true);
             Component->SetUsingAbsoluteRotation(true);Component->SetUsingAbsoluteScale(true);
             Component->RegisterComponent();
+            // Unlit sparks and flares were tuned under manual exposure; lit smoke follows the court's light.
+            VeyrLook::FollowExposureOnComponent(Component,this,ExposureMids);
             Components.Add(Component);ComponentAge.Add(100.f);ComponentLife.Add(0.f);++Pools[P].Num;
         }
         Pools[P].bAsset=Pools[P].Num>0;
     }
+    for(const TPair<UMaterialInterface*,UMaterialInstanceDynamic*>& Pair:ExposureMids)if(Pair.Value)ExposureMidRefs.Add(Pair.Value);
+    // Small moving shadow casters redraw their VSM pages every frame; dropped with the other shadow steps.
+    if(VeyrLook::RenderTier()>=2)DebrisChips->SetCastShadow(false);
     Diagnostic=FString::Printf(TEXT("%d effect systems loaded, %d missing (fallback cards); tuning: %s"),
         LoadedSystems.Num(),MissingSystems.Num(),*T.Diagnostic);
     UE_LOG(LogTemp,Display,TEXT("VEYR_IMPACT_FX %s"),*Diagnostic);
@@ -176,7 +194,11 @@ void AVeyrImpactFx::OnContact(AVeyrDragon* Dragon,const FVeyrGroundContact& C)
     const FVeyrFeelTuning::FEffect& E=T.Dust[Tier];
     const FRotator Facing(0.f,Dragon->GetActorRotation().Yaw,0.f);
     const float Strength=FMath::Lerp(.75f,1.25f,C.Strength);
-    if(SpawnAsset(Tier,C.World,Facing,E.Scale*Scale*Strength,E.LifeSeconds))
+    // Blind review 1: "dust is an opaque grey slab that hides the boss". Relit: smaller, shorter-lived clouds
+    // and thinner cards (-VeyrTune=dustscale=,dustlife=,dustalpha=).
+    static const float DustScale=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustscale"),.38f);
+    static const float DustLife=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustlife"),.7f);
+    if(SpawnAsset(Tier,C.World,Facing,E.Scale*Scale*Strength*DustScale,E.LifeSeconds*DustLife))
     {++DustAsset[Tier];if(E.bCardsWithAsset)SpawnDustCards(E,C.World,Scale,Strength,Tier>=3);}
     else{SpawnDustCards(E,C.World,Scale,Strength,Tier>=3);++DustFallback[Tier];}
     // Debris is ours in both cases (the asset tiers may have none).
@@ -230,8 +252,11 @@ void AVeyrImpactFx::SpawnDustCards(const FVeyrFeelTuning::FEffect& E,const FVect
         const float Spread=E.CardSpreadCmS*Scale*Strength*(bRing?.8f+.4f*Rand():.35f+.65f*Rand());
         C.P=At+Dir*(E.CardSizeCm*.15f*Scale)+FVector(0,0,E.CardSizeCm*.25f*Scale);
         C.V=Dir*Spread+FVector(0,0,E.CardRiseCmS*Scale*(.6f+.8f*Rand()));
-        C.Size=E.CardSizeCm*Scale*Strength*(.7f+.5f*Rand());C.Grow=C.Size*(bRing?1.6f:1.1f);
-        C.Life=E.CardLife*(.8f+.4f*Rand());C.Age=0.f;C.Opacity=E.CardOpacity*FMath::Clamp(Strength,.6f,1.2f);C.Seed=Rand();C.bLive=true;
+        static const float CardThin=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustalpha"),.3f);
+        static const float CardSize=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustsize"),.8f);
+        static const float CardLife=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("dustlife"),.7f);
+        C.Size=E.CardSizeCm*Scale*Strength*CardSize*(.7f+.5f*Rand());C.Grow=C.Size*(bRing?1.6f:1.1f);
+        C.Life=E.CardLife*CardLife*(.8f+.4f*Rand());C.Age=0.f;C.Opacity=E.CardOpacity*CardThin*FMath::Clamp(Strength,.6f,1.2f);C.Seed=Rand();C.bLive=true;
         ++CardsSpawned;
     }
     bCardsDirty=true;

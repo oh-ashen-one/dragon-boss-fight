@@ -3,6 +3,9 @@
 #include "VeyrKnight.h"
 #include "VeyrDragon.h"
 #include "VeyrReplay.h"
+#include "VeyrLook.h"
+#include "VeyrSessionState.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
@@ -131,16 +134,17 @@ void AVeyrHUD::Diamond(float X,float Y,float Radius,const FLinearColor& Color,bo
     }
 }
 
-void AVeyrHUD::ControlLegend(float W,float H,bool bTerminal)
+void AVeyrHUD::ControlLegend(float W,float H,bool bTerminal,float Alpha)
 {
     // MediumFont's visible glyphs occupy roughly 80% of its measured line
     // height: 17 layout pixels gives about 13–14 readable pixels at 1280x720.
     const float X=W-263.f,Y=H-275.f;
-    Rect(X-8,Y-7,250,105,FLinearColor(.008f,.014f,.023f,.48f));
+    Rect(X-8,Y-7,250,105,FLinearColor(.008f,.014f,.023f,.48f*Alpha));
     const TCHAR* Rows[]={TEXT("WASD  Move    SHIFT  Sprint"),TEXT("LMB  Attack    F  Heavy"),TEXT("RMB  Guard    E  Grip"),TEXT("Q  Roll    SPACE  Blink"),TEXT("R  Heal    TAB  Lock"),Cast<AVeyrKnight>(GetOwningPawn())&&Cast<AVeyrKnight>(GetOwningPawn())->UsesSourcedMoves()?TEXT("C  Leap    ESC  Menu"):TEXT("ESC  Menu")};
     UFont* LegendFont=GEngine->GetMediumFont();float TW=0.f,TH=0.f;GetTextSize(TEXT("Ag"),TW,TH,LegendFont);
     const float LegendScale=16.f*Unit/FMath::Max(1.f,TH);
-    for(int32 I=0;I<UE_ARRAY_COUNT(Rows);++I)DrawText(Rows[I],Ivory,X*Unit,(Y+I*16)*Unit,LegendFont,LegendScale,false);
+    const FLinearColor LegendInk(Ivory.R,Ivory.G,Ivory.B,Ivory.A*Alpha);
+    for(int32 I=0;I<UE_ARRAY_COUNT(Rows);++I)DrawText(Rows[I],LegendInk,X*Unit,(Y+I*16)*Unit,LegendFont,LegendScale,false);
     if(bTerminal)Text(TEXT("ENTER  Restart encounter"),X,Y-30,17,Ivory);
 }
 
@@ -233,7 +237,17 @@ void AVeyrHUD::DrawHUD()
             Diamond(Screen.X/Unit,Screen.Y/Unit,4,Ivory);
     }
     const bool bTerminal=Knight->IsDead()||Dragon->IsDead();
-    ControlLegend(W,H,bTerminal);
+    // Phase C3: the controls box shows for the first seconds of play, then fades;
+    // it stays on the pause menu's Controls page. -VeyrKeepControls keeps it on.
+    // -VeyrLegacyRender restores all of phase C, so build 16 A/B captures keep the box too.
+    static const bool bKeepControls=FParse::Param(FCommandLine::Get(),TEXT("VeyrKeepControls"))||VeyrLook::IsLegacy();
+    // Session-wide, so a restart after death does not bring the box back.
+    UVeyrSessionState* Session=GetGameInstance()?GetGameInstance()->GetSubsystem<UVeyrSessionState>():nullptr;
+    float& ControlsShownSeconds=Session?Session->ControlsShownSeconds:LocalControlsShownSeconds;
+    if(Knight->HasEnteredEncounter())ControlsShownSeconds+=Dt;
+    const float LegendAlpha=bKeepControls?1.f:1.f-FMath::Clamp((ControlsShownSeconds-ControlsVisibleSeconds)/ControlsFadeSeconds,0.f,1.f);
+    if(LegendAlpha>0.f)ControlLegend(W,H,false,LegendAlpha);
+    if(bTerminal)Text(TEXT("ENTER  Restart encounter"),W-263.f,H-305.f,17,Ivory);
 
     const float Now=GetWorld()->GetTimeSeconds();
     const bool bCaptured=Knight->IsMouseCaptured();

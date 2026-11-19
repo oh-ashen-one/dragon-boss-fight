@@ -4,6 +4,7 @@
 #include "VeyrDragon.h"
 #include "VeyrImpactFx.h"
 #include "VeyrFeelTuning.h"
+#include "VeyrLook.h"
 #include "VeyrVisualDefinition.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrReplay.h"
@@ -89,7 +90,9 @@ void AVeyrFightFeel::BeginPlay()
     bMarkerOnlyReview=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelMarkerOnly"));
     // Channel 1 already belongs to the knight, sword, cup and dragon.
     // Reuse it without changing receivers or the dragon-only rim channel 2.
-    HitFlash->SetLightingChannels(bLegacy,!bLegacy,false);
+    // Relit court: the dragon leaves channel 1 (the knight's key and rim), so the contact light also uses
+    // channel 2 to keep lighting the dragon's skin.
+    HitFlash->SetLightingChannels(bLegacy,!bLegacy,!bLegacy&&!VeyrLook::IsLegacy());
     HitFlash->SetIndirectLightingIntensity(bLegacy?1.f:0.f);
     LastRealTime=GetWorld()->GetRealTimeSeconds();
     if(UMaterialInterface* Parent=WeaponTrail->GetMaterial(0))
@@ -97,6 +100,7 @@ void AVeyrFightFeel::BeginPlay()
         UMaterialInstanceDynamic* Material=UMaterialInstanceDynamic::Create(Parent,this);
         Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(.55f,.68f,.82f));
         Material->SetScalarParameterValue(TEXT("Brightness"),.85f);WeaponTrail->SetMaterial(0,Material);
+        VeyrLook::FollowExposureAuto(Material);
     }
     for(int32 I=0;I<24;++I)WeaponTrail->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
     if(UMaterialInterface* Parent=HitMarker->GetMaterial(0))
@@ -104,6 +108,7 @@ void AVeyrFightFeel::BeginPlay()
         auto* Material=UMaterialInstanceDynamic::Create(Parent,this);
         Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.86f,.58f));
         Material->SetScalarParameterValue(TEXT("Brightness"),4.f);HitMarker->SetMaterial(0,Material);
+        VeyrLook::FollowExposureAuto(Material);
     }
     HitMarker->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
     // B5: the flash on the dragon's own mesh. The authored overlay lights a radius around the blow; the
@@ -132,6 +137,7 @@ void AVeyrFightFeel::BeginPlay()
             RibbonMaterial->SetScalarParameterValue(TEXT("Opacity"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?(bWide?1.f:.75f):(bWide?.5f:.32f));
             RibbonMaterial->SetScalarParameterValue(TEXT("Brightness"),bWide?2.6f:1.4f);
             Ribbon->SetMaterial(0,RibbonMaterial);
+            VeyrLook::FollowExposureAuto(RibbonMaterial);
             // Three edges per row: clear at the hilt side, full on a band near the tip, clear just past the tip.
             const int32 Verts=RibbonMaxRows*3;
             RibbonVerts.Init(FVector::ZeroVector,Verts);RibbonNormals.Init(FVector::UpVector,Verts);
@@ -522,7 +528,12 @@ void AVeyrFightFeel::UpdateMeshFlash(float RealDelta)
         if(OverlayMesh->GetOverlayMaterial()==MeshFlashMaterial)OverlayMesh->SetOverlayMaterial(nullptr);
         OverlayMesh.Reset();return;
     }
-    const float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,MeshFlashFade));
+    // Additive and unlit: scaled with the exposure so a flash in a dark corner does not clip to white.
+    float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,MeshFlashFade))*VeyrLook::FxExposureGain();
+    // Relit court: the additive peak is capped in display terms (intensity x exposure), so the hit leg flashes
+    // warm instead of clipping to white at 2-6x build 16's exposure. -VeyrTune=flashcap= (display units).
+    static const float FlashCap=VeyrLook::Tune(TEXT("flashcap"),.55f);
+    if(VeyrLook::FxExposureLock()>0.f&&VeyrLook::LastExposure()>0.f)I=FMath::Min(I,FlashCap/VeyrLook::LastExposure());
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Intensity"),I);
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Opacity"),FMath::Clamp(.09f*I,0.f,.45f)); // the afterimage fallback's only control
 }
