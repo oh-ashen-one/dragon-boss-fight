@@ -4,6 +4,8 @@
 #include "VeyrKnight.h"
 #include "VeyrHUD.h"
 #include "VeyrReplay.h"
+#include "VeyrLook.h"
+#include "VeyrLightCheck.h"
 #include "VeyrAudio.h"
 #include "VeyrDragonEffects.h"
 #include "VeyrFightFeel.h"
@@ -40,6 +42,7 @@ AVeyrGameMode::AVeyrGameMode()
 void AVeyrGameMode::StartPlay()
 {
     Super::StartPlay();
+    VeyrLook::ApplyRenderer();
     // D3 windowless sweeps: -VeyrFastSim with the null renderer steps the game at a fixed 1/60 s as fast as the CPU
     // allows. Never active in a rendered run; off by default.
     if(FParse::Param(FCommandLine::Get(),TEXT("VeyrFastSim"))&&FParse::Param(FCommandLine::Get(),TEXT("nullrhi")))
@@ -49,6 +52,7 @@ void AVeyrGameMode::StartPlay()
     FString RequestedReplay;
     const bool HasReplay=FParse::Value(FCommandLine::Get(),TEXT("VeyrReplay="),RequestedReplay);
     bArenaIntroActive=!bArenaIntroPreviouslySeen&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoArenaIntro"))&&
+        !FParse::Param(FCommandLine::Get(),TEXT("VeyrLightCheck"))&&!FCString::Strifind(FCommandLine::Get(),TEXT("VeyrLightCheck="))&&
         !FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyArena"))&&(!HasReplay||RequestedReplay.Equals(TEXT("intro"),ESearchCase::IgnoreCase)||
          FParse::Param(FCommandLine::Get(),TEXT("VeyrFilmIntro"))); // film: intro, then the scripted fight
     // Shipping ignores startup console execution; enforce the delivered frame cap directly.
@@ -140,6 +144,14 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
         {
             StartNativeValidation(ReplayMode,EvidenceDirectory);
         }
+        // Phase C picture evidence: fixed stills (-VeyrLightCheck=<dir>) and/or a
+        // 60 s frame-time report over any fight (-VeyrFrameReport=<dir>).
+        FString LightCheckDirectory,FrameReportDirectory;
+        const bool bLightCheck=FParse::Value(FCommandLine::Get(),TEXT("VeyrLightCheck="),LightCheckDirectory)&&!FPaths::IsRelative(LightCheckDirectory);
+        const bool bFrameReport=FParse::Value(FCommandLine::Get(),TEXT("VeyrFrameReport="),FrameReportDirectory)&&!FPaths::IsRelative(FrameReportDirectory);
+        if(bLightCheck||bFrameReport)
+            if(AVeyrLightCheck* Check=GetWorld()->SpawnActor<AVeyrLightCheck>())
+                Check->Initialize(bLightCheck?LightCheckDirectory:FString(),bFrameReport?FrameReportDirectory:FString());
     }
     if(bArenaIntroActive)
     {
@@ -207,7 +219,12 @@ void AVeyrGameMode::TickArenaIntro(float DeltaSeconds)
     }
     ArenaIntroSeconds+=DeltaSeconds;
     const int32 Shot=VeyrArenaTour::Apply(ArenaIntroCamera,ArenaIntroSeconds);
-    if(Shot!=ArenaIntroShot){ArenaIntroShot=Shot;++ArenaIntroShotsSeen;}
+    if(Shot!=ArenaIntroShot)
+    {
+        ArenaIntroShot=Shot;++ArenaIntroShotsSeen;
+        // A hard cut: exposure snaps, no motion-blur or Lumen history across it.
+        if(!VeyrLook::IsLegacy())VeyrLook::NotifyCameraCut(GetWorld());
+    }
     if(ArenaIntroSeconds>=VeyrArenaTour::Duration())FinishArenaIntro(false);
 }
 
