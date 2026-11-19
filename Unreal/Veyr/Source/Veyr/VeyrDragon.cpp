@@ -2447,6 +2447,7 @@ void AVeyrDragon::UpdateImportedPresentation()
     // Review M3: after the gameplay leg points above are read, so sword leg hits, stomp-leg choice and solid-body
     // blockers use the clip's own legs; only the drawn pose (and what reads it later) carries the lock.
     if(Sampled)UpdateFootLock(bFadeActive);
+    if(Sampled)UpdatePoseDeltaStat();
 }
 
 FName AVeyrDragon::ImportedMoveClip(EVeyrDragonMove Attack,int32 Leg,const TCHAR* Suffix) const

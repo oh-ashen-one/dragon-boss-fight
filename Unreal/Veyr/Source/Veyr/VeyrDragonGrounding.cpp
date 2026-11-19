@@ -9,6 +9,14 @@ namespace
 {
 #include "VeyrDragonSolePoints.inl"
 #include "VeyrDragonHullPoints.inl"
+#include "VeyrDragonSkinFixPoints.inl"
+namespace
+{
+    // Quality goal F: the SkinFix_v1 tables follow the SkinFix meshes; -VeyrLegacyDragonSkin restores both.
+    bool LegacyDragonSkin(){static const bool B=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyDragonSkin"));return B;}
+    TArrayView<const FVeyrSolePoint> SolePoints(){return LegacyDragonSkin()?MakeArrayView(GVeyrSolePoints):MakeArrayView(GVeyrSolePointsSkinFix);}
+    TArrayView<const FVeyrHullPoint> HullPoints(){return LegacyDragonSkin()?MakeArrayView(GVeyrHullPoints):MakeArrayView(GVeyrHullPointsSkinFix);}
+}
 
     TArray<FTransform> ReferenceComponentSpace(const FReferenceSkeleton& Reference)
     {
@@ -70,8 +78,8 @@ bool FVeyrHullModel::Initialize(UVeyrSkeletalPresentation* Presentation)
         // First use: fit every mesh variant the clips can switch to now, so no switch pays for a fit mid-move.
         const UVeyrVisualDefinition* Definition=Presentation->VisualDefinition;
         TArray<const USkeletalMesh*,TInlineAllocator<8>> Variants;
-        if(Definition->SkeletalMesh)Variants.AddUnique(Definition->SkeletalMesh.Get());
-        for(const auto& Entry:Definition->Clips)if(Entry.Value.MeshOverride)Variants.AddUnique(Entry.Value.MeshOverride.Get());
+        if(Definition->SkeletalMesh)Variants.AddUnique(Presentation->RemapSkin(Definition->SkeletalMesh.Get()));
+        for(const auto& Entry:Definition->Clips)if(Entry.Value.MeshOverride)Variants.AddUnique(Presentation->RemapSkin(Entry.Value.MeshOverride.Get()));
         for(const USkeletalMesh* Variant:Variants)
             if(Variant!=Mesh&&Variant->GetRefSkeleton().GetNum()==Mesh->GetRefSkeleton().GetNum())
             {TArray<FPoint> Out;Fit(Variant,Out);FitCache.Add(TObjectKey<USkeletalMesh>(Variant),MoveTemp(Out));}
@@ -99,8 +107,8 @@ bool FVeyrHullModel::Fit(const USkeletalMesh* Mesh,TArray<FPoint>& Out)
     // Normals map through the inverse transpose of the linear part (row-vector convention here).
     const FMatrix NormalMatrix=Linear.Inverse().GetTransposed();
     TMap<UPTRINT,int32> BoneOf; // the table repeats a few dozen bone names 26000 times
-    Out.Reserve(UE_ARRAY_COUNT(GVeyrHullPoints));
-    for(const FVeyrHullPoint& Source:GVeyrHullPoints)
+    Out.Reserve(HullPoints().Num());
+    for(const FVeyrHullPoint& Source:HullPoints())
     {
         FPoint Point;Point.Radius=static_cast<float>(Source.Radius*MapScale);
         Point.bWing=Source.Bones[0]&&FCString::Strncmp(Source.Bones[0],TEXT("VeyrWing"),8)==0;
@@ -175,7 +183,7 @@ bool FVeyrSoleModel::Initialize(UVeyrSkeletalPresentation* Presentation)
     if(!FitGltfFrame(Reference,Rest,Map,FitResidualImportedCm,Joints,Error))
     {Diagnostic=Error+TEXT("; grounding off");return false;}
     auto Apply=[&](const FVector& G){return ApplyMap(Map,G);};
-    for(const FVeyrSolePoint& Source:GVeyrSolePoints)
+    for(const FVeyrSolePoint& Source:SolePoints())
     {
         FPoint Point;Point.Foot=Source.Foot;const FVector P=Apply(FVector(Source.X,Source.Y,Source.Z));
         for(int32 I=0;I<4;++I)

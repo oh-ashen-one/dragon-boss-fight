@@ -30,6 +30,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation") bool bPreferCanonicalMesh=false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Veyr|Presentation") bool bRootSpaceBlend=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Veyr|Presentation") int32 MeshVariantSwitchCount=0;
+    // Quality goal F (2026-11-19): the dragon SkinFix_v1 meshes (refit wing-root and left-front-paw weights) replace the
+    // three old meshes they were made from; -VeyrLegacyDragonSkin keeps the old meshes. Built in SetVisualDefinition.
+    UPROPERTY(Transient) TMap<TObjectPtr<USkeletalMesh>,TObjectPtr<USkeletalMesh>> SkinRemap;
+    USkeletalMesh* RemapSkin(USkeletalMesh* Mesh) const { const TObjectPtr<USkeletalMesh>* Found=Mesh?SkinRemap.Find(Mesh):nullptr; return Found&&*Found?Found->Get():Mesh; }
+    FString SkinDiagnostic;
 
     UFUNCTION(BlueprintPure, Category="Veyr|Presentation|RenderEvidence")
     bool HasPresentationRenderState() const { return IsRenderStateCreated(); }
@@ -198,6 +203,7 @@ private:
     FVector GroundingBaseLocation=FVector::ZeroVector;
     double LastGroundingWorldSeconds=-1.0;
     bool ApplyMeshRenderPolicy(USkeletalMesh* Mesh);
+    void BuildSkinRemap(const UVeyrVisualDefinition* Definition);
     bool RefreshRenderPolicyEvidence();
     bool Fail(const FString& Reason);
     bool CheckReady();

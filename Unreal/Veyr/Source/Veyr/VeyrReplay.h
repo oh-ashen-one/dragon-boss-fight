@@ -181,6 +181,8 @@ private:
     FDelegateHandle VideoPixelsHandle, VideoProcessedHandle;
     TArray<double> WallFrameIntervals;
     TSharedPtr<FJsonObject> LastEvidence;
+    // Quality goal F: the fight's dragonPlayback block, carried across the restart-verification reload.
+    TSharedPtr<FJsonObject> FightPlayback;
     TSharedPtr<FJsonObject> Snapshot() const;
     void Observe();
     void DriveInputs();

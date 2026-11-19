@@ -112,9 +112,9 @@ bool UVeyrSkeletalPresentation::CheckReady()
         if(!bCPUPoseOnlyVerified)return Fail(TEXT("CPU pose probe unexpectedly acquired rendering state"));
     }
     if(!VisualDefinition||!VisualDefinition->SkeletalMesh)return Fail(TEXT("No applied skeletal visual definition"));
-    bool KnownMesh=GetSkeletalMeshAsset()==VisualDefinition->SkeletalMesh;
+    bool KnownMesh=GetSkeletalMeshAsset()==RemapSkin(VisualDefinition->SkeletalMesh);
     if(!KnownMesh)for(const auto& Entry:VisualDefinition->Clips)
-        if(Entry.Value.MeshOverride==GetSkeletalMeshAsset()){KnownMesh=true;break;}
+        if(Entry.Value.MeshOverride&&RemapSkin(Entry.Value.MeshOverride)==GetSkeletalMeshAsset()){KnownMesh=true;break;}
     if(!KnownMesh)return Fail(TEXT("Component mesh is not an approved definition variant"));
 #if WITH_EDITOR
     if(GetSkeletalMeshAsset()->IsCompiling())return Fail(TEXT("Skeletal mesh compilation is still in progress"));
@@ -122,6 +122,38 @@ bool UVeyrSkeletalPresentation::CheckReady()
     if(!Cast<UVeyrSingleNodeInstance>(GetSingleNodeInstance()))
         return Fail(TEXT("Explicit sampling requires the Veyr native single-node instance"));
     return true;
+}
+
+void UVeyrSkeletalPresentation::BuildSkinRemap(const UVeyrVisualDefinition* Definition)
+{
+    SkinRemap.Reset();SkinDiagnostic.Reset();
+    static const TCHAR* Pairs[][2]={
+        {TEXT("/Game/Characters/Customuse/DragonV3B/v028/Rig/Dragon_Takeoff_DangleJoin_v2.Dragon_Takeoff_DangleJoin_v2"),
+         TEXT("/Game/Characters/Customuse/DragonV3B/SkinFix20261119/Dragon_Takeoff_DangleJoin_v2_SkinFix_v1/Dragon_Takeoff_DangleJoin_v2_SkinFix_v1.Dragon_Takeoff_DangleJoin_v2_SkinFix_v1")},
+        {TEXT("/Game/Characters/Customuse/DragonV3B/v028/MeshVariants/dragon_4d1f533d564da478/Dragon_Land_DangleJoin_v2.Dragon_Land_DangleJoin_v2"),
+         TEXT("/Game/Characters/Customuse/DragonV3B/SkinFix20261119/Dragon_Land_DangleJoin_v2_SkinFix_v1/Dragon_Land_DangleJoin_v2_SkinFix_v1.Dragon_Land_DangleJoin_v2_SkinFix_v1")},
+        {TEXT("/Game/Characters/Customuse/DragonV3B/v026/MeshVariants/dragon_4d1f533d564da478/Dragon_FlyHover_Blender_v1.Dragon_FlyHover_Blender_v1"),
+         TEXT("/Game/Characters/Customuse/DragonV3B/SkinFix20261119/Dragon_FlyHover_Blender_v1_SkinFix_v1/Dragon_FlyHover_Blender_v1_SkinFix_v1.Dragon_FlyHover_Blender_v1_SkinFix_v1")}};
+    if(!Definition||!Definition->SkeletalMesh)return;
+    TSet<USkeletalMesh*> Used;Used.Add(Definition->SkeletalMesh.Get());
+    for(const auto& Entry:Definition->Clips)if(Entry.Value.MeshOverride)Used.Add(Entry.Value.MeshOverride.Get());
+    bool Dragon=false;
+    for(const auto& Pair:Pairs)for(USkeletalMesh* M:Used)Dragon|=M&&M->GetPathName()==Pair[0];
+    if(!Dragon)return;
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyDragonSkin"))){SkinDiagnostic=TEXT("legacy");UE_LOG(LogTemp,Display,TEXT("VEYR_DRAGON_SKIN legacy"));return;}
+    for(const auto& Pair:Pairs)
+    {
+        USkeletalMesh* Old=nullptr;for(USkeletalMesh* M:Used)if(M&&M->GetPathName()==Pair[0])Old=M;
+        if(!Old)continue;
+        USkeletalMesh* New=LoadObject<USkeletalMesh>(nullptr,Pair[1]);
+        const bool Ok=New&&New->GetSkeleton()==Old->GetSkeleton()&&New->GetRefSkeleton().GetNum()==Old->GetRefSkeleton().GetNum();
+        bool SameLayout=Ok;
+        if(Ok)for(int32 I=0;I<Old->GetRefSkeleton().GetNum();++I)
+            SameLayout&=Old->GetRefSkeleton().GetBoneName(I)==New->GetRefSkeleton().GetBoneName(I)&&Old->GetRefSkeleton().GetParentIndex(I)==New->GetRefSkeleton().GetParentIndex(I);
+        if(SameLayout)SkinRemap.Add(Old,New);
+        SkinDiagnostic+=FString::Printf(TEXT("%s%s=%s"),SkinDiagnostic.IsEmpty()?TEXT(""):TEXT("; "),*Old->GetName(),!New?TEXT("missing"):!SameLayout?TEXT("incompatible"):TEXT("skinfix"));
+    }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_DRAGON_SKIN %s"),*SkinDiagnostic);
 }
 
 bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDefinition, bool bRequireCompleteMoveset)
@@ -138,8 +170,9 @@ bool UVeyrSkeletalPresentation::SetVisualDefinition(UVeyrVisualDefinition* InDef
 #endif
     HandleExistingParallelEvaluationTask(true,true);
     VisualDefinition=InDefinition;
-    if(!ApplyMeshRenderPolicy(InDefinition->SkeletalMesh))return false;
-    SetSkeletalMesh(InDefinition->SkeletalMesh,true);
+    BuildSkinRemap(InDefinition);
+    if(!ApplyMeshRenderPolicy(RemapSkin(InDefinition->SkeletalMesh)))return false;
+    SetSkeletalMesh(RemapSkin(InDefinition->SkeletalMesh),true);
     SetRelativeTransform(InDefinition->MeshRelativeTransform);
     bRepairMirroredClips=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyMirrorToe"));
     bGroundingEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonGrounding"));
@@ -224,7 +257,7 @@ bool UVeyrSkeletalPresentation::ResolveClip(FName ClipName, const FVeyrVisualCli
     if(!CheckReady())return false;
     OutClip=VisualDefinition->Clips.Find(ClipName);
     if(!OutClip||!OutClip->Sequence)return Fail(TEXT("Requested clip is missing: ")+ClipName.ToString());
-    USkeletalMesh* DesiredMesh=!bPreferCanonicalMesh&&OutClip->MeshOverride?OutClip->MeshOverride.Get():VisualDefinition->SkeletalMesh.Get();
+    USkeletalMesh* DesiredMesh=RemapSkin(!bPreferCanonicalMesh&&OutClip->MeshOverride?OutClip->MeshOverride.Get():VisualDefinition->SkeletalMesh.Get());
     if(DesiredMesh!=GetSkeletalMeshAsset())
     {
         const FReferenceSkeleton& Old=GetSkeletalMeshAsset()->GetRefSkeleton();

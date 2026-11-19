@@ -181,6 +181,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         double Presses=0;if(Saved->TryGetNumberField(TEXT("victoryPrimaryPresses"),Presses))VictoryPrimaryPresses=static_cast<int32>(Presses);
         Elapsed=Saved->GetNumberField(TEXT("durationSeconds"));TerminalSeconds=Saved->GetNumberField(TEXT("terminalSeconds"));
         Saved->TryGetNumberField(TEXT("terminalWallSeconds"),TerminalWallSeconds);
+        {const TSharedPtr<FJsonObject>* SavedPlayback=nullptr;if(Saved->TryGetObjectField(TEXT("dragonPlayback"),SavedPlayback)&&SavedPlayback)FightPlayback=*SavedPlayback;}
         FrameCount=Saved->GetNumberField(TEXT("frameCount"));MaximumFrameSeconds=Saved->GetNumberField(TEXT("maximumFrameSeconds"));
         Samples=Saved->GetArrayField(TEXT("samples"));Events=Saved->GetArrayField(TEXT("events"));
         double SavedFailures=0;if(Saved->TryGetNumberField(TEXT("warningContainmentFailures"),SavedFailures))ObservedWarningContainmentFailures=SavedFailures;
@@ -3151,7 +3152,9 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
         Root->SetNumberField(TEXT("audioStartVideoSeconds"),MixMode->GetMixCaptureStartedWall()-VideoStartedWallTime);
     }
     // F1-F4 (2026-11-18): per-clip playback rates, blend kinds, planted-foot slide, root travel.
-    if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlayback"),Dragon->PlaybackEvidence());
+    // After a restart the live dragon is the fresh one: keep the fight's block and add the fresh one beside it.
+    if(FightPlayback.IsValid()){Root->SetObjectField(TEXT("dragonPlayback"),FightPlayback);if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlaybackAfterRestart"),Dragon->PlaybackEvidence());}
+    else if(IsValid(Dragon))Root->SetObjectField(TEXT("dragonPlayback"),Dragon->PlaybackEvidence());
     Root->SetBoolField(TEXT("performanceMode"),bPerformanceMode);
     Root->SetBoolField(TEXT("headlessNumbersOnly"),bHeadless);Root->SetNumberField(TEXT("stillIntervalSeconds"),StillInterval);
     LastEvidence=Root;

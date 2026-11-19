@@ -134,11 +134,15 @@ def run_spec(spec, delay=0.0):
             x = e['dragonPlayback']
             keys = ('clipTempo', 'twoClipBlend', 'footLock', 'slowSnapTurn', 'rootTracks', 'worstFrameSourceRateOutsideHolds',
                     'worstRateClip', 'worstPlantedSlideCmPerSec', 'worstSlideClip', 'gateRateAtMost1_25', 'gateSlideUnder5',
-                    'walkStrideSpeedCmPerSec', 'trackTravelWorldCm', 'footLockDiagnostic')
+                    'walkStrideSpeedCmPerSec', 'trackTravelWorldCm', 'footLockDiagnostic', 'poseDeltaPops',
+                    'poseDeltaPopsInBlend', 'worstPopRatio', 'worstPopClipBone', 'gateNoBlendPops')
             record['playback'] = {k: x[k] for k in keys if k in x}
             record['playback']['clips'] = {k: {'rate': round(c.get('meanSourceRateOutsideHolds', 0), 3),
                                                'slide': round(c.get('worstPlantedSlideCmPerSec', 0), 2),
-                                               'steps': c.get('steps', 0), 'blends': c.get('blends', {})}
+                                               'steps': c.get('steps', 0), 'blends': c.get('blends', {}),
+                                               'pops': c.get('pops', 0), 'popsInBlend': c.get('popsInBlend', 0),
+                                               'travel': round(c.get('travelWorldCm', 0), 1),
+                                               'track': round(c.get('trackPathWorldCm', 0), 1)}
                                            for k, c in x.get('clips', {}).items()}
         if 'feelProof' in e:
             # Quality goal B4-B6 `feel` mode and the feel counters written once at the root.

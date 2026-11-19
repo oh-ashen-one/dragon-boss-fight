@@ -237,6 +237,48 @@ void AVeyrDragon::ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight)
     ImportedPresentation->SetRootOffsets(DestOffset,SourceOffset);
 }
 
+void AVeyrDragon::UpdatePoseDeltaStat()
+{
+    // A pop is a discontinuity: one frame in which a bone moves much faster than in the frames either side of it.
+    // Real motion (a claw accelerating into a strike) changes speed smoothly over several frames at 30-60 fps.
+    // The pose read here is the last evaluated one, so the middle frame of the three is judged one tick late with the
+    // clip key and blend flag it had then. Component space: actor travel and turns are excluded, root offsets are not.
+    if(!ImportedPresentation)return;
+    const TArray<FTransform>& Cs=ImportedPresentation->GetComponentSpaceTransforms();
+    if(Cs.Num()==0)return;
+    const float Dt=PoseClock<0.f?0.f:Clock-PoseClock;
+    if(PoseClock>=0.f&&Dt<1.e-4f)return;
+    const float Scale=ImportedPresentation->GetComponentScale().X;
+    TArray<float> Speed;
+    if(PosePrevCs.Num()==Cs.Num()&&Dt>0.f)
+    {
+        Speed.SetNumUninitialized(Cs.Num());
+        for(int32 B=0;B<Cs.Num();++B)Speed[B]=static_cast<float>(FVector::Dist(Cs[B].GetLocation(),PosePrevCs[B]))*Scale/Dt;
+    }
+    if(Speed.Num()&&PoseSpeed1.Num()==Speed.Num()&&PoseSpeed2.Num()==Speed.Num()&&!PoseKey1.IsNone())
+    {
+        constexpr float PopRatio=2.5f,FloorCms=60.f;
+        float Worst=0.f;int32 WorstBone=INDEX_NONE;
+        for(int32 B=0;B<Speed.Num();++B)
+        {
+            const float Mid=PoseSpeed1[B],Side=FMath::Max(PoseSpeed2[B],Speed[B]);
+            if(Mid<FloorCms||Mid-Side<FloorCms)continue;
+            const float Ratio=Mid/FMath::Max(Side,FloorCms*.5f);
+            if(Ratio>Worst){Worst=Ratio;WorstBone=B;}
+        }
+        FPlaybackStat& St=PlaybackStats.FindOrAdd(PoseKey1);
+        ++St.PoseFrames;
+        if(bPoseBlend1)St.MaxPopRatioInBlend=FMath::Max(St.MaxPopRatioInBlend,Worst);
+        if(Worst>St.MaxPopRatio){St.MaxPopRatio=Worst;if(WorstBone!=INDEX_NONE)St.WorstPopBone=ImportedPresentation->GetBoneName(WorstBone);}
+        if(Worst>PopRatio){++St.Pops;if(bPoseBlend1)++St.PopsInBlend;}
+    }
+    PosePrevCs.SetNumUninitialized(Cs.Num());
+    for(int32 B=0;B<Cs.Num();++B)PosePrevCs[B]=Cs[B].GetLocation();
+    PoseSpeed2=MoveTemp(PoseSpeed1);PoseSpeed1=MoveTemp(Speed);PoseClock=Clock;
+    PoseKey1=PlaybackStatKey(LastImportedClip);
+    bPoseBlend1=bImportedTransitionReady&&Clock-ImportedTransitionStarted<ImportedTransitionSeconds+1.f/30.f;
+}
+
 void AVeyrDragon::ResetFootLock()
 {
     for(FFootLockFoot& F:LockFeet)F=FFootLockFoot();
@@ -248,7 +290,26 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
     // Review M1: standing states only. Down (buckle, collapse, exposed, rise), dead or flying the clip's own feet play.
     const bool Standing=State==EVeyrDragonState::Idle||State==EVeyrDragonState::Reposition||State==EVeyrDragonState::Windup||
         State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery;
-    const bool Eligible=bFootLock&&Playback.bLoaded&&Standing&&!IsDead()&&!IsAirborne()&&Move!=EVeyrDragonMove::FlyAway;
+    const bool Measure=Playback.bLoaded&&Standing&&!IsDead()&&!IsAirborne()&&Move!=EVeyrDragonMove::FlyAway;
+    const bool Eligible=bFootLock&&Measure;
+    if(Measure&&!bFootLock)
+    {
+        // Evidence only (-VeyrNoFootLock): the clip's own planted-foot slide, nothing pinned.
+        FVeyrSoleSample Anim;
+        if(!ImportedPresentation->MeasureSoles(Anim)||!Anim.bValid)return;
+        const float Dt=FootLockClock<0.f?0.f:FMath::Max(0.f,Clock-FootLockClock);
+        if(Dt>0.f||FootLockClock<0.f)FootLockClock=Clock;
+        FPlaybackStat& Stat=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
+        for(int32 L=0;L<4&&Dt>0.f;++L)
+        {
+            FFootLockFoot& F=LockFeet[L];
+            const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
+            if(Anim.SoleAboveFloorCm[L]<Playback.FootLock.PlantHeightCm*BodyScale&&F.bHasPrev)
+            {Stat.PlantedSeconds[L]+=Dt;Stat.AnimatedSlideCm[L]+=FVector::Dist2D(Anchor,F.PrevTip);}
+            F.PrevTip=Anchor;F.bHasPrev=true;
+        }
+        return;
+    }
     if(!Eligible){bool Any=false;for(const auto& F:LockFeet)Any|=F.bLocked||F.bStepping||F.bReleasing;if(Any)ResetFootLock();return;}
     FVeyrSoleSample Anim;
     if(!ImportedPresentation->MeasureSoles(Anim)||!Anim.bValid){FootLockDiagnostic=TEXT("sole model unavailable");return;}
@@ -266,6 +327,7 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         // frame, so a paw rolling heel to toe is not translated by a foot length. The sole only answers "how high".
         const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
         const float Height=Anim.SoleAboveFloorCm[L];
+        F.bLowNow=Height<T.PlantHeightCm*S;
         if(Dt>0.f)
         {
             const float Speed=F.bHasPrev?static_cast<float>(FVector::Dist2D(Anchor,F.PrevTip))/Dt:0.f;
@@ -315,10 +377,21 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         Lock.Weight=Weight;
     }
     // Review L4: nothing pinned this frame -> no second evaluation (the pose was sampled unlocked).
-    if(!AnyWeight){for(FFootLockFoot& F:LockFeet)F.PrevDrawn=FVector::ZeroVector;return;}
+    auto DrawnPlanted=[&]()
+    {
+        for(int32 L=0;L<4;++L)
+        {
+            FFootLockFoot& F=LockFeet[L];
+            const FVector Drawn=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
+            if(Dt>0.f&&F.bLowNow&&F.bHasPrevAny)Stat.DrawnPlantedSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevAny);
+            if(Dt>0.f||!F.bHasPrevAny){F.PrevAny=Drawn;F.bHasPrevAny=true;}
+        }
+    };
+    if(!AnyWeight){for(FFootLockFoot& F:LockFeet)F.PrevDrawn=FVector::ZeroVector;DrawnPlanted();return;}
     if(!ImportedPresentation->SetLegLocks(Locks)){FootLockDiagnostic=ImportedPresentation->LastError;return;}
     const FString LockError=ImportedPresentation->GetLegLockError();
     if(!LockError.IsEmpty())FootLockDiagnostic=LockError;
+    DrawnPlanted();
     for(float Miss:ImportedPresentation->GetLegLockMissCm())
         Stat.MaxIkMissCm=FMath::Max(Stat.MaxIkMissCm,Miss*static_cast<float>(ImportedPresentation->GetComponentTransform().GetScale3D().GetAbsMax()));
     if(Dt>0.f)
@@ -326,7 +399,7 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         {
             FFootLockFoot& F=LockFeet[L];
             const FVector Drawn=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
-            if(F.bLocked&&!F.PrevDrawn.IsZero())Stat.DrawnSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevDrawn);
+            if(F.bLocked&&!F.PrevDrawn.IsZero()){Stat.DrawnSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevDrawn);Stat.LockedSeconds[L]+=Dt;}
             F.PrevDrawn=F.bLocked?Drawn:FVector::ZeroVector;
         }
 }
@@ -352,7 +425,8 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetStringField(TEXT("data"),PlaybackDiagnostic);O->SetStringField(TEXT("footLockDiagnostic"),FootLockDiagnostic);
     O->SetNumberField(TEXT("snapTrackRateDps"),SnapTrackRate());O->SetNumberField(TEXT("walkStrideSpeedCmPerSec"),WalkStrideSpeedCm);
     O->SetNumberField(TEXT("trackTravelWorldCm"),TrackTravelWorld.Size2D());
-    float WorstRate=0.f,WorstSlide=0.f;FString WorstRateKey,WorstSlideKey;
+    O->SetStringField(TEXT("dragonSkin"),ImportedPresentation?ImportedPresentation->SkinDiagnostic:FString(TEXT("no presentation")));
+    float WorstRate=0.f,WorstSlide=0.f,WorstPop=0.f;FString WorstRateKey,WorstSlideKey,WorstPopKey;int32 Pops=0,PopsInBlend=0;
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();
     for(const auto& E:PlaybackStats)
     {
@@ -368,15 +442,24 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
         for(int32 L=0;L<4;++L)
         {
             TSharedPtr<FJsonObject> F=MakeShared<FJsonObject>();
-            F->SetNumberField(TEXT("plantedSeconds"),S.PlantedSeconds[L]);
+            F->SetNumberField(TEXT("plantedSeconds"),S.PlantedSeconds[L]);F->SetNumberField(TEXT("lockedSeconds"),S.LockedSeconds[L]);
+            F->SetNumberField(TEXT("drawnSlideCmPerLockedSec"),S.LockedSeconds[L]>0?S.DrawnSlideCm[L]/S.LockedSeconds[L]:0.);
             const double Animated=S.PlantedSeconds[L]>0?S.AnimatedSlideCm[L]/S.PlantedSeconds[L]:0.,Drawn=S.PlantedSeconds[L]>0?S.DrawnSlideCm[L]/S.PlantedSeconds[L]:0.;
             F->SetNumberField(TEXT("animatedSlideCmPerSec"),Animated);F->SetNumberField(TEXT("drawnSlideCmPerSec"),Drawn);
+            const double DrawnAll=S.PlantedSeconds[L]>0?S.DrawnPlantedSlideCm[L]/S.PlantedSeconds[L]:0.;
+            F->SetNumberField(TEXT("drawnPlantedSlideCmPerSec"),DrawnAll);
             Feet->SetObjectField(GLegNames[L],F);
-            if(S.PlantedSeconds[L]>.2)MoveWorst=FMath::Max(MoveWorst,static_cast<float>(bFootLock?Drawn:Animated));
+            // Gate number: drawn end-bone travel over every low-foot frame (locked, stepping or free) per low second.
+            if(S.PlantedSeconds[L]>.2)MoveWorst=FMath::Max(MoveWorst,static_cast<float>(bFootLock?DrawnAll:Animated));
         }
         C->SetObjectField(TEXT("feet"),Feet);C->SetNumberField(TEXT("worstPlantedSlideCmPerSec"),MoveWorst);
         C->SetNumberField(TEXT("steps"),S.Steps);C->SetNumberField(TEXT("slips"),S.Slips);C->SetNumberField(TEXT("maxIkMissCm"),S.MaxIkMissCm);
         C->SetNumberField(TEXT("travelWorldCm"),S.TravelWorld.Size2D());C->SetNumberField(TEXT("trackPathWorldCm"),S.TrackLengthCm);
+        C->SetNumberField(TEXT("poseFrames"),S.PoseFrames);C->SetNumberField(TEXT("pops"),S.Pops);C->SetNumberField(TEXT("popsInBlend"),S.PopsInBlend);
+        C->SetNumberField(TEXT("maxPopRatio"),S.MaxPopRatio);C->SetNumberField(TEXT("maxPopRatioInBlend"),S.MaxPopRatioInBlend);
+        C->SetStringField(TEXT("worstPopBone"),S.WorstPopBone.ToString());
+        Pops+=S.Pops;PopsInBlend+=S.PopsInBlend;
+        if(S.MaxPopRatio>WorstPop){WorstPop=S.MaxPopRatio;WorstPopKey=E.Key.ToString()+TEXT(" ")+S.WorstPopBone.ToString();}
         Clips->SetObjectField(E.Key.ToString(),C);
         if(S.MaxRateNonHold>WorstRate&&S.Frames>3){WorstRate=S.MaxRateNonHold;WorstRateKey=E.Key.ToString();}
         if(MoveWorst>WorstSlide){WorstSlide=MoveWorst;WorstSlideKey=E.Key.ToString();}
@@ -384,6 +467,9 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetObjectField(TEXT("clips"),Clips);
     O->SetNumberField(TEXT("worstFrameSourceRateOutsideHolds"),WorstRate);O->SetStringField(TEXT("worstRateClip"),WorstRateKey);
     O->SetNumberField(TEXT("worstPlantedSlideCmPerSec"),WorstSlide);O->SetStringField(TEXT("worstSlideClip"),WorstSlideKey);
+    O->SetNumberField(TEXT("poseDeltaPops"),Pops);O->SetNumberField(TEXT("poseDeltaPopsInBlend"),PopsInBlend);
+    O->SetNumberField(TEXT("worstPopRatio"),WorstPop);O->SetStringField(TEXT("worstPopClipBone"),WorstPopKey);
+    O->SetBoolField(TEXT("gateNoBlendPops"),PopsInBlend==0);
     O->SetBoolField(TEXT("gateRateAtMost1_25"),WorstRate<=1.25f+.02f);O->SetBoolField(TEXT("gateSlideUnder5"),WorstSlide<5.f);
     return O;
 }

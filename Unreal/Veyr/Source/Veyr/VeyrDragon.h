@@ -423,20 +423,27 @@ private:
         FVector Pin=FVector::ZeroVector,From=FVector::ZeroVector,PrevTip=FVector::ZeroVector,PrevDrawn=FVector::ZeroVector,Target=FVector::ZeroVector;
         float T=0.f,Weight=0.f;
         FVector LastBend=FVector(1,0,0);
+        FVector PrevAny=FVector::ZeroVector;bool bHasPrevAny=false,bLowNow=false;
     };
     FFootLockFoot LockFeet[4];
     float FootLockClock=-1.f;
     FString FootLockDiagnostic;
     void UpdateFootLock(bool bFading);
+    // Evidence for blend pops: bone speeds in component space for the last three evaluated frames.
+    void UpdatePoseDeltaStat();
+    TArray<FVector> PosePrevCs;TArray<float> PoseSpeed1,PoseSpeed2;float PoseClock=-1.f;
+    FName PoseKey1=NAME_None;bool bPoseBlend1=false;
     void ResetFootLock();
     // Evidence
     struct FPlaybackStat
     {
         double RealSeconds=0,SourceSeconds=0,RealNonHold=0,SourceNonHold=0;float MaxRateNonHold=0.f;int32 Frames=0;
         TMap<FString,int32> Blends;
-        double PlantedSeconds[4]={0,0,0,0},AnimatedSlideCm[4]={0,0,0,0},DrawnSlideCm[4]={0,0,0,0};
+        double PlantedSeconds[4]={0,0,0,0},AnimatedSlideCm[4]={0,0,0,0},DrawnSlideCm[4]={0,0,0,0},LockedSeconds[4]={0,0,0,0},DrawnPlantedSlideCm[4]={0,0,0,0};
         int32 Steps=0,Slips=0;float MaxIkMissCm=0.f;
         FVector TravelWorld=FVector::ZeroVector;double TrackLengthCm=0;
+        // Blend pops: one-frame pose-delta spikes (a bone's speed jumps past PopRatio x both neighbouring frames).
+        int32 Pops=0,PopsInBlend=0,PoseFrames=0;float MaxPopRatio=0.f,MaxPopRatioInBlend=0.f;FName WorstPopBone;
     };
     TMap<FName,FPlaybackStat> PlaybackStats;
     FName PlaybackStatKey(FName Clip) const;
