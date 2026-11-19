@@ -1,66 +1,295 @@
 {
-  "note": "B4-B6 feel tuning (2026-11-18). Speeds are metres per second divided by BodyScale; sizes and shake distance scale with BodyScale. 'system' is a soft object path (Cascade or Niagara). A system that is not in Unreal/Veyr/Content falls back to the project's own instanced cards (the 'fallback' block). The Paragon folders are free Epic content, copied locally and never committed; see Local/quality-goal/Bfeel-notes.md for the copy steps.",
-  "contacts": {
-    "foot": {"touch_cm": 5, "lift_cm": 12, "min_speed": 0.3},
-    "head": {"touch_cm": 14, "lift_cm": 45, "min_speed": 1.0},
-    "neck": {"touch_cm": 14, "lift_cm": 45, "min_speed": 1.0},
-    "body": {"touch_cm": 14, "lift_cm": 45, "min_speed": 1.0},
-    "tail": {"touch_cm": 10, "lift_cm": 35, "min_speed": 1.2},
-    "wing": {"touch_cm": 10, "lift_cm": 45, "min_speed": 1.4},
-    "dust_tier_max_speed": [1.2, 3.5],
-    "stomp_min_speed": 1.0,
-    "body_cloud_min_speed": 2.0,
-    "landing_window_s": 1.2,
-    "peak_time_constant_s": 0.08,
-    "min_event_interval_s": 0.12
+ "note": "B4-B6 feel tuning (2026-11-18), tuned by eye at 2x with the feel replay against the reference footage; the compiled defaults in VeyrFeelTuning carry the same values. Speeds are metres per second divided by BodyScale; sizes and shake distance scale with BodyScale. 'system' is a soft object path (Cascade or Niagara). A system that is not in Unreal/Veyr/Content falls back to the project's own instanced cards (the 'fallback' block). The Paragon folders are free Epic content, copied locally and never committed; see Local/quality-goal/Bfeel-notes.md for the copy steps.",
+ "contacts": {
+  "foot": {
+   "touch_cm": 5,
+   "lift_cm": 12,
+   "min_speed": 0.3
   },
-  "shake": {
-    "max_distance_cm": 5000,
-    "size_gain": 0.35,
-    "max_degrees": 3.5,
-    "footfall":  {"min_speed": 0.3, "full_speed": 3, "amp_min": 0.08, "amp_max": 0.40, "life_min": 0.16, "life_max": 0.28, "bounce_cm": 0},
-    "stomp":     {"min_speed": 0.8, "full_speed": 6, "amp_min": 0.6,  "amp_max": 1.8,  "life_min": 0.30, "life_max": 0.55, "bounce_cm": 4},
-    "body_fall": {"min_speed": 1.0, "full_speed": 8, "amp_min": 1.2,  "amp_max": 2.8,  "life_min": 0.45, "life_max": 0.80, "bounce_cm": 9},
-    "landing":   {"min_speed": 1.0, "full_speed": 8, "amp_min": 1.4,  "amp_max": 3.0,  "life_min": 0.50, "life_max": 0.85, "bounce_cm": 10}
+  "head": {
+   "touch_cm": 14,
+   "lift_cm": 45,
+   "min_speed": 1.0
   },
-  "flinch": {
-    "rock_min_deg": 5, "rock_max_deg": 21, "twist_min_deg": 4, "twist_max_deg": 18, "cap_deg": 34,
-    "head_part": 1.25, "neck_part": 1.1, "leg_part": 0.5, "body_share": 0.18, "tail_share": 0.35,
-    "snap_s": 0.04, "hz": 2.0, "damping": 0.45, "life_s": 1.0,
-    "flash_peak": 1.8, "flash_peak_gain": 2.2, "flash_radius_cm": 85, "flash_radius_gain_cm": 90, "flash_fade_s": 0.07, "flash_life_s": 0.3
+  "neck": {
+   "touch_cm": 14,
+   "lift_cm": 45,
+   "min_speed": 1.0
   },
-  "knight": {
-    "trail_life_s": 0.11, "trail_base_fraction": 0.0,
-    "slow_tail_s": 0.32, "slow_tail_from": 0.3,
-    "punch_heavy": 0.085, "punch_light": 0.0, "punch_s": 0.3,
-    "kick_min_deg": 4, "kick_gain_deg": 6, "kick_s": 0.45, "hurt_min": 0.55, "hurt_gain": 0.45
+  "body": {
+   "touch_cm": 14,
+   "lift_cm": 45,
+   "min_speed": 1.0
   },
-  "dust": [
-    {"tier": "small",   "system": "/Game/ParagonRampage/FX/Particles/Abilities/Lunge/FX/P_Rampage_Jumpdust", "scale": 0.35, "life_s": 0.9,
-     "fallback": {"cards": 2, "size_cm": 55, "life_s": 0.9, "opacity": 0.22, "rise_cm_s": 30, "spread_cm_s": 55, "chips": 0, "chip_cm": 3, "chip_speed_cm_s": 220}},
-    {"tier": "medium",  "system": "/Game/ParagonRampage/FX/Particles/Abilities/Ultimate/FX/P_Rampage_Footstep_Enraged", "scale": 0.6, "life_s": 1.3,
-     "fallback": {"cards": 4, "size_cm": 90, "life_s": 1.3, "opacity": 0.30, "rise_cm_s": 40, "spread_cm_s": 90, "chips": 4, "chip_cm": 3.5, "chip_speed_cm_s": 280}},
-    {"tier": "large",   "system": "/Game/ParagonTerra/FX/Particles/Terra/Abilities/DoubleSweep/FX/P_Terra_DoubleSweep_DustImpact", "scale": 0.8, "life_s": 1.8,
-     "fallback": {"cards": 6, "size_cm": 140, "life_s": 1.8, "opacity": 0.36, "rise_cm_s": 45, "spread_cm_s": 140, "chips": 10, "chip_cm": 4, "chip_speed_cm_s": 360}},
-    {"tier": "body_cloud", "system": "/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/LeapAOE/FX/P_Greystone_LeapAOE_GroundSmash", "scale": 1.0, "life_s": 2.6,
-     "fallback": {"cards": 8, "size_cm": 230, "life_s": 2.6, "opacity": 0.40, "rise_cm_s": 50, "spread_cm_s": 190, "chips": 22, "chip_cm": 5, "chip_speed_cm_s": 420}},
-    {"tier": "landing_cloud", "system": "/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/LeapAOE/FX/P_Greystone_LeapAOE_GroundSmash", "scale": 1.15, "life_s": 2.8,
-     "fallback": {"cards": 10, "size_cm": 260, "life_s": 2.8, "opacity": 0.42, "rise_cm_s": 55, "spread_cm_s": 230, "chips": 26, "chip_cm": 5, "chip_speed_cm_s": 480}}
+  "tail": {
+   "touch_cm": 10,
+   "lift_cm": 35,
+   "min_speed": 1.2
+  },
+  "wing": {
+   "touch_cm": 10,
+   "lift_cm": 45,
+   "min_speed": 1.4
+  },
+  "dust_tier_max_speed": [
+   1.2,
+   3.5
   ],
-  "hit": [
-    {"tier": "light",    "system": "/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/Primary/FX/P_Greystone_Primary_Sparks", "scale": 0.6, "life_s": 0.4,
-     "fallback": {"cards": 10, "size_cm": 9, "life_s": 0.2, "opacity": 0.85, "rise_cm_s": 0, "spread_cm_s": 520, "chips": 0, "chip_cm": 0, "chip_speed_cm_s": 0}},
-    {"tier": "heavy",    "system": "/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/Primary/FX/P_Greystone_Primary_Impact", "scale": 0.8, "life_s": 0.6,
-     "fallback": {"cards": 16, "size_cm": 12, "life_s": 0.26, "opacity": 0.9, "rise_cm_s": 0, "spread_cm_s": 640, "chips": 4, "chip_cm": 2.5, "chip_speed_cm_s": 300}},
-    {"tier": "heaviest", "system": "/Game/ParagonTerra/FX/Particles/Terra/Abilities/Balance/FX/P_Terra_Boom_Impacted", "scale": 0.7, "life_s": 0.8,
-     "fallback": {"cards": 24, "size_cm": 15, "life_s": 0.32, "opacity": 0.95, "rise_cm_s": 0, "spread_cm_s": 780, "chips": 8, "chip_cm": 3, "chip_speed_cm_s": 380}}
-  ],
-  "debris_mesh": "/Game/ParagonKwang/FX/Meshes/Debris/Rock_A",
-  "fallback_look": {
-    "dust_tint": [0.52, 0.46, 0.39],
-    "chip_tint": [0.07, 0.065, 0.06],
-    "spark_tint": [1.0, 0.8, 0.5],
-    "dust_brightness": 0.32,
-    "spark_brightness": 4.0
+  "stomp_min_speed": 1.0,
+  "body_cloud_min_speed": 2.0,
+  "landing_window_s": 1.2,
+  "peak_time_constant_s": 0.08,
+  "min_event_interval_s": 0.12
+ },
+ "shake": {
+  "max_distance_cm": 5000,
+  "size_gain": 0.35,
+  "max_degrees": 3.5,
+  "footfall": {
+   "min_speed": 0.3,
+   "full_speed": 3,
+   "amp_min": 0.08,
+   "amp_max": 0.4,
+   "life_min": 0.16,
+   "life_max": 0.28,
+   "bounce_cm": 0
+  },
+  "stomp": {
+   "min_speed": 0.8,
+   "full_speed": 6,
+   "amp_min": 0.6,
+   "amp_max": 1.8,
+   "life_min": 0.3,
+   "life_max": 0.55,
+   "bounce_cm": 4
+  },
+  "body_fall": {
+   "min_speed": 1.0,
+   "full_speed": 8,
+   "amp_min": 1.2,
+   "amp_max": 2.8,
+   "life_min": 0.45,
+   "life_max": 0.8,
+   "bounce_cm": 9
+  },
+  "landing": {
+   "min_speed": 1.0,
+   "full_speed": 8,
+   "amp_min": 1.4,
+   "amp_max": 3.0,
+   "life_min": 0.5,
+   "life_max": 0.85,
+   "bounce_cm": 10
   }
+ },
+ "flinch": {
+  "rock_min_deg": 5,
+  "rock_max_deg": 21,
+  "twist_min_deg": 4,
+  "twist_max_deg": 18,
+  "cap_deg": 34,
+  "head_part": 1.25,
+  "neck_part": 1.1,
+  "leg_part": 0.5,
+  "body_share": 0.18,
+  "tail_share": 0.35,
+  "snap_s": 0.04,
+  "hz": 2.0,
+  "damping": 0.45,
+  "life_s": 1.0,
+  "flash_peak": 1.0,
+  "flash_peak_gain": 1.2,
+  "flash_radius_cm": 40,
+  "flash_radius_gain_cm": 45,
+  "flash_fade_s": 0.07,
+  "flash_life_s": 0.3
+ },
+ "knight": {
+  "trail_life_s": 0.22,
+  "trail_base_fraction": 0.2,
+  "slow_tail_s": 0.32,
+  "slow_tail_from": 0.3,
+  "punch_heavy": 0.085,
+  "punch_light": 0.0,
+  "punch_s": 0.3,
+  "kick_min_deg": 4,
+  "kick_gain_deg": 6,
+  "kick_s": 0.45,
+  "hurt_min": 0.55,
+  "hurt_gain": 0.45
+ },
+ "dust": [
+  {
+   "tier": "small",
+   "system": "/Game/ParagonRampage/FX/Particles/Abilities/Lunge/FX/P_Rampage_Jumpdust",
+   "scale": 1.5,
+   "life_s": 0.9,
+   "fallback": {
+    "cards": 3,
+    "size_cm": 130,
+    "life_s": 1.0,
+    "opacity": 0.3,
+    "rise_cm_s": 30,
+    "spread_cm_s": 55,
+    "chips": 0,
+    "chip_cm": 3,
+    "chip_speed_cm_s": 220
+   },
+   "cards_with_asset": true
+  },
+  {
+   "tier": "medium",
+   "system": "/Game/ParagonRampage/FX/Particles/Abilities/Ultimate/FX/P_Rampage_Footstep_Enraged",
+   "scale": 2.5,
+   "life_s": 1.3,
+   "fallback": {
+    "cards": 5,
+    "size_cm": 220,
+    "life_s": 1.5,
+    "opacity": 0.38,
+    "rise_cm_s": 40,
+    "spread_cm_s": 90,
+    "chips": 6,
+    "chip_cm": 4,
+    "chip_speed_cm_s": 280
+   },
+   "cards_with_asset": true
+  },
+  {
+   "tier": "large",
+   "system": "/Game/ParagonTerra/FX/Particles/Terra/Abilities/DoubleSweep/FX/P_Terra_DoubleSweep_DustImpact",
+   "scale": 3.5,
+   "life_s": 1.8,
+   "fallback": {
+    "cards": 7,
+    "size_cm": 330,
+    "life_s": 2.0,
+    "opacity": 0.44,
+    "rise_cm_s": 45,
+    "spread_cm_s": 140,
+    "chips": 12,
+    "chip_cm": 5,
+    "chip_speed_cm_s": 360
+   },
+   "cards_with_asset": true
+  },
+  {
+   "tier": "body_cloud",
+   "system": "/Game/ParagonTerra/FX/Particles/Terra/Abilities/DoubleSweep/FX/P_Terra_DoubleSweep_DustImpact",
+   "scale": 6,
+   "life_s": 2.6,
+   "fallback": {
+    "cards": 10,
+    "size_cm": 520,
+    "life_s": 2.8,
+    "opacity": 0.5,
+    "rise_cm_s": 50,
+    "spread_cm_s": 190,
+    "chips": 24,
+    "chip_cm": 7,
+    "chip_speed_cm_s": 420
+   },
+   "cards_with_asset": true
+  },
+  {
+   "tier": "landing_cloud",
+   "system": "/Game/ParagonTerra/FX/Particles/Terra/Abilities/DoubleSweep/FX/P_Terra_DoubleSweep_DustImpact",
+   "scale": 7,
+   "life_s": 2.8,
+   "fallback": {
+    "cards": 12,
+    "size_cm": 600,
+    "life_s": 3.0,
+    "opacity": 0.52,
+    "rise_cm_s": 55,
+    "spread_cm_s": 230,
+    "chips": 28,
+    "chip_cm": 7,
+    "chip_speed_cm_s": 480
+   },
+   "cards_with_asset": true
+  }
+ ],
+ "hit": [
+  {
+   "tier": "light",
+   "system": "/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/Primary/FX/P_Greystone_Primary_Sparks",
+   "scale": 1.0,
+   "life_s": 0.4,
+   "fallback": {
+    "cards": 10,
+    "size_cm": 9,
+    "life_s": 0.2,
+    "opacity": 0.85,
+    "rise_cm_s": 0,
+    "spread_cm_s": 520,
+    "chips": 0,
+    "chip_cm": 0,
+    "chip_speed_cm_s": 0
+   },
+   "cards_with_asset": false,
+   "smoke_tier": 0,
+   "smoke_scale": 0.45
+  },
+  {
+   "tier": "heavy",
+   "system": "/Game/ParagonGreystone/FX/Particles/Greystone/Abilities/Primary/FX/P_Greystone_Primary_Impact",
+   "scale": 1.3,
+   "life_s": 0.6,
+   "fallback": {
+    "cards": 16,
+    "size_cm": 12,
+    "life_s": 0.26,
+    "opacity": 0.9,
+    "rise_cm_s": 0,
+    "spread_cm_s": 640,
+    "chips": 4,
+    "chip_cm": 2.5,
+    "chip_speed_cm_s": 300
+   },
+   "cards_with_asset": false,
+   "smoke_tier": 1,
+   "smoke_scale": 0.55
+  },
+  {
+   "tier": "heaviest",
+   "system": "/Game/ParagonTerra/FX/Particles/Terra/Abilities/Balance/FX/P_Terra_Boom_Impacted",
+   "scale": 1.6,
+   "life_s": 0.8,
+   "fallback": {
+    "cards": 24,
+    "size_cm": 15,
+    "life_s": 0.32,
+    "opacity": 0.95,
+    "rise_cm_s": 0,
+    "spread_cm_s": 780,
+    "chips": 8,
+    "chip_cm": 3,
+    "chip_speed_cm_s": 380
+   },
+   "cards_with_asset": false,
+   "smoke_tier": 2,
+   "smoke_scale": 0.7
+  }
+ ],
+ "debris_mesh": "/Game/ParagonRampage/FX/Meshes/Debris/SM_Rampage_Rock_FragA",
+ "fallback_look": {
+  "dust_tint": [
+   0.8,
+   0.77,
+   0.72
+  ],
+  "chip_tint": [
+   0.07,
+   0.065,
+   0.06
+  ],
+  "spark_tint": [
+   1.0,
+   0.8,
+   0.5
+  ],
+  "dust_brightness": 0.85,
+  "spark_brightness": 4.0
+ }
 }

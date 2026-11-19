@@ -37,8 +37,10 @@ private:
     TArray<FName> Segments;
     int32 SegmentIndex=-1;
     double SegmentStart=0.0,RestUntil=0.0,FirstExposed=-1.0,LastPress=-100.0;
-    bool bDone=false,bScriptedHitDone=false,bInSegment=false;
-    int32 PressIndex=0,SwordContactsAtStart=0;
+    bool bDone=false,bScriptedHitDone=false,bInSegment=false,bLegStrikeDone=false;
+    int32 LegStrikeContacts=-1;double LegStrikeAt=-1.0;
+    int32 PressIndex=0,SwordContactsAtStart=0,LastContactSerial=0;
+    TArray<TSharedPtr<class FJsonValue>> Contacts;
     float MaxSegmentSeconds=0.f;
     TArray<TSharedPtr<class FJsonValue>> Timeline;
     FString FailReason;

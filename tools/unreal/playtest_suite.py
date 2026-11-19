@@ -129,6 +129,15 @@ def run_spec(spec, delay=0.0):
                     'knightTallerThan45PctFrames', 'knightHiddenByDragonFrames', 'legacyCameraFraming', 'framingSearches',
                     'framingFallbackFrames', 'viewTurnFrames', 'legacyCutThrough')
             record['a123'] = {k: x[k] for k in keys if k in x}
+        if 'feelProof' in e:
+            # Quality goal B4-B6 `feel` mode and the feel counters written once at the root.
+            f = e.get('feel', {})
+            record['feel'] = {'proof': {k: e['feelProof'].get(k) for k in ('done', 'failReason', 'swordContacts', 'knightPresses', 'scriptedKnightHit')},
+                              'contacts': {k: f.get('contacts', {}).get(k) for k in ('total', 'byPart', 'byClass', 'byDustTier', 'mutedByFlinch')},
+                              'shakesByClass': f.get('shakesByClass'), 'dust': f.get('dustSpawnedByTier'), 'hits': f.get('hitBurstsByTier'),
+                              'spineFlinches': f.get('spineFlinches'), 'meshFlashes': f.get('meshFlashes'), 'ribbonFrames': f.get('ribbonFrames'),
+                              'slowTails': f.get('slowTails'), 'zoomPunches': f.get('zoomPunches'), 'hurtKicks': f.get('hurtKicks'),
+                              'missingSystems': f.get('missingSystems')}
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:
