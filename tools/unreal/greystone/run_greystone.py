@@ -2,7 +2,7 @@
 """Run one Greystone editor-Python step in an owned, unattended PythonScriptCommandlet.
 
 usage: run_greystone.py <step> [--set key=value ...] [--project /path/to/Unreal/Veyr]
-steps: load-all, rigs, retarget, definition, motion-db, features   (NullRHI: no window, no GPU)
+steps: load-all, rigs, native, retarget, definition, motion-db, features   (NullRHI: no window, no GPU)
        skin-sheet                                                  (renders: shared GPU slot, never while STREAMING)
 
 Rules kept (BUILDER_RULES): one engine process at a time (waits until no UnrealEditor / Veyr game is running), the
@@ -27,6 +27,7 @@ import greystone_common as g
 STEPS = {
     'load-all': ('load_all.py', False),
     'rigs': ('make_rigs.py', False),
+    'native': ('measure_native.py', False),
     'retarget': ('retarget_clips.py', False),
     'definition': ('build_definition.py', False),
     'motion-db': ('make_motion_databases.py', False),

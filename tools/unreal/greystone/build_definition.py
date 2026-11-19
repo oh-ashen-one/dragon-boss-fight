@@ -1,7 +1,10 @@
 """Trial T4 / step 2: the Greystone data asset supplier. Writes /Game/Characters/Greystone/Runtime/DA_Greystone, which
 AVeyrKnight loads under -VeyrGreystone (VeyrGreystone::DefinitionPath).
 
-usage (through run_greystone.py): definition --set anims=<Local/greystone/retarget-*/anims.json> [--set replace=true]
+usage (through run_greystone.py): definition --set anims=<Local/greystone/retarget-*/anims.json>
+       --set native=<Local/greystone/native-*/native.json> [--set trial=true] [--set replace=true]
+       Greystone's own clips (greystone_common.NATIVE; with trial=true only TRIAL_NATIVE) replace retargeted ones,
+       timed to KnightB's gameplay numbers (see the native block below); everything else is retargeted.
        [--set shieldBack='{"translation_cm":[..],"rotation_xyzw":[..]}']   (spine_03-local, from the skin-sheet pass)
 
 Same clip keys as the KnightB definition (all 64 when the retarget step ran without a key filter), each entry copied
@@ -77,6 +80,8 @@ def convert_root(point):
 knight_clips = {str(k): v for k, v in knight.get_editor_property('clips').items()}
 clips = {}
 for key, entry in anims_doc['anims'].items():
+    if opts.get('native') and key in g.NATIVE and key in json.loads(Path(opts['native']).read_text()):
+        continue  # Greystone's own clip wins (below)
     src = knight_clips[key]
     clip = unreal.VeyrVisualClip()
     for field in FIELDS:
@@ -86,6 +91,99 @@ for key, entry in anims_doc['anims'].items():
     clip.set_editor_property('approved_source_file', entry['source'] + ' (retargeted by RTG_KnightB_to_Greystone)')
     clip.set_editor_property('approved_source_sha256', entry['sourceSHA256'])
     clips[key] = clip
+# ---- Greystone's own clips, timed so every gameplay number stays KnightB's (owner-fixed hitboxes and difficulty) ----
+# Game time tau of a KnightB action = source seconds since the action start / GameplayPlayRate (AVeyrKnight).
+# For a native clip we pick start S_n and rate r_n so the native moment lands at the same tau, then express KnightB's
+# windows and root path in native source time:  windows_n = windows_k * r_n / r_k ;  root sample at native source time
+# t (since start) = KnightB root sample at t * r_k / r_n, converted to Greystone mesh space. Play rate is kept within
+# RATE_MIN..RATE_MAX; when it hits a limit the miss is recorded (seconds of game time the native moment is off).
+RATE_MIN, RATE_MAX = 0.75, 1.35
+native_doc = json.loads(Path(opts['native']).read_text()) if opts.get('native') else {}
+native_keys = [k for k in (g.TRIAL_NATIVE if opts.get('trial') else g.NATIVE) if k in native_doc]
+native_receipt = {}
+
+
+def knight_game(src):
+    r = prop(src, 'gameplay_play_rate') or 1.0
+    start = prop(src, 'start_seconds')
+    seq = prop(src, 'sequence')
+    end = prop(src, 'end_seconds')
+    end = seq.get_play_length() if end is None or end < 0 else end
+    windows = [(w.x, w.y) for w in prop(src, 'damage_windows')]
+    impact = prop(src, 'impact_seconds')
+    hit = windows[0][0] / r if windows else ((impact - start) / r if impact is not None and impact >= 0 else None)
+    return r, start, end, windows, hit, (end - start) / r
+
+
+def warp_root(src, r_k, r_n, length_n):
+    samples = src.get_editor_property('root_translation_samples_cm')
+    yaws = list(src.get_editor_property('root_yaw_samples_degrees'))
+    rate = prop(src, 'root_sample_rate') or 60.0
+    if len(samples) < 2:
+        return [], [], rate
+    out_t, out_y = [], []
+    for i in range(int(length_n * rate) + 1):
+        f = min(max(i / rate * r_k / r_n * rate, 0.0), len(samples) - 1.0)
+        a = int(f); b = min(a + 1, len(samples) - 1); w = f - a
+        pa, pb = samples[a], samples[b]
+        out_t.append(convert_root(unreal.Vector(pa.x + (pb.x - pa.x) * w, pa.y + (pb.y - pa.y) * w, pa.z + (pb.z - pa.z) * w)))
+        if len(yaws) == len(samples):
+            out_y.append(yaws[a] + (yaws[b] - yaws[a]) * w)
+    return out_t, out_y, rate
+
+
+for key in native_keys:
+    n = native_doc[key]
+    src = knight_clips[key]
+    role = n['role']
+    clip = unreal.VeyrVisualClip()
+    for field in FIELDS:
+        prop(clip, field, prop(src, field), True)
+    clip.set_editor_property('sequence', unreal.load_asset(n['sequence']))
+    r_k, s_k, e_k, w_k, hit_k, dur_k = knight_game(src)
+    length = n['lengthSeconds']
+    row = {'native': n['sequence'], 'role': role}
+    if role == 'loop':
+        speed = n['footSpeedCmPerSecond'] * g_rel[2]
+        prop(clip, 'start_seconds', 0.0, True); prop(clip, 'end_seconds', -1.0, True); prop(clip, 'b_loop', True, True)
+        prop(clip, 'gameplay_play_rate', 1.0, True)
+        if speed > 1.0:
+            prop(clip, 'nominal_speed_cm_per_second', speed, True)   # world cm/s at 244 cm; gameplay speed unchanged
+        root, yaw = [unreal.Vector(*p) for p in n['rootSamples']], n['rootYawSamples']
+        clip.set_editor_property('root_translation_samples_cm', root)
+        prop(clip, 'root_yaw_samples_degrees', yaw, True); prop(clip, 'root_sample_rate', n['rootSampleRate'], True)
+        prop(clip, 'b_root_motion_removed', False, True)
+        row.update(nominalSpeedWorld=speed, knightNominal=prop(src, 'nominal_speed_cm_per_second'))
+    else:
+        if role == 'attack' and hit_k is not None and n['contactSeconds'] > 0:
+            contact = n['contactSeconds']
+            r_n = min(RATE_MAX, max(RATE_MIN, contact / hit_k))
+            s_n = max(0.0, contact - hit_k * r_n)
+            row['contactMissSeconds'] = (contact - s_n) / r_n - hit_k
+        else:
+            r_n = min(RATE_MAX, max(RATE_MIN, length / dur_k)) if dur_k > 0 else 1.0
+            s_n = 0.0
+        e_n = min(length, s_n + dur_k * r_n)
+        row['recoveryShortSeconds'] = max(0.0, dur_k - (e_n - s_n) / r_n)   # native ends early: last pose held
+        prop(clip, 'start_seconds', s_n, True); prop(clip, 'end_seconds', e_n, True); prop(clip, 'b_loop', False, True)
+        prop(clip, 'gameplay_play_rate', r_n, True)
+        prop(clip, 'damage_windows', [unreal.Vector2D(a * r_n / r_k, b * r_n / r_k) for a, b in w_k], True)
+        impact = prop(src, 'impact_seconds')
+        if impact is not None and impact >= 0:
+            prop(clip, 'impact_seconds', s_n + (impact - s_k) * r_n / r_k, True)
+        root, yaw, rate = warp_root(src, r_k, r_n, e_n - s_n)
+        clip.set_editor_property('root_translation_samples_cm', root)
+        if yaw:
+            prop(clip, 'root_yaw_samples_degrees', yaw, True)
+        prop(clip, 'root_sample_rate', rate, True)
+        row.update(rate=r_n, start=s_n, end=e_n, knightRate=r_k, knightGameSeconds=dur_k, knightHitGameSeconds=hit_k)
+    clip.set_editor_property('approved_source_file', n['sequence'] + ' (Epic Paragon: Greystone, native; timed to KnightB)')
+    clips[key] = clip
+    native_receipt[key] = row
+missing = [k for k in (g.TRIAL_NATIVE if opts.get('trial') else g.NATIVE) if k not in native_keys]
+if missing:
+    native_receipt['_missingMeasurements'] = missing
+
 for key, path in g.PARAGON_EXTRA.items():
     clip = unreal.VeyrVisualClip()
     clip.set_editor_property('sequence', unreal.load_asset(path))
@@ -152,6 +250,7 @@ definition.set_editor_property('required_bone_targets', sorted(targets))
 definition.set_editor_property('required_clips', [k for k in g.KNIGHT_CLIPS if k in clips])
 definition.set_editor_property('source_sha256', g.sha256(g.package_file(g.GREYSTONE_MESH)))
 errors = [str(e) for e in definition.validate_definition(len([k for k in g.KNIGHT_CLIPS if k in clips]) == 64)]
+(out / 'native-timing.json').write_text(json.dumps(native_receipt, indent=1) + '\n')
 library.save_loaded_asset(definition)
 receipt = {'definition': g.DEFINITION, 'clips': sorted(clips), 'missingKnightKeys': [k for k in g.KNIGHT_CLIPS if k not in clips],
            'meshRelativeTransform': {'rotation_xyzw': list(g_rel[0]), 'translation_cm': list(g_rel[1]), 'scale': g_rel[2]},

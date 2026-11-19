@@ -8,7 +8,7 @@ Plan (two owned rendered launches, one at a time, only after `definition` succee
   3. tools/unreal/blendproof_encode.py <each Evidence/native-blendproof-*>   (per-sequence MP4s, data overlay)
   4. this script: trial_film.py <run 1> <run 2>  -> Local/greystone/trial-film-<UTC>/trial-film.mp4
 The -VeyrGreystoneTrialProof set is: 1.3 s idle, a one-hand run (side), the primary attack (side and three-quarter),
-a roll attack (side), each followed by 1.5 s idle; both runs use the same sequences, camera and proof floor.
+a plain roll (side), each followed by 1.5 s idle; both runs use the same sequences, camera and proof floor.
 Each pair is scaled to the same height, labelled by rig only, padded to the longer clip (last frame held), then the
 pairs are concatenated in sequence order. Nothing is scored here; the film goes to the critic.
 """

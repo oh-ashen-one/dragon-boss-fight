@@ -36,7 +36,7 @@ grey_mesh = unreal.load_asset(g.GREYSTONE_MESH)
 rtg = unreal.load_asset(g.RIGS + '/RTG_KnightB_to_Greystone')
 assert knight and knight_mesh and grey_mesh and rtg, 'run copy_pack.py and the rigs step first'
 clips = {str(k): v for k, v in knight.get_editor_property('clips').items()}
-wanted = opts.get('keys') or g.KNIGHT_CLIPS
+wanted = opts.get('keys') or (g.RETARGET_KEYS if opts.get('skipNative') else g.KNIGHT_CLIPS)  # trial: keys='["Roll"]'
 missing = [k for k in wanted if k not in clips]
 assert not missing, 'KnightB definition lacks keys: ' + ', '.join(missing)
 

@@ -218,3 +218,38 @@ def to_unreal(t):
 def angle_deg(q):
     import math
     return math.degrees(2.0 * math.acos(min(1.0, abs(q[3]))))
+
+
+# ---- Greystone's own clips (coordinator 2026-11-19: use his professional set wherever it fits) ----
+# key -> (native sequence under GS_ANIMS, role). Roles: 'attack' (timed to KnightB's impact and windows),
+# 'loop' (speed from the planted foot, gameplay speed unchanged), 'oneshot' (duration matched), 'stop' (root path kept).
+GS_ANIMS = PACK + '/Characters/Heroes/Greystone/Animations/'
+NATIVE = {
+    'Idle': ('Idle', 'loop'),
+    'Run': ('Jog_Fwd', 'loop'),
+    'RunAlternate': ('Jog_Fwd', 'loop'),
+    'RunOneHandPlanted': ('Jog_Fwd', 'loop'),
+    'RunStop': ('Jog_Fwd_Stop', 'stop'),
+    'RunStopOneHandSourced': ('Jog_Fwd_Stop', 'stop'),
+    'Backpedal': ('Jog_Bwd', 'loop'),
+    'StrafeRunLeft': ('Jog_Left', 'loop'),
+    'StrafeRunRight': ('Jog_Right', 'loop'),
+    'LightAttack': ('Attack_PrimaryA', 'attack'),
+    'LeapAttackSourced': ('Jump_Melee', 'attack'),
+    'Death': ('Death', 'oneshot'),
+    'Stagger': ('HitReact_Front', 'oneshot'),
+    'StaggerFront': ('HitReact_Front', 'oneshot'),
+    'StaggerBack': ('HitReact_Back', 'oneshot'),
+    'StaggerLeft': ('HitReact_Left', 'oneshot'),
+    'StaggerRight': ('HitReact_Right', 'oneshot'),
+}
+# Decide on film before adopting (closest native candidates; retargeted KnightB clip until then).
+NATIVE_CANDIDATES = {
+    'HeavyAttack': ['Attack_RMB', 'Ability_Q'], 'HeavyAttackAlternate': ['Attack_RMB', 'Ability_Q'],
+    'StrafeLeft': ['Jog_Left'], 'StrafeRight': ['Jog_Right'], 'BackpedalStep': ['Jog_Bwd_Start'],
+    'GuardBreak': ['Stun_Start'], 'RunningAttackSourced': ['Attack_PrimaryB'],
+}
+# E3 trial: idle, run (with stop), one attack, one roll. Only Roll is retargeted from KnightB.
+TRIAL_NATIVE = ('Idle', 'Run', 'RunOneHandPlanted', 'RunStop', 'RunStopOneHandSourced', 'LightAttack')
+TRIAL_RETARGET = ('Roll',)
+RETARGET_KEYS = tuple(k for k in KNIGHT_CLIPS if k not in NATIVE)
