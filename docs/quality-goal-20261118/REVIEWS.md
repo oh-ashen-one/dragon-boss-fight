@@ -36,3 +36,17 @@ Our phase A victory film (60 s) against 51 s of the reference's fight footage, n
 
 This is the starting scoreboard: reference better on all six. It also shows the phase A camera proof was too narrow:
 the dedicated camera test measured zero inside frames while the fight film has several. A2 is reopened.
+
+## Phase B weight effects, before against after — 2026-11-18 23:30 ET (installed build 956518d5)
+
+| Item | Better side | Difference | Confidence | What the reviewer saw |
+|---|---|---|---|---|
+| Dragon footfalls | new | clear | high | A grey dust puff at each landing foot; "you notice it if you're looking"; small and short-lived, no debris or cracks: "doesn't read as a creature weighing many tons" |
+| Dragon hit by the sword | new | large | high | Orange sparks at the contact, a white flash, a dust-and-debris cloud. No recoil of the spine or head could be confirmed in either |
+| Weapon trail | new | clear | high | A flat white streak about one blade long for about 8 frames plus sparks; "clearly weaker than the other game", whose bar is heavy motion blur and large layered bursts with debris |
+| Heavy blow and fall | new | clear | medium | Full-head flash, streak, dust, debris cloud; the fall itself barely shows dust in either clip |
+
+Overall: "a casual player would notice". **Measured camera shake: none in either version** (frame-to-frame background
+shift 0.2 px median, 2 px at most), and no slow motion or zoom was visible: those three effects fire by the counters
+but do not show on screen. Also seen: the head flash blows out to flat white, a two-frame camera pop, one red-brown
+tinted frame, the controls overlay in every clip.
