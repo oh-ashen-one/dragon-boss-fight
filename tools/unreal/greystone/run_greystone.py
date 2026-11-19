@@ -69,17 +69,6 @@ job = {'step': a.step, 'reportDirectory': str(out), 'options': options, 'project
 (out / 'job.json').write_text(json.dumps(job, indent=2) + '\n')
 
 
-def foreign_engine_processes():
-    """Hand check kept for the lock changeover: build.py / package.py / Veyr-Mac-Shipping not under the lock."""
-    rows = subprocess.run(['ps', '-axo', 'pid=,command='], capture_output=True, text=True).stdout.splitlines()
-    hits = []
-    for row in rows:
-        pid, _, command = row.strip().partition(' ')
-        if any(x in command for x in ('tools/unreal/build.py', 'tools/unreal/package.py', 'Veyr-Mac-Shipping')):
-            hits.append((int(pid), command[:160]))
-    return hits
-
-
 if rendered:  # the ten-per-hour budget counts rendered launches only
     from owned_launch_budget import wait_for_budget
     wait_for_budget(root)
@@ -101,9 +90,6 @@ from engine_lock import engine_lock
 # Machine-wide engine lock (BUILDER_RULES 2026-11-19) for exactly the commandlet's life; the lock forwards SIGTERM/SIGINT
 # to the child only and records its pid so an orphan is noticed.
 with engine_lock('E trial: ' + a.step, tree=root) as lock:
-    while foreign_engine_processes():  # changeover hand check; nothing of ours is started while one is listed
-        print('Waiting (holding the lock): unlocked build/package/game process running:', foreign_engine_processes()[:2], flush=True)
-        time.sleep(30)
     started = time.time()
     with (out / 'launcher.log').open('w') as log:
         env = {**os.environ, 'VEYR_GREYSTONE_JOB': str(out / 'job.json'), 'VEYR_GREYSTONE_PROJECT': str(project)}

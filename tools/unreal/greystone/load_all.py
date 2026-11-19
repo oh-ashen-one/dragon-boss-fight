@@ -16,7 +16,9 @@ import greystone_common as g
 
 job, out = g.load_job()
 registry = unreal.AssetRegistryHelpers.get_asset_registry()
-roots = [g.PACK] + ([g.GASP_MANNEQUIN] if job['options'].get('gasp') else [])
+# --set roots='["/Game/ParagonGreystone/Characters/Heroes/Greystone"]' limits the scan (the 6-minute lock rule: the first
+# load builds derived data for every mesh and texture it touches, so the trial loads only the hero folder first).
+roots = job['options'].get('roots') or ([g.PACK] + ([g.GASP_MANNEQUIN] if job['options'].get('gasp') else []))
 summary = {'roots': roots, 'loaded': 0, 'failed': [], 'byClass': {}}
 for root in roots:
     registry.scan_paths_synchronous([root], True)
@@ -72,6 +74,8 @@ if mesh and skeleton:
     report['bounds'] = {'origin': [bounds.origin.x, bounds.origin.y, bounds.origin.z],
                         'extent': [bounds.box_extent.x, bounds.box_extent.y, bounds.box_extent.z]}
 for skin, path in g.SKINS.items():
+    if not any(path.startswith(r) for r in roots):
+        continue  # outside this run's scope (skins load their textures)
     m = unreal.load_asset(path)
     slots = []
     if m:
