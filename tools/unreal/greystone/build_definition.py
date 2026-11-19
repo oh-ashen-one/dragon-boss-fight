@@ -57,10 +57,15 @@ g_world = g.reference_world(grey_mesh)
 if library.does_asset_exist(g.DEFINITION):
     if not opts.get('replace'):
         raise RuntimeError(g.DEFINITION + ' exists; pass --set replace=true')
-    library.delete_asset(g.DEFINITION)
-factory = unreal.DataAssetFactory()
-factory.set_editor_property('data_asset_class', unreal.VeyrVisualDefinition)
-definition = tools.create_asset('DA_Greystone', g.RUNTIME, unreal.VeyrVisualDefinition, factory)
+    # Rewrite in place: delete_asset leaves the package name taken in an unattended commandlet (2026-11-19 W5),
+    # and every field below is set again from this run's inputs.
+    definition = unreal.load_asset(g.DEFINITION)
+    assert isinstance(definition, unreal.VeyrVisualDefinition), g.DEFINITION + ' is not a VeyrVisualDefinition'
+else:
+    factory = unreal.DataAssetFactory()
+    factory.set_editor_property('data_asset_class', unreal.VeyrVisualDefinition)
+    definition = tools.create_asset('DA_Greystone', g.RUNTIME, unreal.VeyrVisualDefinition, factory)
+assert definition is not None, 'could not create or load ' + g.DEFINITION
 
 FIELDS = ('start_seconds', 'end_seconds', 'impact_seconds', 'b_loop', 'damage_windows', 'nominal_speed_cm_per_second',
           'attack_reach_cm', 'gameplay_play_rate', 'root_yaw_samples_degrees', 'root_sample_rate', 'b_root_motion_removed',
