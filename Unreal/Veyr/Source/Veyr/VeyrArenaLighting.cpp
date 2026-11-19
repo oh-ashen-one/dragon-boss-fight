@@ -42,7 +42,7 @@ void AVeyrArena::BuildRelitLighting()
     // curtain walls now leave dark bands the fires fill. Real shadows through VSM.
     auto* Moon=MakeDirectional(TEXT("RelitColdMoonKey"));
     Moon->SetRelativeRotation(FRotator(VeyrLook::Tune(TEXT("moonpitch"),-34.f),VeyrLook::Tune(TEXT("moonyaw"),-155.f),0));Moon->SetForwardShadingPriority(1);
-    Moon->SetIntensity(VeyrLook::Tune(TEXT("moon"),.35f));Moon->SetLightColor(MoonColour,false);Moon->SetCastShadows(true);
+    Moon->SetIntensity(VeyrLook::Tune(TEXT("moon"),.5f));Moon->SetLightColor(MoonColour,false);Moon->SetCastShadows(true);
     Moon->SetLightSourceAngle(1.5f);Moon->SetSpecularScale(.8f);Moon->SetVolumetricScatteringIntensity(1.f);
     Moon->RegisterComponent();
 
@@ -69,7 +69,7 @@ void AVeyrArena::BuildRelitLighting()
     {
         DragonKeyLight=MakeDirectional(TEXT("RelitDragonKey"));
         DragonKeyLight->LightingChannels.bChannel0=false;DragonKeyLight->LightingChannels.bChannel1=false;DragonKeyLight->LightingChannels.bChannel2=true;
-        DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),6.f));DragonKeyLight->SetLightColor(FLinearColor(.80f,.87f,1.f),false);DragonKeyLight->SetCastShadows(false);
+        DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),4.5f));DragonKeyLight->SetLightColor(FLinearColor(.80f,.87f,1.f),false);DragonKeyLight->SetCastShadows(false);
         DragonKeyLight->SetLightSourceAngle(8.f);DragonKeyLight->SetSpecularScale(.7f);DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
         DragonKeyLight->RegisterComponent();
         KnightKeyLight=MakeDirectional(TEXT("RelitKnightKey"));
