@@ -32,6 +32,7 @@ namespace VeyrFeelSwitches
     bool ContactBurst();     // -VeyrLegacyContactBurst (the B4 burst and the wide flat mesh tint)
     bool KnightRecoil();     // -VeyrNoKnightRecoil (no rebound lean of the knight on contact)
     bool WideTrail();        // -VeyrLegacyTrailWidth (the B6 ribbon width and brightness)
+    bool StopFx();           // -VeyrLegacyStopFx (struck-part snap and contact burst on the dilated game clock during the stop)
     bool FilmEvidence();     // -VeyrLegacyFilmEvidence (full evidence.json rewritten every 5 s during a film)
 }
 

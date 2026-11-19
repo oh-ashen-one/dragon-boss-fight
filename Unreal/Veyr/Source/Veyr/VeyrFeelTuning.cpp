@@ -77,6 +77,7 @@ namespace VeyrFeelSwitches
     bool ContactBurst(){static const bool B=HitBursts()&&!Off(TEXT("VeyrLegacyContactBurst"));return B;}
     bool KnightRecoil(){static const bool B=!Off(TEXT("VeyrNoKnightRecoil"));return B;}
     bool WideTrail(){static const bool B=RibbonTrail()&&!Off(TEXT("VeyrLegacyTrailWidth"));return B;}
+    bool StopFx(){static const bool B=StopHold()&&!Off(TEXT("VeyrLegacyStopFx"));return B;}
     bool FilmEvidence(){static const bool B=!Off(TEXT("VeyrLegacyFilmEvidence"));return B;}
 }
 

@@ -104,8 +104,9 @@ private:
     // (only that leg hangs below them), and the bone that carries all four legs (the whole-body rock).
     mutable TArray<FChainBone> StrikeSpine;
     mutable FName LegTop[4],LegMid[4],BodyBone;
-    struct FStrike { int32 Region=-1; FVector Blow=FVector::ForwardVector; float Weight=0.f,Size=1.f,Age=10.f; };
-    FStrike Strikes[4]; int32 NextStrike=0;
+    struct FStrike { int32 Region=-1; FVector Blow=FVector::ForwardVector; float Weight=0.f,Size=1.f,Age=10.f; uint64 ContactFrame=0; bool bSeen=false; };
+    mutable FStrike Strikes[4]; int32 NextStrike=0;
+    mutable int32 StrikesSeen=0,MaxStrikeLagFrames=0; int32 FxRealTimeFrames=0; float FxTimeScaleNow=1.f;
     void AddStrikes(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotations,bool bDown) const;
     float MeshFlashLife=.3f,MeshFlashFade=.07f;
     void BuildChain(AVeyrDragon* Boss) const;

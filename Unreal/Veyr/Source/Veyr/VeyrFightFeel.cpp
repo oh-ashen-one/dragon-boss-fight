@@ -21,6 +21,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "GameFramework/WorldSettings.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
@@ -230,7 +231,18 @@ void AVeyrFightFeel::Tick(float DeltaSeconds)
     FlashAge+=RealDelta;FlinchAge+=DeltaSeconds;
     KickAge+=RealDelta;HurtAge+=RealDelta;
     for(FReact& R:Reacts)R.Age+=DeltaSeconds; // the spring runs on the game clock: it starts as the stop ends
-    for(FStrike& S:Strikes)S.Age+=DeltaSeconds;
+    // B2: the struck part's snap runs on the real clock, so it shows within two frames of contact and holds through
+    // the stop; the spring home runs on the game clock after it (-VeyrLegacyStopFx: all on the game clock).
+    const bool bRealSnap=!bLegacy&&VeyrFeelSwitches::StopFx();
+    for(FStrike& S:Strikes)S.Age+=(bRealSnap&&S.Age<VeyrFeelTuning().StrikeSnapSeconds)?RealDelta:DeltaSeconds;
+    {
+        // B2: the contact burst plays in real time through the stop (sparks fly while the bodies hold).
+        const float Global=GetWorld()?GetWorld()->GetWorldSettings()->TimeDilation:1.f;
+        const float Want=(bRealSnap&&bOwnsDilation&&Global>0.f&&Global<.999f)?FMath::Clamp(1.f/Global,1.f,40.f):1.f;
+        const auto* FxMode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+        if(FxMode&&FxMode->ImpactFx&&(Want!=FxTimeScaleNow||Want>1.f)){FxMode->ImpactFx->SetFxTimeScale(Want);FxTimeScaleNow=Want;}
+        if(Want>1.f)++FxRealTimeFrames;
+    }
     UpdateMeshFlash(RealDelta);
     const bool ShowFlash=!bDisabled&&FlashAge<.18f;
     const bool LightVisible=ShowFlash&&(bLegacy||!bMarkerOnlyReview);
@@ -589,7 +601,7 @@ void AVeyrFightFeel::SwordContact(AVeyrDragon* Boss,bool bHeavy)
     {
         // B2: the struck part itself snaps away from the blade and springs back in about a quarter second.
         FStrike& S=Strikes[NextStrike];NextStrike=(NextStrike+1)%UE_ARRAY_COUNT(Strikes);
-        S.Region=FMath::Clamp(Boss->GetLastHitRegion(),0,5);S.Blow=Flat;S.Weight=W;S.Age=0.f;
+        S.Region=FMath::Clamp(Boss->GetLastHitRegion(),0,5);S.Blow=Flat;S.Weight=W;S.Age=0.f;S.ContactFrame=GFrameCounter;S.bSeen=false;
         S.Size=FMath::Clamp(FMath::Sqrt(2.f/FMath::Max(.5f,Boss->BodyScale)),.75f,1.15f);
         ++StrikeEvents;++StrikesByRegion[S.Region];
     }
@@ -599,6 +611,8 @@ void AVeyrFightFeel::SwordContact(AVeyrDragon* Boss,bool bHeavy)
         Mode->Knight->AddHitRecoil(-Flat,bHeavy?T.RecoilHeavy:T.RecoilLight);++KnightRecoils;
     }
     StartMeshFlash(Boss->ImportedPresentation,Boss->LastSwordContactWorld,W);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_B2_CONTACT frame=%llu region=%d heavy=%d stop=%.3f strikes=%d recoils=%d flashes=%d"),
+        GFrameCounter,Boss->GetLastHitRegion(),bHeavy?1:0,LastHitStopSeconds,StrikeEvents,KnightRecoils,ContactFlashes);
     if(Mode&&Mode->ImpactFx)
     {
         const FVector Out=(From+FVector(0,0,120)-Boss->LastSwordContactWorld).GetSafeNormal();
@@ -655,13 +669,19 @@ void AVeyrFightFeel::BuildChain(AVeyrDragon* Boss) const
     }
     {
         // B2 strike caches: the spine (head first, more at the head), each leg's own top two bones.
+        TArray<int32> ChildCount;ChildCount.Init(0,Ref.GetNum());
+        for(int32 B=0;B<Ref.GetNum();++B)if(Ref.GetParentIndex(B)!=INDEX_NONE)++ChildCount[Ref.GetParentIndex(B)];
         const int32 N=FMath::Min(Spine.Num(),8);float Sum=0.f;
         for(int32 I=0;I<N;++I)Sum+=N-I*.5f;
         for(int32 I=0;I<N;++I)StrikeSpine.Add({Ref.GetBoneName(Spine[I]),(N-I*.5f)/FMath::Max(.01f,Sum)});
         for(int32 L=0;L<4;++L)
         {
             TArray<int32> Path;
-            for(int32 B=Ankles[L];B!=INDEX_NONE&&LegMask[B]==(1<<L);B=Ref.GetParentIndex(B))Path.Add(B);
+            for(int32 B=Ankles[L];B!=INDEX_NONE&&LegMask[B]==(1<<L);B=Ref.GetParentIndex(B))
+            {
+                if(B!=Ankles[L]&&ChildCount[B]>1)break; // a spine bone carrying the tail or a wing too: not the leg's own
+                Path.Add(B);
+            }
             if(Path.Num()>=1)LegTop[L]=Ref.GetBoneName(Path.Last());
             if(Path.Num()>=3)LegMid[L]=Ref.GetBoneName(Path[Path.Num()-2]);
         }
@@ -723,6 +743,12 @@ void AVeyrFightFeel::AddStrikes(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotation
     {
         if(S.Age>=T.StrikeLifeSeconds||S.Region<0)continue;
         const float C=Curve(S.Age);
+        if(!S.bSeen&&FMath::Abs(C)>=.5f)
+        {
+            S.bSeen=true;++StrikesSeen;const int32 Lag=static_cast<int32>(GFrameCounter-S.ContactFrame);
+            MaxStrikeLagFrames=FMath::Max(MaxStrikeLagFrames,Lag);
+            UE_LOG(LogTemp,Display,TEXT("VEYR_B2_STRIKE_VISIBLE frame=%llu lag=%d region=%d age=%.3f curve=%.2f"),GFrameCounter,Lag,S.Region,S.Age,C);
+        }
         // Axes that move the struck point along the blow: a hanging leg turns about blow x up, a raised neck about up x blow.
         const FVector Hang=FVector::CrossProduct(S.Blow,FVector::UpVector),Raise=FVector::CrossProduct(FVector::UpVector,S.Blow);
         if(S.Region<4)
@@ -970,6 +996,8 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence(bool bStatic) const
         B2->SetStringField(TEXT("strikeBones"),FString::Printf(TEXT("spine %d, body %s, legs %s/%s %s/%s %s/%s %s/%s"),StrikeSpine.Num(),*BodyBone.ToString(),
             *LegTop[0].ToString(),*LegMid[0].ToString(),*LegTop[1].ToString(),*LegMid[1].ToString(),*LegTop[2].ToString(),*LegMid[2].ToString(),*LegTop[3].ToString(),*LegMid[3].ToString()));
         B2->SetNumberField(TEXT("heldStopTicks"),HeldStopTicks);B2->SetNumberField(TEXT("lastHitStopSeconds"),LastHitStopSeconds);
+        B2->SetNumberField(TEXT("strikesSeen"),StrikesSeen);B2->SetNumberField(TEXT("maxStrikeLagFrames"),MaxStrikeLagFrames);
+        B2->SetBoolField(TEXT("stopFx"),VeyrFeelSwitches::StopFx());B2->SetNumberField(TEXT("fxRealTimeFrames"),FxRealTimeFrames);
         B2->SetNumberField(TEXT("knightRecoils"),KnightRecoils);B2->SetNumberField(TEXT("contactFlashes"),ContactFlashes);
         F->SetObjectField(TEXT("impact2"),B2);
     }

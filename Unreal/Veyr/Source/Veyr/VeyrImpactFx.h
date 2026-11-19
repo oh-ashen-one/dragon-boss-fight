@@ -40,6 +40,7 @@ public:
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 ChipsThrown=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 HitSmoke=0;
     int32 ContactBursts=0; // B2
+    void SetFxTimeScale(float Scale); // B2: the contact burst runs in real time through a hit stop
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 CardsSpawned=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 MaxLiveCards=0;
     UPROPERTY(VisibleAnywhere,Category="Evidence") int32 SkippedMerged=0;

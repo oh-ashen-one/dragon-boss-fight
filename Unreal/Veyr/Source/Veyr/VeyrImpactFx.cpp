@@ -385,6 +385,12 @@ void AVeyrImpactFx::UpdateSparks(float Dt,const FVector& Camera)
     SparkStreaks->SetVisibility(Any);SparkStreaks->MarkRenderStateDirty();bSparksDirty=Any;
 }
 
+void AVeyrImpactFx::SetFxTimeScale(float Scale)
+{
+    CustomTimeDilation=Scale;
+    for(UFXSystemComponent* C:Components)if(UNiagaraComponent* N=Cast<UNiagaraComponent>(C))N->SetCustomTimeDilation(Scale);
+}
+
 void AVeyrImpactFx::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
