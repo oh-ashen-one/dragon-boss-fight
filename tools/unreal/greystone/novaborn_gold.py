@@ -26,7 +26,12 @@ job, out = g.load_job()
 lib = unreal.MaterialEditingLibrary
 assets = unreal.EditorAssetLibrary
 tools = unreal.AssetToolsHelpers.get_asset_tools()
-GLOW = ('glow', 'energy', 'emissive', 'fresnel', 'rim', 'effect')
+# First run (skin-20261119T084938Z) matched 'rim' inside GrimeTint and missed the energy blade's lightswordA/B.
+# Now: emissive colours and the light-sword colours only; eyes and hair keep their own (owner pick shows neither glowing).
+def is_glow(name):
+    n = name.lower()
+    return ('emissive' in n or n.startswith('lightsword')) and 'grime' not in n and not n.startswith('ult')
+SKIP_MATERIAL = ('eye', 'hair', 'mouth', 'eyelash')
 GOLD = (1.0, 0.62, 0.20)
 folder = g.RUNTIME + '/Skin'
 source = unreal.load_asset(g.NOVABORN_MESH)
@@ -58,7 +63,8 @@ for index, slot in enumerate(slots):
             except Exception as error:
                 defaults[n] = str(error)
         row.update(vectors=vectors, scalars=scalars, textures=textures, vectorDefaults=defaults)
-        glow = [n for n in vectors if any(k in n.lower() for k in GLOW) and isinstance(defaults.get(n), list)]
+        skip = any(k in mi.get_name().lower() for k in SKIP_MATERIAL)
+        glow = [] if skip else [n for n in vectors if is_glow(n) and isinstance(defaults.get(n), list)]
         row['glowParameters'] = glow
         if glow:
             name = 'MI_GS_NovabornGold_' + str(index)
