@@ -138,6 +138,24 @@ def run_spec(spec, delay=0.0):
                               'spineFlinches': f.get('spineFlinches'), 'meshFlashes': f.get('meshFlashes'), 'ribbonFrames': f.get('ribbonFrames'),
                               'slowTails': f.get('slowTails'), 'zoomPunches': f.get('zoomPunches'), 'hurtKicks': f.get('hurtKicks'),
                               'missingSystems': f.get('missingSystems')}
+        if 'cameraAudit' in e:
+            # A2 third pass: the camera the player saw, every frame, any mode (VeyrCameraBoom::AuditView).
+            x = e['cameraAudit']
+            record['cameraAudit'] = {k: x[k] for k in (
+                'frames', 'insideDragonFrames', 'insideCapsuleFrames', 'insideHullFrames', 'behindSkinFrames',
+                'skinWithin10cmFrames', 'insideKnightFrames', 'knightWholeOnScreenShare', 'dragonBetweenPartlyFrames',
+                'dragonCoversKnightFrames', 'longestCoveredRunFrames', 'steepPitchFrames', 'minPitchDeg',
+                'minCameraToKnightCm', 'insideSeconds', 'coveredSeconds', 'steepSeconds', 'safetySnaps', 'framingFallbackFrames', 'legacyCameraSafety') if k in x}
+        frames_dir = Path(evidence[-1]).parent / 'native-video'
+        if (frames_dir / 'frames.jsonl').exists():
+            # Film-side camera check (inside_mesh_frames.py: salmon interior + pale facets), on the captured PNGs.
+            check = subprocess.run([sys.executable, str(ROOT / 'tools/unreal/inside_mesh_frames.py'), str(frames_dir)],
+                                   cwd=ROOT, capture_output=True, text=True)
+            line = [l for l in check.stdout.splitlines() if l.startswith('INSIDE_MESH_FRAMES ')]
+            if line:
+                f = json.loads(line[-1].split(' ', 1)[1])
+                record['filmCheck'] = {k: f.get(k) for k in ('frames', 'inside', 'pale', 'graze')}
+                record['filmCheck']['paleSeconds'] = [round(t, 2) for t in f.get('paleSeconds', [])][:40]
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:
