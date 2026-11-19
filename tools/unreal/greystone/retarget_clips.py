@@ -19,6 +19,7 @@ UAnimPoseExtensions::GetAnimPoseAtFrame / GetBonePose(World) (AnimationBlueprint
 UAnimSequenceBase::Controller -> IAnimationDataController::OpenBracket/AddBoneCurve/SetBoneTrackKeys/CloseBracket.
 """
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -137,7 +138,7 @@ for source_path, keys in by_sequence.items():
     assert frames_k == frames_g, f'{name}: frame count changed {frames_k} -> {frames_g}'
     weapon = clips[keys[0]].get_editor_property('weapon_mesh')
     blade_k_local = blade_axis(weapon) if weapon else None
-    sword_rows, top_rows, gun_rows, worst_turn = [], [], [], 0.0
+    sword_rows, top_rows, gun_rows, worst_turn, swings = [], [], [], 0.0, []
     for frame in range(frames_g):
         pk, pg = pose_at(source, frame, knight_mesh), pose_at(result, frame, grey_mesh)
         hand_g = g.compose(bone(pg, 'hand_r'), g_rel)
@@ -148,6 +149,10 @@ for source_path, keys in by_sequence.items():
             local_q = g.qnorm(g.qmul(g.qinv(hand_g[0]), sword_actor_q))  # (S * H^-1).q = H.q^-1 * S.q
             row = (local_q, bottom_local_ref[1], bottom_local_ref[2])
             worst_turn = max(worst_turn, g.angle_deg(g.qmul(g.qinv(bottom_local_ref[0]), local_q)))
+            # Split the turn: swing of the blade direction away from Greystone's own grip, vs twist about the blade.
+            d_ref, d_now = g.qrot(bottom_local_ref[0], blade_g_local), g.qrot(local_q, blade_g_local)
+            swing = math.degrees(math.acos(max(-1.0, min(1.0, sum(a * b for a, b in zip(d_ref, d_now))))))
+            swings.append(swing)
         else:
             row = bottom_local_ref
         sword_rows.append(row)
@@ -174,6 +179,8 @@ for source_path, keys in by_sequence.items():
     for key in keys:
         anims[key] = {'sequence': target_path, 'source': source_path, 'sourceSHA256': g.sha256(g.package_file(source_path.split('.')[0])),
                       'frames': frames_g, 'swordBaked': bool(blade_k_local), 'swordMaxTurnFromGripDeg': worst_turn,
+                      'swordBladeSwingMaxDeg': max(swings) if swings else 0.0,
+                      'swordBladeSwingMeanDeg': (sum(swings) / len(swings)) if swings else 0.0,
                       'cupBaked': bool(gun_rows), 'outputSHA256': g.sha256(g.package_file(target_path))}
     unreal.log(f'VEYR_GREYSTONE_RETARGET {name} frames={frames_g} keys={",".join(keys)}')
 
