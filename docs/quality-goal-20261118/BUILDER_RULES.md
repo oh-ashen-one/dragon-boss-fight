@@ -18,15 +18,32 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
 
 ## Machine and process rules (the owner enforces these)
 
-- Before starting any UnrealBuildTool build (also a compile-check in your own worktree), check that no other
-  UnrealBuildTool, `build.py` or `package.py` process is running and wait until none is; use `-WaitMutex`, never
-  `-NoMutex`; throttle worktree compile-checks with `-MaxParallelActions=6`.
-- **One game or engine process at a time on this machine for this goal, windowless (`-nullrhi`, commandlets, cooks)
-  included.** Never run fights in parallel (`--parallel` stays 1). Before any launch, check that no `Veyr-Mac-Shipping`
-  or `UnrealEditor` process of ours is running. Your brief says whether you hold the engine; if it does not, you may
-  not build, package or launch.
+- **Every build, package, cook, commandlet and game launch holds the engine lock.** It is one machine-wide lock
+  (`~/.cache/veyr-engine/lock`, `tools/unreal/engine_lock.py`), so only one game, engine or build process of ours runs at
+  a time on this machine, windowless (`-nullrhi`, commandlets, cooks) included, and two builders can take turns
+  safely. Start these only through the tools (`build.py`, `package.py`, `run_native.py`, `playtest_suite.py`,
+  `play_shipping.py`, `run_polish_import.py`, `open_owned_editor.py`), which take the lock themselves, or through
+  `python3 tools/unreal/engine_lock.py --label "<who and why>" -- <command...>`. Never start UnrealBuildTool, `Build.sh`,
+  RunUAT, `UnrealEditor`, `UnrealEditor-Cmd` or `Veyr-Mac-Shipping` any other way. If the lock is held you wait in
+  the queue (the tool prints who holds it every minute); `engine_lock.py --status` shows the holder. Your brief no longer
+  says "you hold the engine": you hold it only while one of your processes runs, so do reading, code and frame review
+  between launches, not inside them. A suite takes the lock once per run, not once per suite. Never run fights in
+  parallel (`--parallel` stays 1). Do not edit, kill or delete `~/.cache/veyr-engine/`; if a holder looks dead,
+  `--status` says so.
+  Keep holds short: no single run holds the lock longer than about 6 minutes unless the reason is in your notes file
+  (a release after more than 6 minutes is logged as a "long hold" in `~/.cache/veyr-engine/history.jsonl`). Prefer
+  cooked, packaged builds over the uncooked editor binary for checks: the editor rebuilds assets while it holds the lock.
+- **Build in your own worktree.** A builder with a worktree first runs
+  `python3 tools/unreal/clone_private_content.py --from /Users/midir/veyr-knight-20261028 --to <your worktree>` (APFS
+  clones of the git-ignored Content and Config: Characters, Paragon, ArtPass, some audio; it also seeds
+  `Unreal/Veyr/DerivedDataCache`, which you must do before your first run, or the first editor run rebuilds every static
+  mesh while holding the lock; no extra disk, `--no-ddc` skips it), then builds and
+  packages from its own worktree. Nobody builds or packages in another builder's tree. Throttle compile-checks with `-MaxParallelActions=6`; use `-WaitMutex`, never
+  `-NoMutex`.
 - Rendered launches only through the GPU gate (`run_native.py` / `playtest_suite.py` do this), 60 fps cap, windowed and
-  in the background (`open -g`), never fullscreen, never focused.
+  in the background (`open -g`), never fullscreen, never focused. The ten-rendered-launches-per-hour budget is counted
+  across all checkouts of the project (every worktree's receipts plus `~/.cache/veyr-engine/rendered-launches.jsonl`), so
+  two builders together stay at ten.
 - **No rendered launch while `~/.cache/gpu-slot/STREAMING` exists** (the owner's 11:00-13:00 ET stream window). Never
   remove that file and never set `GPU_SLOT_STREAMING_SLOTS`. Use that time for code, builds and windowless runs.
 - **Never signal a process by name pattern** (`pkill`, `killall`, `pgrep ... | xargs kill`). Other sessions on this

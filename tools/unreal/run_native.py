@@ -116,15 +116,18 @@ if a.wait_for_stream_end:
     # launch a changed binary. GPU headroom/cap checks still happen below.
     if not executable.is_file() or hashlib.sha256(executable.read_bytes()).hexdigest()!=json.loads((run/'launch.json').read_text())['executableSHA256']:
         raise SystemExit('Runtime changed during the guarded wait; preserve evidence and revalidate')
-from owned_launch_budget import wait_for_budget
-wait_for_budget(ROOT)
-with (run/'launcher.log').open('w') as output:
-    environment = os.environ.copy()
-    # Direct executable launches do not receive Info.plist LSEnvironment from
-    # LaunchServices. Honor only this explicit app-owned allocator setting.
-    if a.app and info.get('LSEnvironment',{}).get('UE4_FORCE_MALLOC_ANSI')=='1':
-        environment['UE4_FORCE_MALLOC_ANSI']='1'
-    result = subprocess.run(cmd, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
+from owned_launch_budget import launch_gate, record_rendered_launch
+# Budget wait first (no lock held), then the machine-wide engine lock for exactly the life of this one process.
+with launch_gate(ROOT, 'run_native ' + a.mode + (' headless' if a.headless else '') + ' ' + ROOT.name) as lock:
+    with (run/'launcher.log').open('w') as output:
+        environment = os.environ.copy()
+        # Direct executable launches do not receive Info.plist LSEnvironment from
+        # LaunchServices. Honor only this explicit app-owned allocator setting.
+        if a.app and info.get('LSEnvironment',{}).get('UE4_FORCE_MALLOC_ANSI')=='1':
+            environment['UE4_FORCE_MALLOC_ANSI']='1'
+        result = lock.run(cmd, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
+    lock.exit_code = result.returncode
+    if not a.headless:record_rendered_launch(ROOT, 'veyr-' + a.mode, run/'gpu.json', run)
 print('Process exit:', result.returncode, 'Evidence:', run, flush=True)
 if result.returncode:
     raise SystemExit(result.returncode)

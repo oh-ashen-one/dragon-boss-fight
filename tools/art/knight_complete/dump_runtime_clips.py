@@ -1,7 +1,7 @@
 """Read-only UE 5.8 commandlet: dump the runtime knight definition's clip table (no saves, no imports).
 
-Run (headless, through the GPU slot like every editor launch):
-  gpu_slot.sh capture --label knight-dump -- UnrealEditor <uproject> -run=pythonscript
+Run (headless, through the machine-wide engine lock like every engine launch; engine_lock.py takes it):
+  python3 tools/unreal/engine_lock.py --label knight-dump -- UnrealEditor <uproject> -run=pythonscript
     -script=<absolute path to this file> -nullrhi -unattended -NoZenAutoLaunch -notraceserver
 Writes Local/CustomuseImports/runtime-clips-<stamp>.json and logs VEYR_RUNTIME_CLIPS_DUMPED <path>.
 Used before the v030t attack import to copy the inherited weapon/mesh bindings of the replaced attack clips."""
