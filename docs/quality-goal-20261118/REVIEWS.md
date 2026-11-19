@@ -128,3 +128,47 @@ playback speed errors smaller than the hitching. Full text: `Local/quality-goal/
 Consequence: round 2 keeps its targets and adds the aim snap at the start of fire (fault 1) and a film that runs
 through the whole death fall. Fault 2 is a contact rule, not animation: noted for the owner, hitboxes stay fixed.
 
+## Sound blind review 3 — 2026-11-19 17:40 ET, second-pass capture 3 against the reference
+
+Opus critic, sides hidden (labels P and Q drawn at random; key outside the pack), 62 s of our second-pass sound capture
+(`veyr-b2sound-victory3.mp4`, branch `fable/quality-goal-B2sound` `9605a47`) against the 51 s reference fight cut. He
+cannot listen; sound judged by levels, spectra and onsets against the picture.
+
+**Verdict: OURS CLEARLY BETTER.**
+
+| Measure | Reference | Ours |
+|---|---|---|
+| Integrated loudness | -15.0 LUFS whole film; -25.6 LUFS without the narrator | -17.2 LUFS |
+| True peak | -1.2 dBTP (-10.1 dBFS without the voice) | +0.2 dBTP, 9 full-scale samples at 14.53 s |
+| Hits over the music bed | +6.3 dB | +13.0 dB |
+| Impacts with a clear onset | 5 of 8 | 13 of 14 |
+| Median delay against the impact frame | 8.6 frames | 3.3 frames |
+| Loudness range | 2.6 LU without the voice | 5.3 LU |
+
+New fact: the reference clip carries a narrator over 33 of its 48 s. The -15.0 LUFS that earlier reviews and our level
+target used was the voice, not the game; review 2's "reference slightly better" on sound compared our mix with his
+narration. Our level target is now -20 LUFS plus or minus 2 with true peak at or under -1 dBTP.
+
+Our faults, worst first: heavy boss events weak or late (claw slam at 8.17 s with no clear onset; stomp at 48.82 s 11
+frames late; slash at 11.64 s and debris at 14.32 s 16 frames late); stereo image leans right (2.8 dB on average, up to
+9.8 dB); one small clip. Not judged: footsteps, wing beats, swings and hurt sounds (not isolated), and anything that
+needs ears (whether the sounds please, whether the low end booms). Full text: `Local/quality-goal/review-S-blind3.md`.
+
+Consequence: a short third pass on the three faults plus stomp variety and the fire onset, then the sound branch merges.
+
+## Sound blind review 4 — 2026-11-19 18:35 ET, second pass against third pass (our own two mixes)
+
+Opus critic, sides hidden, 80 s of each of our two sound captures (`veyr-b2sound-victory3.mp4`, pass 2, `9605a47`;
+`veyr-b2sound-victory4.mp4`, pass 3, `a68f67d`).
+
+**Verdict: PASS 2 SLIGHTLY BETTER.** Pass 2 keeps a clear order of events (13.4 dB from the loudest kind to the
+quietest; pass 3: 7.0 dB). In pass 3 the knight's footsteps are louder than the dragon's walking steps, slams stand
+only 4 dB over walking steps, and weapon hits are buried (2-8 kHz peak -27.3 dB against -18.1). Pass 3 wins on headroom
+(no full-scale samples; pass 2 clips at +0.2 dBTP) and on a centred image (pass 2 leans right by 2.8 dB). Neither mix
+turns the low end into a continuous rumble. In both, low thumps play while the dragon flies, the landing is quieter
+than an ordinary slam, and the hit sound starts 150-185 ms after the flash (to be settled on the game clock). Full
+text: `Local/quality-goal/review-S-blind4-passes.md`.
+
+Consequence: pass 4 = pass 2's hierarchy and hit clarity with pass 3's headroom and balance, then a fresh blind review
+against the reference before the sound branch merges.
+

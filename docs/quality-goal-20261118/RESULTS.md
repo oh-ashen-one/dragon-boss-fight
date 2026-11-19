@@ -67,3 +67,27 @@ Each is on its own branch, with its own restore switches, and waits for engine t
 
 `QUALITY_GOAL.md` is still the brief; `LEDGER.md` has every step and agent result; `BUILDER_RULES.md` the working
 rules. One engine process at a time made the engine the bottleneck: about ten hours covered phase A and half of B.
+
+## Integrated build 2026-11-19
+
+Phases B and C merged at `5520737`, packaged as source `9b36487f` (Shipping). This is the build installed beside
+yesterday's milestone (`~/Applications/Veyr/a20c600691d1` stays).
+
+- Rendered regression on that package: controls, intro with sound, showcase, death and victory all pass. The victory
+  run won in 104 s of fight time; its film (101.3 s, with sound, mean -33.4 dB, no silence over 2 s) is
+  `Local/playtest-goal-films/veyr-integrated-BC-victory.mp4`.
+- Frame times (core run, 1280x720, 60 fps cap, other builders running): frame p50 16.67 ms, p95 17.58 ms, p99 115 ms;
+  GPU p95 17.18 ms; 152 of 2991 frames over 17.5 ms. Part of the stalls follow the 5 s evidence save in scripted runs
+  (fixed on `fable/quality-goal-evidence-hitch`).
+- Fight band, 16 seeds per grip, windowless fixed-step sweep (`-VeyrFastSim`, same gameplay code, package `d5c5739f`):
+  one-hand 15/16 wins inside 150 s, median 90.9 s (target 74.8-101.2 s), wins 63.5-130.4 s; two-hand 15/16, median
+  72.8 s (target 62.5-84.5 s), wins 59.4-98.1 s.
+- Passive death, 4 seeds: 7.50, 7.68, 9.28, 12.48 s.
+
+Open faults:
+
+- Passive death on seed 3 takes 12.48 s, over the 12 s target (same on the milestone's lineage).
+- Seed 10 loses with both grips: the knight dies having dealt 0 (one-hand) and 3 (two-hand) hits.
+- Real time against the fixed-step sweep: seed 20261117 one-hand took 170 s in real time under load (fails the 150 s
+  limit) against 108 s fixed-step; seed 1 took 85 s against 92 s. Being retested with the evidence stall removed.
+- The camera is still the phase A one: it can still look through the dragon after a knock-down.
