@@ -447,6 +447,14 @@ private:
     bool bContactCameraFocusInitialized=false;
     float ManualCameraRemaining=0.f;
     float BladeContactRadius=18.f;
+    // E4 (2026-11-19): under -VeyrGreystone the sword sweep uses the old knight's blade (distance along the blade
+    // from the grip to the 28 % point and to the tip, and its contact radius, per clip from the RuntimePolish knight's
+    // weapon meshes) laid along Greystone's sword, so reach and hit chances stay the knight's.
+    // -VeyrGreystoneOwnBlade restores his own sword length and the 18 cm radius.
+    TMap<FName,FVector> GreystoneRefBlade; // X near distance, Y tip distance, Z radius (cm, world)
+    FVector GreystoneRefBladeDefault=FVector::ZeroVector;
+    float GreystoneOwnBladeCm=0.f,GreystoneOwnBaseFromHandCm=0.f;
+    void BuildGreystoneRefBlade();
     // Quality goal E: Greystone presentation (see VeyrGreystone.h). False for the KnightB definition.
     bool bGreystoneActive=false;
     FString GreystoneDiagnostic;

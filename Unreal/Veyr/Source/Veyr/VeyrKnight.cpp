@@ -1365,6 +1365,7 @@ bool AVeyrKnight::ApplyCustomuseVisual(UVeyrVisualDefinition* Definition)
     WarmedVariantTextures.Reset();
     CustomuseVisualDefinition = Definition;
     bGreystoneActive=VeyrGreystone::IsGreystoneDefinition(Definition);GreystoneDiagnostic.Reset();
+    BuildGreystoneRefBlade();
     // E4 (2026-11-19): under -VeyrGreystone his definition is the approved trial rig, so the replay completion gates
     // (RuntimePolish/approved-native) judge the fight, not the rig name. Without the switch nothing changes.
     bUsingPolishDefinition=Definition&&(Definition->GetPathName().Contains(TEXT("/RuntimePolish/"))||bGreystoneActive);
@@ -1550,8 +1551,54 @@ bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_base"),A)||
        !ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_tip"),B))return false;
     Base=A.GetLocation();Tip=B.GetLocation();
-    if(bGreystoneActive)BladeContactRadius=VeyrGreystone::BladeRadiusCm(18.f); // skinned blade: no prop bounds
+    if(bGreystoneActive)
+    {
+        BladeContactRadius=VeyrGreystone::BladeRadiusCm(18.f); // skinned blade: no prop bounds
+        const FVector* Ref=GreystoneRefBlade.Find(RequestedPresentationClip);
+        if(!Ref&&GreystoneRefBladeDefault.Y>0.f)Ref=&GreystoneRefBladeDefault;
+        FTransform Hand;
+        if(Ref&&Ref->Y>0.f&&ImportedPresentation->GetBoneTargetWorldTransform(TEXT("weapon_hand"),Hand))
+        {
+            // His blade line; the grip is the point on it nearest his hand (the knight's socket sits in its grip).
+            const FVector Dir=(Tip-Base).GetSafeNormal();
+            if(!Dir.IsNearlyZero())
+            {
+                GreystoneOwnBladeCm=FVector::Dist(Base,Tip)/.72f;
+                const FVector GripPoint=Base+Dir*FVector::DotProduct(Hand.GetLocation()-Base,Dir);
+                GreystoneOwnBaseFromHandCm=FVector::DotProduct(Base-GripPoint,Dir);
+                Base=GripPoint+Dir*Ref->X;Tip=GripPoint+Dir*Ref->Y;BladeContactRadius=Ref->Z;
+            }
+        }
+    }
     return true;
+}
+
+void AVeyrKnight::BuildGreystoneRefBlade()
+{
+    GreystoneRefBlade.Reset();GreystoneRefBladeDefault=FVector::ZeroVector;
+    if(!bGreystoneActive||FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneOwnBlade")))return;
+    const UVeyrVisualDefinition* Ref=LoadObject<UVeyrVisualDefinition>(nullptr,
+        TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    const FVeyrVisualBoneTarget* Socket=Ref?Ref->BoneTargets.Find(TEXT("weapon_socket")):nullptr;
+    if(!Socket){UE_LOG(LogTemp,Warning,TEXT("VEYR_GREYSTONE_BLADE reference knight blade unavailable; his own sword is used"));return;}
+    const FVector Scale=(Socket->LocalOffset.GetScale3D()*Ref->MeshRelativeTransform.GetScale3D()).GetAbs();
+    for(const auto& It:Ref->Clips)
+    {
+        const UStaticMesh* Mesh=It.Value.WeaponMesh.Get();if(!Mesh)continue;
+        // Same construction as GetWeaponSweep's knight branch: segment from 28 % of the blade to its far end.
+        const FBox Box=Mesh->GetBoundingBox();const FVector Size=Box.GetSize();
+        const int32 Axis=Size.X>Size.Y?(Size.X>Size.Z?0:2):(Size.Y>Size.Z?1:2);
+        const float Near=FMath::Abs(Box.Min[Axis])<FMath::Abs(Box.Max[Axis])?Box.Min[Axis]:Box.Max[Axis];
+        const float Far=Near==Box.Min[Axis]?Box.Max[Axis]:Box.Min[Axis];
+        const float Sign=Far>=0.f?1.f:-1.f;
+        const FVector WorldSize=Size*Scale;
+        const FVector V(FMath::Lerp(Near,Far,.28f)*Sign*Scale[Axis],FMath::Abs(Far)*Scale[Axis],
+            FMath::Clamp(static_cast<float>(FMath::Max(WorldSize[(Axis+1)%3],WorldSize[(Axis+2)%3])*.38),8.f,42.f));
+        GreystoneRefBlade.Add(It.Key,V);
+        if(It.Key==TEXT("LightAttack")||GreystoneRefBladeDefault.Y<=0.f)GreystoneRefBladeDefault=V;
+    }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_GREYSTONE_BLADE reference clips=%d light near=%.1f tip=%.1f radius=%.1f"),
+        GreystoneRefBlade.Num(),GreystoneRefBladeDefault.X,GreystoneRefBladeDefault.Y,GreystoneRefBladeDefault.Z);
 }
 
 void AVeyrKnight::PrepareWeaponComponents()
@@ -2633,6 +2680,18 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
     TSharedRef<FJsonObject> O=VeyrGreystone::PresentationEvidence(CustomuseVisualDefinition,ImportedPresentation,GetFootLocation().Z);
     O->SetBoolField(TEXT("active"),bGreystoneActive);
     O->SetNumberField(TEXT("bladeContactRadiusCm"),BladeContactRadius);
+    if(bGreystoneActive)
+    {
+        TSharedRef<FJsonObject> Blade=MakeShared<FJsonObject>();
+        Blade->SetBoolField(TEXT("knightBladeUsed"),GreystoneRefBladeDefault.Y>0.f);
+        Blade->SetNumberField(TEXT("referenceClips"),GreystoneRefBlade.Num());
+        Blade->SetNumberField(TEXT("knightLightNearCm"),GreystoneRefBladeDefault.X);
+        Blade->SetNumberField(TEXT("knightLightTipCm"),GreystoneRefBladeDefault.Y);
+        Blade->SetNumberField(TEXT("knightLightRadiusCm"),GreystoneRefBladeDefault.Z);
+        Blade->SetNumberField(TEXT("greystoneOwnBladeCm"),GreystoneOwnBladeCm);
+        Blade->SetNumberField(TEXT("greystoneOwnBaseFromGripCm"),GreystoneOwnBaseFromHandCm);
+        O->SetObjectField(TEXT("blade"),Blade);
+    }
     O->SetBoolField(TEXT("twoHanded"),bTwoHanded);
     if(!GreystoneDiagnostic.IsEmpty())O->SetStringField(TEXT("diagnostic"),GreystoneDiagnostic);
     if(bGreystoneActive||KnightMonitorRequested())
