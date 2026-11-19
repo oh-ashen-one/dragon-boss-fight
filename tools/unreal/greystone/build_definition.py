@@ -33,9 +33,16 @@ job, out = g.load_job()
 opts = job['options']
 library = unreal.EditorAssetLibrary
 tools = unreal.AssetToolsHelpers.get_asset_tools()
-anims_file = Path(opts['anims']).resolve()
-assert anims_file.is_relative_to((g.ROOT / 'Local').resolve())
-anims_doc = json.loads(anims_file.read_text())
+# anims: one anims.json or a list of them (the retarget step runs in short batches under the 6-minute lock rule).
+anims_doc = {'anims': {}}
+for item in (opts['anims'] if isinstance(opts['anims'], list) else [opts['anims']]):
+    anims_file = Path(item).resolve()
+    assert anims_file.is_relative_to((g.ROOT / 'Local').resolve())
+    doc = json.loads(anims_file.read_text())
+    if 'scale' in anims_doc and doc['scale'] != anims_doc['scale']:
+        raise RuntimeError('retarget batches disagree on the scale plan: ' + str(anims_file))
+    anims_doc['scale'] = doc['scale']
+    anims_doc['anims'].update(doc['anims'])
 scale = anims_doc['scale']
 g_rel = (tuple(scale['rotation_xyzw']), tuple(scale['translation_cm']), float(scale['scale']))
 knight = unreal.load_asset(g.KNIGHT_DEFINITION)
