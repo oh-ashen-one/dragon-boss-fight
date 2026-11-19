@@ -424,7 +424,7 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 // Round 2: spine/neck-first aim. The head leads the remaining wind-up turn (visual only; the damage
                 // envelope follows the body as before).
                 float AimWanted=0.f;
-                if(bProcSteps&&State==EVeyrDragonState::Windup&&IsWindupTracking()&&IsValid(Target)&&!Target->IsDead()&&Move!=EVeyrDragonMove::Fire)
+                if(bHeadYawLimit&&State==EVeyrDragonState::Windup&&IsWindupTracking()&&IsValid(Target)&&!Target->IsDead()&&Move!=EVeyrDragonMove::Fire)
                 {
                     const FVector Dir=GetActorQuat().UnrotateVector(Target->GetFootLocation()-GetActorLocation());
                     AimWanted=FMath::Clamp(static_cast<float>(FMath::RadiansToDegrees(FMath::Atan2(Dir.Y,Dir.X))),-14.f,14.f);
@@ -2181,6 +2181,51 @@ void AVeyrDragon::UpdateGaze(float DeltaSeconds)
     GazeYawDegrees=GazeSmoothedYaw*Weight;GazePitchDegrees=GazeSmoothedPitch*Weight;
 }
 
+void AVeyrDragon::LimitHeadYaw(const TMap<FName,FRotator>& Gaze)
+{
+    // Round 2 (critic 2026-11-19): the clip's neck->head line may swing at most HeadYawMaxDps; a faster swing (the
+    // bite's sideways whip, the fire start) is held back by a yaw on the neck that the next frames release at the
+    // same rate. World yaw of the base->head line, level-weighted; the pose is evaluated again only when limited.
+    const FVeyrVisualBoneTarget* HeadT=VisualDefinition->BoneTargets.Find(TEXT("head"));
+    const FVeyrVisualBoneTarget* NeckT=VisualDefinition->BoneTargets.Find(TEXT("gaze_neck"));
+    const FName Base=NeckT?ImportedPresentation->GetParentBone(NeckT->BoneName):NAME_None;
+    if(!HeadT||!NeckT||Base.IsNone())return;
+    const bool Standing=State==EVeyrDragonState::Idle||State==EVeyrDragonState::Reposition||State==EVeyrDragonState::Windup||
+        State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery;
+    auto Measure=[&](float& OutYaw)->bool
+    {
+        const FVector Line=ImportedPresentation->GetBoneLocation(HeadT->BoneName)-ImportedPresentation->GetBoneLocation(Base);
+        if(FVector2D(Line.X,Line.Y).Size()<.3*Line.Size())return false;
+        OutYaw=FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(Line.Y),static_cast<float>(Line.X)));return true;
+    };
+    float Raw=0.f;
+    const float Dt=HeadYawClock<0.f?0.f:Clock-HeadYawClock;
+    if(!Standing||IsAirborne()||(Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)||!Measure(Raw))
+    {HeadYawClock=-1.f;return;}
+    if(Dt<1.e-4f){if(HeadYawClock<0.f){HeadYawShown=Raw;HeadYawClock=Clock;}return;}
+    HeadYawClock=Clock;
+    const float Step=HeadYawMaxDps*Dt;
+    const float Desired=HeadYawShown+FMath::Clamp(FMath::FindDeltaAngleDegrees(HeadYawShown,Raw),-Step,Step);
+    const float Corr=FMath::Clamp(FMath::FindDeltaAngleDegrees(Raw,Desired),-40.f,40.f);
+    HeadYawShown=Raw;
+    if(FMath::Abs(Corr)<.25f)return;
+    TMap<FName,FRotator> Limited=Gaze;
+    // Shares over base, neck and head (they pivot at different points, so the line turns by less than their sum).
+    Limited.FindOrAdd(Base).Yaw+=Corr*.6f;Limited.FindOrAdd(NeckT->BoneName).Yaw+=Corr*.5f;
+    if(HeadT->BoneName!=NeckT->BoneName)Limited.FindOrAdd(HeadT->BoneName).Yaw+=Corr*.3f;
+    for(auto& E:Limited)
+    {
+        FRotator& R=E.Value;R.Pitch=FMath::Clamp(R.Pitch,-19.5f,19.5f);R.Yaw=FMath::Clamp(R.Yaw,-19.5f,19.5f);R.Roll=FMath::Clamp(R.Roll,-19.5f,19.5f);
+        const float Deg=FMath::RadiansToDegrees(R.Quaternion().GetAngle());
+        if(Deg>24.f)R=FQuat::Slerp(FQuat::Identity,R.Quaternion(),24.f/Deg).Rotator();
+    }
+    if(!ImportedPresentation->SetComponentSpaceBoneRotations(Limited)||!ImportedPresentation->Reevaluate())
+    {ImportedPresentation->SetComponentSpaceBoneRotations(Gaze);ImportedPresentation->Reevaluate();return;}
+    float Shown=Raw;
+    if(Measure(Shown))HeadYawShown=Shown;
+    ++HeadYawLimitedFrames;HeadYawMaxCorr=FMath::Max(HeadYawMaxCorr,FMath::Abs(Corr));
+}
+
 void AVeyrDragon::UpdateImportedPresentation()
 {
     if(!bUsingCustomuseVisual||!VisualDefinition||!ImportedPresentation)return;
@@ -2225,7 +2270,7 @@ void AVeyrDragon::UpdateImportedPresentation()
         Gaze=BiteGroundRotations(Config.StartSeconds+Trimmed,BiteGroundPitchDegrees);
     }
     // The head comes back up over the recovery instead of snapping.
-    if(bProcSteps&&!GroundBite&&!GroundFire&&FMath::Abs(WindupAimVisual)>.05f&&
+    if(bHeadYawLimit&&!GroundBite&&!GroundFire&&FMath::Abs(WindupAimVisual)>.05f&&
        (State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery))
     {
         const FVeyrVisualBoneTarget* Head=VisualDefinition->BoneTargets.Find(TEXT("head"));
@@ -2237,7 +2282,7 @@ void AVeyrDragon::UpdateImportedPresentation()
     if(GroundFire)Gaze=FireAimRotations(State==EVeyrDragonState::Recovery?1.f-Ease(StateElapsed/FMath::Max(.01f,StateDuration)):1.f);
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
         if(Mode->FightFeel)Mode->FightFeel->AddBossFlinch(this,Gaze);
-    if(bProcSteps)
+    if(bProcSteps||bHeadYawLimit)
         for(auto& E:Gaze)
         {
             // Round 2: the added aim never pushes a bone past the proxy's bounds (20 deg per axis, 25 deg total).
@@ -2460,6 +2505,7 @@ void AVeyrDragon::UpdateImportedPresentation()
         if(!ImportedPresentation->SampleReferencePose())return;
     }
     // A3: one eased vertical offset of the visible body; -VeyrNoDragonGrounding disables. See VeyrDragonGrounding.h.
+    if(bHeadYawLimit&&Sampled)LimitHeadYaw(Gaze);
     ImportedPresentation->UpdateGrounding(VeyrGroundingModeFor(this));
     FTransform Head,Feet[4];
     if(!ImportedPresentation->GetBoneTargetWorldTransform(TEXT("head"),Head))return;

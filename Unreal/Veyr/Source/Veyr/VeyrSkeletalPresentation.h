@@ -80,6 +80,8 @@ public:
     void SetInertialClock(float Seconds);
     bool BeginInertialTransition(float Seconds,float DestinationRate);
     void GetInertialStats(int32& OutStarts,float& OutMaxDegrees,float& OutMaxCm) const;
+    /** Round 2: evaluate the current clip/time again with the current rotations (same clock, no time advance). */
+    bool Reevaluate() { return EvaluatePoseSynchronously(); }
 
     /** Alpha 0 reproduces the frozen source exactly; 1 is the unblended target.
      * Alpha < 1 requires BeginTransition. Missing clips still fail at any alpha.

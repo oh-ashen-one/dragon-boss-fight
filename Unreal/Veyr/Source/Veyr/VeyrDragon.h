@@ -402,7 +402,12 @@ private:
     /** Round 2: procedural stepping and spine/neck-first wind-up aim (-VeyrNoProceduralSteps restores round 1). */
     bool bProcSteps=false;
     int32 ProcStepCount=0,ProcStepPairs=0,ProcStepLastLeg=-1;
+    void LimitHeadYaw(const TMap<FName,FRotator>& Gaze);
     float WindupAimVisual=0.f;
+    /** Round 2 (critic): the neck->head line never swings faster than HeadYawMaxDps; neck-first wind-up aim.
+     * -VeyrNoHeadYawLimit restores round 1. */
+    bool bHeadYawLimit=false;
+    float HeadYawMaxDps=270.f,HeadYawShown=0.f,HeadYawClock=-1.f,HeadYawMaxCorr=0.f;int32 HeadYawLimitedFrames=0;
     float InertialStartedClock=-100.f,InertialBlendSeconds=.35f;
     float PhaseEntryReal=0.f,WalkStrideSpeedCm=0.f;
     const FVeyrClipPlayback* TempoClip(FName Clip,float& OutRate,float& OutHoldRate) const;

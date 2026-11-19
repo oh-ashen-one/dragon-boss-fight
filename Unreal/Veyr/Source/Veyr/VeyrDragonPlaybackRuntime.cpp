@@ -142,6 +142,8 @@ void AVeyrDragon::InitPlayback()
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
     bInertialBlend=bTwoClipBlend&&!FParse::Param(Cmd,TEXT("VeyrCrossfadeBlend"));
     bProcSteps=bFootLock&&!FParse::Param(Cmd,TEXT("VeyrNoProceduralSteps"));
+    bHeadYawLimit=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoHeadYawLimit"));
+    FParse::Value(Cmd,TEXT("VeyrHeadYawMaxDps="),HeadYawMaxDps);HeadYawMaxDps=FMath::Clamp(HeadYawMaxDps,60.f,2000.f);
     UE_LOG(LogTemp,Display,TEXT("VEYR_DRAGON_PLAYBACK loaded=%d tempo=%d blend=%d footlock=%d slowturn=%d roottracks=%d %s"),
         Loaded?1:0,bClipTempo?1:0,bTwoClipBlend?1:0,bFootLock?1:0,bSlowSnapTurn?1:0,bRootTracks?1:0,*PlaybackDiagnostic);
 }
@@ -295,9 +297,11 @@ void AVeyrDragon::UpdatePoseDeltaStat()
             const float HeadYaw=FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(Line.Y),static_cast<float>(Line.X)));
             const float BodyYaw=GetActorRotation().Yaw;
             const float YDt=YawPrevClock<0.f?0.f:Clock-YawPrevClock;
-            if(bYawPrev&&YDt>1.e-4f&&FVector2D(Line.X,Line.Y).Size()>20.f*BodyScale)
+            const float Flat=static_cast<float>(FVector2D(Line.X,Line.Y).Size()/FMath::Max(1.,Line.Size()));
+            if(bYawPrev&&YDt>1.e-4f&&Flat>.3f)
             {
-                const float H=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevHead,HeadYaw))*(1.f/30.f)/YDt;
+                // Visible swing: yaw change scaled by how level the neck is (a neck pointing down turns its yaw freely).
+                const float H=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevHead,HeadYaw))*Flat*(1.f/30.f)/YDt;
                 const float B=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevBody,BodyYaw))*(1.f/30.f)/YDt;
                 FPlaybackStat& St=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
                 if(H>St.MaxHeadYawPer30){St.MaxHeadYawPer30=H;St.MaxHeadYawPhase=ImportedPresentation->CurrentPhase;St.MaxHeadYawStateSeconds=StateElapsed;}
@@ -583,6 +587,8 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("footLockTeleports"),FootLockTeleports);O->SetNumberField(TEXT("footLockEaseOuts"),FootLockEaseOuts);
     O->SetNumberField(TEXT("footLockReachSteps"),FootLockReachSteps);
     O->SetBoolField(TEXT("inertialBlend"),bInertialBlend);
+    O->SetBoolField(TEXT("headYawLimit"),bHeadYawLimit);O->SetNumberField(TEXT("headYawMaxDps"),HeadYawMaxDps);
+    O->SetNumberField(TEXT("headYawLimitedFrames"),HeadYawLimitedFrames);O->SetNumberField(TEXT("headYawMaxCorrectionDeg"),HeadYawMaxCorr);
     O->SetBoolField(TEXT("proceduralSteps"),bProcSteps);O->SetNumberField(TEXT("proceduralStepCount"),ProcStepCount);
     O->SetNumberField(TEXT("proceduralStepDiagonalPairs"),ProcStepPairs);O->SetNumberField(TEXT("stepCarryDps"),Playback.FootLock.CarryDps);
     if(ImportedPresentation){int32 Starts=0;float Deg=0.f,Cm=0.f;ImportedPresentation->GetInertialStats(Starts,Deg,Cm);
