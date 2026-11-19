@@ -111,7 +111,7 @@ private:
     TArray<FTrailSegment> Trail;
     // Bfeel image-shift measure: a world point fixed 15 m down the unshaken view when the event starts, projected
     // through the shaken and the unshaken camera every frame; the difference over the frame height.
-    struct FShiftEvent { FName Kind; float Seconds=0.f,Degrees=0.f,PeakPct=0.f,PeakStepPct=0.f; FVector Point=FVector::ZeroVector; FVector2D Last=FVector2D::ZeroVector; bool bPoint=false,bHaveLast=false; };
+    struct FShiftEvent { FName Kind; float Seconds=0.f,Degrees=0.f,PeakPct=0.f,PeakStepPct=0.f,PeakStep30Pct=0.f; int32 Steps30Over2=0; double Last30Time=-1.0; FVector Point=FVector::ZeroVector; FVector2D Last=FVector2D::ZeroVector,Last30=FVector2D::ZeroVector; bool bPoint=false,bHaveLast=false; };
     TArray<FShiftEvent> ShiftEvents; int32 ActiveShift=INDEX_NONE,ShiftEventsDropped=0;
     TMap<FName,float> MaxShiftByKind;
     float MaxPunchZoomPct=0.f;

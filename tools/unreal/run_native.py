@@ -109,8 +109,12 @@ if a.wait_for_stream_end:
     if not executable.is_file() or hashlib.sha256(executable.read_bytes()).hexdigest()!=json.loads((run/'launch.json').read_text())['executableSHA256']:
         raise SystemExit('Runtime changed during the guarded wait; preserve evidence and revalidate')
 from owned_launch_budget import launch_gate, record_rendered_launch
+from engine_lock import engine_lock
 # Budget wait first (no lock held), then the machine-wide engine lock for exactly the life of this one process.
-with launch_gate(ROOT, 'run_native ' + a.mode + (' headless' if a.headless else '') + ' ' + ROOT.name) as lock:
+# A headless run is not a rendered launch (it is never recorded against the budget), so it waits only for the lock:
+# otherwise windowless checks stall for up to an hour whenever other builders have used the ten rendered slots.
+_label = 'run_native ' + a.mode + (' headless' if a.headless else '') + ' ' + ROOT.name
+with (engine_lock(_label, tree=ROOT) if a.headless else launch_gate(ROOT, _label)) as lock:
     with (run/'launcher.log').open('w') as output:
         environment = os.environ.copy()
         # Direct executable launches do not receive Info.plist LSEnvironment from

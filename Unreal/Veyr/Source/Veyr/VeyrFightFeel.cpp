@@ -426,13 +426,22 @@ void AVeyrFightFeel::MeasureImageShift(const UCameraComponent* Camera,const FRot
     E.PeakPct=FMath::Max(E.PeakPct,static_cast<float>(Shift.Size()));
     if(E.bHaveLast)E.PeakStepPct=FMath::Max(E.PeakStepPct,static_cast<float>((Shift-E.Last).Size()));
     E.Last=Shift;E.bHaveLast=true;
+    // The same displacement sampled at the capture's 30 frames a second, as the reference footage was measured.
+    const double Now=GetWorld()->GetRealTimeSeconds();
+    if(E.Last30Time<0.0){E.Last30Time=Now;E.Last30=FVector2D::ZeroVector;}
+    else if(Now-E.Last30Time>=1.0/30.0-1e-4)
+    {
+        const float Step=static_cast<float>((Shift-E.Last30).Size());
+        E.PeakStep30Pct=FMath::Max(E.PeakStep30Pct,Step);if(Step>=2.f)++E.Steps30Over2;
+        E.Last30=Shift;E.Last30Time=Now;
+    }
     float& Max=MaxShiftByKind.FindOrAdd(E.Kind);Max=FMath::Max(Max,E.PeakPct);
 }
 
 TSharedPtr<FJsonObject> AVeyrFightFeel::ImageShiftEvidence() const
 {
     TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
-    O->SetStringField(TEXT("method"),TEXT("a world point fixed 15 m down the unshaken view at each event's start, projected through the shaken and the unshaken knight camera every frame; displacement in percent of the frame height (peak, and the largest change between two frames)"));
+    O->SetStringField(TEXT("method"),TEXT("a world point fixed 15 m down the unshaken view at each event's start, projected through the shaken and the unshaken knight camera every frame; displacement in percent of the frame height (peak, the largest change between two frames, the largest change between samples 1/30 s apart and how many such samples moved 2 % or more)"));
     O->SetStringField(TEXT("reference"),TEXT("leshy his-1.mp4 heavy hits at 12.9 s and 13.47 s: 1.7-2.7 % and 3.6-4.0 % of the height frame to frame (phase correlation, upper frame)"));
     TSharedPtr<FJsonObject> ByKind=MakeShared<FJsonObject>();
     for(const TPair<FName,float>& P:MaxShiftByKind)ByKind->SetNumberField(P.Key.ToString(),P.Value);
@@ -443,6 +452,7 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::ImageShiftEvidence() const
         TSharedPtr<FJsonObject> J=MakeShared<FJsonObject>();
         J->SetStringField(TEXT("kind"),E.Kind.ToString());J->SetNumberField(TEXT("seconds"),E.Seconds);J->SetNumberField(TEXT("degrees"),E.Degrees);
         J->SetNumberField(TEXT("peakPctHeight"),E.PeakPct);J->SetNumberField(TEXT("peakStepPctHeight"),E.PeakStepPct);
+        J->SetNumberField(TEXT("peakStep30PctHeight"),E.PeakStep30Pct);J->SetNumberField(TEXT("steps30Over2Pct"),E.Steps30Over2);
         List.Add(MakeShared<FJsonValueObject>(J));
     }
     O->SetArrayField(TEXT("events"),List);O->SetNumberField(TEXT("eventsDropped"),ShiftEventsDropped);

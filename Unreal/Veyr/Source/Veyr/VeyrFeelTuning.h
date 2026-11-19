@@ -59,17 +59,20 @@ struct FVeyrFeelTuning
 
     // Camera shake by contact class: degrees by speed (normalised to 1x) and distance.
     FShake Shake[static_cast<int32>(EVeyrFeelClass::Count)]={
-        {.3f,3.f,.35f,.90f,.18f,.32f,0.f},    // Footfall: near the knight a visible tick (reference paws .8-2.4 deg above 4 m/s)
-        {.8f,6.f,.80f,2.00f,.32f,.60f,4.f},   // Stomp / tail slam
-        {1.f,8.f,1.20f,2.80f,.45f,.80f,9.f},  // BodyFall
-        {1.f,8.f,1.40f,3.00f,.50f,.85f,10.f}};// Landing
+        // Tuned 2026-11-19 on the feel proof's image-shift numbers against the reference footage (2-4 % of the frame
+        // height per 30 fps frame on a heavy blow): about 2 % of the height per degree at our lens.
+        {.3f,3.f,.25f,.45f,.18f,.32f,0.f},    // Footfall: near the knight a visible tick, about 1 %
+        {.8f,6.f,.50f,1.20f,.32f,.60f,4.f},   // Stomp / tail slam: near the knight about 3.5 %
+        {1.f,8.f,.90f,1.40f,.45f,.80f,9.f},   // BodyFall
+        {1.f,8.f,1.00f,1.50f,.50f,.85f,10.f}};// Landing
     float ShakeMaxDistanceCm=5000.f;   // x BodyScale
     float ShakeSizeGain=.35f;          // amplitude x (1 + gain x (BodyScale - 1))
     float ShakeMaxDegrees=3.5f;
     // The reference's waveform (WardenCombatFx::UpdateCamera): pitch A sin(23 2pi t), yaw .6A sin(17 2pi t), roll .4A sin(29 2pi t).
     float ShakeHz[3]={23.f,17.f,29.f},ShakeAxis[3]={1.f,.6f,.4f};
-    // A sword blow on the dragon (the reference's BossHit): (.5 + 1.7 W) deg for .28 + .3 W s, no distance fade.
-    float HitShakeMin=.5f,HitShakeGain=1.7f,HitShakeLifeMin=.28f,HitShakeLifeGain=.3f;
+    // A sword blow on the dragon (the reference's BossHit is (.5 + 1.7 W) deg for .28 + .3 W s), no distance fade.
+    // Our wider lens and bigger target read larger per degree: .55 + .95 W (heavy 1.5 deg, about 3 % of the height).
+    float HitShakeMin=.55f,HitShakeGain=.95f,HitShakeLifeMin=.28f,HitShakeLifeGain=.3f;
     // The stop on a blow: the reference holds a light blow 65 ms, a heavy one 150 ms, at a clock of 0.03.
     float HitStopLight=.065f,HitStopHeavy=.15f,HitStopDilation=.03f;
 
