@@ -402,7 +402,7 @@ private:
     bool bClipTempo=false,bTwoClipBlend=false,bFootLock=false,bSlowSnapTurn=false,bRootTracks=false;
     /** Round 2: inertial blending at clip switches (-VeyrCrossfadeBlend restores the F2 two-clip fade). */
     bool bInertialBlend=false;
-    float YawPrevHead=0.f,YawPrevBody=0.f,YawPrevClock=-1.f;bool bYawPrev=false;
+    float YawPrevHead=0.f,YawPrevBody=0.f,YawPrevClock=-1.f,YawPrevFlat=0.f;bool bYawPrev=false;
     /** Round 2: procedural stepping and spine/neck-first wind-up aim (-VeyrNoProceduralSteps restores round 1). */
     bool bProcSteps=false;
     int32 ProcStepCount=0,ProcStepPairs=0,ProcStepLastLeg=-1;
@@ -469,7 +469,7 @@ private:
         // Blend pops: one-frame pose-delta spikes (a bone's speed jumps past PopRatio x both neighbouring frames).
         int32 Pops=0,PopsInBlend=0,PoseFrames=0;float MaxPopRatio=0.f,MaxPopRatioInBlend=0.f;FName WorstPopBone;
         // Round 2 (critic, 2026-11-19): world yaw of the neck->head line and of the body, degrees per 1/30 s.
-        int32 YawSteps=0;float MaxHeadYawPer30=0.f,MaxBodyYawPer30=0.f,MaxHeadYawPhase=-1.f,MaxHeadYawStateSeconds=-1.f;
+        int32 YawSteps=0,YawStepsCurrentFlat=0;float MaxHeadYawPer30=0.f,MaxBodyYawPer30=0.f,MaxHeadYawPhase=-1.f,MaxHeadYawStateSeconds=-1.f;
         // Round 2 diagnosis: planted-flagged frames by foot state (0 locked, 1 releasing, 2 free) and their drawn slide.
         double PlantedByState[4][3]={{0,0,0},{0,0,0},{0,0,0},{0,0,0}},SlideByState[4][3]={{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
         // Root-track instances: the clip's own net track (entry to exit) against the actor's applied share of it.

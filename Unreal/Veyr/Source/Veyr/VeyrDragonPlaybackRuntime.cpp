@@ -309,14 +309,19 @@ void AVeyrDragon::UpdatePoseDeltaStat()
             if(bYawPrev&&YDt>1.e-4f&&Flat>.3f)
             {
                 // Visible swing: yaw change scaled by how level the neck is (a neck pointing down turns its yaw freely).
-                const float H=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevHead,HeadYaw))*Flat*(1.f/30.f)/YDt;
+                // Round 2: scaled by the less level of the two frames. A neck passing near vertical (Exposed, phase
+                // 0.58) can turn its yaw by 60+ deg while the head moves little; the round-1 metric (current frame's
+                // levelness only) counted that as a step and is still reported as yawStepsCurrentFlat.
+                const float DYaw=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevHead,HeadYaw))*(1.f/30.f)/YDt;
+                const float H=DYaw*FMath::Min(Flat,YawPrevFlat);
+                if(DYaw*Flat>20.f)++PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip)).YawStepsCurrentFlat;
                 const float B=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevBody,BodyYaw))*(1.f/30.f)/YDt;
                 FPlaybackStat& St=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
                 if(H>St.MaxHeadYawPer30){St.MaxHeadYawPer30=H;St.MaxHeadYawPhase=ImportedPresentation->CurrentPhase;St.MaxHeadYawStateSeconds=StateElapsed;}
                 St.MaxBodyYawPer30=FMath::Max(St.MaxBodyYawPer30,B);
                 if(H>20.f||B>20.f)++St.YawSteps;
             }
-            if(YDt>1.e-4f||!bYawPrev){YawPrevHead=HeadYaw;YawPrevBody=BodyYaw;YawPrevClock=Clock;bYawPrev=true;}
+            if(YDt>1.e-4f||!bYawPrev){YawPrevHead=HeadYaw;YawPrevBody=BodyYaw;YawPrevClock=Clock;YawPrevFlat=Flat;bYawPrev=true;}
         }
     }
     TArray<float> Speed;
@@ -602,7 +607,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     if(ImportedPresentation){int32 Starts=0;float Deg=0.f,Cm=0.f;ImportedPresentation->GetInertialStats(Starts,Deg,Cm);
         O->SetNumberField(TEXT("inertialStarts"),Starts);O->SetNumberField(TEXT("inertialMaxOffsetDegrees"),Deg);O->SetNumberField(TEXT("inertialMaxOffsetCm"),Cm);}
     O->SetStringField(TEXT("dragonSkin"),ImportedPresentation?ImportedPresentation->SkinDiagnostic:FString(TEXT("no presentation")));
-    int32 YawSteps=0;float WorstYaw=0.f;FString WorstYawKey;
+    int32 YawSteps=0,YawStepsCurrentFlat=0;float WorstYaw=0.f;FString WorstYawKey;
     float WorstRate=0.f,WorstSlide=0.f,WorstPop=0.f;FString WorstRateKey,WorstSlideKey,WorstPopKey;int32 Pops=0,PopsInBlend=0;
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();
     for(const auto& E:PlaybackStats)
@@ -644,7 +649,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
         C->SetNumberField(TEXT("maxPopRatio"),S.MaxPopRatio);C->SetNumberField(TEXT("maxPopRatioInBlend"),S.MaxPopRatioInBlend);
         C->SetNumberField(TEXT("yawSteps"),S.YawSteps);C->SetNumberField(TEXT("maxHeadYawDegPer30Hz"),S.MaxHeadYawPer30);C->SetNumberField(TEXT("maxBodyYawDegPer30Hz"),S.MaxBodyYawPer30);
         C->SetNumberField(TEXT("maxHeadYawClipPhase"),S.MaxHeadYawPhase);C->SetNumberField(TEXT("maxHeadYawStateSeconds"),S.MaxHeadYawStateSeconds);
-        YawSteps+=S.YawSteps;if(S.MaxHeadYawPer30>WorstYaw){WorstYaw=S.MaxHeadYawPer30;WorstYawKey=E.Key.ToString();}
+        YawSteps+=S.YawSteps;YawStepsCurrentFlat+=S.YawStepsCurrentFlat;if(S.MaxHeadYawPer30>WorstYaw){WorstYaw=S.MaxHeadYawPer30;WorstYawKey=E.Key.ToString();}
         C->SetStringField(TEXT("worstPopBone"),S.WorstPopBone.ToString());
         Pops+=S.Pops;PopsInBlend+=S.PopsInBlend;
         if(S.MaxPopRatio>WorstPop){WorstPop=S.MaxPopRatio;WorstPopKey=E.Key.ToString()+TEXT(" ")+S.WorstPopBone.ToString();}
@@ -658,7 +663,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("poseDeltaPops"),Pops);O->SetNumberField(TEXT("poseDeltaPopsInBlend"),PopsInBlend);
     O->SetNumberField(TEXT("worstPopRatio"),WorstPop);O->SetStringField(TEXT("worstPopClipBone"),WorstPopKey);
     O->SetBoolField(TEXT("gateNoBlendPops"),PopsInBlend==0);
-    O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
+    O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("yawStepsCurrentFlat"),YawStepsCurrentFlat);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
     O->SetBoolField(TEXT("gateRateAtMost1_25"),WorstRate<=1.25f+.02f);O->SetBoolField(TEXT("gateSlideUnder5"),WorstSlide<5.f);
     return O;
 }
