@@ -60,3 +60,6 @@ Unreal/Veyr/Content/Audio/Fish20261102/
 # Raw Epic Paragon FX (free to use, not to redistribute; this repository is public). Copied locally by
 # tools/unreal/paragon_fx_closure.py --copy-to Unreal/Veyr/Content; never commit.
 Unreal/Veyr/Content/Paragon*/
+
+# B1 generated supplement (fal.ai sound effects, not CC0 recordings): restore per docs/audio-20261118/README.md
+Unreal/Veyr/Content/Audio/Recorded20261118/*_g[0-9]*.pcm

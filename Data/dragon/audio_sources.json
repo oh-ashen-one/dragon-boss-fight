@@ -1,0 +1,5 @@
+{
+ "_about": "Which files feed each cue (quality goal B1). Files in Content/Audio/Recorded20261118: <Cue>_<n>.pcm = recorded, <Cue>_g<n>.pcm = generated supplement. Per cue: recorded (only <Cue>_<n>), generated (only <Cue>_g<n>) or mixed (both pools together). A choice with no matching files falls back to the other pool and logs it. Missing file: every cue is mixed (compiled-in default; packaged builds have no Data/). Read at start from the Data/dragon folder.",
+ "default": "mixed",
+ "cues": {}
+}
