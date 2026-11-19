@@ -50,3 +50,56 @@ Overall: "a casual player would notice". **Measured camera shake: none in either
 shift 0.2 px median, 2 px at most), and no slow motion or zoom was visible: those three effects fire by the counters
 but do not show on screen. Also seen: the head flash blows out to flat white, a two-frame camera pop, one red-brown
 tinted frame, the controls overlay in every clip.
+
+## Phase C, blind review 1 (2026-11-19 07:05 ET): lighting and picture
+
+Opus critic, sides hidden, 12 real play frames from our picture film against the 12 reference frames, and the same 12
+against the installed build on the same route.
+
+- **Ours against the reference: reference clearly better.** His reasons, most costly first: our floor in front of the
+  camera is crushed to black (up to 90 % near-black in the bottom third); our highlights top out at 108-154 of 255 in 8
+  of 12 frames against his 200-220, so the picture is dim with no shine on metal or scales; our walls glow evenly orange
+  with no source big enough to explain it; one flat wall at one distance where he layers lit pillars, a dark middle and
+  a bright far wall; our dust is an opaque grey slab; the dragon reads as blue-grey plastic and the fire never lights its
+  underside; one frame was a motion-blur smear. Faults he found in the reference: the hero vanishes against the floor,
+  flat milky windows, heavy motion blur in two frames.
+- **New against old: new clearly better.** The old build is nearly colourless, has no light direction, milky blacks, and
+  dust that whites out the screen. The old build's one win: hero and floor read better in the mid-tones.
+- Action: a second, structural pass (floor that reflects, real highlights, visible sources with pools and falloff, depth
+  dressing, thin lit dust, warm up-light and breath light on the dragon, less motion blur).
+
+## Phase C, blind review 2 (2026-11-19 09:00 ET): lighting and picture after the structural pass
+
+A fresh Opus critic, sides hidden, 10 real play frames from the second picture film against 10 reference fight frames.
+
+- **Verdict: ours slightly better.** His reasons: our knight reads among the dragon's limbs with armour highlights where
+  the reference hero is a black cut-out; cool moonlight against orange braziers where the reference is one warm brown;
+  our dust and debris take the scene's light where his smoke is a flat grey sprite; his motion blur smears whole frames,
+  ours stays crisp; our braziers cast shadow streaks and light the dragon from below where his windows are flat cards.
+  He credits the reference with the more cohesive interior mood when nothing is happening.
+- Faults he found in ours, most costly first: foreground cobbles crushed to blue-black in some frames (44 % of one frame
+  at luma 12 or below); a pale pinkish fill with no source on the dragon's legs and tail that makes them look plastic and
+  shows the faceted mesh; a washed-out dust veil in one frame; moon-blue floor patches ending in hard edges; brazier
+  bloom and small armour highlights clipping.
+- C2 ("clearly worse is not accepted") is met on this review. The faults go to the picture builder as a polish list.
+
+## Phase B, blind review 2 (2026-11-19 11:05 ET): weight of impacts and sound, with the real game audio
+
+Opus critic, sides hidden, 60 s of our phase B film against the 51 s reference film. He cannot listen; sound is judged
+from levels, spectra, onsets and their timing against the picture.
+
+- **Weight of impacts: reference clearly better.** Our stomps and falls are rated comparable to his slam (15 frames of
+  shake up to 5.8 % of frame height, dust bloom). What loses is the knight hitting the dragon: a leg hit turns the leg a
+  flat cream colour for 6 frames, no spark at the contact point, the leg does not move, the knight does not recoil; head
+  hits flash for 2 frames and the head does not move. His hit: half a second of burst with debris and 10 frames of
+  shake peaking at 5.4 %. He found no hit-stop and no zoom in either film. Our trail barely shows; our film drops a frame
+  about every 5 s. Faults in the reference: dark and far away, heavy motion blur, the boss's reaction cannot be read.
+- **Sound: reference slightly better.** Ours: weapon hits are silent in the real mix (3 dB rise at a leg hit against
+  28-36 dB in his); the mix is 15 LU quieter (-30.3 LUFS against -15.0) with a narrow range; the stomps correlate at
+  0.84-0.95 and read as one sample; the landing and the knight's steps have no clear sound; the fire breath has no
+  onset. Credit to ours: low-end weight under stomps in sync within 30 ms, probable dragon vocals in calm stretches,
+  no clipping, no pure tones. Faults in the reference: a 15 s stretch of combat with no distinct impact sounds, and
+  effects piled into a dense bed elsewhere.
+- Action: second passes ordered for both: the hit lands on the dragon and on the knight (struck part reacts, burst at
+  the contact point, weapon rebound, visible stop), and the knight's own hits and steps are near-field and loud with a
+  master level near the reference's.

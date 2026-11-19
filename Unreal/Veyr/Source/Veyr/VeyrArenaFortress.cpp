@@ -1,4 +1,5 @@
 #include "VeyrArena.h"
+#include "VeyrLook.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SpotLightComponent.h"
@@ -52,15 +53,24 @@ void AVeyrArena::FortressMuralBay(const FVector& Anchor,float Height,float Yaw,i
     // Light originates at the visible brazier added by BuildDistance. Matte
     // pigments respond to actual illumination; there is no emissive mural boost.
     const FVector Inward=Rotation.RotateVector(FVector(0,1,0));
-    const FVector Lamp=Anchor+Inward*600.f+FVector(0,0,185.f-FortressFloorZ);
-    const FVector Aim=Anchor+Inward*100.f+FVector(0,0,Height*.43f);
+    const bool bRelit=!VeyrLook::IsLegacy();
+    // Phase C: a low grazing up-light close to the wall, like candles at its foot:
+    // a bright lower mural fading to a dark top, instead of a flat front wash.
+    const FVector Lamp=Anchor+Inward*(bRelit?250.f:600.f)+FVector(0,0,(bRelit?120.f:185.f)-FortressFloorZ);
+    const FVector Aim=Anchor+Inward*(bRelit?60.f:100.f)+FVector(0,0,Height*(bRelit?.55f:.43f));
     auto* Light=NewObject<USpotLightComponent>(this,FName(*FString::Printf(TEXT("FrescoBrazierLight%02d"),MuralIndex+1)));
     AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
     Light->SetRelativeLocation(Lamp);Light->SetRelativeRotation((Aim-Lamp).Rotation());
     Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(180.f);
     Light->SetLightColor(FLinearColor(1.f,.70f,.40f));Light->SetAttenuationRadius(2100.f);
-    Light->SetInnerConeAngle(15.f);Light->SetOuterConeAngle(80.f);Light->SetSourceRadius(80.f);Light->SetCastShadows(false);Light->RegisterComponent();
-    FortressFireLights.Add(Light);FortressFireIntensities.Add(180.f);
+    Light->SetInnerConeAngle(15.f);Light->SetOuterConeAngle(80.f);Light->SetSourceRadius(80.f);Light->SetCastShadows(false);
+    if(bRelit)
+    {
+        Light->SetIntensity(VeyrLook::Tune(TEXT("fresco"),120.f));Light->SetLightColor(FLinearColor(1.f,.60f,.30f));Light->SetAttenuationRadius(2400.f);
+        Light->SetInnerConeAngle(10.f);Light->SetOuterConeAngle(55.f);Light->SetSourceRadius(30.f);Light->SetVolumetricScatteringIntensity(1.5f);
+    }
+    Light->RegisterComponent();
+    FortressFireLights.Add(Light);FortressFireIntensities.Add(bRelit?VeyrLook::Tune(TEXT("fresco"),120.f):180.f);
     ++FortressMuralCount;++ConnectedCourtInstanceCount;++ImportedArchitecturePieces;
 }
 

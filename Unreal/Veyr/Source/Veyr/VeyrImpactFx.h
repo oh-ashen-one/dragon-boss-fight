@@ -61,6 +61,9 @@ private:
     UPROPERTY() TObjectPtr<UMaterialInterface> EmberMaterial;
     UPROPERTY() TObjectPtr<UMaterialInterface> ChipMaterial;
     TWeakObjectPtr<AVeyrDragon> BoundDragon;
+    /** Phase C: unlit source materials of the effect systems -> exposure-following copies (VeyrLook). */
+    TMap<UMaterialInterface*,UMaterialInstanceDynamic*> ExposureMids;
+    UPROPERTY() TArray<TObjectPtr<UMaterialInstanceDynamic>> ExposureMidRefs;
     FDelegateHandle ContactHandle;
 
     struct FCard { FVector P=FVector::ZeroVector,V=FVector::ZeroVector; float Age=0.f,Life=0.f,Size=0.f,Grow=0.f,Opacity=0.f,Seed=0.f; bool bLive=false; };

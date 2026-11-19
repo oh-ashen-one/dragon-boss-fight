@@ -33,6 +33,12 @@ public:
     /** B4: a dragon floor contact (bound to AVeyrDragon::OnGroundContact). */
     void ContactImpact(AVeyrDragon* Dragon,const FVeyrGroundContact& Contact);
     void ApplyCameraShake(UCameraComponent* Camera);
+    /** Bfeel: the zoom punch as a fraction of the field of view now; the knight's arm applies it after its own lens boost. */
+    float CurrentPunch() const;
+    /** Bfeel: true when the punch is left to UVeyrCameraBoom (applied after the boost, so the boost cannot undo it). */
+    bool PunchesAfterBoom(const UCameraComponent* Camera) const;
+    /** Bfeel: image shift per shake event, in percent of the frame height (evidence.json > feel > imageShift). */
+    TSharedPtr<FJsonObject> ImageShiftEvidence() const;
     void AddBossFlinch(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotations) const;
     void UpdateWeaponTrail(AVeyrKnight* Player,float GameDelta);
     void RefreshSettings();
@@ -82,7 +88,7 @@ private:
     float KickAge=10.f,KickAmp=0.f,HurtAge=10.f,HurtAmp=0.f;
     FVector KickFrom=FVector::ForwardVector,CameraBaseLocation=FVector::ZeroVector;
     // B5 flinch: up to six blows add up (the reference's spring), world-space rotation vectors in degrees.
-    struct FReact { FVector Rock=FVector::ZeroVector; float Twist=0.f,Age=10.f; };
+    struct FReact { FVector Rock=FVector::ZeroVector; float Twist=0.f,Age=10.f,Down=0.f; };
     FReact Reacts[6]; int32 NextReact=0;
     // B5 mesh flash (overlay material on the struck mesh), on the frame's own time like the reference.
     float MeshFlashAge=10.f,MeshFlashPeak=0.f;
@@ -103,6 +109,14 @@ private:
     FVector PreviousBladeTip=FVector::ZeroVector;
     struct FTrailSegment {FVector Start,End;float Age=0.f,Strength=0.f;};
     TArray<FTrailSegment> Trail;
+    // Bfeel image-shift measure: a world point fixed 15 m down the unshaken view when the event starts, projected
+    // through the shaken and the unshaken camera every frame; the difference over the frame height.
+    struct FShiftEvent { FName Kind; float Seconds=0.f,Degrees=0.f,PeakPct=0.f,PeakStepPct=0.f,PeakStep30Pct=0.f; int32 Steps30Over2=0; double Last30Time=-1.0; FVector Point=FVector::ZeroVector; FVector2D Last=FVector2D::ZeroVector,Last30=FVector2D::ZeroVector; bool bPoint=false,bHaveLast=false; };
+    TArray<FShiftEvent> ShiftEvents; int32 ActiveShift=INDEX_NONE,ShiftEventsDropped=0;
+    TMap<FName,float> MaxShiftByKind;
+    float MaxPunchZoomPct=0.f;
+    void BeginShiftEvent(FName Kind,float Degrees);
+    void MeasureImageShift(const UCameraComponent* Camera,const FRotator& Rotation,const FVector& Location);
     void RequestHitStop(float Seconds);
     void RestoreTime();
     void StartShake(float Degrees,float Life,float Bounce,float Frequency,FName Kind,float Distance,bool bVaryPhase);

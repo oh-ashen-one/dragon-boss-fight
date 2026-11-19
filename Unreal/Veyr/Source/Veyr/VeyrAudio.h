@@ -3,12 +3,15 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "VeyrCombatTypes.h"
+#include "VeyrGroundContacts.h"
+#include "Math/RandomStream.h"
 #include "VeyrAudio.generated.h"
 
 class AVeyrKnight;
 class AVeyrDragon;
 class UAudioComponent;
 class USoundWaveProcedural;
+class FJsonObject;
 
 /** Original, bounded combat feedback. Observes gameplay; never changes combat state. */
 UCLASS()
@@ -38,13 +41,22 @@ public:
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") float MusicStartWorldSeconds=-1.f;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 PlayerPainCues=0;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Audio|Evidence") int32 DragonVocalCues=0;
+    /** Quality goal B1-B3 (2026-11-18): the new recorded set, variants, dragon presence, timed sounds. Evidence for evidence.json "audio". */
+    TSharedRef<FJsonObject> AudioEvidence() const;      // dynamic counters, one per replay sample
+    TSharedRef<FJsonObject> AudioSetupEvidence() const; // static: switches, variants loaded, tables; once at the evidence root
+    bool UsesNewSet() const { return bNewSet; }
 
 protected:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Roll, Blink, Footstep, Wing, Roar, Break, PlayerPain, DragonGrowl, DragonPain, Count };
+    enum class ECue : uint8 { Swing, HeavySwing, Contact, Guard, Impact, Breath, Fire, Heal, Exposed, Death, Victory, Roll, Blink, Footstep, Wing, Roar, Break, PlayerPain, DragonGrowl, DragonPain,
+        ArmorHit, DragonStep, DragonSwing, Bite, Debris, DragonBreathIn, DragonBreathOut, DragonGrowlLow, DragonSnort, Count };
+    /** General pool (legacy path uses only this one), then a separate pool so footsteps never starve important cues. */
     static constexpr int32 VoiceCount = 12;
+    static constexpr int32 StepVoiceCount = 8;
+    static constexpr int32 TotalVoices = VoiceCount + StepVoiceCount;
+    static constexpr int32 MaxVariants = 16;
     static constexpr int32 CueCount = static_cast<int32>(ECue::Count);
     static constexpr int32 SampleRate = 24000;
 
@@ -58,8 +70,8 @@ private:
     TArray<uint8> BedPCM[2];
     int32 BedOffsets[2]={};
     int32 BedSampleRates[2]={24000,24000},BedChannels[2]={1,1};
-    float VoiceLevels[VoiceCount]={};
-    bool VoiceFollowsDragon[VoiceCount]={};
+    float VoiceLevels[TotalVoices]={};
+    bool VoiceFollowsDragon[TotalVoices]={};
     int32 LastRolls=0,LastBlinks=0;
     float FootstepClock=0.f,WingClock=0.f,RoarClock=8.f;
     bool bAudioPolish=false,bFootNearFloor[2]={false,false},bRoarCuePlayed=false,bDrinkCuePlayed=false;
@@ -72,7 +84,7 @@ private:
     void LoadRecordedSamples();
     float Durations[CueCount] = {};
     double LastCueTimes[CueCount] = {};
-    double VoiceEndTimes[VoiceCount] = {};
+    double VoiceEndTimes[TotalVoices] = {};
     int32 LastLight = 0, LastHeavy = 0, LastSwordContact = 0, LastHeadBonus = 0;
     int32 LastHitsTaken = 0, LastGuardedHits = 0, LastHeals = 0, LastCollapses = 0, LastFireAttacks = 0;
     EVeyrKnightAction LastSwingAction=EVeyrKnightAction::Ready;
@@ -84,6 +96,112 @@ private:
 
     void BuildSamples();
     void PlayCue(ECue Cue, float Volume = 1.f);
+
+    // ---- B1-B3 new behaviour (VeyrAudioNew.cpp). The legacy path above is untouched. ----
+    enum class EPlace : uint8 { Flat, Head, Body, Part, World };
+    struct FCueBank
+    {
+        TArray<TArray<int16>> Variants;
+        TArray<float> Peaks;      // per variant, linear full-scale peak
+        TArray<float> Gains;      // per variant, from the measured level against the cue's target level
+        int32 Last=-1;
+        bool bMissingLogged=false;
+    };
+    struct FTimedEvent { float Pos=0.f; bool bPhase=true; ECue Cue=ECue::Count; float Level=1.f; FName Where=NAME_None; };
+    struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; };
+    struct FExpect { bool bActive=false; double Deadline=0.0; ECue Cue=ECue::Count; float Volume=1.f; ECue Second=ECue::Count; float SecondVolume=1.f; };
+
+    bool bNewSet=false,bLoadedOnce=false,bLegacyCues=false;
+    bool bNoVariants=false,bNoBreath=false,bNoMoveSounds=false,bContactAudio=true,bLogCues=false;
+    FCueBank Banks[CueCount];
+    FRandomStream Rand{0x6C1A5B07};
+    int32 CueCounts[CueCount]={},CueSilent[CueCount]={},VariantPlays[CueCount][MaxVariants]={};
+    int32 VoiceCue[TotalVoices]={};
+    uint8 VoiceFollowMode[TotalVoices]={};
+    FName VoicePart[TotalVoices]={};
+    TArray<FPending> Pending;
+    FExpect Expect[4]; // 0 collapse/exposed/death body fall, 1 landing, 2 stomp, 3 spare
+    int32 LastContactSerial=0;
+    int32 ContactsHandled[4]={0,0,0,0},ContactFallbacks=0,TimedEventsFired=0,TimedEventsSkipped=0,SoundsReloads=0;
+    int32 BreathIns=0,BreathOuts=0,Growls=0,KnightSteps=0,DragonSteps=0,BodyFallSounds=0,DebrisSounds=0,ArmorLayers=0;
+    TMap<FName,TArray<FTimedEvent>> TimedClips;
+    FString SoundsFile,SoundsDiagnostic;
+    FDateTime SoundsStamp=FDateTime::MinValue();
+    double SoundsCheckWall=0.0;
+    FName TimedClipKey=NAME_None; float TimedLastPhase=-1.f,TimedLastTime=-1.f; bool bSwingFromData=false;
+    float BreathClock=3.f,GrowlClock=9.f; bool bBreathExhaleNext=false,bPresenceCalm=true;
+    float FootClock[2]={0.f,0.f};
+    float Headroom=1.3f,MaxLoad=5.5f;
+    float DurationLastPlayed=0.f;
+
+    void LoadNewSet();
+    void LoadBank(ECue Cue,const FString& Dir);
+    struct FChosen { int32 V=0; float Pitch=1.f,Level=0.f,Seconds0=0.f,Seconds=0.f; };
+    bool PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force=-1);
+    static void DefaultRadius(ECue Cue,float& Inner,float& Falloff);
+    // ---- verification without a window (VeyrAudioTap.cpp): a software mix of exactly what the code submits ----
+    struct FTapItem
+    {
+        double T=0.0; int32 Cue=0,Variant=0; float Volume=0.f,Level=0.f,Pitch=1.f,Dist=0.f,Gain=1.f,Seconds=0.f;
+        uint8 Place=0; bool bRandom=false; FString Label;
+        float PeakDb=-120.f,RmsDb=-120.f,MusicRmsDb=-120.f;
+    };
+    bool bTap=false,bAudition=false,bAuditionDone=false;
+    int32 TapSession=0;
+    FString TapLabel; // set around a timed-sound play: "<clip>@<phase or time>"
+    FString TapDir;
+    double TapT0=-1.0,TapMusicStart=-1.0,TapGainLast=-1.0;
+    TArray<float> TapFx,TapBeds;                 // interleaved stereo, 48 kHz
+    TArray<FTapItem> TapItems;
+    struct FTapGain { double T; float Music,Ambience; };
+    TArray<FTapGain> TapGains;
+    static float TypicalVolume(int32 Cue);
+    struct FTapContact { double T=0.0; float GameT=0.f,HandledGameT=0.f,Strength=0.f,SpeedMps=0.f; int32 Serial=0,Part=0,Class=0,Leg=-1,ItemFrom=0,ItemTo=0; };
+    struct FTapFrame { double T=0.0; float GameT=0.f,Dt=0.f,KneeL=-1.f,KneeR=-1.f,Speed=0.f,D[4]={-1.f,-1.f,-1.f,-1.f}; };
+    TArray<FTapContact> TapContacts;
+    TArray<FTapFrame> TapTrace;
+    FTapFrame TapNow;
+    void TapInit();
+    void TapTick();
+    void TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Volume,float Level,float Pitch,EPlace Place,const FVector& Pos,float Inner,float Falloff,double T,bool bRandom=false);
+    void TapAudition();
+    void TapWrite(const FString& Stem);
+public:
+    /** Writes the software mix (wav) and the cue list (json) when -VeyrAudioTap=<dir> is set. */
+    void FlushTap();
+private:
+    void LoadCueSources();
+    double AudioNow() const; // real time in the new path (sound does not stretch with hit-stop), game time in the legacy path
+    bool ContactAudioActive() const;
+    enum class ESourceMode : uint8 { Mixed, Recorded, Generated };
+    ESourceMode DefaultSource=ESourceMode::Mixed;
+    TMap<FName,ESourceMode> CueSource;
+    FString SourcesDiagnostic;
+    bool bBodyDownHeard=false;
+    int32 GeneratedFiles=0;
+    double LastLandingHeard=-100.0;
+    TArray<FVeyrGroundContact> ContactScratch;
+    void SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNormalize);
+    static const TCHAR* CueName(int32 Index);
+    static float TargetLevelDb(ECue Cue);
+    static bool IsVocal(ECue Cue);
+    void LoadTimedSounds(bool bForce);
+    void ParseTimedSounds(const FString& Text,const TCHAR* Origin);
+    void TickNew(float DeltaSeconds);
+    bool PlayCueEx(ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f);
+    void QueueCue(float Delay,ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f);
+    void UpdatePending();
+    void UpdateVoiceFollow();
+    void StopCueVoices(ECue A,ECue B=ECue::Count);
+    bool ResolvePart(FName Where,FVector& Out) const;
+    void UpdateTimedSounds();
+    void HandleContacts();
+    void HandleContact(const FVeyrGroundContact& C);
+    void ArmExpect(int32 Slot,float Seconds,ECue Cue,float Volume,ECue Second=ECue::Count,float SecondVolume=1.f);
+    void SatisfyExpect(int32 Slot);
+    void UpdateExpectations();
+    void UpdatePresence(float DeltaSeconds);
+    void UpdateKnightFeet(float DeltaSeconds,float Speed);
     void StopVoices();
     void ExpireVoices();
     void SnapshotCounters();

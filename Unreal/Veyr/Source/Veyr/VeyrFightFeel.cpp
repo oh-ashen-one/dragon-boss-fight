@@ -4,9 +4,13 @@
 #include "VeyrDragon.h"
 #include "VeyrImpactFx.h"
 #include "VeyrFeelTuning.h"
+#include "VeyrLook.h"
 #include "VeyrVisualDefinition.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrReplay.h"
+#include "VeyrCameraBoom.h"
+#include "Engine/Engine.h"
+#include "Engine/GameViewportClient.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneComponent.h"
@@ -86,7 +90,9 @@ void AVeyrFightFeel::BeginPlay()
     bMarkerOnlyReview=FParse::Param(FCommandLine::Get(),TEXT("VeyrFightFeelMarkerOnly"));
     // Channel 1 already belongs to the knight, sword, cup and dragon.
     // Reuse it without changing receivers or the dragon-only rim channel 2.
-    HitFlash->SetLightingChannels(bLegacy,!bLegacy,false);
+    // Relit court: the dragon leaves channel 1 (the knight's key and rim), so the contact light also uses
+    // channel 2 to keep lighting the dragon's skin.
+    HitFlash->SetLightingChannels(bLegacy,!bLegacy,!bLegacy&&!VeyrLook::IsLegacy());
     HitFlash->SetIndirectLightingIntensity(bLegacy?1.f:0.f);
     LastRealTime=GetWorld()->GetRealTimeSeconds();
     if(UMaterialInterface* Parent=WeaponTrail->GetMaterial(0))
@@ -94,6 +100,7 @@ void AVeyrFightFeel::BeginPlay()
         UMaterialInstanceDynamic* Material=UMaterialInstanceDynamic::Create(Parent,this);
         Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(.55f,.68f,.82f));
         Material->SetScalarParameterValue(TEXT("Brightness"),.85f);WeaponTrail->SetMaterial(0,Material);
+        VeyrLook::FollowExposureAuto(Material);
     }
     for(int32 I=0;I<24;++I)WeaponTrail->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
     if(UMaterialInterface* Parent=HitMarker->GetMaterial(0))
@@ -101,6 +108,7 @@ void AVeyrFightFeel::BeginPlay()
         auto* Material=UMaterialInstanceDynamic::Create(Parent,this);
         Material->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.86f,.58f));
         Material->SetScalarParameterValue(TEXT("Brightness"),4.f);HitMarker->SetMaterial(0,Material);
+        VeyrLook::FollowExposureAuto(Material);
     }
     HitMarker->AddInstance(FTransform(FQuat::Identity,FVector::ZeroVector,FVector::ZeroVector));
     // B5: the flash on the dragon's own mesh. The authored overlay lights a radius around the blow; the
@@ -127,6 +135,7 @@ void AVeyrFightFeel::BeginPlay()
             RibbonMaterial->SetScalarParameterValue(TEXT("Opacity"),RibbonDiagnostic==TEXT("M_VeyrWeaponTrail")?.75f:.32f);
             RibbonMaterial->SetScalarParameterValue(TEXT("Brightness"),1.4f);
             Ribbon->SetMaterial(0,RibbonMaterial);
+            VeyrLook::FollowExposureAuto(RibbonMaterial);
             // Three edges per row: clear at the hilt side, full on a band near the tip, clear just past the tip.
             const int32 Verts=RibbonMaxRows*3;
             RibbonVerts.Init(FVector::ZeroVector,Verts);RibbonNormals.Init(FVector::UpVector,Verts);
@@ -251,8 +260,9 @@ void AVeyrFightFeel::RequestHitStop(float Seconds)
         bOwnsDilation=true;
     }
     // A blow inside a slow tail stops the clock again; its own tail (if any) follows.
-    SlowRemaining=0.f;SetDilation=.05f;UGameplayStatics::SetGlobalTimeDilation(this,SetDilation);
-    LastHitStopSeconds=FMath::Clamp(Seconds,.05f,.12f);
+    const bool bRef=!bLegacy&&VeyrFeelSwitches::RefHitStop();
+    SlowRemaining=0.f;SetDilation=bRef?VeyrFeelTuning().HitStopDilation:.05f;UGameplayStatics::SetGlobalTimeDilation(this,SetDilation);
+    LastHitStopSeconds=FMath::Clamp(Seconds,.05f,bRef?.2f:.12f);
     StopRemaining=FMath::Max(StopRemaining,LastHitStopSeconds);++HitStopEvents;
     UE_LOG(LogTemp,Display,TEXT("VEYR_HIT_STOP seconds=%.3f"),LastHitStopSeconds);
 }
@@ -266,6 +276,7 @@ void AVeyrFightFeel::StartShake(float Degrees,float Life,float Bounce,float Freq
     const float K=ShakeEvents*1.618034f;
     ShakePhase=bVaryPhase?FVector(FMath::Frac(K)*6.283f,FMath::Frac(K*1.37f)*6.283f,FMath::Frac(K*1.91f)*6.283f):FVector::ZeroVector;
     LastShakeDegrees=Degrees;LastShakeDistance=Distance;++ShakeEvents;
+    BeginShiftEvent(Kind,Degrees);
     UE_LOG(LogTemp,Display,TEXT("VEYR_CAMERA_SHAKE kind=%s distance=%.1f degrees=%.3f life=%.2f bounce=%.1f"),*Kind.ToString(),Distance,Degrees,ShakeLife,Bounce);
 }
 
@@ -310,8 +321,21 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
     const float A=ShakeAmplitude*Env;
     // Offset the camera socket, never control rotation or player aiming. A
     // deterministic pulse gives comparable replay captures without RNG changes.
-    const float T=ShakeAge*2.f*PI*ShakeFrequency;
-    FRotator Rotation(A*FMath::Cos(13.f*T+ShakePhase.X),A*.55f*FMath::Sin(17.f*T+ShakePhase.Y),A*.3f*FMath::Sin(11.f*T+ShakePhase.Z));
+    FRotator Rotation;
+    if(!bLegacy&&VeyrFeelSwitches::ShakePattern())
+    {
+        // Bfeel: the reference's buzz (23/17/29 Hz sines, yaw .6 and roll .4 of the pitch) on every class: the old
+        // 8-15 Hz cosine on the heavy classes rolled the view like the follow camera's own sway and did not read as a jolt.
+        const FVeyrFeelTuning& TT=VeyrFeelTuning();
+        const float U=ShakeAge*2.f*PI;
+        Rotation=FRotator(TT.ShakeAxis[0]*A*FMath::Sin(TT.ShakeHz[0]*U+ShakePhase.X),TT.ShakeAxis[1]*A*FMath::Sin(TT.ShakeHz[1]*U+ShakePhase.Y),
+            TT.ShakeAxis[2]*A*FMath::Sin(TT.ShakeHz[2]*U+ShakePhase.Z));
+    }
+    else
+    {
+        const float T=ShakeAge*2.f*PI*ShakeFrequency;
+        Rotation=FRotator(A*FMath::Cos(13.f*T+ShakePhase.X),A*.55f*FMath::Sin(17.f*T+ShakePhase.Y),A*.3f*FMath::Sin(11.f*T+ShakePhase.Z));
+    }
     FVector Location=CameraBaseLocation;
     if(ShakeBounce>0.f&&ShakeAge<ShakeLife)
         Location.Z-=ShakeBounce*Env*FMath::Cos(ShakeAge*2.f*PI*4.5f); // the floor drops and rebounds under a heavy fall
@@ -325,6 +349,7 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
         const float Side=static_cast<float>(FVector::DotProduct(KickFrom.GetSafeNormal2D(),Right));
         Rotation+=FRotator(.45f*KickAmp*KE,-Side*KickAmp*KE,-Side*.6f*KickAmp*KE);
     }
+    MeasureImageShift(Camera,Rotation,Location);
     Camera->SetRelativeRotation(Rotation);
     if(ShakeBounce>0.f||!Camera->GetRelativeLocation().Equals(Location,.01f))Camera->SetRelativeLocation(Location);
     FPostProcessSettings& PP=Camera->PostProcessSettings;
@@ -342,8 +367,14 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
     }
     // B6: a heavy blow punches the view in for a moment (on top of the knight's own field of view this frame).
     const float Base=FMath::IsNearlyEqual(Camera->FieldOfView,LastFovSet,.0001f)?Camera->FieldOfView-LastFovDelta:Camera->FieldOfView;
-    const float PunchLife=VeyrFeelTuning().PunchSeconds;
-    const float Punch=VeyrFeelSwitches::ZoomPunch()&&!bDisabled&&!bLegacy&&PunchAge<PunchLife?PunchAmp*FMath::Square(1.f-PunchAge/PunchLife):0.f;
+    const bool bArmPunches=PunchesAfterBoom(Camera);
+    const float Punch=bArmPunches?0.f:CurrentPunch();
+    if(CurrentPunch()>0.f)
+    {
+        // How much bigger the middle of the picture gets (the lens narrowed by the punch), for the evidence.
+        const float P=CurrentPunch(),Half=FMath::DegreesToRadians(FMath::Clamp(Base,5.f,170.f)*.5f);
+        MaxPunchZoomPct=FMath::Max(MaxPunchZoomPct,100.f*(FMath::Tan(Half)/FMath::Tan(Half*(1.f-P))-1.f));
+    }
     LastFovDelta=-Base*Punch;
     if(Punch>0.f||LastFovSet>=0.f)
     {
@@ -351,6 +382,89 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
         LastFovSet=Punch>0.f?Camera->FieldOfView:-1.f;
         if(Punch<=0.f)LastFovDelta=0.f;
     }
+}
+
+float AVeyrFightFeel::CurrentPunch() const
+{
+    const float Life=VeyrFeelTuning().PunchSeconds;
+    if(bDisabled||bLegacy||!VeyrFeelSwitches::ZoomPunch()||PunchAge>=Life)return 0.f;
+    return FMath::Clamp(PunchAmp*FMath::Square(1.f-PunchAge/FMath::Max(.01f,Life)),0.f,.5f);
+}
+
+bool AVeyrFightFeel::PunchesAfterBoom(const UCameraComponent* Camera) const
+{
+    return Camera&&VeyrFeelSwitches::LatePunch()&&Cast<UVeyrCameraBoom>(Camera->GetAttachParent())!=nullptr;
+}
+
+void AVeyrFightFeel::BeginShiftEvent(FName Kind,float Degrees)
+{
+    if(ShiftEvents.Num()>=200){++ShiftEventsDropped;ActiveShift=INDEX_NONE;return;}
+    FShiftEvent& E=ShiftEvents.AddDefaulted_GetRef();
+    E.Kind=Kind;E.Degrees=Degrees;E.Seconds=GetWorld()?static_cast<float>(GetWorld()->GetTimeSeconds()):0.f;
+    ActiveShift=ShiftEvents.Num()-1;
+}
+
+void AVeyrFightFeel::MeasureImageShift(const UCameraComponent* Camera,const FRotator& Rotation,const FVector& Location)
+{
+    if(!Camera||!ShiftEvents.IsValidIndex(ActiveShift))return;
+    const USceneComponent* Parent=Camera->GetAttachParent();
+    if(!Parent)return;
+    const float KickLife=VeyrFeelTuning().KickSeconds;
+    if(ShakeAge>=ShakeLife&&KickAge>=KickLife){ActiveShift=INDEX_NONE;return;}
+    FShiftEvent& E=ShiftEvents[ActiveShift];
+    const FTransform Socket=Parent->GetSocketTransform(Camera->GetAttachSocketName());
+    const FTransform Still=FTransform(FRotator::ZeroRotator,CameraBaseLocation)*Socket;
+    const FTransform Shaken=FTransform(Rotation,Location)*Socket;
+    if(!E.bPoint){E.Point=Still.GetLocation()+Still.GetRotation().GetForwardVector()*1500.f;E.bPoint=true;}
+    auto Project=[&E](const FTransform& View,FVector2D& Out)
+    {
+        const FVector V=View.InverseTransformPosition(E.Point);
+        if(V.X<=1.0)return false;
+        Out=FVector2D(V.Y/V.X,V.Z/V.X);return true;
+    };
+    FVector2D A,B;
+    if(!Project(Still,A)||!Project(Shaken,B))return;
+    // Horizontal field of view (the engine keeps X): one unit of tangent is Aspect / (2 tan(FOV/2)) frame heights.
+    float Aspect=16.f/9.f;
+    if(GEngine&&GEngine->GameViewport){FVector2D Size;GEngine->GameViewport->GetViewportSize(Size);if(Size.Y>1.f)Aspect=Size.X/Size.Y;}
+    const float K=Aspect/(2.f*FMath::Tan(FMath::DegreesToRadians(FMath::Clamp(Camera->FieldOfView,5.f,170.f)*.5f)));
+    const FVector2D Shift=(B-A)*(100.f*K);
+    E.PeakPct=FMath::Max(E.PeakPct,static_cast<float>(Shift.Size()));
+    if(E.bHaveLast)E.PeakStepPct=FMath::Max(E.PeakStepPct,static_cast<float>((Shift-E.Last).Size()));
+    E.Last=Shift;E.bHaveLast=true;
+    // The same displacement sampled at the capture's 30 frames a second, as the reference footage was measured.
+    const double Now=GetWorld()->GetRealTimeSeconds();
+    if(E.Last30Time<0.0){E.Last30Time=Now;E.Last30=FVector2D::ZeroVector;}
+    else if(Now-E.Last30Time>=1.0/30.0-1e-4)
+    {
+        const float Step=static_cast<float>((Shift-E.Last30).Size());
+        E.PeakStep30Pct=FMath::Max(E.PeakStep30Pct,Step);if(Step>=2.f)++E.Steps30Over2;
+        E.Last30=Shift;E.Last30Time=Now;
+    }
+    float& Max=MaxShiftByKind.FindOrAdd(E.Kind);Max=FMath::Max(Max,E.PeakPct);
+}
+
+TSharedPtr<FJsonObject> AVeyrFightFeel::ImageShiftEvidence() const
+{
+    TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
+    O->SetStringField(TEXT("method"),TEXT("a world point fixed 15 m down the unshaken view at each event's start, projected through the shaken and the unshaken knight camera every frame; displacement in percent of the frame height (peak, the largest change between two frames, the largest change between samples 1/30 s apart and how many such samples moved 2 % or more)"));
+    O->SetStringField(TEXT("reference"),TEXT("leshy his-1.mp4 heavy hits at 12.9 s and 13.47 s: 1.7-2.7 % and 3.6-4.0 % of the height frame to frame (phase correlation, upper frame)"));
+    TSharedPtr<FJsonObject> ByKind=MakeShared<FJsonObject>();
+    for(const TPair<FName,float>& P:MaxShiftByKind)ByKind->SetNumberField(P.Key.ToString(),P.Value);
+    O->SetObjectField(TEXT("maxPctHeightByKind"),ByKind);
+    TArray<TSharedPtr<FJsonValue>> List;
+    for(const FShiftEvent& E:ShiftEvents)
+    {
+        TSharedPtr<FJsonObject> J=MakeShared<FJsonObject>();
+        J->SetStringField(TEXT("kind"),E.Kind.ToString());J->SetNumberField(TEXT("seconds"),E.Seconds);J->SetNumberField(TEXT("degrees"),E.Degrees);
+        J->SetNumberField(TEXT("peakPctHeight"),E.PeakPct);J->SetNumberField(TEXT("peakStepPctHeight"),E.PeakStepPct);
+        J->SetNumberField(TEXT("peakStep30PctHeight"),E.PeakStep30Pct);J->SetNumberField(TEXT("steps30Over2Pct"),E.Steps30Over2);
+        List.Add(MakeShared<FJsonValueObject>(J));
+    }
+    O->SetArrayField(TEXT("events"),List);O->SetNumberField(TEXT("eventsDropped"),ShiftEventsDropped);
+    O->SetNumberField(TEXT("punchMaxZoomPct"),MaxPunchZoomPct);
+    O->SetBoolField(TEXT("punchAfterArmBoost"),VeyrFeelSwitches::LatePunch());
+    return O;
 }
 
 void AVeyrFightFeel::Flash(const FVector& Position,float Weight,USkeletalMeshComponent* Mesh)
@@ -397,7 +511,12 @@ void AVeyrFightFeel::UpdateMeshFlash(float RealDelta)
         if(OverlayMesh->GetOverlayMaterial()==MeshFlashMaterial)OverlayMesh->SetOverlayMaterial(nullptr);
         OverlayMesh.Reset();return;
     }
-    const float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,T.FlashFade));
+    // Additive and unlit: scaled with the exposure so a flash in a dark corner does not clip to white.
+    float I=MeshFlashPeak*FMath::Exp(-MeshFlashAge/FMath::Max(.01f,T.FlashFade))*VeyrLook::FxExposureGain();
+    // Relit court: the additive peak is capped in display terms (intensity x exposure), so the hit leg flashes
+    // warm instead of clipping to white at 2-6x build 16's exposure. -VeyrTune=flashcap= (display units).
+    static const float FlashCap=VeyrLook::Tune(TEXT("flashcap"),.55f);
+    if(VeyrLook::FxExposureLock()>0.f&&VeyrLook::LastExposure()>0.f)I=FMath::Min(I,FlashCap/VeyrLook::LastExposure());
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Intensity"),I);
     MeshFlashMaterial->SetScalarParameterValue(TEXT("Opacity"),FMath::Clamp(.09f*I,0.f,.45f)); // the afterimage fallback's only control
 }
@@ -406,8 +525,21 @@ void AVeyrFightFeel::SwordContact(AVeyrDragon* Boss,bool bHeavy)
 {
     if(bDisabled||!Boss)return;
     const float Weight=bHeavy?1.f:.45f;
-    Impact(Boss->LastSwordContactWorld,Weight,TEXT("sword"));
-    RequestHitStop(bHeavy?.095f:.055f);Flash(Boss->LastSwordContactWorld,Weight,Boss->ImportedPresentation);
+    const auto* SwordMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+    if(!bLegacy&&VeyrFeelSwitches::HitShake()&&SwordMode&&SwordMode->bUserCameraShake)
+    {
+        // Bfeel: the knight's own blow shakes his view as the reference's BossHit does, (.5 + 1.7 W) deg, at any distance
+        // (the old Impact faded it with the camera's distance from the contact: about 1.2 deg on a heavy blow).
+        const FVeyrFeelTuning& HT=VeyrFeelTuning();
+        const float Distance=SwordMode->Knight&&SwordMode->Knight->CombatCamera?
+            FVector::Distance(SwordMode->Knight->CombatCamera->GetComponentLocation(),Boss->LastSwordContactWorld):0.f;
+        StartShake(HT.HitShakeMin+HT.HitShakeGain*Weight,HT.HitShakeLifeMin+HT.HitShakeLifeGain*Weight,0.f,1.f,
+            bHeavy?FName(TEXT("sword_heavy")):FName(TEXT("sword_light")),Distance,true);
+    }
+    else Impact(Boss->LastSwordContactWorld,Weight,TEXT("sword"));
+    const bool bRefStop=!bLegacy&&VeyrFeelSwitches::RefHitStop();
+    RequestHitStop(bRefStop?(bHeavy?VeyrFeelTuning().HitStopHeavy:VeyrFeelTuning().HitStopLight):(bHeavy?.095f:.055f));
+    Flash(Boss->LastSwordContactWorld,Weight,Boss->ImportedPresentation);
     FlinchAge=0.f;FlinchWeight=Weight;
     FlinchSide=FVector::DotProduct(Boss->LastSwordContactWorld-Boss->GetActorLocation(),Boss->GetActorRightVector())>=0.f?1.f:-1.f;
     ++FlinchEvents;
@@ -428,6 +560,9 @@ void AVeyrFightFeel::SwordContact(AVeyrDragon* Boss,bool bHeavy)
         FReact& R=Reacts[NextReact];NextReact=(NextReact+1)%UE_ARRAY_COUNT(Reacts);
         R.Rock=FVector::CrossProduct(FVector::UpVector,Flat).GetSafeNormal()*(T.FlinchRockMin+T.FlinchRockMax*W*W)*Part*Size;
         R.Twist=static_cast<float>(FVector::DotProduct(Flat,Boss->GetActorRightVector()))*(T.FlinchTwistMin+T.FlinchTwistMax*W*W)*Part*Size;
+        // Down on the floor: the same size as one sideways swing about the vertical, away from the struck side
+        // (a blow on its right sends the head to its left: a negative turn about up).
+        R.Down=-FlinchSide*FMath::Sqrt(R.Rock.SizeSquared()+R.Twist*R.Twist);
         R.Age=0.f;++SpineFlinches;
     }
     StartMeshFlash(Boss->ImportedPresentation,Boss->LastSwordContactWorld,W);
@@ -452,6 +587,7 @@ void AVeyrFightFeel::PlayerContact(AVeyrKnight* Player,float Damage,bool bBlocke
     const FVector Toward=Source.IsZero()?Player->GetActorForwardVector():FVector(Source-Player->GetActorLocation());
     KickFrom=Toward.GetSafeNormal2D().IsNearlyZero()?Player->GetActorForwardVector():Toward.GetSafeNormal2D();
     KickAge=0.f;KickAmp=bBlocked?1.2f:T.KickMin+T.KickGain*Weight;
+    BeginShiftEvent(bBlocked?FName(TEXT("guard_kick")):FName(TEXT("hurt_kick")),KickAmp);
     if(!bBlocked){HurtAge=0.f;HurtAmp=T.HurtMin+T.HurtGain*Weight;}
     ++HurtKicks;
 }
@@ -527,12 +663,13 @@ void AVeyrFightFeel::AddBossFlinch(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotat
         Boss->State==EVeyrDragonState::Exposed||Boss->State==EVeyrDragonState::Rise;
     const USkeletalMesh* Asset=Boss->ImportedPresentation?Boss->ImportedPresentation->GetSkeletalMeshAsset():nullptr;
     if(Asset&&ChainMesh.Get()!=Asset&&!bLegacy&&VeyrFeelSwitches::SpineFlinch())BuildChain(Boss);
-    if(!bLegacy&&VeyrFeelSwitches::SpineFlinch()&&!bDown&&Asset&&!Chain.IsEmpty())
+    const bool bDownSwing=bDown&&VeyrFeelSwitches::DownFlinch();
+    if(!bLegacy&&VeyrFeelSwitches::SpineFlinch()&&(!bDown||bDownSwing)&&Asset&&!Chain.IsEmpty())
     {
         const FVeyrFeelTuning& T=VeyrFeelTuning();
         // Snap up in the first 40 ms, then an under-damped spring home (2 Hz, damping .45: one rebound, ~0.6 s).
         const double Zeta=T.FlinchDamping,Om=2.0*PI*T.FlinchHz,Root=FMath::Sqrt(1.0-Zeta*Zeta),Wd=Om*Root;
-        FVector Total=FVector::ZeroVector;bool Any=false;
+        FVector Total=FVector::ZeroVector;float DownTotal=0.f;bool Any=false;
         for(const FReact& R:Reacts)
         {
             if(R.Age>=T.FlinchLifeSeconds)continue;
@@ -541,8 +678,11 @@ void AVeyrFightFeel::AddBossFlinch(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotat
             if(R.Age<T.FlinchSnapSeconds){const double S=R.Age/FMath::Max(.001f,T.FlinchSnapSeconds);C=1.0-(1.0-S)*(1.0-S);}
             else{const double U=R.Age-T.FlinchSnapSeconds;C=FMath::Exp(-Zeta*Om*U)*(FMath::Cos(Wd*U)+Zeta/Root*FMath::Sin(Wd*U));}
             Total+=(R.Rock+FVector::UpVector*R.Twist)*static_cast<float>(C);
+            DownTotal+=R.Down*static_cast<float>(C);
         }
         if(!Any)return;
+        // Bfeel: lying down, a whole-spine rock would push the head through the floor; the blow swings it sideways instead.
+        if(bDownSwing)Total=FVector::UpVector*FMath::Clamp(DownTotal,-T.FlinchDownCapDegrees,T.FlinchDownCapDegrees);
         const float Size=FMath::Min(static_cast<float>(Total.Size()),T.FlinchCapDegrees);
         if(Size<.01f)return;
         MaxFlinchDegrees=FMath::Max(MaxFlinchDegrees,Size);FlinchDegreesNow=Size;
@@ -708,6 +848,7 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence(bool bStatic) const
     F->SetNumberField(TEXT("meshFlashes"),MeshFlashes);F->SetStringField(TEXT("meshFlash"),FlashDiagnostic);
     F->SetNumberField(TEXT("hitStops"),HitStopEvents);F->SetNumberField(TEXT("slowTails"),SlowTails);
     F->SetNumberField(TEXT("zoomPunches"),ZoomPunches);F->SetNumberField(TEXT("hurtKicks"),HurtKicks);
+    F->SetObjectField(TEXT("imageShift"),ImageShiftEvidence());
     F->SetNumberField(TEXT("trailSamples"),TrailSamples);F->SetNumberField(TEXT("trailSegmentsVisible"),VisibleTrailSegments);
     F->SetNumberField(TEXT("ribbonFrames"),RibbonFrames);F->SetNumberField(TEXT("ribbonMaxRows"),MaxRibbonRows);
     F->SetNumberField(TEXT("ribbonMaxWidthCm"),MaxRibbonWidthCm);F->SetStringField(TEXT("ribbon"),RibbonDiagnostic);

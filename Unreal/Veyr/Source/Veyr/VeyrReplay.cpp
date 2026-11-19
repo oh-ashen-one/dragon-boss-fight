@@ -422,6 +422,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         O->SetNumberField(TEXT("playerPainCues"),SnapshotMode->Audio->PlayerPainCues);
         O->SetNumberField(TEXT("dragonVocalCues"),SnapshotMode->Audio->DragonVocalCues);
         O->SetBoolField(TEXT("ambienceLoaded"),SnapshotMode->Audio->bAmbienceLoaded);
+        O->SetObjectField(TEXT("audio"),SnapshotMode->Audio->AudioEvidence()); // B1-B3 cue counts by type
     }
     O->SetStringField(TEXT("connectedCourtDiagnostic"),SnapshotArena?SnapshotArena->ConnectedCourtDiagnostic:TEXT("Arena missing"));
     FName ApproachBlocker;float ApproachSweepDistance=0.f;
@@ -3054,6 +3055,8 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
     if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
     if(FeelProof.IsValid())Root->SetObjectField(TEXT("feelProof"),FeelProof->Evidence());
+    if(const AVeyrGameMode* AudioMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(AudioMode->Audio){Root->SetObjectField(TEXT("audioSetup"),AudioMode->Audio->AudioSetupEvidence());if(bFinal)AudioMode->Audio->FlushTap();}
     if(const AVeyrGameMode* FeelMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
         if(FeelMode->FightFeel)Root->SetObjectField(TEXT("feel"),FeelMode->FightFeel->FeelEvidence(true)); // B4-B6 totals + static parts, once
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
