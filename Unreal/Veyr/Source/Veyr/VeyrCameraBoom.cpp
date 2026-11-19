@@ -909,6 +909,13 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     A.MinCameraToKnightCm=FMath::Min(A.MinCameraToKnightCm,Surface);A.InsideKnight+=Surface<10.f;
     const bool bRuleHidden=bKnightHiddenByCamera;
     A.HiddenByRule+=bRuleHidden;if(bRuleHidden)Note(A.RuleHiddenSeconds,Seconds);
+    if(bRuleHidden)
+    {
+        if(A.RuleRunStart<0.f||Seconds-A.RuleRunLast>.1f){A.RuleRunStart=Seconds;++A.RuleHiddenRuns;A.bRuleRunCounted=false;}
+        A.RuleRunLast=Seconds;const float Run=Seconds-A.RuleRunStart;
+        if(Run>A.LongestRuleHiddenSeconds){A.LongestRuleHiddenSeconds=Run;A.LongestRuleHiddenAt=A.RuleRunStart;}
+        if(Run>1.f&&!A.bRuleRunCounted){++A.RuleRunsOver1s;A.bRuleRunCounted=true;}
+    }
     if(Surface<10.f&&!bRuleHidden){++A.InsideKnightVisible;Note(A.KnightInsideSeconds,Seconds);}
     A.KnightWhole+=KnightWholeInView(Camera,View,HorizontalFovDeg);
     // How much of the knight the player sees: 7 points on his body, each inside the central 80 % of the frame
@@ -973,12 +980,12 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
     N(TEXT("hiddenByCameraRuleFrames"),A.HiddenByRule);N(TEXT("hiddenByCameraRuleShare"),A.Frames?static_cast<double>(A.HiddenByRule)/A.Frames:0.0);
     N(TEXT("insideKnightVisibleFrames"),A.InsideKnightVisible);
     N(TEXT("knightInFrameShareOfVisibleFrames"),A.VisibleFrames?static_cast<double>(A.KnightInFrameVisible)/A.VisibleFrames:0.0);
-    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);N(TEXT("insideWhileHiddenFrames"),A.InsideHidden);N(TEXT("insideWhileOverheadFrames"),A.InsideOverhead);N(TEXT("insideLensInRigProxyFrames"),A.InsideInRigProxy);
+    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);N(TEXT("ruleHiddenRuns"),A.RuleHiddenRuns);N(TEXT("ruleHiddenRunsOver1s"),A.RuleRunsOver1s);N(TEXT("longestRuleHiddenSeconds"),A.LongestRuleHiddenSeconds);N(TEXT("longestRuleHiddenAtSeconds"),A.LongestRuleHiddenAt);N(TEXT("insideWhileHiddenFrames"),A.InsideHidden);N(TEXT("insideWhileOverheadFrames"),A.InsideOverhead);N(TEXT("insideLensInRigProxyFrames"),A.InsideInRigProxy);
     N(TEXT("insideLensOffsetFromRigMaxCm"),A.InsideLensOffsetMaxCm);N(TEXT("insideRigProxyMinDistanceCm"),A.InsideRigProxyMinCm<1e30f?A.InsideRigProxyMinCm:-1.0);N(TEXT("insideNearestSkinMinCm"),A.InsideNearMinCm<1e30f?A.InsideNearMinCm:-1.0);
     {const int32 Out=A.VisibleFrames-A.KnightInFrameVisible;N(TEXT("outOfFrameVisibleFrames"),Out);N(TEXT("outOfFrameNearFrames"),A.OutFrameNear);N(TEXT("outOfFramePitchUpFrames"),A.OutFramePitchUp);N(TEXT("outOfFrameOverheadFrames"),A.OutFrameOverhead);N(TEXT("outOfFrameMeanDistanceCm"),Out?A.OutFrameDistanceSum/Out:0.0);}Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);
     N(TEXT("rigOverheadFrames"),RigOverheadFrames);N(TEXT("rigHiddenFrames"),RigHiddenFrames);N(TEXT("rigPivotLiftFrames"),RigPivotLiftFrames);
-    N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());N(TEXT("rigWorldHits"),RigWorldHits);N(TEXT("auditRigOtherFrame"),AuditOtherFrame);N(TEXT("auditRigOtherSkinFrame"),AuditOtherSkinFrame);N(TEXT("rigStaleProxyFrames"),RigStaleProxyFrames);N(TEXT("rigLowOverheadFrames"),RigLowFrames);N(TEXT("rigHideUnderBodyFrames"),RigHideUnderBodyFrames);{TArray<TSharedPtr<FJsonValue>> L;for(const FString& X:RigWorldHitNames)L.Add(MakeShared<FJsonValueString>(X));O->SetArrayField(TEXT("rigWorldHitActors"),L);}N(TEXT("trueSkinMs"),FVeyrDragonTrueSkin::Get().SkinSeconds*1000.0);O->SetBoolField(TEXT("rigProxyTight"),bProxyTight);
+    N(TEXT("rigMeanMs"),RigCalls?RigSeconds*1000.0/RigCalls:0.0);N(TEXT("rigMaxMs"),RigMaxSeconds*1000.0);N(TEXT("rigProxyBoxes"),Proxy.BoxCount());N(TEXT("rigWorldHits"),RigWorldHits);N(TEXT("rigSkinSweeps"),RigSkinSweeps);N(TEXT("rigSkinStepsMean"),RigSkinSweeps?double(RigSkinSteps)/RigSkinSweeps:0.0);N(TEXT("rigSkinSweepMsPerSweep"),RigSkinSweeps?RigSkinSweepSeconds*1000.0/RigSkinSweeps:0.0);N(TEXT("auditRigOtherFrame"),AuditOtherFrame);N(TEXT("auditRigOtherSkinFrame"),AuditOtherSkinFrame);N(TEXT("rigStaleProxyFrames"),RigStaleProxyFrames);N(TEXT("rigLowOverheadFrames"),RigLowFrames);N(TEXT("rigHideUnderBodyFrames"),RigHideUnderBodyFrames);{TArray<TSharedPtr<FJsonValue>> L;for(const FString& X:RigWorldHitNames)L.Add(MakeShared<FJsonValueString>(X));O->SetArrayField(TEXT("rigWorldHitActors"),L);}N(TEXT("trueSkinMs"),FVeyrDragonTrueSkin::Get().SkinSeconds*1000.0);O->SetBoolField(TEXT("rigProxyTight"),bProxyTight);
     O->SetStringField(TEXT("rigProxy"),Proxy.Diagnostic);N(TEXT("rigProxyMarginCm"),RigProxyMarginCm*DragonScale());N(TEXT("rigLensRadiusCm"),RigLensRadiusCm);
     O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight, whole replay (held by the replay, survives restart); seconds are replay seconds; visible = 7 knight points inside the central 80 % with no dragon skin (shapes, interior, wings) in between; jumps = >150 cm or >12 deg in one frame, knight blinks excluded"));
     return O;

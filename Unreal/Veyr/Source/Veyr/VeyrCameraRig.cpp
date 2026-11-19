@@ -18,6 +18,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Misc/CommandLine.h"
+#include "HAL/PlatformTime.h"
 
 bool UVeyrCameraBoom::UpdateProxy()
 {
@@ -39,6 +40,17 @@ bool UVeyrCameraBoom::UpdateProxy()
 float UVeyrCameraBoom::RigSweep(const FVector& From,const FVector& To,float Radius) const
 {
     float T=Proxy.IsValid()?Proxy.Sweep(From,To,Radius):1.f;
+    // Boxes are the broad phase only: where they block, the lens sphere continues against the drawn faces themselves
+    // (bent legs and the belly box claim free space). Start inside the boxes = start inside nothing known: the skin
+    // decides from 0. -VeyrRigProxySweep keeps the box contact.
+    static const bool bBoxOnly=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigProxySweep"));
+    if(!bBoxOnly&&bProxyTight&&T<1.f)
+    {
+        const FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();
+        const double S0=FPlatformTime::Seconds();int32 Steps=0;
+        T=True.SweepSphere(From,To,Radius,T,&Steps);
+        RigSkinSweeps++;RigSkinSteps+=Steps;RigSkinSweepSeconds+=FPlatformTime::Seconds()-S0;
+    }
     if(GetWorld()&&T>0.f)
     {
         const FVector End=From+(To-From)*T;

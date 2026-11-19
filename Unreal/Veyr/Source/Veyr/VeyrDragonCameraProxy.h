@@ -80,6 +80,10 @@ public:
      * to one box of its dominant bone, chosen at rest), then grow by the proxy's margin. Exact containment: linear
      * blend skinning moves blended vertices off their bones' rigid boxes (up to 210 cm at 2x in Collapse/Rise). */
     bool Tighten(FVeyrDragonProxy& Proxy);
+    /** Sphere of radius R swept A->B against the skinned faces by conservative advancement (the distance to the skin
+     * is 1-Lipschitz, so each step of distance-R never crosses a face), starting at StartT (the part before it is known
+     * free, e.g. from the proxy). Returns the free fraction (contact minus 0.5 cm); unconverged = blocked there. */
+    float SweepSphere(const FVector& A,const FVector& B,float R,float StartT,int32* OutSteps=nullptr) const;
     /** Any skin triangle crossing the segment A->B. */
     bool SegmentBlocked(const FVector& A,const FVector& B) const;
     /** Proof against a proxy: worst outside distance of any vertex with the proxy's margin (should be 0) and with

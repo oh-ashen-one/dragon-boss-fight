@@ -433,3 +433,23 @@ bool FVeyrDragonTrueSkin::Tighten(FVeyrDragonProxy& Proxy)
     }
     return true;
 }
+
+float FVeyrDragonTrueSkin::SweepSphere(const FVector& A,const FVector& B,float R,float StartT,int32* OutSteps) const
+{
+    const double Len=FVector::Dist(A,B);int32 Steps=0;
+    if(!Current||Len<1e-3){if(OutSteps)*OutSteps=0;return 1.f;}
+    double T=FMath::Clamp<double>(StartT,0.0,1.0);
+    while(Steps<48)
+    {
+        ++Steps;
+        const FVector P=A+(B-A)*T;
+        const double Remaining=(1.0-T)*Len;
+        const double D=NearestDistance(P,static_cast<float>(Remaining+R+1.0))-R;
+        if(D>Remaining){T=1.0;break;}
+        if(D<.5){if(OutSteps)*OutSteps=Steps;return static_cast<float>(FMath::Max(0.0,T-.5/Len));}
+        T+=D/Len;
+        if(T>=1.0){T=1.0;break;}
+    }
+    if(OutSteps)*OutSteps=Steps;
+    return static_cast<float>(T>=1.0?1.0:FMath::Max(0.0,T-.5/Len));
+}
