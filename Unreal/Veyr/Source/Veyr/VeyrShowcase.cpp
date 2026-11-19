@@ -313,7 +313,8 @@ void FVeyrShowcase::Tick(float,float Elapsed)
         const FSeen* S=Seen.Find(Name);
         // At game timing a recovery ends at its recovery_exit and fades out (F1).
         Passed&=S&&S->Frames>=2&&S->Min<=.15f&&S->Max>=FMath::Min(.85f,Dragon->PlaybackPhaseCeiling(Name)-.1f);
-        if(!bPlayerCamera)Passed&=S&&S->FramedFrames>=FMath::CeilToInt(S->Frames*.9f);
+        // The moves proof (-VeyrShowcaseMoves) holds a fixed side or quarter view; framing is recorded, not gated.
+        if(!bPlayerCamera&&!bMovesMode)Passed&=S&&S->FramedFrames>=FMath::CeilToInt(S->Frames*.9f);
     }
     for(const FString& State:Steps[StepIndex].States)Passed&=States.Contains(State);
     if(Steps[StepIndex].Name==TEXT("Flight"))Passed&=FlightFireFrames>0;

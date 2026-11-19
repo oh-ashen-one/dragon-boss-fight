@@ -2375,7 +2375,8 @@ void AVeyrDragon::UpdateImportedPresentation()
                     const float S0=P->SourceFrameAt(LastSampledSequenceSeconds),S1=P->SourceFrameAt(SequenceSeconds);
                     const double Source=(S1-S0)/P->SrcFps;
                     St.RealSeconds+=Dt;St.SourceSeconds+=Source;++St.Frames;
-                    if(!P->InHold((S0+S1)*.5f)){St.RealNonHold+=Dt;St.SourceNonHold+=Source;St.MaxRateNonHold=FMath::Max(St.MaxRateNonHold,static_cast<float>(Source/Dt));}
+                    // A frame that touches a hold at either end is a hold frame (its rate mixes both).
+                    if(!P->InHold(S0)&&!P->InHold(S1)&&!P->InHold((S0+S1)*.5f)){St.RealNonHold+=Dt;St.SourceNonHold+=Source;St.MaxRateNonHold=FMath::Max(St.MaxRateNonHold,static_cast<float>(Source/Dt));}
                 }
             }
             else if(LastSampledClip!=Clip&&Duration>.001f)

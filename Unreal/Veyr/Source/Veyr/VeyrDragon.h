@@ -424,9 +424,11 @@ private:
         float T=0.f,Weight=0.f;
         FVector LastBend=FVector(1,0,0);
         FVector PrevAny=FVector::ZeroVector;bool bHasPrevAny=false,bLowNow=false;
+        FVector PrevLocal=FVector::ZeroVector;bool bHasPrevLocal=false;
     };
     FFootLockFoot LockFeet[4];
     float FootLockClock=-1.f;
+    FVector FootLockActorPrev=FVector::ZeroVector;bool bFootLockActorPrev=false,bReleaseOnlyLast=false;int32 FootLockTeleports=0,FootLockEaseOuts=0;
     FString FootLockDiagnostic;
     void UpdateFootLock(bool bFading);
     // Evidence for blend pops: bone speeds in component space for the last three evaluated frames.

@@ -310,7 +310,24 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         }
         return;
     }
-    if(!Eligible){bool Any=false;for(const auto& F:LockFeet)Any|=F.bLocked||F.bStepping||F.bReleasing;if(Any)ResetFootLock();return;}
+    // A teleport (showcase placement, restart) is not motion: drop the pins and the slide history at once.
+    const FVector ActorNow=GetActorLocation();
+    const bool Teleported=bFootLockActorPrev&&FVector::Dist2D(ActorNow,FootLockActorPrev)>250.f*BodyScale;
+    FootLockActorPrev=ActorNow;bFootLockActorPrev=true;
+    if(Teleported)
+    {
+        ++FootLockTeleports;ResetFootLock();
+        for(FFootLockFoot& F:LockFeet){F.bHasPrev=F.bHasPrevAny=F.bHasPrevLocal=false;}
+        PoseSpeed1.Reset();PoseSpeed2.Reset();
+        return;
+    }
+    bool AnyActive=false;for(const auto& F:LockFeet)AnyActive|=F.bLocked||F.bStepping||F.bReleasing;
+    // Leaving the standing states (knock-down, death, flight) eases every held foot back to the clip over the release
+    // time instead of dropping the IK in one frame (that drop was the leg pop at buckle).
+    const bool ReleaseOnly=!Eligible&&bFootLock&&Playback.bLoaded&&AnyActive;
+    if(!Eligible&&!ReleaseOnly)return;
+    if(ReleaseOnly&&!bReleaseOnlyLast)++FootLockEaseOuts;
+    bReleaseOnlyLast=ReleaseOnly;
     FVeyrSoleSample Anim;
     if(!ImportedPresentation->MeasureSoles(Anim)||!Anim.bValid){FootLockDiagnostic=TEXT("sole model unavailable");return;}
     const float Dt=FootLockClock<0.f?0.f:FMath::Max(0.f,Clock-FootLockClock);
@@ -327,10 +344,15 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         // frame, so a paw rolling heel to toe is not translated by a foot length. The sole only answers "how high".
         const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
         const float Height=Anim.SoleAboveFloorCm[L];
-        F.bLowNow=Height<T.PlantHeightCm*S;
+        if(ReleaseOnly&&(F.bLocked||F.bStepping)){F.bLocked=F.bStepping=false;F.bReleasing=true;F.T=0.f;F.From=F.Target;}
+        // The plant test uses the CLIP's foot speed (component space): a body turn or travel under a planted paw must
+        // not stop it planting (world speed did, so turning feet were never pinned and slid with the body).
+        const FVector Local=ImportedPresentation->GetComponentTransform().InverseTransformPosition(Anchor);
+        const float LocalSpeed=F.bHasPrevLocal&&Dt>0.f?static_cast<float>(FVector::Dist2D(Local,F.PrevLocal))*ImportedPresentation->GetComponentScale().X/Dt:0.f;
+        if(Dt>0.f||!F.bHasPrevLocal){F.PrevLocal=Local;F.bHasPrevLocal=true;}
         if(Dt>0.f)
         {
-            const float Speed=F.bHasPrev?static_cast<float>(FVector::Dist2D(Anchor,F.PrevTip))/Dt:0.f;
+            const float Speed=LocalSpeed;
             if(F.bLocked)
             {
                 const float Drag=static_cast<float>(FVector::Dist2D(F.Pin,Anchor));
@@ -354,9 +376,11 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
                 if(F.T>=1.f)F.bReleasing=false;
             }
             // A foot plants only when it is low AND slow in the clip (bFading only marks evidence).
-            if(!F.bLocked&&!F.bStepping&&Height<T.PlantHeightCm*S&&Speed<T.PlantSpeedCms*S)
+            if(!ReleaseOnly&&!F.bLocked&&!F.bStepping&&Height<T.PlantHeightCm*S&&Speed<T.PlantSpeedCms*S)
             {F.bLocked=true;F.bReleasing=false;F.Pin=Anchor;}
-            if(Height<T.PlantHeightCm*S&&F.bHasPrev)
+            // Planted = low in the clip and not in a lock step (a stepping paw is lifted on purpose).
+            F.bLowNow=!ReleaseOnly&&!F.bStepping&&Height<T.PlantHeightCm*S;
+            if(F.bLowNow&&F.bHasPrev)
             {Stat.PlantedSeconds[L]+=Dt;Stat.AnimatedSlideCm[L]+=FVector::Dist2D(Anchor,F.PrevTip);}
             F.PrevTip=Anchor;F.bHasPrev=true;
         }
@@ -425,6 +449,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetStringField(TEXT("data"),PlaybackDiagnostic);O->SetStringField(TEXT("footLockDiagnostic"),FootLockDiagnostic);
     O->SetNumberField(TEXT("snapTrackRateDps"),SnapTrackRate());O->SetNumberField(TEXT("walkStrideSpeedCmPerSec"),WalkStrideSpeedCm);
     O->SetNumberField(TEXT("trackTravelWorldCm"),TrackTravelWorld.Size2D());
+    O->SetNumberField(TEXT("footLockTeleports"),FootLockTeleports);O->SetNumberField(TEXT("footLockEaseOuts"),FootLockEaseOuts);
     O->SetStringField(TEXT("dragonSkin"),ImportedPresentation?ImportedPresentation->SkinDiagnostic:FString(TEXT("no presentation")));
     float WorstRate=0.f,WorstSlide=0.f,WorstPop=0.f;FString WorstRateKey,WorstSlideKey,WorstPopKey;int32 Pops=0,PopsInBlend=0;
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();
