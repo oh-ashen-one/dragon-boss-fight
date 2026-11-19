@@ -55,6 +55,7 @@ public:
     UPROPERTY(BlueprintReadOnly) float VictorySeconds=-1;
     UPROPERTY(BlueprintReadOnly) double VictoryWallSeconds=-1.;
     double GetFightWallSeconds() const;
+    static double FightNow();
     bool IsArenaIntroActive() const { return bArenaIntroActive; }
     /** Monotonic wall time at which the test-only master recording began; 0 before it starts. */
     double GetMixCaptureStartedWall() const { return MixCaptureStarted; }

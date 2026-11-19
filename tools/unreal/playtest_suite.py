@@ -74,6 +74,17 @@ def run_spec(spec, delay=0.0):
     record = {'spec': spec, 'headless': 'headless' in flags, 'exit': proc.returncode, 'wallSeconds': round(time.time() - started, 1),
               'run': new[-1] if new else None, 'tail': proc.stdout.strip().splitlines()[-1:] }
     evidence = glob.glob(new[-1] + '/unreal-*/evidence.json') if new else []
+    if len(evidence) > 1:
+        # Seed sweep (-VeyrSeedSweep=A-B) or a next mode: one line per fight; tools/unreal/band_summary.py gives the band.
+        record['fights'] = []
+        for path in sorted(evidence):
+            f = json.loads(Path(path).read_text())
+            combat = [s for s in f.get('samples', []) if s.get('replayStage') == 'combat'] or f.get('samples', [])
+            record['fights'].append({'mode': f.get('mode'), 'passed': f.get('passed'),
+                                     'seed': next((s.get('brainSeed') for s in combat if s.get('brainSeed') is not None), None),
+                                     'terminalWallSeconds': f.get('terminalWallSeconds'),
+                                     'hitsTaken': max([s.get('hitsTaken', 0) for s in combat] or [0]),
+                                     'evidence': path})
     if evidence:
         e = json.loads(Path(evidence[-1]).read_text())
         latest = e.get('latest', {})
