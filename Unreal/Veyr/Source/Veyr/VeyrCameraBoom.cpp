@@ -942,6 +942,14 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     const bool bHidden=Seen==0;A.FullyHidden+=bHidden;
     A.HiddenRunSeconds=bHidden?A.HiddenRunSeconds+Dt:0.f;A.LongestHiddenSeconds=FMath::Max(A.LongestHiddenSeconds,A.HiddenRunSeconds);
     if(!bHalf)Note(A.HiddenSeconds,Seconds);
+    // Fight scope: dragon alive (the victory replay keeps auditing through the terminal pose and the restart check).
+    if(AuditDragon&&!AuditDragon->IsDead())
+    {
+        ++A.FightFrames;A.FightRuleHidden+=bRuleHidden;A.FightHalf+=bHalf;A.FightInside+=bInside;
+        if(!bRuleHidden){++A.FightVisible;A.FightInFrameVisible+=InFrame>=4;}
+        A.FightHiddenRun=bHidden?A.FightHiddenRun+Dt:0.f;A.FightLongestHidden=FMath::Max(A.FightLongestHidden,A.FightHiddenRun);
+        if(bRuleHidden)A.FightLongestRule=FMath::Max(A.FightLongestRule,Seconds-A.RuleRunStart);
+    }
 }
 
 TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) const
@@ -980,7 +988,7 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
     N(TEXT("hiddenByCameraRuleFrames"),A.HiddenByRule);N(TEXT("hiddenByCameraRuleShare"),A.Frames?static_cast<double>(A.HiddenByRule)/A.Frames:0.0);
     N(TEXT("insideKnightVisibleFrames"),A.InsideKnightVisible);
     N(TEXT("knightInFrameShareOfVisibleFrames"),A.VisibleFrames?static_cast<double>(A.KnightInFrameVisible)/A.VisibleFrames:0.0);
-    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);N(TEXT("ruleHiddenRuns"),A.RuleHiddenRuns);N(TEXT("ruleHiddenRunsOver1s"),A.RuleRunsOver1s);N(TEXT("longestRuleHiddenSeconds"),A.LongestRuleHiddenSeconds);N(TEXT("longestRuleHiddenAtSeconds"),A.LongestRuleHiddenAt);N(TEXT("insideWhileHiddenFrames"),A.InsideHidden);N(TEXT("insideWhileOverheadFrames"),A.InsideOverhead);N(TEXT("insideLensInRigProxyFrames"),A.InsideInRigProxy);
+    Times(TEXT("ruleHiddenSeconds"),A.RuleHiddenSeconds);Times(TEXT("outOfFrameSeconds"),A.OutFrameSeconds);N(TEXT("ruleHiddenRuns"),A.RuleHiddenRuns);N(TEXT("fightFrames"),A.FightFrames);N(TEXT("fightInsideDragonFrames"),A.FightInside);N(TEXT("fightRuleHiddenShare"),A.FightFrames?double(A.FightRuleHidden)/A.FightFrames:0.0);N(TEXT("fightKnightInFrameShareOfVisible"),A.FightVisible?double(A.FightInFrameVisible)/A.FightVisible:0.0);N(TEXT("fightHalfVisibleShare"),A.FightFrames?double(A.FightHalf)/A.FightFrames:0.0);N(TEXT("fightLongestHiddenSeconds"),A.FightLongestHidden);N(TEXT("fightLongestRuleHiddenSeconds"),A.FightLongestRule);N(TEXT("ruleHiddenRunsOver1s"),A.RuleRunsOver1s);N(TEXT("longestRuleHiddenSeconds"),A.LongestRuleHiddenSeconds);N(TEXT("longestRuleHiddenAtSeconds"),A.LongestRuleHiddenAt);N(TEXT("insideWhileHiddenFrames"),A.InsideHidden);N(TEXT("insideWhileOverheadFrames"),A.InsideOverhead);N(TEXT("insideLensInRigProxyFrames"),A.InsideInRigProxy);
     N(TEXT("insideLensOffsetFromRigMaxCm"),A.InsideLensOffsetMaxCm);N(TEXT("insideRigProxyMinDistanceCm"),A.InsideRigProxyMinCm<1e30f?A.InsideRigProxyMinCm:-1.0);N(TEXT("insideNearestSkinMinCm"),A.InsideNearMinCm<1e30f?A.InsideNearMinCm:-1.0);
     {const int32 Out=A.VisibleFrames-A.KnightInFrameVisible;N(TEXT("outOfFrameVisibleFrames"),Out);N(TEXT("outOfFrameNearFrames"),A.OutFrameNear);N(TEXT("outOfFramePitchUpFrames"),A.OutFramePitchUp);N(TEXT("outOfFrameOverheadFrames"),A.OutFrameOverhead);N(TEXT("outOfFrameMeanDistanceCm"),Out?A.OutFrameDistanceSum/Out:0.0);}Times(TEXT("knightInsideVisibleSeconds"),A.KnightInsideSeconds);
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);

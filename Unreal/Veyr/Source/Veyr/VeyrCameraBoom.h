@@ -222,6 +222,7 @@ struct FVeyrViewAudit
     int32 TrueSkinFrames=0,InsideVolume=0,NearClip=0,HiddenByRule=0,InsideKnightVisible=0,KnightInFrameVisible=0,VisibleFrames=0,LegacyInside=0;
     float MinSkinCm=TNumericLimits<float>::Max();TArray<float> RuleHiddenSeconds,KnightInsideSeconds,OutFrameSeconds;FString TrueSkinSource;
     int32 OutFrameNear=0,OutFramePitchUp=0,OutFrameOverhead=0;double OutFrameDistanceSum=0;
+    int32 FightFrames=0,FightRuleHidden=0,FightVisible=0,FightInFrameVisible=0,FightHalf=0,FightInside=0;float FightHiddenRun=0.f,FightLongestHidden=0.f,FightLongestRule=0.f;
     float RuleRunStart=-1.f,RuleRunLast=-1.f,LongestRuleHiddenSeconds=0.f,LongestRuleHiddenAt=0.f;int32 RuleHiddenRuns=0,RuleRunsOver1s=0;bool bRuleRunCounted=false;
     int32 InsideHidden=0,InsideOverhead=0,InsideInRigProxy=0;float InsideLensOffsetMaxCm=0.f,InsideRigProxyMinCm=TNumericLimits<float>::Max(),InsideNearMinCm=TNumericLimits<float>::Max();
 };
