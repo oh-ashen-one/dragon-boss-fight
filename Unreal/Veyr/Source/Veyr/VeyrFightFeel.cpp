@@ -477,6 +477,12 @@ void AVeyrFightFeel::Flash(const FVector& Position,float Weight,USkeletalMeshCom
 {
     const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     if(bDisabled||!Mode||!Mode->bUserHitFlash)return;
+    // Camera fifth pass: the warm contact light on a part the camera fade is thinning lit it cream (a ghost limb).
+    // No contact light there; -VeyrFlashOverFade restores it.
+    static const bool bFlashOverFade=FParse::Param(FCommandLine::Get(),TEXT("VeyrFlashOverFade"));
+    if(!bFlashOverFade&&Mesh)
+        if(const AVeyrDragon* D=Cast<AVeyrDragon>(Mesh->GetOwner()))
+            if(D->CameraFadeCovers(Position,100.f+100.f*Weight)){++HitLightsSkippedForFade;return;}
     FlashAge=0.f;FlashWeight=Weight;HitFlash->SetWorldLocation(Position+FVector(0,0,18));
     FlashWorldPoint=Position;FlashMesh=Mesh;FlashBone=NAME_None;
     if(Mesh)
@@ -862,7 +868,7 @@ TSharedPtr<FJsonObject> AVeyrFightFeel::FeelEvidence(bool bStatic) const
     F->SetNumberField(TEXT("flinches"),FlinchEvents);F->SetNumberField(TEXT("spineFlinches"),SpineFlinches);
     F->SetNumberField(TEXT("maxFlinchDegrees"),MaxFlinchDegrees);F->SetNumberField(TEXT("flinchBones"),FlinchBoneCount);
     F->SetNumberField(TEXT("flinchLegRootsHeld"),LegCompensations);F->SetStringField(TEXT("flinchChain"),FlinchDiagnostic);
-    F->SetNumberField(TEXT("meshFlashes"),MeshFlashes);F->SetNumberField(TEXT("meshFlashesSkippedForFade"),MeshFlashesSkippedForFade);F->SetStringField(TEXT("meshFlash"),FlashDiagnostic);
+    F->SetNumberField(TEXT("meshFlashes"),MeshFlashes);F->SetNumberField(TEXT("meshFlashesSkippedForFade"),MeshFlashesSkippedForFade);F->SetNumberField(TEXT("hitLightsSkippedForFade"),HitLightsSkippedForFade);F->SetNumberField(TEXT("hitFlashEvents"),HitFlashEvents);F->SetStringField(TEXT("meshFlash"),FlashDiagnostic);
     F->SetNumberField(TEXT("hitStops"),HitStopEvents);F->SetNumberField(TEXT("slowTails"),SlowTails);
     F->SetNumberField(TEXT("zoomPunches"),ZoomPunches);F->SetNumberField(TEXT("hurtKicks"),HurtKicks);
     F->SetObjectField(TEXT("imageShift"),ImageShiftEvidence());

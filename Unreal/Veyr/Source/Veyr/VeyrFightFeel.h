@@ -56,7 +56,7 @@ public:
     // B4-B6 evidence
     int32 ContactShakes=0,ShakesByClass[4]={0,0,0,0};
     float MaxShakeByClass[4]={0.f,0.f,0.f,0.f};
-    int32 MeshFlashesSkippedForFade=0;FVector MeshFlashHitPos=FVector::ZeroVector;
+    int32 MeshFlashesSkippedForFade=0,HitLightsSkippedForFade=0;FVector MeshFlashHitPos=FVector::ZeroVector;
     int32 SpineFlinches=0,MeshFlashes=0,FallbackFlashes=0,SlowTails=0,ZoomPunches=0,HurtKicks=0,RibbonFrames=0,MaxRibbonRows=0;
     mutable int32 FlinchBoneCount=0,LegCompensations=0; // filled when the chain is (re)built from the pose path
     mutable float MaxFlinchDegrees=0.f,FlinchDegreesNow=0.f;
