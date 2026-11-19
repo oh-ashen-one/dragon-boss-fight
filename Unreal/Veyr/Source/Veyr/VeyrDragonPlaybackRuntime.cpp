@@ -217,9 +217,9 @@ void AVeyrDragon::ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight)
     FName Phase;
     const FVeyrClipPlayback* Dest=Eligible&&Playback.bLoaded?Playback.Find(Clip,Phase):nullptr;
     if(Dest){const FVeyrMoveTempo* T=Playback.MoveTempo(*Dest);if(!T||!T->bRootTrack||Dest->TrackCm.IsEmpty())Dest=nullptr;}
-    // Round 2: Rise's track ends about 200 cm (2x) from where it starts and the knock-down showcase stacks three of
-    // them, leaving the Death chapter out of frame (344/466 frustum misses). Off by default; -VeyrRiseRootTrack restores it.
-    static const bool bRiseTrack=FParse::Param(FCommandLine::Get(),TEXT("VeyrRiseRootTrack"));
+    // Rise's own track (about 200 cm at 2x) stays on, as in round 1: without it the Rise->Idle slide-back doubles.
+    // -VeyrNoRiseRootTrack turns only Rise's track off.
+    static const bool bRiseTrack=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoRiseRootTrack"));
     if(Dest&&!bRiseTrack&&Dest->Move==FName(TEXT("rise")))Dest=nullptr;
     const FTransform& Comp=ImportedPresentation->GetComponentTransform();
     auto ToWorld=[&](const FVector2D& D){FVector W=Comp.TransformVector(FVector(D.X,D.Y,0.f));W.Z=0.f;return W;};
@@ -586,7 +586,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
 {
     TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
     O->SetBoolField(TEXT("clipTempo"),bClipTempo);O->SetBoolField(TEXT("twoClipBlend"),bTwoClipBlend);
-    O->SetBoolField(TEXT("footLock"),bFootLock);O->SetBoolField(TEXT("slowSnapTurn"),bSlowSnapTurn);O->SetBoolField(TEXT("rootTracks"),bRootTracks);O->SetBoolField(TEXT("riseRootTrack"),bRootTracks&&FParse::Param(FCommandLine::Get(),TEXT("VeyrRiseRootTrack")));
+    O->SetBoolField(TEXT("footLock"),bFootLock);O->SetBoolField(TEXT("slowSnapTurn"),bSlowSnapTurn);O->SetBoolField(TEXT("rootTracks"),bRootTracks);O->SetBoolField(TEXT("riseRootTrack"),bRootTracks&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoRiseRootTrack")));
     O->SetStringField(TEXT("data"),PlaybackDiagnostic);O->SetStringField(TEXT("footLockDiagnostic"),FootLockDiagnostic);
     O->SetNumberField(TEXT("snapTrackRateDps"),SnapTrackRate());O->SetNumberField(TEXT("walkStrideSpeedCmPerSec"),WalkStrideSpeedCm);
     O->SetNumberField(TEXT("trackTravelWorldCm"),TrackTravelWorld.Size2D());
