@@ -93,8 +93,8 @@ struct FVeyrFeelTuning
     float FlinchDownCapDegrees=12.f;
     float FlashPeak=1.f,FlashPeakGain=1.2f,FlashRadiusCm=40.f,FlashRadiusGainCm=45.f,FlashFade=.07f,FlashLife=.3f;
     // B2 struck-part reaction (degrees, x weight W 0.3-1, x size): a fast snap and return, 0.03 s up, ~0.25 s back.
-    float StrikeLegMin=5.f,StrikeLegGain=9.f,StrikeHeadMin=10.f,StrikeHeadGain=16.f,StrikeBodyMin=1.f,StrikeBodyGain=2.5f;
-    float StrikeSnapSeconds=.03f,StrikeHz=2.2f,StrikeDecaySeconds=.075f,StrikeLifeSeconds=.4f;
+    float StrikeLegMin=14.f,StrikeLegGain=16.f,StrikeHeadMin=10.f,StrikeHeadGain=16.f,StrikeBodyMin=1.f,StrikeBodyGain=2.5f;
+    float StrikeSnapSeconds=.03f,StrikeHz=3.f,StrikeDecaySeconds=.045f,StrikeLifeSeconds=.4f;
     // B2 contact flash: small and hot around the blade's contact point instead of a tint over the whole limb.
     float ContactFlashRadiusCm=18.f,ContactFlashRadiusGainCm=18.f,ContactFlashPeakScale=1.6f,ContactFlashFade=.035f,ContactFlashLife=.14f;
     // B2 hit stop as filmed at 30 fps: at least two film frames on a light blow, five on a heavy one; shake and punch hold.
