@@ -43,7 +43,7 @@ void AVeyrArena::BuildRelitLighting()
     auto* Moon=MakeDirectional(TEXT("RelitColdMoonKey"));
     Moon->SetRelativeRotation(FRotator(VeyrLook::Tune(TEXT("moonpitch"),-34.f),VeyrLook::Tune(TEXT("moonyaw"),-155.f),0));Moon->SetForwardShadingPriority(1);
     Moon->SetIntensity(VeyrLook::Tune(TEXT("moon"),.5f));Moon->SetLightColor(MoonColour,false);Moon->SetCastShadows(true);
-    Moon->SetLightSourceAngle(1.5f);Moon->SetSpecularScale(.8f);Moon->SetVolumetricScatteringIntensity(1.f);
+    Moon->SetLightSourceAngle(1.5f);Moon->SetSpecularScale(VeyrLook::Tune(TEXT("moonspec"),1.6f));Moon->SetVolumetricScatteringIntensity(1.f);
     Moon->RegisterComponent();
 
     // Rims re-aimed every tick (TickRelitLighting) to shine from behind the subject
@@ -70,16 +70,48 @@ void AVeyrArena::BuildRelitLighting()
         DragonKeyLight=MakeDirectional(TEXT("RelitDragonKey"));
         DragonKeyLight->LightingChannels.bChannel0=false;DragonKeyLight->LightingChannels.bChannel1=false;DragonKeyLight->LightingChannels.bChannel2=true;
         DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),4.5f));DragonKeyLight->SetLightColor(FLinearColor(.80f,.87f,1.f),false);DragonKeyLight->SetCastShadows(false);
-        DragonKeyLight->SetLightSourceAngle(8.f);DragonKeyLight->SetSpecularScale(.7f);DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
+        DragonKeyLight->SetLightSourceAngle(8.f);DragonKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("dkeyspec"),1.4f));DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
         DragonKeyLight->RegisterComponent();
         KnightKeyLight=MakeDirectional(TEXT("RelitKnightKey"));
         KnightKeyLight->LightingChannels.bChannel0=false;KnightKeyLight->LightingChannels.bChannel1=true;KnightKeyLight->LightingChannels.bChannel2=false;
         KnightKeyLight->SetIntensity(VeyrLook::Tune(TEXT("kkey"),4.f));KnightKeyLight->SetLightColor(FLinearColor(1.f,.87f,.72f),false);KnightKeyLight->SetCastShadows(false);
-        KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(.9f);KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
+        KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("kkeyspec"),1.6f));KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
         KnightKeyLight->RegisterComponent();
     }
 
     const float PoolScale=VeyrLook::Tune(TEXT("pool"),2.f);
+    // Floor fill (blind review 1: "the floor under the hero is a void"): a wide, cool, unshadowed spot that
+    // rides above the camera and looks down at the floor ahead, so the paving in front of the knight never
+    // falls to black. Court channel only, low specular so it adds no fake glints. -VeyrTune=floorfill=
+    FloorFillLight=NewObject<USpotLightComponent>(this,TEXT("RelitFloorFill"));
+    AddInstanceComponent(FloorFillLight);FloorFillLight->SetupAttachment(GetRootComponent());FloorFillLight->SetMobility(EComponentMobility::Movable);
+    FloorFillLight->SetIntensityUnits(ELightUnits::Candelas);FloorFillLight->SetIntensity(VeyrLook::Tune(TEXT("floorfill"),60.f));
+    FloorFillLight->SetLightColor(FLinearColor(.62f,.72f,1.f),false);FloorFillLight->SetAttenuationRadius(2600.f);
+    FloorFillLight->SetInnerConeAngle(20.f);FloorFillLight->SetOuterConeAngle(62.f);FloorFillLight->SetCastShadows(false);
+    FloorFillLight->SetSpecularScale(.35f);FloorFillLight->SetAffectGlobalIllumination(false);FloorFillLight->SetVolumetricScatteringIntensity(0.f);
+    FloorFillLight->RegisterComponent();
+    // Warm up-light under the dragon: the braziers' and the breath's light reaching its belly and legs.
+    DragonBellyLight=NewObject<UPointLightComponent>(this,TEXT("RelitDragonBellyGlow"));
+    AddInstanceComponent(DragonBellyLight);DragonBellyLight->SetupAttachment(GetRootComponent());DragonBellyLight->SetMobility(EComponentMobility::Movable);
+    DragonBellyLight->LightingChannels.bChannel0=false;DragonBellyLight->LightingChannels.bChannel1=false;DragonBellyLight->LightingChannels.bChannel2=true;
+    BellyBase=VeyrLook::Tune(TEXT("belly"),260.f);BellyBreath=VeyrLook::Tune(TEXT("bellybreath"),2200.f);BellyLevel=BellyBase;
+    DragonBellyLight->SetIntensityUnits(ELightUnits::Candelas);DragonBellyLight->SetIntensity(BellyBase);
+    DragonBellyLight->SetLightColor(FLinearColor(1.f,.55f,.25f),false);DragonBellyLight->SetAttenuationRadius(2200.f);
+    DragonBellyLight->SetSourceRadius(120.f);DragonBellyLight->SetCastShadows(false);DragonBellyLight->SetAffectGlobalIllumination(false);
+    DragonBellyLight->SetVolumetricScatteringIntensity(0.f);DragonBellyLight->RegisterComponent();
+    // Focal gate behind the dragon's usual ground (east gatehouse): a brighter warm niche the eye goes to.
+    {
+        auto* Gate=NewObject<USpotLightComponent>(this,TEXT("RelitFocalGate"));
+        AddInstanceComponent(Gate);Gate->SetupAttachment(GetRootComponent());Gate->SetMobility(EComponentMobility::Movable);
+        const FVector From(3100.f,0.f,1500.f),To(5050.f,0.f,420.f);
+        Gate->SetRelativeLocation(From);Gate->SetRelativeRotation((To-From).Rotation());
+        Gate->SetIntensityUnits(ELightUnits::Candelas);Gate->SetIntensity(VeyrLook::Tune(TEXT("gate"),2600.f));
+        Gate->SetLightColor(FLinearColor(1.f,.62f,.32f),false);Gate->SetAttenuationRadius(4200.f);
+        Gate->SetInnerConeAngle(10.f);Gate->SetOuterConeAngle(26.f);Gate->SetCastShadows(false);Gate->SetVolumetricScatteringIntensity(1.5f);
+        Gate->RegisterComponent();
+    }
+    BuildDepthDressing();
+
     for(int32 I=0;I<UE_ARRAY_COUNT(Pools);++I)
     {
         auto* Pool=NewObject<USpotLightComponent>(this,FName(*FString::Printf(TEXT("RelitFloorPool%d"),I)));
@@ -136,7 +168,7 @@ void AVeyrArena::BuildRelitLighting()
     AddInstanceComponent(Fog);Fog->SetupAttachment(GetRootComponent());Fog->SetRelativeLocation(FVector(0,0,-150));
     Fog->SetFogDensity(VeyrLook::Tune(TEXT("fog"),.020f));Fog->SetFogHeightFalloff(.30f);Fog->SetStartDistance(0.f);Fog->SetFogMaxOpacity(.97f);
     Fog->SetFogInscatteringColor(FLinearColor(.020f,.025f,.035f)*VeyrLook::Tune(TEXT("fogcolor"),1.f));
-    Fog->SetSecondFogDensity(VeyrLook::Tune(TEXT("fog2"),.012f));Fog->SetSecondFogHeightOffset(240.f);Fog->SetSecondFogHeightFalloff(1.2f);
+    Fog->SetSecondFogDensity(VeyrLook::Tune(TEXT("fog2"),.02f));Fog->SetSecondFogHeightOffset(240.f);Fog->SetSecondFogHeightFalloff(1.2f);
     Fog->SetVolumetricFog(true);Fog->SetVolumetricFogScatteringDistribution(.45f);
     Fog->SetVolumetricFogAlbedo(FColor(230,218,205));Fog->SetVolumetricFogExtinctionScale(VeyrLook::Tune(TEXT("fogext"),.9f));
     Fog->SetVolumetricFogDistance(9000.f);
@@ -152,18 +184,18 @@ void AVeyrArena::BuildRelitLighting()
     // 1.6 stops darker than build 16's manual exposure; 3.5 EV100 gives about 4 stops.
     S.bOverride_AutoExposureMethod=true;S.AutoExposureMethod=AEM_Histogram;
     S.bOverride_AutoExposureApplyPhysicalCameraExposure=true;S.AutoExposureApplyPhysicalCameraExposure=false;
-    S.bOverride_AutoExposureBias=true;S.AutoExposureBias=VeyrLook::Tune(TEXT("bias"),-.4f);
+    S.bOverride_AutoExposureBias=true;S.AutoExposureBias=VeyrLook::Tune(TEXT("bias"),-.1f);
     S.bOverride_AutoExposureMinBrightness=true;S.AutoExposureMinBrightness=VeyrLook::Tune(TEXT("evmin"),-3.5f);
     S.bOverride_AutoExposureMaxBrightness=true;S.AutoExposureMaxBrightness=VeyrLook::Tune(TEXT("evmax"),3.5f);
-    S.bOverride_AutoExposureLowPercent=true;S.AutoExposureLowPercent=VeyrLook::Tune(TEXT("lowpct"),65.f);
-    S.bOverride_AutoExposureHighPercent=true;S.AutoExposureHighPercent=VeyrLook::Tune(TEXT("highpct"),95.f);
+    S.bOverride_AutoExposureLowPercent=true;S.AutoExposureLowPercent=VeyrLook::Tune(TEXT("lowpct"),50.f);
+    S.bOverride_AutoExposureHighPercent=true;S.AutoExposureHighPercent=VeyrLook::Tune(TEXT("highpct"),88.f);
     S.bOverride_AutoExposureSpeedUp=true;S.AutoExposureSpeedUp=2.f;
     S.bOverride_AutoExposureSpeedDown=true;S.AutoExposureSpeedDown=1.2f;
     S.bOverride_HistogramLogMin=true;S.HistogramLogMin=-8.f;
     S.bOverride_HistogramLogMax=true;S.HistogramLogMax=8.f;
-    S.bOverride_LocalExposureHighlightContrastScale=true;S.LocalExposureHighlightContrastScale=VeyrLook::Tune(TEXT("lehc"),.75f);
+    S.bOverride_LocalExposureHighlightContrastScale=true;S.LocalExposureHighlightContrastScale=VeyrLook::Tune(TEXT("lehc"),1.f);
     S.bOverride_LocalExposureShadowContrastScale=true;S.LocalExposureShadowContrastScale=VeyrLook::Tune(TEXT("lesc"),.8f);
-    S.bOverride_BloomIntensity=true;S.BloomIntensity=VeyrLook::Tune(TEXT("bloom"),.45f);
+    S.bOverride_BloomIntensity=true;S.BloomIntensity=VeyrLook::Tune(TEXT("bloom"),.75f);
     S.bOverride_VignetteIntensity=true;S.VignetteIntensity=VeyrLook::Tune(TEXT("vignette"),.38f);
     S.bOverride_ColorContrast=true;const float Contrast=VeyrLook::Tune(TEXT("contrast"),1.08f);S.ColorContrast=FVector4(Contrast,Contrast,Contrast,1.f);
     S.bOverride_ColorSaturation=true;const float Saturation=VeyrLook::Tune(TEXT("sat"),.95f);S.ColorSaturation=FVector4(Saturation,Saturation,Saturation,1.f);
@@ -171,8 +203,8 @@ void AVeyrArena::BuildRelitLighting()
     S.ColorGainShadows=FVector4(1.f-.07f*Split,1.f-.03f*Split,1.f+.08f*Split,1.f);
     S.bOverride_ColorGainHighlights=true;S.ColorGainHighlights=FVector4(1.f+.06f*Split,1.f,1.f-.08f*Split,1.f);
     S.bOverride_FilmToe=true;S.FilmToe=VeyrLook::Tune(TEXT("toe"),.60f);
-    S.bOverride_MotionBlurAmount=true;S.MotionBlurAmount=VeyrLook::MotionBlur()?VeyrLook::Tune(TEXT("mb"),.35f):0.f; // -VeyrNoMotionBlur
-    S.bOverride_MotionBlurMax=true;S.MotionBlurMax=3.f;
+    S.bOverride_MotionBlurAmount=true;S.MotionBlurAmount=VeyrLook::MotionBlur()?VeyrLook::Tune(TEXT("mb"),.18f):0.f; // -VeyrNoMotionBlur
+    S.bOverride_MotionBlurMax=true;S.MotionBlurMax=VeyrLook::Tune(TEXT("mbmax"),1.5f); // blind review: one smeared frame
     S.bOverride_MotionBlurPerObjectSize=true;S.MotionBlurPerObjectSize=0.f;
     CourtGrade->RegisterComponent();
     Ambient->RecaptureSky();
@@ -240,6 +272,55 @@ void AVeyrArena::AimRelitRims()
     if(DragonKeyLight)DragonKeyLight->SetWorldRotation(FRotator(DragonKeyPitch,CameraYaw+DragonKeyYaw,0));
     if(KnightKeyLight)KnightKeyLight->SetWorldRotation(FRotator(KnightKeyPitch,CameraYaw+KnightKeyYaw,0));
     if(KnightKeyLight&&!ChannelSplitDragon.IsValid())SplitDragonLightingChannel();
+    if(FloorFillLight)
+    {
+        const FVector Eye=PC->PlayerCameraManager->GetCameraLocation();
+        FloorFillLight->SetWorldLocationAndRotation(Eye+FVector(0,0,500.f),FRotator(-72.f,CameraYaw,0));
+    }
+    if(DragonBellyLight)
+        if(const AVeyrDragon* Dragon=Cast<AVeyrDragon>(ChannelSplitDragon.Get()))
+        {
+            const bool bBreath=Dragon->Move==EVeyrDragonMove::Fire&&Dragon->State==EVeyrDragonState::Active;
+            const float Dt=GetWorld()->GetDeltaSeconds();
+            BellyLevel=FMath::FInterpTo(BellyLevel,bBreath?BellyBase+BellyBreath:BellyBase,Dt,bBreath?10.f:3.f);
+            FVector At=Dragon->GetActorLocation();At.Z=70.f;
+            DragonBellyLight->SetWorldLocation(At);DragonBellyLight->SetIntensity(BellyLevel*(1.f+.08f*FMath::Sin(GetWorld()->GetTimeSeconds()*17.f)));
+        }
+}
+
+void AVeyrArena::BuildDepthDressing()
+{
+    // Blind review 1: "one flat wall at one distance". Silhouettes in front of the lit walls, all from the
+    // project's own Tripo kit, collision off, at the court edges outside the fight (the dragon roams about
+    // 20 m round the centre; these stand 35-43 m out). -VeyrNoDepthDressing keeps the open court.
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDepthDressing")))return;
+    auto Load=[](const TCHAR* Name){return LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/ArtPass/Tripo/%s/SM_%s.SM_%s"),Name,Name,Name),nullptr,LOAD_Quiet|LOAD_NoWarn);};
+    UStaticMesh* Arch=Load(TEXT("CathedralArch_v001"));
+    UStaticMesh* Buttress=Load(TEXT("PolishCornerButtress_v001"));
+    UStaticMesh* Niche=Load(TEXT("PolishFuneraryEffigyNiche_v001"));
+    int32 Count=0;
+    auto Piece=[&](UStaticMesh* Mesh,const FVector& At,float Height,float Yaw)
+    {
+        if(!Mesh)return;
+        const FBox B=Mesh->GetBoundingBox();const float S=Height/FMath::Max(1.f,static_cast<float>(B.GetSize().Z));
+        auto* C=NewObject<UStaticMeshComponent>(this,FName(*FString::Printf(TEXT("RelitDepthPiece%02d"),Count++)));
+        AddInstanceComponent(C);C->SetupAttachment(GetRootComponent());C->SetMobility(EComponentMobility::Movable);C->SetStaticMesh(Mesh);
+        C->SetCollisionEnabled(ECollisionEnabled::NoCollision);C->SetCanEverAffectNavigation(false);C->SetCastShadow(true);
+        const FRotator R(0,Yaw,0);
+        C->SetRelativeScale3D(FVector(S));C->SetRelativeRotation(R);
+        C->SetRelativeLocation(At-R.RotateVector(FVector(B.GetCenter().X,B.GetCenter().Y,B.Min.Z)*S));
+        C->RegisterComponent();
+    };
+    for(float Side:{-1.f,1.f})
+    {
+        // Broken arches along the long walls, between the braziers, read as a dark arcade against the lit wall.
+        for(float X:{-1550.f,1550.f})Piece(Arch,FVector(X,Side*3550.f,0),VeyrLook::Tune(TEXT("archh"),950.f),Side>0?180.f:0.f);
+        // Buttress piers in the four corners.
+        for(float X:{-4250.f,4250.f})Piece(Buttress,FVector(X,Side*3650.f,0),1100.f,Side*(X>0?45.f:135.f));
+        // Effigy niches flanking the focal gate.
+        Piece(Niche,FVector(4550.f,Side*1500.f,0),620.f,-90.f);
+    }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_LOOK_DEPTH_PIECES %d"),Count);
 }
 
 void AVeyrArena::SplitDragonLightingChannel()
