@@ -41,6 +41,9 @@ g_rel = (tuple(scale['rotation_xyzw']), tuple(scale['translation_cm']), float(sc
 knight = unreal.load_asset(g.KNIGHT_DEFINITION)
 k_rel = g.from_unreal(knight.get_editor_property('mesh_relative_transform'))
 grey_mesh = unreal.load_asset(g.GREYSTONE_MESH)
+# Shown skin: the owner's pick (Novaborn, gold energy) when the skin step made it; --set mesh=<path> overrides.
+shown_path = opts.get('mesh') or (g.OWNER_SKIN_MESH if library.does_asset_exist(g.OWNER_SKIN_MESH) else g.GREYSTONE_MESH)
+shown_mesh = unreal.load_asset(shown_path)
 k_world = g.reference_world(knight.get_editor_property('skeletal_mesh'))
 g_world = g.reference_world(grey_mesh)
 
@@ -190,7 +193,7 @@ for key, path in g.PARAGON_EXTRA.items():
     prop(clip, 'b_loop', key != 'ParagonAttackPrimaryA', True)
     clip.set_editor_property('approved_source_file', path + ' (Epic Paragon: Greystone, native)')
     clips[key] = clip
-definition.set_editor_property('skeletal_mesh', grey_mesh)
+definition.set_editor_property('skeletal_mesh', shown_mesh)
 definition.set_editor_property('mesh_relative_transform', g.to_unreal(g_rel))
 definition.set_editor_property('clips', clips)
 props = knight.get_editor_property('props')
@@ -219,8 +222,8 @@ def hand_offset(k_offset, k_bone='LeftHand', g_bone='hand_l'):
 targets = {'head': target('head'), 'weapon_hand': target('hand_r'), 'left_foot': target('ball_l'),
            'right_foot': target('ball_r'), 'cup_socket': target('ik_hand_gun')}
 bottom = g.from_unreal(g_world['sword_bottom'])
-s_lo = g.socket_world(grey_mesh, 'FX_Sword_Bottom', g_world)
-s_hi = g.socket_world(grey_mesh, 'FX_Sword_Top', g_world)
+s_lo = g.socket_world(shown_mesh, 'FX_Sword_Bottom', g_world) or g.socket_world(grey_mesh, 'FX_Sword_Bottom', g_world)
+s_hi = g.socket_world(shown_mesh, 'FX_Sword_Top', g_world) or g.socket_world(grey_mesh, 'FX_Sword_Top', g_world)
 lo = g.from_unreal(s_lo)[1] if s_lo else bottom[1]
 hi = g.from_unreal(s_hi)[1] if s_hi else g.from_unreal(g_world['sword_top'])[1]
 for name, share in (('weapon_base', .28), ('weapon_tip', 1.0)):
@@ -252,7 +255,7 @@ definition.set_editor_property('source_sha256', g.sha256(g.package_file(g.GREYST
 errors = [str(e) for e in definition.validate_definition(len([k for k in g.KNIGHT_CLIPS if k in clips]) == 64)]
 (out / 'native-timing.json').write_text(json.dumps(native_receipt, indent=1) + '\n')
 library.save_loaded_asset(definition)
-receipt = {'definition': g.DEFINITION, 'clips': sorted(clips), 'missingKnightKeys': [k for k in g.KNIGHT_CLIPS if k not in clips],
+receipt = {'definition': g.DEFINITION, 'shownMesh': shown_path, 'clips': sorted(clips), 'missingKnightKeys': [k for k in g.KNIGHT_CLIPS if k not in clips],
            'meshRelativeTransform': {'rotation_xyzw': list(g_rel[0]), 'translation_cm': list(g_rel[1]), 'scale': g_rel[2]},
            'boneTargets': {k: str(v.get_editor_property('bone_name')) for k, v in targets.items()},
            'shieldBackLocal': {'rotation_xyzw': list(back_local[0]), 'translation_cm': list(back_local[1])},

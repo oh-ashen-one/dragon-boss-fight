@@ -28,6 +28,9 @@ SKINS = {
     'Tough': PACK + '/Characters/Heroes/Greystone/Skins/Tough/Meshes/Greystone_Tough',
     'WhiteTiger': PACK + '/Characters/Heroes/Greystone/Skins/WhiteTiger/Meshes/Greystone_WhiteTiger',
 }
+# Owner's pick = Novaborn with its energy turned gold (thumbnail identification 2026-11-19, see novaborn_gold.py).
+NOVABORN_MESH = SKINS['Novaborn']
+OWNER_SKIN_MESH = '/Game/Characters/Greystone/Runtime/SK_Greystone_NovabornGold'
 OURS = '/Game/Characters/Greystone'
 RIGS = OURS + '/Rigs'
 ANIMS = OURS + '/Anims'
