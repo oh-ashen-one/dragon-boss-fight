@@ -1236,7 +1236,11 @@ void AVeyrKnight::UpdateCameraOcclusion(float DeltaSeconds)
         CameraHiddenParts.Empty();CameraHiddenProxyParts=0;
         const FVector Chest=GetFootLocation()+FVector(0,0,160.f);
         const FVector Focus=Boss->IsHeadExposed()?FMath::Lerp(Chest,Boss->GetHeadLocation(),.8f):Chest;
-        Boss->SetViewOcclusion(CombatCamera->GetComponentLocation(),Focus,true);
+        // Second pass (2026-11-18): no see-through hole in the dragon; the camera arm keeps the knight in
+        // sight instead (owner: "you can sometimes see through it ... That should never happen!").
+        // -VeyrLegacyCutThrough restores the dithered cut-through.
+        static const bool bLegacyCutThrough=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCutThrough"));
+        Boss->SetViewOcclusion(CombatCamera->GetComponentLocation(),Focus,bLegacyCutThrough);
         return;
     }
 

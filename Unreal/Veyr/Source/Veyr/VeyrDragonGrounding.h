@@ -1,4 +1,5 @@
 #pragma once
+#include "UObject/ObjectKey.h"
 #include "CoreMinimal.h"
 
 class AVeyrDragon;
@@ -47,6 +48,36 @@ private:
     struct FPoint { int32 Foot=0; FInfluence Influences[4]; };
     TArray<FPoint> Points;
     bool bReady=false;
+};
+
+/**
+ * A2 (2026-11-18): the dragon's skin as 1500 boom spheres plus 5000 denser samples with normals (VeyrDragonHullPoints.inl: farthest-point samples of
+ * the shipped mesh, wings and body separately), skinned with the evaluated pose. The bone-only wing model
+ * missed the membranes by a median 135 cm (1x), so the camera arm keeps clear of these instead.
+ */
+class FVeyrHullModel
+{
+public:
+    bool Initialize(UVeyrSkeletalPresentation* Presentation);
+    bool IsReadyFor(const UVeyrSkeletalPresentation* Presentation) const;
+    /** Camera boom spheres for the current pose: world centres (XYZ) and radii (W). */
+    bool Skin(UVeyrSkeletalPresentation* Presentation,TArray<FVector4>& Out) const;
+    /** Every body skin sample (boom + dense) with its skinned outward normal, world space. Wing samples are
+     * left out: the membranes are open sheets, so the far side of one is not inside anything. */
+    bool SkinSurface(UVeyrSkeletalPresentation* Presentation,TArray<FVector>& OutPositions,TArray<FVector>& OutNormals) const;
+    int32 BoomCount() const { return FMath::Min(BoomPoints,Points.Num()); }
+    int32 BoomWingCount() const { return BoomWing; }
+    FString Diagnostic;
+private:
+    struct FInfluence { int32 Bone=INDEX_NONE; float Weight=0.f; FVector BoneLocal=FVector::ZeroVector,NormalLocal=FVector::ZeroVector; };
+    struct FPoint { float Radius=0.f; bool bWing=false; FInfluence Influences[4]; };
+    TArray<FPoint> Points;
+    int32 BoomPoints=0,BoomWing=0;
+    TWeakObjectPtr<const USkeletalMesh> FittedMesh;
+    /** Fit per mesh, kept across the clip mesh-variant switches (Stomp/Tail swap meshes every state): refitting
+     * 6500 samples on each switch cost 60-250 ms frames and cut the showcase Tail clips short. */
+    TMap<TObjectKey<USkeletalMesh>,TArray<FPoint>> FitCache;
+    bool Fit(const USkeletalMesh* Mesh,TArray<FPoint>& Out);
 };
 
 /** Which grounding rule the dragon's current state wants. Reads only public dragon state. */
