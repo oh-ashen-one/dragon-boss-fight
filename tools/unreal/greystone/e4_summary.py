@@ -89,7 +89,7 @@ def main():
     else:
         out = [s for r in a.runs for s in run(r)]
         for s in out:
-            print(json.dumps({k: v for k, v in s.items() if k not in ('folder',)}, default=str)[:1500])
+            print(json.dumps({k: v for k, v in s.items() if k not in ('folder',)}, default=str))
     if a.json:
         a.json.write_text(json.dumps(out, indent=1, default=str) + '\n')
 
