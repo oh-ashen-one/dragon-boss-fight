@@ -43,6 +43,10 @@ private:
     // holds one fixed camera angle relative to the dragon's facing (side-on 90 deg, three-quarter 45 deg).
     bool bMovesMode=false;
     float FixedCameraAngle=-1000.f;
+    // Round 2: root tracks carry the dragon through each knock-down (intended). The default showcase puts it back
+    // where the first Stagger chapter began before every Stagger and Death chapter so the fitted stations stay inside
+    // the court (-VeyrShowcaseNoRecentre turns this off; the moves proof never re-centres).
+    FVector ChapterHome=FVector::ZeroVector;bool bChapterHomeSet=false;float LastRecentreCm=0.f;
     bool BeginStep(float Elapsed);
     void FrameShot();
     void ObserveFrame();

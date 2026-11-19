@@ -141,6 +141,20 @@ bool FVeyrShowcase::BeginStep(float Elapsed)
     {bDone=true;Hooks.Finish(true,TEXT("Every-move rehearsal completed with native clip/state coverage; not a combat victory"));return false;}
     Seen.Reset();States.Reset();FlightFireFrames=0;MinimumCornersVisible=1.f;FrustumMissFrames=ObstructedFrames=0;
     FString Error;
+    LastRecentreCm=0.f;
+    {
+        const FString StepName=Steps[StepIndex].Name.ToString();
+        if(!bMovesMode&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrShowcaseNoRecentre"))&&(StepName.StartsWith(TEXT("Stagger"))||StepName==TEXT("Death")))
+        {
+            if(!bChapterHomeSet){ChapterHome=Dragon->GetActorLocation();bChapterHomeSet=true;}
+            else
+            {
+                FVector Home=ChapterHome;Home.Z=Dragon->GetActorLocation().Z;
+                LastRecentreCm=static_cast<float>(FVector::Dist2D(Home,Dragon->GetActorLocation()));
+                Dragon->SetActorLocation(Home,false,nullptr,ETeleportType::TeleportPhysics);
+            }
+        }
+    }
     if(!Dragon->StartShowcaseSegment(Steps[StepIndex].Name,Error))
     {bDone=true;Hooks.Finish(false,Error);return false;}
     StepStarted=Elapsed;bResting=false;
@@ -321,7 +335,7 @@ void FVeyrShowcase::Tick(float,float Elapsed)
     auto Row=MakeShared<FJsonObject>();Row->SetStringField(TEXT("segment"),Steps[StepIndex].Name.ToString());
     Row->SetNumberField(TEXT("startSeconds"),StepStarted);Row->SetNumberField(TEXT("endSeconds"),Elapsed);Row->SetBoolField(TEXT("passed"),Passed);
     Row->SetNumberField(TEXT("flightFireDownFrames"),FlightFireFrames);Row->SetNumberField(TEXT("minimumAnatomicalSupportsFramed"),MinimumCornersVisible);
-    Row->SetNumberField(TEXT("frustumMissFrames"),FrustumMissFrames);Row->SetNumberField(TEXT("obstructedFrames"),ObstructedFrames);
+    Row->SetNumberField(TEXT("recentredCm"),LastRecentreCm);Row->SetNumberField(TEXT("frustumMissFrames"),FrustumMissFrames);Row->SetNumberField(TEXT("obstructedFrames"),ObstructedFrames);
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();for(const auto& P:Seen){auto C=MakeShared<FJsonObject>();C->SetNumberField(TEXT("frames"),P.Value.Frames);C->SetNumberField(TEXT("framedFrames"),P.Value.FramedFrames);C->SetNumberField(TEXT("minPhase"),P.Value.Min);C->SetNumberField(TEXT("maxPhase"),P.Value.Max);Clips->SetObjectField(P.Key.ToString(),C);}Row->SetObjectField(TEXT("clips"),Clips);
     Chapters.Add(MakeShared<FJsonValueObject>(Row));Hooks.Event(TEXT("showcase_end_")+Steps[StepIndex].Name.ToString());
     if(!Passed){bDone=true;Hooks.Finish(false,TEXT("Showcase did not cover required clip phases/states: ")+Steps[StepIndex].Name.ToString());return;}
