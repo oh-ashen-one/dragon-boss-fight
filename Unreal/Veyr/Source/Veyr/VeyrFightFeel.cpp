@@ -739,7 +739,7 @@ void AVeyrFightFeel::AddStrikes(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotation
         FRotator& Slot=Rotations.FindOrAdd(Bone);Slot=ClampBoneRotation(Delta*Slot.Quaternion());++StrikeBonesApplied;
     };
     float Peak=0.f;
-    for(const FStrike& S:Strikes)
+    for(FStrike& S:Strikes)
     {
         if(S.Age>=T.StrikeLifeSeconds||S.Region<0)continue;
         const float C=Curve(S.Age);
