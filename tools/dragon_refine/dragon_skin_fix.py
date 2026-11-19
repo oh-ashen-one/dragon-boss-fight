@@ -26,9 +26,9 @@ def main():
     ap.add_argument('--rig', required=True); ap.add_argument('--clips', nargs='+', required=True)
     ap.add_argument('--output', type=Path, required=True); ap.add_argument('--report', type=Path, required=True)
     ap.add_argument('--limit', type=float, default=0.02); ap.add_argument('--rings', type=int, default=6)
-    ap.add_argument('--fps', type=float, default=4); ap.add_argument('--smooth', type=float, default=0.05)
+    ap.add_argument('--fps', type=float, default=2); ap.add_argument('--flight-fps', type=float, default=8); ap.add_argument('--smooth', type=float, default=0.05)
     ap.add_argument('--iterations', type=int, default=240); ap.add_argument('--toe-share', type=float, default=0.5)
-    ap.add_argument('--no-paw', action='store_true'); ap.add_argument('--no-wings', action='store_true')
+    ap.add_argument('--power', type=float, default=2.0); ap.add_argument('--flight-weight', type=float, default=1.0); ap.add_argument('--base-weights', type=Path, help='start from this NPZ (e.g. a finished wing fit) instead of the shipped weights'); ap.add_argument('--no-paw', action='store_true'); ap.add_argument('--no-wings', action='store_true')
     a = ap.parse_args()
     rig = ss.Clip(a.rig); clips = [ss.Clip(f) for f in a.clips]
     for c in clips:
@@ -36,6 +36,9 @@ def main():
     h = rig.P[:, 1].max() - rig.P[:, 1].min(); names = rig.names
     report = dict(rig=str(a.rig), clips=[str(c.path) for c in clips], args={k: v for k, v in vars(a).items() if k not in ('clips',)}, heightGltf=float(h))
     J, W = rig.J.copy(), rig.W.copy()
+    if a.base_weights:
+        d = np.load(a.base_weights); assert [str(x) for x in d['names']] == names
+        J, W = d['joints'].astype(int), d['weights'].astype(np.float64); report['baseWeights'] = str(a.base_weights)
     if not a.no_wings:
         roots = [names.index('VeyrWingNegZRoot'), names.index('VeyrWingPosZRoot')]
         dom = rig.J[np.arange(len(rig.J)), rig.W.argmax(1)]
@@ -45,15 +48,17 @@ def main():
         bad = np.flatnonzero((worst > a.limit * h) & np.isin(dom[rig.I], roots).any(1))
         seeds = np.unique(rig.I[bad].ravel())
         fit = sf.Fit(rig, rig.J, rig.W, seeds, rings=a.rings, candidates=8)
-        ct = [(c, c.times(a.fps)) for c in clips]
+        ct = [(c, c.times(a.flight_fps if any(k in c.path.name for k in ('Takeoff', 'FlyHover', 'Land_')) else a.fps)) for c in clips]
         fit.frames(ct)
         off = 0; neutral = []
+        isflight = np.concatenate([np.full(len(ts), any(k in c.path.name for k in ('Takeoff', 'FlyHover', 'Land_'))) for c, ts in ct])
+        fw = np.where(isflight, a.flight_weight, 1.0)
         for c, ts in ct:
             if 'idle' in c.path.name.lower(): neutral += list(range(off, off + len(ts), 4))
             off += len(ts)
         t0 = time.time()
-        w = fit.solve(h, smooth=a.smooth, stay=0.002, iterations=a.iterations, lr=0.02, neutral=neutral)
-        w = fit.solve(h, smooth=a.smooth, stay=0.002, iterations=a.iterations // 2, lr=0.01, mask=fit.four(w), w0=w, neutral=neutral)
+        w = fit.solve(h, smooth=a.smooth, stay=0.002, iterations=a.iterations, lr=0.02, neutral=neutral, power=a.power, frame_weight=fw)
+        w = fit.solve(h, smooth=a.smooth, stay=0.002, iterations=a.iterations // 2, lr=0.01, mask=fit.four(w), w0=w, neutral=neutral, power=a.power, frame_weight=fw)
         J2, W2 = fit.result(w)
         keep = ~fit.free[fit.inv]; J2[keep] = rig.J[keep]; W2[keep] = rig.W[keep]
         J, W = J2, W2
@@ -64,7 +69,7 @@ def main():
         J, W, info = sp.paw_weights(rig.P, J.astype(int), W.astype(np.float64), names, toe_scale=a.toe_share)
         report['paw'] = info
     np.savez(a.output, joints=J.astype(np.uint16), weights=W.astype(np.float32), names=np.array(names))
-    a.report.write_text(json.dumps(report, indent=1) + '\n')
+    a.report.write_text(json.dumps(report, indent=1, default=str) + '\n')
     print('WROTE', a.output, json.dumps(report.get('wings', {})), json.dumps(report.get('paw', {})))
 
 

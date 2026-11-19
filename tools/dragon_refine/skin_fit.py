@@ -95,7 +95,7 @@ class Fit:
         out[:, ~inr] = self.F[:, self.fpos[idx[~inr]]]
         return out
 
-    def solve(self, height, margin=0.0, smooth=2.0, stay=0.02, iterations=600, lr=0.02, mask=None, w0=None, neutral=()):
+    def solve(self, height, margin=0.0, smooth=2.0, stay=0.02, iterations=600, lr=0.02, mask=None, w0=None, neutral=(), power=2.0, frame_weight=None):
         R = self.R; e = self.e
         if mask is None: mask = self.cmask
         W0 = np.take_along_axis(self.D0[R], self.cand, 1)
@@ -116,7 +116,9 @@ class Fit:
             d = xa - xb; ln = np.linalg.norm(d, axis=2) + 1e-12
             h = np.maximum(ln - (1 + margin) * self.L, 0)
             u = d / ln[..., None]
-            gx = (2 * scale / Xr.shape[0]) * h[..., None] * u  # dLoss/dxa ; dLoss/dxb = -gx (mean over frames)
+            # hinge^power (power > 2 leans on the worst triangles); frame_weight lets flight frames count more
+            fw = (np.ones(Xr.shape[0]) if frame_weight is None else frame_weight)[:, None, None] / Xr.shape[0]
+            gx = ((power * scale) * fw[:, :, 0] * (h / (0.02 * height)) ** (power - 2) * h)[..., None] * u  # extra factor is 1 at the 2 % limit  # dLoss/dxa ; dLoss/dxb = -gx
             G = np.zeros((Xr.shape[0], len(R), 3), np.float32)
             np.add.at(G, (slice(None), self.pos[a[ra]]), gx[:, ra])
             np.add.at(G, (slice(None), self.pos[b[rb]]), -gx[:, rb])
@@ -139,6 +141,7 @@ class Fit:
             rate = lr * (1 - 0.9 * it / max(iterations - 1, 1))
             w = project_simplex(w - rate * mt / max(float(np.abs(mt).max()), 1e-12), mask)
             if it % 100 == 0 or it == iterations - 1:
+                print('fit it', it, 'stretch loss', round(float((h * h).sum() * scale / Xr.shape[0]), 4), 'worst %', round(float(h.max() / height * 100), 2), flush=True)
                 self.last = dict(it=it, stretchLoss=float((h * h).sum() * scale), worstPct=float(h.max() / height * 100) if margin == 0 else None)
         return w
 
