@@ -477,7 +477,11 @@ private:
         FVector P[4][3];bool bValid[4]={false,false,false,false};int32 SinceSwitch=100;FName LastClip;FName SwitchFrom,SwitchTo;
         int32 Frames=0,Switches=0,CrossFaded=0,UnposedFrames=0,FallbackFrames=0;float MaxPopCm=0.f,MaxGripDeviationCm=0.f,BindGripCm=-1.f;
         FString MaxPopAt,MaxGripClip;TMap<FString,float> PopOver20;
+        // Same points in the presentation mesh's own frame (body turn and capsule motion removed): true pose pops only.
+        FVector L[4][3];float MaxLocalPopCm=0.f;FString MaxLocalPopAt;TMap<FString,float> LocalPopOver20;
     };
+    // -VeyrKnightMonitor: run the same monitor on the old knight (like-for-like baseline); visual measurement only.
+    static bool KnightMonitorRequested();
     // Process-wide: a scenario's restart check spawns a fresh knight, and the evidence is written from that one, so the
     // monitor spans every Greystone knight of the run (the four-frame ring resets when the knight changes).
     FGreystoneMonitor& GreystoneMonitorShared() const;

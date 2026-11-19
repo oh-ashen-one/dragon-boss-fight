@@ -1646,7 +1646,7 @@ void AVeyrKnight::UpdateEquippedWeapon()
 void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
 {
     if(!bImportedPresentationActive||!ImportedPresentation||!CustomuseVisualDefinition)return;
-    if(bGreystoneActive)MonitorGreystoneFrame(); // the pose shown last frame, before this frame's sample
+    if(bGreystoneActive||KnightMonitorRequested())MonitorGreystoneFrame(); // the pose shown last frame, before this frame's sample
     // Detect contacts on the sourced/blended pose, not last frame's IK result.
     ImportedPresentation->ClearFootTargets();
     if(bGreystoneActive)UpdateGreystoneProps();
@@ -2570,6 +2570,12 @@ AVeyrKnight::FGreystoneMonitor& AVeyrKnight::GreystoneMonitorShared() const
     return Monitor;
 }
 
+bool AVeyrKnight::KnightMonitorRequested()
+{
+    static const bool bOn=FParse::Param(FCommandLine::Get(),TEXT("VeyrKnightMonitor"));
+    return bOn;
+}
+
 void AVeyrKnight::MonitorGreystoneFrame()
 {
     FGreystoneMonitor& M=GreystoneMonitorShared();
@@ -2580,9 +2586,10 @@ void AVeyrKnight::MonitorGreystoneFrame()
     // Points relative to the capsule: weapon hand, both toes.
     FTransform T[3];const TCHAR* Names[3]={TEXT("weapon_hand"),TEXT("left_foot"),TEXT("right_foot")};
     bool Ok=true;for(int32 I=0;I<3;++I)Ok&=P->GetBoneTargetWorldTransform(Names[I],T[I]);
-    for(int32 F=0;F<3;++F){for(int32 I=0;I<3;++I)M.P[F][I]=M.P[F+1][I];M.bValid[F]=M.bValid[F+1];}
+    for(int32 F=0;F<3;++F){for(int32 I=0;I<3;++I){M.P[F][I]=M.P[F+1][I];M.L[F][I]=M.L[F+1][I];}M.bValid[F]=M.bValid[F+1];}
     const FVector C=GetActorLocation();
-    for(int32 I=0;I<3;++I)M.P[3][I]=Ok?T[I].GetLocation()-C:FVector::ZeroVector;
+    const FTransform MeshX=P->GetComponentTransform();
+    for(int32 I=0;I<3;++I){M.P[3][I]=Ok?T[I].GetLocation()-C:FVector::ZeroVector;M.L[3][I]=Ok?MeshX.InverseTransformPosition(T[I].GetLocation())*MeshX.GetScale3D().X:FVector::ZeroVector;}
     M.bValid[3]=Ok;
     const FName Clip=RequestedPresentationClip;
     if(!M.LastClip.IsNone()&&Clip!=M.LastClip)
@@ -2600,6 +2607,10 @@ void AVeyrKnight::MonitorGreystoneFrame()
             const float Pop=FMath::Min(FVector::Dist(S1,S0),FVector::Dist(S1,S2));
             if(Pop>M.MaxPopCm){M.MaxPopCm=Pop;M.MaxPopAt=FString::Printf(TEXT("%s->%s %s"),*M.SwitchFrom.ToString(),*M.SwitchTo.ToString(),Names[I]);}
             if(Pop>20.f){float& W=M.PopOver20.FindOrAdd(M.SwitchFrom.ToString()+TEXT("->")+M.SwitchTo.ToString());W=FMath::Max(W,Pop);}
+            const FVector L0=M.L[1][I]-M.L[0][I],L1=M.L[2][I]-M.L[1][I],L2=M.L[3][I]-M.L[2][I];
+            const float LocalPop=FMath::Min(FVector::Dist(L1,L0),FVector::Dist(L1,L2));
+            if(LocalPop>M.MaxLocalPopCm){M.MaxLocalPopCm=LocalPop;M.MaxLocalPopAt=FString::Printf(TEXT("%s->%s %s"),*M.SwitchFrom.ToString(),*M.SwitchTo.ToString(),Names[I]);}
+            if(LocalPop>20.f){float& W=M.LocalPopOver20.FindOrAdd(M.SwitchFrom.ToString()+TEXT("->")+M.SwitchTo.ToString());W=FMath::Max(W,LocalPop);}
         }
     // Sword seat: hand_r to sword_bottom distance against the bind pose.
     const FName Hand=VeyrBoneRoles::Resolve(P,EVeyrBoneRole::RightHand);
@@ -2624,7 +2635,7 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
     O->SetNumberField(TEXT("bladeContactRadiusCm"),BladeContactRadius);
     O->SetBoolField(TEXT("twoHanded"),bTwoHanded);
     if(!GreystoneDiagnostic.IsEmpty())O->SetStringField(TEXT("diagnostic"),GreystoneDiagnostic);
-    if(bGreystoneActive)
+    if(bGreystoneActive||KnightMonitorRequested())
     {
         const FGreystoneMonitor& M=GreystoneMonitorShared();TSharedRef<FJsonObject> F=MakeShared<FJsonObject>();
         F->SetNumberField(TEXT("frames"),M.Frames);F->SetNumberField(TEXT("unposedFrames"),M.UnposedFrames);
@@ -2634,6 +2645,9 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
         F->SetNumberField(TEXT("maxGripDeviationCm"),M.MaxGripDeviationCm);F->SetStringField(TEXT("maxGripClip"),M.MaxGripClip);
         TSharedRef<FJsonObject> Over=MakeShared<FJsonObject>();for(const auto& It:M.PopOver20)Over->SetNumberField(It.Key,It.Value);
         F->SetObjectField(TEXT("switchPopsOver20Cm"),Over);
+        F->SetNumberField(TEXT("maxLocalSwitchPopCm"),M.MaxLocalPopCm);F->SetStringField(TEXT("maxLocalSwitchPopAt"),M.MaxLocalPopAt);
+        TSharedRef<FJsonObject> LocalOver=MakeShared<FJsonObject>();for(const auto& It:M.LocalPopOver20)LocalOver->SetNumberField(It.Key,It.Value);
+        F->SetObjectField(TEXT("localSwitchPopsOver20Cm"),LocalOver);
         O->SetObjectField(TEXT("frameMonitor"),F);
     }
     return O;
