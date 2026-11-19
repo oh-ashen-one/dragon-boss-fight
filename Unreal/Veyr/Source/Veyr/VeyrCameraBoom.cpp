@@ -310,6 +310,19 @@ bool UVeyrCameraBoom::IsDragonOnScreen(const FVector& Camera,const FQuat& View,f
     return false;
 }
 
+bool UVeyrCameraBoom::KnightWholeInView(const FVector& Camera,const FQuat& View,float HorizontalFovDeg) const
+{
+    FVector KB,KT;float KR=0.f;
+    if(!KnightCapsule(KB,KT,KR))return true;
+    const float Aspect=ViewAspect();const FVector Right=View.GetRightVector(),Mid=(KB+KT)*.5;
+    for(const FVector& P:{KB-FVector::UpVector*KR,KT+FVector::UpVector*KR,Mid+Right*KR,Mid-Right*KR})
+    {
+        float U,V;
+        if(!ProjectToView(P,Camera,View,HorizontalFovDeg,Aspect,U,V)||FMath::Abs(U)>1.f||FMath::Abs(V)>1.f)return false;
+    }
+    return true;
+}
+
 bool UVeyrCameraBoom::PlacementOk(const FVector& P,const FVector& KBottom,const FVector& KTop,float KRadius,float MinDistance) const
 {
     if(FMath::PointDistToSegment(P,KBottom,KTop)<MinDistance)return false;
@@ -432,6 +445,8 @@ FVector UVeyrCameraBoom::FrameKnight(const FVector& Origin,const FVector& Base,c
     ViewCorrection=bViewCorrectionValid?FQuat::Slerp(ViewCorrection,Correction,FMath::Clamp(DeltaTime*10.f,0.f,1.f)):Correction;
     ViewCorrection.Normalize();bViewCorrectionValid=true;
     FramedView=ViewCorrection*ArmView;
+    // The eased view must still hold the whole knight; otherwise take the solved view at once.
+    if(!KnightWholeInView(Out,FramedView,Fov+FMath::Max(FovBoostDeg,Boost))){ViewCorrection=Correction;ViewCorrection.Normalize();FramedView=View;}
     FramedLookAt=LookAt;bFramedViewValid=true;
     FovBoostDeg=FMath::FInterpTo(FovBoostDeg,Boost,DeltaTime,4.f);
     if(FramedView.AngularDistance(ArmView)>FMath::DegreesToRadians(2.f))++ViewTurnFrames;

@@ -119,6 +119,7 @@ private:
     bool SegmentClearOfBareDragon(const FVector& A,const FVector& B,float Radius) const;
     /** Knight framing pass over the first-pass result; returns the final camera location. */
     FVector FrameKnight(const FVector& Origin,const FVector& Base,const FVector& Proposed,float DeltaTime);
+    bool KnightWholeInView(const FVector& Camera,const FQuat& View,float HorizontalFovDeg) const;
     bool PlacementOk(const FVector& P,const FVector& KBottom,const FVector& KTop,float KRadius,float MinDistance) const;
     /** View that keeps the knight whole in frame from Camera, starting from the arm's view; boost in degrees. */
     FQuat FrameView(const FVector& Camera,const FQuat& ArmView,const FVector& LookAt,float Fov,float& OutBoost) const;
