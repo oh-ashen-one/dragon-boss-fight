@@ -64,6 +64,9 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-19 03:38 | Sound slot, windowless, from its own worktree | sonnet-builder (the sound wiring agent) | lock | 2.5 h | running. Decided: 116 CC0 recordings go into git with the ledger; 26 generated takes stay local |
 | 11-19 03:38 | Greystone trial, windowless steps | opus-builder (the E agent) | lock | 2 h | running |
 | 11-19 03:40 | Disk: deleted yesterday's superseded stage folders, 10 old bundles, raw frame dumps older than 2 h and archives older than 3 h (films, numbers, receipts kept): 106 GB free to 420 GB | director | none | | done |
+| 11-19 04:06 | Camera, second approach (steady arm, swept pull-in) | opus-builder (the A1-A3 agent) | lock | | NOT met, not pushed (`fable/quality-goal-A123-camera3-steady-wip` `c9c73a3`): steadier, but 42 frames inside the dragon, 51 inside the knight, in frame 95.4 %. Causes named: body set is 3,500 skin samples with gaps to 108 cm; feel bounce moves the lens after placement; stepped lift; lens ends in his armour when boxed in |
+| 11-19 04:08 | Camera rewrite from a clean spec: per-bone boxes proven to enclose the drawn skin, one swept placement, offsets before the sweep, over-head fallback and knight hidden when boxed in, audit against true skin; windowless on 6 seeds before any film | opus-builder (new), Opus 5.5 high | lock | 3 h | running (`fable/quality-goal-camera4`, `~/veyr-quality-cam`) |
+| 11-19 04:10 | Picture slot: renderer features, relit courtyard, controls box, from its own worktree | opus-builder (the picture agent) | lock, rendered budget | 3.5 h | running |
 
 ## Spend
 
