@@ -12,6 +12,7 @@ import sys
 import tempfile
 from audit_bundle import repair_copy
 from metal_preflight import verify_metal_toolchain
+from engine_lock import engine_lock
 
 ROOT = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser(description=__doc__)
@@ -33,18 +34,21 @@ if not metal['success']:
         'packagingSucceeded':False,'exitCode':1,'stage':'metal-toolchain-preflight','apps':[],
         'nativePackagedGameplayVerified':False},indent=2)+'\n')
     raise SystemExit('Metal compiler/linker preflight failed; inspect the package metal-preflight.log before retrying')
-# Embed and verify the exact source identity in the native target first.
-build = subprocess.run([sys.executable, str(ROOT/'tools/unreal/build.py'), '--engine', str(engine), '--target', 'Veyr','--configuration',a.configuration], cwd=ROOT)
-if build.returncode:
-    raise SystemExit(build.returncode)
-# Use a fresh task-owned stage outside Documents/FileProvider. The source tree,
-# earlier stages and failed archives remain intact for recovery and diagnosis.
-stage_base=Path(tempfile.mkdtemp(prefix='veyr-stage-',dir='/private/tmp'))
-(stage_base/'veyr-stage-owner.json').write_text(json.dumps({'project':str(project.parent.resolve()),'receiptDirectory':str(receipt_dir.resolve())})+'\n')
-cooker_options = '-nullrhi -NoCrashReports -notraceserver -NoZenAutoLaunch -DDC=(EnginePak=InstalledEnginePak,Local) -LocalDataCachePath="' + str(project.parent/'DerivedDataCache') + '" -SkipZenStore'
-command = [str(engine/'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', '-project='+str(project), '-noP4', '-platform=Mac', '-clientconfig='+a.configuration, '-skipbuild', '-skipbuildeditor', '-cook', '-map=/Game/Maps/VeyrArena', '-stage', '-stagingdirectory='+str(stage_base), '-pak', '-archive', '-archivedirectory='+str(archive), '-unattended', '-utf8output', '-AdditionalCookerOptions='+cooker_options]
-with (receipt_dir/'package.log').open('w') as output:
-    result = subprocess.run(command, cwd=ROOT, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
+# One machine-wide engine lock across the whole build and cook (build.py inside re-enters it through VEYR_ENGINE_LOCK_HELD);
+# the Metal preflight above and the bundle repair below are not engine processes and run outside it.
+with engine_lock('package ' + a.configuration + ' ' + ROOT.name, tree=ROOT) as lock:
+    # Embed and verify the exact source identity in the native target first.
+    build = lock.run([sys.executable, str(ROOT/'tools/unreal/build.py'), '--engine', str(engine), '--target', 'Veyr','--configuration',a.configuration], cwd=ROOT)
+    if build.returncode:
+        raise SystemExit(build.returncode)
+    # Use a fresh task-owned stage outside Documents/FileProvider. The source tree,
+    # earlier stages and failed archives remain intact for recovery and diagnosis.
+    stage_base=Path(tempfile.mkdtemp(prefix='veyr-stage-',dir='/private/tmp'))
+    (stage_base/'veyr-stage-owner.json').write_text(json.dumps({'project':str(project.parent.resolve()),'receiptDirectory':str(receipt_dir.resolve())})+'\n')
+    cooker_options = '-nullrhi -NoCrashReports -notraceserver -NoZenAutoLaunch -DDC=(EnginePak=InstalledEnginePak,Local) -LocalDataCachePath="' + str(project.parent/'DerivedDataCache') + '" -SkipZenStore'
+    command = [str(engine/'Engine/Build/BatchFiles/RunUAT.sh'), 'BuildCookRun', '-project='+str(project), '-noP4', '-platform=Mac', '-clientconfig='+a.configuration, '-skipbuild', '-skipbuildeditor', '-cook', '-map=/Game/Maps/VeyrArena', '-stage', '-stagingdirectory='+str(stage_base), '-pak', '-archive', '-archivedirectory='+str(archive), '-unattended', '-utf8output', '-AdditionalCookerOptions='+cooker_options]
+    with (receipt_dir/'package.log').open('w') as output:
+        result = lock.run(command, cwd=ROOT, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT)
 apps = list(archive.rglob('Veyr.app')) if archive.exists() else []
 if not apps and archive.exists():apps=list(archive.rglob('Veyr-Mac-Shipping.app'))
 staged_apps=list((stage_base/'Mac').glob('Veyr*.app'))
