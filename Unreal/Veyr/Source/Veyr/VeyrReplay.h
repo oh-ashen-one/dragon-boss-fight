@@ -210,6 +210,10 @@ private:
     void StopVideoCapture(const FString& Reason);
     bool AppendVideoRecord(const TSharedRef<FJsonObject>& Record);
     void SaveEvidence(bool bFinal);
+    void SaveEvidencePeriodic();
+    TFuture<void> EvidenceWriteFuture;
+    bool bAsyncPeriodicSave=false;
+    TArray<TSharedPtr<FJsonValue>> EvidenceSaveTimings;
     void Finish(bool bSuccess, const FString& Reason);
     void BeginTerminalVerification();
     void AdvanceRestart(float DeltaSeconds);
