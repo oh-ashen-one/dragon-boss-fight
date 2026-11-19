@@ -20,6 +20,13 @@ class AVeyrDragon;
  * pull (and further while its point would still sit inside the body), like the reference warden arm.
  * Every distance is authored for the shipped 2x dragon and scales with the dragon's BodyScale, so
  * phase D's 2.5x and 3x runs keep the same framing. -VeyrLegacyCameraBoom restores the stock arm.
+ *
+ * Knight framing (2026-11-18, second pass): the camera keeps at least MinKnightDistanceCm from the knight
+ * (KnightHardMinCm at worst, never inside his capsule) with a clear line of sight to him. When the dragon
+ * blocks the arm closer than that, it searches other placements (the arm lowered and levelled under the
+ * belly, slid sideways round the body, the pivot raised, then shorter arms with a slightly wider lens) and
+ * turns the view so the knight stays whole in frame, above the bottom edge. -VeyrLegacyCameraFraming
+ * restores the first-pass arm (which collapsed onto the knight).
  */
 UCLASS(ClassGroup=(Veyr))
 class VEYR_API UVeyrCameraBoom : public USpringArmComponent
@@ -48,6 +55,30 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 PivotInsideFrames=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Dragon|Evidence") int32 ShapeCount=0;
 
+    /** Knight framing (not scaled: knight-sized). Preferred and hard minimum camera to knight-axis distance. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float MinKnightDistanceCm=420.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float KnightHardMinCm=260.f;
+    /** Widest extra lens used when a placement had to come closer than MinKnightDistanceCm. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float MaxFovBoostDeg=8.f;
+    /** Screen-edge margin (fraction of the half frame) the knight's capsule keeps. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float KnightScreenMargin=.06f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") bool bLegacyFraming=false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 FramingSearches=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 FramingFallbackFrames=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 ViewTurnFrames=0;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") float FovBoostDeg=0.f;
+
+    /** Camera-space projection: U right, V up, each -1..1 at the frame edges. False when behind the camera. */
+    static bool ProjectToView(const FVector& Point,const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Aspect,float& OutU,float& OutV);
+    /** Viewport aspect (width / height), 16:9 without a viewport. */
+    float ViewAspect() const;
+    /** Clear sight lines from Point to the knight's chest and head (bare dragon, no see-through). */
+    bool IsKnightInSight(const FVector& Point) const;
+    /** Any dragon shape centre inside the view frustum. */
+    bool IsDragonOnScreen(const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Aspect) const;
+    /** The knight's capsule segment (centres of its end spheres) and radius; false without a capsule owner. */
+    bool KnightCapsule(FVector& OutBottom,FVector& OutTop,float& OutRadius) const;
+
     /** Dragon size factor used this frame (BodyScale / 2). */
     float DragonScale() const;
     /** True when the point is within Radius of the dragon's body or wing shapes (shapes are refreshed
@@ -66,6 +97,7 @@ public:
     void RefreshDragonShapes() { FindDragon(); RefreshShapes(); }
 
 protected:
+    virtual void UpdateDesiredArmLocation(bool bDoTrace,bool bDoLocationLag,bool bDoRotationLag,float DeltaTime) override;
     virtual FVector BlendLocations(const FVector& DesiredArmLocation,const FVector& TraceHitLocation,bool bHitSomething,float DeltaTime) override;
 
 private:
@@ -83,4 +115,17 @@ private:
     float ShapeDistance(const FShape& Shape,const FVector& Point) const;
     /** Smallest fraction t in [0,1] of Origin->End where a sphere of Radius touches a shape not already containing Origin. */
     float FirstContact(const FVector& Origin,const FVector& End,float Radius) const;
+    /** True when a sphere of Radius moving from A to B touches no bare dragon shape (exact, no marching). */
+    bool SegmentClearOfBareDragon(const FVector& A,const FVector& B,float Radius) const;
+    /** Knight framing pass over the first-pass result; returns the final camera location. */
+    FVector FrameKnight(const FVector& Origin,const FVector& Base,const FVector& Proposed,float DeltaTime);
+    bool KnightWholeInView(const FVector& Camera,const FQuat& View,float HorizontalFovDeg) const;
+    bool PlacementOk(const FVector& P,const FVector& KBottom,const FVector& KTop,float KRadius,float MinDistance) const;
+    /** View that keeps the knight whole in frame from Camera, starting from the arm's view; boost in degrees. */
+    FQuat FrameView(const FVector& Camera,const FQuat& ArmView,const FVector& LookAt,float Fov,float& OutBoost) const;
+    FVector LastFramedRelative=FVector::ZeroVector; bool bLastFramed=false; bool bLastSolved=false;
+    int32 StickyCandidate=INDEX_NONE;
+    FQuat FramedView=FQuat::Identity; bool bFramedViewValid=false; FVector FramedLookAt=FVector::ZeroVector;
+    float AppliedFovBoost=0.f,AppliedFov=0.f;
+    FQuat ViewCorrection=FQuat::Identity; bool bViewCorrectionValid=false;
 };

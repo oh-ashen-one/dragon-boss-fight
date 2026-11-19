@@ -1,4 +1,5 @@
 #pragma once
+#include "UObject/ObjectKey.h"
 #include "CoreMinimal.h"
 
 class AVeyrDragon;
@@ -73,6 +74,10 @@ private:
     TArray<FPoint> Points;
     int32 BoomPoints=0,BoomWing=0;
     TWeakObjectPtr<const USkeletalMesh> FittedMesh;
+    /** Fit per mesh, kept across the clip mesh-variant switches (Stomp/Tail swap meshes every state): refitting
+     * 6500 samples on each switch cost 60-250 ms frames and cut the showcase Tail clips short. */
+    TMap<TObjectKey<USkeletalMesh>,TArray<FPoint>> FitCache;
+    bool Fit(const USkeletalMesh* Mesh,TArray<FPoint>& Out);
 };
 
 /** Which grounding rule the dragon's current state wants. Reads only public dragon state. */

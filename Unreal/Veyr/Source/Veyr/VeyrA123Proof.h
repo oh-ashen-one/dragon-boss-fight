@@ -63,6 +63,9 @@ private:
     // camerahug
     int32 CameraFrames=0,CameraInsideFrames=0,CollapseFrames=0,CollapseInsideFrames=0,PullInStart=0;
     int32 CapsuleInsideFrames=0,BackFaceFrames=0,HullInsideFrames=0;float MaxBackFaceDepthCm=0.f;
+    // Second pass: the knight as seen by the camera.
+    int32 KnightCapsuleInsideFrames=0,KnightWholeFrames=0,DragonOnScreenFrames=0,KnightTallFrames=0,KnightOccludedFrames=0;
+    float MinCameraToKnightCm=TNumericLimits<float>::Max();
     float MaxLiftCm=0.f,MinFraction=1.f,MaxCameraJumpCm=0.f;
     FVector LastCameraRelative=FVector::ZeroVector; bool bHasLastCamera=false;
     TMap<FName,int32> InsideByShape;

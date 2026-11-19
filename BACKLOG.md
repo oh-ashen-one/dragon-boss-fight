@@ -1,7 +1,13 @@
-# Owner playtest feedback and gap backlog — 2026-11-18; NOT STARTED
+# Owner playtest feedback and gap backlog — 2026-11-18; PARTLY DONE, paused by the owner
+
+Status on 2026-11-18 23:30 ET: section A items 1, 3 and 4 and the weight items in sections C-E (dust, shake, hit
+reaction, trail) are in the installed build; item 2 (camera inside the dragon) is only partly fixed; everything else
+is written on branches but has never run. Details: `docs/quality-goal-20261118/RESULTS.md`.
+
+(The original list follows.)
 
 The owner played today's `main` (`79fe0bc`, packaged, not installed) and asked for the items below to be recorded.
-**Nothing here is started; wait for the owner's go.** Side-by-side footage of the reference game (Can It Code's
+ Side-by-side footage of the reference game (Can It Code's
 Leshy fight) and ours: `Local/playtest-goal-review/vs.html` (`python3 serve.py 8823`, then
 `http://localhost:8823/vs.html`); reference frames in `~/leshy-reference`.
 

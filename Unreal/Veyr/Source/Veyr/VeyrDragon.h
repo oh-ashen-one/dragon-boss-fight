@@ -4,6 +4,7 @@
 #include "GameFramework/Actor.h"
 #include "VeyrCombatTypes.h"
 #include "VeyrMoveData.h"
+#include "VeyrGroundContacts.h"
 #include "VeyrDragon.generated.h"
 
 class AVeyrKnight;
@@ -201,6 +202,14 @@ public:
     bool bLegacyKnockdown=false;
     float KnockdownFloorBudgetSeconds=4.9f; // 0.1 s under the 5 s limit: states end on frame boundaries
     float KnockdownRiseRate=1.25f;
+    /** Lever (b), band pass: the head keeps its exposed bonus through the first part of the rise while it is
+     * still low. Off by default until measured; -VeyrRiseHeadBonus turns it on (new knock-down timing only). */
+    bool bRiseHeadBonus=false;
+    float RiseHeadBonusFraction=.4f;
+    /** Exposed, or (lever b) the low first part of the rise: blows to the head take the exposed bonus. */
+    UFUNCTION(BlueprintPure, Category="Combat") bool IsHeadBonusActive() const;
+    /** Seconds left of the head bonus (Exposed remaining plus the rise share when lever b is on). */
+    float GetHeadBonusRemaining() const;
     /** Where the head lies during Exposed, in actor space per unit of BodyScale. Measured on build A
      * (2026-11-18, 8 fights, scale 2: 1390 cm ahead, 88 cm left, 287 cm up); refreshed from every Exposed frame. */
     FVector DownHeadLocalPerScale=FVector(695.f,-44.f,143.5f);
@@ -335,6 +344,23 @@ public:
     void DescribeMoveData(TArray<FString>& OutLines) const;
     /** Which hard-coded move a JSON move name stands for; false = data-only. */
     static bool MapDataMoveToEnum(FName MoveName, EVeyrDragonMove& OutMove);
+
+    // ---- B4 (2026-11-18): ground contacts. -VeyrNoGroundContacts disables; see VeyrGroundContacts.h.
+    /** Fires inside the dragon tick, once per contact (feet, head, neck, body, tail, wings). */
+    FVeyrOnGroundContact OnGroundContact;
+    /** Contacts detected on the latest dragon tick. */
+    const TArray<FVeyrGroundContact>& GetGroundContactsThisFrame() const { return GroundContacts.ThisFrame(); }
+    /** Last serial issued (monotonic, 0 before the first contact). */
+    int32 GetGroundContactSerial() const { return GroundContacts.LastSerial(); }
+    /** Contacts with a serial above AfterSerial from a 64-entry ring; returns the last serial. */
+    int32 GetGroundContactsSince(int32 AfterSerial,TArray<FVeyrGroundContact>& Out) const { return GroundContacts.CopySince(AfterSerial,Out); }
+    const FVeyrGroundContactCounters& GetGroundContactCounters() const { return GroundContacts.Counters(); }
+    const FVeyrGroundContactDetector& GetGroundContactDetector() const { return GroundContacts; }
+    /** True when contacts drive the camera shake (the old hard-coded stomp/tail/landing shakes are skipped). */
+    /** True when contact events (not the fixed per-move impacts) shake the camera this frame. */
+    bool ContactsDriveShake() const;
+    /** Showcase rails for the feel proof: Collapse (Buckle skipped) as one segment. */
+    bool StartFeelSegment(FName Segment,FString& Error);
 
 protected:
     virtual void BeginPlay() override;
@@ -483,6 +509,10 @@ private:
     static constexpr float FlightSeconds = 2.4f;
 
 
+    // ---- B4 ground contacts
+    FVeyrGroundContactDetector GroundContacts;
+    float LastAirborneClock=-100.f;
+    void UpdateGroundContacts(float DeltaSeconds);
     // ---- Data-driven move layer state
     FBossMoveData MoveData;
     UPROPERTY(Transient) TArray<TObjectPtr<UCapsuleComponent>> HurtCapsules;
