@@ -128,7 +128,7 @@ void AVeyrAudio::TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Vo
         SumSq+=double(L)*L+double(R)*R;Peak=FMath::Max(Peak,FMath::Max(FMath::Abs(L),FMath::Abs(R)));
     }
     FTapItem Item;Item.T=T;Item.Cue=static_cast<int32>(Cue);Item.Variant=Variant;Item.Volume=Volume;Item.Level=Level;Item.Pitch=Pitch;
-    Item.Pan=Pan;Item.Dist=Dist;Item.Gain=Atten;Item.Seconds=float(Frames)/TapRate;Item.Place=static_cast<uint8>(Place);Item.bRandom=bRandom;
+    Item.Pan=Pan;Item.Wall=FPlatformTime::Seconds();Item.GameT=GetWorld()?GetWorld()->GetTimeSeconds():0.f;Item.Dist=Dist;Item.Gain=Atten;Item.Seconds=float(Frames)/TapRate;Item.Place=static_cast<uint8>(Place);Item.bRandom=bRandom;
     Item.Label=TapLabel;Item.PeakDb=ToDb(Peak);Item.RmsDb=ToDb(std::sqrt(SumSq/FMath::Max<double>(1.0,Frames*2.0)));
     TapItems.Add(Item);
 }
@@ -273,7 +273,7 @@ void AVeyrAudio::TapWrite(const FString& Stem)
         TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();
         O->SetStringField(TEXT("cue"),CueName(I.Cue));O->SetNumberField(TEXT("t"),I.T);O->SetNumberField(TEXT("variant"),I.Variant);
         O->SetNumberField(TEXT("volume"),I.Volume);O->SetNumberField(TEXT("level"),I.Level);O->SetNumberField(TEXT("pitch"),I.Pitch);
-        O->SetNumberField(TEXT("distanceCm"),I.Dist);O->SetNumberField(TEXT("pan"),I.Pan);O->SetNumberField(TEXT("attenuation"),I.Gain);O->SetNumberField(TEXT("seconds"),I.Seconds);
+        O->SetNumberField(TEXT("distanceCm"),I.Dist);O->SetNumberField(TEXT("pan"),I.Pan);O->SetNumberField(TEXT("wall"),I.Wall);O->SetNumberField(TEXT("gameT"),I.GameT);O->SetNumberField(TEXT("attenuation"),I.Gain);O->SetNumberField(TEXT("seconds"),I.Seconds);
         O->SetNumberField(TEXT("peakDb"),I.PeakDb);O->SetNumberField(TEXT("rmsDb"),I.RmsDb);O->SetNumberField(TEXT("musicRmsDb"),MusicDb);
         O->SetNumberField(TEXT("aboveMusicDb"),I.RmsDb-MusicDb);O->SetBoolField(TEXT("randomPhase"),I.bRandom);if(!I.Label.IsEmpty())O->SetStringField(TEXT("label"),I.Label);
         Items.Add(MakeShared<FJsonValueObject>(O));
@@ -317,7 +317,7 @@ void AVeyrAudio::TapWrite(const FString& Stem)
         TArray<TSharedPtr<FJsonValue>> Es;
         for(const FTapEvent& E:TapEvents)
         {
-            TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();O->SetStringField(TEXT("kind"),E.Kind);O->SetNumberField(TEXT("t"),E.T);
+            TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();O->SetStringField(TEXT("kind"),E.Kind);O->SetNumberField(TEXT("t"),E.T);O->SetNumberField(TEXT("wall"),E.Wall);O->SetNumberField(TEXT("gameT"),E.GameT);
             Es.Add(MakeShared<FJsonValueObject>(O));
         }
         Root->SetArrayField(TEXT("events"),Es);

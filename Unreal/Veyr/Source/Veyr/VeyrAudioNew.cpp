@@ -96,6 +96,21 @@ namespace
 void AVeyrAudio::AddVariant(ECue Cue,TArray<int16>&& S)
 {
     FCueBank& B=Banks[static_cast<int32>(Cue)];
+    if(Cue==ECue::Wing)
+    {
+        // Wing beats must read as air, not as a thump: two cascaded high-pass sections at 450 Hz (24 dB per octave), no sub layer.
+        FBiquad H1=FBiquad::Make(true,450.f,SampleRate),H2=FBiquad::Make(true,450.f,SampleRate);
+        for(int16& V:S)V=int16(FMath::Clamp(H2.Run(H1.Run(float(V))),-32767.f,32767.f));
+    }
+    float Peak0=1e-4f;
+    for(int16 V:S)Peak0=FMath::Max(Peak0,FMath::Abs(float(V))/32768.f);
+    // Head trim: drop the quiet lead-in below 4 % of the peak (at most 25 ms, keeping 2 ms), so the sound starts on its first real sample.
+    {
+        int32 First=0;
+        for(int32 I=0;I<S.Num();++I)if(FMath::Abs(float(S[I]))/32768.f>=.04f*Peak0){First=I;break;}
+        const int32 Cut=FMath::Clamp(First-int32(.002f*SampleRate),0,int32(.025f*SampleRate));
+        if(Cut>0)S.RemoveAt(0,Cut);
+    }
     double Sum=0,E=0,El=0,Eh=0;int64 N=0;float Peak=1e-4f;
     FBiquad Lp=FBiquad::Make(false,200.f,SampleRate),Hp=FBiquad::Make(true,2000.f,SampleRate);
     for(int16 V:S)
@@ -105,17 +120,18 @@ void AVeyrAudio::AddVariant(ECue Cue,TArray<int16>&& S)
         if(Ax>.01f){Sum+=double(X)*X;++N;}
         const float L=Lp.Run(X),H=Hp.Run(X);E+=double(X)*X;El+=double(L)*L;Eh+=double(H)*H;
     }
-    float AttackMs=0.f;
+    float AttackMs=0.f,OnsetMs=0.f;
+    for(int32 I=0;I<S.Num();++I)if(FMath::Abs(float(S[I]))/32768.f>=.1f*Peak){OnsetMs=1000.f*I/SampleRate;break;}
     for(int32 I=0;I<S.Num();++I)if(FMath::Abs(float(S[I]))/32768.f>=.5f*Peak){AttackMs=1000.f*I/SampleRate;break;}
     const double Rms=N>0?std::sqrt(Sum/double(N)):1e-4;
     const float MeasuredDb=float(20.0*std::log10(FMath::Max(Rms,1e-5)));
     const float TargetDb=TargetLevelDb(Cue);
-    // Gain brings the variant's gated RMS to the target at the default master (0.65); the peak keeps it under -1 dBFS.
-    // Targets are dBFS of the RECORDED master, so the engine's measured -9 dB is divided out here; the peak keeps a single voice near -1 dBFS there.
+    // Targets are dBFS of the RECORDED master, so the engine's measured -9 dB is divided out here. The solo ceiling of a voice is .9 of full scale
+    // there (pass 2's value: pass 3 lowered it to .55 and the hits and slams sank 4 to 6 dB); stacks of layers are protected by the peak budget instead.
     float Gain=TargetDb<0.f?FMath::Pow(10.f,(TargetDb-MeasuredDb)/20.f)/(.65f*EngineFactor):1.f/(.65f*EngineFactor);
-    Gain=FMath::Min(Gain,.55f/(Peak*.65f*EngineFactor));
+    Gain=FMath::Min(Gain,.9f/(Peak*.65f*EngineFactor));
     B.Variants.Add(MoveTemp(S));B.Gains.Add(Gain);B.Peaks.Add(Peak);
-    B.LowShare.Add(float(El/FMath::Max(E,1e-9)));B.HighShare.Add(float(Eh/FMath::Max(E,1e-9)));B.AttackMs.Add(AttackMs);
+    B.LowShare.Add(float(El/FMath::Max(E,1e-9)));B.HighShare.Add(float(Eh/FMath::Max(E,1e-9)));B.AttackMs.Add(AttackMs);B.OnsetMs.Add(OnsetMs);
 }
 
 void AVeyrAudio::SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNormalize)
@@ -123,7 +139,7 @@ void AVeyrAudio::SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNor
     TArray<int16> S;
     if(!BytesToSamples(Bytes,S))return;
     FCueBank& B=Banks[static_cast<int32>(Cue)];
-    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.LowShare.Reset();B.HighShare.Reset();B.AttackMs.Reset();
+    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.LowShare.Reset();B.HighShare.Reset();B.AttackMs.Reset();B.OnsetMs.Reset();
     AddVariant(Cue,MoveTemp(S));
     (void)bNormalize;
 }
@@ -163,7 +179,7 @@ void AVeyrAudio::LoadBank(ECue Cue,const FString& Dir)
 {
     const int32 Index=static_cast<int32>(Cue);
     FCueBank& B=Banks[Index];
-    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.LowShare.Reset();B.HighShare.Reset();B.AttackMs.Reset();B.Last=-1;
+    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.LowShare.Reset();B.HighShare.Reset();B.AttackMs.Reset();B.OnsetMs.Reset();B.Last=-1;
     TArray<FString> Files;
     IFileManager::Get().FindFiles(Files,*(Dir/(FString(CueName(Index))+TEXT("_*.pcm"))),true,false);
     // Name after the underscore: "<n>" = recorded, "g<n>" = generated supplement.
@@ -372,7 +388,7 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 
         for(int32 I=0;I<Bank.Variants.Num();++I)
         {
             const float Lo=Bank.LowShare[I],Hi=Bank.HighShare[I],Mid=FMath::Max(0.f,1.f-Lo-Hi);
-            const bool Ok=Role==0||(Role==1&&Hi>.40f&&Bank.AttackMs[I]<30.f)||(Role==2&&Mid>.35f)||(Role==3&&Lo>.40f);
+            const bool Ok=Role==0||(Role==1&&Hi>.40f&&Bank.OnsetMs[I]<12.f)||(Role==2&&Mid>.35f)||(Role==3&&Lo>.40f)||(Role==4&&Lo>.40f&&Bank.AttackMs[I]<20.f);
             if(Ok)Pool.Add(I);
         }
         if(Pool.IsEmpty())for(int32 I=0;I<Bank.Variants.Num();++I)Pool.Add(I);
@@ -399,7 +415,7 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 
     C.Level=FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter*FMath::Pow(10.f,MakeupDb/20.f);
     // Solo peak ceiling just under full scale after the master; the master limiter deals with sums.
     if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f)
-        C.Level=FMath::Min(C.Level,.55f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)*EngineFactor));
+        C.Level=FMath::Min(C.Level,.9f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)*EngineFactor));
     return true;
 }
 
@@ -468,9 +484,11 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     float Load=0.f;
     for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0&&Now-VoiceStartTimes[I]<.12)Load+=VoicePeakAmp[I];
     const float PeakOfThis=Bank.Peaks.IsValidIndex(V)?Bank.Peaks[V]:1.f;
-    float PeakAmp=Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;
-    constexpr float PeakBudget=.64f; // -3.9 dBFS: the real peak sat 1.1 dB above the .84 (-1.5 dBFS) design with the music under it, so -3.9 gives about -2.8 dBFS, clear of -1 dBTP
-    if(Load+PeakAmp>PeakBudget&&PeakAmp>1e-4f){Level*=FMath::Max(.35f,(PeakBudget-Load)/PeakAmp);PeakAmp=Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;}
+    // Peaks of layers started together do not coincide sample for sample: they are counted at half. Budget .72 (-2.9 dBFS) of such half-peaks lets a normal
+    // stack of four layers through untouched and scales only the rare pile-ups (a slam on a landing on a step); the real peak sat about 1.1 dB over the design.
+    float PeakAmp=.5f*Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;
+    constexpr float PeakBudget=.72f; // -3.9 dBFS: the real peak sat 1.1 dB above the .84 (-1.5 dBFS) design with the music under it, so -3.9 gives about -2.8 dBFS, clear of -1 dBTP
+    if(Load+PeakAmp>PeakBudget&&PeakAmp>1e-4f){Level*=FMath::Max(.5f,(PeakBudget-Load)/PeakAmp);PeakAmp=.5f*Level*MasterVolume*EffectsVolume*EngineFactor*PeakOfThis;}
     const bool bPeakTracked=true;(void)bPeakTracked;
     USoundWaveProcedural* Wave=NewObject<USoundWaveProcedural>(this);
     Wave->SetSampleRate(SampleRate);Wave->NumChannels=1;Wave->Duration=Seconds0;Wave->bLooping=false;Wave->SoundGroup=SOUNDGROUP_Effects;
@@ -595,7 +613,7 @@ void AVeyrAudio::UpdateExpectations()
 void AVeyrAudio::TapEvent(const TCHAR* Kind)
 {
     if(!bTap||bAudition||!GetWorld())return;
-    FTapEvent E;E.Kind=Kind;E.T=AudioNow()-TapT0;TapEvents.Add(E);
+    FTapEvent E;E.Kind=Kind;E.T=AudioNow()-TapT0;E.Wall=FPlatformTime::Seconds();E.GameT=GetWorld()->GetTimeSeconds();TapEvents.Add(E);
 }
 
 void AVeyrAudio::InstallMasterChain()
@@ -617,9 +635,9 @@ void AVeyrAudio::InstallMasterChain()
 
 void AVeyrAudio::PlayWeaponHit(int32 Weight,bool bHead)
 {
-    // The knight's own sword hitting the dragon: near-field (flat, never attenuated by where the camera is), layered:
-    // a sharp mid/high attack, a body, a low thump; sized by weight class (0 light, 1 heavy). A hit on the downed head is the
-    // reward moment and the fullest of all: every layer up, a ring, a smash body, and the small background and the music duck briefly.
+    // The knight's own sword hitting the dragon: near-field (flat, never attenuated by where the camera is), layered: a sharp mid/high attack (onset under
+    // 12 ms), a body, a fast low thump (half peak within 20 ms: a recipe whose own attack is longer than 30 ms would trail the flash). Voices are held at their
+    // solo ceiling, so a layer's volume can only go DOWN from it: the hit classes sit under the boss events by their W: head .85, heavy .75, light .65.
     TapEvent(bHead?TEXT("weaponHead"):Weight>0?TEXT("weaponHeavy"):TEXT("weaponLight"));
     const double Now=AudioNow();
     if(bHead&&GetWorld())
@@ -627,21 +645,21 @@ void AVeyrAudio::PlayWeaponHit(int32 Weight,bool bHead)
         BackgroundDuckUntil=Now+.5;
         MusicDuckTarget=.22f;MusicDuckUntil=GetWorld()->GetTimeSeconds()+.6;
     }
-    const float W=bHead?1.15f:Weight>0?1.f:.8f;
-    PlayCueEx(ECue::Contact,W*1.4f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
-    PlayCueEx(ECue::Guard,W*(bHead?1.1f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
-    PlayCueEx(ECue::ArmorHit,W*1.1f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
-    PlayCueEx(ECue::Impact,bHead?1.5f:Weight>0?1.2f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0||bHead?1.f:1.15f);
+    const float W=bHead?.85f:Weight>0?.75f:.65f;
+    PlayCueEx(ECue::Contact,W,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
+    PlayCueEx(ECue::Guard,W*(bHead?1.f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
+    PlayCueEx(ECue::ArmorHit,W,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
+    PlayCueEx(ECue::Impact,W*(bHead||Weight>0?1.f:.5f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,4,Weight>0||bHead?1.f:1.15f);
     if(Weight>0||bHead)
     {
-        // Heavy and head hits: a second low body and a mid thump so all three bands rise, not only the highs.
-        PlayCueEx(ECue::Exposed,bHead?1.1f:.9f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.05f);
-        QueueCue(.012f,ECue::DragonStep,bHead?.9f:.7f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2,1.2f);
+        // Heavy and head hits: a second fast low body and a mid thump so all three bands rise, not only the highs.
+        PlayCueEx(ECue::Exposed,W,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,4,1.05f);
+        QueueCue(.012f,ECue::DragonStep,W*.8f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2,1.2f);
     }
     if(bHead)
     {
-        QueueCue(.02f,ECue::Guard,.8f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1,.8f);              // the ring, a little later and lower
-        QueueCue(.02f,ECue::Break,.7f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,.9f);               // a smash body
+        QueueCue(.02f,ECue::Guard,W*.8f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1,.8f);            // the ring, a little later and lower
+        QueueCue(.02f,ECue::Break,W*.7f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,.9f);             // a smash body
     }
 }
 
@@ -662,7 +680,7 @@ void AVeyrAudio::PlayStompLayers(const FVector& AtIn,float S,bool bLanding)
     LastTransient=Tr;
     const float Semis=Rand.FRandRange(-2.f,2.f);
     const float Pitch=FMath::Pow(2.f,Semis/12.f);
-    const float Heavy=FMath::Lerp(.7f,.95f,S);
+    const float Heavy=FMath::Lerp(.85f,1.f,S);
     const float Slip=Rand.FRandRange(0.f,.05f);
     TiltMode=Tilt;
     if(PlayCueEx(ECue::DragonStep,Heavy,EPlace::World,At,NAME_None,0.f,0.f,R==1||R==3?2:3,Pitch))++DragonSteps;
@@ -675,7 +693,14 @@ void AVeyrAudio::PlayStompLayers(const FVector& AtIn,float S,bool bLanding)
     if(Tr==0)QueueCue(.04f,ECue::Debris,FMath::Lerp(.5f,.95f,S),EPlace::World,At,NAME_None,0.f,0.f,1,Pitch,Tilt);
     else if(Tr==1)QueueCue(.03f,ECue::Break,.45f,EPlace::World,At,NAME_None,0.f,0.f,1,Pitch);
     else QueueCue(.08f,ECue::Exposed,.5f,EPlace::World,At,NAME_None,0.f,0.f,2,.9f*Pitch,Tilt);
-    if(bLanding)PlayCueEx(ECue::Exposed,.9f,EPlace::World,At,NAME_None,0.f,0.f,3);
+    if(bLanding)
+    {
+        // The landing is the biggest thud of the fight: more low layers than any slam, all at their ceiling.
+        PlayCueEx(ECue::Exposed,1.f,EPlace::World,At,NAME_None,0.f,0.f,3,.95f*Pitch);
+        PlayCueEx(ECue::Impact,1.f,EPlace::World,At,NAME_None,0.f,0.f,3,.9f*Pitch);
+        QueueCue(.02f,ECue::Break,.9f,EPlace::World,At,NAME_None,0.f,0.f,3,.85f);
+        QueueCue(.03f,ECue::DragonStep,1.f,EPlace::World,At,NAME_None,0.f,0.f,3,.8f,Tilt);
+    }
     if(S>.3f||bLanding){QueueCue(.1f,ECue::Debris,FMath::Lerp(.5f,.95f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?1:2);++DebrisSounds;}
 }
 
@@ -683,6 +708,8 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
 {
     const AVeyrDragon* D=Dragon.Get();
     if(!D)return;
+    // No foot sounds while the dragon flies (a thump with no foot on the ground); only the landing itself may sound.
+    if(D->IsAirborne()&&C.Class!=EVeyrGroundContactClass::Landing)return;
     const float S=FMath::Clamp(C.Strength,0.f,1.f);
     const FVector At=C.World;
     ++ContactsHandled[static_cast<int32>(C.Class)];
@@ -712,9 +739,9 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
             }
             TapEvent(TEXT("dragonFootfall"));
             {
-                const float V=bStompHierarchy?FMath::Lerp(.1f,.5f,S):(S<.3f?.1f:FMath::Lerp(.14f,.4f,(S-.3f)/.35f));
+                const float V=bStompHierarchy?FMath::Lerp(.08f,.22f,S):(S<.3f?.1f:FMath::Lerp(.14f,.4f,(S-.3f)/.35f)); // pass 2 walked at up to .3: 2.7 dB lower puts the slams 8 dB over a step
                 if(PlayCueEx(ECue::DragonStep,V,EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
-                if(bStompHierarchy&&S>.7f)PlayCueEx(ECue::Impact,.18f,EPlace::World,At,NAME_None,0.f,0.f,3);
+                if(bStompHierarchy&&S>.7f)PlayCueEx(ECue::Impact,.12f,EPlace::World,At,NAME_None,0.f,0.f,3);
             }
             break;
         case EVeyrGroundContactClass::Stomp:
@@ -805,6 +832,7 @@ void AVeyrAudio::UpdateTimedSounds()
             if(bTap)TapLabel=FString::Printf(TEXT("%s@%s%.2f"),*ClipName,E.bPhase?TEXT("p"):TEXT("t"),Now);
             const bool bPlayed=PlayCueEx(E.Cue,E.Level,EPlace::Part,FVector::ZeroVector,E.Where,0.f,0.f,E.Role,E.PitchMul);
             TapLabel.Reset();
+            if(bPlayed&&E.Cue==ECue::Impact&&(ClipName.Contains(TEXT("ClawActive"))||ClipName.Contains(TEXT("Claw0Active"))||ClipName.Contains(TEXT("Claw1Active"))||ClipName.Contains(TEXT("TailActive"))))TapEvent(TEXT("clawTailImpact"));
             if(bPlayed)
             {++TimedEventsFired;if(E.Cue==ECue::DragonSwing)bSwingFromData=true;}
         }
@@ -876,7 +904,7 @@ void AVeyrAudio::UpdateKnightFeet(float DeltaSeconds,float Speed)
             const bool Near=K->IsGrounded()&&Height<Limit;
             if(Near&&!bFootNearFloor[Side]&&Speed>60.f&&FootClock[Side]<=0.f)
             {
-                const float Vol=FMath::Lerp(.45f,.8f,FMath::Clamp((Speed-60.f)/500.f,0.f,1.f));
+                const float Vol=FMath::Lerp(.32f,.55f,FMath::Clamp((Speed-60.f)/500.f,0.f,1.f));
                 TapEvent(TEXT("knightStep"));
                 // Near-field: the knight's own footsteps are not attenuated by the camera.
                 if(PlayCueEx(ECue::Footstep,Vol,EPlace::Flat))++KnightSteps;

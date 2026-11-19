@@ -105,7 +105,7 @@ private:
     {
         TArray<TArray<int16>> Variants;
         TArray<float> Peaks;      // per variant, linear full-scale peak
-        TArray<float> LowShare,HighShare,AttackMs; // per variant: energy share below 200 Hz and above 2 kHz, ms to half peak
+        TArray<float> LowShare,HighShare,AttackMs,OnsetMs; // per variant: energy share below 200 Hz and above 2 kHz, ms to half peak, ms to 10 % of peak (after the head trim)
         TArray<float> Gains;      // per variant, from the measured level against the cue's target level
         int32 Last=-1;
         bool bMissingLogged=false;
@@ -134,7 +134,7 @@ private:
     FName TimedClipKey=NAME_None; float TimedLastPhase=-1.f,TimedLastTime=-1.f; bool bSwingFromData=false;
     float BreathClock=3.f,GrowlClock=9.f; bool bBreathExhaleNext=false,bPresenceCalm=true;
     float FootClock[2]={0.f,0.f};
-    float MaxLoad=6.f,MakeupDb=0.f; // extra dB on every effect; -VeyrAudioMakeupDb=<dB>
+    float MaxLoad=6.f,MakeupDb=-1.5f; // extra dB on every effect; -VeyrAudioMakeupDb=<dB>
     /** Measured on two captures (flat and spatial alike): the recorded master is about 9 dB under Level x master x effects. Gains and ceilings are set against the recorded level. */
     static constexpr float EngineFactor=.355f; // MakeupDb: -VeyrAudioMakeupDb=<dB> on all effects (calibration against a real capture)
     float DurationLastPlayed=0.f;
@@ -149,7 +149,7 @@ private:
     struct FTapItem
     {
         double T=0.0; int32 Cue=0,Variant=0; float Volume=0.f,Level=0.f,Pitch=1.f,Dist=0.f,Gain=1.f,Seconds=0.f;
-        uint8 Place=0; bool bRandom=false; FString Label; float Pan=0.f;
+        uint8 Place=0; bool bRandom=false; FString Label; float Pan=0.f; double Wall=0.0; float GameT=0.f;
         float PeakDb=-120.f,RmsDb=-120.f,MusicRmsDb=-120.f;
     };
     bool bTap=false,bAudition=false,bAuditionDone=false;
@@ -157,7 +157,7 @@ private:
     bool bFireBeamWas=false; double FireStartedAt=-100.0;
     // Stomp policy (one switch, the default is one constant): -VeyrStompHierarchy = walking steps get a light thump scaled by strength and only
     // attacks (stomp class, slams, claws, tail, landing, falls) get the heavy layers; -VeyrStompPass3 = the pass 3 behaviour (strong foot strikes, strength >= 0.65, play the heavy layers too).
-    static constexpr bool kStompHierarchyDefault=false;
+    static constexpr bool kStompHierarchyDefault=true; // pass 4: the hierarchy (the critic's blind comparison of passes 2 and 3 chose it)
     bool bStompHierarchy=kStompHierarchyDefault;
     double BackgroundDuckUntil=-100.0;   // brief duck of the small background cues (steps, breath, debris) after a head hit or a flame ignition
     float MusicDuckTarget=.5f;           // the music duck depth: .5 normally, deeper for a head hit
@@ -177,7 +177,7 @@ private:
     TArray<FTapContact> TapContacts;
     TArray<FTapFrame> TapTrace;
     FTapFrame TapNow;
-    struct FTapEvent { FString Kind; double T=0.0; };
+    struct FTapEvent { FString Kind; double T=0.0; double Wall=0.0; float GameT=0.f; };
     TArray<FTapEvent> TapEvents;
     float TapOffsetDb=-9.f; // the same measured engine factor, so the tap shows what the player hears   // -VeyrAudioTapOffsetDb: what the real output differs from the model (measured on a capture)
     void TapEvent(const TCHAR* Kind);
@@ -212,7 +212,7 @@ private:
     void LoadTimedSounds(bool bForce);
     void ParseTimedSounds(const FString& Text,const TCHAR* Origin);
     void TickNew(float DeltaSeconds);
-    /** Role: 0 any variant, 1 sharp (mid/high attack), 2 body (mid), 3 low. PitchMul scales the random pitch. */
+    /** Role: 0 any variant, 1 sharp (mid/high, onset under 12 ms), 2 body (mid), 3 low, 4 fast low (low, half peak within 20 ms). PitchMul scales the random pitch. */
     bool PlayCueEx(ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f,uint8 Role=0,float PitchMul=1.f);
     void QueueCue(float Delay,ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f,uint8 Role=0,float PitchMul=1.f,uint8 Tilt=0);
     void UpdatePending();
