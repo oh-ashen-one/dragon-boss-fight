@@ -67,6 +67,11 @@ namespace VeyrFeelSwitches
     bool SlowTail(){static const bool B=!Off(TEXT("VeyrNoSlowTail"));return B;}
     bool ZoomPunch(){static const bool B=!Off(TEXT("VeyrNoZoomPunch"));return B;}
     bool HurtKick(){static const bool B=!Off(TEXT("VeyrNoHurtKick"));return B;}
+    bool ShakePattern(){static const bool B=!Off(TEXT("VeyrLegacyShakePattern"));return B;}
+    bool HitShake(){static const bool B=!Off(TEXT("VeyrLegacyHitShake"));return B;}
+    bool RefHitStop(){static const bool B=!Off(TEXT("VeyrLegacyHitStop"));return B;}
+    bool LatePunch(){static const bool B=ZoomPunch()&&!Off(TEXT("VeyrLegacyPunchOrder"));return B;}
+    bool DownFlinch(){static const bool B=SpineFlinch()&&!Off(TEXT("VeyrLegacyDownFlinch"));return B;}
 }
 
 FVeyrFeelTuning::FVeyrFeelTuning()
@@ -122,6 +127,20 @@ bool FVeyrFeelTuning::LoadFromFile(const FString& File)
         Num(S,TEXT("max_distance_cm"),ShakeMaxDistanceCm);Num(S,TEXT("size_gain"),ShakeSizeGain);Num(S,TEXT("max_degrees"),ShakeMaxDegrees);
         const TCHAR* Names[]={TEXT("footfall"),TEXT("stomp"),TEXT("body_fall"),TEXT("landing")};
         for(int32 I=0;I<4;++I)ReadShake(Obj(S,Names[I]),Shake[I]);
+        const TArray<TSharedPtr<FJsonValue>>* Hz=nullptr;
+        if(S->TryGetArrayField(TEXT("hz"),Hz)&&Hz&&Hz->Num()>=3)for(int32 I=0;I<3;++I)ShakeHz[I]=FMath::Clamp(static_cast<float>((*Hz)[I]->AsNumber()),.5f,60.f);
+        const TArray<TSharedPtr<FJsonValue>>* Axis=nullptr;
+        if(S->TryGetArrayField(TEXT("axis"),Axis)&&Axis&&Axis->Num()>=3)for(int32 I=0;I<3;++I)ShakeAxis[I]=(*Axis)[I]->AsNumber();
+        if(const TSharedPtr<FJsonObject> H=Obj(S,TEXT("sword")))
+        {
+            Num(H,TEXT("amp_min"),HitShakeMin);Num(H,TEXT("amp_gain"),HitShakeGain);
+            Num(H,TEXT("life_min"),HitShakeLifeMin);Num(H,TEXT("life_gain"),HitShakeLifeGain);
+        }
+    }
+    if(const TSharedPtr<FJsonObject> H=Obj(Root,TEXT("hit_stop")))
+    {
+        Num(H,TEXT("light_s"),HitStopLight);Num(H,TEXT("heavy_s"),HitStopHeavy);Num(H,TEXT("dilation"),HitStopDilation);
+        HitStopLight=FMath::Clamp(HitStopLight,0.f,.25f);HitStopHeavy=FMath::Clamp(HitStopHeavy,0.f,.25f);HitStopDilation=FMath::Clamp(HitStopDilation,.01f,1.f);
     }
     if(const TSharedPtr<FJsonObject> F=Obj(Root,TEXT("flinch")))
     {
@@ -129,6 +148,7 @@ bool FVeyrFeelTuning::LoadFromFile(const FString& File)
         Num(F,TEXT("twist_min_deg"),FlinchTwistMin);Num(F,TEXT("twist_max_deg"),FlinchTwistMax);Num(F,TEXT("cap_deg"),FlinchCapDegrees);
         Num(F,TEXT("head_part"),FlinchHeadPart);Num(F,TEXT("neck_part"),FlinchNeckPart);Num(F,TEXT("leg_part"),FlinchLegPart);
         Num(F,TEXT("body_share"),FlinchBodyShare);Num(F,TEXT("tail_share"),FlinchTailShare);
+        Num(F,TEXT("down_cap_deg"),FlinchDownCapDegrees);
         Num(F,TEXT("snap_s"),FlinchSnapSeconds);Num(F,TEXT("hz"),FlinchHz);Num(F,TEXT("damping"),FlinchDamping);Num(F,TEXT("life_s"),FlinchLifeSeconds);
         Num(F,TEXT("flash_peak"),FlashPeak);Num(F,TEXT("flash_peak_gain"),FlashPeakGain);Num(F,TEXT("flash_radius_cm"),FlashRadiusCm);
         Num(F,TEXT("flash_radius_gain_cm"),FlashRadiusGainCm);Num(F,TEXT("flash_fade_s"),FlashFade);Num(F,TEXT("flash_life_s"),FlashLife);

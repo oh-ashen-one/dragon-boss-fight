@@ -30,7 +30,9 @@ private:
     void ChangeSensitivity(float Delta);
     void ToggleDisplayMode();
     void CycleResolution();
-    void ControlLegend(float W,float H,bool bTerminal);
+    void ControlLegend(float W,float H,bool bTerminal,float Alpha=1.f);
+    float LocalControlsShownSeconds=0.f;
+    static constexpr float ControlsVisibleSeconds=8.f,ControlsFadeSeconds=1.f;
     void Text(const FString& Value,float X,float Y,float Height,const FLinearColor& Color,bool bCentered=false);
     void Line(float X1,float Y1,float X2,float Y2,const FLinearColor& Color,float Width=1.f);
     void Rect(float X,float Y,float Width,float Height,const FLinearColor& Color);

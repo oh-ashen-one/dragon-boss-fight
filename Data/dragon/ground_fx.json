@@ -48,26 +48,26 @@
   "footfall": {
    "min_speed": 0.3,
    "full_speed": 3,
-   "amp_min": 0.08,
-   "amp_max": 0.4,
-   "life_min": 0.16,
-   "life_max": 0.28,
+   "amp_min": 0.25,
+   "amp_max": 0.45,
+   "life_min": 0.18,
+   "life_max": 0.32,
    "bounce_cm": 0
   },
   "stomp": {
    "min_speed": 0.8,
    "full_speed": 6,
-   "amp_min": 0.6,
-   "amp_max": 1.8,
-   "life_min": 0.3,
-   "life_max": 0.55,
+   "amp_min": 0.5,
+   "amp_max": 1.4,
+   "life_min": 0.32,
+   "life_max": 0.75,
    "bounce_cm": 4
   },
   "body_fall": {
    "min_speed": 1.0,
    "full_speed": 8,
-   "amp_min": 1.2,
-   "amp_max": 2.8,
+   "amp_min": 0.9,
+   "amp_max": 1.4,
    "life_min": 0.45,
    "life_max": 0.8,
    "bounce_cm": 9
@@ -75,11 +75,27 @@
   "landing": {
    "min_speed": 1.0,
    "full_speed": 8,
-   "amp_min": 1.4,
-   "amp_max": 3.0,
+   "amp_min": 1.0,
+   "amp_max": 1.5,
    "life_min": 0.5,
    "life_max": 0.85,
    "bounce_cm": 10
+  },
+  "hz": [
+   23,
+   17,
+   29
+  ],
+  "axis": [
+   1,
+   0.6,
+   0.4
+  ],
+  "sword": {
+   "amp_min": 0.6,
+   "amp_gain": 1.1,
+   "life_min": 0.3,
+   "life_gain": 0.45
   }
  },
  "flinch": {
@@ -102,15 +118,16 @@
   "flash_radius_cm": 40,
   "flash_radius_gain_cm": 45,
   "flash_fade_s": 0.07,
-  "flash_life_s": 0.3
+  "flash_life_s": 0.3,
+  "down_cap_deg": 12
  },
  "knight": {
   "trail_life_s": 0.22,
   "trail_base_fraction": 0.2,
-  "slow_tail_s": 0.32,
-  "slow_tail_from": 0.3,
+  "slow_tail_s": 0.5,
+  "slow_tail_from": 0.25,
   "punch_heavy": 0.085,
-  "punch_light": 0.0,
+  "punch_light": 0.04,
   "punch_s": 0.3,
   "kick_min_deg": 4,
   "kick_gain_deg": 6,
@@ -291,5 +308,10 @@
   ],
   "dust_brightness": 0.85,
   "spark_brightness": 4.0
+ },
+ "hit_stop": {
+  "light_s": 0.065,
+  "heavy_s": 0.15,
+  "dilation": 0.03
  }
 }

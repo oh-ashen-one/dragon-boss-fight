@@ -9,6 +9,8 @@
 #include "Camera/CameraComponent.h"
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
+#include "VeyrGameMode.h"
+#include "VeyrFightFeel.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/GameViewportClient.h"
 #include "GameFramework/Character.h"
@@ -698,14 +700,18 @@ FQuat UVeyrCameraBoom::FrameView(const FVector& Camera,const FQuat& ArmView,cons
 
 void UVeyrCameraBoom::UpdateDesiredArmLocation(bool bDoTrace,bool bDoLocationLag,bool bDoRotationLag,float DeltaTime)
 {
-    Super::UpdateDesiredArmLocation(bDoTrace,bDoLocationLag,bDoRotationLag,DeltaTime);
     UCameraComponent* Camera=nullptr;
     for(USceneComponent* Child:GetAttachChildren())if(UCameraComponent* C=Cast<UCameraComponent>(Child)){Camera=C;break;}
+    // Last frame's punch, if nobody set the lens since: take it back out before framing reads the lens.
+    if(Camera&&PunchedFov>0.f&&FMath::IsNearlyEqual(Camera->FieldOfView,PunchedFov,.001f))Camera->SetFieldOfView(PunchBaseFov);
+    PunchedFov=-1.f;
+    Super::UpdateDesiredArmLocation(bDoTrace,bDoLocationLag,bDoRotationLag,DeltaTime);
     if(!bFramedViewValid||bLegacyBoom||bLegacyFraming)
     {
         bViewCorrectionValid=false;
         if(Camera&&AppliedFovBoost!=0.f&&FMath::IsNearlyEqual(Camera->FieldOfView,AppliedFov,.01f))Camera->SetFieldOfView(Camera->FieldOfView-AppliedFovBoost);
         AppliedFovBoost=0.f;FovBoostDeg=0.f;
+        ApplyFeelPunch(Camera);
         return;
     }
     RelativeSocketRotation=GetComponentTransform().GetRotation().Inverse()*FramedView;
@@ -717,6 +723,19 @@ void UVeyrCameraBoom::UpdateDesiredArmLocation(bool bDoTrace,bool bDoLocationLag
         AppliedFovBoost=FovBoostDeg;AppliedFov=BaseFov+AppliedFovBoost;
         Camera->SetFieldOfView(AppliedFov);
     }
+    ApplyFeelPunch(Camera);
+}
+
+void UVeyrCameraBoom::ApplyFeelPunch(UCameraComponent* Camera)
+{
+    const UWorld* World=GetWorld();
+    const AVeyrGameMode* Mode=World?World->GetAuthGameMode<AVeyrGameMode>():nullptr;
+    if(!Camera||!Mode||!Mode->FightFeel||!Mode->FightFeel->PunchesAfterBoom(Camera))return;
+    const float Punch=Mode->FightFeel->CurrentPunch();
+    if(Punch<=0.f)return;
+    PunchBaseFov=Camera->FieldOfView;
+    Camera->SetFieldOfView(PunchBaseFov*(1.f-Punch));
+    PunchedFov=Camera->FieldOfView;
 }
 
 FVector UVeyrCameraBoom::SafeArm(const FVector& Origin0,const FVector& Base,float DeltaTime)
