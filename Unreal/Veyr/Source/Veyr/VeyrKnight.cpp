@@ -779,7 +779,7 @@ void AVeyrKnight::ApplyBossDamage(float Amount, const FVector& Source, bool bUnb
     Health = FMath::Clamp(Health - Amount, 0.f, 100.f);
     ++HitsTaken; DamageGrace = .30f;
     if(auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
-        if(Mode->FightFeel)Mode->FightFeel->PlayerContact(this,Amount,bCanBlock&&!bBroken);
+        if(Mode->FightFeel)Mode->FightFeel->PlayerContact(this,Amount,bCanBlock&&!bBroken,Source);
     if (IsDead())
     {
         bGuardRequested = false; bLockedOn = false;

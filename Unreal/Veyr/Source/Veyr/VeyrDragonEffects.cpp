@@ -1,5 +1,9 @@
 #include "VeyrDragonEffects.h"
 #include "VeyrDragon.h"
+#include "VeyrFeelTuning.h"
+#include "VeyrFightFeel.h"
+#include "VeyrGameMode.h"
+#include "Engine/World.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/PointLightComponent.h"
@@ -129,7 +133,13 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
     FVector Camera;FRotator View;Player->GetPlayerViewPoint(Camera,View);
     ImpactAge+=DeltaSeconds;
     if(Dragon->GetSwordContactCount()>LastSwordContacts)
-    {LastSwordContacts=Dragon->GetSwordContactCount();ImpactAge=0.f;ImpactOrigin=Dragon->LastSwordContactWorld;}
+    {
+        LastSwordContacts=Dragon->GetSwordContactCount();ImpactOrigin=Dragon->LastSwordContactWorld;
+        // B5: AVeyrImpactFx owns the burst only when the new feel path is live; otherwise this one plays as before.
+        const AVeyrGameMode* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
+        const bool bNewBursts=VeyrFeelSwitches::HitBursts()&&Mode&&Mode->ImpactFx&&Mode->FightFeel&&Mode->FightFeel->UsesContactFraming();
+        if(!bNewBursts)ImpactAge=0.f;
+    }
     ImpactSpriteCount=ImpactAge<.28f?16:0;Impacts->SetVisibility(ImpactSpriteCount>0);
     if(ImpactSpriteCount>0)
     {

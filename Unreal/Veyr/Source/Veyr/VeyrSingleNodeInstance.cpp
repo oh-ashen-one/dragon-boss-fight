@@ -452,7 +452,7 @@ void UVeyrSingleNodeInstance::ClearExplicitLowerBody()
 
 bool UVeyrSingleNodeInstance::SetExplicitBoneRotations(const TMap<FName,FRotator>& Rotations)
 {
-    if(!IsInGameThread()||Rotations.Num()>4)return false;
+    if(!IsInGameThread()||Rotations.Num()>16)return false; // B5: gaze or aim plus the whole-spine flinch
     for(const auto& Entry:Rotations)
     {
         const FRotator& R=Entry.Value;

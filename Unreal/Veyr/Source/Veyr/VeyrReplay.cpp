@@ -8,6 +8,7 @@
 #include "VeyrArena.h"
 #include "VeyrBlendProof.h"
 #include "VeyrA123Proof.h"
+#include "VeyrFeelProof.h"
 #include "VeyrShowcase.h"
 #include "VeyrIdentity.h"
 #include "Camera/CameraComponent.h"
@@ -123,7 +124,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrStillInterval="),StillInterval))StillInterval=FMath::Clamp(StillInterval,.30f,10.f);
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!FVeyrA123Proof::IsMode(ReplayMode)&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!FVeyrA123Proof::IsMode(ReplayMode)&&!FVeyrFeelProof::IsMode(ReplayMode)&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro|footclosehits|camerahug|soleheights and absolute evidence directory")); return false;
     }
@@ -256,6 +257,16 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
         {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED %s could not begin"),*ReplayMode);return false;}
         DurationLimit=A123Proof->DurationLimit();
     }
+    if(FVeyrFeelProof::IsMode(ReplayMode))
+    {
+        FeelProof=MakeShared<FVeyrFeelProof>();
+        FVeyrFeelProof::FHooks Hooks;
+        Hooks.Shot=[this](const FString& Name){CaptureClock=FMath::Max(CaptureClock,.30f);Event(Name);};
+        Hooks.Finish=[this](bool bOk,const FString& Reason){Finish(bOk,Reason);};
+        if(!FeelProof->Begin(GetWorld(),Knight,Dragon,Hooks))
+        {UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED feel could not begin"));return false;}
+        DurationLimit=FeelProof->DurationLimit();
+    }
     if(ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&
        !(ReplayMode==TEXT("blendproof")&&FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintProof")))&&!Knight->bLockedOn)Knight->ToggleLockOn();
     if(ReplayMode==TEXT("stance"))Event(TEXT("stance_idle_before_input"));
@@ -294,6 +305,7 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
         F->SetNumberField(TEXT("lastShakeDistanceCm"),Feel->LastShakeDistance);
         F->SetNumberField(TEXT("timeDilation"),UGameplayStatics::GetGlobalTimeDilation(this));
         O->SetObjectField(TEXT("fightFeel"),F);
+        O->SetObjectField(TEXT("feel"),Feel->FeelEvidence()); // B4-B6 counters
     }
     if(!IsValid(Knight)||!IsValid(Dragon))return O;
     O->SetNumberField(TEXT("bossMaxHealth"),Dragon->MaxHealth);
@@ -2054,7 +2066,11 @@ void AVeyrReplay::TrackFlightWithLookInput()
        (Dragon->State!=EVeyrDragonState::Windup&&Dragon->State!=EVeyrDragonState::Active&&Dragon->State!=EVeyrDragonState::Recovery))return;
     APlayerController* PC=Cast<APlayerController>(Knight->GetController());
     if(!PC||!Knight->CombatCamera)return;
-    const FRotator Aim=(Dragon->GetHeadLocation()-Knight->CombatCamera->GetComponentLocation()).Rotation();
+    // Aim from the camera arm's pivot (on the knight), not the camera: where the camera sits after collision
+    // must not change the scripted fight. -VeyrLegacyFlightAim restores the camera origin.
+    static const bool bLegacyAim=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyFlightAim"));
+    const FVector From=bLegacyAim||!Knight->CameraBoom?Knight->CombatCamera->GetComponentLocation():Knight->CameraBoom->GetComponentLocation();
+    const FRotator Aim=(Dragon->GetHeadLocation()-From).Rotation();
     const FRotator View=PC->GetControlRotation();
     const bool Legacy=UInputSettings::GetInputSettings()->bEnableLegacyInputScales;
     const float YawScale=Legacy?PC->InputYawScale_DEPRECATED:1.f,PitchScale=Legacy?PC->InputPitchScale_DEPRECATED:1.f;
@@ -2420,6 +2436,7 @@ void AVeyrReplay::DriveInputs()
 {
     if(DriveBlendProofInputs())return;
     if(A123Proof.IsValid()){A123Proof->Drive(Elapsed,GetWorld()->GetDeltaSeconds());return;}
+    if(FeelProof.IsValid()){FeelProof->Drive(Elapsed,GetWorld()->GetDeltaSeconds());return;}
     if(DriveCollisionInputs())return;
     if(DriveIntegrationInputs())return;
     if(DriveStanceInputs())return;
@@ -3033,6 +3050,9 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
     if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
+    if(FeelProof.IsValid())Root->SetObjectField(TEXT("feelProof"),FeelProof->Evidence());
+    if(const AVeyrGameMode* FeelMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
+        if(FeelMode->FightFeel)Root->SetObjectField(TEXT("feel"),FeelMode->FightFeel->FeelEvidence(true)); // B4-B6 totals + static parts, once
     Root->SetBoolField(TEXT("finished"),bFinished); Root->SetBoolField(TEXT("passed"),bFinished&&bPassed);
     Root->SetStringField(TEXT("reason"),bFinished?OutcomeReason:TEXT("running")); Root->SetNumberField(TEXT("durationSeconds"),Elapsed);
     Root->SetNumberField(TEXT("scenarioLimitGameSeconds"),DurationLimit);
