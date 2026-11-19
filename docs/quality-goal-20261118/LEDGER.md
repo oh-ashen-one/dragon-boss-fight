@@ -96,6 +96,14 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-19 11:17 | Picture merged into the goal branch (`17cf98d` = A + B + C); the picture builder runs the integrated check in the main checkout (windowless now, rendered after 13:00) | director | | | running |
 | 11-19 11:20 | Dragon playback, round 2: procedural stepping so the body turns over planted or stepping feet, inertial blending at clip switches, full 16-seed band retune | same agent | lock | to 16:00 | running |
 | 11-19 11:28 | OWNER: "Pause all of your work for now. I'll tell you when to resume it." | owner | | | all seven builders stopped at 11:30; no game, engine, build or Blender process of this session is running; engine lock free. Stopped mid-edit with uncommitted changes left in place in their worktrees: sound second pass (`~/veyr-quality-Baudio`, 4 files), dragon playback round 2 (`~/veyr-quality-F`, 11), Greystone (`~/veyr-quality-E`, 13), bigger dragon (`~/veyr-quality-D`, 8). Committed and pushed where they stood: camera steady-with-dissolve (`fable/quality-goal-camera4` `59e502c`, unrun), impacts second approach (`fable/quality-goal-B2impact` `2f21743`, unrun). Goal branch `17cf98d` (A + B + picture) has not been built or checked as a combination; nothing new is installed |
+| 11-19 14:26 | OWNER: `/goal resume` (pause goal cleared by him) | owner | | | work resumes; stream window over, lock free, nothing was running, 176 GB free |
+| 11-19 14:30 | Integrated check of the goal branch (A + B + picture) in the main checkout: package, 16-seed band, rendered regression, victory film | opus-builder (the picture agent), Opus 5.5 high | lock, 4 rendered | to 16:15 | running |
+| 11-19 14:30 | Camera: steady view with dragon dissolve, run for the first time; both versions filmed for the owner's choice | opus-builder (the camera4 agent) | lock, 4 rendered | to 17:00 | running |
+| 11-19 14:30 | Impacts, second approach, first run (struck part, contact burst, rebound) | opus-builder (the weight agent) | lock, 1 rendered until 15:30 | to 17:00 | running |
+| 11-19 14:30 | Sound, second pass, finished from the uncommitted state and checked on the real output | sonnet-builder (the sound agent), Sonnet 5.5 high | lock, 1 rendered until 15:30 | to 17:00 | running |
+| 11-19 14:30 | Dragon playback round 2 (stepping, inertial blending, band) from the uncommitted state | opus-builder (the playback agent) | lock, windowless until 15:30 | to 18:00 | running |
+| 11-19 14:30 | Greystone E4 / E5 and the arena film from the uncommitted state | opus-builder (the E agent) | lock, windowless until 15:30 | to 18:00 | running |
+| 11-19 14:30 | Bigger dragon (D3) from the uncommitted state | opus-builder (the D agent) | lock, windowless until 15:30 | to 18:00 | running |
 
 ## Spend
 
