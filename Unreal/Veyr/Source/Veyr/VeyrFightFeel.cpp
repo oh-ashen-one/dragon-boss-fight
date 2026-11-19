@@ -226,6 +226,7 @@ void AVeyrFightFeel::Tick(float DeltaSeconds)
     {
         const float HoldAge=.25f/FMath::Max(1.f,VeyrFeelTuning().ShakeHz[0]);
         if(ShakeAge<HoldAge)ShakeAge=FMath::Min(ShakeAge+RealDelta,HoldAge);
+        if(PunchAge<0.f)PunchAge=FMath::Min(PunchAge+RealDelta,0.f); // a delayed punch still lands during the stop
         ++HeldStopTicks;
     }
     else{ShakeAge+=RealDelta;PunchAge+=RealDelta;}
@@ -343,7 +344,8 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
 {
     if(!Camera)return;
     if(!bCameraBaseCaptured){CameraBaseLocation=Camera->GetRelativeLocation();bCameraBaseCaptured=true;}
-    const float Env=FMath::Square(FMath::Clamp(1.f-ShakeAge/FMath::Max(.01f,ShakeLife),0.f,1.f));
+    // B2: a negative age is a kick waiting for the struck part's snap to show first (-VeyrLegacyKickTiming).
+    const float Env=ShakeAge<0.f?0.f:FMath::Square(FMath::Clamp(1.f-ShakeAge/FMath::Max(.01f,ShakeLife),0.f,1.f));
     const float A=ShakeAmplitude*Env;
     // Offset the camera socket, never control rotation or player aiming. A
     // deterministic pulse gives comparable replay captures without RNG changes.
@@ -413,7 +415,7 @@ void AVeyrFightFeel::ApplyCameraShake(UCameraComponent* Camera)
 float AVeyrFightFeel::CurrentPunch() const
 {
     const float Life=VeyrFeelTuning().PunchSeconds;
-    if(bDisabled||bLegacy||!VeyrFeelSwitches::ZoomPunch()||PunchAge>=Life)return 0.f;
+    if(bDisabled||bLegacy||!VeyrFeelSwitches::ZoomPunch()||PunchAge>=Life||PunchAge<0.f)return 0.f;
     return FMath::Clamp(PunchAmp*FMath::Square(1.f-PunchAge/FMath::Max(.01f,Life)),0.f,.5f);
 }
 
@@ -622,6 +624,12 @@ void AVeyrFightFeel::SwordContact(AVeyrDragon* Boss,bool bHeavy)
     if(bHeavy&&VeyrFeelSwitches::SlowTail()&&bOwnsDilation){bPendingSlow=true;SlowTotal=T.SlowTailSeconds;}
     if(bHeavy&&VeyrFeelSwitches::ZoomPunch()){PunchAge=0.f;PunchAmp=T.PunchHeavy*FMath::Lerp(.75f,1.f,W);++ZoomPunches;}
     else if(!bHeavy&&T.PunchLight>0.f&&VeyrFeelSwitches::ZoomPunch()){PunchAge=0.f;PunchAmp=T.PunchLight;++ZoomPunches;}
+    if(VeyrFeelSwitches::KickAfterSnap())
+    {
+        // B2: the camera kick starts two frames after contact so the struck leg's snap is seen before the view jumps.
+        if(ShakeAge==0.f)ShakeAge=-T.KickDelaySeconds;
+        if(PunchAge==0.f)PunchAge=-T.KickDelaySeconds;
+    }
 }
 
 void AVeyrFightFeel::PlayerContact(AVeyrKnight* Player,float Damage,bool bBlocked,const FVector& Source)

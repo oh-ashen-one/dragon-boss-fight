@@ -78,6 +78,7 @@ namespace VeyrFeelSwitches
     bool KnightRecoil(){static const bool B=!Off(TEXT("VeyrNoKnightRecoil"));return B;}
     // Director 16:55: the wide trail drew a filled white quad held through the stop; off unless -VeyrWideTrail.
     bool WideTrail(){static const bool B=RibbonTrail()&&!Off(TEXT("VeyrLegacyTrailWidth"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrWideTrail"));return B;}
+    bool KickAfterSnap(){static const bool B=StrikeReact()&&!Off(TEXT("VeyrLegacyKickTiming"));return B;}
     bool StopFx(){static const bool B=StopHold()&&!Off(TEXT("VeyrLegacyStopFx"));return B;}
     bool FilmEvidence(){static const bool B=!Off(TEXT("VeyrLegacyFilmEvidence"));return B;}
 }

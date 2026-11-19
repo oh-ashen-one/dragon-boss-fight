@@ -209,9 +209,11 @@ private:
     void ConsumeVideoWrite(bool bWait=false);
     void StopVideoCapture(const FString& Reason);
     bool AppendVideoRecord(const TSharedRef<FJsonObject>& Record);
-    void SaveEvidence(bool bFinal,bool bSlim=false);
-    /** B2: the 5 s interim save while a film records; slim (no per-sample arrays) so it cannot stall the capture. */
-    void SaveInterimEvidence();
+    void SaveEvidence(bool bFinal);
+    void SaveEvidencePeriodic();
+    TFuture<void> EvidenceWriteFuture;
+    bool bAsyncPeriodicSave=false;
+    TArray<TSharedPtr<FJsonValue>> EvidenceSaveTimings;
     void Finish(bool bSuccess, const FString& Reason);
     void BeginTerminalVerification();
     void AdvanceRestart(float DeltaSeconds);
