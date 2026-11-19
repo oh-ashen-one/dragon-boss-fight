@@ -211,6 +211,7 @@ void AVeyrDragon::BeginPlay()
     // keeps its exposed bonus through the first 40 % of the rise. -VeyrNoRiseHeadBonus (or legacy timing) turns it off.
     bRiseHeadBonus=!bLegacyKnockdown&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoRiseHeadBonus"));
     BodyScale=ConfiguredBodyScale();PaceScale=ConfiguredPaceScale();
+    bRoamFit=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoRoamFit"));
     bAggression=!bLegacyPacing&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyBrain"));
     SetActorScale3D(FVector(BodyScale));
     FString ReplayName;

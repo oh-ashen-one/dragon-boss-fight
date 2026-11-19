@@ -64,7 +64,9 @@ def main(folders):
         margins = [s.get('minWallMarginCm', 1e9) for s in size_rows if s]
         if margins:
             worst = min(range(len(size_rows)), key=lambda i: size_rows[i].get('minWallMarginCm', 1e9))
-            print(f"  worst wall margin {margins[worst]:.0f} cm at {size_rows[worst].get('minWallMarginWhere')}; "
+            cw = min(range(len(size_rows)), key=lambda i: size_rows[i].get('minCapsuleWallMarginCm', 1e9))
+            print(f"  worst hurt-capsule wall margin {size_rows[cw].get('minCapsuleWallMarginCm', 0):.0f} cm: {size_rows[cw].get('minCapsuleWallMarginWhere')}")
+            print(f"  worst wall margin {margins[worst]:.0f} cm at {size_rows[worst].get('minWallMarginWhere')} xyz {size_rows[worst].get('minWallMarginAt')}; "
                   f"overlap frames total {sum(s.get('overlapFrames', 0) for s in size_rows)}")
             comps = {}
             for s in size_rows:
@@ -78,6 +80,7 @@ def main(folders):
                 stand[k] = stand.get(k, 0) + v
             for k, v in (s.get('swordHitsDown') or {}).items():
                 down[k] = down.get(k, 0) + v
+        print('  warning containment failures:', sum(d.get('warningContainmentFailures', 0) for _, d in rows))
         print('  sword hits standing:', stand)
         print('  sword hits down:', down)
         heads = [s.get('headDownLowestCm') for s in size_rows if s.get('headDownLowestCm', -1) >= 0]
@@ -87,7 +90,8 @@ def main(folders):
         if s0:
             print(f"  body {s0.get('bodyLengthCm', 0):.0f} long, {s0.get('bodySpanCm', 0):.0f} wide, "
                   f"{s0.get('bodyHeightCm', 0):.0f} tall; head top {s0.get('headStandingTopCm', 0):.0f}; "
-                  f"front leg top {s0.get('frontLegTopStandingCm', 0):.0f}")
+                  f"front leg top {s0.get('frontLegTopStandingCm', 0):.0f}; belly clearance {s0.get('bellyClearanceCm', 0):.0f}; "
+                  f"chest clearance {s0.get('chestClearanceCm', 0):.0f}")
             for shot in s0.get('introShots') or []:
                 print(f"  intro {shot['shot']}: in frame {shot['dragonPointsInFramePct']:.0f} % height "
                       f"{shot['dragonScreenHeightPct']:.0f} % width {shot['dragonScreenWidthPct']:.0f} % "

@@ -112,8 +112,16 @@ void FVeyrSizeMeter::Tick(UWorld* World,AVeyrDragon* Dragon,AVeyrKnight* Knight,
     }
     bTwoHanded|=Knight->IsTwoHanded();
     if(!bIntroMeasured&&Clock>.3f){bIntroMeasured=true;MeasureBody(Dragon);MeasureIntro(World,Dragon);
-        FVector A,B;float R;if(Dragon->GetHurtPartWorld(TEXT("head"),A,B,R))HeadStandingZ=static_cast<float>(FMath::Max(A.Z,B.Z)-FloorZ);
-        if(Dragon->GetHurtPartWorld(TEXT("leg_fl"),A,B,R))LegTopStandingZ=static_cast<float>(FMath::Max(A.Z,B.Z)-FloorZ);}
+}
+    if(!bStandingMeasured&&Clock>1.5f&&Dragon->State!=EVeyrDragonState::Exposed)
+    {
+        bStandingMeasured=true;HeadStandingZ=static_cast<float>(Dragon->GetHeadLocation().Z-FloorZ);
+        FVector A,B;float R;
+        if(Dragon->GetHurtPartWorld(TEXT("leg_fl"),A,B,R))LegTopStandingZ=static_cast<float>(FMath::Max(A.Z,B.Z)+R-FloorZ);
+        else LegTopStandingZ=-1.f;
+        if(Dragon->GetHurtPartWorld(TEXT("belly"),A,B,R))BellyClearanceCm=static_cast<float>(FMath::Min(A.Z,B.Z)-R-FloorZ);
+        if(Dragon->GetHurtPartWorld(TEXT("chest"),A,B,R))ChestClearanceCm=static_cast<float>(FMath::Min(A.Z,B.Z)-R-FloorZ);
+    }
     const FString Place=PlaceName(Dragon);
     // Clearance against the fortress wall lines: every hurt capsule and every bone of the drawn body.
     float Margin=1.e9f;FString Where;
@@ -121,22 +129,36 @@ void FVeyrSizeMeter::Tick(UWorld* World,AVeyrDragon* Dragon,AVeyrKnight* Knight,
     {
         FVector A,B;float R;
         if(!Dragon->GetHurtPartWorld(Name,A,B,R))continue;
-        for(const FVector& Q:{A,B,(A+B)*.5f}){const float M=WallMargin(Q,R);if(M<Margin){Margin=M;Where=Name;}}
+        ++PartsTested;
+        for(const FVector& Q:{A,B,(A+B)*.5f})
+        {
+            const float M=WallMargin(Q,R);
+            if(M<Margin){Margin=M;Where=Name;}
+            if(M<MinCapsuleMarginCm){MinCapsuleMarginCm=M;MinCapsuleMarginWhere=FString::Printf(TEXT("%s in %s at (%.0f,%.0f)"),Name,*Place,Q.X,Q.Y);}
+        }
     }
+    if(PartsTested>0)++HurtPartFrames;PartsTested=0;
+    FVector WorstBone=FVector::ZeroVector;
     if(UVeyrSkeletalPresentation* P=Dragon->ImportedPresentation)
         for(int32 I=0;I<P->GetComponentSpaceTransforms().Num();++I)
-        {const float M=WallMargin(P->GetBoneTransform(I).GetLocation(),0.f);if(M<Margin){Margin=M;Where=P->GetBoneName(I).ToString();}}
-    if(Margin<MinWallMarginCm){MinWallMarginCm=Margin;MinWallMarginWhere=Where+TEXT(" in ")+Place;}
+        {const FVector L=P->GetBoneTransform(I).GetLocation();const float M=WallMargin(L,0.f);if(M<Margin){Margin=M;Where=P->GetBoneName(I).ToString();WorstBone=L;}}
+    if(Margin<MinWallMarginCm){MinWallMarginCm=Margin;MinWallMarginWhere=Where+TEXT(" in ")+Place;MinWallMarginAt=WorstBone;}
     float& PlaceMin=MinMarginByPlace.FindOrAdd(Place,1.e9f);PlaceMin=FMath::Min(PlaceMin,Margin);
     // Physics overlap of the hurt capsules with any tall static geometry (walls, towers, props), every third frame.
     if(Frames%3==0)
     {
         ++OverlapChecks;bool bAny=false;
         FCollisionQueryParams Params(SCENE_QUERY_STAT(VeyrSizeMeter),false,Dragon);Params.AddIgnoredActor(Knight);
-        for(const TCHAR* Name:PartNames)
+        struct FSeg{FString Name;FVector A,B;float R;};TArray<FSeg> Segs;
+        for(const TCHAR* Name:PartNames){FVector A,B;float R;if(Dragon->GetHurtPartWorld(Name,A,B,R))Segs.Add({Name,A,B,R});}
         {
-            FVector A,B;float R;
-            if(!Dragon->GetHurtPartWorld(Name,A,B,R))continue;
+            TArray<FVeyrDragonContact> Tail;FVeyrDragonFlameBeam Unused;
+            if(Dragon->ReadImportedContactPose(Dragon->ImportedPresentation,EVeyrDragonMove::TailSmack,0,Tail,Unused))
+                for(int32 I=0;I<Tail.Num();++I)Segs.Add({FString::Printf(TEXT("tail_chain%d"),I),Tail[I].Start,Tail[I].End,Tail[I].Radius});
+        }
+        for(const FSeg& Seg:Segs)
+        {
+            const TCHAR* Name=*Seg.Name;const FVector A=Seg.A,B=Seg.B;const float R=Seg.R;
             const FVector Axis=B-A;const float Half=static_cast<float>(Axis.Size())*.5f;
             const FQuat Q=Axis.IsNearlyZero()?FQuat::Identity:FRotationMatrix::MakeFromZ(Axis.GetSafeNormal()).ToQuat();
             TArray<FOverlapResult> Hits;
@@ -189,7 +211,13 @@ void FVeyrSizeMeter::Tick(UWorld* World,AVeyrDragon* Dragon,AVeyrKnight* Knight,
     LastHitsTaken=Knight->HitsTaken;bWasActive=bActive||bAerialFire;
     // Knight's sword hits on the dragon, by part, standing or down.
     const bool bDown=Dragon->State==EVeyrDragonState::Collapse||Dragon->State==EVeyrDragonState::Exposed||Dragon->State==EVeyrDragonState::Rise;
-    if(Dragon->Health<LastDragonHealth-.01f)(bDown?HitsDown:HitsStanding).FindOrAdd(Dragon->LastSwordHurtPart.ToString())++;
+    if(Dragon->Health<LastDragonHealth-.01f)
+    {
+        static const TCHAR* Regions[]={TEXT("leg0"),TEXT("leg1"),TEXT("leg2"),TEXT("leg3"),TEXT("head"),TEXT("body")};
+        const int32 Region=Dragon->GetLastHitRegion();
+        const FString Label=!Dragon->LastSwordHurtPart.IsNone()?Dragon->LastSwordHurtPart.ToString():Region>=0&&Region<6?FString(Regions[Region]):TEXT("other");
+        (bDown?HitsDown:HitsStanding).FindOrAdd(Label)++;
+    }
     LastDragonHealth=Dragon->Health;
     if(Dragon->State==EVeyrDragonState::Exposed)
     {
@@ -211,7 +239,11 @@ TSharedPtr<FJsonObject> FVeyrSizeMeter::ToJson() const
     O->SetNumberField(TEXT("bodyLengthCm"),BodyLengthCm);O->SetNumberField(TEXT("bodySpanCm"),BodySpanCm);O->SetNumberField(TEXT("bodyHeightCm"),BodyHeightCm);
     O->SetNumberField(TEXT("headStandingTopCm"),HeadStandingZ);O->SetNumberField(TEXT("frontLegTopStandingCm"),LegTopStandingZ);
     O->SetNumberField(TEXT("frames"),Frames);
+    O->SetNumberField(TEXT("bellyClearanceCm"),BellyClearanceCm);O->SetNumberField(TEXT("chestClearanceCm"),ChestClearanceCm);
     O->SetNumberField(TEXT("minWallMarginCm"),MinWallMarginCm);O->SetStringField(TEXT("minWallMarginWhere"),MinWallMarginWhere);
+    O->SetStringField(TEXT("minWallMarginAt"),FString::Printf(TEXT("%.0f,%.0f,%.0f"),MinWallMarginAt.X,MinWallMarginAt.Y,MinWallMarginAt.Z));
+    O->SetNumberField(TEXT("minCapsuleWallMarginCm"),MinCapsuleMarginCm);O->SetStringField(TEXT("minCapsuleWallMarginWhere"),MinCapsuleMarginWhere);
+    O->SetNumberField(TEXT("hurtPartFrames"),HurtPartFrames);
     auto Places=MakeShared<FJsonObject>();for(const auto& P:MinMarginByPlace)Places->SetNumberField(P.Key,P.Value);
     O->SetObjectField(TEXT("minWallMarginByPlaceCm"),Places);
     O->SetNumberField(TEXT("overlapChecks"),OverlapChecks);O->SetNumberField(TEXT("overlapFrames"),OverlapFrames);

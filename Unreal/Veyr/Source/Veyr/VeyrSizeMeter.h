@@ -36,7 +36,10 @@ private:
     TMap<FString,int32> HitsStanding, HitsDown;
     float HeadDownMinZ=1.e9f, HeadDownMaxZ=-1.e9f, HeadStandingZ=0.f, LegTopStandingZ=0.f;
     float BodyLengthCm=0.f, BodySpanCm=0.f, BodyHeightCm=0.f;
-    float BrainSeed=0.f, BodyScale=0.f;
+    int32 BrainSeed=0;float BodyScale=0.f;
+    FVector MinWallMarginAt=FVector::ZeroVector;
+    float MinCapsuleMarginCm=1.e9f;FString MinCapsuleMarginWhere;
+    int32 HurtPartFrames=0,PartsTested=0;bool bStandingMeasured=false;float BellyClearanceCm=-1.f,ChestClearanceCm=-1.f;
     bool bTwoHanded=false;
     TArray<TSharedPtr<FJsonValue>> IntroShots;
     int32 FlightsStarted=0;

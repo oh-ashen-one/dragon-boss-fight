@@ -98,7 +98,7 @@ void AVeyrGameMode::StartPlay()
     Arena=GetWorld()->SpawnActor<AVeyrArena>(FVector::ZeroVector,FRotator::ZeroRotator,Params);
     // The creature scales about its origin; back the spawn off so the snout starts where it always did
     // (674 cm ahead of the origin at the original size) and the opening distance to the knight holds.
-    Dragon=GetWorld()->SpawnActor<AVeyrDragon>(FVector(500.f+674.f*(AVeyrDragon::ConfiguredBodyScale()-1.f),0,0),FRotator(0,180,0),Params);
+    Dragon=GetWorld()->SpawnActor<AVeyrDragon>(FVector(500.f+674.f*(AVeyrDragon::ConfiguredBodyScale()-1.f)-SizeFitShiftCm(),0,0),FRotator(0,180,0),Params);
     if(Arena&&Dragon)Arena->AddTickPrerequisiteActor(Dragon);
     if(Dragon&&FightFeel)Dragon->AddTickPrerequisiteActor(FightFeel);
     DragonEffects=GetWorld()->SpawnActor<AVeyrDragonEffects>();
@@ -124,7 +124,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
     }
     if(Knight&&!bPawnPositioned)
     {
-        Knight->SetActorLocationAndRotation(FVector(-1600,0,125),FRotator::ZeroRotator,false,nullptr,ETeleportType::TeleportPhysics);
+        Knight->SetActorLocationAndRotation(FVector(-1600.f-SizeFitShiftCm(),0,125),FRotator::ZeroRotator,false,nullptr,ETeleportType::TeleportPhysics);
         Knight->GetCharacterMovement()->StopMovementImmediately();
         Knight->Boss=Dragon;
         if(Dragon){Dragon->Target=Knight;Knight->AddTickPrerequisiteActor(Dragon);}
@@ -234,6 +234,16 @@ void AVeyrGameMode::StartMixCapture()
     UAudioMixerBlueprintLibrary::StartRecordingOutput(this,MixCaptureDuration+1.f);
     MixCaptureStarted=FPlatformTime::Seconds();
     UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_CAPTURE_START wall=%.6f world=%.6f intro=%d"),MixCaptureStarted,GetWorld()->GetTimeSeconds(),bArenaIntroActive);
+}
+
+float AVeyrGameMode::SizeFitShiftCm()
+{
+    // D3: above 2x the idle tail (about 1420 cm behind the origin per unit of scale) would reach past the east wall
+    // line at spawn. Shift the dragon and the knight west together so the tail stays 200 cm inside x=5100 and the
+    // opening snout-to-knight distance holds. 0 at 2x and below; -VeyrNoSizeFit restores the old placement.
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrNoSizeFit")))return 0.f;
+    const float S=AVeyrDragon::ConfiguredBodyScale();
+    return FMath::Max(0.f,500.f+674.f*(S-1.f)+1420.f*S-4900.f);
 }
 
 double AVeyrGameMode::FightNow()

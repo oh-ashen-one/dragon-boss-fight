@@ -158,7 +158,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat") float ExposedSeconds=7.f;
     /** How far the creature's origin may travel from the court centre. The court is 4900 x 4400 cm
      * to its walls; a body twice as long and wide keeps tail and wings inside by roaming less. */
-    float RoamRadius() const { return 2700.f-700.f*(BodyScale-1.f); }
+    /** D3: above 2x the roam circle also keeps the tail (about 1420 cm per unit of scale behind the origin) 100 cm
+     * inside the side walls (y=+-4500), at least 300 cm; -VeyrNoRoamFit restores the linear radius. */
+    float RoamRadius() const
+    {
+        const float Linear=2700.f-700.f*(BodyScale-1.f);
+        return bRoamFit&&BodyScale>2.01f?FMath::Clamp(4400.f-1420.f*BodyScale,300.f,Linear):Linear;
+    }
+    bool bRoamFit=false;
     /** Distance in front of the body centre where the bite lands (measured from its clip). */
     float FrontSweet() const { return FrontSweetCm; }
     /** True while a wind-up may still turn the body onto the player. */
