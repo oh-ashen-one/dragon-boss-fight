@@ -89,7 +89,12 @@ FVector UVeyrCameraBoom::RigArm(const FVector& Base,float DeltaTime)
     FVector Pivot(KB.X,KB.Y,FMath::Min(Foot.Z+RigPivotHeightCm,Top.Z-10.0));
     if(Proxy.IsValid())
     {
-        const float Lift=Proxy.FreeAbove(Pivot,R,4000.f*S);
+        // The boxes only flag it; the drawn skin decides: a pivot outside the closed skin by the lens radius stays
+        // (bent legs / belly boxes claim free space and lifted the view over the dragon's back). -VeyrRigProxyLift restores.
+        static const bool bProxyLift=FParse::Param(FCommandLine::Get(),TEXT("VeyrRigProxyLift"));
+        const FVeyrDragonTrueSkin& TrueLift=FVeyrDragonTrueSkin::Get();
+        const bool bSkinClear=!bProxyLift&&bProxyTight&&Proxy.Contains(Pivot,R)&&!TrueLift.InsideVolume(Pivot)&&TrueLift.NearestDistance(Pivot,R+1.f)>=R;
+        const float Lift=bSkinClear?0.f:Proxy.FreeAbove(Pivot,R,4000.f*S);
         if(Lift>0.f){Pivot.Z+=Lift;++RigPivotLiftFrames;}
     }
     // b. Direction: control rotation (or lock-on line), sticky eased rise near the body, turn-rate limited.
