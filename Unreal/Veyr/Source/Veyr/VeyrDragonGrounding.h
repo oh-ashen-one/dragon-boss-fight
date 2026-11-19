@@ -65,6 +65,9 @@ public:
     /** Every body skin sample (boom + dense) with its skinned outward normal, world space. Wing samples are
      * left out: the membranes are open sheets, so the far side of one is not inside anything. */
     bool SkinSurface(UVeyrSkeletalPresentation* Presentation,TArray<FVector>& OutPositions,TArray<FVector>& OutNormals) const;
+    /** The wing membrane samples (boom + dense) with skinned normals: a sight line that changes side of a
+     * membrane next to its samples crosses it (camera third pass). */
+    bool SkinWingSurface(UVeyrSkeletalPresentation* Presentation,TArray<FVector>& OutPositions,TArray<FVector>& OutNormals) const;
     int32 BoomCount() const { return FMath::Min(BoomPoints,Points.Num()); }
     int32 BoomWingCount() const { return BoomWing; }
     FString Diagnostic;

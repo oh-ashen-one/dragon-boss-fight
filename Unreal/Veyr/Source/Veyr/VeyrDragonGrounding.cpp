@@ -164,6 +164,26 @@ bool FVeyrHullModel::SkinSurface(UVeyrSkeletalPresentation* Presentation,TArray<
     return true;
 }
 
+bool FVeyrHullModel::SkinWingSurface(UVeyrSkeletalPresentation* Presentation,TArray<FVector>& OutPositions,TArray<FVector>& OutNormals) const
+{
+    OutPositions.Reset();OutNormals.Reset();
+    if(!IsReadyFor(Presentation)||!Presentation->bPoseEvaluated)return false;
+    const TArray<FTransform>& Pose=Presentation->GetComponentSpaceTransforms();
+    const FTransform Component=Presentation->GetComponentTransform();
+    OutPositions.Reserve(Points.Num());OutNormals.Reserve(Points.Num());
+    for(const FPoint& Point:Points)
+    {
+        if(!Point.bWing)continue;
+        FVector Skinned=FVector::ZeroVector,Normal=FVector::ZeroVector;
+        for(const FInfluence& I:Point.Influences)
+            if(I.Bone!=INDEX_NONE&&Pose.IsValidIndex(I.Bone))
+            {Skinned+=Pose[I.Bone].TransformPosition(I.BoneLocal)*I.Weight;Normal+=Pose[I.Bone].TransformVectorNoScale(I.NormalLocal)*I.Weight;}
+        OutPositions.Add(Component.TransformPosition(Skinned));
+        OutNormals.Add(Component.TransformVectorNoScale(Normal).GetSafeNormal());
+    }
+    return true;
+}
+
 bool FVeyrSoleModel::Initialize(UVeyrSkeletalPresentation* Presentation)
 {
     bReady=false;Points.Reset();FitResidualImportedCm=-1.f;FittedMesh.Reset();

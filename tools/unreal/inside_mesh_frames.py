@@ -9,14 +9,52 @@ classifier splits each frame (scaled to 320x180) into 10x10 blocks and counts "i
 GRAZE (the near plane cutting the skin). Calibrated on build16 at 4 fps (inside/clipping 82.6-84.4 s and 107.6-109.1 s; no other hits, fire
 breath excluded by hue).
 
-  python3 tools/unreal/inside_mesh_frames.py FILM.mp4 [--fps 4] [--json OUT.json]
+  python3 tools/unreal/inside_mesh_frames.py FILM.mp4|RUN/native-video [--fps 12] [--json OUT.json]
   python3 tools/unreal/inside_mesh_frames.py --self-test
-Exit code 1 when any INSIDE frame is found (0 otherwise), so it can gate a film.
+Exit code 1 when any INSIDE or PALE frame is found (0 otherwise), so it can gate a film.
+
+PALE (third pass, 2026-11-18): the phase A film showed a second inside look the salmon class missed:
+pale grey, low-saturation, flat-shaded facets (the dragon's back faces under the arena light) filling
+the screen while the knight is seen through or under them. Cobbles and scales are pale too but carry
+fine detail; facets are smooth gradients. Per 32x32 block at 640x360 the ratio of luminance spread to
+mean absolute Laplacian is high (>2.2) on facets and about 1 on cobbles. PALE needs >=20 % pale blocks,
+a median ratio over them >=1.8 and >=10 % smooth, non-bluish pale blocks below the top third (where
+the knight stands; this also rejects cloudy sky). Calibrated on veyr-phaseA-victory.mp4
+(flagged by the critic at 35.5, 36.75, 73.5, 79.5 s) against veyr-79fe0bc-baseline-victory.mp4.
 """
 import argparse, json, subprocess, sys
+from pathlib import Path
 import numpy as np
 
 W, H, B = 320, 180, 10
+PW, PH, PB = 640, 360, 20
+
+
+def pale_facets(rgb640):
+    """(pale share, median smoothness ratio, smooth pale share) of a 640x360 frame, HUD masked."""
+    a = rgb640.astype(np.float32) / 255.0
+    lum = a @ np.array([.299, .587, .114], np.float32)
+    lap = np.zeros_like(lum)
+    lap[1:-1, 1:-1] = np.abs(4 * lum[1:-1, 1:-1] - lum[:-2, 1:-1] - lum[2:, 1:-1] - lum[1:-1, :-2] - lum[1:-1, 2:])
+    gy, gx = PH // PB, PW // PB
+    blk = a.reshape(gy, PB, gx, PB, 3).mean(axis=(1, 3))
+    bl = blk @ np.array([.299, .587, .114], np.float32)
+    sat = (blk.max(-1) - blk.min(-1)) / np.maximum(blk.max(-1), 1e-6)
+    spread = lum.reshape(gy, PB, gx, PB).std(axis=(1, 3))
+    ratio = spread / np.maximum(lap.reshape(gy, PB, gx, PB).mean(axis=(1, 3)), 1e-3)
+    keep = np.ones((gy, gx), bool)
+    keep[:2, :] = False; keep[11:, :4] = False; keep[9:, 25:] = False   # boss bar, gauge, help text and icons
+    pale = (bl > 0.30) & (sat < 0.22) & keep
+    # Smooth pale blocks that are not cloudy night sky (bluish), counted below the top third, where the
+    # knight stands: facets there cover or crowd him.
+    smooth = pale & (ratio > 2.2) & (spread > 0.05) & (blk[..., 2] - blk[..., 0] < 0.06)
+    smooth[:gy // 3, :] = False
+    med = float(np.median(ratio[pale])) if pale.any() else 0.0
+    return float(pale[keep].mean()), med, float(smooth[keep].mean())
+
+
+def pale_class(pale, med, smooth):
+    return pale >= 0.2 and med >= 1.8 and smooth >= 0.10
 
 
 def interior_share(rgb):
@@ -37,17 +75,45 @@ def interior_share(rgb):
     return float(interior.mean())
 
 
-def frames(path, fps):
-    cmd = ['ffmpeg', '-v', 'error', '-i', str(path), '-vf', f'fps={fps},scale={W}:{H}', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
+def frames(path, fps, w=W, h=H):
+    if Path(path).is_dir():
+        yield from native_frames(Path(path), fps, w, h)
+        return
+    cmd = ['ffmpeg', '-v', 'error', '-i', str(path), '-vf', f'fps={fps},scale={w}:{h}', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     n = 0
     while True:
-        buf = p.stdout.read(W * H * 3)
-        if len(buf) < W * H * 3:
+        buf = p.stdout.read(w * h * 3)
+        if len(buf) < w * h * 3:
             break
-        yield (n + 0.5) / fps, np.frombuffer(buf, np.uint8).reshape(H, W, 3)
+        yield (n + 0.5) / fps, np.frombuffer(buf, np.uint8).reshape(h, w, 3)
         n += 1
     p.wait()
+
+
+def native_frames(folder, fps, w, h):
+    """A run's native-video folder (frame-NNNNNN.png + frames.jsonl): every k-th PNG, timed by wallSeconds."""
+    rows = [json.loads(l) for l in (folder / 'frames.jsonl').read_text().splitlines() if l.strip()]
+    rows = [r for r in rows if r.get('type') == 'frame' and (folder / r['file']).exists()]
+    if not rows:
+        return
+    span = max(rows[-1]['wallSeconds'] - rows[0]['wallSeconds'], 1e-3)
+    k = max(1, round(len(rows) / span / fps))
+    pick = rows[::k]
+    listing = folder.parent / '.inside-mesh-frames.ffconcat'
+    listing.write_text('ffconcat version 1.0\n' + ''.join(f"file '{folder / r['file']}'\nduration 1\n" for r in pick))
+    try:
+        cmd = ['ffmpeg', '-v', 'error', '-safe', '0', '-f', 'concat', '-i', str(listing), '-vf', f'scale={w}:{h}', '-fps_mode', 'passthrough',
+               '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        for r in pick:
+            buf = p.stdout.read(w * h * 3)
+            if len(buf) < w * h * 3:
+                break
+            yield r['wallSeconds'], np.frombuffer(buf, np.uint8).reshape(h, w, 3)
+        p.wait()
+    finally:
+        listing.unlink(missing_ok=True)
 
 
 def classify(share, inside, graze):
@@ -75,6 +141,18 @@ def self_test():
     graze = normal.copy(); graze[:20, :120] = [225, 155, 125]
     cases = {'inside': (inside, 'INSIDE'), 'textured_sand': (tex, 'ok'), 'cobbles': (normal, 'ok'), 'fire': (fire, 'ok'), 'graze': (graze, 'GRAZE')}
     ok = True
+    # Pale facets: flat-shaded grey cells (~60 px, a low-poly mesh seen from inside) against grey cobbles.
+    y2, x2 = np.mgrid[0:PH, 0:PW]
+    seeds = rng.random((70, 2)) * [PH, PW]
+    cell = np.argmin((y2[..., None] - seeds[:, 0]) ** 2 + (x2[..., None] - seeds[:, 1]) ** 2, axis=-1)
+    shade = rng.integers(120, 230, 70)[cell].astype(np.float32)
+    facets = np.stack([shade, shade + 3, shade + 5], -1)
+    stones = np.repeat(np.repeat(rng.integers(90, 190, (PH // 8, PW // 8, 1)), 8, 0), 8, 1).astype(np.float32).repeat(3, -1)
+    stones += rng.normal(0, 18, stones.shape)
+    for name, img, want in (('pale_facets', facets, True), ('pale_cobbles', stones, False)):
+        got = pale_class(*pale_facets(np.clip(img, 0, 255).astype(np.uint8)))
+        print(f'{name:14s} pale -> {got} (want {want})')
+        ok &= got == want
     for name, (img, want) in cases.items():
         share = interior_share(np.clip(img, 0, 255).astype(np.uint8))
         got = classify(share, 0.05, 0.013)
@@ -87,7 +165,7 @@ def self_test():
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('film', nargs='?')
-    ap.add_argument('--fps', type=float, default=4)
+    ap.add_argument('--fps', type=float, default=12, help='sample rate; 12 catches the 0.1-0.3 s pale frames, 4 misses some')
     ap.add_argument('--inside', type=float, default=0.05, help='interior block share for INSIDE')
     ap.add_argument('--graze', type=float, default=0.013, help='interior block share for GRAZE (fire smoke reaches 0.012)')
     ap.add_argument('--json')
@@ -98,19 +176,26 @@ def main():
     if not a.film:
         ap.error('film required')
     rows = []
-    for t, img in frames(a.film, a.fps):
+    for t, big in frames(a.film, a.fps, PW, PH):
+        img = big.reshape(H, 2, W, 2, 3).mean(axis=(1, 3)).astype(np.uint8)
         share = interior_share(img)
-        rows.append({'t': round(t, 3), 'interiorShare': round(share, 4), 'class': classify(share, a.inside, a.graze)})
+        pale, med, smooth = pale_facets(big)
+        cls = classify(share, a.inside, a.graze)
+        if cls != 'INSIDE' and pale_class(pale, med, smooth):
+            cls = 'PALE'
+        rows.append({'t': round(t, 3), 'interiorShare': round(share, 4), 'paleShare': round(pale, 3), 'paleSmoothRatio': round(med, 2),
+                     'paleSmoothShare': round(smooth, 3), 'class': cls})
     flagged = [r for r in rows if r['class'] != 'ok']
     for r in flagged:
-        print(f"{r['t']:8.2f}s {r['class']:6s} {r['interiorShare']:.3f}")
+        print(f"{r['t']:8.2f}s {r['class']:6s} {r['interiorShare']:.3f} pale {r['paleShare']:.2f} ratio {r['paleSmoothRatio']:.2f} smooth {r['paleSmoothShare']:.3f}")
     summary = {'film': a.film, 'fps': a.fps, 'frames': len(rows), 'inside': sum(r['class'] == 'INSIDE' for r in rows),
+               'pale': sum(r['class'] == 'PALE' for r in rows), 'paleSeconds': [r['t'] for r in rows if r['class'] == 'PALE'],
                'graze': sum(r['class'] == 'GRAZE' for r in rows), 'thresholds': {'inside': a.inside, 'graze': a.graze}}
     print('INSIDE_MESH_FRAMES', json.dumps(summary))
     if a.json:
         with open(a.json, 'w') as f:
             json.dump({**summary, 'rows': rows}, f, indent=1)
-    return 1 if summary['inside'] else 0
+    return 1 if summary['inside'] or summary['pale'] else 0
 
 
 if __name__ == '__main__':

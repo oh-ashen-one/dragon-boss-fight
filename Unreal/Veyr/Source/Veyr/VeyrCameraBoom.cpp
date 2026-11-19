@@ -6,6 +6,8 @@
 #include "EngineUtils.h"
 #include "Misc/CommandLine.h"
 #include "Camera/CameraComponent.h"
+#include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/GameViewportClient.h"
 #include "GameFramework/Character.h"
@@ -20,6 +22,7 @@ void UVeyrCameraBoom::BeginPlay()
     Super::BeginPlay();
     bLegacyBoom=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraBoom"));
     bLegacyFraming=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraFraming"));
+    bLegacySafety=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyCameraSafety"));
     FindDragon();
 }
 
@@ -106,31 +109,106 @@ bool UVeyrCameraBoom::IsPointInsideSolidCapsule(const FVector& Point,float Margi
     return false;
 }
 
-bool UVeyrCameraBoom::IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm)
+bool UVeyrCameraBoom::EnsureSurface() const
 {
-    if(OutDepthCm)*OutDepthCm=0.f;
     AVeyrDragon* D=Dragon.Get();
     UVeyrSkeletalPresentation* Presentation=D?D->ImportedPresentation.Get():nullptr;
     if(!Presentation||!D->bUsingCustomuseVisual)return false;
     if(SurfaceFrame!=GFrameCounter)
     {
-        SurfaceFrame=GFrameCounter;
+        SurfaceFrame=GFrameCounter;SurfaceGrid.Reset();SurfaceBounds=FBox(ForceInit);WingGrid.Reset();WingBounds=FBox(ForceInit);
         if(!Hull.IsReadyFor(Presentation))Hull.Initialize(Presentation);
         Hull.SkinSurface(Presentation,SurfacePositions,SurfaceNormals);
+        Hull.SkinWingSurface(Presentation,WingPositions,WingNormals);
+        // Buckets of 50 cm x scale: a query reads a few dozen samples instead of all of them.
+        SurfaceCell=FMath::Max(25.f,50.f*DragonScale());
+        auto Bucket=[this](const TArray<FVector>& Points,TMap<FIntVector,TArray<int32>>& Grid,FBox& Bounds)
+        {
+            for(int32 I=0;I<Points.Num();++I)
+            {
+                const FVector& P=Points[I];Bounds+=P;
+                Grid.FindOrAdd(FIntVector(FMath::FloorToInt(P.X/SurfaceCell),FMath::FloorToInt(P.Y/SurfaceCell),FMath::FloorToInt(P.Z/SurfaceCell))).Add(I);
+            }
+        };
+        Bucket(SurfacePositions,SurfaceGrid,SurfaceBounds);Bucket(WingPositions,WingGrid,WingBounds);
     }
+    return SurfacePositions.Num()>0;
+}
+
+void UVeyrCameraBoom::NearestSkin(const FVector& Point,int32 K,TArray<TPair<double,int32>,TInlineAllocator<13>>& Out,bool bWing) const
+{
+    Out.Reset();
+    if(!EnsureSurface())return;
+    const TMap<FIntVector,TArray<int32>>& Grid=bWing?WingGrid:SurfaceGrid;
+    const TArray<FVector>& Positions=bWing?WingPositions:SurfacePositions;
+    const FIntVector C(FMath::FloorToInt(Point.X/SurfaceCell),FMath::FloorToInt(Point.Y/SurfaceCell),FMath::FloorToInt(Point.Z/SurfaceCell));
+    auto Visit=[&](const FIntVector& Cell)
+    {
+        const TArray<int32>* Bucket=Grid.Find(Cell);if(!Bucket)return;
+        for(const int32 I:*Bucket)
+        {
+            const double Distance=FVector::DistSquared(Positions[I],Point);
+            if(Out.Num()==K&&Distance>=Out.Last().Key)continue;
+            int32 At=Out.Num();while(At>0&&Out[At-1].Key>Distance)--At;
+            Out.Insert(TPair<double,int32>(Distance,I),At);
+            if(Out.Num()>K)Out.Pop(EAllowShrinking::No);
+        }
+    };
+    // Rings of cells outwards until K samples are known and the next ring cannot hold a nearer one.
+    const int32 MaxRing=FMath::CeilToInt(400.f*DragonScale()/SurfaceCell);
+    for(int32 Ring=0;Ring<=MaxRing;++Ring)
+    {
+        if(Out.Num()==K&&FMath::Sqrt(Out.Last().Key)<(Ring-1)*SurfaceCell)break;
+        for(int32 X=-Ring;X<=Ring;++X)for(int32 Y=-Ring;Y<=Ring;++Y)for(int32 Z=-Ring;Z<=Ring;++Z)
+            if(FMath::Max3(FMath::Abs(X),FMath::Abs(Y),FMath::Abs(Z))==Ring)Visit(C+FIntVector(X,Y,Z));
+    }
+}
+
+float UVeyrCameraBoom::NearestSkinCm(const FVector& Point) const
+{
+    if(!EnsureSurface())return TNumericLimits<float>::Max();
+    float Best=TNumericLimits<float>::Max();
+    TArray<TPair<double,int32>,TInlineAllocator<13>> Nearest;
+    if(SurfaceBounds.ExpandBy(400.f*DragonScale()).IsInside(Point)){NearestSkin(Point,1,Nearest);if(!Nearest.IsEmpty())Best=static_cast<float>(FMath::Sqrt(Nearest[0].Key));}
+    if(WingBounds.ExpandBy(400.f*DragonScale()).IsInside(Point)){NearestSkin(Point,1,Nearest,true);if(!Nearest.IsEmpty())Best=FMath::Min(Best,static_cast<float>(FMath::Sqrt(Nearest[0].Key)));}
+    return Best;
+}
+
+bool UVeyrCameraBoom::CrossesWing(const FVector& A,const FVector& B) const
+{
+    if(!EnsureSurface()||WingPositions.IsEmpty())return false;
+    const FBox Near=WingBounds.ExpandBy(100.f*DragonScale());
+    if(!FMath::LineBoxIntersection(Near,A,B,B-A)&&!Near.IsInside(A))return false;
+    // Signed side of the nearest membrane sample at every 20 cm step; a flip with both steps within a
+    // sample spacing of the sheet is a crossing (an open sheet has no inside, so the side is all there is).
+    const float Reach=35.f*DragonScale();
+    const float Length=static_cast<float>(FVector::Dist(A,B));
+    const int32 Steps=FMath::Clamp(FMath::CeilToInt(Length/20.f),1,160);
+    TArray<TPair<double,int32>,TInlineAllocator<13>> Nearest;
+    float Previous=0.f;bool bPrevious=false;
+    for(int32 I=0;I<=Steps;++I)
+    {
+        const FVector P=FMath::Lerp(A,B,static_cast<float>(I)/Steps);
+        if(!Near.IsInside(P)){bPrevious=false;continue;}
+        NearestSkin(P,1,Nearest,true);
+        if(Nearest.IsEmpty()||Nearest[0].Key>FMath::Square(Reach)){bPrevious=false;continue;}
+        const float Side=static_cast<float>(FVector::DotProduct(P-WingPositions[Nearest[0].Value],WingNormals[Nearest[0].Value]));
+        if(bPrevious&&Side*Previous<0.f)return true;
+        Previous=Side;bPrevious=true;
+    }
+    return false;
+}
+
+bool UVeyrCameraBoom::IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm) const
+{
+    if(OutDepthCm)*OutDepthCm=0.f;
+    if(!EnsureSurface())return false;
+    // Outside the skinned samples' box (plus the thickest part) nothing can be behind the skin.
+    if(!SurfaceBounds.ExpandBy(200.f*DragonScale()*2.f).IsInside(Point))return false;
     // Consensus of the 12 nearest body samples, so a single sample with a bent normal (spines, horns,
     // the tail tip) cannot decide it, and only within 200 cm x scale of the skin: the body is nowhere thicker.
     constexpr int32 K=12;
-    TArray<TPair<double,int32>,TInlineAllocator<K+1>> Nearest;
-    for(int32 I=0;I<SurfacePositions.Num();++I)
-    {
-        const double Distance=FVector::DistSquared(SurfacePositions[I],Point);
-        if(Nearest.Num()==K&&Distance>=Nearest.Last().Key)continue;
-        int32 At=Nearest.Num();
-        while(At>0&&Nearest[At-1].Key>Distance)--At;
-        Nearest.Insert(TPair<double,int32>(Distance,I),At);
-        if(Nearest.Num()>K)Nearest.Pop(EAllowShrinking::No);
-    }
+    TArray<TPair<double,int32>,TInlineAllocator<13>> Nearest;NearestSkin(Point,K,Nearest);
     if(Nearest.IsEmpty())return false;
     if(FMath::Sqrt(Nearest[0].Key)>200.f*DragonScale()*2.f)return false;
     int32 Away=0;float Depth=0.f;
@@ -141,6 +219,23 @@ bool UVeyrCameraBoom::IsPointBehindSkin(const FVector& Point,float Margin,float*
     }
     if(OutDepthCm)*OutDepthCm=Depth;
     return Away*4>=Nearest.Num()*3;
+}
+
+bool UVeyrCameraBoom::IsPointInsideBody(const FVector& Point,float Margin) const
+{
+    return IsPointInsideBareDragon(Point,Margin)||IsPointBehindSkin(Point,0.f);
+}
+
+bool UVeyrCameraBoom::SightClear(const FVector& A,const FVector& B,bool bAlwaysMarch) const
+{
+    if(!SegmentClearOfBareDragon(A,B,0.f))return false;
+    if(bLegacySafety&&!bAlwaysMarch)return true;
+    // The surface spheres cover the skin's vertices, not the inside of a thick neck or torso nor the middle
+    // of a large flat facet: march the line and ask the back-face test at every step.
+    const float Length=static_cast<float>(FVector::Dist(A,B));
+    const int32 Steps=FMath::Clamp(FMath::CeilToInt(Length/40.f),1,64);
+    for(int32 I=1;I<Steps;++I)if(IsPointBehindSkin(FMath::Lerp(A,B,static_cast<float>(I)/Steps),5.f))return false;
+    return !CrossesWing(A,B);
 }
 
 float UVeyrCameraBoom::FirstContact(const FVector& Origin,const FVector& End,float Radius) const
@@ -328,12 +423,20 @@ bool UVeyrCameraBoom::PlacementOk(const FVector& P,const FVector& KBottom,const 
     if(FMath::PointDistToSegment(P,KBottom,KTop)<MinDistance)return false;
     if(P.Z<KBottom.Z-KRadius+40.f)return false; // above the floor the knight stands on
     if(IsPointInsideBareDragon(P,FMath::Max(ProbeSize,10.f)+10.f))return false;
+    if(!bLegacySafety)
+    {
+        // Third pass: the interior of a thick body part is inside too, and the near plane needs room from the skin.
+        if(IsPointBehindSkin(P,0.f))return false;
+        if(NearestSkinCm(P)<NearSkinClearanceCm)return false;
+    }
     // The knight seen without any see-through: clear sight lines to his chest and head, stopping short of him.
     const FVector Chest=FMath::Lerp(KBottom,KTop,.6f),Head=KTop;
     for(const FVector& T:{Chest,Head})
     {
         const FVector End=T+(P-T).GetSafeNormal()*(KRadius+25.f);
         if(!SegmentClearOfBareDragon(P,End,4.f))return false;
+        // Marched all the way to his capsule: a knight against the lying neck is covered right next to him.
+        if(!bLegacySafety&&!SightClear(P,T+(P-T).GetSafeNormal()*(KRadius+5.f)))return false;
     }
     return true;
 }
@@ -343,8 +446,21 @@ namespace
     struct FVeyrFramingCandidate { float YawDeg; int32 Height; float Length; float Cost; };
     /** Placements in the owner's order of preference: the arm as is, lowered and level under the belly, slid
      * sideways round the body, the pivot raised, then shorter arms (closer than preferred; the lens widens). */
-    const TArray<FVeyrFramingCandidate>& FramingCandidates()
+    const TArray<FVeyrFramingCandidate>& FramingCandidates(bool bLegacy)
     {
+        // Third pass: low and to the side before up; the highest ring (pivot +420 cm x scale) is gone.
+        static TArray<FVeyrFramingCandidate> Safe=[]
+        {
+            TArray<FVeyrFramingCandidate> L;
+            const float Yaws[]={0.f,25.f,-25.f,50.f,-50.f,75.f,-75.f,105.f,-105.f,140.f,-140.f,180.f};
+            const float HeightCost[]={0.f,.5f,4.f};
+            const float Lengths[]={1.f,.8f,.62f,.5f};
+            for(const float Y:Yaws)for(int32 H=0;H<3;++H)for(const float Len:Lengths)
+                L.Add({Y,H,Len,FMath::Abs(Y)/25.f*.8f+HeightCost[H]+(1.f-Len)*6.f});
+            L.Sort([](const FVeyrFramingCandidate& A,const FVeyrFramingCandidate& B){return A.Cost<B.Cost;});
+            return L;
+        }();
+        if(!bLegacy)return Safe;
         static TArray<FVeyrFramingCandidate> List=[]
         {
             TArray<FVeyrFramingCandidate> L;
@@ -383,7 +499,7 @@ FVector UVeyrCameraBoom::FrameKnight(const FVector& Origin,const FVector& Base,c
         {
             FVector P=Origin+FRotator(0.f,C.YawDeg,0.f).RotateVector(Arm)*C.Length;
             if(C.Height==1)P.Z=Foot.Z+120.f;              // lowered and level: the room under the belly
-            else if(C.Height==2)P.Z+=200.f*S;             // pivot raised
+            else if(C.Height==2)P.Z+=(bLegacySafety?200.f:120.f)*S; // pivot raised (third pass: less)
             else if(C.Height==3)P.Z+=420.f*S;
             return P;
         };
@@ -394,7 +510,7 @@ FVector UVeyrCameraBoom::FrameKnight(const FVector& Origin,const FVector& Base,c
             if(!GetWorld()->SweepSingleByChannel(Hit,Origin,P,FQuat::Identity,ProbeChannel,FCollisionShape::MakeSphere(ProbeSize),Params))return true;
             P=Hit.Location;return false;
         };
-        const TArray<FVeyrFramingCandidate>& List=FramingCandidates();
+        const TArray<FVeyrFramingCandidate>& List=FramingCandidates(bLegacySafety);
         auto Try=[&](int32 Index,float MinDistance)
         {
             FVector P=Make(List[Index]);
@@ -408,7 +524,7 @@ FVector UVeyrCameraBoom::FrameKnight(const FVector& Origin,const FVector& Base,c
             // The placement used last frame first, so the view does not flip between equal choices.
             if(StickyCandidate!=INDEX_NONE&&Try(StickyCandidate,KnightHardMinCm))bFound=true;
             int32 Evaluated=0;
-            for(int32 I=0;I<List.Num()&&!bFound&&Evaluated<96;++I,++Evaluated)
+            for(int32 I=0;I<List.Num()&&!bFound&&Evaluated<(bLegacySafety?96:144);++I,++Evaluated)
             {
                 const float Need=List[I].Length<.79f?KnightHardMinCm:Preferred;
                 if(Try(I,Need)){bFound=true;StickyCandidate=I;}
@@ -418,9 +534,40 @@ FVector UVeyrCameraBoom::FrameKnight(const FVector& Origin,const FVector& Base,c
         {
             // Nothing clean: keep out of the knight and the dragon first, sight lines second.
             ++FramingFallbackFrames;
-            const FVector Up=Foot+FVector::UpVector*FMath::Max(600.f*S,(KT.Z-Foot.Z)+400.f)-F0.GetSafeNormal2D()*KnightHardMinCm;
-            Target=!IsPointInsideBareDragon(Proposed,10.f)&&FMath::PointDistToSegment(Proposed,KB,KT)>=KR+60.f?Proposed:Up;
             StickyCandidate=INDEX_NONE;
+            if(bLegacySafety)
+            {
+                const FVector Up=Foot+FVector::UpVector*FMath::Max(600.f*S,(KT.Z-Foot.Z)+400.f)-F0.GetSafeNormal2D()*KnightHardMinCm;
+                Target=!IsPointInsideBareDragon(Proposed,10.f)&&FMath::PointDistToSegment(Proposed,KB,KT)>=KR+60.f?Proposed:Up;
+            }
+            else
+            {
+                // Never up and never into the body: walk the arm in towards its pivot (the stock arm's answer; the
+                // pivot sits at the knight's shoulder, outside the dragon), then a low ring round the knight.
+                const FVector Chest=FMath::Lerp(KB,KT,.6f);
+                auto Clean=[&](const FVector& P,bool bNeedSight)
+                {
+                    if(P.Z<Foot.Z+40.f||FMath::PointDistToSegment(P,KB,KT)<KR+60.f||IsPointInsideBody(P,10.f))return false;
+                    return !bNeedSight||SightClear(P,Chest+(P-Chest).GetSafeNormal()*(KR+5.f));
+                };
+                bool bPicked=false;
+                for(const bool bNeedSight:{true,false})
+                {
+                    for(const float T:{.85f,.7f,.55f,.42f,.3f})
+                    {
+                        const FVector P=FMath::Lerp(Origin,Proposed,T);
+                        if(Clean(P,bNeedSight)){Target=P;bPicked=true;break;}
+                    }
+                    for(int32 A=0;A<12&&!bPicked;++A)
+                    {
+                        const FVector Dir=FRotator(0.f,A*30.f,0.f).RotateVector(-F0.GetSafeNormal2D());
+                        const FVector P=FVector(Chest.X,Chest.Y,Foot.Z+170.f)+Dir*KnightHardMinCm;
+                        if(Clean(P,bNeedSight)){Target=P;bPicked=true;}
+                    }
+                    if(bPicked)break;
+                }
+                if(!bPicked)Target=bLastFramed?Foot+LastFramedRelative:FMath::Lerp(Origin,Proposed,.3f);
+            }
         }
         bSolved=true;
     }
@@ -431,6 +578,21 @@ FVector UVeyrCameraBoom::FrameKnight(const FVector& Origin,const FVector& Base,c
     {
         const FVector Eased=Foot+FMath::VInterpTo(LastFramedRelative,Target-Foot,DeltaTime,7.f);
         if(PlacementOk(Eased,KB,KT,KR,KnightHardMinCm))Out=Eased;
+        else if(!bLegacySafety)
+        {
+            // Third pass: a straight ease can cut through the body between two clean placements; swing round the
+            // knight instead (yaw, height and distance eased separately), then a faster ease; a snap only after both.
+            const FVector From=LastFramedRelative,To=Target-Foot;
+            const float A=FMath::RadiansToDegrees(FMath::Atan2(From.Y,From.X)),B=FMath::RadiansToDegrees(FMath::Atan2(To.Y,To.X));
+            const float Alpha=FMath::Clamp(DeltaTime*7.f,0.f,1.f);
+            const float Yaw=FMath::DegreesToRadians(A+FMath::FindDeltaAngleDegrees(A,B)*Alpha);
+            const float Radius=FMath::Lerp(static_cast<float>(From.Size2D()),static_cast<float>(To.Size2D()),Alpha);
+            const FVector Swung=Foot+FVector(FMath::Cos(Yaw)*Radius,FMath::Sin(Yaw)*Radius,FMath::Lerp(From.Z,To.Z,Alpha));
+            const FVector Fast=Foot+FMath::VInterpTo(LastFramedRelative,To,DeltaTime,20.f);
+            if(PlacementOk(Swung,KB,KT,KR,KnightHardMinCm))Out=Swung;
+            else if(PlacementOk(Fast,KB,KT,KR,KnightHardMinCm))Out=Fast;
+            else ++SafetySnaps;
+        }
     }
     LastFramedRelative=Out-Foot;bLastFramed=true;bLastSolved=bSolved;
     // View: keep looking where the arm looked, turned only as far as the knight needs to stay whole in frame.
@@ -486,12 +648,15 @@ FQuat UVeyrCameraBoom::FrameView(const FVector& Camera,const FQuat& ArmView,cons
         if(FMath::Abs(Pitch)<.05&&FMath::Abs(Yaw)<.05)break;
         R.Pitch+=static_cast<float>(Pitch);R.Yaw+=static_cast<float>(Yaw);
     }
+    // Third pass: no steep top-down view; past the floor the lens opens instead (boots may sit at the edge).
+    if(!bLegacySafety&&R.Pitch<MinViewPitchDeg)R.Pitch=MinViewPitchDeg;
     // Still taller than the frame: open the lens, up to MaxFovBoostDeg.
     double AzB,ElB,AzT,ElT;Angles(Bottom,R,AzB,ElB);Angles(Top,R,AzT,ElT);
-    const double Span=(ElT-ElB)*.5;
+    // Third pass: the half-height the lens must hold is also whatever the pitch floor pushed past the edge.
+    const double Span=bLegacySafety?(ElT-ElB)*.5:FMath::Max3((ElT-ElB)*.5,-ElB,ElT);
     if(Span>LimitV)
     {
-        const double NeedTanV=FMath::Tan(FMath::DegreesToRadians(Span))/M;
+        const double NeedTanV=FMath::Tan(FMath::DegreesToRadians(FMath::Min(Span,80.0)))/M;
         const double NeedFov=2.0*FMath::RadiansToDegrees(FMath::Atan(NeedTanV*Aspect));
         OutBoost=static_cast<float>(FMath::Clamp(NeedFov-Fov,0.0,static_cast<double>(MaxFovBoostDeg)));
     }
@@ -519,4 +684,52 @@ void UVeyrCameraBoom::UpdateDesiredArmLocation(bool bDoTrace,bool bDoLocationLag
         AppliedFovBoost=FovBoostDeg;AppliedFov=BaseFov+AppliedFovBoost;
         Camera->SetFieldOfView(AppliedFov);
     }
+}
+
+void UVeyrCameraBoom::AuditView(const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Seconds)
+{
+    if(bLegacyBoom)RefreshDragonShapes(); // the stock arm does not refresh the shapes itself
+    FViewAudit& A=ViewAudit;++A.Frames;
+    FVector KB,KT;float KR=0.f;const bool bKnight=KnightCapsule(KB,KT,KR);
+    const bool bCapsule=IsPointInsideSolidCapsule(Camera,0.f);
+    const bool bHull=IsPointInsideBareDragon(Camera,10.f);
+    const bool bBehind=IsPointBehindSkin(Camera,10.f);
+    const bool bNear=NearestSkinCm(Camera)<10.f;
+    const bool bInside=bCapsule||bHull||bBehind;
+    A.InsideCapsule+=bCapsule;A.InsideHull+=bHull;A.BehindSkin+=bBehind;A.NearSkin+=bNear;A.InsideAny+=bInside;
+    A.InsideRun=bInside?A.InsideRun+1:0;A.LongestInsideRun=FMath::Max(A.LongestInsideRun,A.InsideRun);
+    if(bInside&&A.InsideSeconds.Num()<40&&(A.InsideSeconds.IsEmpty()||Seconds-A.InsideSeconds.Last()>.5f))A.InsideSeconds.Add(Seconds);
+    const float Pitch=View.Rotator().Pitch;A.MinPitchDeg=FMath::Min(A.MinPitchDeg,Pitch);
+    if(Pitch<-40.f){++A.SteepFrames;if(A.SteepSeconds.Num()<40&&(A.SteepSeconds.IsEmpty()||Seconds-A.SteepSeconds.Last()>.5f))A.SteepSeconds.Add(Seconds);}
+    if(!bKnight)return;
+    const float Surface=FMath::PointDistToSegment(Camera,KB,KT)-KR;
+    A.MinCameraToKnightCm=FMath::Min(A.MinCameraToKnightCm,Surface);A.InsideKnight+=Surface<10.f;
+    A.KnightWhole+=KnightWholeInView(Camera,View,HorizontalFovDeg);
+    // Dragon skin between the camera and the knight (exact shapes plus the marched interior), to his capsule.
+    int32 Blocked=0;
+    for(const FVector& T:{FMath::Lerp(KB,KT,.6f),KT,FMath::Lerp(KB,KT,.15f)})
+        Blocked+=!SightClear(Camera,T+(Camera-T).GetSafeNormal()*(KR+5.f),true);
+    A.SightPartlyBlocked+=Blocked>0;A.SightBlocked+=Blocked>=2;
+    A.BlockedRun=Blocked>=2?A.BlockedRun+1:0;A.LongestBlockedRun=FMath::Max(A.LongestBlockedRun,A.BlockedRun);
+    if(Blocked>=2&&A.BlockedSeconds.Num()<40&&(A.BlockedSeconds.IsEmpty()||Seconds-A.BlockedSeconds.Last()>.5f))A.BlockedSeconds.Add(Seconds);
+}
+
+TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson() const
+{
+    const FViewAudit& A=ViewAudit;
+    TSharedPtr<FJsonObject> O=MakeShared<FJsonObject>();
+    auto N=[&](const TCHAR* K,double V){O->SetNumberField(K,V);};
+    N(TEXT("frames"),A.Frames);N(TEXT("insideDragonFrames"),A.InsideAny);N(TEXT("insideCapsuleFrames"),A.InsideCapsule);
+    N(TEXT("insideHullFrames"),A.InsideHull);N(TEXT("behindSkinFrames"),A.BehindSkin);N(TEXT("skinWithin10cmFrames"),A.NearSkin);
+    N(TEXT("longestInsideRunFrames"),A.LongestInsideRun);N(TEXT("insideKnightFrames"),A.InsideKnight);
+    N(TEXT("knightWholeOnScreenShare"),A.Frames?static_cast<double>(A.KnightWhole)/A.Frames:0.0);
+    N(TEXT("dragonBetweenPartlyFrames"),A.SightPartlyBlocked);N(TEXT("dragonCoversKnightFrames"),A.SightBlocked);
+    N(TEXT("longestCoveredRunFrames"),A.LongestBlockedRun);N(TEXT("steepPitchFrames"),A.SteepFrames);
+    N(TEXT("minPitchDeg"),A.MinPitchDeg);N(TEXT("minCameraToKnightCm"),A.MinCameraToKnightCm<1e30f?A.MinCameraToKnightCm:-1.0);
+    N(TEXT("framingSearches"),FramingSearches);N(TEXT("safetySnaps"),SafetySnaps);N(TEXT("framingFallbackFrames"),FramingFallbackFrames);
+    O->SetBoolField(TEXT("legacyCameraSafety"),bLegacySafety);O->SetBoolField(TEXT("legacyCameraFraming"),bLegacyFraming);O->SetBoolField(TEXT("legacyCameraBoom"),bLegacyBoom);
+    auto Times=[&](const TCHAR* K,const TArray<float>& V){TArray<TSharedPtr<FJsonValue>> L;for(float T:V)L.Add(MakeShared<FJsonValueNumber>(FMath::RoundToFloat(T*100.f)/100.f));O->SetArrayField(K,L);};
+    Times(TEXT("insideSeconds"),A.InsideSeconds);Times(TEXT("coveredSeconds"),A.BlockedSeconds);Times(TEXT("steepSeconds"),A.SteepSeconds);
+    O->SetStringField(TEXT("scope"),TEXT("every replay frame whose view target is the knight; seconds are replay seconds; dragon skin = solid capsules, hull spheres and the back-face test (dense skin samples), marched every 40 cm to the knight's capsule"));
+    return O;
 }

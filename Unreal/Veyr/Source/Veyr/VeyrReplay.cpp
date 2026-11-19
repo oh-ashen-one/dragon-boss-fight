@@ -8,6 +8,7 @@
 #include "VeyrArena.h"
 #include "VeyrBlendProof.h"
 #include "VeyrA123Proof.h"
+#include "VeyrCameraBoom.h"
 #include "VeyrFeelProof.h"
 #include "VeyrShowcase.h"
 #include "VeyrIdentity.h"
@@ -15,6 +16,7 @@
 #include "Camera/CameraActor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
 #include "GameFramework/InputSettings.h"
 #include "Animation/AnimSequence.h"
 #include "Engine/GameViewportClient.h"
@@ -3050,6 +3052,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(ReplayMode==TEXT("lockon"))Root->SetObjectField(TEXT("lockOn"),LockOnEvidence());
     if(ReplayMode==TEXT("blendproof")&&BlendProof.IsValid())Root->SetObjectField(TEXT("blendProof"),BlendProof->Evidence());
     if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
+    if(IsValid(Knight))if(const UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))Root->SetObjectField(TEXT("cameraAudit"),Boom->AuditJson());
     if(FeelProof.IsValid())Root->SetObjectField(TEXT("feelProof"),FeelProof->Evidence());
     if(const AVeyrGameMode* FeelMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
         if(FeelMode->FightFeel)Root->SetObjectField(TEXT("feel"),FeelMode->FightFeel->FeelEvidence(true)); // B4-B6 totals + static parts, once
@@ -3206,6 +3209,14 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     }
     Elapsed+=DeltaSeconds;++FrameCount;MaximumFrameSeconds=FMath::Max(MaximumFrameSeconds,DeltaSeconds);
     SampleClock+=DeltaSeconds;SaveClock+=DeltaSeconds;Observe();
+    // A2 third pass: audit the camera the player sees, every frame, in every mode (own cameras excluded).
+    if(UVeyrCameraBoom* Boom=Cast<UVeyrCameraBoom>(Knight->CameraBoom))
+        if(const APlayerController* ViewPC=Cast<APlayerController>(Knight->GetController());ViewPC&&ViewPC->GetViewTarget()==Knight&&ViewPC->PlayerCameraManager)
+        {
+            // The rendered point of view (the camera manager's last update), not the arm's request.
+            const APlayerCameraManager* View=ViewPC->PlayerCameraManager;
+            Boom->AuditView(View->GetCameraLocation(),View->GetCameraRotation().Quaternion(),View->GetFOVAngle(),static_cast<float>(Elapsed));
+        }
     if(SampleClock>=(bPerformanceMode?5.f:.25f)){SampleClock=0;Samples.Add(MakeShared<FJsonValueObject>(Snapshot()));}
     if(ReplayMode==TEXT("environment"))
     {

@@ -68,6 +68,32 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 ViewTurnFrames=0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") float FovBoostDeg=0.f;
 
+    /** Safety pass (2026-11-18, third pass): the body's interior counts as inside (back-face test), sight lines are
+     * marched through it all the way to the knight, no high placements, the view never pitches below
+     * MinViewPitchDeg. -VeyrLegacyCameraSafety restores the second pass. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float MinViewPitchDeg=-35.f;
+    /** Nearest skin sample the camera may have (near plane plus margin), cm. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera|Knight") float NearSkinClearanceCm=35.f;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") bool bLegacySafety=false;
+    /** Frames where neither the straight, swung nor fast ease was clean and the camera jumped to its placement. */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera|Knight|Evidence") int32 SafetySnaps=0;
+
+    /** Per-frame audit of the camera the player actually sees (replays call AuditView every frame in every mode). */
+    struct FViewAudit
+    {
+        int32 Frames=0,InsideAny=0,InsideCapsule=0,InsideHull=0,BehindSkin=0,NearSkin=0,InsideKnight=0,KnightWhole=0,
+            SightPartlyBlocked=0,SightBlocked=0,SteepFrames=0,LongestInsideRun=0,LongestBlockedRun=0,InsideRun=0,BlockedRun=0;
+        float MinCameraToKnightCm=TNumericLimits<float>::Max(),MinPitchDeg=90.f;
+        TArray<float> InsideSeconds,BlockedSeconds,SteepSeconds;
+    };
+    FViewAudit ViewAudit;
+    void AuditView(const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Seconds);
+    TSharedPtr<class FJsonObject> AuditJson() const;
+    /** Inside the bare body shapes or behind the skin (interior). */
+    bool IsPointInsideBody(const FVector& Point,float Margin) const;
+    /** No skin between A and B: bare shapes (exact) plus the interior marched every ~40 cm. */
+    bool SightClear(const FVector& A,const FVector& B,bool bAlwaysMarch=false) const;
+
     /** Camera-space projection: U right, V up, each -1..1 at the frame edges. False when behind the camera. */
     static bool ProjectToView(const FVector& Point,const FVector& Camera,const FQuat& View,float HorizontalFovDeg,float Aspect,float& OutU,float& OutV);
     /** Viewport aspect (width / height), 16:9 without a viewport. */
@@ -90,7 +116,9 @@ public:
     bool IsPointInsideSolidCapsule(const FVector& Point,float Margin,FName* OutShape=nullptr) const;
     /** Back-face check: at least 9 of the 12 nearest skinned body skin samples (wings excluded) face away from
      * Point by more than Margin, and the nearest is within 200 cm x scale. */
-    bool IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm=nullptr);
+    bool IsPointBehindSkin(const FVector& Point,float Margin,float* OutDepthCm=nullptr) const;
+    /** Distance to the nearest skinned skin sample (body and wings), cm; large when far away. */
+    float NearestSkinCm(const FVector& Point) const;
     AVeyrDragon* GetDragon() const { return Dragon.Get(); }
     /** Rebuild the body and wing shapes from the dragon's current pose (the arm does this each update;
      * replays call it so legacy-arm runs are measured against the same shapes). */
@@ -103,10 +131,18 @@ protected:
 private:
     struct FShape { FVector A=FVector::ZeroVector,B=FVector::ZeroVector,C=FVector::ZeroVector; float Radius=0.f,Clearance=0.f; bool bTriangle=false; FName Name; };
     TArray<FShape> Shapes;
-    FVeyrHullModel Hull;
+    mutable FVeyrHullModel Hull;
     TArray<FVector4> HullSpheres;
-    TArray<FVector> SurfacePositions,SurfaceNormals;
-    uint64 SurfaceFrame=0;
+    mutable TArray<FVector> SurfacePositions,SurfaceNormals;
+    mutable uint64 SurfaceFrame=0;
+    mutable TMap<FIntVector,TArray<int32>> SurfaceGrid; mutable float SurfaceCell=100.f; mutable FBox SurfaceBounds;
+    mutable TArray<FVector> WingPositions,WingNormals; mutable TMap<FIntVector,TArray<int32>> WingGrid; mutable FBox WingBounds;
+    /** A wing membrane between A and B: the line changes side of the sheet right next to its samples. */
+    bool CrossesWing(const FVector& A,const FVector& B) const;
+    /** Skin the dense samples once per frame and bucket them; false without a fitted hull. */
+    bool EnsureSurface() const;
+    /** Up to K nearest skin samples to Point within MaxRing cells; distance-squared ascending. */
+    void NearestSkin(const FVector& Point,int32 K,TArray<TPair<double,int32>,TInlineAllocator<13>>& Out,bool bWing=false) const;
     TWeakObjectPtr<AVeyrDragon> Dragon;
     bool bPrerequisiteAdded=false;
     float PreviousTarget=1.f;
