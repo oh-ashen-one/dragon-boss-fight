@@ -88,6 +88,9 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-19 10:50 | Phase B merged into the goal branch (`5fa51c2`); generated takes restored locally from the staging folder | director | none | | done, pushed. Band to be re-measured on the integrated build (the camera changes the scripted player's path) |
 | 11-19 10:52 | Bigger dragon (D3): one switchable scale, reach and clearance at 2.5x and 3x, band per size, clips per size after 13:00 | opus-builder (the D agent), Opus 5.5 high | lock | 3.5 h | running (`fable/quality-goal-D3`) |
 | 11-19 10:55 | Blind critic: weight of impacts and sound, our phase B film against the reference film | opus-critic | none | short | running |
+| 11-19 11:05 | Blind critic on phase B (weight and sound) | opus-critic | none | | impacts: reference clearly better (our stomps comparable; the knight's hits on the dragon weightless); sound: reference slightly better (our weapon hits silent in the real mix, mix 15 LU quieter). See `REVIEWS.md` |
+| 11-19 11:10 | Impacts, second approach: struck part reacts, burst at the contact point, weapon rebound, hit-stop visible in film, wider trail | opus-builder (the weight agent) | lock | to 15:00 | running (`fable/quality-goal-B2impact`) |
+| 11-19 11:10 | Sound, second pass: near-field knight hits and steps, master level, varied stomps, landing and fire onsets; verified on the real output after 13:00 | sonnet-builder (the sound agent) | lock | to 15:00 | running (`fable/quality-goal-B2sound`) |
 
 ## Spend
 
