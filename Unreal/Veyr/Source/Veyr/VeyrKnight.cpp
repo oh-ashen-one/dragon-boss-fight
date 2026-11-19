@@ -1748,7 +1748,11 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
         ++ProofTransitionSerial;ProofBlendFromClip=PresentationTransitionClip;
         PresentationTransitionStarted=VisualClock;PresentationTransitionClip=Clip;bPreserveRollPrefix=false;
     }
-    const float BlendSeconds=bFlowTransition&&IsAttackAction()?.14f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    // E4 (2026-11-19): Greystone's native attacks start mid-wind-up (timed to the knight's impact), so a 0.10 s fade
+    // from idle or run kinks the weapon hand by 22-28 cm in one frame. 0.18 s on his attack entries; visual only (the
+    // action timing and damage windows are the knight's). -VeyrGreystone only.
+    const float GreystoneAttackEntry=bGreystoneActive&&!bFlowTransition&&IsAttackAction()?.18f:0.f;
+    const float BlendSeconds=GreystoneAttackEntry>0.f?GreystoneAttackEntry:bFlowTransition&&IsAttackAction()?.14f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float Alpha=RunStartTail?FMath::Clamp((ActionElapsed-(ActionDuration-.30f))/.30f,0.f,1.f):
         bTransitionIdleWalkEdge||(bFlowTransition&&IsAttackAction())?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;
