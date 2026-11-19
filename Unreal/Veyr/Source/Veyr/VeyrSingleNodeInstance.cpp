@@ -180,8 +180,8 @@ namespace
                 InertialR0[B]=QuatLog(SourceQ*Dst.GetRotation().Inverse());
                 InertialT0[B]=SourceT-Dst.GetTranslation();
                 // Bounded velocity mismatch: continuity at the switch without flinging long chains.
-                InertialW0[B]=(W-DW).GetClampedToMaxSize(12.);
-                InertialV0[B]=(V-DV).GetClampedToMaxSize(600.);
+                InertialW0[B]=(W-DW).GetClampedToMaxSize(4.);
+                InertialV0[B]=(V-DV).GetClampedToMaxSize(200.);
                 InertialMaxDegrees=FMath::Max(InertialMaxDegrees,FMath::RadiansToDegrees(static_cast<float>(InertialR0[B].Size())));
                 if(Bones_HasParent(Output,I))InertialMaxCm=FMath::Max(InertialMaxCm,static_cast<float>(InertialT0[B].Size()));
             }

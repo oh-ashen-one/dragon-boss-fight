@@ -300,7 +300,8 @@ void AVeyrDragon::UpdatePoseDeltaStat()
                 const float H=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevHead,HeadYaw))*(1.f/30.f)/YDt;
                 const float B=FMath::Abs(FMath::FindDeltaAngleDegrees(YawPrevBody,BodyYaw))*(1.f/30.f)/YDt;
                 FPlaybackStat& St=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
-                St.MaxHeadYawPer30=FMath::Max(St.MaxHeadYawPer30,H);St.MaxBodyYawPer30=FMath::Max(St.MaxBodyYawPer30,B);
+                if(H>St.MaxHeadYawPer30){St.MaxHeadYawPer30=H;St.MaxHeadYawPhase=ImportedPresentation->CurrentPhase;St.MaxHeadYawStateSeconds=StateElapsed;}
+                St.MaxBodyYawPer30=FMath::Max(St.MaxBodyYawPer30,B);
                 if(H>20.f||B>20.f)++St.YawSteps;
             }
             if(YDt>1.e-4f||!bYawPrev){YawPrevHead=HeadYaw;YawPrevBody=BodyYaw;YawPrevClock=Clock;bYawPrev=true;}
@@ -432,10 +433,12 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         for(int32 L=0;L<4;++L)
         {
             // The foot's drift: where the clip puts it moves with the body (turn and travel); land ahead of it.
+            // Fixed when the step starts (a lead re-estimated every frame made the landing jitter).
             FFootLockFoot& F=LockFeet[L];
+            if(!F.bStartStep&&!F.bReachMiss)continue;
             const FVector Anchor=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
             const FVector Vel=F.bHasPrev?(Anchor-F.PrevTip)/Dt:FVector::ZeroVector;
-            F.Lead=(FVector(Vel.X,Vel.Y,0.)*T.StepLeadSeconds).GetClampedToMaxSize(T.StepTriggerCm*S*2.f);
+            F.Lead=(FVector(Vel.X,Vel.Y,0.)*T.StepLeadSeconds).GetClampedToMaxSize(T.StepTriggerCm*S*1.5f);
         }
     }
     for(int32 L=0;L<4;++L)
@@ -454,7 +457,7 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
             if(F.bLocked&&bProcSteps)
             {
                 if(Height>T.ReleaseHeightCm*S){F.bLocked=false;F.bReleasing=true;F.T=0.f;F.From=F.Pin;}
-                else if(F.bStartStep)
+                else if(F.bStartStep||F.bReachMiss)
                 {F.bLocked=false;F.bStepping=true;F.bProcStep=true;F.T=0.f;F.From=F.Pin;++Stat.Steps;++ProcStepCount;ProcStepLastLeg=L;}
                 F.bStartStep=F.bReachMiss=false;
             }
@@ -479,7 +482,10 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
                 {
                     F.bStepping=false;F.bLocked=Height<T.PlantHeightCm*S;
                     // A procedural step plants where it landed (its lead included), so the drift has room again.
-                    F.Pin=F.bProcStep?FVector(Anchor.X+F.Lead.X,Anchor.Y+F.Lead.Y,Anchor.Z):Anchor;F.bProcStep=false;
+                    F.Pin=F.bProcStep?FVector(Anchor.X+F.Lead.X,Anchor.Y+F.Lead.Y,Anchor.Z):Anchor;
+                    // Landing off the floor (the clip lifted the paw meanwhile): ease back to the clip, no snap.
+                    if(F.bProcStep&&!F.bLocked&&!F.Lead.IsNearlyZero()){F.bReleasing=true;F.T=0.f;F.From=F.Pin;}
+                    F.bProcStep=false;
                 }
             }
             else if(F.bReleasing)
@@ -488,7 +494,7 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
                 if(F.T>=1.f)F.bReleasing=false;
             }
             // A foot plants only when it is low AND slow in the clip (bFading only marks evidence).
-            const bool Slow=Speed<T.PlantSpeedCms*S||bProcSteps; // round 2: a low paw plants; drift is stepped out
+            const bool Slow=Speed<T.PlantSpeedCms*S;
             if(!ReleaseOnly&&!F.bLocked&&!F.bStepping&&!F.bReleasing&&Height<T.PlantHeightCm*S&&Slow)
             {F.bLocked=true;F.bReleasing=false;F.Pin=Anchor;}
             // Planted = low in the clip and not in a lock step (a stepping paw is lifted on purpose).
@@ -523,7 +529,11 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
         {
             FFootLockFoot& F=LockFeet[L];
             const FVector Drawn=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
-            if(Dt>0.f&&F.bLowNow&&F.bHasPrevAny)Stat.DrawnPlantedSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevAny);
+            if(Dt>0.f&&F.bLowNow&&F.bHasPrevAny)
+            {
+                Stat.DrawnPlantedSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevAny);
+                const int32 K=F.bLocked?0:F.bReleasing?1:2;Stat.PlantedByState[L][K]+=Dt;Stat.SlideByState[L][K]+=FVector::Dist2D(Drawn,F.PrevAny);
+            }
             if(Dt>0.f||!F.bHasPrevAny){F.PrevAny=Drawn;F.bHasPrevAny=true;}
         }
     };
@@ -601,6 +611,12 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
             F->SetNumberField(TEXT("animatedSlideCmPerSec"),Animated);F->SetNumberField(TEXT("drawnSlideCmPerSec"),Drawn);
             const double DrawnAll=S.PlantedSeconds[L]>0?S.DrawnPlantedSlideCm[L]/S.PlantedSeconds[L]:0.;
             F->SetNumberField(TEXT("drawnPlantedSlideCmPerSec"),DrawnAll);
+            for(int32 K=0;K<3;++K)
+            {
+                static const TCHAR* Names[3]={TEXT("Locked"),TEXT("Releasing"),TEXT("Free")};
+                F->SetNumberField(FString(TEXT("planted"))+Names[K]+TEXT("Seconds"),S.PlantedByState[L][K]);
+                F->SetNumberField(FString(TEXT("slide"))+Names[K]+TEXT("Cm"),S.SlideByState[L][K]);
+            }
             Feet->SetObjectField(GLegNames[L],F);
             // Gate number: drawn end-bone travel over every low-foot frame (locked, stepping or free) per low second.
             if(S.PlantedSeconds[L]>.2)MoveWorst=FMath::Max(MoveWorst,static_cast<float>(bFootLock?DrawnAll:Animated));
@@ -613,6 +629,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
         C->SetNumberField(TEXT("poseFrames"),S.PoseFrames);C->SetNumberField(TEXT("pops"),S.Pops);C->SetNumberField(TEXT("popsInBlend"),S.PopsInBlend);
         C->SetNumberField(TEXT("maxPopRatio"),S.MaxPopRatio);C->SetNumberField(TEXT("maxPopRatioInBlend"),S.MaxPopRatioInBlend);
         C->SetNumberField(TEXT("yawSteps"),S.YawSteps);C->SetNumberField(TEXT("maxHeadYawDegPer30Hz"),S.MaxHeadYawPer30);C->SetNumberField(TEXT("maxBodyYawDegPer30Hz"),S.MaxBodyYawPer30);
+        C->SetNumberField(TEXT("maxHeadYawClipPhase"),S.MaxHeadYawPhase);C->SetNumberField(TEXT("maxHeadYawStateSeconds"),S.MaxHeadYawStateSeconds);
         YawSteps+=S.YawSteps;if(S.MaxHeadYawPer30>WorstYaw){WorstYaw=S.MaxHeadYawPer30;WorstYawKey=E.Key.ToString();}
         C->SetStringField(TEXT("worstPopBone"),S.WorstPopBone.ToString());
         Pops+=S.Pops;PopsInBlend+=S.PopsInBlend;
