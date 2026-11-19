@@ -459,6 +459,10 @@ void AVeyrDragon::UpdateFootLock(bool bFading)
             FFootLockFoot& F=LockFeet[L];
             const FVector Drawn=ImportedPresentation->GetBoneLocation(FName(GLegBones[L][2]));
             if(F.bLocked&&!F.PrevDrawn.IsZero()){Stat.DrawnSlideCm[L]+=FVector::Dist2D(Drawn,F.PrevDrawn);Stat.LockedSeconds[L]+=Dt;}
+            // Out of reach: the leg cannot hold the pin any more (a fast turn swings the hip away), so the drawn paw is
+            // being dragged. Step now from where the paw really is instead of sliding it until the drag threshold.
+            if(F.bLocked&&FVector::Dist2D(Drawn,F.Pin)>3.f*BodyScale)
+            {F.bLocked=false;F.bStepping=true;F.T=0.f;F.From=FVector(Drawn.X,Drawn.Y,F.Pin.Z);++Stat.Steps;++FootLockReachSteps;}
             F.PrevDrawn=F.bLocked?Drawn:FVector::ZeroVector;
         }
 }
@@ -485,6 +489,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("snapTrackRateDps"),SnapTrackRate());O->SetNumberField(TEXT("walkStrideSpeedCmPerSec"),WalkStrideSpeedCm);
     O->SetNumberField(TEXT("trackTravelWorldCm"),TrackTravelWorld.Size2D());
     O->SetNumberField(TEXT("footLockTeleports"),FootLockTeleports);O->SetNumberField(TEXT("footLockEaseOuts"),FootLockEaseOuts);
+    O->SetNumberField(TEXT("footLockReachSteps"),FootLockReachSteps);
     O->SetStringField(TEXT("dragonSkin"),ImportedPresentation?ImportedPresentation->SkinDiagnostic:FString(TEXT("no presentation")));
     float WorstRate=0.f,WorstSlide=0.f,WorstPop=0.f;FString WorstRateKey,WorstSlideKey,WorstPopKey;int32 Pops=0,PopsInBlend=0;
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();

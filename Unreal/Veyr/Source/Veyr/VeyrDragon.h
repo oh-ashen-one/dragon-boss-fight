@@ -430,7 +430,7 @@ private:
     };
     FFootLockFoot LockFeet[4];
     float FootLockClock=-1.f;
-    FVector FootLockActorPrev=FVector::ZeroVector;FQuat FootLockActorQuatPrev=FQuat::Identity;bool bFootLockActorPrev=false,bReleaseOnlyLast=false;int32 FootLockTeleports=0,FootLockEaseOuts=0;
+    FVector FootLockActorPrev=FVector::ZeroVector;FQuat FootLockActorQuatPrev=FQuat::Identity;bool bFootLockActorPrev=false,bReleaseOnlyLast=false;int32 FootLockReachSteps=0;int32 FootLockTeleports=0,FootLockEaseOuts=0;
     FString FootLockDiagnostic;
     void UpdateFootLock(bool bFading);
     // Evidence for blend pops: bone speeds in component space for the last three evaluated frames.
