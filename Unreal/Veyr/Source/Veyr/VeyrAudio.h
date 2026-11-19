@@ -132,7 +132,9 @@ private:
     FName TimedClipKey=NAME_None; float TimedLastPhase=-1.f,TimedLastTime=-1.f; bool bSwingFromData=false;
     float BreathClock=3.f,GrowlClock=9.f; bool bBreathExhaleNext=false,bPresenceCalm=true;
     float FootClock[2]={0.f,0.f};
-    float MaxLoad=6.f,MakeupDb=9.f; // MakeupDb +9: the engine plays our voices about 9 dB under the arithmetic (measured on two captures, flat and spatial alike); -VeyrAudioMakeupDb=<dB> overrides // MakeupDb: -VeyrAudioMakeupDb=<dB> on all effects (calibration against a real capture)
+    float MaxLoad=6.f,MakeupDb=0.f; // extra dB on every effect; -VeyrAudioMakeupDb=<dB>
+    /** Measured on two captures (flat and spatial alike): the recorded master is about 9 dB under Level x master x effects. Gains and ceilings are set against the recorded level. */
+    static constexpr float EngineFactor=.355f; // MakeupDb: -VeyrAudioMakeupDb=<dB> on all effects (calibration against a real capture)
     float DurationLastPlayed=0.f;
 
     void LoadNewSet();

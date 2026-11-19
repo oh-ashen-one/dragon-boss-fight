@@ -111,8 +111,9 @@ void AVeyrAudio::AddVariant(ECue Cue,TArray<int16>&& S)
     const float MeasuredDb=float(20.0*std::log10(FMath::Max(Rms,1e-5)));
     const float TargetDb=TargetLevelDb(Cue);
     // Gain brings the variant's gated RMS to the target at the default master (0.65); the peak keeps it under -1 dBFS.
-    float Gain=TargetDb<0.f?FMath::Pow(10.f,(TargetDb-MeasuredDb)/20.f)/.65f:1.f/.65f;
-    Gain=FMath::Min(Gain,.9f/(Peak*.65f));
+    // Targets are dBFS of the RECORDED master, so the engine's measured -9 dB is divided out here; the peak keeps a single voice near -1 dBFS there.
+    float Gain=TargetDb<0.f?FMath::Pow(10.f,(TargetDb-MeasuredDb)/20.f)/(.65f*EngineFactor):1.f/(.65f*EngineFactor);
+    Gain=FMath::Min(Gain,.9f/(Peak*.65f*EngineFactor));
     B.Variants.Add(MoveTemp(S));B.Gains.Add(Gain);B.Peaks.Add(Peak);
     B.LowShare.Add(float(El/FMath::Max(E,1e-9)));B.HighShare.Add(float(Eh/FMath::Max(E,1e-9)));B.AttackMs.Add(AttackMs);
 }
@@ -398,7 +399,7 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 
     C.Level=FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter*FMath::Pow(10.f,MakeupDb/20.f);
     // Solo peak ceiling just under full scale after the master; the master limiter deals with sums.
     if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f)
-        C.Level=FMath::Min(C.Level,.9f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)));
+        C.Level=FMath::Min(C.Level,.9f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)*EngineFactor));
     return true;
 }
 
@@ -460,7 +461,7 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     float Load=0.f;
     for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0)Load+=VoiceLevels[I]*MasterVolume*EffectsVolume;
     const float Amp=Level*MasterVolume*EffectsVolume;
-    if(Load+Amp>MaxLoad)Level=FMath::Max(Level*.4f,(MaxLoad-Load)/FMath::Max(.05f,MasterVolume*EffectsVolume)); // the sum of voices stays bounded before the limiter
+    if((Load+Amp)*EngineFactor>MaxLoad)Level=FMath::Max(Level*.4f,(MaxLoad/EngineFactor-Load)/FMath::Max(.05f,MasterVolume*EffectsVolume)); // the sum of voices stays bounded before the limiter
 
     USoundWaveProcedural* Wave=NewObject<USoundWaveProcedural>(this);
     Wave->SetSampleRate(SampleRate);Wave->NumChannels=1;Wave->Duration=Seconds0;Wave->bLooping=false;Wave->SoundGroup=SOUNDGROUP_Effects;
