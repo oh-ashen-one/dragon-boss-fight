@@ -104,6 +104,7 @@ Director: Fable 5.2 (plans, briefs, reviews; builds nothing). Started 2026-11-18
 | 11-19 14:30 | Dragon playback round 2 (stepping, inertial blending, band) from the uncommitted state | opus-builder (the playback agent) | lock, windowless until 15:30 | to 18:00 | running |
 | 11-19 14:30 | Greystone E4 / E5 and the arena film from the uncommitted state | opus-builder (the E agent) | lock, windowless until 15:30 | to 18:00 | running |
 | 11-19 14:30 | Bigger dragon (D3) from the uncommitted state | opus-builder (the D agent) | lock, windowless until 15:30 | to 18:00 | running |
+| 11-19 14:40 | Blind critic: boss animation, playback round 1 film against the reference | opus-critic, Opus 5.5 high | none | short | OURS CLEARLY BETTER (see `REVIEWS.md`). Our worst faults: upper body snaps 60-90 degrees in 80 ms at the start of fire, knight stands inside a foot, camera shows only legs, death fall cut off. Sent to the playback builder |
 
 ## Spend
 
