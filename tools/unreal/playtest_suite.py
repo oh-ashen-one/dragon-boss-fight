@@ -94,6 +94,17 @@ def run_spec(spec, delay=0.0):
             'whiffOpenings': max([s.get('whiffOpenings', 0) for s in samples] or [0]),
             'guardPocketFlights': max([s.get('guardPocketFlights', 0) for s in samples] or [0]),
             'exposedCapRises': max([s.get('exposedCapRises', 0) for s in samples] or [0]),
+            # Knock-down length (floor = Exposed start to standing; buckle start to standing / to the end of the post-rise wait); the
+            # sample with the most completed knock-downs is the last one before any restart.
+            **(lambda kd: {'legacyKnockdown': kd.get('legacyKnockdown'), 'knockdownsStood': kd.get('knockdownsStood', 0),
+                           'knockdownLongestFloorSeconds': kd.get('knockdownLongestFloorSeconds'),
+                           'knockdownMeanFloorSeconds': kd.get('knockdownMeanFloorSeconds'),
+                           'knockdownLongestStandSeconds': kd.get('knockdownLongestStandSeconds'),
+                           'knockdownMeanStandSeconds': kd.get('knockdownMeanStandSeconds'),
+                           'knockdownsActed': kd.get('knockdownsActed', 0),
+                           'knockdownLongestActSeconds': kd.get('knockdownLongestActSeconds'),
+                           'knockdownMeanActSeconds': kd.get('knockdownMeanActSeconds')})(
+                max(samples or [{}], key=lambda s: (s.get('knockdownsStood', 0), s.get('knockdownsActed', 0)))),
             'courtOverreachCm': max([s.get('bossCourtOverreachCm', -100000) for s in samples] or [-100000]),
             'bossAttacks': max([s.get('bossAttacksStarted', 0) for s in samples] or [0]),
             'bossContacts': max([s.get('bossDamageContacts', 0) for s in samples] or [0]),
@@ -110,10 +121,13 @@ def run_spec(spec, delay=0.0):
             # Quality goal A1-A3 proof modes (footclosehits / camerahug / soleheights).
             x = e['a123']
             keys = ('mirroredClips', 'sweepMirroredMaxStretchCm1x', 'sweepLegacyMirroredMaxStretchCm1x', 'liveMirroredFrames',
-                    'liveMirroredMaxStretchCm', 'liveMirrorRepairSamples', 'cameraFrames', 'cameraInsideFrames', 'collapseFrames',
+                    'liveMirroredMaxStretchCm', 'liveMirrorRepairSamples', 'cameraFrames', 'cameraInsideFrames', 'capsuleInsideFrames', 'backFaceFrames', 'maxBackFaceDepthCm', 'hullInsideFrames', 'boomGuardEvents', 'boomPivotInsideFrames', 'boomResultInsideFrames', 'collapseFrames',
                     'collapseInsideFrames', 'pullInEvents', 'maxLiftCm', 'maxCameraJumpCmPerFrame', 'liveGroundFrames',
-                    'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepWorstClipMedianFloatCm1x', 'sweepWorstClip',
-                    'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
+                    'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepBeforeIdleFloatCm', 'sweepBeforeWorstClipMedianCm', 'sweepWorstClip', 'sweepAfterPlantedWorstCm', 'sweepAfterPlantedWorstClip', 'sweepGroundClips', 'sweepClipsWithin3Cm', 'legHitsPerFoot', 'liveAnyClipMaxStretchCm',
+                    'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding',
+                    'knightCapsuleInsideFrames', 'minCameraToKnightCm', 'knightWholeOnScreenShare', 'dragonOnScreenShare',
+                    'knightTallerThan45PctFrames', 'knightHiddenByDragonFrames', 'legacyCameraFraming', 'framingSearches',
+                    'framingFallbackFrames', 'viewTurnFrames', 'legacyCutThrough')
             record['a123'] = {k: x[k] for k in keys if k in x}
         if 'dragonPlayback' in e:
             # Quality goal F1-F4: switches, worst source rate outside holds, worst planted-foot slide, per-clip rate/slide.
@@ -126,6 +140,15 @@ def run_spec(spec, delay=0.0):
                                                'slide': round(c.get('worstPlantedSlideCmPerSec', 0), 2),
                                                'steps': c.get('steps', 0), 'blends': c.get('blends', {})}
                                            for k, c in x.get('clips', {}).items()}
+        if 'feelProof' in e:
+            # Quality goal B4-B6 `feel` mode and the feel counters written once at the root.
+            f = e.get('feel', {})
+            record['feel'] = {'proof': {k: e['feelProof'].get(k) for k in ('done', 'failReason', 'swordContacts', 'knightPresses', 'scriptedKnightHit')},
+                              'contacts': {k: f.get('contacts', {}).get(k) for k in ('total', 'byPart', 'byClass', 'byDustTier', 'mutedByFlinch')},
+                              'shakesByClass': f.get('shakesByClass'), 'dust': f.get('dustSpawnedByTier'), 'hits': f.get('hitBurstsByTier'),
+                              'spineFlinches': f.get('spineFlinches'), 'meshFlashes': f.get('meshFlashes'), 'ribbonFrames': f.get('ribbonFrames'),
+                              'slowTails': f.get('slowTails'), 'zoomPunches': f.get('zoomPunches'), 'hurtKicks': f.get('hurtKicks'),
+                              'missingSystems': f.get('missingSystems')}
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
         if 'brainReachMap' in e:

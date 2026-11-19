@@ -32,7 +32,7 @@ public:
     /** Owns the knight's input for this tick. */
     void Drive(double Elapsed,float Dt);
     TSharedPtr<FJsonObject> Evidence() const;
-    float DurationLimit() const { return Mode==TEXT("camerahug")?240.f:180.f; }
+    float DurationLimit() const { return Mode==TEXT("camerahug")?240.f:Mode==TEXT("footclosehits")?620.f:200.f; }
 
 private:
     TWeakObjectPtr<UWorld> World;
@@ -47,7 +47,7 @@ private:
     float LiveSeconds=90.f;
     float Scale=1.f;           // dragon BodyScale / 2
     float BodyScale=2.f;
-    int32 HealthRefills=0;
+    int32 HealthRefills=0,BossHealthRefills=0;
     TSharedPtr<FJsonObject> SweepJson;
     FString FailReason;
 
@@ -56,9 +56,16 @@ private:
     FName SweepWorstBone;
     int32 MirroredClips=0;
     float LiveMaxStretchCm=0.f; FName LiveWorstBone; int32 LiveMirrorSamplesStart=0,LiveMirroredFrames=0,LiveFrames=0;
+    float LiveAllMaxStretchCm=0.f; FName LiveAllWorstBone;
+    int32 FootIndex=0,FootHits[4]={0,0,0,0},RegionHits[4][6]={{0}},LastSwordContacts=0;
+    double FootStart=0.0;
 
     // camerahug
     int32 CameraFrames=0,CameraInsideFrames=0,CollapseFrames=0,CollapseInsideFrames=0,PullInStart=0;
+    int32 CapsuleInsideFrames=0,BackFaceFrames=0,HullInsideFrames=0;float MaxBackFaceDepthCm=0.f;
+    // Second pass: the knight as seen by the camera.
+    int32 KnightCapsuleInsideFrames=0,KnightWholeFrames=0,DragonOnScreenFrames=0,KnightTallFrames=0,KnightOccludedFrames=0;
+    float MinCameraToKnightCm=TNumericLimits<float>::Max();
     float MaxLiftCm=0.f,MinFraction=1.f,MaxCameraJumpCm=0.f;
     FVector LastCameraRelative=FVector::ZeroVector; bool bHasLastCamera=false;
     TMap<FName,int32> InsideByShape;
@@ -66,6 +73,11 @@ private:
 
     // soleheights
     TArray<float> LiveGroundLowest;
+    float SweepBeforeIdleMedianCm=0.f,SweepWorstPlantedAfterCm=0.f,SweepWorstBeforeMedianCm=0.f; FName SweepWorstPlantedClip;
+    int32 SweepClipsWithin3Cm=0,SweepGroundClips=0;
+    float SideSign=0.f,SideCameraDistanceCm=0.f;FVector SideAim=FVector::ZeroVector;bool SideAimValid=false;
+    TWeakObjectPtr<class ACameraActor> SideCamera;
+    void UpdateSideCamera();
     float WorstSweepFloatCm=0.f; FName WorstSweepClip;
     int32 SoleFailures=0;
 

@@ -63,23 +63,38 @@ void AVeyrDragon::UpdateGroundContacts(float DeltaSeconds)
     }
     else FloorZ=0.f;
 
-    // Body: the hurt capsules fitted to the mesh. Leg capsules are left to the soles.
+    // Body: the solid anatomy capsules (bone-driven, need no data files, so packaged builds have them too), same
+    // shapes as UpdateSolidBody for the trunk, neck, head and tail; wings from the boxes.json capsules when loaded.
     int32 Slot=4;
+    auto Body=[&](FName Name,EVeyrGroundContactPart Kind,const FVector& A,const FVector& B,float Radius)
+    {
+        const int32 Index=Slot++;
+        if(Index>=FVeyrGroundContactDetector::MaxSlots||A.ContainsNaN()||B.ContainsNaN())return;
+        const FVector Low=A.Z<B.Z?A:B;
+        GroundContacts.Sample(Index,Name,Kind,INDEX_NONE,Low-FVector(0,0,Radius),FloorZ);
+    };
+    if(bSolidBodyReady&&bImportedTargetsValid)
+    {
+        auto Bone=[&](FName Name){return ImportedPresentation->GetBoneTransform(ImportedPresentation->GetBoneIndex(Name)).GetLocation();};
+        const float S=ImportedPresentation->GetComponentTransform().GetScale3D().GetAbsMax()/21.558172f;
+        const FVector Pelvis=Bone(SolidPelvisBone),Chest=Bone(SolidChestBone),NeckBase=Bone(SolidNeckBaseBone),NeckMiddle=Bone(SolidNeckMiddleBone);
+        static const FName Names[8]={TEXT("belly"),TEXT("chest"),TEXT("neck"),TEXT("neck_upper"),TEXT("head"),TEXT("tail_base"),TEXT("tail_mid"),TEXT("tail_end")};
+        Body(Names[0],EVeyrGroundContactPart::Body,Pelvis,Chest,225.f*S);
+        Body(Names[1],EVeyrGroundContactPart::Body,Chest,NeckBase,145.f*S);
+        Body(Names[2],EVeyrGroundContactPart::Neck,NeckBase,NeckMiddle,110.f*S);
+        Body(Names[3],EVeyrGroundContactPart::Neck,NeckMiddle,ImportedHeadWorld,100.f*S);
+        Body(Names[4],EVeyrGroundContactPart::Head,ImportedHeadWorld,ImportedMouthWorld,100.f*S);
+        Body(Names[5],EVeyrGroundContactPart::Tail,ImportedTailWorld[0],ImportedTailWorld[1],110.f*S);
+        Body(Names[6],EVeyrGroundContactPart::Tail,ImportedTailWorld[1],ImportedTailWorld[2],75.f*S);
+        Body(Names[7],EVeyrGroundContactPart::Tail,ImportedTailWorld[2],ImportedTailWorld[3],50.f*S);
+    }
+    else Slot+=8;
     for(const FVeyrHurtPartRuntime& Part:HurtParts)
     {
-        if(Slot>=FVeyrGroundContactDetector::MaxSlots)break;
-        EVeyrGroundContactPart Kind;
-        if(Part.Kind==FName(TEXT("leg")))continue;
-        else if(Part.Kind==FName(TEXT("head")))Kind=EVeyrGroundContactPart::Head;
-        else if(Part.Kind==FName(TEXT("neck")))Kind=EVeyrGroundContactPart::Neck;
-        else if(Part.Kind==FName(TEXT("tail")))Kind=EVeyrGroundContactPart::Tail;
-        else if(Part.Kind==FName(TEXT("wing")))Kind=EVeyrGroundContactPart::Wing;
-        else Kind=EVeyrGroundContactPart::Body;
+        if(Part.Kind!=FName(TEXT("wing")))continue;
         FVector A,B;float Radius=0.f;
-        const int32 Index=Slot++;
-        if(!HurtPartWorldSegment(Part,A,B,Radius))continue;
-        const FVector Low=A.Z<B.Z?A:B;
-        GroundContacts.Sample(Index,Part.Part,Kind,INDEX_NONE,Low-FVector(0,0,Radius),FloorZ);
+        if(HurtPartWorldSegment(Part,A,B,Radius))Body(Part.Part,EVeyrGroundContactPart::Wing,A,B,Radius);
+        else ++Slot;
     }
     GroundContacts.EndFrame();
     for(const FVeyrGroundContact& C:GroundContacts.ThisFrame())

@@ -176,7 +176,8 @@ void AVeyrImpactFx::OnContact(AVeyrDragon* Dragon,const FVeyrGroundContact& C)
     const FVeyrFeelTuning::FEffect& E=T.Dust[Tier];
     const FRotator Facing(0.f,Dragon->GetActorRotation().Yaw,0.f);
     const float Strength=FMath::Lerp(.75f,1.25f,C.Strength);
-    if(SpawnAsset(Tier,C.World,Facing,E.Scale*Scale*Strength,E.LifeSeconds))++DustAsset[Tier];
+    if(SpawnAsset(Tier,C.World,Facing,E.Scale*Scale*Strength,E.LifeSeconds))
+    {++DustAsset[Tier];if(E.bCardsWithAsset)SpawnDustCards(E,C.World,Scale,Strength,Tier>=3);}
     else{SpawnDustCards(E,C.World,Scale,Strength,Tier>=3);++DustFallback[Tier];}
     // Debris is ours in both cases (the asset tiers may have none).
     if(E.Chips>0)ThrowChips(E,C.World,FVector::UpVector,Scale*Strength,static_cast<float>(C.World.Z)-1.f);
@@ -188,9 +189,16 @@ void AVeyrImpactFx::HitBurst(const FVector& At,const FVector& Out,int32 Tier,flo
     Tier=FMath::Clamp(Tier,0,2);
     const FVeyrFeelTuning::FEffect& E=VeyrFeelTuning().Hit[Tier];
     const FVector Normal=Out.IsNearlyZero()?FVector::UpVector:Out.GetSafeNormal();
-    if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*FMath::Sqrt(FMath::Max(.25f,BodyScale)),E.LifeSeconds))++HitAsset[Tier];
+    if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*FMath::Sqrt(FMath::Max(.25f,BodyScale)),E.LifeSeconds))
+    {++HitAsset[Tier];if(E.bCardsWithAsset)ThrowSparks(E,At,Normal,1.f);}
     else{ThrowSparks(E,At,Normal,1.f);++HitFallback[Tier];}
     if(E.Chips>0)ThrowChips(E,At,Normal,1.f,0.f);
+    // The reference's hits throw a pale puff that hangs for a second, not only sparks.
+    if(E.SmokeTier>=0&&E.SmokeTier<5)
+    {
+        const float Puff=E.SmokeScale*FMath::Sqrt(FMath::Max(.25f,BodyScale));
+        SpawnDustCards(VeyrFeelTuning().Dust[E.SmokeTier],At+Normal*20.f*Puff,Puff,1.f,false);++HitSmoke;
+    }
 }
 
 void AVeyrImpactFx::SpawnDustCards(const FVeyrFeelTuning::FEffect& E,const FVector& At,float Scale,float Strength,bool bRing)
