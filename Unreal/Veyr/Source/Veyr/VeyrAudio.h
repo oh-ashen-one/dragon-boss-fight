@@ -102,6 +102,7 @@ private:
     struct FCueBank
     {
         TArray<TArray<int16>> Variants;
+        TArray<float> Peaks;      // per variant, linear full-scale peak
         TArray<float> Gains;      // per variant, from the measured level against the cue's target level
         int32 Last=-1;
         bool bMissingLogged=false;
@@ -142,11 +143,12 @@ private:
     struct FTapItem
     {
         double T=0.0; int32 Cue=0,Variant=0; float Volume=0.f,Level=0.f,Pitch=1.f,Dist=0.f,Gain=1.f,Seconds=0.f;
-        uint8 Place=0; bool bRandom=false;
+        uint8 Place=0; bool bRandom=false; FString Label;
         float PeakDb=-120.f,RmsDb=-120.f,MusicRmsDb=-120.f;
     };
     bool bTap=false,bAudition=false,bAuditionDone=false;
     int32 TapSession=0;
+    FString TapLabel; // set around a timed-sound play: "<clip>@<phase or time>"
     FString TapDir;
     double TapT0=-1.0,TapMusicStart=-1.0,TapGainLast=-1.0;
     TArray<float> TapFx,TapBeds;                 // interleaved stereo, 48 kHz

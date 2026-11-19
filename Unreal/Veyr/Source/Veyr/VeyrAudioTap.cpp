@@ -98,7 +98,7 @@ void AVeyrAudio::TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Vo
     }
     FTapItem Item;Item.T=T;Item.Cue=static_cast<int32>(Cue);Item.Variant=Variant;Item.Volume=Volume;Item.Level=Level;Item.Pitch=Pitch;
     Item.Dist=Dist;Item.Gain=Atten;Item.Seconds=float(Frames)/TapRate;Item.Place=static_cast<uint8>(Place);Item.bRandom=bRandom;
-    Item.PeakDb=ToDb(Peak);Item.RmsDb=ToDb(std::sqrt(SumSq/FMath::Max<double>(1.0,Frames*2.0)));
+    Item.Label=TapLabel;Item.PeakDb=ToDb(Peak);Item.RmsDb=ToDb(std::sqrt(SumSq/FMath::Max<double>(1.0,Frames*2.0)));
     TapItems.Add(Item);
 }
 
@@ -108,7 +108,7 @@ float AVeyrAudio::TypicalVolume(int32 Cue)
     switch(static_cast<ECue>(Cue))
     {
         case ECue::Footstep:return .55f;case ECue::DragonStep:return .7f;
-        case ECue::DragonBreathIn:case ECue::DragonBreathOut:return .5f;
+        case ECue::DragonBreathIn:case ECue::DragonBreathOut:return .8f;
         case ECue::DragonGrowlLow:case ECue::DragonSnort:return .75f;case ECue::Debris:return .8f;
         default:return 1.f;
     }
@@ -239,7 +239,7 @@ void AVeyrAudio::TapWrite(const FString& Stem)
         O->SetNumberField(TEXT("volume"),I.Volume);O->SetNumberField(TEXT("level"),I.Level);O->SetNumberField(TEXT("pitch"),I.Pitch);
         O->SetNumberField(TEXT("distanceCm"),I.Dist);O->SetNumberField(TEXT("attenuation"),I.Gain);O->SetNumberField(TEXT("seconds"),I.Seconds);
         O->SetNumberField(TEXT("peakDb"),I.PeakDb);O->SetNumberField(TEXT("rmsDb"),I.RmsDb);O->SetNumberField(TEXT("musicRmsDb"),MusicDb);
-        O->SetNumberField(TEXT("aboveMusicDb"),I.RmsDb-MusicDb);O->SetBoolField(TEXT("randomPhase"),I.bRandom);
+        O->SetNumberField(TEXT("aboveMusicDb"),I.RmsDb-MusicDb);O->SetBoolField(TEXT("randomPhase"),I.bRandom);if(!I.Label.IsEmpty())O->SetStringField(TEXT("label"),I.Label);
         Items.Add(MakeShared<FJsonValueObject>(O));
         FCueSum& S=Sum.FindOrAdd(I.Cue);
         ++S.N;if(S.Hist.Num()<=I.Variant)S.Hist.SetNumZeroed(I.Variant+1);++S.Hist[I.Variant];

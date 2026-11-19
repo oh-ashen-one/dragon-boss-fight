@@ -36,16 +36,16 @@ float AVeyrAudio::TargetLevelDb(ECue Cue)
     {
         case ECue::Swing:return -11.f;         case ECue::HeavySwing:return -10.5f;
         case ECue::Contact:return -20.f;       case ECue::Guard:return -20.f;
-        case ECue::ArmorHit:return -15.f;      case ECue::Impact:return -15.f;
-        case ECue::DragonStep:return -13.f;    case ECue::DragonSwing:return -12.f;
+        case ECue::ArmorHit:return -15.f;      case ECue::Impact:return -13.5f;
+        case ECue::DragonStep:return -11.5f;    case ECue::DragonSwing:return -12.f;
         case ECue::Bite:return -16.f;          case ECue::Breath:return -17.f;
         case ECue::Fire:return -17.f;          case ECue::Wing:return -14.5f;
-        case ECue::Roll:return -20.f;          case ECue::Footstep:return -13.f;
+        case ECue::Roll:return -20.f;          case ECue::Footstep:return -11.f;
         case ECue::Blink:return -18.f;         case ECue::Break:return -20.f;
         case ECue::Debris:return -17.f;        case ECue::Exposed:return -15.f;
-        case ECue::Death:return -15.f;         case ECue::Heal:return -19.f;
+        case ECue::Death:return -15.f;         case ECue::Heal:return -16.5f;
         case ECue::Victory:return -17.f;       case ECue::DragonBreathIn:return -15.f;
-        case ECue::DragonBreathOut:return -15.f; case ECue::DragonGrowlLow:return -17.f;
+        case ECue::DragonBreathOut:return -15.f; case ECue::DragonGrowlLow:return -15.f;
         case ECue::DragonSnort:return -19.f;
         default:return 0.f; // 0 = leave at the file's own level (the three roar files and the pain cue)
     }
@@ -77,8 +77,8 @@ void AVeyrAudio::SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNor
     TArray<int16> S;
     if(!BytesToSamples(Bytes,S))return;
     FCueBank& B=Banks[static_cast<int32>(Cue)];
-    B.Variants.Reset();B.Gains.Reset();
-    B.Variants.Add(MoveTemp(S));B.Gains.Add(1.f);
+    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();
+    B.Variants.Add(MoveTemp(S));B.Gains.Add(1.f);B.Peaks.Add(1.f);
     (void)bNormalize;
 }
 
@@ -117,7 +117,7 @@ void AVeyrAudio::LoadBank(ECue Cue,const FString& Dir)
 {
     const int32 Index=static_cast<int32>(Cue);
     FCueBank& B=Banks[Index];
-    B.Variants.Reset();B.Gains.Reset();B.Last=-1;
+    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.Last=-1;
     TArray<FString> Files;
     IFileManager::Get().FindFiles(Files,*(Dir/(FString(CueName(Index))+TEXT("_*.pcm"))),true,false);
     // Name after the underscore: "<n>" = recorded, "g<n>" = generated supplement.
@@ -158,7 +158,7 @@ void AVeyrAudio::LoadBank(ECue Cue,const FString& Dir)
         float Gain=TargetDb<0.f?FMath::Pow(10.f,(TargetDb-MeasuredDb)/20.f):1.f;
         Gain=FMath::Clamp(Gain,.4f,2.6f);
         Gain=FMath::Min(Gain,1.6f/Peak); // peak x gain x the .65 voice level stays under full scale
-        B.Variants.Add(MoveTemp(S));B.Gains.Add(Gain);
+        B.Variants.Add(MoveTemp(S));B.Gains.Add(Gain);B.Peaks.Add(Peak);
     }
 }
 
@@ -347,6 +347,9 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force)
     C.Pitch=Pitch;
     C.Seconds=C.Seconds0/FMath::Max(.5f,Pitch);
     C.Level=.65f*Headroom*FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter;
+    // Solo peak ceiling about -6 dBFS after the master: a close stomp and a step at once must not clip the sum.
+    if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f&&Cue!=ECue::Roar&&Cue!=ECue::DragonGrowl&&Cue!=ECue::DragonPain&&Cue!=ECue::PlayerPain)
+        C.Level=FMath::Min(C.Level,.5f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)));
     return true;
 }
 
@@ -366,7 +369,7 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     if(Cue==ECue::PlayerPain&&Now-LastCueTimes[Index]<.8)return false;
     if((Cue==ECue::DragonGrowl||Cue==ECue::DragonPain)&&Now-LastCueTimes[Index]<2.0)return false;
     if((Cue==ECue::DragonGrowlLow||Cue==ECue::DragonSnort)&&Now-LastCueTimes[Index]<1.5)return false;
-    if(Now-LastCueTimes[Index]<(bStep?.025:.06))return false;
+    if(Now-LastCueTimes[Index]<(Cue==ECue::DragonStep?0.0:bStep?.025:.06))return false; // four feet may land in one frame
     if(bAudioPolish&&(Cue==ECue::Contact||Cue==ECue::Impact||Cue==ECue::Roar||Cue==ECue::Guard||Cue==ECue::ArmorHit||Cue==ECue::Exposed))MusicDuckUntil=GetWorld()->GetTimeSeconds()+.35; // the duck is read against game time in RefreshMix
     const int32 Lo=bStep?VoiceCount:0,Hi=bStep?TotalVoices:VoiceCount;
     int32 Slot=INDEX_NONE;
@@ -465,8 +468,9 @@ void AVeyrAudio::StopCueVoices(ECue A,ECue B)
         if(VoiceEndTimes[I]<=0)continue;
         const ECue C=static_cast<ECue>(VoiceCue[I]);
         if(C!=A&&C!=B)continue;
-        if(IsValid(Voices[I])){Voices[I]->Stop();Voices[I]->SetSound(nullptr);}
-        VoiceWaves[I]=nullptr;VoiceEndTimes[I]=0;VoiceLevels[I]=0.f;ActiveVoices=FMath::Max(0,ActiveVoices-1);
+        // Fade out (0.3 s) instead of a hard stop: a breath cut by a strike must not click. The slot frees at once for the mix budget.
+        if(IsValid(Voices[I]))Voices[I]->FadeOut(.3f,0.f);
+        VoiceEndTimes[I]=FMath::Min(VoiceEndTimes[I],AudioNow()+.35);VoiceLevels[I]*=.3f;
     }
 }
 
@@ -617,7 +621,10 @@ void AVeyrAudio::UpdateTimedSounds()
             if(!(E.Pos>Prev&&E.Pos<=Now))continue;
             // A jump into the middle of a clip (state seeded late) must not replay what was skipped.
             if(Prev<0.f&&Now-E.Pos>(E.bPhase?.3f:.45f)){++TimedEventsSkipped;continue;}
-            if(PlayCueEx(E.Cue,E.Level,EPlace::Part,FVector::ZeroVector,E.Where))
+            if(bTap)TapLabel=FString::Printf(TEXT("%s@%s%.2f"),*ClipName,E.bPhase?TEXT("p"):TEXT("t"),Now);
+            const bool bPlayed=PlayCueEx(E.Cue,E.Level,EPlace::Part,FVector::ZeroVector,E.Where);
+            TapLabel.Reset();
+            if(bPlayed)
             {++TimedEventsFired;if(E.Cue==ECue::DragonSwing)bSwingFromData=true;}
         }
     }

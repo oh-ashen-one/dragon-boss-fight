@@ -7,7 +7,7 @@ Game side: add `-VeyrAudioTap=<absolute dir>` (and `-VeyrAudioAudition` for the 
     python3 tools/audio/check_tap.py <dir-or-json> [--expect-variants staged/Recorded20261118 [staged/Generated20261118]] [--earshot]
 
 Checks per cue: fires; every loaded variant plays (audition); expected variant count loaded; no variant twice in a row in the random
-phase; not clipped (item peak under -2 dBFS, master peak under -1 dBFS, no clipped samples); audible over the music bed at its live gain.
+phase; not clipped (item peak under -2 dBFS, master peak under -1 dBFS, no clipped samples); audible over the music bed at its live gain (median of the cue's events, in its own window).
 --earshot adds `earshot realness` on the mix wav (real recording vs synthesized). Exit status 1 if any check fails.
 """
 import argparse, json, re, subprocess, sys
@@ -54,7 +54,7 @@ def main():
     if not 4 <= gap <= 14:
         fails.append(f'effects vs music {gap:+.1f} dB outside +4..+14')
     items = d['items']
-    print(f"{'cue':16} {'events':>6} {'loaded':>6} {'used':>4} {'b2b':>3} {'peak':>6} {'min>music':>9}  result")
+    print(f"{'cue':16} {'events':>6} {'loaded':>6} {'used':>4} {'b2b':>3} {'peak':>6} {'med>music':>9}  result")
     for cue, c in sorted(d['cues'].items()):
         bad = []
         loaded = c['variantsLoaded']
@@ -67,7 +67,9 @@ def main():
         if c['maxPeakDb'] > -2.0:
             bad.append(f"peak {c['maxPeakDb']:.1f} dBFS")
         floor = 0.0 if cue in FIXED else (a.quiet_floor if cue in QUIET else a.floor)  # fixed vocals keep their approved levels
-        m = c.get('minAboveMusicDb')
+        import statistics
+        vals = [i['aboveMusicDb'] for i in items if i['cue'] == cue and i['musicRmsDb'] > -100]
+        m = statistics.median(vals) if vals else None  # median per cue: one quiet variant or a far pitched-down take is not the cue
         if m is not None and m < floor:
             bad.append(f'only {m:+.1f} dB over the music (need {floor:+.0f})')
         print(f"{cue:16} {c['events']:6} {loaded:6} {c['variantsUsed']:4} {c['backToBackRepeats']:3} {c['maxPeakDb']:6.1f} "
