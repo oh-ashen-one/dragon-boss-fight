@@ -69,13 +69,13 @@ void AVeyrArena::BuildRelitLighting()
     {
         DragonKeyLight=MakeDirectional(TEXT("RelitDragonKey"));
         DragonKeyLight->LightingChannels.bChannel0=false;DragonKeyLight->LightingChannels.bChannel1=false;DragonKeyLight->LightingChannels.bChannel2=true;
-        DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),4.5f));DragonKeyLight->SetLightColor(FLinearColor(.80f,.87f,1.f),false);DragonKeyLight->SetCastShadows(false);
-        DragonKeyLight->SetLightSourceAngle(8.f);DragonKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("dkeyspec"),1.4f));DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
+        DragonKeyLight->SetIntensity(VeyrLook::Tune(TEXT("dkey"),3.f));DragonKeyLight->SetLightColor(FLinearColor(.80f,.87f,1.f),false);DragonKeyLight->SetCastShadows(false);
+        DragonKeyLight->SetLightSourceAngle(8.f);DragonKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("dkeyspec"),.9f));DragonKeyLight->SetAffectGlobalIllumination(false);DragonKeyLight->SetVolumetricScatteringIntensity(0.f);
         DragonKeyLight->RegisterComponent();
         KnightKeyLight=MakeDirectional(TEXT("RelitKnightKey"));
         KnightKeyLight->LightingChannels.bChannel0=false;KnightKeyLight->LightingChannels.bChannel1=true;KnightKeyLight->LightingChannels.bChannel2=false;
         KnightKeyLight->SetIntensity(VeyrLook::Tune(TEXT("kkey"),4.f));KnightKeyLight->SetLightColor(FLinearColor(1.f,.87f,.72f),false);KnightKeyLight->SetCastShadows(false);
-        KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("kkeyspec"),1.6f));KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
+        KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("kkeyspec"),2.f));KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
         KnightKeyLight->RegisterComponent();
     }
 
@@ -85,7 +85,7 @@ void AVeyrArena::BuildRelitLighting()
     // falls to black. Court channel only, low specular so it adds no fake glints. -VeyrTune=floorfill=
     FloorFillLight=NewObject<USpotLightComponent>(this,TEXT("RelitFloorFill"));
     AddInstanceComponent(FloorFillLight);FloorFillLight->SetupAttachment(GetRootComponent());FloorFillLight->SetMobility(EComponentMobility::Movable);
-    FloorFillLight->SetIntensityUnits(ELightUnits::Candelas);FloorFillLight->SetIntensity(VeyrLook::Tune(TEXT("floorfill"),60.f));
+    FloorFillLight->SetIntensityUnits(ELightUnits::Candelas);FloorFillLight->SetIntensity(VeyrLook::Tune(TEXT("floorfill"),25.f));
     FloorFillLight->SetLightColor(FLinearColor(.62f,.72f,1.f),false);FloorFillLight->SetAttenuationRadius(2600.f);
     FloorFillLight->SetInnerConeAngle(20.f);FloorFillLight->SetOuterConeAngle(62.f);FloorFillLight->SetCastShadows(false);
     FloorFillLight->SetSpecularScale(.35f);FloorFillLight->SetAffectGlobalIllumination(false);FloorFillLight->SetVolumetricScatteringIntensity(0.f);
@@ -94,7 +94,7 @@ void AVeyrArena::BuildRelitLighting()
     DragonBellyLight=NewObject<UPointLightComponent>(this,TEXT("RelitDragonBellyGlow"));
     AddInstanceComponent(DragonBellyLight);DragonBellyLight->SetupAttachment(GetRootComponent());DragonBellyLight->SetMobility(EComponentMobility::Movable);
     DragonBellyLight->LightingChannels.bChannel0=false;DragonBellyLight->LightingChannels.bChannel1=false;DragonBellyLight->LightingChannels.bChannel2=true;
-    BellyBase=VeyrLook::Tune(TEXT("belly"),260.f);BellyBreath=VeyrLook::Tune(TEXT("bellybreath"),2200.f);BellyLevel=BellyBase;
+    BellyBase=VeyrLook::Tune(TEXT("belly"),180.f);BellyBreath=VeyrLook::Tune(TEXT("bellybreath"),2200.f);BellyLevel=BellyBase;
     DragonBellyLight->SetIntensityUnits(ELightUnits::Candelas);DragonBellyLight->SetIntensity(BellyBase);
     DragonBellyLight->SetLightColor(FLinearColor(1.f,.55f,.25f),false);DragonBellyLight->SetAttenuationRadius(2200.f);
     DragonBellyLight->SetSourceRadius(120.f);DragonBellyLight->SetCastShadows(false);DragonBellyLight->SetAffectGlobalIllumination(false);
@@ -107,7 +107,7 @@ void AVeyrArena::BuildRelitLighting()
         Gate->SetRelativeLocation(From);Gate->SetRelativeRotation((To-From).Rotation());
         Gate->SetIntensityUnits(ELightUnits::Candelas);Gate->SetIntensity(VeyrLook::Tune(TEXT("gate"),2600.f));
         Gate->SetLightColor(FLinearColor(1.f,.62f,.32f),false);Gate->SetAttenuationRadius(4200.f);
-        Gate->SetInnerConeAngle(10.f);Gate->SetOuterConeAngle(26.f);Gate->SetCastShadows(false);Gate->SetVolumetricScatteringIntensity(1.5f);
+        Gate->SetInnerConeAngle(10.f);Gate->SetOuterConeAngle(26.f);Gate->SetCastShadows(false);Gate->SetVolumetricScatteringIntensity(VeyrLook::Tune(TEXT("gatefog"),.4f));
         Gate->RegisterComponent();
     }
     BuildDepthDressing();
@@ -184,7 +184,7 @@ void AVeyrArena::BuildRelitLighting()
     // 1.6 stops darker than build 16's manual exposure; 3.5 EV100 gives about 4 stops.
     S.bOverride_AutoExposureMethod=true;S.AutoExposureMethod=AEM_Histogram;
     S.bOverride_AutoExposureApplyPhysicalCameraExposure=true;S.AutoExposureApplyPhysicalCameraExposure=false;
-    S.bOverride_AutoExposureBias=true;S.AutoExposureBias=VeyrLook::Tune(TEXT("bias"),-.1f);
+    S.bOverride_AutoExposureBias=true;S.AutoExposureBias=VeyrLook::Tune(TEXT("bias"),-.4f);
     S.bOverride_AutoExposureMinBrightness=true;S.AutoExposureMinBrightness=VeyrLook::Tune(TEXT("evmin"),-3.5f);
     S.bOverride_AutoExposureMaxBrightness=true;S.AutoExposureMaxBrightness=VeyrLook::Tune(TEXT("evmax"),3.5f);
     S.bOverride_AutoExposureLowPercent=true;S.AutoExposureLowPercent=VeyrLook::Tune(TEXT("lowpct"),50.f);
@@ -197,13 +197,13 @@ void AVeyrArena::BuildRelitLighting()
     S.bOverride_LocalExposureShadowContrastScale=true;S.LocalExposureShadowContrastScale=VeyrLook::Tune(TEXT("lesc"),.8f);
     S.bOverride_BloomIntensity=true;S.BloomIntensity=VeyrLook::Tune(TEXT("bloom"),.75f);
     S.bOverride_VignetteIntensity=true;S.VignetteIntensity=VeyrLook::Tune(TEXT("vignette"),.38f);
-    S.bOverride_ColorContrast=true;const float Contrast=VeyrLook::Tune(TEXT("contrast"),1.08f);S.ColorContrast=FVector4(Contrast,Contrast,Contrast,1.f);
+    S.bOverride_ColorContrast=true;const float Contrast=VeyrLook::Tune(TEXT("contrast"),1.18f);S.ColorContrast=FVector4(Contrast,Contrast,Contrast,1.f);
     S.bOverride_ColorSaturation=true;const float Saturation=VeyrLook::Tune(TEXT("sat"),.95f);S.ColorSaturation=FVector4(Saturation,Saturation,Saturation,1.f);
     S.bOverride_ColorGainShadows=true;const float Split=VeyrLook::Tune(TEXT("split"),.3f); // 0 = no split tone, 2 = double
     S.ColorGainShadows=FVector4(1.f-.07f*Split,1.f-.03f*Split,1.f+.08f*Split,1.f);
     S.bOverride_ColorGainHighlights=true;S.ColorGainHighlights=FVector4(1.f+.06f*Split,1.f,1.f-.08f*Split,1.f);
     S.bOverride_FilmToe=true;S.FilmToe=VeyrLook::Tune(TEXT("toe"),.60f);
-    S.bOverride_MotionBlurAmount=true;S.MotionBlurAmount=VeyrLook::MotionBlur()?VeyrLook::Tune(TEXT("mb"),.18f):0.f; // -VeyrNoMotionBlur
+    S.bOverride_MotionBlurAmount=true;S.MotionBlurAmount=VeyrLook::MotionBlur()?VeyrLook::Tune(TEXT("mb"),.12f):0.f; // -VeyrNoMotionBlur
     S.bOverride_MotionBlurMax=true;S.MotionBlurMax=VeyrLook::Tune(TEXT("mbmax"),1.5f); // blind review: one smeared frame
     S.bOverride_MotionBlurPerObjectSize=true;S.MotionBlurPerObjectSize=0.f;
     CourtGrade->RegisterComponent();
@@ -297,7 +297,6 @@ void AVeyrArena::BuildDepthDressing()
     auto Load=[](const TCHAR* Name){return LoadObject<UStaticMesh>(nullptr,*FString::Printf(TEXT("/Game/ArtPass/Tripo/%s/SM_%s.SM_%s"),Name,Name,Name),nullptr,LOAD_Quiet|LOAD_NoWarn);};
     UStaticMesh* Arch=Load(TEXT("CathedralArch_v001"));
     UStaticMesh* Buttress=Load(TEXT("PolishCornerButtress_v001"));
-    UStaticMesh* Niche=Load(TEXT("PolishFuneraryEffigyNiche_v001"));
     int32 Count=0;
     auto Piece=[&](UStaticMesh* Mesh,const FVector& At,float Height,float Yaw)
     {
@@ -305,7 +304,7 @@ void AVeyrArena::BuildDepthDressing()
         const FBox B=Mesh->GetBoundingBox();const float S=Height/FMath::Max(1.f,static_cast<float>(B.GetSize().Z));
         auto* C=NewObject<UStaticMeshComponent>(this,FName(*FString::Printf(TEXT("RelitDepthPiece%02d"),Count++)));
         AddInstanceComponent(C);C->SetupAttachment(GetRootComponent());C->SetMobility(EComponentMobility::Movable);C->SetStaticMesh(Mesh);
-        C->SetCollisionEnabled(ECollisionEnabled::NoCollision);C->SetCanEverAffectNavigation(false);C->SetCastShadow(true);
+        C->SetCollisionEnabled(ECollisionEnabled::NoCollision);C->SetCanEverAffectNavigation(false);C->SetCastShadow(false); // silhouettes against the lit wall; no extra shadow cost
         const FRotator R(0,Yaw,0);
         C->SetRelativeScale3D(FVector(S));C->SetRelativeRotation(R);
         C->SetRelativeLocation(At-R.RotateVector(FVector(B.GetCenter().X,B.GetCenter().Y,B.Min.Z)*S));
@@ -317,8 +316,6 @@ void AVeyrArena::BuildDepthDressing()
         for(float X:{-1550.f,1550.f})Piece(Arch,FVector(X,Side*3550.f,0),VeyrLook::Tune(TEXT("archh"),950.f),Side>0?180.f:0.f);
         // Buttress piers in the four corners.
         for(float X:{-4250.f,4250.f})Piece(Buttress,FVector(X,Side*3650.f,0),1100.f,Side*(X>0?45.f:135.f));
-        // Effigy niches flanking the focal gate.
-        Piece(Niche,FVector(4550.f,Side*1500.f,0),620.f,-90.f);
     }
     UE_LOG(LogTemp,Display,TEXT("VEYR_LOOK_DEPTH_PIECES %d"),Count);
 }

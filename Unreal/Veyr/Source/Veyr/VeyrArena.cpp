@@ -140,7 +140,7 @@ void AVeyrArena::BeginPlay()
             // Blind review 1: the dark floor read as a void. A damp court: patchy roughness (puddles in the
             // joints, drier crowns) so Lumen reflections put the moon, the braziers and the fire into it.
             // -VeyrTune=floorwet= (0 dry .. 1 wet); -VeyrNoFloorSheen keeps the scanned roughness.
-            const float Wet=FMath::Clamp(VeyrLook::Tune(TEXT("floorwet"),.6f),0.f,1.f);
+            const float Wet=FMath::Clamp(VeyrLook::Tune(TEXT("floorwet"),.85f),0.f,1.f);
             constexpr int32 N=256;
             FloorSheenTexture=UTexture2D::CreateTransient(N,N,PF_B8G8R8A8);FloorSheenTexture->SRGB=false;
             FColor* Pixels=static_cast<FColor*>(FloorSheenTexture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
@@ -755,7 +755,7 @@ void AVeyrArena::BuildDistance()
             for(int32 Cross=0;Cross<3;++Cross)
             {
                 const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,FlameZ+40.f*(FlameScale-1.f)),(bFortressCandidate?FVector(1.1f,.9f,1):FVector(.72f,.38f,1))*FlameScale));
-                FlameCards->SetCustomDataValue(Instance,0,.45f,false);FlameCards->SetCustomDataValue(Instance,1,FMath::Frac(I*.618f+Cross*.23f),false);
+                FlameCards->SetCustomDataValue(Instance,0,VeyrLook::IsLegacy()?.45f:VeyrLook::Tune(TEXT("flamealpha"),.7f),false);FlameCards->SetCustomDataValue(Instance,1,FMath::Frac(I*.618f+Cross*.23f),false);
                 FlameCards->SetCustomDataValue(Instance,2,.25f,false);FlameCards->SetCustomDataValue(Instance,3,1.f,false);
             }
         else Box(Embers,P+FVector(0,0,165),FVector(55,55,8));
@@ -769,8 +769,8 @@ void AVeyrArena::BuildDistance()
         {
             // Phase C: each brazier throws a warm, shadowed pool onto the floor and
             // washes its wall. Small source radius keeps the shadows readable.
-            FireCandelas=VeyrLook::Tune(TEXT("fire"),1100.f);Light->SetIntensity(FireCandelas);
-            Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(VeyrLook::Tune(TEXT("fireradius"),1700.f));Light->SetSourceRadius(25.f);
+            FireCandelas=VeyrLook::Tune(TEXT("fire"),750.f);Light->SetIntensity(FireCandelas);
+            Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(VeyrLook::Tune(TEXT("fireradius"),1250.f));Light->SetSourceRadius(25.f);
             // At tier >= 2 the budget picks the braziers nearest the camera (UpdateBrazierShadowBudget).
             Light->SetCastShadows(VeyrLook::ShadowedFireBudget()>=1000);BrazierLights.Add(Light);
             Light->SetVolumetricScatteringIntensity(2.5f);Light->SetSpecularScale(.9f);
