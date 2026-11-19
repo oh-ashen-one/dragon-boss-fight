@@ -16,7 +16,7 @@ from pathlib import Path
 
 PROBLEM = re.compile(r'VEYR_SKELETAL_PRESENTATION_(FAILED|TARGET_MISSING)|MISSING_CLIP|missing clip|Missing clip|'
                      r'not in definition|ResolveClip|Foot IK bone|knightFallback=true|VEYR_GREYSTONE_.*(FAIL|MISS)', re.I)
-ACTIONS = ('LightAttack', 'HeavyAttack', 'Roll', 'RollAttack', 'Heal', 'Guard', 'Blink', 'RunningAttack', 'LeapAttack',
+ACTIONS = ('LightAttack', 'Block', 'GuardBreak', 'GripToTwoHand', 'GripToOneHand', 'Dodge', 'Sprint', 'HeavyAttack', 'Roll', 'RollAttack', 'Heal', 'Guard', 'Blink', 'RunningAttack', 'LeapAttack',
            'GripTransition', 'Stagger', 'Knockdown', 'RunStop', 'RunStart', 'Jump', 'ComboAttack')
 
 
@@ -44,6 +44,8 @@ def scenario(folder, log_lines):
         'playerHealthEnd': latest.get('playerHealth'),
         'clipsShown': dict(clips.most_common()),
         'problemLines': log_lines,
+        'frameMonitor': rig.get('frameMonitor'),
+        'dragonDead': events['dragon_Dead'] > 0,
     }
 
 
