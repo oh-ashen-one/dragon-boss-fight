@@ -3070,7 +3070,7 @@ void AVeyrReplay::SaveEvidence(bool bFinal)
     if(A123Proof.IsValid())Root->SetObjectField(TEXT("a123"),A123Proof->Evidence());
     if(FeelProof.IsValid())Root->SetObjectField(TEXT("feelProof"),FeelProof->Evidence());
     if(const AVeyrGameMode* AudioMode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())
-        if(AudioMode->Audio)Root->SetObjectField(TEXT("audioSetup"),AudioMode->Audio->AudioSetupEvidence());
+        if(AudioMode->Audio){Root->SetObjectField(TEXT("audioSetup"),AudioMode->Audio->AudioSetupEvidence());if(bFinal)AudioMode->Audio->FlushTap();}
     if(IsValid(Knight))Root->SetObjectField(TEXT("knightRig"),Knight->GreystoneEvidence()); // E: which knight was shown
     if(FramingProof.IsValid())Root->SetObjectField(TEXT("framingProof"),FramingProof->Evidence());
     if(FramingMeter.IsValid())Root->SetObjectField(TEXT("framing"),FramingMeter->Evidence());

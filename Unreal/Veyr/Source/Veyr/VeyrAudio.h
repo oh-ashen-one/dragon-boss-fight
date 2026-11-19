@@ -102,6 +102,7 @@ private:
     struct FCueBank
     {
         TArray<TArray<int16>> Variants;
+        TArray<float> Peaks;      // per variant, linear full-scale peak
         TArray<float> Gains;      // per variant, from the measured level against the cue's target level
         int32 Last=-1;
         bool bMissingLogged=false;
@@ -130,11 +131,45 @@ private:
     FName TimedClipKey=NAME_None; float TimedLastPhase=-1.f,TimedLastTime=-1.f; bool bSwingFromData=false;
     float BreathClock=3.f,GrowlClock=9.f; bool bBreathExhaleNext=false,bPresenceCalm=true;
     float FootClock[2]={0.f,0.f};
-    float Headroom=.85f,MaxLoad=3.6f;
+    float Headroom=1.3f,MaxLoad=5.5f;
     float DurationLastPlayed=0.f;
 
     void LoadNewSet();
     void LoadBank(ECue Cue,const FString& Dir);
+    struct FChosen { int32 V=0; float Pitch=1.f,Level=0.f,Seconds0=0.f,Seconds=0.f; };
+    bool PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force=-1);
+    static void DefaultRadius(ECue Cue,float& Inner,float& Falloff);
+    // ---- verification without a window (VeyrAudioTap.cpp): a software mix of exactly what the code submits ----
+    struct FTapItem
+    {
+        double T=0.0; int32 Cue=0,Variant=0; float Volume=0.f,Level=0.f,Pitch=1.f,Dist=0.f,Gain=1.f,Seconds=0.f;
+        uint8 Place=0; bool bRandom=false; FString Label;
+        float PeakDb=-120.f,RmsDb=-120.f,MusicRmsDb=-120.f;
+    };
+    bool bTap=false,bAudition=false,bAuditionDone=false;
+    int32 TapSession=0;
+    FString TapLabel; // set around a timed-sound play: "<clip>@<phase or time>"
+    FString TapDir;
+    double TapT0=-1.0,TapMusicStart=-1.0,TapGainLast=-1.0;
+    TArray<float> TapFx,TapBeds;                 // interleaved stereo, 48 kHz
+    TArray<FTapItem> TapItems;
+    struct FTapGain { double T; float Music,Ambience; };
+    TArray<FTapGain> TapGains;
+    static float TypicalVolume(int32 Cue);
+    struct FTapContact { double T=0.0; float GameT=0.f,HandledGameT=0.f,Strength=0.f,SpeedMps=0.f; int32 Serial=0,Part=0,Class=0,Leg=-1,ItemFrom=0,ItemTo=0; };
+    struct FTapFrame { double T=0.0; float GameT=0.f,Dt=0.f,KneeL=-1.f,KneeR=-1.f,Speed=0.f,D[4]={-1.f,-1.f,-1.f,-1.f}; };
+    TArray<FTapContact> TapContacts;
+    TArray<FTapFrame> TapTrace;
+    FTapFrame TapNow;
+    void TapInit();
+    void TapTick();
+    void TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Volume,float Level,float Pitch,EPlace Place,const FVector& Pos,float Inner,float Falloff,double T,bool bRandom=false);
+    void TapAudition();
+    void TapWrite(const FString& Stem);
+public:
+    /** Writes the software mix (wav) and the cue list (json) when -VeyrAudioTap=<dir> is set. */
+    void FlushTap();
+private:
     void LoadCueSources();
     double AudioNow() const; // real time in the new path (sound does not stretch with hit-stop), game time in the legacy path
     bool ContactAudioActive() const;
@@ -143,6 +178,7 @@ private:
     TMap<FName,ESourceMode> CueSource;
     FString SourcesDiagnostic;
     bool bBodyDownHeard=false;
+    int32 GeneratedFiles=0;
     double LastLandingHeard=-100.0;
     TArray<FVeyrGroundContact> ContactScratch;
     void SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNormalize);

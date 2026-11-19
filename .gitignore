@@ -66,3 +66,6 @@ Unreal/**/Content/ParagonGreystone/
 Unreal/**/Content/Characters/Greystone/
 Unreal/**/Content/Characters/UEFN_Mannequin/
 Unreal/**/Content/Characters/Paragon/
+
+# B1 generated supplement (fal.ai sound effects, not CC0 recordings): restore per docs/audio-20261118/README.md
+Unreal/Veyr/Content/Audio/Recorded20261118/*_g[0-9]*.pcm

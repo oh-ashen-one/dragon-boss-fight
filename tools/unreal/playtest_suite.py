@@ -131,14 +131,14 @@ def run_spec(spec, delay=0.0):
             record['a123'] = {k: x[k] for k in keys if k in x}
         if 'audio' in latest:
             # Quality goal B1-B3: which cues fired (counts by cue, dragon contacts/breaths/timed sounds, knight steps).
-            a = latest['audio']
-            fired = {k: v for k, v in a.get('cueCounts', {}).items() if v}
-            record['audio'] = {'newSet': a.get('newSet'), 'cuesStarted': a.get('cuesStarted'), 'cuesDropped': a.get('cuesDropped'),
-                               'cueCounts': fired, 'silentCueRequests': a.get('silentCueRequests'),
-                               'dragon': a.get('dragon'), 'knight': a.get('knight')}
+            au = latest['audio']
+            fired = {k: v for k, v in au.get('cueCounts', {}).items() if v}
+            record['audio'] = {'newSet': au.get('newSet'), 'cuesStarted': au.get('cuesStarted'), 'cuesDropped': au.get('cuesDropped'),
+                               'cueCounts': fired, 'silentCueRequests': au.get('silentCueRequests'),
+                               'dragon': au.get('dragon'), 'knight': au.get('knight')}
             if e.get('audioSetup'):
                 record['audio']['setup'] = e['audioSetup']
-            if not a.get('newSet'):
+            if not au.get('newSet'):
                 print('    WARNING: audio.newSet is false: this run played the PREVIOUS sounds (new set missing or -VeyrLegacyCues)', flush=True)
         if 'framing' in e:
             # Quality goal D1: what the player's camera showed (VeyrFramingMeter). Goal: knight >= .95, limb >= .90.

@@ -101,7 +101,13 @@ void AVeyrLightCheck::Initialize(const FString& StillsDirectory,const FString& F
         {TEXT("07_dragon_claw"),TEXT("Claw0"),6.f},
         {TEXT("08_collapse"),TEXT("Stagger0"),10.f},
         {TEXT("09_flight"),TEXT("Flight"),8.f},
-        {TEXT("10_dark_corner"),NAME_None,1.8f}};
+        {TEXT("10_dark_corner"),NAME_None,1.8f},
+        // Gameplay views (review 2026-11-19): the combat camera's place behind the knight, looking at the dragon,
+        // with the knight 8, 15 and 25 m in front of the forelegs, and among the feet.
+        {TEXT("11_play_8m"),NAME_None,1.8f},
+        {TEXT("12_play_15m"),NAME_None,1.8f},
+        {TEXT("13_play_25m"),NAME_None,1.8f},
+        {TEXT("14_play_feet"),NAME_None,1.8f}};
     LastWall=FPlatformTime::Seconds();
     UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_BEGIN stills=%s frames=%s legacy=%d tier=%d"),*StillsDir,*FrameDir,VeyrLook::IsLegacy(),VeyrLook::RenderTier());
 }
@@ -121,6 +127,13 @@ void AVeyrLightCheck::TickFrameReport()
     if(bFrameDone||!Knight)return;
     const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>();
     const bool bFighting=Knight->HasEnteredEncounter()&&Mode&&!Mode->IsArenaIntroActive();
+    TraceClock+=Wall/1000.f;
+    if(TraceClock>=NextTraceSample)
+    {
+        NextTraceSample=TraceClock+.1f;
+        const TCHAR* PhaseName=Mode&&Mode->IsArenaIntroActive()?TEXT("intro"):bFighting?TEXT("fight"):TEXT("other");
+        ExposureTrace.Add(FString::Printf(TEXT("%.2f,%s,%.5f,%.5f,%.3f"),TraceClock,PhaseName,VeyrLook::LastExposure(),VeyrLook::LastSceneLuminance(),VeyrLook::FxExposureGain()));
+    }
     if(!bFrameRecording)
     {
         // Stills runs report too: the clock then starts with the first scripted shot.
@@ -134,6 +147,7 @@ void AVeyrLightCheck::TickFrameReport()
     if(FScreenshotRequest::IsScreenshotRequested())SkipFrames=FMath::Max(SkipFrames,3);
     if(SkipFrames>0){--SkipFrames;++SkippedTool;return;}
     FrameMs.Add(Wall);RecordedSeconds+=Wall/1000.f;
+    if(VeyrLook::LastExposure()>0.f)ExposureFrames.Add(VeyrLook::LastExposure());
     GameMs.Add(FPlatformTime::ToMilliseconds(GGameThreadTime));
     RenderMs.Add(FPlatformTime::ToMilliseconds(GRenderThreadTime));
     GpuMs.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)));
@@ -153,6 +167,20 @@ void AVeyrLightCheck::WriteFrameReport(bool bPartial)
     int32 Over=0;for(float V:FrameMs)Over+=V>17.5f;
     Root->SetNumberField(TEXT("framesOver17_5ms"),Over);
     Root->SetNumberField(TEXT("meanFps"),Mean(FrameMs)>0.f?1000.f/Mean(FrameMs):0.f);
+    // Exposure over the recorded frames, and its range in stops (build 16 manual exposure = 0.833).
+    Root->SetObjectField(TEXT("exposure"),Stats(ExposureFrames));
+    {
+        float Lo=0.f,Hi=0.f;
+        if(ExposureFrames.Num()){Lo=Percentile(ExposureFrames,.05f);Hi=Percentile(ExposureFrames,.95f);}
+        Root->SetNumberField(TEXT("exposureStopsP5toP95"),Lo>0.f?FMath::Log2(Hi/Lo):0.f);
+        Root->SetNumberField(TEXT("fxExposureLock"),VeyrLook::FxExposureLock());
+    }
+    Root->SetStringField(TEXT("exposureTrace"),TEXT("exposure-trace.csv"));
+    {
+        FString Csv=TEXT("seconds,phase,exposure,sceneLuminance,fxGain\n");
+        for(const FString& Line:ExposureTrace)Csv+=Line+TEXT("\n");
+        FFileHelper::SaveStringToFile(Csv,*FPaths::Combine(FrameDir,TEXT("exposure-trace.csv")));
+    }
     Root->SetStringField(TEXT("note"),StillsDir.IsEmpty()
         ?TEXT("wall-clock frame interval under the 60 fps cap; GPU ms is the headroom signal")
         :TEXT("stills mode: scripted poses, not a fight; frames around cuts and screenshots are skipped"));
@@ -199,6 +227,20 @@ void AVeyrLightCheck::PlaceActors()
         Position=Leg+(Out.IsNearlyZero()?FVector(-1,0,0):Out)*280.f;Position.Z=KnightZ;
         Facing=(Leg-Position).GetSafeNormal2D().Rotation();
     }
+    else if(Shot.Name.StartsWith(TEXT("11"))||Shot.Name.StartsWith(TEXT("12"))||Shot.Name.StartsWith(TEXT("13"))||Shot.Name.StartsWith(TEXT("14")))
+    {
+        const FVector Front=(Dragon->GetLegLocation(0)+Dragon->GetLegLocation(1))*.5f;
+        FVector Out=(Front-Dragon->GetActorLocation()).GetSafeNormal2D();if(Out.IsNearlyZero())Out=FVector(-1,0,0);
+        const float Metres=Shot.Name.StartsWith(TEXT("11"))?8.f:Shot.Name.StartsWith(TEXT("12"))?15.f:25.f;
+        if(Shot.Name.StartsWith(TEXT("14")))
+        {
+            FVector Under=FVector::ZeroVector;for(int32 I=0;I<4;++I)Under+=Dragon->GetLegLocation(I)*.25f;
+            Position=FMath::Lerp(Under,Front,.55f);
+        }
+        else Position=Front+Out*Metres*100.f;
+        Position.Z=KnightZ;
+        Facing=(Dragon->GetActorLocation()-Position).GetSafeNormal2D().Rotation();
+    }
     else if(Shot.Name.StartsWith(TEXT("10")))
     {
         // Away from every brazier and floor pool: the readability test.
@@ -236,13 +278,24 @@ void AVeyrLightCheck::PlaceCamera()
         At=Head+DF*650.f+DR*520.f;At.Z=K.Z+90.f;Look=Head;Fov=66.f;
     }
     else if(Name.StartsWith(TEXT("09"))){At=K-KF*300.f+FVector(0,0,110);Look=Head;Fov=80.f;}
+    else if(Name.StartsWith(TEXT("11"))||Name.StartsWith(TEXT("12"))||Name.StartsWith(TEXT("13"))||Name.StartsWith(TEXT("14")))
+    {
+        // Combat-camera stand-in: 4.5 m behind and 2 m above the knight, aimed between him and the dragon.
+        At=K-KF*450.f+FVector(0,0,200);Look=FMath::Lerp(K+FVector(0,0,120),D+FVector(0,0,300),.35f);Fov=75.f;
+        if(Name.StartsWith(TEXT("14"))){At=K-KF*350.f+FVector(0,0,150);Look=K+KF*400.f+FVector(0,0,180);}
+    }
     Camera->GetCameraComponent()->SetFieldOfView(Fov);
     Camera->SetActorLocationAndRotation(At,(Look-At).Rotation());
 }
 
 bool AVeyrLightCheck::BeginShot()
 {
-    if(++ShotIndex>=Shots.Num()){FinishStills();return false;}
+    if(++ShotIndex>=Shots.Num())
+    {
+        FParse::Value(FCommandLine::Get(),TEXT("VeyrLightCheckBreathSeconds="),BreathSeconds);
+        if(BreathSeconds>0.f)BeginBreath();else FinishStills();
+        return false;
+    }
     const FShot& Shot=Shots[ShotIndex];
     PhaseClock=0.f;bStrikeIssued=false;bSegmentStarted=false;bPreRollDone=Shot.PreRollSeconds<=0.f;SkipFrames=FMath::Max(SkipFrames,10);
     PlaceActors();
@@ -312,6 +365,8 @@ void AVeyrLightCheck::TickStills(float DeltaSeconds)
         PC->SetViewTarget(Camera);
         if(PC->MyHUD&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrLightCheckHUD")))PC->MyHUD->bShowHUD=false;
         Phase=EPhase::Setup;PhaseClock=0.f;return;
+    case EPhase::Breath:
+        TickBreath(DeltaSeconds);return;
     case EPhase::Setup:
         if(!BeginShot())return;
         Phase=EPhase::Hold;return;
@@ -333,7 +388,8 @@ void AVeyrLightCheck::TickStills(float DeltaSeconds)
             Row->SetStringField(TEXT("shot"),Shots[ShotIndex].Name);Row->SetStringField(TEXT("file"),FPaths::GetCleanFilename(PendingFile));
             Row->SetStringField(TEXT("segment"),Shots[ShotIndex].Segment.ToString());Row->SetBoolField(TEXT("segmentStarted"),bSegmentStarted);
             Row->SetNumberField(TEXT("dragonState"),static_cast<int32>(Dragon->State));Row->SetNumberField(TEXT("stateElapsed"),Dragon->GetStateElapsed());
-            Row->SetNumberField(TEXT("holdSeconds"),PhaseClock);Row->SetNumberField(TEXT("runSeconds"),TotalClock);
+            Row->SetNumberField(TEXT("holdSeconds"),PhaseClock);
+            Row->SetNumberField(TEXT("exposure"),VeyrLook::LastExposure());Row->SetNumberField(TEXT("fxGain"),VeyrLook::FxExposureGain());Row->SetNumberField(TEXT("runSeconds"),TotalClock);
             ShotRecords.Add(MakeShared<FJsonValueObject>(Row));
         }
         UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_CAPTURE %s state=%d elapsed=%.2f"),*Shots[ShotIndex].Name,static_cast<int32>(Dragon->State),Dragon->GetStateElapsed());
@@ -351,6 +407,55 @@ void AVeyrLightCheck::TickStills(float DeltaSeconds)
         Phase=EPhase::Setup;PhaseClock=0.f;return;
     default:return;
     }
+}
+
+void AVeyrLightCheck::BeginBreath()
+{
+    ShotIndex=4; // 05_fire_breath framing
+    Phase=EPhase::Breath;BreathClock=0.f;BreathRest=.5f;BreathLastWall=FPlatformTime::Seconds();bSegmentStarted=false;
+    PlaceActors();PlaceCamera();VeyrLook::NotifyCameraCut(GetWorld());
+    UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_BREATH_BEGIN seconds=%.0f"),BreathSeconds);
+}
+
+void AVeyrLightCheck::TickBreath(float DeltaSeconds)
+{
+    const double Now=FPlatformTime::Seconds();const float Wall=static_cast<float>((Now-BreathLastWall)*1000.0);BreathLastWall=Now;
+    BreathClock+=DeltaSeconds;
+    PlaceCamera();
+    const bool bBeam=bSegmentStarted&&Dragon->Move==EVeyrDragonMove::Fire&&Dragon->State==EVeyrDragonState::Active;
+    if(bBeam&&!FScreenshotRequest::IsScreenshotRequested())
+    {
+        BreathMs.Add(Wall);BreathGpuMs.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0)));
+        if(VeyrLook::LastExposure()>0.f)BreathExposure.Add(VeyrLook::LastExposure());
+    }
+    if(bSegmentStarted)
+    {
+        if(!Dragon->IsShowcaseSegmentComplete())return;
+        Dragon->RestAfterShowcaseSegment();bSegmentStarted=false;BreathRest=.5f;return;
+    }
+    if(BreathClock>=BreathSeconds){WriteBreathReport();FinishStills();return;}
+    BreathRest-=DeltaSeconds;
+    if(BreathRest>0.f||Dragon->State!=EVeyrDragonState::Idle)return;
+    PlaceActors();
+    FString Error;
+    bSegmentStarted=Dragon->StartShowcaseSegment(TEXT("Fire"),Error);
+    if(bSegmentStarted)++BreathCount;
+    else{UE_LOG(LogTemp,Warning,TEXT("VEYR_LIGHTCHECK_BREATH_FAILED %s"),*Error);Dragon->RestAfterShowcaseSegment();WriteBreathReport();FinishStills();}
+}
+
+void AVeyrLightCheck::WriteBreathReport()
+{
+    auto Root=LookFields(GetWorld());
+    Root->SetStringField(TEXT("mode"),TEXT("breath"));Root->SetNumberField(TEXT("breaths"),BreathCount);
+    Root->SetNumberField(TEXT("beamFrames"),BreathMs.Num());
+    Root->SetObjectField(TEXT("frameMs"),Stats(BreathMs));Root->SetObjectField(TEXT("gpuMs"),Stats(BreathGpuMs));
+    Root->SetObjectField(TEXT("exposure"),Stats(BreathExposure));
+    int32 Over=0;for(float V:BreathMs)Over+=V>17.5f;
+    Root->SetNumberField(TEXT("framesOver17_5ms"),Over);
+    Root->SetStringField(TEXT("note"),TEXT("frames while the fire beam is live, shot-05 camera; wall-clock interval under the 60 fps cap"));
+    SaveJson(Root,FPaths::Combine(StillsDir,TEXT("breath-report.json")));
+    UE_LOG(LogTemp,Display,TEXT("VEYR_BREATH_REPORT breaths=%d frames=%d meanMs=%.2f p95Ms=%.2f gpuP95Ms=%.2f tier=%d"),
+        BreathCount,BreathMs.Num(),Mean(BreathMs),Percentile(BreathMs,.95f),Percentile(BreathGpuMs,.95f),VeyrLook::RenderTier());
 }
 
 void AVeyrLightCheck::FinishStills()

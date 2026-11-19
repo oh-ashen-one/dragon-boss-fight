@@ -16,7 +16,7 @@ runtime = p.add_mutually_exclusive_group(required=True)
 runtime.add_argument('--engine', type=Path)
 runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
-p.add_argument('--mode', choices=['core','death','victory','camp','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment','intro','footclosehits','camerahug','soleheights','framing','feel'], required=True)
+p.add_argument('--mode', choices=['core','death','victory','camp','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment','intro','footclosehits','camerahug','soleheights','framing','feel','lightcheck'], required=True)
 p.add_argument('--next-mode',choices=['environment','showcase','healing','death'],help='One additional scenario in a fresh world, using the same owned renderer process')
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--wait-for-stream-end',action='store_true',help='Keep this single owned request waiting while the shared streaming flag exists; still acquire the normal GPU gate afterward')
@@ -30,6 +30,7 @@ p.add_argument('--extra-arg', action='append', default=[], help='Extra game comm
 p.add_argument('--no-proof-floor', action='store_true', help='blendproof only: do not apply the 25 cm checker (-VeyrProofFloor)')
 p.add_argument('--headless', action='store_true', help='Numbers only: run with the null renderer (-nullrhi). No window, no GPU use, '
                'no frames; the shared GPU gate does not count such a process, so no slot is taken. Never valid as visual evidence')
+p.add_argument('--frame-report', action='store_true', help='Phase C: 60 s frame-time + exposure report of the fight into <run>/frames (-VeyrFrameReport)')
 p.add_argument('--width', type=int, default=1280)
 p.add_argument('--height', type=int, default=720)
 a = p.parse_args()
@@ -99,6 +100,13 @@ for extra in a.extra_arg:
 if a.start_two_handed:
     if a.mode not in ('core','victory'):p.error('--start-two-handed applies only to core/victory validation')
     cmd.append('-VeyrReplayStartTwoHanded')
+if a.mode=='lightcheck':
+    # Phase C picture check: no replay; the game stages its own ten stills plus a fire-breath stress and quits.
+    if a.next_mode or a.performance or a.audio_capture_seconds or a.headless:p.error('lightcheck is one rendered stills run')
+    cmd=[c for c in cmd if c not in ('-VeyrReplay=lightcheck','-VeyrReplayQuit')]
+    cmd.extend(['-VeyrLightCheck='+str(run/'stills'),'-VeyrFrameReport='+str(run/'frames')])
+elif a.frame_report:
+    cmd.append('-VeyrFrameReport='+str(run/'frames'))
 print('Native run:', run, flush=True)
 if a.wait_for_stream_end:
     streaming=Path.home()/'.cache/gpu-slot/STREAMING'
@@ -109,8 +117,12 @@ if a.wait_for_stream_end:
     if not executable.is_file() or hashlib.sha256(executable.read_bytes()).hexdigest()!=json.loads((run/'launch.json').read_text())['executableSHA256']:
         raise SystemExit('Runtime changed during the guarded wait; preserve evidence and revalidate')
 from owned_launch_budget import launch_gate, record_rendered_launch
+from engine_lock import engine_lock
 # Budget wait first (no lock held), then the machine-wide engine lock for exactly the life of this one process.
-with launch_gate(ROOT, 'run_native ' + a.mode + (' headless' if a.headless else '') + ' ' + ROOT.name) as lock:
+# A headless run is not a rendered launch (it is never recorded against the budget), so it waits only for the lock:
+# otherwise windowless checks stall for up to an hour whenever other builders have used the ten rendered slots.
+_label = 'run_native ' + a.mode + (' headless' if a.headless else '') + ' ' + ROOT.name
+with (engine_lock(_label, tree=ROOT) if a.headless else launch_gate(ROOT, _label)) as lock:
     with (run/'launcher.log').open('w') as output:
         environment = os.environ.copy()
         # Direct executable launches do not receive Info.plist LSEnvironment from
@@ -123,6 +135,11 @@ with launch_gate(ROOT, 'run_native ' + a.mode + (' headless' if a.headless else 
 print('Process exit:', result.returncode, 'Evidence:', run, flush=True)
 if result.returncode:
     raise SystemExit(result.returncode)
+if a.mode=='lightcheck':
+    check=run/'stills'/'lightcheck.json'
+    shots=json.loads(check.read_text()).get('shots',[]) if check.exists() else []
+    print('Lightcheck stills:',len(shots),'breath report:',(run/'stills'/'breath-report.json').exists(),flush=True)
+    raise SystemExit(0 if len(shots)==14 and not json.loads(check.read_text()).get('partial') else 1)
 results = list(run.glob('unreal-*/evidence.json'))
 expected=[a.mode]+([a.next_mode] if a.next_mode else [])
 if len(results) != len(expected):raise SystemExit('Expected one completed evidence file per requested scenario')

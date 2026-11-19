@@ -12,6 +12,10 @@ Rules: read-only on the source (git runs with GIT_OPTIONAL_LOCKS=0, so even the 
 Unreal/Veyr/Content and Unreal/Veyr/Config; __pycache__, *.pyc and .DS_Store are ignored; a file already present with the
 same size and mtime is skipped; a tracked file in the target is never overwritten; a differing untracked file already in
 the target is kept and reported (--update replaces it). --untracked also brings untracked (not ignored) Content folders.
+
+By default it also seeds <target>/Unreal/Veyr/DerivedDataCache from the source's with clones (`cp -cRn`, existing files are
+never overwritten), so the first editor run in a fresh worktree does not rebuild every static mesh while holding the engine
+lock. Skip it with --no-ddc.
 """
 import argparse
 import os
@@ -97,6 +101,7 @@ def main():
     parser.add_argument('--to', dest='target', type=Path, required=True, help='worktree to fill')
     parser.add_argument('--untracked', action='store_true', help='also bring untracked (not ignored) Content folders')
     parser.add_argument('--update', action='store_true', help='replace a differing untracked file already in the target (never a tracked file)')
+    parser.add_argument('--no-ddc', action='store_true', help='do not seed Unreal/Veyr/DerivedDataCache from the source tree')
     parser.add_argument('--dry-run', action='store_true', help='print what would be done, copy nothing')
     args = parser.parse_args()
     source, target = args.source.expanduser().resolve(), args.target.expanduser().resolve()
@@ -166,7 +171,26 @@ def main():
         print('  not overwritten (tracked in target):', rel)
     for rel in conflicts[:20]:
         print('  differs, kept (use --update to replace):', rel)
+    if not args.no_ddc:
+        seed_ddc(source, target, args.dry_run)
     return 0
+
+
+def seed_ddc(source, target, dry_run):
+    src, dst = source / 'Unreal/Veyr/DerivedDataCache', target / 'Unreal/Veyr/DerivedDataCache'
+    if not src.is_dir():
+        print('DerivedDataCache: none in the source tree, nothing to seed')
+        return
+    before_files, before_size = tree_stats(dst) if dst.is_dir() else (0, 0)
+    if not dry_run:
+        dst.mkdir(parents=True, exist_ok=True)
+        result = subprocess.run(['/bin/cp', '-cRn', str(src) + '/.', str(dst) + '/'], capture_output=True, text=True)
+        if result.stderr.strip():
+            print('DerivedDataCache: cp reported:', result.stderr.strip()[:300])
+    files, size = tree_stats(dst) if dst.is_dir() else (0, 0)
+    src_files, src_size = tree_stats(src)
+    print(f'DerivedDataCache: {"would seed" if dry_run else "seeded"} {dst} (source {src_files} files, {src_size / 1e9:.2f} GB; '
+          f'target now {files} files, {size / 1e9:.2f} GB, was {before_files}; existing files kept, clones take no extra disk)', flush=True)
 
 
 if __name__ == '__main__':

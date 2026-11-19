@@ -135,6 +135,26 @@ void AVeyrArena::BeginPlay()
         auto* CourtPaving=UMaterialInstanceDynamic::Create(CathedralFloorParent,this,TEXT("FortressCourtPaving"));
         CourtPaving->SetScalarParameterValue(TEXT("FloorTileCm"),400.f);
         CourtPaving->SetScalarParameterValue(TEXT("FloorDesaturation"),.35f);
+        if(!VeyrLook::IsLegacy()&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoFloorSheen")))
+        {
+            // Blind review 1: the dark floor read as a void. A damp court: patchy roughness (puddles in the
+            // joints, drier crowns) so Lumen reflections put the moon, the braziers and the fire into it.
+            // -VeyrTune=floorwet= (0 dry .. 1 wet); -VeyrNoFloorSheen keeps the scanned roughness.
+            const float Wet=FMath::Clamp(VeyrLook::Tune(TEXT("floorwet"),.85f),0.f,1.f);
+            constexpr int32 N=256;
+            FloorSheenTexture=UTexture2D::CreateTransient(N,N,PF_B8G8R8A8);FloorSheenTexture->SRGB=false;
+            FColor* Pixels=static_cast<FColor*>(FloorSheenTexture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+            for(int32 Y=0;Y<N;++Y)for(int32 X=0;X<N;++X)
+            {
+                const float U=X*(2.f*PI/N),V=Y*(2.f*PI/N);
+                const float Blot=.5f+.22f*FMath::Sin(U*2.f+1.3f)*FMath::Cos(V*3.f+.4f)+.16f*FMath::Sin(U*5.f+V*4.f)+.12f*FMath::Cos(U*9.f-V*7.f+2.f);
+                const float Rough=FMath::Clamp(FMath::Lerp(.72f,.16f,Wet*FMath::SmoothStep(.35f,.75f,Blot))+.06f*FMath::Sin(U*31.f+V*29.f),.08f,.9f);
+                const uint8 R=static_cast<uint8>(Rough*255.f);Pixels[Y*N+X]=FColor(R,R,R,255);
+            }
+            FloorSheenTexture->GetPlatformData()->Mips[0].BulkData.Unlock();FloorSheenTexture->UpdateResource();
+            CourtPaving->SetTextureParameterValue(TEXT("FloorRoughness"),FloorSheenTexture);
+            CourtPaving->SetScalarParameterValue(TEXT("FloorMinimumRoughness"),.08f);
+        }
         Materials.Add(CourtPaving);FloorMaterial=CourtPaving;
     }
     FloorSurface=MakeBatch(TEXT("ContinuousCathedralFloor"),CylinderMesh,FloorMaterial);
@@ -710,6 +730,10 @@ void AVeyrArena::BuildDistance()
     UStaticMesh* FlamePlane=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Plane.Plane"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     UMaterialInterface* FlameMaterial=LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Veyr/FX/v3/M_VeyrBreathFlame.M_VeyrBreathFlame"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     UInstancedStaticMeshComponent* FlameCards=nullptr;
+    // New look: the unlit flame cards hold their tuned screen brightness under auto exposure (VeyrLook).
+    if(FlameMaterial&&VeyrLook::FxExposureLock()>0.f)
+        if(UMaterialInstanceDynamic* Follow=UMaterialInstanceDynamic::Create(FlameMaterial,this))
+            if(VeyrLook::FollowExposureAuto(Follow)>0){Materials.Add(Follow);FlameMaterial=Follow;}
     if(FlamePlane&&FlameMaterial)
     {
         FlameCards=MakeBatch(TEXT("CourtBrazierAtlasFlames"),FlamePlane,FlameMaterial);
@@ -719,22 +743,25 @@ void AVeyrArena::BuildDistance()
     auto Brazier=[&](const FVector& P)
     {
         const int32 I=Index++;
+        // Blind review 1: "tiny braziers cannot explain the light". Relit: 1.35x braziers with 1.8x flames.
+        const float BrazierScale=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("brazierscale"),1.35f);
+        const float FlameScale=VeyrLook::IsLegacy()?1.f:VeyrLook::Tune(TEXT("flamescale"),1.8f);
         if(bFortressCandidate&&PolishMeshes.Contains(TEXT("FortressBrazier")))
-            KitPiece(TEXT("FortressBrazier"),P,220.f,0.f,true);
+            KitPiece(TEXT("FortressBrazier"),P,220.f*BrazierScale,0.f,true);
         else if(CathedralBrazierMesh)
             ImportedPiece(CathedralBrazierMesh,FName(*FString::Printf(TEXT("CourtBrazier%02d"),I)),P,180.f,0.f,false);
-        const float FlameZ=bFortressCandidate?178.f:198.f;
+        const float FlameZ=(bFortressCandidate?178.f:198.f)*BrazierScale;
         if(FlameCards)
             for(int32 Cross=0;Cross<3;++Cross)
             {
-                const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,FlameZ),bFortressCandidate?FVector(1.1f,.9f,1):FVector(.72f,.38f,1)));
-                FlameCards->SetCustomDataValue(Instance,0,.45f,false);FlameCards->SetCustomDataValue(Instance,1,FMath::Frac(I*.618f+Cross*.23f),false);
+                const int32 Instance=FlameCards->AddInstance(FTransform(FRotator(90,Cross*60.f,0),P+FVector(0,0,FlameZ+40.f*(FlameScale-1.f)),(bFortressCandidate?FVector(1.1f,.9f,1):FVector(.72f,.38f,1))*FlameScale));
+                FlameCards->SetCustomDataValue(Instance,0,VeyrLook::IsLegacy()?.45f:VeyrLook::Tune(TEXT("flamealpha"),.7f),false);FlameCards->SetCustomDataValue(Instance,1,FMath::Frac(I*.618f+Cross*.23f),false);
                 FlameCards->SetCustomDataValue(Instance,2,.25f,false);FlameCards->SetCustomDataValue(Instance,3,1.f,false);
             }
         else Box(Embers,P+FVector(0,0,165),FVector(55,55,8));
         auto* Light=NewObject<UPointLightComponent>(this,*FString::Printf(TEXT("CourtAmberBrazier%02d"),I));
         AddInstanceComponent(Light);Light->SetupAttachment(GetRootComponent());Light->SetMobility(EComponentMobility::Movable);
-        Light->SetRelativeLocation(P+FVector(0,0,bFortressCandidate?185.f:210.f));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(bFortressCandidate?320.f:190.f);
+        Light->SetRelativeLocation(P+FVector(0,0,(bFortressCandidate?185.f:210.f)*BrazierScale+20.f*(FlameScale-1.f)));Light->SetIntensityUnits(ELightUnits::Candelas);Light->SetIntensity(bFortressCandidate?320.f:190.f);
         Light->SetLightColor(bFortressCandidate?FLinearColor(1.f,.70f,.40f):FLinearColor(1.f,.43f,.13f),false);Light->SetAttenuationRadius(bFortressCandidate?2200.f:1000.f);Light->SetSourceRadius(bFortressCandidate?80.f:45.f);
         Light->SetCastShadows(false);Light->SetSpecularScale(.7f);
         float FireCandelas=320.f;
@@ -742,8 +769,8 @@ void AVeyrArena::BuildDistance()
         {
             // Phase C: each brazier throws a warm, shadowed pool onto the floor and
             // washes its wall. Small source radius keeps the shadows readable.
-            FireCandelas=700.f;Light->SetIntensity(FireCandelas);
-            Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(2800.f);Light->SetSourceRadius(25.f);
+            FireCandelas=VeyrLook::Tune(TEXT("fire"),750.f);Light->SetIntensity(FireCandelas);
+            Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(VeyrLook::Tune(TEXT("fireradius"),1250.f));Light->SetSourceRadius(25.f);
             // At tier >= 2 the budget picks the braziers nearest the camera (UpdateBrazierShadowBudget).
             Light->SetCastShadows(VeyrLook::ShadowedFireBudget()>=1000);BrazierLights.Add(Light);
             Light->SetVolumetricScatteringIntensity(2.5f);Light->SetSpecularScale(.9f);

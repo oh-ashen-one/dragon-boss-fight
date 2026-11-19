@@ -96,6 +96,19 @@ class EngineLockTests(unittest.TestCase):
             self.assertEqual(p.wait(timeout=30), 0)
         self.assertEqual(marks.read_text().split(), ['A1', 'B1', 'A2'])
 
+    def test_long_hold_is_logged_and_waiter_sees_hold_time(self):
+        env = {**self.env, 'VEYR_ENGINE_LONG_HOLD_SECONDS': '1'}
+        a = cli(env, 'slowpoke', 'sleep', '2.2')
+        wait_for(lambda: self.holder())
+        time.sleep(1.1)
+        out = subprocess.run([sys.executable, '-c', 'import sys;sys.path.insert(0,%r)\nimport engine_lock as e;print(e.describe_holder(e.read_holder()))' % str(HERE)],
+                             env=env, capture_output=True, text=True).stdout
+        self.assertRegex(out, r'held for 0m0\d+s')
+        _, err = a.communicate(timeout=30)
+        self.assertIn('long hold', err)
+        long_holds = [h for h in self.history() if h.get('event') == 'long hold']
+        self.assertEqual([(h['label'], h['heldSeconds'] > 1) for h in long_holds], [('slowpoke', True)])
+
     def test_exit_code_passthrough_and_child_pid(self):
         p = cli(self.env, 'rc', sys.executable, '-c', 'import sys;sys.exit(7)')
         out, err = p.communicate(timeout=30)

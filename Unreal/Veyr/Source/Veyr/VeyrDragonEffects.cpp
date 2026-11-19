@@ -1,10 +1,10 @@
 #include "VeyrDragonEffects.h"
 #include "VeyrDragon.h"
+#include "VeyrLook.h"
 #include "VeyrFeelTuning.h"
 #include "VeyrFightFeel.h"
 #include "VeyrGameMode.h"
 #include "Engine/World.h"
-#include "VeyrLook.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/PointLightComponent.h"
@@ -89,13 +89,18 @@ bool AVeyrDragonEffects::Initialize(AVeyrDragon* InDragon)
         UMaterialInstanceDynamic* Material=UMaterialInstanceDynamic::Create(Parent,this);
         Material->SetScalarParameterValue(TEXT("Brightness"),Brightness);
         Material->SetVectorParameterValue(TEXT("Tint"),Tint);
+        VeyrLook::FollowExposureAuto(Material); // unlit additive sprites hold their tuned screen brightness
         return Material;
     };
     ConfigurePool(Core,PresentationMaterial(CoreMaterial,FLinearColor(1.f,.92f,.72f),3.3f),CoreCount);
     ConfigurePool(Flame,PresentationMaterial(FlameMaterial,FLinearColor(1.f,.60f,.25f),2.2f),FlameCount);
     ConfigurePool(Smoke,PresentationMaterial(SmokeMaterial,FLinearColor(.34f,.32f,.29f),.12f),SmokeCount);
-    ConfigurePool(Embers,EmberMaterial,EmberCount);
-    ConfigurePool(Impacts,EmberMaterial,16);LastSwordContacts=Dragon->GetSwordContactCount();ImpactAge=100.f;
+    UMaterialInterface* Ember=EmberMaterial;
+    if(VeyrLook::FxExposureLock()>0.f)
+        if(UMaterialInstanceDynamic* Follow=UMaterialInstanceDynamic::Create(EmberMaterial,this))
+            if(VeyrLook::FollowExposureAuto(Follow)>0)Ember=Follow;
+    ConfigurePool(Embers,Ember,EmberCount);
+    ConfigurePool(Impacts,Ember,16);LastSwordContacts=Dragon->GetSwordContactCount();ImpactAge=100.f;
     AddTickPrerequisiteActor(Dragon);bEffectsReady=true;
     EffectsDiagnostic=TEXT("FXv3 textured turbulent jet, independent hot core, smoke/embers and three local fire lights; native visual acceptance pending");
     return true;
@@ -251,7 +256,8 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
                 // casters; the unshadowed ones carry the reach of a 2x-3x dragon's breath.
                 const float Reach=(1800.f+I*600.f)*FireScale;
                 FireLights[I]->SetAttenuationRadius(FireLights[I]->CastShadows?FMath::Min(Reach,2000.f):Reach);
-                FireLights[I]->SetIntensity((I==0?25000.f:I==1?18000.f:11000.f)*Flicker*Startup);
+                static const float BreathScale=VeyrLook::Tune(TEXT("breath"),.45f);
+                FireLights[I]->SetIntensity((I==0?25000.f:I==1?18000.f:11000.f)*BreathScale*Flicker*Startup);
             }
             else
             {
