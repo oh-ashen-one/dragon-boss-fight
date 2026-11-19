@@ -655,7 +655,7 @@ void AVeyrAudio::UpdatePresence(float DeltaSeconds)
         const ECue Cue=bBreathExhaleNext?ECue::DragonBreathOut:ECue::DragonBreathIn;
         if(PlayCueEx(Cue,Vol,EPlace::Head))
         {
-            if(bBreathExhaleNext){++BreathOuts;BreathClock=Rand.FRandRange(2.4f,3.6f)*(Move?.8f:1.f); // calm large animal: about 12 breaths a minute}
+            if(bBreathExhaleNext){++BreathOuts;BreathClock=Rand.FRandRange(2.4f,3.6f)*(Move?.8f:1.f);} // calm large animal: about 12 breaths a minute
             else {++BreathIns;BreathClock=DurationLastPlayed*.9f+Rand.FRandRange(.15f,.4f);}
             bBreathExhaleNext=!bBreathExhaleNext;
         }
