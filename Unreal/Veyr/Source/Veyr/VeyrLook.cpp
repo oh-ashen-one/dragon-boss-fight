@@ -137,6 +137,22 @@ void VeyrLook::NotifyCameraCut(UWorld* World)
         if(PC->PlayerCameraManager)PC->PlayerCameraManager->SetGameCameraCutThisFrame();
 }
 
+float VeyrLook::Tune(const TCHAR* Key,float Default)
+{
+    static const TMap<FString,float> Values=[]{
+        TMap<FString,float> Out;FString Text;
+        if(FParse::Value(FCommandLine::Get(),TEXT("VeyrTune="),Text,false))
+        {
+            TArray<FString> Items;Text.ParseIntoArray(Items,TEXT(","));
+            for(const FString& Item:Items){FString K,V;if(Item.Split(TEXT("="),&K,&V))Out.Add(K.ToLower(),FCString::Atof(*V));}
+        }
+        return Out;}();
+    const float* Found=Values.Find(FString(Key).ToLower());
+    const float Value=Found?*Found:Default;
+    if(Found)UE_LOG(LogTemp,Display,TEXT("VEYR_LOOK_TUNE %s=%g (default %g)"),Key,Value,Default);
+    return Value;
+}
+
 bool VeyrLook::MotionBlur()
 {
     static const bool bBlur=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoMotionBlur"));

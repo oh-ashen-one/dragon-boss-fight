@@ -746,8 +746,8 @@ void AVeyrArena::BuildDistance()
         {
             // Phase C: each brazier throws a warm, shadowed pool onto the floor and
             // washes its wall. Small source radius keeps the shadows readable.
-            FireCandelas=700.f;Light->SetIntensity(FireCandelas);
-            Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(2800.f);Light->SetSourceRadius(25.f);
+            FireCandelas=VeyrLook::Tune(TEXT("fire"),700.f);Light->SetIntensity(FireCandelas);
+            Light->SetLightColor(FLinearColor(1.f,.55f,.24f),false);Light->SetAttenuationRadius(VeyrLook::Tune(TEXT("fireradius"),2800.f));Light->SetSourceRadius(25.f);
             // At tier >= 2 the budget picks the braziers nearest the camera (UpdateBrazierShadowBudget).
             Light->SetCastShadows(VeyrLook::ShadowedFireBudget()>=1000);BrazierLights.Add(Light);
             Light->SetVolumetricScatteringIntensity(2.5f);Light->SetSpecularScale(.9f);

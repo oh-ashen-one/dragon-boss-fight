@@ -25,6 +25,9 @@ namespace VeyrLook
     int32 ShadowedFireBudget();
     /** Tells the renderer the view jumped (exposure snaps, no motion-blur or Lumen history smear). */
     void NotifyCameraCut(UWorld* World);
+    /** -VeyrTune=key=value,key=value: tuning overrides for the relit court so one package serves several
+     *  look rounds (keys in C-notes "Tune keys"); Default when the key is absent. Logged once per key. */
+    float Tune(const TCHAR* Key,float Default);
     /** -VeyrNoMotionBlur: the new look without its camera motion blur (A/B for smeared trails and shakes). */
     bool MotionBlur();
 

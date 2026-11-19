@@ -256,7 +256,8 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
                 // casters; the unshadowed ones carry the reach of a 2x-3x dragon's breath.
                 const float Reach=(1800.f+I*600.f)*FireScale;
                 FireLights[I]->SetAttenuationRadius(FireLights[I]->CastShadows?FMath::Min(Reach,2000.f):Reach);
-                FireLights[I]->SetIntensity((I==0?25000.f:I==1?18000.f:11000.f)*Flicker*Startup);
+                static const float BreathScale=VeyrLook::Tune(TEXT("breath"),1.f);
+                FireLights[I]->SetIntensity((I==0?25000.f:I==1?18000.f:11000.f)*BreathScale*Flicker*Startup);
             }
             else
             {
