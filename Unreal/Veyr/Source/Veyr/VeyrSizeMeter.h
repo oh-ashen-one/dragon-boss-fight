@@ -42,6 +42,8 @@ private:
     int32 HurtPartFrames=0,PartsTested=0;bool bStandingMeasured=false;float BellyClearanceCm=-1.f,ChestClearanceCm=-1.f;
     bool bTwoHanded=false;
     TArray<TSharedPtr<FJsonValue>> IntroShots;
+    // Gameplay camera: share of the dragon's bones inside the frame, and the dragon's screen height, every 6th frame.
+    double ScreenSamples=0, ScreenInShareSum=0, ScreenHeightSum=0, ScreenWholeSamples=0, ScreenHalfOffSamples=0;
     int32 FlightsStarted=0;
     bool bWasAirborne=false;
     float MaxAirborneHeightCm=0.f;

@@ -7,6 +7,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Engine/World.h"
+#include "Camera/PlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
 #include "Engine/OverlapResult.h"
 #include "CollisionQueryParams.h"
 #include "Dom/JsonValue.h"
@@ -122,6 +124,25 @@ void FVeyrSizeMeter::Tick(UWorld* World,AVeyrDragon* Dragon,AVeyrKnight* Knight,
         if(Dragon->GetHurtPartWorld(TEXT("belly"),A,B,R))BellyClearanceCm=static_cast<float>(FMath::Min(A.Z,B.Z)-R-FloorZ);
         if(Dragon->GetHurtPartWorld(TEXT("chest"),A,B,R))ChestClearanceCm=static_cast<float>(FMath::Min(A.Z,B.Z)-R-FloorZ);
     }
+    if(Frames%6==0)
+        if(APlayerController* PC=World->GetFirstPlayerController())if(PC->PlayerCameraManager)if(UVeyrSkeletalPresentation* P=Dragon->ImportedPresentation)
+        {
+            const FMinimalViewInfo& View=PC->PlayerCameraManager->GetCameraCacheView();
+            const FRotationMatrix Basis(View.Rotation);const float TanH=FMath::Tan(FMath::DegreesToRadians(View.FOV*.5f)),TanV=TanH*9.f/16.f;
+            int32 In=0,N=0;float MinV=2.f,MaxV=-2.f;
+            for(int32 I=0;I<P->GetComponentSpaceTransforms().Num();I+=2)
+            {
+                const FVector D=P->GetBoneTransform(I).GetLocation()-View.Location;++N;
+                const float X=FVector::DotProduct(D,Basis.GetUnitAxis(EAxis::X));if(X<=10.f)continue;
+                const float U=FVector::DotProduct(D,Basis.GetUnitAxis(EAxis::Y))/(X*TanH),V=FVector::DotProduct(D,Basis.GetUnitAxis(EAxis::Z))/(X*TanV);
+                if(FMath::Abs(U)<=1.f&&FMath::Abs(V)<=1.f){++In;MinV=FMath::Min(MinV,V);MaxV=FMath::Max(MaxV,V);}
+            }
+            if(N>0)
+            {
+                const double Share=double(In)/N;++ScreenSamples;ScreenInShareSum+=Share;ScreenHeightSum+=In?.5*(MaxV-MinV):0.;
+                ScreenWholeSamples+=Share>=.999?1:0;ScreenHalfOffSamples+=Share<.5?1:0;
+            }
+        }
     const FString Place=PlaceName(Dragon);
     // Clearance against the fortress wall lines: every hurt capsule and every bone of the drawn body.
     float Margin=1.e9f;FString Where;
@@ -264,5 +285,10 @@ TSharedPtr<FJsonObject> FVeyrSizeMeter::ToJson() const
     O->SetNumberField(TEXT("headDownLowestCm"),HeadDownMinZ<1.e8f?HeadDownMinZ:-1.f);O->SetNumberField(TEXT("headDownHighestCm"),HeadDownMaxZ>-1.e8f?HeadDownMaxZ:-1.f);
     O->SetNumberField(TEXT("flightsStarted"),FlightsStarted);O->SetNumberField(TEXT("maxAirborneHeightCm"),MaxAirborneHeightCm);
     O->SetArrayField(TEXT("introShots"),IntroShots);
+    O->SetNumberField(TEXT("cameraSamples"),ScreenSamples);
+    O->SetNumberField(TEXT("dragonBonesInFrameMeanPct"),ScreenSamples?100.*ScreenInShareSum/ScreenSamples:-1.);
+    O->SetNumberField(TEXT("dragonWholeInFramePct"),ScreenSamples?100.*ScreenWholeSamples/ScreenSamples:-1.);
+    O->SetNumberField(TEXT("dragonMostlyOffFramePct"),ScreenSamples?100.*ScreenHalfOffSamples/ScreenSamples:-1.);
+    O->SetNumberField(TEXT("dragonScreenHeightMeanPct"),ScreenSamples?100.*ScreenHeightSum/ScreenSamples:-1.);
     return O;
 }
