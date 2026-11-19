@@ -35,6 +35,37 @@ namespace
     float ToDb(double X){return float(20.0*std::log10(FMath::Max(X,1e-6)));}
 }
 
+// Software model of the master limiter: lookahead peak limiter, ceiling -1.5 dBFS, 5 ms lookahead, 140 ms release.
+static void ApplyLimiter(TArray<float>& Mix,float Ceiling,int32 Look,float ReleaseMs)
+{
+    const int32 N=Mix.Num()/2;
+    if(N<=0)return;
+    TArray<float> G;G.SetNumUninitialized(N);
+    for(int32 I=0;I<N;++I){const float P=FMath::Max(FMath::Abs(Mix[I*2]),FMath::Abs(Mix[I*2+1]));G[I]=P>Ceiling?Ceiling/P:1.f;}
+    // minimum over [i, i+look] (monotonic deque)
+    TArray<float> Gm;Gm.SetNumUninitialized(N);
+    TArray<int32> Dq;Dq.Reserve(Look*2+4);int32 Head=0;
+    for(int32 I=N-1;I>=0;--I)
+    {
+        while(Dq.Num()>Head&&G[Dq.Last()]>=G[I])Dq.Pop();
+        Dq.Add(I);
+        while(Dq.Num()>Head&&Dq[Head]>I+Look)++Head;
+        Gm[I]=G[Dq[Head]];
+        if(Head>4096){Dq.RemoveAt(0,Head);Head=0;}
+    }
+    // release: down at once, up slowly; then a box average over the lookahead (attack ramp)
+    const float A=1.f-FMath::Exp(-1.f/(ReleaseMs*.001f*TapRate));
+    float R=1.f;
+    for(int32 I=0;I<N;++I){R=Gm[I]<R?Gm[I]:R+(Gm[I]-R)*A;Gm[I]=R;}
+    double Sum=0;
+    for(int32 I=0;I<N;++I)
+    {
+        Sum+=Gm[I];if(I>Look)Sum-=Gm[I-Look-1];
+        const float Gain=float(Sum/FMath::Min(I+1,Look+1));
+        Mix[I*2]*=Gain;Mix[I*2+1]*=Gain;
+    }
+}
+
 void AVeyrAudio::TapInit()
 {
     FString Dir;
@@ -44,7 +75,7 @@ void AVeyrAudio::TapInit()
     bAudition=bNewSet&&FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioAudition"));
     TapSession=++GTapSession;
     TapT0=AudioNow();TapMusicStart=-1.0;TapGainLast=-1.0;
-    TapFx.Reset();TapBeds.Reset();TapItems.Reset();TapGains.Reset();
+    TapFx.Reset();TapBeds.Reset();TapItems.Reset();TapGains.Reset();TapEvents.Reset();TapContacts.Reset();TapTrace.Reset();
     UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_TAP dir=%s audition=%d"),*TapDir,bAudition?1:0);
 }
 
@@ -78,7 +109,7 @@ void AVeyrAudio::TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Vo
         Pan=FMath::Clamp(float(FVector::DotProduct(To,FRotationMatrix(Rot).GetScaledAxis(EAxis::Y))),-1.f,1.f);
     }
     const float Angle=(Pan+1.f)*PI*.25f;
-    const float Amp=Level*MasterVolume*EffectsVolume*Atten;
+    const float Amp=Level*MasterVolume*EffectsVolume*Atten*FMath::Pow(10.f,TapOffsetDb/20.f);
     const float GL=Amp*FMath::Cos(Angle),GR=Amp*FMath::Sin(Angle);
     const int64 Start=int64(T*TapRate);
     const int64 Frames=int64(double(PCM.Num())/SampleRate/FMath::Max(.5f,Pitch)*TapRate);
@@ -203,6 +234,11 @@ void AVeyrAudio::TapWrite(const FString& Stem)
             }
         }
     }
+    // The master limiter (modelled) over effects + beds. Stats and the wav are what comes out of it.
+    TArray<float> Mixed;Mixed.SetNumUninitialized(Frames*2);
+    for(int32 I=0;I<Frames*2;++I)Mixed[I]=TapFx[I]+(TapBeds.IsValidIndex(I)?TapBeds[I]:0.f);
+    const bool bLimited=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoMasterLimiter"));
+    if(bLimited)ApplyLimiter(Mixed,FMath::Pow(10.f,-1.5f/20.f),240,140.f);
     // Master stats and the wav.
     TArray<uint8> Wav;
     Wav.SetNumUninitialized(44+Frames*4);
@@ -215,7 +251,7 @@ void AVeyrAudio::TapWrite(const FString& Stem)
         for(int32 C=0;C<2;++C)
         {
             const float Fx=TapFx[F*2+C],Bed=TapBeds.IsValidIndex(F*2+C)?TapBeds[F*2+C]:0.f;
-            const float X=Fx+Bed;
+            const float X=Mixed[F*2+C];
             Peak=FMath::Max(Peak,FMath::Abs(X));if(FMath::Abs(X)>=.999f)++Clipped;
             SumFx+=double(Fx)*Fx;SumBed+=double(Bed)*Bed;if(FMath::Abs(Fx)>1e-4f)++ActiveFx;
             const int16 Q=int16(FMath::Clamp(X,-1.f,1.f)*32767.f);
@@ -260,7 +296,7 @@ void AVeyrAudio::TapWrite(const FString& Stem)
         Cues->SetObjectField(CueName(KV.Key),O);
     }
     Root->SetStringField(TEXT("note"),TEXT("Software mix of what the code submits (linear distance curve, equal-power pan, flat cues centred); not the engine's output."));
-    Root->SetBoolField(TEXT("newSet"),bNewSet);Root->SetBoolField(TEXT("audition"),bAudition);
+    Root->SetBoolField(TEXT("newSet"),bNewSet);Root->SetBoolField(TEXT("audition"),bAudition);Root->SetBoolField(TEXT("masterLimiterModelled"),bLimited);Root->SetNumberField(TEXT("tapOffsetDb"),TapOffsetDb);Root->SetNumberField(TEXT("makeupDb"),MakeupDb);
     Root->SetNumberField(TEXT("seconds"),double(Frames)/TapRate);
     Root->SetNumberField(TEXT("masterPeakDb"),ToDb(Peak));Root->SetNumberField(TEXT("clippedSamples"),Clipped);
     Root->SetNumberField(TEXT("effectsRmsDbOverActive"),ActiveFx>0?ToDb(std::sqrt(SumFx/double(ActiveFx))):-120.0);
@@ -278,6 +314,13 @@ void AVeyrAudio::TapWrite(const FString& Stem)
             Cs.Add(MakeShared<FJsonValueObject>(O));
         }
         Root->SetArrayField(TEXT("contacts"),Cs);
+        TArray<TSharedPtr<FJsonValue>> Es;
+        for(const FTapEvent& E:TapEvents)
+        {
+            TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();O->SetStringField(TEXT("kind"),E.Kind);O->SetNumberField(TEXT("t"),E.T);
+            Es.Add(MakeShared<FJsonValueObject>(O));
+        }
+        Root->SetArrayField(TEXT("events"),Es);
         // Per-frame trace (columns): time, game time, dt, knight foot heights (cm above the floor), knight speed, dragon sole clearances (cm).
         TSharedRef<FJsonObject> Tr=MakeShared<FJsonObject>();
         auto Col=[&](const TCHAR* Name,TFunction<double(const FTapFrame&)> F)

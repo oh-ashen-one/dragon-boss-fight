@@ -20,6 +20,8 @@
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
 #include "Algo/Sort.h"
+#include "AudioMixerBlueprintLibrary.h"
+#include "SubmixEffects/AudioMixerSubmixEffectDynamicsProcessor.h"
 #include <cmath>
 
 namespace
@@ -30,24 +32,28 @@ namespace
 
 float AVeyrAudio::TargetLevelDb(ECue Cue)
 {
-    // Gated RMS (dBFS) a cue should have at Volume 1.0. Where the old game had a level, this keeps its balance
-    // (receipt docs/audio-20261118/recorded-set.json "oldGameLevelRmsDb"); the others are set for weight.
+    // Final gated RMS (dBFS) of a variant at cue Volume 1.0, after the master (0.65) and before the master limiter.
+    // 2026-11-19 second pass: a real capture of the first pass was 15 LU under the reference (-30 LUFS) and the weapon
+    // hits did not rise out of the mix, so transients are now set near full scale and background cues (breath, steps of
+    // the dragon's calm) stay low: the loudness range comes from the difference.
     switch(Cue)
     {
-        case ECue::Swing:return -11.f;         case ECue::HeavySwing:return -10.5f;
-        case ECue::Contact:return -20.f;       case ECue::Guard:return -20.f;
-        case ECue::ArmorHit:return -15.f;      case ECue::Impact:return -13.5f;
-        case ECue::DragonStep:return -11.5f;    case ECue::DragonSwing:return -12.f;
-        case ECue::Bite:return -16.f;          case ECue::Breath:return -17.f;
-        case ECue::Fire:return -17.f;          case ECue::Wing:return -14.5f;
-        case ECue::Roll:return -20.f;          case ECue::Footstep:return -11.f;
-        case ECue::Blink:return -18.f;         case ECue::Break:return -20.f;
-        case ECue::Debris:return -17.f;        case ECue::Exposed:return -15.f;
-        case ECue::Death:return -15.f;         case ECue::Heal:return -14.f;
-        case ECue::Victory:return -17.f;       case ECue::DragonBreathIn:return -15.f;
-        case ECue::DragonBreathOut:return -15.f; case ECue::DragonGrowlLow:return -15.f;
-        case ECue::DragonSnort:return -19.f;
-        default:return 0.f; // 0 = leave at the file's own level (the three roar files and the pain cue)
+        case ECue::Swing:return -9.f;          case ECue::HeavySwing:return -7.f;
+        case ECue::Contact:return -9.f;        case ECue::Guard:return -8.f;
+        case ECue::ArmorHit:return -8.f;       case ECue::Impact:return -8.f;
+        case ECue::DragonStep:return -9.f;     case ECue::DragonSwing:return -9.f;
+        case ECue::Bite:return -9.f;           case ECue::Breath:return -15.f;
+        case ECue::Fire:return -11.f;          case ECue::Wing:return -13.f;
+        case ECue::Roll:return -14.f;          case ECue::Footstep:return -10.f;
+        case ECue::Blink:return -13.f;         case ECue::Break:return -10.f;
+        case ECue::Debris:return -14.f;        case ECue::Exposed:return -8.f;
+        case ECue::Death:return -8.f;          case ECue::Heal:return -13.f;
+        case ECue::Victory:return -9.f;        case ECue::DragonBreathIn:return -18.f;
+        case ECue::DragonBreathOut:return -18.f; case ECue::DragonGrowlLow:return -12.f;
+        case ECue::DragonSnort:return -15.f;
+        case ECue::Roar:return -9.f;           case ECue::DragonGrowl:return -12.f;
+        case ECue::DragonPain:return -12.f;    case ECue::PlayerPain:return -9.f;
+        default:return 0.f;
     }
 }
 
@@ -72,13 +78,52 @@ static bool BytesToSamples(const TArray<uint8>& Bytes,TArray<int16>& Out)
     return true;
 }
 
+namespace
+{
+    struct FBiquad
+    {
+        float B0=0,B1=0,B2=0,A1=0,A2=0,Z1=0,Z2=0;
+        static FBiquad Make(bool bHigh,float Hz,float Rate)
+        {
+            FBiquad F;const float W=2.f*PI*Hz/Rate,C=FMath::Cos(W),Sn=FMath::Sin(W),Al=Sn/(2.f*.7071f),A0=1.f+Al;
+            if(bHigh){F.B0=(1+C)/2/A0;F.B1=-(1+C)/A0;F.B2=(1+C)/2/A0;}else{F.B0=(1-C)/2/A0;F.B1=(1-C)/A0;F.B2=(1-C)/2/A0;}
+            F.A1=-2*C/A0;F.A2=(1-Al)/A0;return F;
+        }
+        float Run(float X){const float Y=B0*X+Z1;Z1=B1*X-A1*Y+Z2;Z2=B2*X-A2*Y;return Y;}
+    };
+}
+
+void AVeyrAudio::AddVariant(ECue Cue,TArray<int16>&& S)
+{
+    FCueBank& B=Banks[static_cast<int32>(Cue)];
+    double Sum=0,E=0,El=0,Eh=0;int64 N=0;float Peak=1e-4f;
+    FBiquad Lp=FBiquad::Make(false,200.f,SampleRate),Hp=FBiquad::Make(true,2000.f,SampleRate);
+    for(int16 V:S)
+    {
+        const float X=float(V)/32768.f,Ax=FMath::Abs(X);
+        Peak=FMath::Max(Peak,Ax);
+        if(Ax>.01f){Sum+=double(X)*X;++N;}
+        const float L=Lp.Run(X),H=Hp.Run(X);E+=double(X)*X;El+=double(L)*L;Eh+=double(H)*H;
+    }
+    float AttackMs=0.f;
+    for(int32 I=0;I<S.Num();++I)if(FMath::Abs(float(S[I]))/32768.f>=.5f*Peak){AttackMs=1000.f*I/SampleRate;break;}
+    const double Rms=N>0?std::sqrt(Sum/double(N)):1e-4;
+    const float MeasuredDb=float(20.0*std::log10(FMath::Max(Rms,1e-5)));
+    const float TargetDb=TargetLevelDb(Cue);
+    // Gain brings the variant's gated RMS to the target at the default master (0.65); the peak keeps it under -1 dBFS.
+    float Gain=TargetDb<0.f?FMath::Pow(10.f,(TargetDb-MeasuredDb)/20.f)/.65f:1.f/.65f;
+    Gain=FMath::Min(Gain,.9f/(Peak*.65f));
+    B.Variants.Add(MoveTemp(S));B.Gains.Add(Gain);B.Peaks.Add(Peak);
+    B.LowShare.Add(float(El/FMath::Max(E,1e-9)));B.HighShare.Add(float(Eh/FMath::Max(E,1e-9)));B.AttackMs.Add(AttackMs);
+}
+
 void AVeyrAudio::SetBankFromSingle(ECue Cue,const TArray<uint8>& Bytes,bool bNormalize)
 {
     TArray<int16> S;
     if(!BytesToSamples(Bytes,S))return;
     FCueBank& B=Banks[static_cast<int32>(Cue)];
-    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();
-    B.Variants.Add(MoveTemp(S));B.Gains.Add(1.f);B.Peaks.Add(1.f);
+    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.LowShare.Reset();B.HighShare.Reset();B.AttackMs.Reset();
+    AddVariant(Cue,MoveTemp(S));
     (void)bNormalize;
 }
 
@@ -117,7 +162,7 @@ void AVeyrAudio::LoadBank(ECue Cue,const FString& Dir)
 {
     const int32 Index=static_cast<int32>(Cue);
     FCueBank& B=Banks[Index];
-    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.Last=-1;
+    B.Variants.Reset();B.Gains.Reset();B.Peaks.Reset();B.LowShare.Reset();B.HighShare.Reset();B.AttackMs.Reset();B.Last=-1;
     TArray<FString> Files;
     IFileManager::Get().FindFiles(Files,*(Dir/(FString(CueName(Index))+TEXT("_*.pcm"))),true,false);
     // Name after the underscore: "<n>" = recorded, "g<n>" = generated supplement.
@@ -140,25 +185,12 @@ void AVeyrAudio::LoadBank(ECue Cue,const FString& Dir)
     TArray<FString> Use;
     if(Mode!=ESourceMode::Generated)Use.Append(Recorded);
     if(Mode!=ESourceMode::Recorded)Use.Append(Generated);
-    const float TargetDb=TargetLevelDb(Cue);
     for(const FString& File:Use)
     {
         if(B.Variants.Num()>=MaxVariants)break;
         TArray<uint8> Bytes;TArray<int16> S;
         if(!FFileHelper::LoadFileToArray(Bytes,*(Dir/File))||!BytesToSamples(Bytes,S))continue;
-        double Sum=0;int64 N=0;float Peak=1e-4f;
-        for(int16 V:S)
-        {
-            const float X=std::abs(float(V))/32768.f;
-            Peak=FMath::Max(Peak,X);
-            if(X>.01f){Sum+=double(X)*X;++N;}
-        }
-        const double Rms=N>0?std::sqrt(Sum/double(N)):1e-4;
-        const float MeasuredDb=float(20.0*std::log10(FMath::Max(Rms,1e-5)));
-        float Gain=TargetDb<0.f?FMath::Pow(10.f,(TargetDb-MeasuredDb)/20.f):1.f;
-        Gain=FMath::Clamp(Gain,.4f,2.6f);
-        Gain=FMath::Min(Gain,1.6f/Peak); // peak x gain x the .65 voice level stays under full scale
-        B.Variants.Add(MoveTemp(S));B.Gains.Add(Gain);B.Peaks.Add(Peak);
+        AddVariant(Cue,MoveTemp(S));
     }
 }
 
@@ -325,14 +357,28 @@ void AVeyrAudio::DefaultRadius(ECue Cue,float& Inner,float& Falloff)
     }
 }
 
-bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force)
+bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 Role,float PitchMul)
 {
     const int32 Index=static_cast<int32>(Cue);
     FCueBank& Bank=Banks[Index];
     if(Bank.Variants.IsEmpty())return false;
     int32 V=0;
     if(Force>=0)V=FMath::Min(Force,Bank.Variants.Num()-1);
-    else if(!bNoVariants&&Bank.Variants.Num()>1){do{V=Rand.RandRange(0,Bank.Variants.Num()-1);}while(V==Bank.Last);}
+    else
+    {
+        // Candidates: the variants that fit the role (sharp = attack with highs, body = mids, low = sub/low), falling back to all.
+        TArray<int32,TInlineAllocator<MaxVariants>> Pool;
+        for(int32 I=0;I<Bank.Variants.Num();++I)
+        {
+            const float Lo=Bank.LowShare[I],Hi=Bank.HighShare[I],Mid=FMath::Max(0.f,1.f-Lo-Hi);
+            const bool Ok=Role==0||(Role==1&&Hi>.40f&&Bank.AttackMs[I]<30.f)||(Role==2&&Mid>.35f)||(Role==3&&Lo>.40f);
+            if(Ok)Pool.Add(I);
+        }
+        if(Pool.IsEmpty())for(int32 I=0;I<Bank.Variants.Num();++I)Pool.Add(I);
+        if(bNoVariants)V=Pool[0];
+        else if(Pool.Num()==1)V=Pool[0];
+        else{do{V=Pool[Rand.RandRange(0,Pool.Num()-1)];}while(V==Bank.Last);}
+    }
     Bank.Last=V;
     C.V=V;
     C.Seconds0=float(Bank.Variants[V].Num())/SampleRate;
@@ -341,19 +387,22 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force)
     if(!bVocal&&!bNoVariants&&Force<0)
     {
         Pitch=1.f+Rand.FRandRange(-.05f,.05f);
-        LevelJitter=FMath::Pow(10.f,Rand.FRandRange(-1.5f,1.5f)/20.f);
+        LevelJitter=FMath::Pow(10.f,Rand.FRandRange(-2.f,2.f)/20.f);
+        // Big bodies: a wider pitch spread so consecutive stomps and falls differ even when the same few samples are near.
+        if(Cue==ECue::DragonStep||Cue==ECue::Exposed||Cue==ECue::Impact||Cue==ECue::Debris)Pitch*=1.f+Rand.FRandRange(-.10f,.10f);
     }
     if(Cue==ECue::DragonStep||Cue==ECue::Exposed)Pitch*=FMath::Lerp(1.07f,.9f,FMath::Clamp(Volume,0.f,1.f)); // heavier = lower
+    Pitch*=PitchMul;
     C.Pitch=Pitch;
     C.Seconds=C.Seconds0/FMath::Max(.5f,Pitch);
-    C.Level=.65f*Headroom*FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter;
-    // Solo peak ceiling about -7.5 dBFS after the master: a close stomp and a step at once must not clip the sum.
-    if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f&&Cue!=ECue::Roar&&Cue!=ECue::DragonGrowl&&Cue!=ECue::DragonPain&&Cue!=ECue::PlayerPain)
-        C.Level=FMath::Min(C.Level,.42f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)));
+    C.Level=FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter*FMath::Pow(10.f,MakeupDb/20.f);
+    // Solo peak ceiling just under full scale after the master; the master limiter deals with sums.
+    if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f)
+        C.Level=FMath::Min(C.Level,.9f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)));
     return true;
 }
 
-bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff)
+bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff,uint8 Role,float PitchMul)
 {
     if(!GetWorld()||MasterVolume<=0.f||!FMath::IsFinite(MasterVolume))return false;
     const int32 Index=static_cast<int32>(Cue);
@@ -385,13 +434,14 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     if(!IsValid(Voice))return false;
 
     FChosen C;
-    if(!PickVariant(Cue,Volume,C))return false; // never the variant played last; random pitch and level off vocal cues
+    if(!PickVariant(Cue,Volume,C,-1,Role,PitchMul))return false; // never the variant played last; random pitch and level off vocal cues
     const int32 V=C.V;const float Pitch=C.Pitch,Seconds=C.Seconds,Seconds0=C.Seconds0;
     const TArray<int16>& PCM=Bank.Variants[V];
     float Level=C.Level;
     float Load=0.f;
-    for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0)Load+=VoiceLevels[I];
-    if(Load+Level>MaxLoad)Level=FMath::Max(Level*.4f,MaxLoad-Load); // limiter-safe headroom: the sum of voices stays bounded
+    for(int32 I=0;I<TotalVoices;++I)if(VoiceEndTimes[I]>0)Load+=VoiceLevels[I]*MasterVolume*EffectsVolume;
+    const float Amp=Level*MasterVolume*EffectsVolume;
+    if(Load+Amp>MaxLoad)Level=FMath::Max(Level*.4f,(MaxLoad-Load)/FMath::Max(.05f,MasterVolume*EffectsVolume)); // the sum of voices stays bounded before the limiter
 
     USoundWaveProcedural* Wave=NewObject<USoundWaveProcedural>(this);
     Wave->SetSampleRate(SampleRate);Wave->NumChannels=1;Wave->Duration=Seconds0;Wave->bLooping=false;Wave->SoundGroup=SOUNDGROUP_Effects;
@@ -442,10 +492,10 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     return true;
 }
 
-void AVeyrAudio::QueueCue(float Delay,ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff)
+void AVeyrAudio::QueueCue(float Delay,ECue Cue,float Volume,EPlace Place,const FVector& World,FName Part,float Inner,float Falloff,uint8 Role,float PitchMul)
 {
     if(!GetWorld())return;
-    FPending P;P.At=AudioNow()+Delay;P.Cue=Cue;P.Volume=Volume;P.Place=Place;P.World=World;P.Part=Part;P.Inner=Inner;P.Falloff=Falloff;
+    FPending P;P.At=AudioNow()+Delay;P.Cue=Cue;P.Volume=Volume;P.Place=Place;P.World=World;P.Part=Part;P.Inner=Inner;P.Falloff=Falloff;P.Role=Role;P.PitchMul=PitchMul;
     Pending.Add(P);
 }
 
@@ -457,7 +507,7 @@ void AVeyrAudio::UpdatePending()
     {
         if(Pending[I].At>Now)continue;
         const FPending P=Pending[I];Pending.RemoveAtSwap(I);
-        PlayCueEx(P.Cue,P.Volume,P.Place,P.World,P.Part,P.Inner,P.Falloff);
+        PlayCueEx(P.Cue,P.Volume,P.Place,P.World,P.Part,P.Inner,P.Falloff,P.Role,P.PitchMul);
     }
 }
 
@@ -511,6 +561,55 @@ void AVeyrAudio::UpdateExpectations()
     }
 }
 
+void AVeyrAudio::TapEvent(const TCHAR* Kind)
+{
+    if(!bTap||bAudition||!GetWorld())return;
+    FTapEvent E;E.Kind=Kind;E.T=AudioNow()-TapT0;TapEvents.Add(E);
+}
+
+void AVeyrAudio::InstallMasterChain()
+{
+    // A master limiter so the louder mix peaks at about -1.5 dBFS instead of clipping. -VeyrNoMasterLimiter removes it.
+    if(bMasterChain||FParse::Param(FCommandLine::Get(),TEXT("VeyrNoMasterLimiter"))||!GetWorld())return;
+    bMasterChain=true;
+    USubmixEffectDynamicsProcessorPreset* Limiter=NewObject<USubmixEffectDynamicsProcessorPreset>(this,TEXT("VeyrMasterLimiter"));
+    FSubmixEffectDynamicsProcessorSettings S;
+    S.DynamicsProcessorType=ESubmixEffectDynamicsProcessorType::Limiter;
+    S.PeakMode=ESubmixEffectDynamicsPeakMode::Peak;
+    S.LinkMode=ESubmixEffectDynamicsChannelLinkMode::Peak;
+    S.ThresholdDb=-1.5f;S.KneeBandwidthDb=0.f;S.LookAheadMsec=5.f;S.AttackTimeMsec=1.f;S.ReleaseTimeMsec=140.f;
+    S.InputGainDb=0.f;S.OutputGainDb=0.f;
+    Limiter->SetSettings(S);
+    UAudioMixerBlueprintLibrary::AddMasterSubmixEffect(this,Limiter);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_MASTER_LIMITER installed ceiling -1.5 dBFS lookahead 5 ms release 140 ms"));
+}
+
+void AVeyrAudio::PlayWeaponHit(int32 Weight,bool bHead)
+{
+    // The knight's own sword hitting the dragon: near-field (flat, never attenuated by where the camera is), layered:
+    // a sharp mid/high attack, a body, a low thump; sized by weight class (0 light, 1 heavy), head adds a metal ring.
+    TapEvent(bHead?TEXT("weaponHead"):Weight>0?TEXT("weaponHeavy"):TEXT("weaponLight"));
+    const float W=Weight>0?1.f:.8f;
+    PlayCueEx(ECue::Contact,W*1.2f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
+    PlayCueEx(ECue::Guard,W*(bHead?.9f:.55f),EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1);
+    PlayCueEx(ECue::ArmorHit,W*.8f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,2);
+    PlayCueEx(ECue::Impact,Weight>0||bHead?.85f:.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,Weight>0?1.f:1.15f);
+    if(Weight>0||bHead)QueueCue(.015f,ECue::Exposed,.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.1f);
+}
+
+void AVeyrAudio::PlayStompLayers(const FVector& At,float S,bool bLanding)
+{
+    // A dragon foot strike or landing: a random recipe over differently shaped samples, so consecutive ones differ.
+    const int32 R=Rand.RandRange(0,2);
+    const float Heavy=FMath::Lerp(.75f,1.f,S);
+    if(PlayCueEx(ECue::DragonStep,Heavy,EPlace::World,At,NAME_None,0.f,0.f,R==1?2:3))++DragonSteps;
+    if(R==0)PlayCueEx(ECue::Impact,FMath::Lerp(.6f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
+    else if(R==1)PlayCueEx(ECue::Exposed,FMath::Lerp(.5f,.85f,S),EPlace::World,At,NAME_None,0.f,0.f,2);
+    else{QueueCue(.03f,ECue::DragonStep,.7f,EPlace::World,At,NAME_None,0.f,0.f,3,.8f);PlayCueEx(ECue::Impact,.55f,EPlace::World,At,NAME_None,0.f,0.f,2);}
+    if(bLanding)PlayCueEx(ECue::Exposed,.9f,EPlace::World,At,NAME_None,0.f,0.f,3);
+    if(S>.3f||bLanding){QueueCue(.1f,ECue::Debris,FMath::Lerp(.5f,.95f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?1:2);++DebrisSounds;}
+}
+
 void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
 {
     const AVeyrDragon* D=Dragon.Get();
@@ -533,35 +632,36 @@ void AVeyrAudio::HandleContact(const FVeyrGroundContact& C)
     switch(C.Class)
     {
         case EVeyrGroundContactClass::Footfall:
-            if(PlayCueEx(ECue::DragonStep,FMath::Lerp(.42f,.9f,S),EPlace::World,At))++DragonSteps;
+            TapEvent(TEXT("dragonFootfall"));
+            if(PlayCueEx(ECue::DragonStep,FMath::Lerp(.5f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++DragonSteps;
+            if(S>.5f)PlayCueEx(ECue::Impact,FMath::Lerp(.2f,.5f,S),EPlace::World,At,NAME_None,0.f,0.f,3);
             break;
         case EVeyrGroundContactClass::Stomp:
+            TapEvent(TEXT("dragonStomp"));
             SatisfyExpect(2);
-            if(PlayCueEx(ECue::DragonStep,1.f,EPlace::World,At))++DragonSteps;
-            PlayCueEx(ECue::Impact,FMath::Lerp(.6f,1.f,S),EPlace::World,At);
-            if(S>.3f){QueueCue(.1f,ECue::Debris,FMath::Lerp(.5f,.95f,S),EPlace::World,At);++DebrisSounds;}
+            PlayStompLayers(At,S,false);
             break;
         case EVeyrGroundContactClass::BodyFall:
         {
+            TapEvent(TEXT("bodyFall"));
             const bool bBulk=C.Part==EVeyrGroundContactPart::Body||C.Part==EVeyrGroundContactPart::Head||C.Part==EVeyrGroundContactPart::Neck;
             if(bBulk){SatisfyExpect(0);bBodyDownHeard=true;}
             if(bBulk||S>.6f)
             {
-                if(PlayCueEx(ECue::Exposed,FMath::Lerp(.6f,1.f,S),EPlace::World,At))++BodyFallSounds;
-                PlayCueEx(ECue::Impact,FMath::Lerp(.5f,.9f,S),EPlace::World,At);
+                if(PlayCueEx(ECue::Exposed,FMath::Lerp(.7f,1.f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(0,1)?2:3))++BodyFallSounds;
+                PlayCueEx(ECue::Impact,FMath::Lerp(.5f,.9f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(2,3));
             }
-            else if(PlayCueEx(ECue::Impact,FMath::Lerp(.45f,.85f,S),EPlace::World,At))++BodyFallSounds;
+            else if(PlayCueEx(ECue::Impact,FMath::Lerp(.45f,.85f,S),EPlace::World,At,NAME_None,0.f,0.f,Rand.RandRange(2,3)))++BodyFallSounds;
             if(C.DustTier>=3||S>.5f){QueueCue(.1f,ECue::Debris,FMath::Lerp(.5f,1.f,S),EPlace::World,At);++DebrisSounds;}
             break;
         }
         case EVeyrGroundContactClass::Landing:
             SatisfyExpect(1);
-            // One landing sound per landing: a foot-by-foot landing (and the detector's 1.2 s window) must not replay it.
+            // One landing sound per landing (already played at the airborne flip when that came first).
             if(AudioNow()-LastLandingHeard<1.5)break;
             LastLandingHeard=AudioNow();
-            if(PlayCueEx(ECue::Exposed,.9f,EPlace::World,At))++BodyFallSounds;
-            if(PlayCueEx(ECue::DragonStep,1.f,EPlace::World,At))++DragonSteps;
-            QueueCue(.12f,ECue::Debris,.85f,EPlace::World,At);++DebrisSounds;
+            TapEvent(TEXT("dragonLanding"));
+            PlayStompLayers(At,1.f,true);++BodyFallSounds;
             break;
     }
 }
@@ -695,8 +795,10 @@ void AVeyrAudio::UpdateKnightFeet(float DeltaSeconds,float Speed)
             const bool Near=K->IsGrounded()&&Height<Limit;
             if(Near&&!bFootNearFloor[Side]&&Speed>60.f&&FootClock[Side]<=0.f)
             {
-                const float Vol=FMath::Lerp(.4f,.75f,FMath::Clamp((Speed-60.f)/500.f,0.f,1.f));
-                if(PlayCueEx(ECue::Footstep,Vol,EPlace::World,Foot.GetLocation()))++KnightSteps;
+                const float Vol=FMath::Lerp(.7f,1.1f,FMath::Clamp((Speed-60.f)/500.f,0.f,1.f));
+                TapEvent(TEXT("knightStep"));
+                // Near-field: the knight's own footsteps are not attenuated by the camera.
+                if(PlayCueEx(ECue::Footstep,Vol,EPlace::Flat))++KnightSteps;
                 FootClock[Side]=.16f;
             }
             if(Near)bFootNearFloor[Side]=true;
@@ -717,6 +819,7 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
     const AVeyrKnight* K=Knight.Get();const AVeyrDragon* D=Dragon.Get();
     if(!K||!D){StopVoices();bInitialized=false;SetActorTickEnabled(false);return;}
     UpdatePending();UpdateVoiceFollow();LoadTimedSounds(false);
+    InstallMasterChain();
     if(K->IsDead()){StopVoices();PlayCueEx(ECue::Death,1.f);bTerminal=true;return;}
     if(D->IsDead())
     {
@@ -797,12 +900,19 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
     LastSwingAction=K->Action;LastSwingClip=SourceClip;LastSwingElapsed=SourceSeconds;
 
     // Hits.
-    if(D->GetSwordContactCount()>LastSwordContact)PlayCueEx(ECue::Contact,D->GetHeadBonusHitCount()>LastHeadBonus?1.f:.8f);
+    if(D->GetSwordContactCount()>LastSwordContact)
+    {
+        const bool bHead=D->GetHeadBonusHitCount()>LastHeadBonus;
+        const bool bHeavy=K->Action==EVeyrKnightAction::HeavyAttack||K->Action==EVeyrKnightAction::LeapAttack||K->Action==EVeyrKnightAction::RollAttack;
+        PlayWeaponHit(bHeavy?1:0,bHead);
+    }
     if(K->GuardedHits>LastGuardedHits)PlayCueEx(ECue::Guard,1.f);
     else if(K->HitsTaken>LastHitsTaken)
     {
-        // Armour hit layered under the pain cue.
-        if(PlayCueEx(ECue::ArmorHit,.95f))++ArmorLayers;
+        // Armour hit layered under the pain cue (near-field, flat).
+        TapEvent(TEXT("hurt"));
+        if(PlayCueEx(ECue::ArmorHit,1.f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,1))++ArmorLayers;
+        PlayCueEx(ECue::Impact,.5f,EPlace::Flat,FVector::ZeroVector,NAME_None,0.f,0.f,3,1.2f);
         QueueCue(.015f,ECue::PlayerPain,.9f);
     }
     if(!bAudioPolish&&K->SuccessfulHeals>LastHeals)PlayCueEx(ECue::Heal,1.f);
@@ -813,7 +923,12 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
         PlayCueEx(ECue::DragonPain,.9f,EPlace::Head);
     }
     if(D->GetAttackCount(EVeyrDragonMove::Fire)>LastFireAttacks)PlayCueEx(ECue::Breath,1.f,EPlace::Head);
-    if(bWasAirborne&&!D->IsAirborne()&&AudioNow()-LastLandingHeard>2.5)ArmExpect(1,1.f,ECue::Impact,1.f);
+    if(bWasAirborne&&!D->IsAirborne()&&AudioNow()-LastLandingHeard>2.5)
+    {
+        // The landing sounds at the airborne flip, the frame the dust wall rises, not when the last foot has settled.
+        LastLandingHeard=AudioNow();TapEvent(TEXT("dragonLanding"));
+        PlayStompLayers(D->GetActorLocation(),1.f,true);++BodyFallSounds;
+    }
     if(D->State!=LastDragonState)
     {
         if(D->State==EVeyrDragonState::Windup)bSwingFromData=false;
@@ -821,7 +936,15 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
         else if(D->State==EVeyrDragonState::Buckle)PlayCueEx(ECue::DragonPain,.8f,EPlace::Head);
         else if(D->State==EVeyrDragonState::Active)
         {
-            if(D->Move==EVeyrDragonMove::Fire)PlayCueEx(ECue::Fire,1.f,EPlace::Head);
+            if(D->Move==EVeyrDragonMove::Fire)
+            {
+                // Ignition onset (low thump, crackle, whoosh) and then the sustained roar of the flame.
+                TapEvent(TEXT("fireIgnition"));
+                PlayCueEx(ECue::Impact,.8f,EPlace::Head,FVector::ZeroVector,NAME_None,0.f,0.f,3);
+                PlayCueEx(ECue::Debris,.8f,EPlace::Head,FVector::ZeroVector,NAME_None,0.f,0.f,1,1.2f);
+                QueueCue(.12f,ECue::Breath,1.f,EPlace::Head);
+                PlayCueEx(ECue::Fire,1.f,EPlace::Head);
+            }
             else if(D->Move==EVeyrDragonMove::Bite)PlayCueEx(ECue::DragonGrowl,.65f,EPlace::Head);
             else if(D->Move==EVeyrDragonMove::BackStomp)ArmExpect(2,.8f,ECue::Impact,.9f);
             else if(D->Move!=EVeyrDragonMove::FlyAway&&(bNoMoveSounds||!bSwingFromData))PlayCueEx(ECue::DragonSwing,.9f,EPlace::Body);

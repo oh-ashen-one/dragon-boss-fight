@@ -78,6 +78,8 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
         bNoMoveSounds=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonMoveSounds"));
         bContactAudio=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDragonContactSounds"));
         bLogCues=FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioLog"));
+        FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioMakeupDb="),MakeupDb);
+        FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioTapOffsetDb="),TapOffsetDb);
         TapInit();
         if(!bLegacyCues&&!bNewSet)UE_LOG(LogTemp,Error,TEXT("VEYR_AUDIO_NEW_SET_MISSING Content/Audio/Recorded20261118 not found: playing the PREVIOUS sounds (evidence audio.newSet=false)"));
     }

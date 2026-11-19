@@ -103,12 +103,13 @@ private:
     {
         TArray<TArray<int16>> Variants;
         TArray<float> Peaks;      // per variant, linear full-scale peak
+        TArray<float> LowShare,HighShare,AttackMs; // per variant: energy share below 200 Hz and above 2 kHz, ms to half peak
         TArray<float> Gains;      // per variant, from the measured level against the cue's target level
         int32 Last=-1;
         bool bMissingLogged=false;
     };
     struct FTimedEvent { float Pos=0.f; bool bPhase=true; ECue Cue=ECue::Count; float Level=1.f; FName Where=NAME_None; };
-    struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; };
+    struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; uint8 Role=0; float PitchMul=1.f; };
     struct FExpect { bool bActive=false; double Deadline=0.0; ECue Cue=ECue::Count; float Volume=1.f; ECue Second=ECue::Count; float SecondVolume=1.f; };
 
     bool bNewSet=false,bLoadedOnce=false,bLegacyCues=false;
@@ -131,13 +132,14 @@ private:
     FName TimedClipKey=NAME_None; float TimedLastPhase=-1.f,TimedLastTime=-1.f; bool bSwingFromData=false;
     float BreathClock=3.f,GrowlClock=9.f; bool bBreathExhaleNext=false,bPresenceCalm=true;
     float FootClock[2]={0.f,0.f};
-    float Headroom=1.3f,MaxLoad=5.5f;
+    float MaxLoad=6.f,MakeupDb=0.f; // MakeupDb: -VeyrAudioMakeupDb=<dB> on all effects (calibration against a real capture)
     float DurationLastPlayed=0.f;
 
     void LoadNewSet();
     void LoadBank(ECue Cue,const FString& Dir);
     struct FChosen { int32 V=0; float Pitch=1.f,Level=0.f,Seconds0=0.f,Seconds=0.f; };
-    bool PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force=-1);
+    bool PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force=-1,uint8 Role=0,float PitchMul=1.f);
+    void AddVariant(ECue Cue,TArray<int16>&& S);
     static void DefaultRadius(ECue Cue,float& Inner,float& Falloff);
     // ---- verification without a window (VeyrAudioTap.cpp): a software mix of exactly what the code submits ----
     struct FTapItem
@@ -161,6 +163,14 @@ private:
     TArray<FTapContact> TapContacts;
     TArray<FTapFrame> TapTrace;
     FTapFrame TapNow;
+    struct FTapEvent { FString Kind; double T=0.0; };
+    TArray<FTapEvent> TapEvents;
+    float TapOffsetDb=0.f;   // -VeyrAudioTapOffsetDb: what the real output differs from the model (measured on a capture)
+    void TapEvent(const TCHAR* Kind);
+    void PlayWeaponHit(int32 Weight,bool bHead);
+    void PlayStompLayers(const FVector& At,float S,bool bLanding);
+    void InstallMasterChain();
+    bool bMasterChain=false;
     void TapInit();
     void TapTick();
     void TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Volume,float Level,float Pitch,EPlace Place,const FVector& Pos,float Inner,float Falloff,double T,bool bRandom=false);
@@ -188,8 +198,9 @@ private:
     void LoadTimedSounds(bool bForce);
     void ParseTimedSounds(const FString& Text,const TCHAR* Origin);
     void TickNew(float DeltaSeconds);
-    bool PlayCueEx(ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f);
-    void QueueCue(float Delay,ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f);
+    /** Role: 0 any variant, 1 sharp (mid/high attack), 2 body (mid), 3 low. PitchMul scales the random pitch. */
+    bool PlayCueEx(ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f,uint8 Role=0,float PitchMul=1.f);
+    void QueueCue(float Delay,ECue Cue,float Volume,EPlace Place=EPlace::Flat,const FVector& World=FVector::ZeroVector,FName Part=NAME_None,float Inner=0.f,float Falloff=0.f,uint8 Role=0,float PitchMul=1.f);
     void UpdatePending();
     void UpdateVoiceFollow();
     void StopCueVoices(ECue A,ECue B=ECue::Count);
