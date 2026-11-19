@@ -20,6 +20,12 @@ namespace VeyrFeelSwitches
     bool SlowTail();         // -VeyrNoSlowTail
     bool ZoomPunch();        // -VeyrNoZoomPunch
     bool HurtKick();         // -VeyrNoHurtKick
+    // Bfeel (2026-11-19): the reference's measured camera numbers, each with its way back.
+    bool ShakePattern();     // -VeyrLegacyShakePattern (the old 13/17/11 x class-rate cosine)
+    bool HitShake();         // -VeyrLegacyHitShake (sword hits shake through the distance-faded Impact again)
+    bool RefHitStop();       // -VeyrLegacyHitStop (55/95 ms at 0.05 again)
+    bool LatePunch();        // -VeyrLegacyPunchOrder (punch before the arm's lens boost, which could open it back up)
+    bool DownFlinch();       // -VeyrLegacyDownFlinch (only the small head nudge while the dragon is down)
 }
 
 enum class EVeyrFeelClass : uint8 { Footfall=0, Stomp=1, BodyFall=2, Landing=3, Count=4 };
@@ -53,24 +59,33 @@ struct FVeyrFeelTuning
 
     // Camera shake by contact class: degrees by speed (normalised to 1x) and distance.
     FShake Shake[static_cast<int32>(EVeyrFeelClass::Count)]={
-        {.3f,3.f,.08f,.40f,.16f,.28f,0.f},    // Footfall: felt, never in the way of aiming
-        {.8f,6.f,.60f,1.80f,.30f,.55f,4.f},   // Stomp / tail slam
+        {.3f,3.f,.35f,.90f,.18f,.32f,0.f},    // Footfall: near the knight a visible tick (reference paws .8-2.4 deg above 4 m/s)
+        {.8f,6.f,.80f,2.00f,.32f,.60f,4.f},   // Stomp / tail slam
         {1.f,8.f,1.20f,2.80f,.45f,.80f,9.f},  // BodyFall
         {1.f,8.f,1.40f,3.00f,.50f,.85f,10.f}};// Landing
     float ShakeMaxDistanceCm=5000.f;   // x BodyScale
     float ShakeSizeGain=.35f;          // amplitude x (1 + gain x (BodyScale - 1))
     float ShakeMaxDegrees=3.5f;
+    // The reference's waveform (WardenCombatFx::UpdateCamera): pitch A sin(23 2pi t), yaw .6A sin(17 2pi t), roll .4A sin(29 2pi t).
+    float ShakeHz[3]={23.f,17.f,29.f},ShakeAxis[3]={1.f,.6f,.4f};
+    // A sword blow on the dragon (the reference's BossHit): (.5 + 1.7 W) deg for .28 + .3 W s, no distance fade.
+    float HitShakeMin=.5f,HitShakeGain=1.7f,HitShakeLifeMin=.28f,HitShakeLifeGain=.3f;
+    // The stop on a blow: the reference holds a light blow 65 ms, a heavy one 150 ms, at a clock of 0.03.
+    float HitStopLight=.065f,HitStopHeavy=.15f,HitStopDilation=.03f;
 
     // Dragon flinch (degrees at the head, summed along the spine); the spring of the reference.
     float FlinchRockMin=5.f,FlinchRockMax=21.f,FlinchTwistMin=4.f,FlinchTwistMax=18.f,FlinchCapDegrees=34.f;
     float FlinchHeadPart=1.25f,FlinchNeckPart=1.1f,FlinchLegPart=.5f,FlinchBodyShare=.18f,FlinchTailShare=.35f;
     float FlinchSnapSeconds=.04f,FlinchHz=2.f,FlinchDamping=.45f,FlinchLifeSeconds=1.f;
+    /** Down on the floor the same blow swings the head and neck sideways along the floor (no pitch into it), capped here. */
+    float FlinchDownCapDegrees=30.f;
     float FlashPeak=1.f,FlashPeakGain=1.2f,FlashRadiusCm=40.f,FlashRadiusGainCm=45.f,FlashFade=.07f,FlashLife=.3f;
 
     // Knight
     float TrailLife=.22f,TrailBaseFraction=.2f;
-    float SlowTailSeconds=.32f,SlowTailFrom=.3f;
-    float PunchHeavy=.085f,PunchLight=.0f,PunchSeconds=.3f;
+    // The reference eases a heavy blow back from 0.3 over .34 s; longer and deeper here so it reads at 60 fps.
+    float SlowTailSeconds=.5f,SlowTailFrom=.25f;
+    float PunchHeavy=.085f,PunchLight=.04f,PunchSeconds=.3f;
     float KickMin=4.f,KickGain=6.f,KickSeconds=.45f,HurtMin=.55f,HurtGain=.45f;
 
     // Effects: dust tiers 0..2 (feet), 3 body fall, 4 landing; hit bursts 0..2.

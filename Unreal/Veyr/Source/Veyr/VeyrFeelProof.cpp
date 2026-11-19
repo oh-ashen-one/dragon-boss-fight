@@ -163,5 +163,9 @@ TSharedPtr<FJsonObject> FVeyrFeelProof::Evidence() const
     O->SetNumberField(TEXT("knightPresses"),PressIndex);
     if(const AVeyrDragon* D=Dragon.Get())O->SetNumberField(TEXT("swordContacts"),D->GetSwordContactCount()-SwordContactsAtStart);
     O->SetBoolField(TEXT("done"),bDone);O->SetStringField(TEXT("failReason"),FailReason);
+    // Bfeel: what each shake did to the picture (percent of the frame height), so a check is a number beside the clip.
+    if(const UWorld* W=World.Get())
+        if(const auto* Mode=W->GetAuthGameMode<AVeyrGameMode>())
+            if(Mode->FightFeel)O->SetObjectField(TEXT("imageShift"),Mode->FightFeel->ImageShiftEvidence());
     return O;
 }

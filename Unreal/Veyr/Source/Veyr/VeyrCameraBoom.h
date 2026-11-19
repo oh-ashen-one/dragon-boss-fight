@@ -127,5 +127,8 @@ private:
     int32 StickyCandidate=INDEX_NONE;
     FQuat FramedView=FQuat::Identity; bool bFramedViewValid=false; FVector FramedLookAt=FVector::ZeroVector;
     float AppliedFovBoost=0.f,AppliedFov=0.f;
+    /** Bfeel: the fight feel's zoom punch, applied after the boost (the boost would otherwise open the lens back up). */
+    float PunchedFov=-1.f,PunchBaseFov=0.f;
+    void ApplyFeelPunch(class UCameraComponent* Camera);
     FQuat ViewCorrection=FQuat::Identity; bool bViewCorrectionValid=false;
 };
