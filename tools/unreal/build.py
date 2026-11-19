@@ -15,16 +15,19 @@ import sys
 import shutil
 import tempfile
 
+from engine_lock import engine_lock
 
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT = ROOT / "Unreal" / "Veyr"
+ACTIVE_LOCK = None  # the engine lock main() holds while UnrealBuildTool / xcodebuild run; lets run_logged record the child
 
 
 def run_logged(command, log, *, env=None):
     """Keep build output private and give nested tools valid standard input."""
     with os.fdopen(os.open(log, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as stream:
-        result = subprocess.run(command, cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
-                                stdout=stream, stderr=subprocess.STDOUT)
+        run = ACTIVE_LOCK.run if ACTIVE_LOCK is not None else subprocess.run
+        result = run(command, cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
+                     stdout=stream, stderr=subprocess.STDOUT)
     return result.returncode
 
 
@@ -228,16 +231,24 @@ def main():
         # by Epic's XcodeBuild.sh; no engine or global configuration is changed.
         environment = os.environ.copy()
         environment["UE_BUILD_FROM_XCODE"] = "1"
-    compile_exit = run_logged(command, log, env=environment)
-    text = log.read_text(errors="replace")
-    compile_success = compile_exit == 0 and "Result: Succeeded" in text
-    unchanged_after_compile = snapshot() == before
-    finalization = None
-    local_signature = None
-    if args.target == "Veyr" and compile_success and unchanged_after_compile:
-        finalization = finalize_standalone(build_tool, args.configuration, evidence)
-        if finalization["success"] and snapshot() == before:
-            local_signature = sign_local_bundle(args.configuration, evidence)
+    # Machine-wide engine lock across the compile, the Xcode finalization and the bundle signing. When package.py started
+    # this build it already holds the lock and this acquire re-enters it (VEYR_ENGINE_LOCK_HELD) without waiting.
+    global ACTIVE_LOCK
+    with engine_lock("build " + args.target + " " + args.configuration + " " + ROOT.name, tree=ROOT) as lock:
+        ACTIVE_LOCK = lock
+        try:
+            compile_exit = run_logged(command, log, env=environment)
+            text = log.read_text(errors="replace")
+            compile_success = compile_exit == 0 and "Result: Succeeded" in text
+            unchanged_after_compile = snapshot() == before
+            finalization = None
+            local_signature = None
+            if args.target == "Veyr" and compile_success and unchanged_after_compile:
+                finalization = finalize_standalone(build_tool, args.configuration, evidence)
+                if finalization["success"] and snapshot() == before:
+                    local_signature = sign_local_bundle(args.configuration, evidence)
+        finally:
+            ACTIVE_LOCK = None
     unchanged = snapshot() == before
     success = compile_success and unchanged
     if args.target == "VeyrEditor":

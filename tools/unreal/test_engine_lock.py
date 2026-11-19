@@ -210,5 +210,81 @@ class EngineLockTests(unittest.TestCase):
         self.assertTrue(marker.exists())
 
 
+def receipt(folder, started, name='gpu.json'):
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / name).write_text(json.dumps({'cmd': ['x'], 'started_at': started}))
+
+
+class LaunchBudgetTests(unittest.TestCase):
+    """The hourly rendered-launch budget counts across every worktree of the repository and the shared log."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix='veyr-budget-test-')
+        base = Path(self.tmp.name)
+        self.state = base / 'state'
+        os.environ['VEYR_ENGINE_LOCK_DIR'] = str(self.state)
+        self.main = base / 'main'
+        self.other = base / 'other'
+        git = lambda *a, cwd=self.main: subprocess.run(['git', '-c', 'user.name=t', '-c', 'user.email=t@t', *a], cwd=cwd, check=True, capture_output=True)
+        self.main.mkdir()
+        git('init', '-q')
+        (self.main / 'f').write_text('x')
+        git('add', 'f')
+        git('commit', '-q', '-m', 'x')
+        git('worktree', 'add', '-q', str(self.other), '-b', 'other')
+        import importlib
+        import owned_launch_budget
+        self.budget = importlib.reload(owned_launch_budget)
+
+    def tearDown(self):
+        os.environ.pop('VEYR_ENGINE_LOCK_DIR', None)
+        os.environ.pop('VEYR_ENGINE_LOCK_HELD', None)
+        self.tmp.cleanup()
+
+    def test_other_worktree_launches_count_and_own_tree_is_the_floor(self):
+        now = time.time()
+        for i in range(4):
+            receipt(self.main / 'Evidence' / f'native-core-{i}', now - 60 * i)
+        self.assertEqual(len(self.budget.recent_launches(self.main)), 4)  # alone: the old per-tree count
+        for i in range(6):
+            receipt(self.other / 'Evidence' / f'native-core-{i}', now - 100 - 60 * i)
+        self.assertEqual(len(self.budget.recent_launches(self.main)), 10)  # two trees together reach the budget
+        self.assertEqual(len(self.budget.recent_launches(self.other)), 10)
+        receipt(self.other / 'Evidence' / 'native-old', now - 7200)
+        self.assertEqual(len(self.budget.recent_launches(self.main)), 10)  # older than an hour: not counted
+
+    def test_shared_log_survives_a_deleted_tree(self):
+        now = time.time()
+        gone = Path(self.tmp.name) / 'gone'
+        for i in range(10):
+            receipt(gone / 'Evidence' / f'native-core-{i}', now - 30 * i)
+            self.assertTrue(self.budget.record_rendered_launch(gone, 'veyr-core', gone / 'Evidence' / f'native-core-{i}' / 'gpu.json'))
+        import shutil
+        shutil.rmtree(gone)
+        self.assertEqual(len(self.budget.recent_launches(self.main)), 10)
+        self.assertFalse(self.budget.record_rendered_launch(self.main, 'x', self.main / 'missing.json'))  # declined: nothing started
+
+    def test_launch_gate_holds_the_lock_and_second_builder_waits(self):
+        code = ('import sys;sys.path.insert(0,%r)\nimport time\nfrom pathlib import Path\nfrom owned_launch_budget import launch_gate\n'
+                'with launch_gate(Path(sys.argv[1]),"gate") as l:\n    print("in",flush=True);time.sleep(1.5)\n' % str(HERE))
+        env = {**os.environ}
+        env.pop('VEYR_ENGINE_LOCK_HELD', None)
+        a = subprocess.Popen([sys.executable, '-c', code, str(self.main)], env=env, stdout=subprocess.PIPE, text=True)
+        self.assertEqual(a.stdout.readline().strip(), 'in')
+        start = time.time()
+        b = subprocess.run([sys.executable, '-c', code, str(self.other)], env=env, capture_output=True, text=True, timeout=60)
+        self.assertEqual(b.returncode, 0, b.stderr)
+        self.assertGreater(time.time() - start, 0.8)
+        a.wait(timeout=30)
+
+    def test_budget_full_blocks_until_slot_frees_but_not_the_lock(self):
+        now = time.time()
+        for i in range(10):
+            receipt(self.main / 'Evidence' / f'native-core-{i}', now - 3590 + i)  # oldest ages out in ~10 s
+        launches = self.budget.recent_launches(self.main)
+        self.assertEqual(len(launches), 10)
+        self.assertEqual(subprocess.run([sys.executable, str(LOCK), '--status'], capture_output=True, text=True).stdout.strip(), 'free')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
