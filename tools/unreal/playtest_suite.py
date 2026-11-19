@@ -124,7 +124,10 @@ def run_spec(spec, delay=0.0):
                     'liveMirroredMaxStretchCm', 'liveMirrorRepairSamples', 'cameraFrames', 'cameraInsideFrames', 'capsuleInsideFrames', 'backFaceFrames', 'maxBackFaceDepthCm', 'hullInsideFrames', 'boomGuardEvents', 'boomPivotInsideFrames', 'boomResultInsideFrames', 'collapseFrames',
                     'collapseInsideFrames', 'pullInEvents', 'maxLiftCm', 'maxCameraJumpCmPerFrame', 'liveGroundFrames',
                     'liveLowestSoleMedianCm', 'liveLowestSoleP90Cm', 'sweepBeforeIdleFloatCm', 'sweepBeforeWorstClipMedianCm', 'sweepWorstClip', 'sweepAfterPlantedWorstCm', 'sweepAfterPlantedWorstClip', 'sweepGroundClips', 'sweepClipsWithin3Cm', 'legHitsPerFoot', 'liveAnyClipMaxStretchCm',
-                    'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding')
+                    'groundingOffsetCm', 'legacyMirrorToe', 'legacyCameraBoom', 'noDragonGrounding',
+                    'knightCapsuleInsideFrames', 'minCameraToKnightCm', 'knightWholeOnScreenShare', 'dragonOnScreenShare',
+                    'knightTallerThan45PctFrames', 'knightHiddenByDragonFrames', 'legacyCameraFraming', 'framingSearches',
+                    'framingFallbackFrames', 'viewTurnFrames', 'legacyCutThrough')
             record['a123'] = {k: x[k] for k in keys if k in x}
         if 'camp' in e:
             record['camp'] = e['camp']['zones']
