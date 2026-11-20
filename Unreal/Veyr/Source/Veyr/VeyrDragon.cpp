@@ -436,7 +436,13 @@ void AVeyrDragon::AdvanceState(float DeltaSeconds)
                 // starting earlier, and planted feet step through the floor lock instead of skating.
                 // Round 2: the body turns no faster than its stepping feet can carry (the neck aims first, below).
                 const float SnapRate=bProcSteps?FMath::Min(SnapTrackRate(),Playback.FootLock.CarryDps):SnapTrackRate();
-                const float SnapSeconds=FMath::Min(FMath::Abs(Wanted),WindupTrackBudget)/SnapRate+(bSlowSnapTurn?Playback.TrackLeadSeconds:.06f);
+                // Round 2 fairness (coordinator 2026-11-19): the turn starts when the goal branch's 195 deg/s snap would
+                // (remaining wind-up = turn at the legacy rate + 0.06 s), then turns at the round-1 rate, so no attack
+                // tracks for longer in seconds than before playback; the lengthened wind-ups no longer give the body an
+                // early turn back onto a player who stepped clear. -VeyrEarlyTrackStart: start at the round-1 rate's time.
+                static const bool bEarlyTrack=FParse::Param(FCommandLine::Get(),TEXT("VeyrEarlyTrackStart"));
+                const float StartRate=bSlowSnapTurn&&!bEarlyTrack?FMath::Max(SnapRate,TrackRateDegreesPerSecond*PaceScale):SnapRate;
+                const float SnapSeconds=FMath::Min(FMath::Abs(Wanted),WindupTrackBudget)/StartRate+(bSlowSnapTurn?Playback.TrackLeadSeconds:.06f);
                 if(!FMath::IsNearlyZero(Wanted)&&StateDuration-StateElapsed<=SnapSeconds)
                 {
                     const float Step=FMath::Min(FMath::Min(FMath::Abs(Wanted),WindupTrackBudget),SnapRate*DeltaSeconds);
@@ -2223,9 +2229,17 @@ void AVeyrDragon::LimitHeadYaw(const TMap<FName,FRotator>& Gaze)
     const bool Down=State==EVeyrDragonState::Buckle||State==EVeyrDragonState::Collapse||State==EVeyrDragonState::Exposed||State==EVeyrDragonState::Rise;
     const bool Standing=State==EVeyrDragonState::Idle||State==EVeyrDragonState::Reposition||State==EVeyrDragonState::Windup||
         State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery||(Down&&!bStandingOnly);
+    // Round 2 (package 13 sweeps): Exposed still stepped 21-22 deg per 30 Hz frame (60 steps over 16 two-hand fights).
+    // The neck lies steep there, so a visible swing can be a raw yaw jump of 50+ deg, beyond the
+    // 40 deg correction and the 19.5/24 deg bone caps. In the knock-down states the limit is on the visible (level-
+    // weighted) yaw, as the metric measures it, with wider caps. -VeyrHeadYawDownRound1Caps restores the standing caps.
+    static const bool bDownRound1=FParse::Param(FCommandLine::Get(),TEXT("VeyrHeadYawDownRound1Caps"));
+    const bool bDownCaps=Down&&!bStandingOnly&&!bDownRound1;
+    float Flat=1.f;
     auto Measure=[&](float& OutYaw)->bool
     {
         const FVector Line=ImportedPresentation->GetBoneLocation(HeadT->BoneName)-ImportedPresentation->GetBoneLocation(Base);
+        Flat=static_cast<float>(FVector2D(Line.X,Line.Y).Size()/FMath::Max(1.,Line.Size()));
         if(FVector2D(Line.X,Line.Y).Size()<.3*Line.Size())return false;
         OutYaw=FMath::RadiansToDegrees(FMath::Atan2(static_cast<float>(Line.Y),static_cast<float>(Line.X)));return true;
     };
@@ -2235,9 +2249,10 @@ void AVeyrDragon::LimitHeadYaw(const TMap<FName,FRotator>& Gaze)
     {HeadYawClock=-1.f;return;}
     if(Dt<1.e-4f){if(HeadYawClock<0.f){HeadYawShown=Raw;HeadYawClock=Clock;}return;}
     HeadYawClock=Clock;
-    const float Step=HeadYawMaxDps*Dt;
+    const float Step=HeadYawMaxDps*Dt/(bDownCaps?FMath::Max(Flat,.3f):1.f);
     const float Desired=HeadYawShown+FMath::Clamp(FMath::FindDeltaAngleDegrees(HeadYawShown,Raw),-Step,Step);
-    const float Corr=FMath::Clamp(FMath::FindDeltaAngleDegrees(Raw,Desired),-40.f,40.f);
+    const float CorrCap=bDownCaps?90.f:40.f,AxisCap=bDownCaps?40.f:19.5f,TotalCap=bDownCaps?48.f:24.f;
+    const float Corr=FMath::Clamp(FMath::FindDeltaAngleDegrees(Raw,Desired),-CorrCap,CorrCap);
     HeadYawShown=Raw;
     if(FMath::Abs(Corr)<.25f)return;
     TMap<FName,FRotator> Limited=Gaze;
@@ -2246,9 +2261,9 @@ void AVeyrDragon::LimitHeadYaw(const TMap<FName,FRotator>& Gaze)
     if(HeadT->BoneName!=NeckT->BoneName)Limited.FindOrAdd(HeadT->BoneName).Yaw+=Corr*.3f;
     for(auto& E:Limited)
     {
-        FRotator& R=E.Value;R.Pitch=FMath::Clamp(R.Pitch,-19.5f,19.5f);R.Yaw=FMath::Clamp(R.Yaw,-19.5f,19.5f);R.Roll=FMath::Clamp(R.Roll,-19.5f,19.5f);
+        FRotator& R=E.Value;R.Pitch=FMath::Clamp(R.Pitch,-AxisCap,AxisCap);R.Yaw=FMath::Clamp(R.Yaw,-AxisCap,AxisCap);R.Roll=FMath::Clamp(R.Roll,-AxisCap,AxisCap);
         const float Deg=FMath::RadiansToDegrees(R.Quaternion().GetAngle());
-        if(Deg>24.f)R=FQuat::Slerp(FQuat::Identity,R.Quaternion(),24.f/Deg).Rotator();
+        if(Deg>TotalCap)R=FQuat::Slerp(FQuat::Identity,R.Quaternion(),TotalCap/Deg).Rotator();
     }
     if(!ImportedPresentation->SetComponentSpaceBoneRotations(Limited)||!ImportedPresentation->Reevaluate())
     {ImportedPresentation->SetComponentSpaceBoneRotations(Gaze);ImportedPresentation->Reevaluate();return;}
