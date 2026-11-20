@@ -1581,6 +1581,56 @@ bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
     return true;
 }
 
+bool AVeyrKnight::GreystoneOptOut(const TCHAR* Flag)
+{
+    return FParse::Param(FCommandLine::Get(),Flag);
+}
+
+void AVeyrKnight::UpdateGreystoneVisualTurn(float DeltaSeconds)
+{
+    // E4 pass 2 (blind critic: the sprint-start turn swings the body from three-quarter to front in ONE frame, sword tip
+    // 260 px). Visual only: the actor (gameplay facing, sweep rig, camera) still turns at once; the shown mesh keeps
+    // the old facing and eases round, half the gap in ~0.1 s, so a 120-180 degree snap takes 10-20 frames at 60 fps.
+    // Ordinary steering (under ~2 degrees a frame) passes through untouched. -VeyrGreystoneSnapTurn restores the snap.
+    static const bool bOff=GreystoneOptOut(TEXT("VeyrGreystoneSnapTurn"));
+    const float Yaw=GetActorRotation().Yaw;
+    if(!bGreystoneActive||bOff||DeltaSeconds<=0.f||Action==EVeyrKnightAction::Dead||!bGreystoneTurnYawValid)
+    {
+        GreystoneTurnLagYaw=0.f;GreystonePreviousActorYaw=Yaw;bGreystoneTurnYawValid=true;return;
+    }
+    GreystoneTurnLagYaw-=FMath::FindDeltaAngleDegrees(GreystonePreviousActorYaw,Yaw);GreystonePreviousActorYaw=Yaw;
+    GreystoneTurnLagYaw=FMath::Clamp(FRotator::NormalizeAxis(GreystoneTurnLagYaw),-179.f,179.f);
+    // A roll's direction is shown by PresentationRollYaw; attacks turn to the target: both catch up faster.
+    const bool Roll=Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Backstep;
+    const float Rate=Roll?25.f:IsAttackAction()?14.f:7.f;
+    const float Step=FMath::Min(FMath::Abs(GreystoneTurnLagYaw),FMath::Max(FMath::Abs(GreystoneTurnLagYaw)*Rate*DeltaSeconds,120.f*DeltaSeconds));
+    GreystoneTurnLagYaw-=FMath::Sign(GreystoneTurnLagYaw)*Step;
+    MaxGreystoneTurnLagYaw=FMath::Max(MaxGreystoneTurnLagYaw,FMath::Abs(GreystoneTurnLagYaw));
+}
+
+void AVeyrKnight::UpdateGreystoneIdleBreath(float DeltaSeconds,bool bMoving)
+{
+    // E4 pass 2 (blind critic: his idle is close to frozen, head <= 2 px in 3.3 s against the knight's 7-8 px). Paragon's
+    // Idle is a quiet loop; on top of it a slow breath (spine pitch, 0.27 Hz) and a weight shift (spine roll, 0.11 Hz)
+    // as bounded component-space additive rotations, faded in only while he stands in Ready. Visual only.
+    static const bool bOff=GreystoneOptOut(TEXT("VeyrGreystoneNoBreath"));
+    if(!bGreystoneActive||bOff||!ImportedPresentation)return;
+    const bool Standing=Action==EVeyrKnightAction::Ready&&!bMoving&&IsGrounded();
+    GreystoneBreathWeight=FMath::FInterpConstantTo(GreystoneBreathWeight,Standing?1.f:0.f,DeltaSeconds,Standing?1.2f:6.f);
+    if(GreystoneBreathWeight<=0.001f)
+    {
+        if(bGreystoneBreathApplied){ImportedPresentation->SetComponentSpaceBoneRotations({});bGreystoneBreathApplied=false;}
+        return;
+    }
+    const float T=VisualClock,W=GreystoneBreathWeight;
+    const float Breath=FMath::Sin(T*2.f*PI*.27f)*2.2f*W,Shift=FMath::Sin(T*2.f*PI*.11f+.7f)*2.4f*W;
+    TMap<FName,FRotator> R;
+    static const FName Spine1(TEXT("spine_01")),Spine3(TEXT("spine_03")),Pelvis(TEXT("pelvis"));
+    if(ImportedPresentation->GetBoneIndex(Spine1)!=INDEX_NONE)R.Add(Spine1,FRotator(0.f,0.f,Shift));
+    if(ImportedPresentation->GetBoneIndex(Spine3)!=INDEX_NONE)R.Add(Spine3,FRotator(Breath,0.f,Shift*.35f));
+    if(R.Num()&&ImportedPresentation->SetComponentSpaceBoneRotations(R))bGreystoneBreathApplied=true;
+}
+
 bool AVeyrKnight::PrepareGreystoneGameplayRig()
 {
     static const bool bOwnSweep=FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneOwnSweep"));
@@ -1628,6 +1678,11 @@ bool AVeyrKnight::SampleGreystoneGameplaySweep(FName Clip,float GreystoneSourceS
     Base=Authored.TransformPosition(PA);Tip=Authored.TransformPosition(PB);
     const FVector WorldSize=Size*Authored.GetScale3D().GetAbs();
     BladeContactRadius=FMath::Clamp(static_cast<float>(FMath::Max(WorldSize[(Axis+1)%3],WorldSize[(Axis+2)%3])*.38),8.f,42.f);
+    {   // For the owner: how far from the knight's grip his gameplay sweep reaches (in-game scale).
+        const FVector Grip=Authored.GetLocation();
+        GreystoneRigTipFromGripCm=FMath::Max(GreystoneRigTipFromGripCm,static_cast<float>(FVector::Dist(Grip,Tip)));
+        GreystoneRigBaseFromGripCm=static_cast<float>(FVector::Dist(Grip,Base));GreystoneRigRadiusCm=BladeContactRadius;
+    }
     ++GreystoneRigSweeps;
     return true;
 }
@@ -1795,7 +1850,9 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     PresentationLowerWeight=PresentationLowerTime=PresentationJumpPhase=0.f;
     const float DesiredRollYaw=IsRollPrefix()?FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw,RollDirection.Rotation().Yaw):0.f;
     PresentationRollYaw=FMath::RInterpTo(FRotator(0,PresentationRollYaw,0),FRotator(0,DesiredRollYaw,0),DeltaSeconds,20.f).Yaw;
-    ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*CustomuseVisualDefinition->MeshRelativeTransform.GetRotation());
+    UpdateGreystoneVisualTurn(DeltaSeconds);
+    ImportedPresentation->SetRelativeRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw+GreystoneTurnLagYaw))*CustomuseVisualDefinition->MeshRelativeTransform.GetRotation());
+    UpdateGreystoneIdleBreath(DeltaSeconds,Moving);
     RequestedPresentationClip=Clip;
     const bool Restarted=Action!=EVeyrKnightAction::Ready&&PresentationPreviousActionElapsed>=0.f&&ActionElapsed<PresentationPreviousActionElapsed;
     if(Clip!=PresentationTransitionClip||Restarted)
@@ -1845,7 +1902,9 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     // E4 (2026-11-19): Greystone's native attacks start mid-wind-up (timed to the knight's impact), so a 0.10 s fade
     // from idle or run kinks the weapon hand by 22-28 cm in one frame. 0.18 s on his attack entries; visual only (the
     // action timing and damage windows are the knight's). -VeyrGreystone only.
-    const float GreystoneAttackEntry=bGreystoneActive&&!bFlowTransition&&(IsAttackAction()||Action==EVeyrKnightAction::Stagger)?.18f:0.f;
+    // E4 pass 2: the roll dive went from standing to flat in 4 frames (the blind critic read it as a knockdown); 0.16 s.
+    const float GreystoneAttackEntry=bGreystoneActive&&!bFlowTransition&&(IsAttackAction()||Action==EVeyrKnightAction::Stagger)?.18f:
+        bGreystoneActive&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::Backstep)&&!GreystoneOptOut(TEXT("VeyrGreystoneSnapRoll"))?.16f:0.f;
     const float BlendSeconds=GreystoneAttackEntry>0.f?GreystoneAttackEntry:bFlowTransition&&IsAttackAction()?.14f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float Alpha=RunStartTail?FMath::Clamp((ActionElapsed-(ActionDuration-.30f))/.30f,0.f,1.f):
@@ -2740,6 +2799,7 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
         Blade->SetNumberField(TEXT("knightRadiusCm"),GreystoneRefBladeDefault.Z);
         Blade->SetNumberField(TEXT("greystoneOwnTipFromGripCm"),GreystoneOwnBladeCm);
         Blade->SetNumberField(TEXT("greystoneOwnBaseFromGripCm"),GreystoneOwnBaseFromHandCm);
+        Blade->SetNumberField(TEXT("knightRigTipFromGripCm"),GreystoneRigTipFromGripCm);Blade->SetNumberField(TEXT("knightRigBaseFromGripCm"),GreystoneRigBaseFromGripCm);Blade->SetNumberField(TEXT("knightRigRadiusCm"),GreystoneRigRadiusCm);Blade->SetNumberField(TEXT("maxVisualTurnLagDeg"),MaxGreystoneTurnLagYaw);
         Blade->SetNumberField(TEXT("knightRigSweeps"),GreystoneRigSweeps);Blade->SetNumberField(TEXT("knightRigFailures"),GreystoneRigFailures);
         O->SetObjectField(TEXT("blade"),Blade);
     }

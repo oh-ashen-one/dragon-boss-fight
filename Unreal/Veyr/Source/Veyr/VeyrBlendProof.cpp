@@ -299,7 +299,9 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
     const FDef& D=Def(FMath::Min(SeqIndex,DefCount()-1));
     const FVector Target=K->GetActorLocation();
     if(bSnap||!bFocusValid){Focus=Target;bFocusValid=true;}
-    else Focus+=(Target-Focus)*FMath::Clamp(Dt*4.f,0.f,1.f);
+    // E4 pass 2: the film's roll travels 4.8 m; at the old 4/s follow he dived out of the frame and the blind critic
+    // read the dive as a knockdown. Follow the roll (and its recovery) closely.
+    else Focus+=(Target-Focus)*FMath::Clamp(Dt*(bKnightFilm&&D.Kind==EKind::Roll?14.f:4.f),0.f,1.f);
     const bool FullBody=bHeavyProof||bMobilityProof||bPrimaryTapProof||bRunStartProof||bGreystoneTrialProof||bGreystoneMotionProof;
     FVector Look(Focus.X,Focus.Y,FloorZ+(FullBody?220.f:100.f));
     const float Az=FMath::DegreesToRadians(D.CameraAzimuthDeg);
@@ -316,7 +318,7 @@ void FVeyrBlendProof::ApplyCamera(float Dt,bool bSnap)
         // 2026-11-19T20:48 first take at 4.2 m cut his head off in the orbit; 7 m keeps the whole 2.4 m figure (about
         // 60 % of the frame height) at FOV 50.
         Look=FVector(Focus.X,Focus.Y,FloorZ+125.f);
-        Location=Look+FilmDir*700.f;Location.Z=FloorZ+165.f;
+        Location=Look+FilmDir*(D.Kind==EKind::Roll?850.f:700.f);Location.Z=FloorZ+165.f;
         Cam->GetCameraComponent()->SetFieldOfView(50.f);
     }
     // Extra inspection chapter follows the actual rendered hand, so the

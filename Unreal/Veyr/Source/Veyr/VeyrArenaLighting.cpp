@@ -51,7 +51,11 @@ void AVeyrArena::BuildRelitLighting()
     // Channel 1 = knight, his props and the dragon; channel 2 = dragon only.
     CharacterRim=MakeDirectional(TEXT("RelitCharacterRim"));
     CharacterRim->LightingChannels.bChannel0=false;CharacterRim->LightingChannels.bChannel1=true;CharacterRim->LightingChannels.bChannel2=false;
-    CharacterRim->SetIntensity(VeyrLook::Tune(TEXT("rim"),14.f));CharacterRim->SetLightColor(RimColour,false);CharacterRim->SetCastShadows(false);
+    // E4 pass 2 (blind critic: at quarter size Greystone's slim dark armour merges with the court and the dragon's
+    // legs). Under -VeyrGreystone the hero rim and key are a little stronger (rim x1.45, key x1.25), his light
+    // channel only; the old knight's look is unchanged. -VeyrGreystoneNoRimBoost restores the knight's values.
+    const bool GreystoneRim=FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystone"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneNoRimBoost"));
+    CharacterRim->SetIntensity(VeyrLook::Tune(TEXT("rim"),14.f)*(GreystoneRim?1.45f:1.f));CharacterRim->SetLightColor(RimColour,false);CharacterRim->SetCastShadows(false);
     CharacterRim->SetSpecularScale(1.f);CharacterRim->SetAffectGlobalIllumination(false);CharacterRim->SetVolumetricScatteringIntensity(0.f);
     CharacterRim->RegisterComponent();
     DragonRimLight=MakeDirectional(TEXT("RelitDragonBackRim"));
@@ -75,7 +79,7 @@ void AVeyrArena::BuildRelitLighting()
         DragonKeyLight->RegisterComponent();
         KnightKeyLight=MakeDirectional(TEXT("RelitKnightKey"));
         KnightKeyLight->LightingChannels.bChannel0=false;KnightKeyLight->LightingChannels.bChannel1=true;KnightKeyLight->LightingChannels.bChannel2=false;
-        KnightKeyLight->SetIntensity(VeyrLook::Tune(TEXT("kkey"),4.f));KnightKeyLight->SetLightColor(FLinearColor(1.f,.87f,.72f),false);KnightKeyLight->SetCastShadows(false);
+        KnightKeyLight->SetIntensity(VeyrLook::Tune(TEXT("kkey"),4.f)*(GreystoneRim?1.25f:1.f));KnightKeyLight->SetLightColor(FLinearColor(1.f,.87f,.72f),false);KnightKeyLight->SetCastShadows(false);
         KnightKeyLight->SetLightSourceAngle(10.f);KnightKeyLight->SetSpecularScale(VeyrLook::Tune(TEXT("kkeyspec"),1.5f));KnightKeyLight->SetAffectGlobalIllumination(false);KnightKeyLight->SetVolumetricScatteringIntensity(0.f);
         KnightKeyLight->RegisterComponent();
     }

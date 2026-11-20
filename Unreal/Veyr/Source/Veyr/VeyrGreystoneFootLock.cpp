@@ -82,7 +82,7 @@ bool AVeyrKnight::UpdateGreystoneFootLock(float DeltaSeconds)
             }
             // E4 pops (2026-11-19): a roll, stagger or run start moves the body at once; a held foot then trails in the
             // mesh frame and snaps when its release ends (mesh-frame pops 33-53 cm). Start the release on that entry.
-            const bool BurstEntry=NewTransition&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::Stagger||
+            const bool BurstEntry=(NewTransition||Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack)&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Stagger||
                 Action==EVeyrKnightAction::RunStart||Action==EVeyrKnightAction::Backstep);
             if(Lifted||Reach>ReachCm||Replanted||OutOfLeg||BurstEntry)
             {
@@ -94,7 +94,12 @@ bool AVeyrKnight::UpdateGreystoneFootLock(float DeltaSeconds)
         }
         // Engage on a foot the clip plants (low and still), or on any low foot when a cross-fade starts or runs;
         // after a stepped release the foot must have been lifted or come to rest before it can lock again.
-        if(!F.bLocked&&Low&&(RawSpeed<PlantSpeedCmPerSecond||Fading||F.bWasLifted||F.bStepped))
+        // E4 pass 2 (run->roll 52.7 cm, left foot): the fade rule above re-locked a low foot during the roll's own
+        // entry fade, so the body dived away from a held foot. No new lock through a roll or backstep, and none while a
+        // stagger or run start is still fading in.
+        const bool Burst=Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Backstep||
+            (Fading&&(Action==EVeyrKnightAction::Stagger||Action==EVeyrKnightAction::RunStart));
+        if(!F.bLocked&&!Burst&&Low&&(RawSpeed<PlantSpeedCmPerSecond||Fading||F.bWasLifted||F.bStepped))
         {
             F.bLocked=true;F.bReleasing=false;F.bStepped=false;F.Anchor=RawToe;F.AnchorAnkle=RawAnkle;F.Weight=1.f;F.bWasLifted=false;
         }

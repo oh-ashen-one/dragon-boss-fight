@@ -394,6 +394,13 @@ private:
     bool PrepareGreystoneGameplayRig();
     bool SampleGreystoneGameplaySweep(FName Clip,float GreystoneSourceSeconds,float GreystoneRate,FVector& Base,FVector& Tip);
     int32 GreystoneRigSweeps=0,GreystoneRigFailures=0;
+    float GreystoneRigTipFromGripCm=0.f,GreystoneRigBaseFromGripCm=0.f,GreystoneRigRadiusCm=0.f;
+    // E4 pass 2: visual-only turn ease and idle breath for Greystone (VeyrKnight.cpp).
+    static bool GreystoneOptOut(const TCHAR* Flag);
+    void UpdateGreystoneVisualTurn(float DeltaSeconds);
+    void UpdateGreystoneIdleBreath(float DeltaSeconds,bool bMoving);
+    float GreystoneTurnLagYaw=0.f,GreystonePreviousActorYaw=0.f,MaxGreystoneTurnLagYaw=0.f,GreystoneBreathWeight=0.f;
+    bool bGreystoneTurnYawValid=false,bGreystoneBreathApplied=false;
     struct FLocomotionPhasePose { float Time=0.f,RootSpeed=0.f; FVector Points[4]; };
     struct FLocomotionPhaseCache { TArray<FLocomotionPhasePose> Poses; float NominalSpeed=0.f; };
     TMap<FName,FLocomotionPhaseCache> LocomotionPhaseCache;
