@@ -175,7 +175,21 @@ float AVeyrDragon::TempoWalkBaseSpeed() const
 float AVeyrDragon::TempoWalkRate() const
 {
     const FVeyrMoveTempo* T=Playback.Moves.Find(TEXT("walk"));
-    return T?T->Rate:1.f;
+    float Rate=T?T->Rate:1.f;
+    // Round 2 (F, band): the measured stride (745 cm/s at body scale 2) walked the dragon 43 % faster over the
+    // ground than before playback (160 x 1.25 x scale x pace = 520 cm/s), shortening two-hand fights and closing
+    // on the knight sooner. The default keeps the pre-playback ground speed and slows the cadence to match, so the
+    // planted feet still hold (the walk phase advances by distance). -VeyrDragonWalkClipSpeed keeps the clip's speed.
+    static const bool bClipSpeed=FParse::Param(FCommandLine::Get(),TEXT("VeyrDragonWalkClipSpeed"));
+    if(!bClipSpeed&&WalkStrideSpeedCm>0.f)
+    {
+        const FName Key=VideoClip(TEXT("Walk"));
+        const FVeyrVisualClip* Clip=VisualDefinition?VisualDefinition->Clips.Find(Key):nullptr;
+        const float Nominal=Clip&&Clip->NominalSpeedCmPerSecond>0.f?Clip->NominalSpeedCmPerSecond:160.f;
+        const float Legacy=(Key==FName(TEXT("WalkV2r"))?FMath::Min(Nominal,160.f):Nominal)*1.25f*BodyScale*PaceScale;
+        Rate=FMath::Min(Rate,Legacy/WalkStrideSpeedCm);
+    }
+    return Rate;
 }
 
 float AVeyrDragon::PlaybackPhaseCeiling(FName Clip) const
@@ -595,7 +609,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetBoolField(TEXT("clipTempo"),bClipTempo);O->SetBoolField(TEXT("twoClipBlend"),bTwoClipBlend);
     O->SetBoolField(TEXT("footLock"),bFootLock);O->SetBoolField(TEXT("slowSnapTurn"),bSlowSnapTurn);O->SetBoolField(TEXT("rootTracks"),bRootTracks);O->SetBoolField(TEXT("riseRootTrack"),bRootTracks&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoRiseRootTrack")));
     O->SetStringField(TEXT("data"),PlaybackDiagnostic);O->SetStringField(TEXT("footLockDiagnostic"),FootLockDiagnostic);
-    O->SetNumberField(TEXT("snapTrackRateDps"),SnapTrackRate());O->SetNumberField(TEXT("walkStrideSpeedCmPerSec"),WalkStrideSpeedCm);
+    O->SetNumberField(TEXT("snapTrackRateDps"),SnapTrackRate());O->SetNumberField(TEXT("walkStrideSpeedCmPerSec"),WalkStrideSpeedCm);O->SetNumberField(TEXT("walkRate"),TempoWalkRate());O->SetNumberField(TEXT("walkGroundSpeedCmPerSec"),TempoWalkBaseSpeed()*TempoWalkRate());
     O->SetNumberField(TEXT("trackTravelWorldCm"),TrackTravelWorld.Size2D());
     O->SetNumberField(TEXT("footLockTeleports"),FootLockTeleports);O->SetNumberField(TEXT("footLockEaseOuts"),FootLockEaseOuts);
     O->SetNumberField(TEXT("footLockReachSteps"),FootLockReachSteps);
