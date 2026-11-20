@@ -7,6 +7,8 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "NiagaraComponent.h"
@@ -209,8 +211,35 @@ void AVeyrImpactFx::HitBurst(const FVector& At,const FVector& Out,int32 Tier,flo
 {
     if(!VeyrFeelSwitches::HitBursts())return;
     Tier=FMath::Clamp(Tier,0,2);
-    const FVeyrFeelTuning::FEffect& E=VeyrFeelTuning().Hit[Tier];
     const FVector Normal=Out.IsNearlyZero()?FVector::UpVector:Out.GetSafeNormal();
+    if(VeyrFeelSwitches::ContactBurst())
+    {
+        // B2: every blow, legs included, throws a burst that lasts about half a second at the blade's contact point:
+        // the spark asset larger, spark cards that live 0.45 s, debris specks, and a short pale burst (the reference's
+        // white flash-and-dust), all sized by the blow's tier and the dragon's size.
+        FVeyrFeelTuning::FEffect E=VeyrFeelTuning().Hit[Tier];
+        const float Body=FMath::Sqrt(FMath::Max(.25f,BodyScale));
+        if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*1.6f*Body,-FMath::Min(E.LifeSeconds,.2f)) /* round 4: a pale sprite of the asset lay on the floor ~0.4 s */)++HitAsset[Tier];else ++HitFallback[Tier];
+        // Round 3: the 1.7x, 0.45 s, opaque spark streaks lay on the floor as a white slab for half a second: streaks keep
+        // their data size and opacity and live at most 0.25 s.
+        E.Cards+=4;E.CardLife=FMath::Min(E.CardLife,.25f);
+        ThrowSparks(E,At,Normal,Body);
+        E.Chips=FMath::Max(E.Chips,6+4*Tier);E.ChipSizeCm=FMath::Max(E.ChipSizeCm,3.f+Tier);E.ChipSpeedCmS=FMath::Max(E.ChipSpeedCmS,360.f);
+        ThrowChips(E,At,Normal,Body,0.f);
+        // The pale dust-card puff (90+40 tier cm, opacity .9) drew a flat white slab on heavy hits under the new exposure,
+        // held through the stop (films 20261119T205054Z and T224519Z): only with -VeyrContactPuff.
+        static const bool bPuff=FParse::Param(FCommandLine::Get(),TEXT("VeyrContactPuff"));
+        if(bPuff)
+        {
+            FVeyrFeelTuning::FEffect Burst=VeyrFeelTuning().Dust[0];
+            Burst.Cards=5+2*Tier;Burst.CardSizeCm=90.f+40.f*Tier;Burst.CardLife=.5f;Burst.CardOpacity=.9f;
+            Burst.CardRiseCmS=40.f;Burst.CardSpreadCmS=120.f+40.f*Tier;
+            SpawnDustCards(Burst,At+Normal*12.f*Body,Body,1.f,false);++HitSmoke;
+        }
+        ++ContactBursts;
+        return;
+    }
+    const FVeyrFeelTuning::FEffect& E=VeyrFeelTuning().Hit[Tier];
     if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*FMath::Sqrt(FMath::Max(.25f,BodyScale)),E.LifeSeconds))
     {++HitAsset[Tier];if(E.bCardsWithAsset)ThrowSparks(E,At,Normal,1.f);}
     else{ThrowSparks(E,At,Normal,1.f);++HitFallback[Tier];}
@@ -367,6 +396,12 @@ void AVeyrImpactFx::UpdateSparks(float Dt,const FVector& Camera)
     SparkStreaks->SetVisibility(Any);SparkStreaks->MarkRenderStateDirty();bSparksDirty=Any;
 }
 
+void AVeyrImpactFx::SetFxTimeScale(float Scale)
+{
+    CustomTimeDilation=Scale;
+    for(UFXSystemComponent* C:Components)if(UNiagaraComponent* N=Cast<UNiagaraComponent>(C))N->SetCustomTimeDilation(Scale);
+}
+
 void AVeyrImpactFx::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
@@ -376,7 +411,8 @@ void AVeyrImpactFx::Tick(float DeltaSeconds)
         if(ComponentAge[I]>=100.f)continue;
         ComponentAge[I]+=DeltaSeconds;
         // Caps a looping source emitter: stop spawning after its life, let the last particles finish.
-        if(ComponentAge[I]>=ComponentLife[I]){if(IsValid(Components[I]))Components[I]->Deactivate();ComponentAge[I]=100.f;}
+        // A negative life is a hard stop (B2 contact burst): live particles die with the emitter, nothing lingers.
+        if(ComponentAge[I]>=FMath::Abs(ComponentLife[I])){if(IsValid(Components[I])){if(ComponentLife[I]<0.f)Components[I]->DeactivateImmediate();else Components[I]->Deactivate();}ComponentAge[I]=100.f;}
     }
     if(!bCardsDirty&&!bChipsDirty&&!bSparksDirty)return;
     FVector Camera=GetActorLocation();FRotator View;

@@ -6,6 +6,8 @@
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
 #include "Engine/World.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 
 bool FVeyrFeelProof::Begin(UWorld* InWorld,AVeyrKnight* InKnight,AVeyrDragon* InDragon,FHooks InHooks)
 {
@@ -89,7 +91,13 @@ void FVeyrFeelProof::Drive(double Elapsed,float Dt)
         for(int32 I=0;I<4;++I){const float L=FVector::Dist2D(D->GetLegLocation(I),K->GetActorLocation());if(L<Near){Near=L;Leg=I;}}
         const float Reach=220.f+75.f*D->BodyScale;
         if(Near>Reach-80.f)Move=FVector(D->GetLegLocation(Leg)-K->GetActorLocation()).GetSafeNormal2D();
-        if(!bInSegment&&SegmentIndex==1&&Near<=Reach&&D->State==EVeyrDragonState::Idle&&LegStrikeAt<0.0)
+        // -VeyrFeelLegLight: a light blow on the same leg first, so the light hit is filmed from the heavy's camera.
+        static const bool bLegLight=FParse::Param(FCommandLine::Get(),TEXT("VeyrFeelLegLight"));
+        if(bLegLight&&!bInSegment&&SegmentIndex==1&&Near<=Reach&&D->State==EVeyrDragonState::Idle&&LegLightAt<0.0)
+        {
+            bLight=true;LegLightAt=Elapsed;Mark(Elapsed,TEXT("knight_leg_light"));
+        }
+        else if(!bInSegment&&SegmentIndex==1&&Near<=Reach&&D->State==EVeyrDragonState::Idle&&LegStrikeAt<0.0&&(!bLegLight||Elapsed-LegLightAt>1.0))
         {
             bHeavy=true;LegStrikeAt=Elapsed;LegStrikeContacts=D->GetSwordContactCount();
             Mark(Elapsed,TEXT("knight_leg_heavy"));
