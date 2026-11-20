@@ -39,7 +39,12 @@ Read this once, fully, before touching anything. The goal itself is `QUALITY_GOA
   and `--run 'death:headless,-VeyrFastSim,-VeyrSeedSweep=0-3'`; summary with `tools/unreal/band_summary.py --per-seed`.
   A fast sweep is a distribution, not a seed-for-seed replay of real time (measured 2026-11-19 on 4 seeds: median 92.9 s
   fast against 85.0 s real, per-seed results differ), so use it to compare builds (old against new on the same package
-  and mode) and for retune loops. The acceptance band of the final integrated build is run once at real time. Never run
+  and mode) and for retune loops. Update 18:45: fixed-step fights are reproducible to the hundredth of a second on
+  every build whose gameplay is unchanged (seeds 0-3: 108.33, 91.85, 89.87, 94.05 s one-hand on the goal branch), and
+  real-time windowless fights are not a stable measure: the same seed and package gave 84.9 and 117.9 s, and before the
+  evidence-save fix (`8ddfbad`) the 5 s stall stretched them further (seed 20261117: 183.8 s and a loss with the old
+  save, 95.1 s with the fix). So the fixed-step sweep IS the acceptance band (goal branch baseline: one-hand 15 of 16,
+  median 90.9 s; two-hand 15 of 16, median 72.8 s), and real time is checked by the rendered regression victories. Never run
   a 32-fight band at real time on a work branch; never more than 4 real-time windowless fights in one lock hold; keep at
   most one ticket in the lock queue at a time.
 - **Build in your own worktree.** A builder with a worktree first runs

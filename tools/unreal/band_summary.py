@@ -33,6 +33,7 @@ def fights(folders):
                 'hitsDealt': max([s.get('swordContacts', 0) for s in combat] or [0]),
                 'fastSim': 'fixed' if d.get('meanFrameSeconds') and abs(d['meanFrameSeconds'] - 1 / 60) < 1e-4 else 'wall',
                 'reason': d.get('reason', ''),
+                'falls': int(d.get('fallRecoveries', 0) or 0) + int(d.get('dragonFallRecoveries', 0) or 0),
                 'path': str(path.parent),
             }
 
@@ -43,16 +44,28 @@ def main(argv):
     if per_seed:
         for r in rows:
             print(f"{r['mode']:8} {r['grip']:8} seed {r['seed']!s:>9} passed {r['passed']!s:5} t {r['seconds']:7.2f} s "
-                  f"hits taken {r['hitsTaken']:2} dealt {r['hitsDealt']:3}  {r['reason'][:70]}")
+                  f"hits taken {r['hitsTaken']:2} dealt {r['hitsDealt']:3}  {'FALL RECOVERIES ' + str(r['falls']) + '  ' if r['falls'] else ''}{r['reason'][:70]}")
     for grip, target in BAND.items():
         v = [r for r in rows if r['mode'] == 'victory' and r['grip'] == grip]
         if not v:
             continue
-        times = [r['seconds'] for r in v]
-        wins = sum(1 for r in v if r['passed'] and r['seconds'] <= 150)
-        med = statistics.median(times)
-        print(f"{grip}: {wins}/{len(v)} wins inside 150 s, median {med:.1f} s ({100 * (med / target - 1):+.0f} % against "
-              f"{target} s, band +-15 %: {'in' if abs(med / target - 1) <= .15 else 'OUT'}), range {min(times):.1f}-{max(times):.1f} s")
+        # A loss has no fight time (-1 s); it never enters the median. Medians are over wins only.
+        won = [r for r in v if r['passed'] and r['seconds'] >= 0]
+        lost = [r for r in v if r not in won]
+        times = [r['seconds'] for r in won]
+        inside = sum(1 for t in times if t <= 150)
+        if times:
+            med = statistics.median(times)
+            print(f"{grip}: wins {len(won)} of {len(v)} ({inside} inside 150 s), median over wins {med:.1f} s "
+                  f"({100 * (med / target - 1):+.0f} % against {target} s, band +-15 %: "
+                  f"{'in' if abs(med / target - 1) <= .15 else 'OUT'}), range {min(times):.1f}-{max(times):.1f} s")
+        else:
+            print(f"{grip}: wins 0 of {len(v)}")
+        for r in lost:
+            print(f"{grip}: loss seed {r['seed']}: {r['reason'][:80]}")
+    falls = [r for r in rows if r['falls']]
+    if falls:
+        print(f"FAIL: {len(falls)} run(s) needed a fall recovery (a hole in the court): " + ', '.join(f"seed {r['seed']}" for r in falls))
     deaths = [r['seconds'] for r in rows if r['mode'] == 'death']
     if deaths:
         print(f"passive: death in {min(deaths):.2f}-{max(deaths):.2f} s over {len(deaths)} runs "

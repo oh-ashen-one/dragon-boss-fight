@@ -16,7 +16,7 @@ runtime = p.add_mutually_exclusive_group(required=True)
 runtime.add_argument('--engine', type=Path)
 runtime.add_argument('--app', type=Path, help='Test the actual cooked Mac app')
 p.add_argument('--gpu-slot', type=Path, required=True)
-p.add_argument('--mode', choices=['core','death','victory','camp','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment','intro','footclosehits','camerahug','soleheights','feel','lightcheck'], required=True)
+p.add_argument('--mode', choices=['core','death','victory','camp','leg0','leg1','leg2','leg3','controls','avoidance','healing','guard','stance','integration','collision','lockon','blendproof','showcase','environment','intro','footclosehits','camerahug','soleheights','feel','lightcheck','perimeter'], required=True)
 p.add_argument('--next-mode',choices=['environment','showcase','healing','death'],help='One additional scenario in a fresh world, using the same owned renderer process')
 p.add_argument('--slot-wait-seconds', type=int, default=180, help='Bounded shared-slot queue wait, 30 to 3600 seconds; does not extend test duration')
 p.add_argument('--wait-for-stream-end',action='store_true',help='Keep this single owned request waiting while the shared streaming flag exists; still acquire the normal GPU gate afterward')
@@ -71,7 +71,7 @@ else:
     launch = [str(executable), str(project), '/Game/Maps/VeyrArena', '-game']
 if not executable.is_file():
     p.error('Runtime executable is missing')
-(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds or a.with_sound),'performanceMode':a.performance,'headlessNullRenderer':a.headless,'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
+(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds or a.with_sound),'performanceMode':a.performance,'headlessNullRenderer':a.headless,'extraArgs':list(a.extra_arg),'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
 if a.headless and (a.performance or a.video_fps or a.audio_capture_seconds or a.with_sound or a.launch_services):
     p.error('--headless is a silent, frame-less run; it cannot be combined with media, performance or LaunchServices options')
 # Headless: a windowless process is App-Napped by macOS and its frame-limiter sleeps stretch to ~0.1 s.

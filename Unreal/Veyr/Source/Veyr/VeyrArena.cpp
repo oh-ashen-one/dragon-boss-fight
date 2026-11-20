@@ -19,6 +19,9 @@
 #include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "Misc/App.h"
+#include "Misc/Crc.h"
 #include "Engine/Texture2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
@@ -200,8 +203,19 @@ void AVeyrArena::BeginPlay()
     Rocks->SetCastShadow(false);RockSpurs->SetCastShadow(false);
     Embers = MakeBatch(TEXT("PROTO_BrazierEmberBeds"), SphereMesh, Coal);
     BuildFloor();
-    if(bFortressCandidate)BuildFortressCourt();
-    else bUsingImportedCathedral=BuildImportedCathedral();
+    // The boundary is the wall face lines; it exists even when a court kit failed to load.
+    if(bFortressCandidate)
+    {
+        CourtBoundary={FVector2D(-5100,-4500),FVector2D(5100,-4500),FVector2D(5100,4500),FVector2D(-5100,4500)};
+        BuildFortressCourt();
+    }
+    else
+    {
+        bUsingImportedCathedral=BuildImportedCathedral();
+        CourtBoundary={FVector2D(-4900,-2700),FVector2D(-3300,-4100),FVector2D(1800,-4550),FVector2D(4900,-2800),
+            FVector2D(4900,2800),FVector2D(1800,4550),FVector2D(-3300,4100),FVector2D(-4900,2700)};
+    }
+    BuildPerimeterBlockers(250.f,650.f);
     // Missing kit assets remain an explicit validation failure. Do not silently
     // dress an old primitive facade as the new reference-matched environment.
     BuildDistance();
@@ -210,6 +224,7 @@ void AVeyrArena::BeginPlay()
     BuildInteractiveDetails();
     BuildCollision();
     if(VeyrLook::SplitInstancesForLumen())SplitCourtInstancesForLumen();
+    CourtCollisionSignature(); // VEYR_COURT_COLLISION: compare windowless and rendered runs
     if(!VeyrLook::IsLegacy())SetActorTickInterval(0.f);
     UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY connected court: clear fight diameter~7200cm, walkable aisles0..240cm; %d instanced groups."), Batches.Num());
     UE_LOG(LogTemp,Display,TEXT("VEYR_CONNECTED_COURT ready=%d meshes=%d/12 instances=%d diagnostic=%s"),
@@ -1132,4 +1147,77 @@ void AVeyrArena::RestorePropCameraOcclusion(APlayerController* Player)
     if(!Player)return;
     for(const auto& Pair:HiddenPropTimers)Player->HiddenPrimitiveComponents.Remove(Pair.Key.Get());
     HiddenPropTimers.Reset();
+}
+
+float AVeyrArena::CourtOutsideDistance(const FVector& WorldPoint) const
+{
+    const int32 N=CourtBoundary.Num();if(N<3)return 0.f;
+    const FVector L=GetActorTransform().InverseTransformPosition(WorldPoint);const FVector2D P(L.X,L.Y);
+    bool bInside=false;double Best=TNumericLimits<double>::Max();
+    for(int32 I=0,J=N-1;I<N;J=I++)
+    {
+        const FVector2D& A=CourtBoundary[J];const FVector2D& B=CourtBoundary[I];
+        if(((B.Y>P.Y)!=(A.Y>P.Y))&&(P.X<(A.X-B.X)*(P.Y-B.Y)/(A.Y-B.Y)+B.X))bInside=!bInside;
+        const FVector2D AB=B-A;const double T=FMath::Clamp(FVector2D::DotProduct(P-A,AB)/FMath::Max(1.0,AB.SizeSquared()),0.0,1.0);
+        Best=FMath::Min(Best,FVector2D::Distance(P,A+AB*T));
+    }
+    return static_cast<float>(bInside?-Best:Best);
+}
+
+void AVeyrArena::BuildPerimeterBlockers(float InnerDepth,float OuterDepth)
+{
+    // Arena gaps (2026-11-19): a collision-only ring behind every wall face line. The visible kit
+    // walls keep their own collision; this closes any joint, seam or missing piece that would lead
+    // out of the world. It starts InnerDepth behind the face line (behind the fortress gate bars),
+    // so the fighting floor is unchanged, and it blocks only pawns: camera and visibility traces
+    // pass through it. Each box runs OuterDepth past both ends so neighbouring boxes overlap at
+    // every vertex. Opt-in (-VeyrArenaRing): the real walls hold once their gaps are closed
+    // (BuildFortressCornerPiers), so ordinary play has no invisible wall.
+    if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrArenaRing"))||CourtBoundary.Num()<3||!CubeMesh)return;
+    auto* Ring=NewObject<UInstancedStaticMeshComponent>(this,TEXT("CourtPerimeterBlockers"));
+    AddInstanceComponent(Ring);Ring->SetupAttachment(GetRootComponent());Ring->SetMobility(EComponentMobility::Static);
+    Ring->SetStaticMesh(CubeMesh);Ring->SetHiddenInGame(true);Ring->SetVisibility(false);Ring->SetCastShadow(false);
+    Ring->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);Ring->SetCollisionObjectType(ECC_WorldStatic);
+    Ring->SetCollisionResponseToAllChannels(ECR_Ignore);Ring->SetCollisionResponseToChannel(ECC_Pawn,ECR_Block);
+    Ring->SetGenerateOverlapEvents(false);Ring->SetCanEverAffectNavigation(false);Ring->RegisterComponent();
+    const int32 N=CourtBoundary.Num();FVector2D C(0,0);for(const FVector2D& P:CourtBoundary)C+=P;C/=N;
+    const float Depth=OuterDepth-InnerDepth,Height=3000.f;
+    for(int32 I=0;I<N;++I)
+    {
+        const FVector2D A=CourtBoundary[I],B=CourtBoundary[(I+1)%N];
+        const FVector2D D=(B-A).GetSafeNormal();FVector2D Out(D.Y,-D.X);
+        if(FVector2D::DotProduct(Out,(A+B)*.5f-C)<0)Out=-Out;
+        const FVector2D Mid=(A+B)*.5f+Out*(InnerDepth+Depth*.5f);
+        const float Len=static_cast<float>(FVector2D::Distance(A,B))+2.f*OuterDepth;
+        Ring->AddInstance(FTransform(FRotator(0,FMath::RadiansToDegrees(FMath::Atan2(D.Y,D.X)),0),FVector(Mid.X,Mid.Y,Height*.5f-400.f),FVector(Len,Depth,Height)/100.f));
+        ++PerimeterBlockerCount;
+    }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_PERIMETER_BLOCKERS edges=%d innerCm=%.0f outerCm=%.0f"),PerimeterBlockerCount,InnerDepth,OuterDepth);
+}
+
+FString AVeyrArena::CourtCollisionSignature() const
+{
+    // Equality check for windowless and rendered runs: every pawn-blocking primitive of the court,
+    // its instances and their world bounds (rounded to cm), plus whether each has a collision body.
+    if(!CourtCollisionSignatureCache.IsEmpty())return CourtCollisionSignatureCache;
+    TArray<UPrimitiveComponent*> Parts;GetComponents<UPrimitiveComponent>(Parts);
+    TArray<int32> Words;int32 Components=0,Instances=0,Bodies=0,ComplexAsSimple=0,Simple=0;
+    auto Add=[&Words](const FBox& B){for(const FVector& V:{B.Min,B.Max}){Words.Add(FMath::RoundToInt(V.X));Words.Add(FMath::RoundToInt(V.Y));Words.Add(FMath::RoundToInt(V.Z));}};
+    for(UPrimitiveComponent* C:Parts)
+    {
+        if(!C||!C->IsCollisionEnabled()||C->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block)continue;
+        ++Components;
+        if(UBodySetup* Body=C->GetBodySetup()){++Bodies;ComplexAsSimple+=Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple?1:0;Simple+=Body->AggGeom.GetElementCount();}
+        if(auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
+        {
+            const FBox Local=ISM->GetStaticMesh()?ISM->GetStaticMesh()->GetBoundingBox():FBox(ForceInit);
+            for(int32 I=0;I<ISM->GetInstanceCount();++I){FTransform T;ISM->GetInstanceTransform(I,T,true);Add(Local.TransformBy(T));++Instances;}
+        }
+        else{Add(C->Bounds.GetBox());++Instances;}
+    }
+    const uint32 Crc=FCrc::MemCrc32(Words.GetData(),Words.Num()*sizeof(int32));
+    CourtCollisionSignatureCache=FString::Printf(TEXT("components=%d instances=%d bodies=%d complexAsSimple=%d simple=%d boundsCrc=%08x fortressMeshes=%d cornerPiers=%d"),
+        Components,Instances,Bodies,ComplexAsSimple,Simple,Crc,FortressMeshCount,CornerPierCount);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_COURT_COLLISION %s render=%d"),*CourtCollisionSignatureCache,FApp::CanEverRender()?1:0);
+    return CourtCollisionSignatureCache;
 }

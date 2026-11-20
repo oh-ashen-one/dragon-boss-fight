@@ -156,3 +156,164 @@ needs ears (whether the sounds please, whether the low end booms). Full text: `L
 
 Consequence: a short third pass on the three faults plus stomp variety and the fire onset, then the sound branch merges.
 
+## Sound blind review 4 — 2026-11-19 18:35 ET, second pass against third pass (our own two mixes)
+
+Opus critic, sides hidden, 80 s of each of our two sound captures (`veyr-b2sound-victory3.mp4`, pass 2, `9605a47`;
+`veyr-b2sound-victory4.mp4`, pass 3, `a68f67d`).
+
+**Verdict: PASS 2 SLIGHTLY BETTER.** Pass 2 keeps a clear order of events (13.4 dB from the loudest kind to the
+quietest; pass 3: 7.0 dB). In pass 3 the knight's footsteps are louder than the dragon's walking steps, slams stand
+only 4 dB over walking steps, and weapon hits are buried (2-8 kHz peak -27.3 dB against -18.1). Pass 3 wins on headroom
+(no full-scale samples; pass 2 clips at +0.2 dBTP) and on a centred image (pass 2 leans right by 2.8 dB). Neither mix
+turns the low end into a continuous rumble. In both, low thumps play while the dragon flies, the landing is quieter
+than an ordinary slam, and the hit sound starts 150-185 ms after the flash (to be settled on the game clock). Full
+text: `Local/quality-goal/review-S-blind4-passes.md`.
+
+Consequence: pass 4 = pass 2's hierarchy and hit clarity with pass 3's headroom and balance, then a fresh blind review
+against the reference before the sound branch merges.
+
+## Camera blind review — 2026-11-19 19:45 ET, steady view with dissolve against the reference
+
+Opus critic, sides hidden (labels G and H at random; key outside the pack), silent films: 100 s of our steady-view
+one-hand victory (`veyr-camera-steady-1h.mp4`, branch `fable/quality-goal-camera4` `6097716`, package 20, with the
+evidence-save fix) against the 51 s reference fight cut (about 39 s of continuous play in nine pieces once its edits
+are removed). One aspect only.
+
+**Verdict: OURS SLIGHTLY BETTER.**
+
+| Measure | Ours | Reference |
+|---|---|---|
+| Hero hidden | about 1.5 s of 100 s | about 9 s of 39 s |
+| Boss head in frame | about 33 % | about 90 % |
+| Typical view speed (px per frame at 640 wide) | 2.7 | 1.2 |
+| 99th percentile | 22.4 | 18.1 |
+
+Ours keeps the hero readable almost throughout; the reference loses him behind the boss, its antlers, smoke and
+pillars, with no fade. Our faults, worst first: the boss is framed as feet and belly (head out of frame two thirds of
+the time, so a bite or breath cannot be read coming: "breaks the fight"); legs come right up to the lens and the fade
+reads as switching on late; lurches of 37-57 px per frame at four moments; the hero under the HUD dial for a moment.
+Our own audit's "head or torso in frame 96-98 %" hid the first fault. Full text:
+`Local/quality-goal/review-A-blind5-camera.md`.
+
+Consequence: the branch merges after its regression (it already beats the reference), then a third pass: head and
+chest in frame at least 70 %, parts near the lens fully faded before they cover a quarter of the frame, view motion
+capped outside impact kicks, the knight kept clear of the HUD.
+
+## Impacts blind review 3 — 2026-11-19 20:30 ET, second approach against the reference
+
+Opus critic, sides hidden (labels R and S at random; key outside the pack), silent films: our 74 s two-hand victory on
+the impacts second approach (`veyr-b2impact-victory-2h.mp4`, branch `fable/quality-goal-B2impact` `e3e36c2`, package
+11) against the 51 s reference fight cut. One aspect only: weight of impacts.
+
+**Verdict: OURS CLEARLY BETTER** (the first review of this aspect, on phase B, was "reference clearly better").
+
+| | Ours | Reference |
+|---|---|---|
+| Hero hits judged | 9, all read, same feedback each time | 3 judgeable |
+| Flash | on the contact frame, 10-14 frames | white puff 6 frames, then smoke over the contact |
+| Blade held (hit-stop) | 8-10 frames at 60 fps | 0 |
+| Zoom punch | 5.3-6.2 % | 3.3 % once |
+| Shake | 2.1-4.8 % of height, about 15 frames | 1.3-3.2 %, 6-8 frames |
+| Boss hits on the hero | no shake (under 0.7 %), no flash | 3-4.9 % shake, one 11 % kick |
+
+Our faults, worst first: a hit at 13.78 s whites out half the screen, turns the claw flat yellow for 10 frames and the
+old camera snaps away; the boss's hits on the hero get no feedback at all ("weaker than the hero's taps"); the struck
+leg does not visibly move at fight distance (0 frames measured); light and heavy hits differ only by the tint; shake
+starts 2-4 frames late. Capture note: 1,881 of 4,447 of our frames repeat (about 35 game frames per second in a 60 fps
+file). Full text: `Local/quality-goal/review-W-blind3-impacts.md`.
+
+Consequence: the branch merges once its band and regression pass; the five faults are the next pass.
+
+## Standing after 2026-11-19 20:30 ET
+
+| Aspect | Latest blind verdict | On which build | In the goal branch |
+|---|---|---|---|
+| Lighting and picture | ours slightly better | picture polish round | yes, installed |
+| Boss animation | ours clearly better (round 1 and round 2) | playback round 2 film | no (one-hand band, fire aim) |
+| Sound | ours clearly better (pass 2 and the calibrated pass 6) | calibrated mix, pass 6 | no (merge pending its identity check) |
+| Camera | ours slightly better | steady view, package 20 | no (merge pending its identity check) |
+| Weight of impacts | ours clearly better | impacts second approach | yes, merged 23:10 (not installed) |
+| Hero model and movement | ours slightly better against the reference (Greystone, first pass); Greystone clearly better than our old knight (second pass) | Greystone package 5 | no (real roll clip pending; playback merges first) |
+
+"Done" needs all six on ONE final film of the integrated build, reviewed blind again.
+
+## Phase F blind review 2 — 2026-11-19 21:25 ET, boss animation, playback round 2 against the reference
+
+Opus critic, sides hidden (labels L and M at random; key outside the pack), silent films: our 92.5 s two-hand victory
+on playback round 2 (`veyr-dragonplayback2-victory-2h.mp4`, branch `fable/quality-goal-F`, package 14 with the goal
+branch's tracking; captured at 29.5 of 30 frames per second, no repeats) against the 51 s reference fight cut.
+
+**Verdict: OURS CLEARLY BETTER** (as on round 1). Ours shows a full flight cycle, a knock-down and a get-up with no
+pops, and a death fall that plays through and settles; in a turn the front foot stays within 3 px of the cobbles for
+14 frames and lifts cleanly. The reference boss never reacts to a hit and never dies on film.
+
+Our faults, worst first: the fire does not go where the head points (flame column straight up at 32.1 s with the head
+facing the hero; the first jet sweeps away from him); the death fall is seen from inside the body and the lens enters
+a leg at 39.6 s (the old camera on that branch); the head still snaps about 90 degrees in 4 frames before the first
+breath (2.20-2.33 s), which our yaw-step metric does not count; a struck foot flashes without recoiling. Full text:
+`Local/quality-goal/review-F-blind2.md`.
+
+Consequence: fire aim and the pre-breath head turn join the playback merge list, with the one-hand band (recoveries).
+
+## Hero blind reviews — 2026-11-19 21:55 and 22:10 ET (Greystone, branch `fable/quality-goal-E` `23d8280`, package 3)
+
+**1. Greystone against our old knight**, the matched 65 s hero clips (`greystone-hero.mp4`, `knight-hero.mp4`), labels
+at random. **Verdict: the OLD KNIGHT slightly better overall; model: old knight slightly better; movement: equal.** The
+old knight's silhouette still reads at quarter size and his idle is alive (head bobs 7-8 px); Greystone's idle is close
+to frozen (2 px in 3.3 s) and his slim dark body blends into the background. Greystone has believable sword and shield
+proportions (the old knight's weapon is 1.07 times his height: "a canoe"), smaller weapon jumps, and settles after a
+sprint. Shared faults: the body turns in one frame at a sprint start; a hit takes them from standing to flat in 4-5
+frames. The roll was not judged: the script's dodge inputs played as sprints. Full text:
+`Local/quality-goal/review-E-blind1-pair.md`.
+
+**2. Greystone in the arena against the reference's hero**, his 30 s arena clip (`greystone-arena.mp4`) against the
+51 s reference fight cut, silent. **Verdict: OURS SLIGHTLY BETTER overall; model: reference slightly better;
+movement: ours slightly better.** The reference hero is an unlit black silhouette, hidden by blur and smoke, and his
+hammer pops onto his back without a hand. Our faults, worst first: the dodge is a dive into a headstand (upright to
+flat in one frame, legs straight up, head on the cobbles; about nine times in ten seconds) and the sword does not
+follow the flip; getting up is a two-frame snap. Captured at about 42 frames per second. Full text:
+`Local/quality-goal/review-E-blind2-reference.md`.
+
+Consequence: Greystone's dodge is the first fix, then getting up, idle, sprint turn and readability at small size; he
+has to beat the old knight in the pair before he becomes the default.
+
+## Sound blind review 6 — 2026-11-19 22:40 ET, calibrated mix (pass 6) against the reference
+
+Opus critic, sides hidden (labels V and W at random; key outside the pack), 90 s of our calibrated mix
+(`veyr-b2mix-victory8.mp4`, branch `fable/quality-goal-B2sound` `cac3224`, audio aligned from content) against the 51 s
+reference fight cut. He was asked first to establish what each track contains: the reference is narrated for 70 % of
+its length, so its game sound was judged on the 15.3 s without the voice.
+
+**Verdict: OURS CLEARLY BETTER.**
+
+| Measure | Ours | Reference (game sound only) |
+|---|---|---|
+| Integrated loudness | -25.0 LUFS | -25.6 LUFS |
+| Loudness range | 10.1 LU | 2.6 LU |
+| True peak | -2.5 dBTP, no clipping | -7.1 dBTP |
+| Impact sound against the picture | -1 to +2 frames | 2 to 6 frames late |
+| Impact rise over the mix | +10 to +39 dB in all three bands | +6 to +12 dB low, +3 to +5 dB above |
+| Visible actions with no sound | none found | three (36.70, 39.83, 44.37 s) |
+
+Our faults, worst first: between events the mix falls to -48 to -55 dBFS with no ambience or music bed he could
+measure (11 % of the film under -45 dB); single boss events far under their kind's level (a stomp and a growl 9 dB
+under the hero's hits); one roar in 90 s. Left to right swings of up to 6 dB follow the dragon. Not judged: tone,
+footsteps, whether the panning follows the action. Full text: `Local/quality-goal/review-S-blind6-final.md`.
+
+Consequence: the sound branch merges after its identity check and regression; ambience and bed level, the low single
+events and the roar triggers follow.
+
+## Hero blind review 3 — 2026-11-19 22:55 ET, Greystone (second pass) against our old knight
+
+Matched 65 s hero clips with a filmed roll (`greystone-hero2.mp4`, branch `fable/quality-goal-E` `9982684`, package 5;
+`knight-hero2.mp4`), labels at random. **Verdict: GREYSTONE CLEARLY BETTER overall; model: Greystone slightly better;
+movement: Greystone slightly better.** (The first pair went slightly to the old knight.) Greystone reads at quarter
+scale through the pale face, light tabard and gold blade; the old knight's weapon, 1.1 times his height and carried
+level at the hip, "reads as a canoe or fish trap" and flips 180 degrees in two frames after attacks. Greystone's
+faults: the heavy wind-up jumps 0.43 of his height in one frame; the roll is an airborne front flip with the sword
+fixed in the world; on a hit the head bends back alone and the feet never step. Full text:
+`Local/quality-goal/review-E-blind3-pair2.md`.
+
+Consequence: Greystone becomes the default when his branch merges (after the playback branch), with a switch that
+restores the old knight; a sourced roll clip, the heavy wind-up and the hit reaction are his next pass.
+
