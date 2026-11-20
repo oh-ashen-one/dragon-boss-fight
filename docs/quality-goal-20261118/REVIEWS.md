@@ -230,7 +230,7 @@ Consequence: the branch merges once its band and regression pass; the five fault
 |---|---|---|---|
 | Lighting and picture | ours slightly better | picture polish round | yes, installed |
 | Boss animation | ours clearly better (round 1 and round 2) | playback round 2 film | no (one-hand band, fire aim) |
-| Sound | ours clearly better | sound pass 2 (clips slightly) | no (mix calibration running) |
+| Sound | ours clearly better (pass 2 and the calibrated pass 6) | calibrated mix, pass 6 | no (merge pending its identity check) |
 | Camera | ours slightly better | steady view, package 20 | no (merge pending its identity check) |
 | Weight of impacts | ours clearly better | impacts second approach | no (band and regression pending) |
 | Hero model and movement | ours slightly better (Greystone; but the old knight beats him slightly in the pair) | Greystone package 3, arena clip | no (dodge broken, playback merges first) |
@@ -276,4 +276,30 @@ follow the flip; getting up is a two-frame snap. Captured at about 42 frames per
 
 Consequence: Greystone's dodge is the first fix, then getting up, idle, sprint turn and readability at small size; he
 has to beat the old knight in the pair before he becomes the default.
+
+## Sound blind review 6 — 2026-11-19 22:40 ET, calibrated mix (pass 6) against the reference
+
+Opus critic, sides hidden (labels V and W at random; key outside the pack), 90 s of our calibrated mix
+(`veyr-b2mix-victory8.mp4`, branch `fable/quality-goal-B2sound` `cac3224`, audio aligned from content) against the 51 s
+reference fight cut. He was asked first to establish what each track contains: the reference is narrated for 70 % of
+its length, so its game sound was judged on the 15.3 s without the voice.
+
+**Verdict: OURS CLEARLY BETTER.**
+
+| Measure | Ours | Reference (game sound only) |
+|---|---|---|
+| Integrated loudness | -25.0 LUFS | -25.6 LUFS |
+| Loudness range | 10.1 LU | 2.6 LU |
+| True peak | -2.5 dBTP, no clipping | -7.1 dBTP |
+| Impact sound against the picture | -1 to +2 frames | 2 to 6 frames late |
+| Impact rise over the mix | +10 to +39 dB in all three bands | +6 to +12 dB low, +3 to +5 dB above |
+| Visible actions with no sound | none found | three (36.70, 39.83, 44.37 s) |
+
+Our faults, worst first: between events the mix falls to -48 to -55 dBFS with no ambience or music bed he could
+measure (11 % of the film under -45 dB); single boss events far under their kind's level (a stomp and a growl 9 dB
+under the hero's hits); one roar in 90 s. Left to right swings of up to 6 dB follow the dragon. Not judged: tone,
+footsteps, whether the panning follows the action. Full text: `Local/quality-goal/review-S-blind6-final.md`.
+
+Consequence: the sound branch merges after its identity check and regression; ambience and bed level, the low single
+events and the roar triggers follow.
 
