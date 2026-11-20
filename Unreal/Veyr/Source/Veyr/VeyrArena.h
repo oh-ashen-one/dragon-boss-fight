@@ -56,6 +56,12 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") bool bFortressGateProbeReady=false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Environment") TMap<FName,FVector> ConnectedMeshDimensionsCm;
     UFUNCTION(BlueprintPure, Category="Environment") float GetMaximumWalkableHeightNear(const FVector& WorldPoint,float RadiusCm) const;
+    /** Court boundary polygon (local cm, the wall face lines), set by the court builder. */
+    TArray<FVector2D> CourtBoundary;
+    /** Signed 2D distance outside the court boundary (negative inside); 0 without a boundary. */
+    float CourtOutsideDistance(const FVector& WorldPoint) const;
+    /** Collision-only boxes behind every boundary edge (arena gaps fix; -VeyrLegacyArenaGaps removes them). */
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 PerimeterBlockerCount=0;
     /** Phase C frame-report counters: court parts split out for Lumen, shadowed court lights now. */
     int32 GetLumenSplitComponentCount() const { return LumenSplitParts.Num(); }
     int32 CountShadowedCourtLights() const;
@@ -174,6 +180,7 @@ private:
     bool LoadPolishKit();
     FVector KitSize(FName Name,float Height) const;
     void KitPiece(FName Name,const FVector& Anchor,float Height,float Yaw,bool bBlocking=true,bool bFrontAnchor=false,float WidthScale=1.f);
+    void BuildPerimeterBlockers(float InnerDepth,float OuterDepth);
     void KitWallRun(FName Name,const FVector& Start,const FVector& End,const FVector& Inward,float Height,float FloorZ,bool bBlocking=true);
     void BuildCourtTerrain();
 };
