@@ -172,3 +172,30 @@ text: `Local/quality-goal/review-S-blind4-passes.md`.
 Consequence: pass 4 = pass 2's hierarchy and hit clarity with pass 3's headroom and balance, then a fresh blind review
 against the reference before the sound branch merges.
 
+## Camera blind review — 2026-11-19 19:45 ET, steady view with dissolve against the reference
+
+Opus critic, sides hidden (labels G and H at random; key outside the pack), silent films: 100 s of our steady-view
+one-hand victory (`veyr-camera-steady-1h.mp4`, branch `fable/quality-goal-camera4` `6097716`, package 20, with the
+evidence-save fix) against the 51 s reference fight cut (about 39 s of continuous play in nine pieces once its edits
+are removed). One aspect only.
+
+**Verdict: OURS SLIGHTLY BETTER.**
+
+| Measure | Ours | Reference |
+|---|---|---|
+| Hero hidden | about 1.5 s of 100 s | about 9 s of 39 s |
+| Boss head in frame | about 33 % | about 90 % |
+| Typical view speed (px per frame at 640 wide) | 2.7 | 1.2 |
+| 99th percentile | 22.4 | 18.1 |
+
+Ours keeps the hero readable almost throughout; the reference loses him behind the boss, its antlers, smoke and
+pillars, with no fade. Our faults, worst first: the boss is framed as feet and belly (head out of frame two thirds of
+the time, so a bite or breath cannot be read coming: "breaks the fight"); legs come right up to the lens and the fade
+reads as switching on late; lurches of 37-57 px per frame at four moments; the hero under the HUD dial for a moment.
+Our own audit's "head or torso in frame 96-98 %" hid the first fault. Full text:
+`Local/quality-goal/review-A-blind5-camera.md`.
+
+Consequence: the branch merges after its regression (it already beats the reference), then a third pass: head and
+chest in frame at least 70 %, parts near the lens fully faded before they cover a quarter of the frame, view motion
+capped outside impact kicks, the knight kept clear of the HUD.
+
