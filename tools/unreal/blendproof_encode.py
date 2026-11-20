@@ -55,7 +55,7 @@ def frame_text(row):
             f"{slide_text}")
 
 
-def encode(manifest_rows, frames, evidence_rows, out_dir, name, ffmpeg, skip_overlay):
+def encode(manifest_rows, frames, evidence_rows, out_dir, name, ffmpeg, skip_overlay, clock="callback"):
     """frames: native 'frame' records already filtered; manifest_rows: world_start/world_end context."""
     video_dir = out_dir.parent / "native-video"
     sub = video_dir / f"frames-{name}.jsonl"
@@ -70,7 +70,7 @@ def encode(manifest_rows, frames, evidence_rows, out_dir, name, ffmpeg, skip_ove
     for path in (vfr, vfr.with_suffix(".encode.json"), video_dir / f"{vfr.stem}.ffconcat", final):
         if path.exists():
             path.unlink()
-    result = subprocess.run([sys.executable, str(HERE / "encode_video.py"), str(sub), "--output", str(vfr)], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, str(HERE / "encode_video.py"), str(sub), "--output", str(vfr), "--clock", clock], capture_output=True, text=True)
     if result.returncode:
         raise SystemExit(f"encode_video failed for {name}: {result.stdout}\n{result.stderr}")
     srt = out_dir / f"{name}.srt"
@@ -109,6 +109,7 @@ def main():
     parser.add_argument("--no-overlay", action="store_true")
     parser.add_argument("--delete-frames", action="store_true", help="remove native-video PNGs after every MP4 verified")
     parser.add_argument("--margin", type=float, default=0.25, help="game seconds of context around each sequence")
+    parser.add_argument("--clock", choices=("callback", "requested"), default="callback", help="frame timestamps (encode_video.py --clock)")
     args = parser.parse_args()
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg or not shutil.which("ffprobe"):
@@ -137,7 +138,7 @@ def main():
             continue
         name = f"{seq['index']:02d}-{seq['name']}"
         sequence_rows = [r for r in evidence_rows if r["seq"] == seq["index"]]
-        receipts.append(encode(rows, picked, sequence_rows, out_dir, name, ffmpeg, args.no_overlay))
+        receipts.append(encode(rows, picked, sequence_rows, out_dir, name, ffmpeg, args.no_overlay, args.clock))
         print("encoded", name, len(picked), "native frames", flush=True)
     receipts.append(encode(rows, frames, evidence_rows, out_dir, "00-blendproof-all", ffmpeg, args.no_overlay))
     (out_dir / "media-receipt.json").write_text(json.dumps(receipts, indent=2) + "\n")
