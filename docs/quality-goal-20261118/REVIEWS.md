@@ -233,7 +233,7 @@ Consequence: the branch merges once its band and regression pass; the five fault
 | Sound | ours clearly better (pass 2 and the calibrated pass 6) | calibrated mix, pass 6 | no (merge pending its identity check) |
 | Camera | ours slightly better | steady view, package 20 | no (merge pending its identity check) |
 | Weight of impacts | ours clearly better | impacts second approach | no (band and regression pending) |
-| Hero model and movement | ours slightly better (Greystone; but the old knight beats him slightly in the pair) | Greystone package 3, arena clip | no (dodge broken, playback merges first) |
+| Hero model and movement | ours slightly better against the reference (Greystone, first pass); Greystone clearly better than our old knight (second pass) | Greystone package 5 | no (real roll clip pending; playback merges first) |
 
 "Done" needs all six on ONE final film of the integrated build, reviewed blind again.
 
@@ -302,4 +302,18 @@ footsteps, whether the panning follows the action. Full text: `Local/quality-goa
 
 Consequence: the sound branch merges after its identity check and regression; ambience and bed level, the low single
 events and the roar triggers follow.
+
+## Hero blind review 3 — 2026-11-19 22:55 ET, Greystone (second pass) against our old knight
+
+Matched 65 s hero clips with a filmed roll (`greystone-hero2.mp4`, branch `fable/quality-goal-E` `9982684`, package 5;
+`knight-hero2.mp4`), labels at random. **Verdict: GREYSTONE CLEARLY BETTER overall; model: Greystone slightly better;
+movement: Greystone slightly better.** (The first pair went slightly to the old knight.) Greystone reads at quarter
+scale through the pale face, light tabard and gold blade; the old knight's weapon, 1.1 times his height and carried
+level at the hip, "reads as a canoe or fish trap" and flips 180 degrees in two frames after attacks. Greystone's
+faults: the heavy wind-up jumps 0.43 of his height in one frame; the roll is an airborne front flip with the sword
+fixed in the world; on a hit the head bends back alone and the feet never step. Full text:
+`Local/quality-goal/review-E-blind3-pair2.md`.
+
+Consequence: Greystone becomes the default when his branch merges (after the playback branch), with a switch that
+restores the old knight; a sourced roll clip, the heavy wind-up and the hit reaction are his next pass.
 
