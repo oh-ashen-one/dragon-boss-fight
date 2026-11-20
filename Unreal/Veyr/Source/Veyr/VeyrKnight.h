@@ -447,12 +447,9 @@ private:
     bool bContactCameraFocusInitialized=false;
     float ManualCameraRemaining=0.f;
     float BladeContactRadius=18.f;
-    // E4 (2026-11-19): under -VeyrGreystone the sword sweep uses the old knight's blade (distance along the blade
-    // from the grip to the 28 % point and to the tip, and its contact radius, per clip from the RuntimePolish knight's
-    // weapon meshes) laid along Greystone's sword, so reach and hit chances stay the knight's.
-    // -VeyrGreystoneOwnBlade restores his own sword length and the 18 cm radius.
-    TMap<FName,FVector> GreystoneRefBlade; // X near distance, Y tip distance, Z radius (cm, world)
-    FVector GreystoneRefBladeDefault=FVector::ZeroVector;
+    // E4 (2026-11-19): opt-in, the old knight's measured sweep (grip to 28 % point, grip to tip, radius) laid along
+    // Greystone's sword: -VeyrGreystoneBladeNear= -VeyrGreystoneBladeTip= [-VeyrGreystoneBladeRadius=]. Default: his own.
+    FVector GreystoneRefBladeDefault=FVector::ZeroVector; // X grip to 28 % point, Y grip to tip, Z radius (cm)
     float GreystoneOwnBladeCm=0.f,GreystoneOwnBaseFromHandCm=0.f;
     void BuildGreystoneRefBlade();
     // Quality goal E: Greystone presentation (see VeyrGreystone.h). False for the KnightB definition.
@@ -487,6 +484,7 @@ private:
         FString MaxPopAt,MaxGripClip;TMap<FString,float> PopOver20;
         // Same points in the presentation mesh's own frame (body turn and capsule motion removed): true pose pops only.
         FVector L[4][3];float MaxLocalPopCm=0.f;FString MaxLocalPopAt;TMap<FString,float> LocalPopOver20;
+        int32 KnightBladeSamples=0;float KnightBaseFromGripCm=0.f,KnightTipFromGripCm=0.f,KnightRadiusCm=0.f,KnightHandOffLineCm=0.f;
     };
     // -VeyrKnightMonitor: run the same monitor on the old knight (like-for-like baseline); visual measurement only.
     static bool KnightMonitorRequested();
