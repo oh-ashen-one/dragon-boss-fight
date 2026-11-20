@@ -52,6 +52,9 @@ public:
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") float UserEffectsVolume=1.f;
     UPROPERTY(BlueprintReadOnly, Category="Veyr|Settings") float UserMouseSensitivity=1.f;
     UPROPERTY(BlueprintReadOnly) float EncounterSeconds=0;
+    /** Arena gaps safety net: knight or dragon lost below the floor or outside the court (-VeyrNoFallRecovery). */
+    UPROPERTY(BlueprintReadOnly) int32 KnightFallRecoveries=0;
+    UPROPERTY(BlueprintReadOnly) int32 DragonFallRecoveries=0;
     UPROPERTY(BlueprintReadOnly) float VictorySeconds=-1;
     UPROPERTY(BlueprintReadOnly) double VictoryWallSeconds=-1.;
     double GetFightWallSeconds() const;
@@ -77,6 +80,10 @@ private:
     void FinishArenaIntro(bool bSkipped);
     FVeyrFightClock FightClock;
     void SampleFightClock();
+    void GuardCourtBounds();
+    FVector LastGroundedKnight=FVector::ZeroVector,LastValidDragon=FVector::ZeroVector;
+    bool bHaveGroundedKnight=false,bHaveValidDragon=false;
+    int8 FallRecoveryMode=-1;
     bool bPawnPositioned=false;
     FString MixCaptureDirectory,MixCaptureName;
     double MixCaptureStarted=0;
