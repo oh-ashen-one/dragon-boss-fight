@@ -71,7 +71,7 @@ else:
     launch = [str(executable), str(project), '/Game/Maps/VeyrArena', '-game']
 if not executable.is_file():
     p.error('Runtime executable is missing')
-(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds or a.with_sound),'performanceMode':a.performance,'headlessNullRenderer':a.headless,'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
+(run/'launch.json').write_text(json.dumps({'runtimeKind':'packaged-app' if a.app else 'editor-game', 'executableSHA256':hashlib.sha256(executable.read_bytes()).hexdigest(), 'resolution':[a.width,a.height], 'screenPercentage':100, 'fpsCap':60, 'silent':not(a.performance or a.audio_capture_seconds or a.with_sound),'performanceMode':a.performance,'headlessNullRenderer':a.headless,'extraArgs':list(a.extra_arg),'masterAudioCaptureSeconds':a.audio_capture_seconds},indent=2)+'\n')
 if a.headless and (a.performance or a.video_fps or a.audio_capture_seconds or a.with_sound or a.launch_services):
     p.error('--headless is a silent, frame-less run; it cannot be combined with media, performance or LaunchServices options')
 # Headless: a windowless process is App-Napped by macOS and its frame-limiter sleeps stretch to ~0.1 s.
