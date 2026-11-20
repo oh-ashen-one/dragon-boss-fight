@@ -64,7 +64,8 @@ bool AVeyrDragon::TempoTrimmedSeconds(FName Clip,float RealElapsed,float& OutTri
 
 bool AVeyrDragon::FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed)
 {
-    if(!bFireSlamLead||FireSlamLeadSeconds<=0.f||Move!=EVeyrDragonMove::Fire)return false;
+    // The scripted showcase keeps the plain timing: its coverage gate needs each wind-up from its first frames.
+    if(!bFireSlamLead||bShowcaseMode||FireSlamLeadSeconds<=0.f||Move!=EVeyrDragonMove::Fire)return false;
     if(State!=EVeyrDragonState::Windup&&State!=EVeyrDragonState::Active&&State!=EVeyrDragonState::Recovery)return false;
     const FName W=ImportedMoveClip(Move,StompLeg,TEXT("Windup")),A=ImportedMoveClip(Move,StompLeg,TEXT("Active")),R=ImportedMoveClip(Move,StompLeg,TEXT("Recovery"));
     if(InOutClip!=(State==EVeyrDragonState::Windup?W:State==EVeyrDragonState::Active?A:R))return false;
@@ -192,6 +193,9 @@ void AVeyrDragon::InitPlayback()
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
     // Fire slam (coordinator 2026-11-19): a visual lead only; -VeyrLegacyFireSlam restores, -VeyrFireSlamLead=<s> sets it.
     bFireSlamLead=bClipTempo&&!FParse::Param(Cmd,TEXT("VeyrLegacyFireSlam"));
+    // Hold H16: the head-down jet hit the knight in 17 of 35 fires (legacy 5); its damage front starts 0.2 s later.
+    FParse::Value(Cmd,TEXT("VeyrFireSlamDamageDelay="),FireSlamDamageDelaySeconds);
+    FireSlamDamageDelaySeconds=bFireSlamLead?FMath::Clamp(FireSlamDamageDelaySeconds,0.f,.6f):0.f;
     FParse::Value(Cmd,TEXT("VeyrFireSlamLead="),FireSlamLeadSeconds);FireSlamLeadSeconds=FMath::Clamp(FireSlamLeadSeconds,0.f,.5f);
     // Gate 2 (round 2, 18:05): the one-hand sweep on package 11 had a median of 50 pops per fight (22-68) against
     // round 1's 25-47, so inertial blending is opt-in (-VeyrInertialBlend); the default keeps the two-clip fades.
@@ -752,7 +756,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("worstPopRatio"),WorstPop);O->SetStringField(TEXT("worstPopClipBone"),WorstPopKey);
     O->SetBoolField(TEXT("gateNoBlendPops"),PopsInBlend==0);
     O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("yawStepsCurrentFlat"),YawStepsCurrentFlat);O->SetNumberField(TEXT("yawStepsInHitReaction"),YawStepsInHitReaction);O->SetNumberField(TEXT("headTurnSteps"),HeadTurnSteps);O->SetNumberField(TEXT("worstHeadTurnDegPer30Hz"),WorstTurn);O->SetStringField(TEXT("worstHeadTurnClip"),WorstTurnKey);O->SetNumberField(TEXT("yawStepsAll"),YawSteps+YawStepsInHitReaction);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
-    O->SetBoolField(TEXT("fireSlamLead"),bFireSlamLead);O->SetNumberField(TEXT("fireSlamLeadSeconds"),bFireSlamLead?FireSlamLeadSeconds:0.f);
+    O->SetBoolField(TEXT("fireSlamLead"),bFireSlamLead);O->SetNumberField(TEXT("fireSlamLeadSeconds"),bFireSlamLead?FireSlamLeadSeconds:0.f);O->SetNumberField(TEXT("fireSlamDamageDelaySeconds"),FireSlamDamageDelaySeconds);
     {
         TArray<TSharedPtr<FJsonValue>> FC,FH;int32 EarlyC=0,EarlyH=0;
         for(const float T:FireContactElapsed){FC.Add(MakeShared<FJsonValueNumber>(T));EarlyC+=T<=.18f;}

@@ -1431,7 +1431,14 @@ void AVeyrDragon::TryDamageTarget()
         bool bHit=false;
         if(Move==EVeyrDragonMove::Fire)
         {
-            const FVeyrDragonFlameBeam Beam=GetActiveFlameBeam();bHit=FlameHitsKnight(Beam);
+            FVeyrDragonFlameBeam Beam=GetActiveFlameBeam();
+            // Fire slam: the damage front ramps from FireSlamDamageDelaySeconds (0 without the lead); the jet is unchanged.
+            if(FireSlamDamageDelaySeconds>0.f&&Beam.bDamaging)
+            {
+                Beam.Length=1750.f*BodyScale*FMath::Clamp((StateElapsed-FireSlamDamageDelaySeconds)/.18f,0.f,1.f);
+                Beam.bDamaging=Beam.Length>20.f;
+            }
+            bHit=FlameHitsKnight(Beam);
             if(bPreviousContactPoseValid&&PreviousFlame.bDamaging)
                 for(int32 Step=1;Step<16&&!bHit;++Step)
                 {
