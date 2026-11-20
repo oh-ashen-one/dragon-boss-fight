@@ -199,3 +199,41 @@ Consequence: the branch merges after its regression (it already beats the refere
 chest in frame at least 70 %, parts near the lens fully faded before they cover a quarter of the frame, view motion
 capped outside impact kicks, the knight kept clear of the HUD.
 
+## Impacts blind review 3 — 2026-11-19 20:30 ET, second approach against the reference
+
+Opus critic, sides hidden (labels R and S at random; key outside the pack), silent films: our 74 s two-hand victory on
+the impacts second approach (`veyr-b2impact-victory-2h.mp4`, branch `fable/quality-goal-B2impact` `e3e36c2`, package
+11) against the 51 s reference fight cut. One aspect only: weight of impacts.
+
+**Verdict: OURS CLEARLY BETTER** (the first review of this aspect, on phase B, was "reference clearly better").
+
+| | Ours | Reference |
+|---|---|---|
+| Hero hits judged | 9, all read, same feedback each time | 3 judgeable |
+| Flash | on the contact frame, 10-14 frames | white puff 6 frames, then smoke over the contact |
+| Blade held (hit-stop) | 8-10 frames at 60 fps | 0 |
+| Zoom punch | 5.3-6.2 % | 3.3 % once |
+| Shake | 2.1-4.8 % of height, about 15 frames | 1.3-3.2 %, 6-8 frames |
+| Boss hits on the hero | no shake (under 0.7 %), no flash | 3-4.9 % shake, one 11 % kick |
+
+Our faults, worst first: a hit at 13.78 s whites out half the screen, turns the claw flat yellow for 10 frames and the
+old camera snaps away; the boss's hits on the hero get no feedback at all ("weaker than the hero's taps"); the struck
+leg does not visibly move at fight distance (0 frames measured); light and heavy hits differ only by the tint; shake
+starts 2-4 frames late. Capture note: 1,881 of 4,447 of our frames repeat (about 35 game frames per second in a 60 fps
+file). Full text: `Local/quality-goal/review-W-blind3-impacts.md`.
+
+Consequence: the branch merges once its band and regression pass; the five faults are the next pass.
+
+## Standing after 2026-11-19 20:30 ET
+
+| Aspect | Latest blind verdict | On which build | In the goal branch |
+|---|---|---|---|
+| Lighting and picture | ours slightly better | picture polish round | yes, installed |
+| Boss animation | ours clearly better | playback round 1 film | no (band not yet in) |
+| Sound | ours clearly better | sound pass 2 (clips slightly) | no (mix calibration running) |
+| Camera | ours slightly better | steady view, package 20 | no (merge pending its identity check) |
+| Weight of impacts | ours clearly better | impacts second approach | no (band and regression pending) |
+| Hero model and movement | not reviewed | | Greystone films pending |
+
+"Done" needs all six on ONE final film of the integrated build, reviewed blind again.
+
