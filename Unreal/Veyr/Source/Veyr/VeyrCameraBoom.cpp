@@ -926,6 +926,8 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
             const FVector PV=A.LastCamera+A.LastView.GetForwardVector()*1500.f,PS=A.LastCamera+A.LastSteer.GetForwardVector()*1500.f;
             ViewPx=ProjectToView(PV,Camera,View,HorizontalFovDeg,Asp,U,V)?FMath::Sqrt(FMath::Square(U*320.f)+FMath::Square(V*320.f/Asp)):640.f;
             SteerPx=ProjectToView(PS,Camera,Steer,HorizontalFovDeg,Asp,U,V)?FMath::Sqrt(FMath::Square(U*320.f)+FMath::Square(V*320.f/Asp)):640.f;
+            // Per 1/30 s (the film's frame), so it compares with the critic's per-frame measure at 30 fps.
+            if(Dt>0.f){const float K=1.f/(30.f*Dt);ViewPx*=K;SteerPx*=K;}
         }
         if(!bTeleport)
         {
