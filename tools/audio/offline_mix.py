@@ -243,7 +243,7 @@ def summary(x, d, lag=0.0, quiet=False):
                                low=float(np.median([r['low'] for r in v])), rise=np.median([r['rise'] for r in v], axis=0).round(1).tolist(),
                                corr=(float(np.median(cors)), sum(c >= .8 for c in cors), len(cors)) if cors else None)
     # fire sustained while the flame shows: median 200 Hz-8 kHz level over the flame against the 0.5 s before the ignition
-    ig = [e['t'] for e in d['events'] if e['kind'] == 'fireIgnition']; en = [e['t'] for e in d['events'] if e['kind'] == 'fireEnd']
+    ig = [e['t'] + lag for e in d['events'] if e['kind'] == 'fireIgnition']; en = [e['t'] + lag for e in d['events'] if e['kind'] == 'fireEnd']
     mono = x.mean(1); bp = sosfilt(butter(4, [200, 8000], btype='band', fs=SR, output='sos'), mono); sus = []
     for t0 in ig:
         t1 = min([t for t in en if t > t0 + .2] or [t0 + 1.5])
@@ -293,6 +293,22 @@ def report(res):
         print(f"  {k:15} n={v['n']:3} full {v['full']:6.1f}  2-8k {v['high']:6.1f}  <200 {v['low']:6.1f}  rise {v['rise']}  {cs}")
 
 
+def find_lag(real, tap):
+    """Recording time minus tap time (s): onset-envelope correlation at 50 ms, as rank_kinds.py, refined to 5 ms."""
+    def env(x, h):
+        n = int(SR * h); k = len(x) // n; return np.maximum(np.diff(10 * np.log10((x.mean(1)[:k * n].reshape(k, n) ** 2).mean(1) + 1e-10)), 0)
+    def best(h, lo, hi):
+        dr, dt = env(real, h), env(tap, h); b = (-1, 0)
+        for l in range(lo, hi):
+            x, y = (dr[l:], dt) if l >= 0 else (dr, dt[-l:]); n = min(len(x), len(y))
+            if n < 400: continue
+            c = np.corrcoef(x[:n], y[:n])[0, 1]
+            if c > b[0]: b = (c, l)
+        return b
+    c, l = best(.05, -600, 600); c2, l2 = best(.005, l * 10 - 12, l * 10 + 12)
+    return l2 * .005, c2
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('cues'); ap.add_argument('--content', default=str(Path(__file__).resolve().parents[2] / 'Unreal/Veyr/Content'))
     ap.add_argument('--gains'); ap.add_argument('--trim', type=float); ap.add_argument('--music', type=float, default=0.0)
@@ -303,6 +319,10 @@ def main():
     ap.add_argument('--top', type=float, default=-3.0, help='target median peak of the landing (dBFS)'); ap.add_argument('--step', type=float, default=1.2)
     ap.add_argument('--narrow', type=float, default=1.0, help='scale the pan of the dragon ground thuds (0.5 models the pass 5 placement on an older log)')
     ap.add_argument('--as-pass5', action='store_true', help='play a pass 4 log through the pass 5 level rule (no ceiling, no budget)')
+    ap.add_argument('--measure', help='a real recording (wav, 48 kHz stereo) of this log: measure it against every target instead of rendering')
+    ap.add_argument('--lag', type=float, default=0.0, help='with --measure: recording time minus tap time (s)')
+    ap.add_argument('--calibrate', help='the real master recording of this log: shift the effects and bed offsets by the median per-kind peak difference (real minus offline) first')
+    ap.add_argument('--clamp', type=float, default=6.0, help='--solve moves no kind gain more than this from where it started (dB)')
     ap.add_argument('--json'); ap.add_argument('--ladder', help='explicit targets, e.g. Landing:-2.5/Slam:-3.3/... (dBFS median peak)')
     a = ap.parse_args()
     d = json.loads(Path(a.cues).read_text()); global MASTER, EFFECTS
@@ -319,6 +339,11 @@ def main():
     if a.gains:
         for part in a.gains.split('/'):
             k, v = part.split(':'); gains[k] = float(v)
+    if a.measure:
+        x, sr = rdwav(Path(a.measure)); assert sr == SR, 'resample the recording to 48 kHz first'
+        res = summary(x, d, lag=a.lag); check(res)
+        if a.json: Path(a.json).write_text(json.dumps({'measured': a.measure, 'lag': a.lag, 'result': res}, indent=1, default=str))
+        return
     if a.verify:
         out, fx, peaks = mix_from(d, banks, beds, None, None, 0, 0.0, offset, limit, per_item=True)
         diffs = [p - it['peakDb'] for p, it in zip(peaks, d['items']) if p is not None and it['peakDb'] > -90]
@@ -333,19 +358,33 @@ def main():
         if beds is None: print('(no beds wav in this tap: the offline render has effects only)')
         return
     trim = a.trim if a.trim is not None else d.get('masterTrimDb', 0.0)
+    bed_offset = a.bed_offset
+    if a.calibrate:
+        real = rdwav(Path(a.calibrate))[0]; tapw = rdwav(Path(a.cues).with_name(stem + '-mix.wav'))[0]
+        lag, c = find_lag(real, tapw)
+        out, fx, _ = mix_from(d, banks, beds, None, None, 0, bed_offset, offset, limit)
+        rr = summary(real, d, lag=lag, quiet=True); ro = summary(out, d, quiet=True)
+        diffs = {k: rr['kinds'][k]['full'] - ro['kinds'][k]['full'] for k in ro['kinds'] if k in rr['kinds'] and ro['kinds'][k]['n'] >= 2}
+        shift = float(np.median(list(diffs.values())))
+        print(f'calibration: lag {lag:+.3f} s (corr {c:.2f}); real minus offline (logged gains): LUFS {rr["lufs"] - ro["lufs"]:+.2f}, per kind ' +
+              ', '.join(f'{k} {v:+.1f}' for k, v in diffs.items()) + f'; offsets shifted {shift:+.2f} dB')
+        offset += shift; bed_offset += shift
     if a.solve:
         targets = {k: a.top - i * a.step for i, k in enumerate(LADDER)}
         if a.ladder: targets = {k: float(v) for k, v in (p.split(':') for p in a.ladder.split('/'))}
+        base = {k: gains.get(k, 0.0) for k in targets}
+        for k in targets: gains.setdefault(k, 0.0)
         for it_ in range(8):
-            out, fx, _ = mix_from(d, banks, beds, gains, trim, a.music, a.bed_offset, offset, None)
+            out, fx, _ = mix_from(d, banks, beds, gains, trim, a.music, bed_offset, offset, None)
             res = summary(out, d, quiet=True)
             worst = 0
             for ev, kk in EVENT_KIND.items():
                 if ev in res['kinds'] and kk in targets:
-                    err = targets[kk] - res['kinds'][ev]['full']; worst = max(worst, abs(err)); gains[kk] += .85 * err
+                    err = targets[kk] - res['kinds'][ev]['full']; worst = max(worst, abs(err))
+                    gains[kk] = float(np.clip(gains[kk] + .85 * err, base[kk] - a.clamp, base[kk] + a.clamp))
             print(f'iteration {it_}: worst error {worst:.2f} dB')
             if worst < .3: break
-    out, fx, _ = mix_from(d, banks, beds, gains, trim, a.music, a.bed_offset, offset, limit)
+    out, fx, _ = mix_from(d, banks, beds, gains, trim, a.music, bed_offset, offset, limit)
     res = summary(out, d); check(res)
     print('gains: ' + '/'.join(f'{k}:{v:.1f}' for k, v in gains.items() if abs(v) > .01) + f'  trim {trim:.1f}  music {a.music:.1f}')
     if a.out: wrwav(a.out, out)
