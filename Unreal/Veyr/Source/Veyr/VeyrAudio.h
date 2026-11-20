@@ -5,6 +5,7 @@
 #include "VeyrCombatTypes.h"
 #include "VeyrGroundContacts.h"
 #include "Math/RandomStream.h"
+#include "Sound/SoundWaveProcedural.h"
 #include "VeyrAudio.generated.h"
 
 class AVeyrKnight;
@@ -12,6 +13,23 @@ class AVeyrDragon;
 class UAudioComponent;
 class USoundWaveProcedural;
 class FJsonObject;
+class USoundEffectSubmixPreset;
+
+/** A procedural wave that notes the wall time of the audio render's first pull (timing evidence only; plays exactly like its parent). */
+UCLASS()
+class VEYR_API UVeyrProbeWave : public USoundWaveProcedural
+{
+    GENERATED_BODY()
+public:
+    UVeyrProbeWave(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer){}
+    volatile double FirstPullWall=-1.0;
+    virtual int32 GeneratePCMData(uint8* PCMData,const int32 SamplesNeeded) override
+    {
+        const int32 N=Super::GeneratePCMData(PCMData,SamplesNeeded);
+        if(N>0&&FirstPullWall<0.0)FirstPullWall=FPlatformTime::Seconds();
+        return N;
+    }
+};
 
 /** Original, bounded combat feedback. Observes gameplay; never changes combat state. */
 UCLASS()
@@ -101,6 +119,25 @@ private:
 
     // ---- B1-B3 new behaviour (VeyrAudioNew.cpp). The legacy path above is untouched. ----
     enum class EPlace : uint8 { Flat, Head, Body, Part, World };
+    /** Mix pass 5 (2026-11-19): every layer belongs to one event kind; one static gain per kind, one master trim at the end. -VeyrMixPass4 restores pass 4 (solo ceiling + peak budget). */
+    enum class EMixKind : uint8 { Other, Landing, Slam, ClawTail, BodyFall, HeadHit, HeavyHit, FireIgnition, LightHit, Hurt, WalkStep, KnightStep, Wing, FireSustain, Presence, Count };
+    static constexpr int32 MixKindCount=static_cast<int32>(EMixKind::Count);
+    static const TCHAR* KindName(int32 Kind);
+    bool bMixTable=true;
+    EMixKind CurKind=EMixKind::Other;
+    float KindGainDb[MixKindCount]={};
+    float MasterTrimDb=0.f,MusicTrimDb=0.f;
+    float LimiterDb=-2.5f;
+    void LoadMixTable();
+    float MixTrim() const { return bMixTable?FMath::Pow(10.f,MasterTrimDb/20.f):1.f; }
+    float KindGain(EMixKind K) const { return bMixTable?FMath::Pow(10.f,KindGainDb[static_cast<int32>(K)]/20.f):1.f; }
+    // Timing and sync evidence: -VeyrAudioTiming (probe waves on hit layers), -VeyrSyncTest (white frame + click, then a loud tone that proves the limiter).
+    bool bProbeNext=false,bTiming=false,bSyncTest=false;
+    int32 SyncIndex=0; double SyncStartWall=-1.0; bool bSyncFadeOn=false;
+    UPROPERTY(Transient) TArray<TObjectPtr<UVeyrProbeWave>> ProbeWaves;
+    UPROPERTY(Transient) TObjectPtr<USoundEffectSubmixPreset> MasterLimiterPreset;
+    void TickSyncTest();
+    float TapTiltFc=0.f,TapTiltK=-1.f; int32 TapProbe=-1;
     struct FCueBank
     {
         TArray<TArray<int16>> Variants;
@@ -111,7 +148,7 @@ private:
         bool bMissingLogged=false;
     };
     struct FTimedEvent { float Pos=0.f; bool bPhase=true; ECue Cue=ECue::Count; float Level=1.f; FName Where=NAME_None; uint8 Role=0; float PitchMul=1.f; };
-    struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; uint8 Role=0; float PitchMul=1.f; uint8 Tilt=0; };
+    struct FPending { double At=0.0; ECue Cue=ECue::Count; float Volume=1.f; EPlace Place=EPlace::Flat; FVector World=FVector::ZeroVector; FName Part=NAME_None; float Inner=0.f,Falloff=0.f; uint8 Role=0; float PitchMul=1.f; uint8 Tilt=0; EMixKind Kind=EMixKind::Other; };
     struct FExpect { bool bActive=false; double Deadline=0.0; ECue Cue=ECue::Count; float Volume=1.f; ECue Second=ECue::Count; float SecondVolume=1.f; };
 
     bool bNewSet=false,bLoadedOnce=false,bLegacyCues=false;
@@ -151,6 +188,7 @@ private:
         double T=0.0; int32 Cue=0,Variant=0; float Volume=0.f,Level=0.f,Pitch=1.f,Dist=0.f,Gain=1.f,Seconds=0.f;
         uint8 Place=0; bool bRandom=false; FString Label; float Pan=0.f; double Wall=0.0; float GameT=0.f;
         float PeakDb=-120.f,RmsDb=-120.f,MusicRmsDb=-120.f;
+        uint8 Kind=0; float KindGain=1.f,Trim=1.f,TiltFc=0.f,TiltK=-1.f; int32 Probe=-1; uint64 Frame=0;
     };
     bool bTap=false,bAudition=false,bAuditionDone=false;
     int32 TapSession=0;
@@ -177,7 +215,7 @@ private:
     TArray<FTapContact> TapContacts;
     TArray<FTapFrame> TapTrace;
     FTapFrame TapNow;
-    struct FTapEvent { FString Kind; double T=0.0; double Wall=0.0; float GameT=0.f; };
+    struct FTapEvent { FString Kind; double T=0.0; double Wall=0.0; float GameT=0.f; uint64 Frame=0; };
     TArray<FTapEvent> TapEvents;
     float TapOffsetDb=-9.f; // the same measured engine factor, so the tap shows what the player hears   // -VeyrAudioTapOffsetDb: what the real output differs from the model (measured on a capture)
     void TapEvent(const TCHAR* Kind);

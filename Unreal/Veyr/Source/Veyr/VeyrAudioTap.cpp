@@ -89,8 +89,8 @@ void AVeyrAudio::TapTick()
         &&!(Dragon.IsValid()&&Dragon->IsDead())&&!Knight->IsDead();
     const float FinalGain=bAudioPolish&&Dragon.IsValid()&&Dragon->Health<=Dragon->MaxHealth*.25f?1.15f:1.f;
     FTapGain G;G.T=T;
-    G.Music=Live?MasterVolume*MusicVolume*.32f*(bAudioPolish?MusicDuckGain*MusicEnvelope*FinalGain:1.f):0.f;
-    G.Ambience=Live&&!BedPCM[1].IsEmpty()?MasterVolume*EffectsVolume*.22f:0.f;
+    G.Music=Live?MasterVolume*MusicVolume*.32f*(bAudioPolish?MusicDuckGain*MusicEnvelope*FinalGain:1.f)*MixTrim()*(bMixTable?FMath::Pow(10.f,MusicTrimDb/20.f):1.f):0.f;
+    G.Ambience=Live&&!BedPCM[1].IsEmpty()?MasterVolume*EffectsVolume*.22f*MixTrim():0.f;
     if(Live&&TapMusicStart<0)TapMusicStart=T;
     TapGains.Add(G);
 }
@@ -130,6 +130,8 @@ void AVeyrAudio::TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Vo
     FTapItem Item;Item.T=T;Item.Cue=static_cast<int32>(Cue);Item.Variant=Variant;Item.Volume=Volume;Item.Level=Level;Item.Pitch=Pitch;
     Item.Pan=Pan;Item.Wall=FPlatformTime::Seconds();Item.GameT=GetWorld()?GetWorld()->GetTimeSeconds():0.f;Item.Dist=Dist;Item.Gain=Atten;Item.Seconds=float(Frames)/TapRate;Item.Place=static_cast<uint8>(Place);Item.bRandom=bRandom;
     Item.Label=TapLabel;Item.PeakDb=ToDb(Peak);Item.RmsDb=ToDb(std::sqrt(SumSq/FMath::Max<double>(1.0,Frames*2.0)));
+    Item.Kind=static_cast<uint8>(CurKind);Item.KindGain=KindGain(CurKind);Item.Trim=MixTrim();Item.TiltFc=TapTiltFc;Item.TiltK=TapTiltK;Item.Probe=TapProbe;Item.Frame=GFrameCounter;
+    TapTiltFc=0.f;TapTiltK=-1.f;TapProbe=-1;
     TapItems.Add(Item);
 }
 
@@ -238,7 +240,17 @@ void AVeyrAudio::TapWrite(const FString& Stem)
     TArray<float> Mixed;Mixed.SetNumUninitialized(Frames*2);
     for(int32 I=0;I<Frames*2;++I)Mixed[I]=TapFx[I]+(TapBeds.IsValidIndex(I)?TapBeds[I]:0.f);
     const bool bLimited=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoMasterLimiter"));
-    if(bLimited)ApplyLimiter(Mixed,FMath::Pow(10.f,-1.5f/20.f),240,140.f);
+    if(bLimited)ApplyLimiter(Mixed,FMath::Pow(10.f,(bMixTable?LimiterDb:-1.5f)/20.f),240,140.f);
+    {
+        // The beds alone (music + ambience at their live gains, before the limiter): tools/audio/offline_mix.py re-renders the effects from the items.
+        TArray<uint8> Bw;Bw.SetNumUninitialized(44+Frames*4);
+        auto B32=[&Bw](int32 At,uint32 V){FMemory::Memcpy(&Bw[At],&V,4);};
+        auto B16=[&Bw](int32 At,uint16 V){FMemory::Memcpy(&Bw[At],&V,2);};
+        FMemory::Memcpy(&Bw[0],"RIFF",4);B32(4,36+Frames*4);FMemory::Memcpy(&Bw[8],"WAVEfmt ",8);B32(16,16);B16(20,1);B16(22,2);B32(24,TapRate);B32(28,TapRate*4);B16(32,4);B16(34,16);
+        FMemory::Memcpy(&Bw[36],"data",4);B32(40,Frames*4);
+        for(int32 I=0;I<Frames*2;++I){const int16 Q=int16(FMath::Clamp(TapBeds.IsValidIndex(I)?TapBeds[I]:0.f,-1.f,1.f)*32767.f);FMemory::Memcpy(&Bw[44+I*2],&Q,2);}
+        FFileHelper::SaveArrayToFile(Bw,*(TapDir/(Stem+TEXT("-beds.wav"))));
+    }
     // Master stats and the wav.
     TArray<uint8> Wav;
     Wav.SetNumUninitialized(44+Frames*4);
@@ -276,6 +288,9 @@ void AVeyrAudio::TapWrite(const FString& Stem)
         O->SetNumberField(TEXT("distanceCm"),I.Dist);O->SetNumberField(TEXT("pan"),I.Pan);O->SetNumberField(TEXT("wall"),I.Wall);O->SetNumberField(TEXT("gameT"),I.GameT);O->SetNumberField(TEXT("attenuation"),I.Gain);O->SetNumberField(TEXT("seconds"),I.Seconds);
         O->SetNumberField(TEXT("peakDb"),I.PeakDb);O->SetNumberField(TEXT("rmsDb"),I.RmsDb);O->SetNumberField(TEXT("musicRmsDb"),MusicDb);
         O->SetNumberField(TEXT("aboveMusicDb"),I.RmsDb-MusicDb);O->SetBoolField(TEXT("randomPhase"),I.bRandom);if(!I.Label.IsEmpty())O->SetStringField(TEXT("label"),I.Label);
+        O->SetStringField(TEXT("kind"),KindName(I.Kind));O->SetNumberField(TEXT("kindGain"),I.KindGain);O->SetNumberField(TEXT("trim"),I.Trim);O->SetNumberField(TEXT("frame"),double(I.Frame));
+        if(I.TiltK>=0.f){O->SetNumberField(TEXT("tiltFc"),I.TiltFc);O->SetNumberField(TEXT("tiltK"),I.TiltK);}
+        if(I.Probe>=0&&ProbeWaves.IsValidIndex(I.Probe)&&ProbeWaves[I.Probe])O->SetNumberField(TEXT("firstPullWall"),ProbeWaves[I.Probe]->FirstPullWall);
         Items.Add(MakeShared<FJsonValueObject>(O));
         FCueSum& S=Sum.FindOrAdd(I.Cue);
         ++S.N;if(S.Hist.Num()<=I.Variant)S.Hist.SetNumZeroed(I.Variant+1);++S.Hist[I.Variant];
@@ -298,6 +313,9 @@ void AVeyrAudio::TapWrite(const FString& Stem)
     Root->SetStringField(TEXT("note"),TEXT("Software mix of what the code submits (linear distance curve, equal-power pan, flat cues centred); not the engine's output."));
     Root->SetBoolField(TEXT("newSet"),bNewSet);Root->SetBoolField(TEXT("audition"),bAudition);Root->SetBoolField(TEXT("masterLimiterModelled"),bLimited);Root->SetNumberField(TEXT("tapOffsetDb"),TapOffsetDb);Root->SetNumberField(TEXT("makeupDb"),MakeupDb);
     Root->SetNumberField(TEXT("seconds"),double(Frames)/TapRate);
+    Root->SetBoolField(TEXT("mixTable"),bMixTable);Root->SetNumberField(TEXT("masterTrimDb"),MasterTrimDb);Root->SetNumberField(TEXT("musicTrimDb"),MusicTrimDb);Root->SetNumberField(TEXT("limiterDb"),bMixTable?LimiterDb:-1.5f);
+    Root->SetNumberField(TEXT("masterVolume"),MasterVolume);Root->SetNumberField(TEXT("effectsVolume"),EffectsVolume);Root->SetNumberField(TEXT("tapT0Wall"),TapT0>=0?FPlatformTime::Seconds()-(AudioNow()-TapT0):0.0);
+    {TSharedRef<FJsonObject> Kg=MakeShared<FJsonObject>();for(int32 K=0;K<MixKindCount;++K)Kg->SetNumberField(KindName(K),KindGainDb[K]);Root->SetObjectField(TEXT("kindGainDb"),Kg);}
     Root->SetNumberField(TEXT("masterPeakDb"),ToDb(Peak));Root->SetNumberField(TEXT("clippedSamples"),Clipped);
     Root->SetNumberField(TEXT("effectsRmsDbOverActive"),ActiveFx>0?ToDb(std::sqrt(SumFx/double(ActiveFx))):-120.0);
     Root->SetNumberField(TEXT("bedsRmsDbOverAll"),Frames>0?ToDb(std::sqrt(SumBed/(Frames*2.0))):-120.0);
@@ -317,10 +335,13 @@ void AVeyrAudio::TapWrite(const FString& Stem)
         TArray<TSharedPtr<FJsonValue>> Es;
         for(const FTapEvent& E:TapEvents)
         {
-            TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();O->SetStringField(TEXT("kind"),E.Kind);O->SetNumberField(TEXT("t"),E.T);O->SetNumberField(TEXT("wall"),E.Wall);O->SetNumberField(TEXT("gameT"),E.GameT);
+            TSharedRef<FJsonObject> O=MakeShared<FJsonObject>();O->SetStringField(TEXT("kind"),E.Kind);O->SetNumberField(TEXT("t"),E.T);O->SetNumberField(TEXT("wall"),E.Wall);O->SetNumberField(TEXT("gameT"),E.GameT);O->SetNumberField(TEXT("frame"),double(E.Frame));
             Es.Add(MakeShared<FJsonValueObject>(O));
         }
         Root->SetArrayField(TEXT("events"),Es);
+        TArray<TSharedPtr<FJsonValue>> Pulls;
+        for(const TObjectPtr<UVeyrProbeWave>& W:ProbeWaves)Pulls.Add(MakeShared<FJsonValueNumber>(W?double(W->FirstPullWall):-1.0));
+        Root->SetArrayField(TEXT("probePulls"),Pulls);
         // Per-frame trace (columns): time, game time, dt, knight foot heights (cm above the floor), knight speed, dragon sole clearances (cm).
         TSharedRef<FJsonObject> Tr=MakeShared<FJsonObject>();
         auto Col=[&](const TCHAR* Name,TFunction<double(const FTapFrame&)> F)

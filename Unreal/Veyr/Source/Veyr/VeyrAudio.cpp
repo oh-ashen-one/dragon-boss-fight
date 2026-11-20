@@ -82,6 +82,7 @@ void AVeyrAudio::Initialize(AVeyrKnight* InKnight, AVeyrDragon* InDragon)
         else if(FParse::Param(FCommandLine::Get(),TEXT("VeyrStompPass3")))bStompHierarchy=false;
         FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioMakeupDb="),MakeupDb);
         FParse::Value(FCommandLine::Get(),TEXT("VeyrAudioTapOffsetDb="),TapOffsetDb);
+        LoadMixTable();
         TapInit();
         if(!bLegacyCues&&!bNewSet)UE_LOG(LogTemp,Error,TEXT("VEYR_AUDIO_NEW_SET_MISSING Content/Audio/Recorded20261118 not found: playing the PREVIOUS sounds (evidence audio.newSet=false)"));
     }
@@ -490,7 +491,9 @@ void AVeyrAudio::RefreshMix()
         if(VoiceEndTimes[I]>0&&VoiceFollowsDragon[I]&&Dragon.IsValid())Voices[I]->SetWorldLocation(Dragon->GetMouthLocation());
     }
     const float FinalGain=bAudioPolish&&Dragon.IsValid()&&Dragon->Health<=Dragon->MaxHealth*.25f?1.15f:1.f;
-    for(int32 I=0;I<Beds.Num();++I)Beds[I]->SetVolumeMultiplier(MasterVolume*(I==0?MusicVolume*.32f*(bAudioPolish?MusicDuckGain*MusicEnvelope*FinalGain:1.f):EffectsVolume*.22f));
+    // Mix pass 5: the master trim on the beds too (the music trim on the music alone); both 0 dB / off under -VeyrMixPass4.
+    const float BedTrim=bNewSet?MixTrim():1.f,MusicTrim=bNewSet&&bMixTable?FMath::Pow(10.f,MusicTrimDb/20.f):1.f;
+    for(int32 I=0;I<Beds.Num();++I)Beds[I]->SetVolumeMultiplier(BedTrim*MasterVolume*(I==0?MusicVolume*.32f*MusicTrim*(bAudioPolish?MusicDuckGain*MusicEnvelope*FinalGain:1.f):EffectsVolume*.22f));
 }
 void AVeyrAudio::UpdateBeds()
 {
