@@ -84,6 +84,13 @@ bool AVeyrKnight::UpdateGreystoneFootLock(float DeltaSeconds)
             // mesh frame and snaps when its release ends (mesh-frame pops 33-53 cm). Start the release on that entry.
             const bool BurstEntry=(NewTransition||Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack)&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Stagger||
                 Action==EVeyrKnightAction::RunStart||Action==EVeyrKnightAction::Backstep);
+            // Pass 2c: a roll moves the body ~60 cm in the 0.12 s a smooth release takes, so the foot chased the body
+            // in big steps (run->roll 63.6 cm). At the roll's first frame the held foot is still close to the clip's
+            // foot: let go at once there (one small catch-up) instead of dragging it through the dive.
+            if(NewTransition&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Backstep))
+            {
+                F=FGreystoneFootLock();Targets.Add(FTransform::Identity);Weights.Add(0.f);continue;
+            }
             if(Lifted||Reach>ReachCm||Replanted||OutOfLeg||BurstEntry)
             {
                 F.bReleasing=true;F.ReleaseSeconds=0.f;
