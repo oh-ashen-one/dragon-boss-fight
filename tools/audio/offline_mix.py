@@ -220,7 +220,7 @@ def measure(x, events, lag=0.0):
     lo = sosfilt(butter(4, 200, btype='low', fs=SR, output='sos'), mono)
     N = int(.033 * SR); rows = {}
     for e in events:
-        i = int((e['t'] + lag) * SR)
+        i = int((e['t'] + (lag(e['t']) if callable(lag) else lag)) * SR)
         if i < 16 * N or i + int(.3 * SR) > len(mono): continue
         n = int(.25 * SR)
         full = 20 * np.log10(np.abs(mono[i:i + n]).max() + 1e-9); high = 20 * np.log10(np.abs(hi[i:i + n]).max() + 1e-9)
@@ -243,7 +243,8 @@ def summary(x, d, lag=0.0, quiet=False):
                                low=float(np.median([r['low'] for r in v])), rise=np.median([r['rise'] for r in v], axis=0).round(1).tolist(),
                                corr=(float(np.median(cors)), sum(c >= .8 for c in cors), len(cors)) if cors else None)
     # fire sustained while the flame shows: median 200 Hz-8 kHz level over the flame against the 0.5 s before the ignition
-    ig = [e['t'] + lag for e in d['events'] if e['kind'] == 'fireIgnition']; en = [e['t'] + lag for e in d['events'] if e['kind'] == 'fireEnd']
+    L = lag if callable(lag) else (lambda t: lag)
+    ig = [e['t'] + L(e['t']) for e in d['events'] if e['kind'] == 'fireIgnition']; en = [e['t'] + L(e['t']) for e in d['events'] if e['kind'] == 'fireEnd']
     mono = x.mean(1); bp = sosfilt(butter(4, [200, 8000], btype='band', fs=SR, output='sos'), mono); sus = []
     for t0 in ig:
         t1 = min([t for t in en if t > t0 + .2] or [t0 + 1.5])
@@ -309,6 +310,34 @@ def find_lag(real, tap):
     return l2 * .005, c2
 
 
+def lag_map(real, tap, block=10.0, search=3.0):
+    """Recording time minus tap time as a function of tap time. The master recording loses time when the audio render falls behind
+    (under capture load a 106 s fight recorded about 1.7 s short), so one constant lag misplaces late events. Per 10 s block (5 s hop):
+    the onset-envelope correlation peak within +-3 s of the global lag at 10 ms; blocks whose peak is weak keep their neighbour's lag."""
+    g, _ = find_lag(real, tap); h = .01; n = int(SR * h)
+    def env(x):
+        k = len(x) // n; return np.maximum(np.diff(10 * np.log10((x.mean(1)[:k * n].reshape(k, n) ** 2).mean(1) + 1e-10)), 0)
+    er, et = env(real), env(tap); B = int(block / h); S = int(search / h); ts, ls = [], []
+    for c0 in range(0, len(et) - B, B // 2):
+        y = et[c0:c0 + B]
+        if y.std() == 0: continue
+        best = (-1, 0)
+        for l in range(int(g / h) - S, int(g / h) + S + 1):
+            a0 = c0 + l
+            if a0 < 0 or a0 + B > len(er): continue
+            x = er[a0:a0 + B]
+            if x.std() == 0: continue
+            cc = np.corrcoef(x, y)[0, 1]
+            if cc > best[0]: best = (cc, l)
+        ts.append((c0 + B / 2) * h); ls.append(best[1] * h if best[0] > .3 else np.nan)
+    ts, ls = np.array(ts), np.array(ls)
+    ok = ~np.isnan(ls)
+    if ok.sum() == 0: return (lambda t: g), [(float(g), 0.0)]
+    ls = np.interp(ts, ts[ok], ls[ok])
+    med = np.array([np.median(ls[max(0, i - 1):i + 2]) for i in range(len(ls))])
+    return (lambda t: float(np.interp(t, ts, med))), list(zip(ts.round(1).tolist(), med.round(3).tolist()))
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('cues'); ap.add_argument('--content', default=str(Path(__file__).resolve().parents[2] / 'Unreal/Veyr/Content'))
     ap.add_argument('--gains'); ap.add_argument('--trim', type=float); ap.add_argument('--music', type=float, default=0.0)
@@ -320,7 +349,7 @@ def main():
     ap.add_argument('--narrow', type=float, default=1.0, help='scale the pan of the dragon ground thuds (0.5 models the pass 5 placement on an older log)')
     ap.add_argument('--as-pass5', action='store_true', help='play a pass 4 log through the pass 5 level rule (no ceiling, no budget)')
     ap.add_argument('--measure', help='a real recording (wav, 48 kHz stereo) of this log: measure it against every target instead of rendering')
-    ap.add_argument('--lag', type=float, default=0.0, help='with --measure: recording time minus tap time (s)')
+    ap.add_argument('--lag', type=float, help='with --measure: recording time minus tap time (s); default: a local lag map from the tap mix')
     ap.add_argument('--calibrate', help='the real master recording of this log: shift the effects and bed offsets by the median per-kind peak difference (real minus offline) first')
     ap.add_argument('--clamp', type=float, default=6.0, help='--solve moves no kind gain more than this from where it started (dB)')
     ap.add_argument('--json'); ap.add_argument('--ladder', help='explicit targets, e.g. Landing:-2.5/Slam:-3.3/... (dBFS median peak)')
@@ -341,7 +370,11 @@ def main():
             k, v = part.split(':'); gains[k] = float(v)
     if a.measure:
         x, sr = rdwav(Path(a.measure)); assert sr == SR, 'resample the recording to 48 kHz first'
-        res = summary(x, d, lag=a.lag); check(res)
+        if a.lag is not None: lag = a.lag; lm = None
+        else:
+            lag, lm = lag_map(x, rdwav(Path(a.cues).with_name(stem + '-mix.wav'))[0])
+            print('local lag (tap s, recording minus tap s): ' + ' '.join(f'{t:.0f}:{l:+.2f}' for t, l in lm[::2]))
+        res = summary(x, d, lag=lag); check(res)
         if a.json: Path(a.json).write_text(json.dumps({'measured': a.measure, 'lag': a.lag, 'result': res}, indent=1, default=str))
         return
     if a.verify:
@@ -361,12 +394,12 @@ def main():
     bed_offset = a.bed_offset
     if a.calibrate:
         real = rdwav(Path(a.calibrate))[0]; tapw = rdwav(Path(a.cues).with_name(stem + '-mix.wav'))[0]
-        lag, c = find_lag(real, tapw)
+        lag, lm = lag_map(real, tapw); c = float('nan')
         out, fx, _ = mix_from(d, banks, beds, None, None, 0, bed_offset, offset, limit)
         rr = summary(real, d, lag=lag, quiet=True); ro = summary(out, d, quiet=True)
         diffs = {k: rr['kinds'][k]['full'] - ro['kinds'][k]['full'] for k in ro['kinds'] if k in rr['kinds'] and ro['kinds'][k]['n'] >= 2}
         shift = float(np.median(list(diffs.values())))
-        print(f'calibration: lag {lag:+.3f} s (corr {c:.2f}); real minus offline (logged gains): LUFS {rr["lufs"] - ro["lufs"]:+.2f}, per kind ' +
+        print(f'calibration: local lag {lm[0][1]:+.3f} .. {lm[-1][1]:+.3f} s; real minus offline (logged gains): LUFS {rr["lufs"] - ro["lufs"]:+.2f}, per kind ' +
               ', '.join(f'{k} {v:+.1f}' for k, v in diffs.items()) + f'; offsets shifted {shift:+.2f} dB')
         offset += shift; bed_offset += shift
     if a.solve:

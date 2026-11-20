@@ -1203,11 +1203,12 @@ void AVeyrAudio::LoadMixTable()
     // -VeyrMixPass4 restores the pass 4 behaviour (per-voice solo ceiling, coincident-peak budget, hit classes by volume, limiter at -1.5).
     // Tuning without a rebuild: -VeyrMixGains=Landing:2/Slam:-1 (dB per kind), -VeyrMixTrimDb=<dB>, -VeyrMusicTrimDb=<dB>, -VeyrLimiterDb=<dBFS>.
     static const float Defaults[MixKindCount]={
-        /*Other*/0.f,/*Landing*/.8f,/*Slam*/-4.f,/*ClawTail*/1.1f,/*BodyFall*/.5f,/*HeadHit*/-11.f,/*HeavyHit*/-7.7f,/*FireIgnition*/-10.7f,
-        /*LightHit*/-3.2f,/*Hurt*/-9.5f,/*WalkStep*/3.2f,/*KnightStep*/-19.2f,/*Wing*/-6.f,/*FireSustain*/6.f,/*Presence*/-13.f};
+        /*Other*/0.f,/*Landing*/.8f,/*Slam*/-4.f,/*ClawTail*/1.1f,/*BodyFall*/.5f,/*HeadHit*/-11.f,/*HeavyHit*/-7.7f,/*FireIgnition*/-10.2f,
+        /*LightHit*/-3.8f,/*Hurt*/-9.5f,/*WalkStep*/3.2f,/*KnightStep*/-19.2f,/*Wing*/-6.f,/*FireSustain*/6.f,/*Presence*/-13.f};
     // Solved offline (offline_mix.py --solve, ladder Landing -2 ... KnightStep -15.5 dBFS median mono peak) on the r5 victory log replayed
     // through this level rule, then re-solved on the pass 5 sync-test log calibrated against its real master (20:24, offline_mix.py
-    // --calibrate --solve --clamp 4); head +1.4 (its low-band rise), wing -6 (its lows under a walking step) by hand.
+    // --calibrate --solve --clamp 4); head +1.4 (its low-band rise), wing -6 (its lows under a walking step), fire
+    // ignition +.5 and light -.6 (they were 1.1 dB out of order in the first film) by hand.
     constexpr float DefaultTrimDb=0.f,DefaultMusicTrimDb=-4.f;
     bMixTable=!FParse::Param(FCommandLine::Get(),TEXT("VeyrMixPass4"));
     for(int32 K=0;K<MixKindCount;++K){KindGainDb[K]=Defaults[K];for(int32 Q=0;Q<CueCount;++Q)LayerGainDb[K][Q]=0.f;}
