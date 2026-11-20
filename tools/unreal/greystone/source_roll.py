@@ -86,7 +86,8 @@ for side, source_path in SOURCES.items():
     controller = seq.get_editor_property('controller')
     controller.open_bracket(unreal.Text('Greystone roll root hold'), False)
     controller.add_bone_curve('root', False)
-    controller.set_bone_track_keys('root', [unreal.Vector(*first_root[1])] * frames, [unreal.Quat(*first_root[0])] * frames,
+    ref_root = g.from_unreal(g_world['root'])  # root has no parent: its reference world transform is its local one
+    controller.set_bone_track_keys('root', [unreal.Vector(*ref_root[1])] * frames, [unreal.Quat(*ref_root[0])] * frames,
                                    [unreal.Vector(1.0, 1.0, 1.0)] * frames, False)
     controller.close_bracket(False)
     # If the retargeter put the travel on the pelvis instead, take the pelvis's horizontal drift out too (its height and
@@ -123,11 +124,16 @@ for side, source_path in SOURCES.items():
                      'footZ': min(b['ball_l'][2], b['ball_r'][2], b['foot_l'][2], b['foot_r'][2]) - floor,
                      'headAbovePelvis': b['head'][2] - b['pelvis'][2], 'pelvisX': b['pelvis'][0], 'pelvisY': b['pelvis'][1],
                      'swordTipZ': b['sword_top'][2] - floor, 'handToSwordCm': math.dist(b['hand_r'], b['sword_bottom'])})
-    contact = next((r['frame'] for r in rows if r['footZ'] < min(x['footZ'] for x in rows) + 6.0), 0)
+    # The clip is fall -> landing -> shoulder roll -> stand. Roll window: from the last grounded, still-upright frame
+    # before the most inverted frame (the landing crouch he dives from) to the first grounded upright frame after it.
+    stand = max(r['headAbovePelvis'] for r in rows)
+    ground = min(r['footZ'] for r in rows) + 12.0
     low = min(rows, key=lambda r: r['pelvisZ'])
     flip = min(rows, key=lambda r: r['headAbovePelvis'])
-    up = next((r['frame'] for r in rows if r['frame'] > low['frame'] and r['headAbovePelvis'] > 0.8 * rows[0]['headAbovePelvis']
-               and r['footZ'] < 15.0), frames - 1)
+    before = [r['frame'] for r in rows if r['frame'] < flip['frame'] and r['footZ'] < ground and r['headAbovePelvis'] > 0.55 * stand]
+    contact = before[-1] if before else next((r['frame'] for r in rows if r['footZ'] < ground), 0)
+    up = next((r['frame'] for r in rows if r['frame'] > flip['frame'] and r['headAbovePelvis'] > 0.75 * stand
+               and r['footZ'] < ground), frames - 1)
     made_clips[side] = (seq, length, frames, rows)
     receipt['clips'][side] = {'asset': target_path, 'frames': frames, 'lengthSeconds': length, 'rootTravelRemovedCm': root_moves,
                               'pelvisTravelRemovedCm': pelvis_travel_removed, 'pelvisParent': g_parents.get('pelvis'),
@@ -136,6 +142,7 @@ for side, source_path in SOURCES.items():
                               'pelvisTravelXYcm': math.dist((rows[0]['pelvisX'], rows[0]['pelvisY']), (rows[-1]['pelvisX'], rows[-1]['pelvisY'])),
                               'rows': rows}
 
+(out / 'roll.json').write_text(json.dumps(receipt, indent=1, default=str) + '\n')  # measured, before any apply
 side = opts.get('apply')
 if side:
     seq, length, frames, rows = made_clips[side]
@@ -144,15 +151,16 @@ if side:
     src = {str(k): v for k, v in knight.get_editor_property('clips').items()}['Roll']
     definition = unreal.load_asset(g.DEFINITION)
     clips = {str(k): v for k, v in definition.get_editor_property('clips').items()}
-    old = clips['Roll']
+    old = clips.get('RollKnightRetarget', clips['Roll'])
     r_k = src.get_editor_property('gameplay_play_rate') or 1.0
     s_k = src.get_editor_property('start_seconds')
     e_k = src.get_editor_property('end_seconds')
     e_k = src.get_editor_property('sequence').get_play_length() if e_k is None or e_k < 0 else e_k
     dur_k = (e_k - s_k) / r_k
     contact = receipt['clips'][side]['contactFrame']
-    s_n = float(opts.get('start', max(0, contact - 1) * length / max(1, frames - 1)))
-    end_n = float(opts.get('end', length))
+    up = receipt['clips'][side]['upright frame']
+    s_n = float(opts.get('start', contact * length / max(1, frames - 1)))
+    end_n = float(opts.get('end', up * length / max(1, frames - 1)))
     r_n = min(1.35, max(0.75, (end_n - s_n) / dur_k))
     e_n = min(length, s_n + dur_k * r_n)
 
@@ -176,7 +184,7 @@ if side:
     clip.set_editor_property('sequence', seq)
     clip.set_editor_property('start_seconds', s_n)
     clip.set_editor_property('end_seconds', e_n)
-    clip.set_editor_property('b_loop', False)
+    clip.set_editor_property('loop', False)
     clip.set_editor_property('gameplay_play_rate', r_n)
     clip.set_editor_property('root_translation_samples_cm', root)
     if yaw:
