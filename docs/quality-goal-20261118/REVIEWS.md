@@ -232,7 +232,7 @@ Consequence: the branch merges once its band and regression pass; the five fault
 | Boss animation | ours clearly better (round 1 and round 2) | playback round 2 film | no (one-hand band, fire aim) |
 | Sound | ours clearly better (pass 2 and the calibrated pass 6) | calibrated mix, pass 6 | no (merge pending its identity check) |
 | Camera | ours slightly better | steady view, package 20 | no (merge pending its identity check) |
-| Weight of impacts | ours clearly better | impacts second approach | no (band and regression pending) |
+| Weight of impacts | ours clearly better | impacts second approach | yes, merged 23:10 (not installed) |
 | Hero model and movement | ours slightly better against the reference (Greystone, first pass); Greystone clearly better than our old knight (second pass) | Greystone package 5 | no (real roll clip pending; playback merges first) |
 
 "Done" needs all six on ONE final film of the integrated build, reviewed blind again.
