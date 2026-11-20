@@ -219,7 +219,7 @@ void AVeyrImpactFx::HitBurst(const FVector& At,const FVector& Out,int32 Tier,flo
         // white flash-and-dust), all sized by the blow's tier and the dragon's size.
         FVeyrFeelTuning::FEffect E=VeyrFeelTuning().Hit[Tier];
         const float Body=FMath::Sqrt(FMath::Max(.25f,BodyScale));
-        if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*1.6f*Body,E.LifeSeconds))++HitAsset[Tier];else ++HitFallback[Tier];
+        if(SpawnAsset(5+Tier,At,Normal.Rotation(),E.Scale*1.6f*Body,-FMath::Min(E.LifeSeconds,.2f)) /* round 4: a pale sprite of the asset lay on the floor ~0.4 s */)++HitAsset[Tier];else ++HitFallback[Tier];
         // Round 3: the 1.7x, 0.45 s, opaque spark streaks lay on the floor as a white slab for half a second: streaks keep
         // their data size and opacity and live at most 0.25 s.
         E.Cards+=4;E.CardLife=FMath::Min(E.CardLife,.25f);
@@ -411,7 +411,8 @@ void AVeyrImpactFx::Tick(float DeltaSeconds)
         if(ComponentAge[I]>=100.f)continue;
         ComponentAge[I]+=DeltaSeconds;
         // Caps a looping source emitter: stop spawning after its life, let the last particles finish.
-        if(ComponentAge[I]>=ComponentLife[I]){if(IsValid(Components[I]))Components[I]->Deactivate();ComponentAge[I]=100.f;}
+        // A negative life is a hard stop (B2 contact burst): live particles die with the emitter, nothing lingers.
+        if(ComponentAge[I]>=FMath::Abs(ComponentLife[I])){if(IsValid(Components[I])){if(ComponentLife[I]<0.f)Components[I]->DeactivateImmediate();else Components[I]->Deactivate();}ComponentAge[I]=100.f;}
     }
     if(!bCardsDirty&&!bChipsDirty&&!bSparksDirty)return;
     FVector Camera=GetActorLocation();FRotator View;

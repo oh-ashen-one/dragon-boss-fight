@@ -112,7 +112,8 @@ private:
     void BuildChain(AVeyrDragon* Boss) const;
     // B6 ribbon
     static constexpr int32 RibbonMaxSamples=24,RibbonSub=4,RibbonMaxRows=(RibbonMaxSamples-1)*RibbonSub+1;
-    struct FRibbonSample { FVector Base=FVector::ZeroVector,Tip=FVector::ZeroVector; float Age=0.f,Strength=0.f; bool bHeavy=false; };
+    struct FRibbonSample { FVector Base=FVector::ZeroVector,Tip=FVector::ZeroVector; float Age=0.f,Strength=0.f; bool bHeavy=false,bCut=false; };
+    float RibbonCutAge=10.f; // B2: real seconds since a sword contact cut the trail drawn before it
     FRibbonSample RibbonSamples[RibbonMaxSamples]; int32 RibbonCount=0;
     TArray<FVector> RibbonVerts,RibbonNormals; TArray<FLinearColor> RibbonColors; TArray<FVector2D> RibbonUVs;
     TArray<FProcMeshTangent> RibbonTangents; TArray<int32> RibbonTris;

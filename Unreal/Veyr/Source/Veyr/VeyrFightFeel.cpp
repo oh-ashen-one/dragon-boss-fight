@@ -236,6 +236,7 @@ void AVeyrFightFeel::Tick(float DeltaSeconds)
     // B2: the struck part's snap runs on the real clock, so it shows within two frames of contact and holds through
     // the stop; the spring home runs on the game clock after it (-VeyrLegacyStopFx: all on the game clock).
     const bool bRealSnap=!bLegacy&&VeyrFeelSwitches::StopFx();
+    RibbonCutAge+=RealDelta;
     for(FStrike& S:Strikes)S.Age+=(bRealSnap&&S.Age<VeyrFeelTuning().StrikeSnapSeconds)?RealDelta:DeltaSeconds;
     {
         // B2: the contact burst plays in real time through the stop (sparks fly while the bodies hold).
@@ -624,6 +625,7 @@ void AVeyrFightFeel::SwordContact(AVeyrDragon* Boss,bool bHeavy)
     if(bHeavy&&VeyrFeelSwitches::SlowTail()&&bOwnsDilation){bPendingSlow=true;SlowTotal=T.SlowTailSeconds;}
     if(bHeavy&&VeyrFeelSwitches::ZoomPunch()){PunchAge=0.f;PunchAmp=T.PunchHeavy*FMath::Lerp(.75f,1.f,W);++ZoomPunches;}
     else if(!bHeavy&&T.PunchLight>0.f&&VeyrFeelSwitches::ZoomPunch()){PunchAge=0.f;PunchAmp=T.PunchLight;++ZoomPunches;}
+    if(VeyrFeelSwitches::StopFx()){for(int32 I=0;I<RibbonCount;++I)RibbonSamples[I].bCut=true;RibbonCutAge=0.f;}
     if(VeyrFeelSwitches::KickAfterSnap())
     {
         // B2: the camera kick starts two frames after contact so the struck leg's snap is seen before the view jumps.
@@ -870,7 +872,7 @@ void AVeyrFightFeel::UpdateRibbon(AVeyrKnight* Player,float GameDelta)
             if(RibbonCount==RibbonMaxSamples){for(int32 I=1;I<RibbonCount;++I)RibbonSamples[I-1]=RibbonSamples[I];--RibbonCount;}
             FRibbonSample& S=RibbonSamples[RibbonCount++];
             S.Base=FMath::Lerp(Base,Tip,FMath::Clamp(bWide?T.TrailBaseFraction*.5f:T.TrailBaseFraction,0.f,.9f));S.Tip=Tip;S.Age=0.f;
-            S.Strength=FMath::Clamp((Speed-300.f)/1500.f,bWide?.55f:.25f,1.f);
+            S.Strength=FMath::Clamp((Speed-300.f)/1500.f,bWide?.55f:.25f,1.f);S.bCut=false;
             S.bHeavy=Player->Action==EVeyrKnightAction::HeavyAttack||Player->Action==EVeyrKnightAction::LeapAttack;
             MaxRibbonWidthCm=FMath::Max(MaxRibbonWidthCm,static_cast<float>(FVector::Distance(S.Base,S.Tip)));
             ++TrailSamples;
@@ -899,6 +901,8 @@ void AVeyrFightFeel::UpdateRibbon(AVeyrKnight* Player,float GameDelta)
             const float Age=FMath::Clamp(FMath::Lerp(B.Age,C.Age,U)/Life,0.f,1.f);
             // The newest end fades in over its row: no hard edge at the blade.
             Alpha=FMath::Pow(1.f-Age,bWide?1.1f:1.6f)*FMath::Lerp(B.Strength,C.Strength,U)*(R==Rows-1?.35f:1.f);
+            // B2: the smear drawn before a contact fades on the real clock, gone 0.12 s after it, frozen frames included.
+            if(B.bCut||C.bCut)Alpha*=FMath::Square(FMath::Clamp(1.f-RibbonCutAge/.12f,0.f,1.f));
             Colour=(B.bHeavy||C.bHeavy)?Warm:Cool;
         }
         else{Inner=RibbonVerts[(Rows-1)*3];Outer=RibbonVerts[(Rows-1)*3+2]-(RibbonVerts[(Rows-1)*3+2]-Inner)*(bWide?.3f/1.3f:.08f/1.08f);}
