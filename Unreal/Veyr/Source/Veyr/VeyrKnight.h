@@ -401,6 +401,9 @@ private:
     void UpdateGreystoneIdleBreath(float DeltaSeconds,bool bMoving);
     float GreystoneTurnLagYaw=0.f,GreystonePreviousActorYaw=0.f,MaxGreystoneTurnLagYaw=0.f,GreystoneBreathWeight=0.f;
     bool bGreystoneTurnYawValid=false,bGreystoneBreathApplied=false;
+    void AddGreystoneSwordPin(TArray<struct FVeyrBonePin>& Pins);
+    FTransform GreystoneSwordGrip=FTransform::Identity;float GreystoneSwordPinWeight=0.f;bool bGreystoneSwordGripValid=false;
+    FString GreystoneBreathError;
     struct FLocomotionPhasePose { float Time=0.f,RootSpeed=0.f; FVector Points[4]; };
     struct FLocomotionPhaseCache { TArray<FLocomotionPhasePose> Poses; float NominalSpeed=0.f; };
     TMap<FName,FLocomotionPhaseCache> LocomotionPhaseCache;

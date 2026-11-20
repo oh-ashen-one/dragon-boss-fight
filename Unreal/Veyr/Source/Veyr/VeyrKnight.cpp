@@ -1615,20 +1615,49 @@ void AVeyrKnight::UpdateGreystoneIdleBreath(float DeltaSeconds,bool bMoving)
     // as bounded component-space additive rotations, faded in only while he stands in Ready. Visual only.
     static const bool bOff=GreystoneOptOut(TEXT("VeyrGreystoneNoBreath"));
     if(!bGreystoneActive||bOff||!ImportedPresentation)return;
+    // Roll tuck (blind critic E2: the retargeted roll dives flat and goes into a headstand, head on the cobbles). Curl
+    // the spine, neck and head forward and fold the hips and knees about the roll's own right axis through the middle of
+    // the roll, so he rolls over a rounded back. Visual only; -VeyrGreystoneNoTuck.
+    static const bool bNoTuck=GreystoneOptOut(TEXT("VeyrGreystoneNoTuck"));
+    const bool RollNow=(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack)&&ActionDuration>0.f;
+    float Tuck=0.f;
+    if(RollNow&&!bNoTuck)
+    {
+        const float X=ActionElapsed/ActionDuration;
+        Tuck=FMath::SmoothStep(.06f,.22f,X)*(1.f-FMath::SmoothStep(.50f,.72f,X));
+        if(Action==EVeyrKnightAction::RollAttack)Tuck*=FMath::Clamp(1.f-ActionElapsed/.6f,0.f,1.f);
+    }
     const bool Standing=Action==EVeyrKnightAction::Ready&&!bMoving&&IsGrounded();
     GreystoneBreathWeight=FMath::FInterpConstantTo(GreystoneBreathWeight,Standing?1.f:0.f,DeltaSeconds,Standing?1.2f:6.f);
-    if(GreystoneBreathWeight<=0.001f)
+    if(GreystoneBreathWeight<=0.001f&&Tuck<=0.001f)
     {
         if(bGreystoneBreathApplied){ImportedPresentation->SetComponentSpaceBoneRotations({});bGreystoneBreathApplied=false;}
         return;
     }
-    const float T=VisualClock,W=GreystoneBreathWeight;
-    const float Breath=FMath::Sin(T*2.f*PI*.27f)*2.2f*W,Shift=FMath::Sin(T*2.f*PI*.11f+.7f)*2.4f*W;
-    TMap<FName,FRotator> R;
-    static const FName Spine1(TEXT("spine_01")),Spine3(TEXT("spine_03")),Pelvis(TEXT("pelvis"));
-    if(ImportedPresentation->GetBoneIndex(Spine1)!=INDEX_NONE)R.Add(Spine1,FRotator(0.f,0.f,Shift));
-    if(ImportedPresentation->GetBoneIndex(Spine3)!=INDEX_NONE)R.Add(Spine3,FRotator(Breath,0.f,Shift*.35f));
+    TMap<FName,FQuat> Q;
+    auto Add=[&](const TCHAR* Name,const FQuat& R){const FName B(Name);if(ImportedPresentation->GetBoneIndex(B)==INDEX_NONE)return;FQuat& S=Q.FindOrAdd(B,FQuat::Identity);S=R*S;};
+    if(GreystoneBreathWeight>0.001f)
+    {
+        const float T=VisualClock,W=GreystoneBreathWeight;
+        const float Breath=FMath::Sin(T*2.f*PI*.27f)*2.2f*W,Shift=FMath::Sin(T*2.f*PI*.11f+.7f)*2.4f*W;
+        Add(TEXT("spine_01"),FRotator(0.f,0.f,Shift).Quaternion());
+        Add(TEXT("spine_03"),FRotator(Breath,0.f,Shift*.35f).Quaternion());
+    }
+    if(Tuck>0.001f)
+    {
+        // Pitch about the roll's right axis in world, moved into component space. Negative pitch on a forward-facing
+        // frame takes up toward forward: the spine curls forward; thighs fold the opposite way (knees up), calves back.
+        const FQuat Frame=FRotator(0.f,RollDirection.Rotation().Yaw,0.f).Quaternion();
+        const FQuat Comp=ImportedPresentation->GetComponentQuat();
+        auto Curl=[&](float Degrees){return Comp.Inverse()*Frame*FRotator(Degrees*Tuck,0.f,0.f).Quaternion()*Frame.Inverse()*Comp;};
+        Add(TEXT("spine_01"),Curl(-14.f));Add(TEXT("spine_02"),Curl(-14.f));Add(TEXT("spine_03"),Curl(-14.f));
+        Add(TEXT("neck_01"),Curl(-16.f));Add(TEXT("head"),Curl(-12.f));
+        Add(TEXT("thigh_l"),Curl(18.f));Add(TEXT("thigh_r"),Curl(18.f));Add(TEXT("calf_l"),Curl(-18.f));Add(TEXT("calf_r"),Curl(-18.f));
+    }
+    TMap<FName,FRotator> R;for(const auto& It:Q)R.Add(It.Key,It.Value.Rotator());
     if(R.Num()&&ImportedPresentation->SetComponentSpaceBoneRotations(R))bGreystoneBreathApplied=true;
+    else if(R.Num()&&ImportedPresentation->LastError!=GreystoneBreathError)
+    {GreystoneBreathError=ImportedPresentation->LastError;UE_LOG(LogTemp,Warning,TEXT("VEYR_GREYSTONE_TUCK %s"),*GreystoneBreathError);}
 }
 
 bool AVeyrKnight::PrepareGreystoneGameplayRig()
@@ -1905,7 +1934,10 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     // E4 pass 2: the roll dive went from standing to flat in 4 frames (the blind critic read it as a knockdown); 0.16 s.
     const float GreystoneAttackEntry=bGreystoneActive&&!bFlowTransition&&(IsAttackAction()||Action==EVeyrKnightAction::Stagger)?.18f:
         bGreystoneActive&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::Backstep)&&!GreystoneOptOut(TEXT("VeyrGreystoneSnapRoll"))?.16f:0.f;
-    const float BlendSeconds=GreystoneAttackEntry>0.f?GreystoneAttackEntry:bFlowTransition&&IsAttackAction()?.14f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
+    // E4 pass 2 (critic E2: getting up from the roll is a two-frame snap): a longer exit from a roll into Ready.
+    const float GreystoneRollExit=bGreystoneActive&&Action==EVeyrKnightAction::Ready&&ProofBlendFromClip.ToString().StartsWith(TEXT("Roll"))&&
+        !GreystoneOptOut(TEXT("VeyrGreystoneSnapRoll"))?.26f:0.f;
+    const float BlendSeconds=GreystoneRollExit>0.f?GreystoneRollExit:GreystoneAttackEntry>0.f?GreystoneAttackEntry:bFlowTransition&&IsAttackAction()?.14f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float Alpha=RunStartTail?FMath::Clamp((ActionElapsed-(ActionDuration-.30f))/.30f,0.f,1.f):
         bTransitionIdleWalkEdge||(bFlowTransition&&IsAttackAction())?FMath::SmoothStep(0.f,1.f,LinearAlpha):LinearAlpha;
@@ -2709,8 +2741,9 @@ void AVeyrKnight::UpdateGreystoneProps()
         Action==EVeyrKnightAction::GripToOneHand,ActionElapsed,ActionDuration);
     const float Heal=VeyrGreystone::ShieldHealWeight(Action==EVeyrKnightAction::Heal,ActionElapsed,ActionDuration);
     TArray<FVeyrBonePin> Pins;FString Error;
-    if(!VeyrGreystone::BuildShieldPins(CustomuseVisualDefinition,ImportedPresentation,Back,Heal,Pins,Error)||
-       !ImportedPresentation->SetBonePins(Pins))
+    bool PinsOk=VeyrGreystone::BuildShieldPins(CustomuseVisualDefinition,ImportedPresentation,Back,Heal,Pins,Error);
+    if(PinsOk)AddGreystoneSwordPin(Pins);
+    if(!PinsOk||!ImportedPresentation->SetBonePins(Pins))
     {
         const FString Message=Error.IsEmpty()?ImportedPresentation->LastError:Error;
         if(Message!=GreystoneDiagnostic)UE_LOG(LogTemp,Warning,TEXT("VEYR_GREYSTONE_PROPS %s"),*Message);
@@ -2718,6 +2751,31 @@ void AVeyrKnight::UpdateGreystoneProps()
         return;
     }
     GreystoneDiagnostic.Reset();
+}
+
+void AVeyrKnight::AddGreystoneSwordPin(TArray<FVeyrBonePin>& Pins)
+{
+    // E4 pass 2 (blind critic E2: through the dodge the sword stays horizontal while the body flips). The roll is the
+    // old knight's clip retargeted, and its weapon track is world-steady like the knight's rigid cage blade. Greystone's
+    // own clips carry his real grip: record sword_bottom relative to hand_r while a native clip plays in Ready, and pin
+    // the sword to the hand with that grip through rolls (eased in 0.12 s, out 0.30 s). -VeyrGreystoneFreeSwordRoll.
+    static const bool bOff=GreystoneOptOut(TEXT("VeyrGreystoneFreeSwordRoll"));
+    static const FName Hand(TEXT("hand_r")),Sword(VeyrGreystone::SwordBottomBone);
+    const int32 HandIndex=ImportedPresentation->GetBoneIndex(Hand),SwordIndex=ImportedPresentation->GetBoneIndex(Sword);
+    if(bOff||HandIndex==INDEX_NONE||SwordIndex==INDEX_NONE)return;
+    const float Dt=GetWorld()?GetWorld()->GetDeltaSeconds():1.f/60.f;
+    const bool Roll=Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Backstep;
+    if(Action==EVeyrKnightAction::Ready&&GreystoneSwordPinWeight<=0.f&&ImportedPresentation->bPoseEvaluated&&
+       ImportedPresentation->CurrentTransitionAlpha>=1.f)
+    {
+        const FTransform HandCS=ImportedPresentation->GetBoneTransform(HandIndex,FTransform::Identity);
+        const FTransform SwordCS=ImportedPresentation->GetBoneTransform(SwordIndex,FTransform::Identity);
+        GreystoneSwordGrip=SwordCS.GetRelativeTransform(HandCS);bGreystoneSwordGripValid=!GreystoneSwordGrip.ContainsNaN();
+    }
+    GreystoneSwordPinWeight=FMath::FInterpConstantTo(GreystoneSwordPinWeight,Roll?1.f:0.f,Dt,Roll?1.f/.12f:1.f/.30f);
+    if(!bGreystoneSwordGripValid||GreystoneSwordPinWeight<=0.f)return;
+    FVeyrBonePin Pin;Pin.Bone=Sword;Pin.Anchor=Hand;Pin.AnchorLocal=GreystoneSwordGrip;
+    Pin.Weight=FMath::SmoothStep(0.f,1.f,GreystoneSwordPinWeight);Pins.Add(Pin);
 }
 
 AVeyrKnight::FGreystoneMonitor& AVeyrKnight::GreystoneMonitorShared() const
