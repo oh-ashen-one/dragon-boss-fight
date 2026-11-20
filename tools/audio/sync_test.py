@@ -21,7 +21,7 @@ r = subprocess.run(['ffprobe', '-v', 'error', '-f', 'lavfi', '-i', f"movie={a.fi
                     '-of', 'json'], capture_output=True, text=True, check=True)
 fr = [(float(f['pts_time']), float(f['tags']['lavfi.signalstats.YAVG'])) for f in json.loads(r.stdout)['frames'] if 'tags' in f]
 t = np.array([x[0] for x in fr]); y = np.array([x[1] for x in fr])
-white = [t[i] for i in range(1, len(y)) if y[i] > 235 and y[i - 1] <= 235]
+white = [t[i] for i in range(1, len(y)) if y[i] > 200 and y[i - 1] <= 200]
 # audio
 wav = tmp / 'a.wav'; subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', a.film, '-vn', '-ac', '2', '-ar', '48000', str(wav)], check=True)
 w = wave.open(str(wav)); sr = w.getframerate(); x = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).reshape(-1, 2).astype(float) / 32768

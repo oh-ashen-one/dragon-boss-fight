@@ -656,6 +656,9 @@ void AVeyrAudio::InstallMasterChain()
     S.LinkMode=ESubmixEffectDynamicsChannelLinkMode::Peak;
     S.ThresholdDb=bMixTable?LimiterDb:-1.5f;S.KneeBandwidthDb=0.f;S.LookAheadMsec=5.f;S.AttackTimeMsec=1.f;S.ReleaseTimeMsec=140.f;
     S.InputGainDb=0.f;S.OutputGainDb=0.f;
+    // Mix pass 5: digital envelope (the analog-mode follower lags a transient by about 25 ms, longer than the 5 ms look-ahead, so the
+    // first 25 ms of a loud onset went through: the sync test's +3 dBFS tone clipped for 25 ms, then sat at -1 dBFS). -VeyrMixPass4: analog.
+    S.bAnalogMode=!bMixTable;
     Limiter->SetSettings(S);
     UAudioMixerBlueprintLibrary::AddMasterSubmixEffect(this,Limiter);
     UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_MASTER_LIMITER installed ceiling %.1f dBFS lookahead 5 ms release 140 ms (preset held)"),S.ThresholdDb);
@@ -1200,10 +1203,11 @@ void AVeyrAudio::LoadMixTable()
     // -VeyrMixPass4 restores the pass 4 behaviour (per-voice solo ceiling, coincident-peak budget, hit classes by volume, limiter at -1.5).
     // Tuning without a rebuild: -VeyrMixGains=Landing:2/Slam:-1 (dB per kind), -VeyrMixTrimDb=<dB>, -VeyrMusicTrimDb=<dB>, -VeyrLimiterDb=<dBFS>.
     static const float Defaults[MixKindCount]={
-        /*Other*/0.f,/*Landing*/.5f,/*Slam*/-3.6f,/*ClawTail*/.6f,/*BodyFall*/1.1f,/*HeadHit*/-10.4f,/*HeavyHit*/-7.f,/*FireIgnition*/-8.9f,
-        /*LightHit*/-3.4f,/*Hurt*/-5.5f,/*WalkStep*/5.3f,/*KnightStep*/-15.2f,/*Wing*/0.f,/*FireSustain*/6.f,/*Presence*/-13.f};
+        /*Other*/0.f,/*Landing*/.8f,/*Slam*/-4.f,/*ClawTail*/1.1f,/*BodyFall*/.5f,/*HeadHit*/-11.f,/*HeavyHit*/-7.7f,/*FireIgnition*/-10.7f,
+        /*LightHit*/-3.2f,/*Hurt*/-9.5f,/*WalkStep*/3.2f,/*KnightStep*/-19.2f,/*Wing*/-6.f,/*FireSustain*/6.f,/*Presence*/-13.f};
     // Solved offline (offline_mix.py --solve, ladder Landing -2 ... KnightStep -15.5 dBFS median mono peak) on the r5 victory log replayed
-    // through this level rule; first-pass values, refined on a pass 5 log with -VeyrMixGains.
+    // through this level rule, then re-solved on the pass 5 sync-test log calibrated against its real master (20:24, offline_mix.py
+    // --calibrate --solve --clamp 4); head +1.4 (its low-band rise), wing -6 (its lows under a walking step) by hand.
     constexpr float DefaultTrimDb=0.f,DefaultMusicTrimDb=-4.f;
     bMixTable=!FParse::Param(FCommandLine::Get(),TEXT("VeyrMixPass4"));
     for(int32 K=0;K<MixKindCount;++K){KindGainDb[K]=Defaults[K];for(int32 Q=0;Q<CueCount;++Q)LayerGainDb[K][Q]=0.f;}

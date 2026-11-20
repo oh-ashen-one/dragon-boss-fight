@@ -129,7 +129,7 @@ private:
     float LayerGainDb[MixKindCount][CueCount]={}; // per layer where needed: kind x cue (dB), e.g. the light hit's low layers, the knight's swings under Other
     float LayerGain(EMixKind K,ECue Cue) const { return bMixTable?FMath::Pow(10.f,LayerGainDb[static_cast<int32>(K)][static_cast<int32>(Cue)]/20.f):1.f; }
     float MasterTrimDb=0.f,MusicTrimDb=0.f;
-    float LimiterDb=-2.0f;
+    float LimiterDb=-3.0f;
     void LoadMixTable();
     float MixTrim() const { return bMixTable?FMath::Pow(10.f,MasterTrimDb/20.f):1.f; }
     float KindGain(EMixKind K) const { return bMixTable?FMath::Pow(10.f,KindGainDb[static_cast<int32>(K)]/20.f):1.f; }

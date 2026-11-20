@@ -233,6 +233,10 @@ void AVeyrGameMode::StartMixCapture()
     if(MixCaptureDirectory.IsEmpty()||MixCaptureStarted!=0||bMixCaptureFinished)return;
     UAudioMixerBlueprintLibrary::StartRecordingOutput(this,MixCaptureDuration+1.f);
     MixCaptureStarted=FPlatformTime::Seconds();
+    // The file name's ticks are the recording start (mux_film.py places an earlier world's recording by them). They were the world's
+    // load time, which put world 0's audio about 0.2 s early in the film (sync test 20:24: click 209 ms before its white frame).
+    // -VeyrMixNameAtLoad restores the load-time name.
+    if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrMixNameAtLoad")))MixCaptureName=FString::Printf(TEXT("VeyrMix-%lld"),FDateTime::UtcNow().GetTicks());
     UE_LOG(LogTemp,Display,TEXT("VEYR_AUDIO_CAPTURE_START wall=%.6f world=%.6f intro=%d"),MixCaptureStarted,GetWorld()->GetTimeSeconds(),bArenaIntroActive);
 }
 
