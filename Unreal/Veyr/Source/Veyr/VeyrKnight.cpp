@@ -428,7 +428,10 @@ FName AVeyrKnight::ResolveActionClip(EVeyrKnightAction NewAction) const
         case EVeyrKnightAction::RunStart:return TEXT("RunStartTwoHandSourced");
         case EVeyrKnightAction::Combo:return TEXT("LightCombo");
         case EVeyrKnightAction::RollAttack:return TEXT("RollAttack");
-        case EVeyrKnightAction::Roll:return TEXT("Roll");
+        case EVeyrKnightAction::Roll:
+            // Pass 3: DA_Greystone's Roll is a sourced shoulder roll; -VeyrGreystoneKnightRoll plays the old retargeted one.
+            return bGreystoneActive&&GreystoneOptOut(TEXT("VeyrGreystoneKnightRoll"))&&HasVisualClip(TEXT("RollKnightRetarget"))?
+                FName(TEXT("RollKnightRetarget")):FName(TEXT("Roll"));
         case EVeyrKnightAction::RunStop:return bContiguousSprint&&bTwoHanded?TEXT("RunStopTwoHandContiguous"):bSourcedSprint?(bTwoHanded?TEXT("RunStopTwoHandSourced"):TEXT("RunStopOneHandSourced")):TEXT("RunStop");
         case EVeyrKnightAction::BlinkLeft:return bTwoHanded&&HasVisualClip(TEXT("BlinkLeftTwoHand"))?FName(TEXT("BlinkLeftTwoHand")):FName(TEXT("BlinkLeft"));
         case EVeyrKnightAction::BlinkRight:return bTwoHanded&&HasVisualClip(TEXT("BlinkRightTwoHand"))?FName(TEXT("BlinkRightTwoHand")):FName(TEXT("BlinkRight"));
@@ -1619,7 +1622,10 @@ void AVeyrKnight::UpdateGreystoneIdleBreath(float DeltaSeconds,bool bMoving)
     // the spine, neck and head forward and fold the hips and knees about the roll's own right axis through the middle of
     // the roll, so he rolls over a rounded back. Visual only; -VeyrGreystoneNoTuck.
     static const bool bNoTuck=GreystoneOptOut(TEXT("VeyrGreystoneNoTuck"));
-    const bool RollNow=(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack)&&ActionDuration>0.f;
+    // Pass 3: Roll now plays a sourced shoulder roll (GASP land roll); the tuck stays for the knight's somersault only
+    // (RollAttack's roll prefix, or Roll under -VeyrGreystoneKnightRoll).
+    const bool KnightRoll=Action==EVeyrKnightAction::RollAttack||ActionPresentationClip==FName(TEXT("RollKnightRetarget"));
+    const bool RollNow=KnightRoll&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack)&&ActionDuration>0.f;
     float Tuck=0.f;
     if(RollNow&&!bNoTuck)
     {
@@ -2764,18 +2770,45 @@ void AVeyrKnight::AddGreystoneSwordPin(TArray<FVeyrBonePin>& Pins)
     const int32 HandIndex=ImportedPresentation->GetBoneIndex(Hand),SwordIndex=ImportedPresentation->GetBoneIndex(Sword);
     if(bOff||HandIndex==INDEX_NONE||SwordIndex==INDEX_NONE)return;
     const float Dt=GetWorld()?GetWorld()->GetDeltaSeconds():1.f/60.f;
-    const bool Roll=Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Backstep;
-    if(Action==EVeyrKnightAction::Ready&&GreystoneSwordPinWeight<=0.f&&ImportedPresentation->bPoseEvaluated&&
-       ImportedPresentation->CurrentTransitionAlpha>=1.f)
+    // Critic E3: the heavy wind-up turned the blade ~90 degrees in his hand in one frame (the knight's retargeted heavy
+    // carries the knight's blade direction). Heavy attacks keep his own grip too; -VeyrGreystoneFreeSwordHeavy.
+    static const bool bFreeHeavy=GreystoneOptOut(TEXT("VeyrGreystoneFreeSwordHeavy"));
+    const bool Roll=Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::RollAttack||Action==EVeyrKnightAction::Backstep||
+        (!bFreeHeavy&&Action==EVeyrKnightAction::HeavyAttack);
+    const bool Capture=Action==EVeyrKnightAction::Ready&&ImportedPresentation->bPoseEvaluated&&ImportedPresentation->CurrentTransitionAlpha>=1.f;
+    if(Capture&&GreystoneSwordPinWeight<=0.f)
     {
         const FTransform HandCS=ImportedPresentation->GetBoneTransform(HandIndex,FTransform::Identity);
         const FTransform SwordCS=ImportedPresentation->GetBoneTransform(SwordIndex,FTransform::Identity);
         GreystoneSwordGrip=SwordCS.GetRelativeTransform(HandCS);bGreystoneSwordGripValid=!GreystoneSwordGrip.ContainsNaN();
     }
     GreystoneSwordPinWeight=FMath::FInterpConstantTo(GreystoneSwordPinWeight,Roll?1.f:0.f,Dt,Roll?1.f/.12f:1.f/.30f);
-    if(!bGreystoneSwordGripValid||GreystoneSwordPinWeight<=0.f)return;
-    FVeyrBonePin Pin;Pin.Bone=Sword;Pin.Anchor=Hand;Pin.AnchorLocal=GreystoneSwordGrip;
-    Pin.Weight=FMath::SmoothStep(0.f,1.f,GreystoneSwordPinWeight);Pins.Add(Pin);
+    if(bGreystoneSwordGripValid&&GreystoneSwordPinWeight>0.f)
+    {
+        FVeyrBonePin Pin;Pin.Bone=Sword;Pin.Anchor=Hand;Pin.AnchorLocal=GreystoneSwordGrip;
+        Pin.Weight=FMath::SmoothStep(0.f,1.f,GreystoneSwordPinWeight);Pins.Add(Pin);
+    }
+    // Critic E3: in the hit reaction (Paragon HitReact_*) his head snaps back ~90 degrees on its own for four frames.
+    // Through a stagger, hold neck and head to the chest with his idle's neck/head pose (85 %), so the head moves with
+    // the chest. Visual only; -VeyrGreystoneFreeHeadHit.
+    static const bool bFreeHead=GreystoneOptOut(TEXT("VeyrGreystoneFreeHeadHit"));
+    static const FName Chest(TEXT("spine_03")),Neck(TEXT("neck_01")),Head(TEXT("head"));
+    const int32 ChestI=ImportedPresentation->GetBoneIndex(Chest),NeckI=ImportedPresentation->GetBoneIndex(Neck),HeadI=ImportedPresentation->GetBoneIndex(Head);
+    if(bFreeHead||ChestI==INDEX_NONE||NeckI==INDEX_NONE||HeadI==INDEX_NONE)return;
+    if(Capture&&GreystoneHeadPinWeight<=0.f)
+    {
+        const FTransform C=ImportedPresentation->GetBoneTransform(ChestI,FTransform::Identity);
+        const FTransform N=ImportedPresentation->GetBoneTransform(NeckI,FTransform::Identity);
+        const FTransform H=ImportedPresentation->GetBoneTransform(HeadI,FTransform::Identity);
+        GreystoneNeckFromChest=N.GetRelativeTransform(C);GreystoneHeadFromNeck=H.GetRelativeTransform(N);
+        bGreystoneHeadPoseValid=!GreystoneNeckFromChest.ContainsNaN()&&!GreystoneHeadFromNeck.ContainsNaN();
+    }
+    const bool Hit=Action==EVeyrKnightAction::Stagger;
+    GreystoneHeadPinWeight=FMath::FInterpConstantTo(GreystoneHeadPinWeight,Hit?.85f:0.f,Dt,Hit?1.f/.06f:1.f/.25f);
+    if(!bGreystoneHeadPoseValid||GreystoneHeadPinWeight<=0.f)return;
+    const float W=FMath::SmoothStep(0.f,1.f,GreystoneHeadPinWeight);
+    FVeyrBonePin N;N.Bone=Neck;N.Anchor=Chest;N.AnchorLocal=GreystoneNeckFromChest;N.Weight=W;Pins.Add(N);
+    FVeyrBonePin H;H.Bone=Head;H.Anchor=Neck;H.AnchorLocal=GreystoneHeadFromNeck;H.Weight=W;Pins.Add(H);
 }
 
 AVeyrKnight::FGreystoneMonitor& AVeyrKnight::GreystoneMonitorShared() const

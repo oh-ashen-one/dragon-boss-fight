@@ -10,7 +10,10 @@
 #include "VeyrVisualDefinition.h"
 
 bool VeyrGreystone::IsLegacyKnightForced(){return FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyKnight"));}
-bool VeyrGreystone::IsRequested(){return FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystone"))&&!IsLegacyKnightForced();}
+// Critic E3 (2026-11-20): Greystone becomes the default when this branch merges, after the playback branch. The flip is
+// this one constant (the coordinator says when); -VeyrLegacyKnight then restores the old knight.
+static constexpr bool GreystoneByDefault=false;
+bool VeyrGreystone::IsRequested(){return (GreystoneByDefault||FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystone")))&&!IsLegacyKnightForced();}
 bool VeyrGreystone::IsLegacyMotionForced(){return FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyMotion"));}
 bool VeyrGreystone::FootCleanupEnabled(){return FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneFeet"));}
 bool VeyrGreystone::FootLockEnabled(){return !FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneNoFootLock"));}

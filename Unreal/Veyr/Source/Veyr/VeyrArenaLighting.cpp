@@ -3,6 +3,7 @@
 // warm against cold. The lights only have to look good, not to have a visible source.
 // -VeyrLegacyRender keeps BuildLighting's original body instead.
 #include "VeyrArena.h"
+#include "VeyrGreystone.h"
 #include "VeyrLook.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/DirectionalLightComponent.h"
@@ -54,7 +55,7 @@ void AVeyrArena::BuildRelitLighting()
     // E4 pass 2 (blind critic: at quarter size Greystone's slim dark armour merges with the court and the dragon's
     // legs). Under -VeyrGreystone the hero rim and key are a little stronger (rim x1.45, key x1.25), his light
     // channel only; the old knight's look is unchanged. -VeyrGreystoneNoRimBoost restores the knight's values.
-    const bool GreystoneRim=FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystone"))&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneNoRimBoost"));
+    const bool GreystoneRim=VeyrGreystone::IsRequested()&&!FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneNoRimBoost"));
     CharacterRim->SetIntensity(VeyrLook::Tune(TEXT("rim"),14.f)*(GreystoneRim?1.45f:1.f));CharacterRim->SetLightColor(RimColour,false);CharacterRim->SetCastShadows(false);
     CharacterRim->SetSpecularScale(1.f);CharacterRim->SetAffectGlobalIllumination(false);CharacterRim->SetVolumetricScatteringIntensity(0.f);
     CharacterRim->RegisterComponent();

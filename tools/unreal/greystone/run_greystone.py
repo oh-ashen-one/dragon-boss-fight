@@ -31,6 +31,7 @@ STEPS = {
     'compare': ('compare_clips.py', False),
     'skin': ('novaborn_gold.py', False),
     'retarget': ('retarget_clips.py', False),
+    'source-roll': ('source_roll.py', False),
     'definition': ('build_definition.py', False),
     'motion-db': ('make_motion_databases.py', False),
     'features': ('bake_motion_features.py', False),
