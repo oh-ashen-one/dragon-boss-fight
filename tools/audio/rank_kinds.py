@@ -6,12 +6,12 @@
 Aligns the tap time to the film audio by onset-envelope correlation (or --lag), then for each event kind prints n, median full-band peak (dBFS, 0.25 s after
 the event), median 2-8 kHz peak, median rise over the previous 0.5 s, sorted loudest first, and the span top to bottom, slam minus walking step, landing minus slam.
 """
-import argparse, json, subprocess, tempfile, wave
+import sys, argparse, json, subprocess, tempfile, wave
 from pathlib import Path
 import numpy as np
 from scipy.signal import butter, sosfilt
 
-ap = argparse.ArgumentParser(); ap.add_argument('media'); ap.add_argument('cues'); ap.add_argument('--lag', type=float)
+ap = argparse.ArgumentParser(); ap.add_argument('media'); ap.add_argument('cues'); ap.add_argument('--lag', type=float); ap.add_argument('--local', action='store_true', help='use a local lag map (the master recording loses time under load)')
 a = ap.parse_args()
 p = Path(a.media)
 if p.suffix.lower() != '.wav':
@@ -19,7 +19,7 @@ if p.suffix.lower() != '.wav':
 def rd(q):
     w = wave.open(str(q)); sr = w.getframerate(); return np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).reshape(-1, w.getnchannels()).astype(float) / 32768, sr
 r, sr = rd(p); d = json.loads(Path(a.cues).read_text())
-lag = a.lag
+lag = a.lag; lagf = None
 if lag is None:
     t, st = rd(Path(a.cues).with_name(Path(a.cues).name.replace('-cues.json', '-mix.wav')))
     def env(x, s, h=.05):
@@ -31,12 +31,15 @@ if lag is None:
         c = np.corrcoef(x[:n], y[:n])[0, 1]
         if c > best[0]: best = (c, l)
     lag = best[1] * .05; print(f'alignment correlation {best[0]:.2f}, lag {lag:+.2f} s')
+    if a.local:
+        sys.path.insert(0, str(Path(__file__).parent)); import offline_mix as om
+        lagf, lm = om.lag_map(r, t); print('local lag map (tap s: lag s): ' + ' '.join(f'{x:.0f}:{y:+.2f}' for x, y in lm[::2]))
 sos = butter(4, [2000, 8000], btype='band', fs=sr, output='sos'); hi = sosfilt(sos, r.mean(1))
 mono = r.mean(1)
 pk = lambda x, i0, n: 20 * np.log10(np.abs(x[i0:i0 + n]).max() + 1e-9)
 rows = {}
 for e in d['events']:
-    i = int((e['t'] + lag) * sr)
+    i = int((e['t'] + (lagf(e['t']) if lagf else lag)) * sr)
     if i < sr or i + int(.3 * sr) > len(mono): continue
     n = int(.25 * sr)
     full = pk(mono, i, n); high = pk(hi, i, n)

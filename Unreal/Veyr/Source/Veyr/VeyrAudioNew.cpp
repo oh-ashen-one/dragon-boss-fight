@@ -644,7 +644,16 @@ void AVeyrAudio::TapEvent(const TCHAR* Kind)
 void AVeyrAudio::InstallMasterChain()
 {
     // A master limiter so the louder mix peaks at about -1.5 dBFS instead of clipping. -VeyrNoMasterLimiter removes it.
-    if(bMasterChain||FParse::Param(FCommandLine::Get(),TEXT("VeyrNoMasterLimiter"))||!GetWorld())return;
+    if(!GetWorld()||FParse::Param(FCommandLine::Get(),TEXT("VeyrNoMasterLimiter")))return;
+    // Mix pass 5: re-offer the same preset every half second. The main submix rebuilds its effect chain from its asset when it is
+    // (re)initialised, which drops an effect added at run time (the 20:24 and 21:04 films: no limiting at all, 153 and 375 full-scale
+    // samples). The mixer ignores an add whose preset is already in the chain, so this costs one audio-thread command when nothing was lost.
+    if(bMasterChain)
+    {
+        const double Wall=FPlatformTime::Seconds();
+        if(bMixTable&&MasterLimiterPreset&&Wall-LastLimiterOfferWall>=.5){LastLimiterOfferWall=Wall;UAudioMixerBlueprintLibrary::AddMasterSubmixEffect(this,MasterLimiterPreset);}
+        return;
+    }
     bMasterChain=true;
     // Cause of "the limiter does not hold" (2026-11-19): the preset was referenced only by this local, so the next garbage collection
     // destroyed it, and FSoundEffectSubmix::ProcessAudio skips an effect whose preset is no longer valid. It is now held by a UPROPERTY.
