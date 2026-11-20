@@ -215,7 +215,8 @@ bool AVeyrDragon::BuildHurtParts()
     const FQuat Frame(FVector::UpVector,FMath::DegreesToRadians(BestYaw));
 
     const int32 PawnMode=VeyrMoveData::HurtBlocksPawnMode();
-    const float ComponentScale=ImportedPresentation->GetComponentTransform().GetScale3D().GetAbsMax();
+    UVeyrSkeletalPresentation* Pose=GameplayPose(); // hurt capsules ride the gameplay pose
+    const float ComponentScale=Pose->GetComponentTransform().GetScale3D().GetAbsMax();
     TSet<int32> Legs;
     for(const FBound& B:Bound)
     {
@@ -227,7 +228,7 @@ bool AVeyrDragon::BuildHurtParts()
         Runtime.LocalB=B.RefPose.InverseTransformPosition(Frame.RotateVector(Part.B)/Scale);
         Runtime.bBlocksPawn=PawnMode==2||(PawnMode==1&&Part.Kind!=FName(TEXT("wing")));
         UCapsuleComponent* Capsule=NewObject<UCapsuleComponent>(this,*FString::Printf(TEXT("VeyrHurt_%s"),*Part.Name.ToString()));
-        Capsule->SetupAttachment(ImportedPresentation,Runtime.Bone);
+        Capsule->SetupAttachment(Pose,Runtime.Bone);
         // Ride the bone's location and rotation; size stays in world cm.
         Capsule->SetUsingAbsoluteScale(true);Capsule->SetRelativeScale3D(FVector::OneVector);
         const FVector Axis=Runtime.LocalB-Runtime.LocalA;
@@ -258,8 +259,9 @@ bool AVeyrDragon::BuildHurtParts()
 
 bool AVeyrDragon::HurtPartWorldSegment(const FVeyrHurtPartRuntime& Part, FVector& OutA, FVector& OutB, float& OutRadius) const
 {
-    if(!ImportedPresentation||Part.BoneIndex==INDEX_NONE||!ImportedPresentation->GetComponentSpaceTransforms().IsValidIndex(Part.BoneIndex))return false;
-    const FTransform Bone=ImportedPresentation->GetBoneTransform(Part.BoneIndex);
+    const UVeyrSkeletalPresentation* Pose=GameplayPose();
+    if(!Pose||Part.BoneIndex==INDEX_NONE||!Pose->GetComponentSpaceTransforms().IsValidIndex(Part.BoneIndex))return false;
+    const FTransform Bone=Pose->GetBoneTransform(Part.BoneIndex);
     OutA=Bone.TransformPosition(Part.LocalA);OutB=Bone.TransformPosition(Part.LocalB);
     OutRadius=Part.DataRadius/FMath::Max(KINDA_SMALL_NUMBER,MoveData.GameScale)*Bone.GetScale3D().GetAbsMax();
     return !OutA.ContainsNaN()&&!OutB.ContainsNaN()&&FMath::IsFinite(OutRadius);

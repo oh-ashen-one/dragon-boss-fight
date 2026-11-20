@@ -169,7 +169,7 @@ void AVeyrDragonEffects::Tick(float DeltaSeconds)
     const float FireScale=FMath::Max(1.f,static_cast<float>(Dragon->BodyScale));
     const bool FireMove=Dragon->Move==EVeyrDragonMove::Fire&&!Dragon->IsDead()&&!Dragon->IsEncounterStopped();
     const bool Windup=FireMove&&Dragon->State==EVeyrDragonState::Windup;
-    const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam();
+    const FVeyrDragonFlameBeam Beam=Dragon->GetActiveFlameBeam(true); // the visible jet follows the shown head
     const bool Active=Dragon->State==EVeyrDragonState::Active&&Beam.bDamaging&&Beam.Length>1.f;
     if(Dragon->bUsingCustomuseVisual&&!Dragon->HasValidImportedCombatPose()){HideEffects();return;}
     const float TailAge=EffectsClock-LastActiveClock;

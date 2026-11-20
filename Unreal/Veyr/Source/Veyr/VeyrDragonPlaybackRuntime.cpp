@@ -62,6 +62,21 @@ bool AVeyrDragon::TempoTrimmedSeconds(FName Clip,float RealElapsed,float& OutTri
     return true;
 }
 
+float AVeyrDragon::VisualTempoInput(FName Clip) const
+{
+    const float Base=StateElapsed+(State==EVeyrDragonState::Windup?PhaseEntryReal:0.f);
+    const bool Phase=State==EVeyrDragonState::Windup||State==EVeyrDragonState::Active||State==EVeyrDragonState::Recovery;
+    if(UsesOwnSpeedTiming()||!Phase||Move==EVeyrDragonMove::FlyAway)return Base;
+    const float Full=TempoDuration(Clip),Dur=FMath::Max(.01f,StateDuration);
+    if(Full<=0.f)return Base;
+    // Goal clock. The strike follows the phase (the shown blow lands with the gameplay one). A wind-up longer than
+    // its phase is entered part-way (its slow start skipped, under the entry fade) and ends with the phase; a
+    // recovery longer than its phase plays from its start at its own speed and is cut by the next fade. Clips
+    // shorter than their phase are slowed to fill it.
+    if(State==EVeyrDragonState::Active||Full<=Dur)return StateElapsed*Full/Dur;
+    return State==EVeyrDragonState::Windup?StateElapsed+(Full-Dur):StateElapsed;
+}
+
 bool AVeyrDragon::FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed)
 {
     // The scripted showcase keeps the plain timing: its coverage gate needs each wind-up from its first frames.
@@ -73,7 +88,12 @@ bool AVeyrDragon::FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed)
     if(WD<=0.f||AD<=0.f||RD<=0.f)return false;
     const float L=FireSlamLeadSeconds;
     float T=0.f;FName Out;
-    if(State==EVeyrDragonState::Recovery)
+    if(State==EVeyrDragonState::Recovery&&!UsesOwnSpeedTiming())
+    {
+        // Goal clock: the lead was paid back over the strike; the recovery plays like any other.
+        Out=R;T=VisualTempoInput(R);
+    }
+    else if(State==EVeyrDragonState::Recovery)
     {
         // Where the recovery's still hold sits on the real-time input (found once by scanning the tempo map).
         if(FireSlamHoldClip!=R)
@@ -100,7 +120,10 @@ bool AVeyrDragon::FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed)
     {
         // One real-time input along wind-up and strike, L ahead: the wind-up is entered L in (under its entry fade)
         // and reaches the strike trim L before ignition, so the slam plays at its own speed in those frames.
-        const float U=State==EVeyrDragonState::Windup?FMath::Max(0.f,StateElapsed+WD+L-WindupDuration):WD+StateElapsed+L;
+        // On the goal's clock the strike phase is not the clip's own length: the lead is paid back over the strike
+        // (shown rate (AD-L)/ActiveDuration) so the strike trim ends with the phase.
+        const float ActiveIn=UsesOwnSpeedTiming()?StateElapsed+L:L+StateElapsed*FMath::Max(0.f,AD-L)/FMath::Max(.01f,ActiveDuration);
+        const float U=State==EVeyrDragonState::Windup?FMath::Max(0.f,StateElapsed+WD+L-WindupDuration):WD+ActiveIn;
         if(U<WD){Out=W;T=U;}else if(U<WD+AD){Out=A;T=U-WD;}else{Out=R;T=U-WD-AD;}
     }
     float Trimmed=0.f;
@@ -110,6 +133,7 @@ bool AVeyrDragon::FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed)
 
 float AVeyrDragon::ActivePhaseSeconds(float Phase) const
 {
+    if(!UsesOwnSpeedTiming())return Phase*ActiveDuration; // goal timing: the strike is sampled by phase
     const FName Clip=ImportedMoveClip(Move,Move==EVeyrDragonMove::ClawSwipe?ClawLeg:StompLeg,TEXT("Active"));
     float Rate=1.f,Hold=1.f;
     const FVeyrClipPlayback* C=TempoClip(Clip,Rate,Hold);
@@ -193,7 +217,11 @@ void AVeyrDragon::InitPlayback()
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
     // Fire slam (coordinator 2026-11-19): a visual lead only; -VeyrLegacyFireSlam restores, -VeyrFireSlamLead=<s> sets it.
     bFireSlamLead=bClipTempo&&!FParse::Param(Cmd,TEXT("VeyrLegacyFireSlam"));
-    // Hold H16: the head-down jet hit the knight in 17 of 35 fires (legacy 5); its damage front starts 0.2 s later.
+    // Coordinator 23:00: gameplay timing is the goal branch's unless -VeyrDragonOwnSpeedTiming.
+    bOwnSpeedTiming=FParse::Param(Cmd,TEXT("VeyrDragonOwnSpeedTiming"));
+    // Hold H16: with own-speed timing the shown (head-down) jet was also the damaging one and hit in 17 of 35 fires;
+    // there its damage front starts 0.2 s later. With the gameplay rig the damaging beam is the goal's: no delay.
+    FireSlamDamageDelaySeconds=bOwnSpeedTiming?.2f:0.f;
     FParse::Value(Cmd,TEXT("VeyrFireSlamDamageDelay="),FireSlamDamageDelaySeconds);
     FireSlamDamageDelaySeconds=bFireSlamLead?FMath::Clamp(FireSlamDamageDelaySeconds,0.f,.6f):0.f;
     FParse::Value(Cmd,TEXT("VeyrFireSlamLead="),FireSlamLeadSeconds);FireSlamLeadSeconds=FMath::Clamp(FireSlamLeadSeconds,0.f,.5f);
@@ -286,7 +314,8 @@ void AVeyrDragon::ApplyRootTracks(FName Clip,float SequenceSeconds,float Weight)
     // own track offset removed, so actor + pose is the clip's own world body path (hitboxes unchanged) and nothing
     // slides back when the clip ends or fades.
     FVector DestOffset=FVector::ZeroVector,SourceOffset=FVector::ZeroVector;
-    const bool Eligible=bRootTracks&&!IsDead();
+    // Root tracks move the actor (gameplay): own-speed timing only; with the goal's clock the pose keeps its own path.
+    const bool Eligible=bRootTracks&&UsesOwnSpeedTiming()&&!IsDead();
     FName Phase;
     const FVeyrClipPlayback* Dest=Eligible&&Playback.bLoaded?Playback.Find(Clip,Phase):nullptr;
     if(Dest){const FVeyrMoveTempo* T=Playback.MoveTempo(*Dest);if(!T||!T->bRootTrack||Dest->TrackCm.IsEmpty())Dest=nullptr;}
@@ -757,6 +786,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetBoolField(TEXT("gateNoBlendPops"),PopsInBlend==0);
     O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("yawStepsCurrentFlat"),YawStepsCurrentFlat);O->SetNumberField(TEXT("yawStepsInHitReaction"),YawStepsInHitReaction);O->SetNumberField(TEXT("headTurnSteps"),HeadTurnSteps);O->SetNumberField(TEXT("worstHeadTurnDegPer30Hz"),WorstTurn);O->SetStringField(TEXT("worstHeadTurnClip"),WorstTurnKey);O->SetNumberField(TEXT("yawStepsAll"),YawSteps+YawStepsInHitReaction);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
     O->SetBoolField(TEXT("fireSlamLead"),bFireSlamLead);O->SetNumberField(TEXT("fireSlamLeadSeconds"),bFireSlamLead?FireSlamLeadSeconds:0.f);O->SetNumberField(TEXT("fireSlamDamageDelaySeconds"),FireSlamDamageDelaySeconds);
+    O->SetBoolField(TEXT("ownSpeedTiming"),bOwnSpeedTiming);O->SetBoolField(TEXT("gameplayRig"),bGameplayRigEnabled);
     {
         TArray<TSharedPtr<FJsonValue>> FC,FH;int32 EarlyC=0,EarlyH=0;
         for(const float T:FireContactElapsed){FC.Add(MakeShared<FJsonValueNumber>(T));EarlyC+=T<=.18f;}

@@ -301,7 +301,7 @@ public:
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVeyrDragonFootprint GetActiveFootprint() const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") TArray<FVeyrDragonFootprint> GetWarningFootprints() const;
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") TArray<FVeyrDragonFootprint> GetActiveFootprints() const;
-    UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVeyrDragonFlameBeam GetActiveFlameBeam() const;
+    UFUNCTION(BlueprintPure, Category="Combat|Evidence") FVeyrDragonFlameBeam GetActiveFlameBeam(bool bShown=false) const;
     /** Positional policy only; repetition and periodic flight can still override it. */
     UFUNCTION(BlueprintPure, Category="Combat|Evidence") int32 PredictPositionalMove(const FVector& Point) const;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Evidence") FString ImportedCombatDiagnostic;
@@ -426,6 +426,31 @@ private:
     float FireSlamDamageDelaySeconds=.2f;
     FName FireSlamHoldClip;float FireSlamHold0=-1.f,FireSlamHold1=-1.f;
     bool FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed);
+    /** Coordinator 2026-11-19 23:00: gameplay is the goal branch's exactly. A hidden gameplay rig plays the goal's
+     * pose (clip by phase, frozen blends, no lock or limiter) and supplies contacts, hurt capsules, legs, the solid
+     * body and the damaging mouth; the shown mesh plays the new playback fitted into the goal's phases.
+     * -VeyrDragonOwnSpeedTiming restores own-speed gameplay timing (and the shown pose as gameplay pose);
+     * -VeyrNoGameplayRig keeps goal timing but lets the shown pose drive gameplay. */
+    UPROPERTY(VisibleAnywhere, Category="Presentation") TObjectPtr<UVeyrSkeletalPresentation> GameplayRig;
+    bool bOwnSpeedTiming=false,bGameplayRigEnabled=false,bGameplayPass=false,bShownMouthValid=false;
+    FVector ShownMouthWorld=FVector::ZeroVector,ShownMouthAimWorld=FVector::ZeroVector;
+    bool UsesOwnSpeedTiming() const {return bClipTempo&&(bOwnSpeedTiming||bShowcaseMode);}
+    UVeyrSkeletalPresentation* GameplayPose() const {return bGameplayRigEnabled&&GameplayRig?GameplayRig.Get():ImportedPresentation.Get();}
+    /** Real-time input to a clip's tempo map that fits the clip into the current (goal) phase. */
+    float VisualTempoInput(FName Clip) const;
+    void UpdateImportedPresentationPass();
+    struct FPresentationPassBank
+    {
+        FVector LastPresentationLocation=FVector::ZeroVector;float LastPresentationYaw=0.f,WalkPhase=0.f,TurnPhase=0.f;bool bPresentationMotionInitialized=false;
+        FName LastImportedClip=NAME_None;EVeyrDragonState LastImportedState=EVeyrDragonState::Idle;bool bImportedTransitionReady=false;
+        float ImportedTransitionStarted=0.f,ImportedTransitionSeconds=.12f;
+        FName FadeSourceClip=NAME_None;float FadeSourceSeconds=0.f,FadeSourceRate=0.f,FadeSourceMin=0.f,FadeSourceMax=0.f,FadeLastClock=-1.f;
+        bool bFadeSourceLoop=false,bFadeActive=false;
+        float LastSampledSequenceSeconds=0.f,LastSampleClock=-1.f,LastSequenceRate=1.f;FName LastSampledClip=NAME_None;
+        float InertialStartedClock=-100.f,InertialBlendSeconds=.35f;FName TrackStem=NAME_None,FadeTrackStem=NAME_None;
+    };
+    FPresentationPassBank GameplayBank;
+    void SwapPresentationBank();
     /** Evidence: gameplay seconds into the fire strike of each flame contact and of each one that cost health. */
     TArray<float> FireContactElapsed,FireHitElapsed;
     float ActivePhaseSeconds(float Phase) const;
