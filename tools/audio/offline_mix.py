@@ -53,6 +53,34 @@ def prep(cue, s):
     return s[cut:]
 
 
+TARGET_DB = {'Swing': -10, 'HeavySwing': -8, 'Contact': -5, 'Guard': -6, 'ArmorHit': -5, 'Impact': -5, 'DragonStep': -6, 'DragonSwing': -7, 'Bite': -7,
+             'Breath': -15, 'Fire': -11, 'Wing': -15, 'Roll': -16, 'Footstep': -9, 'Blink': -15, 'Break': -9, 'Debris': -12, 'Exposed': -5, 'Death': -8,
+             'Heal': -15, 'Victory': -10, 'DragonBreathIn': -22, 'DragonBreathOut': -22, 'DragonGrowlLow': -14, 'DragonSnort': -18, 'Roar': -8,
+             'DragonGrowl': -11, 'DragonPain': -11, 'PlayerPain': -8}
+
+
+def variant_gain(cue, s):
+    """AddVariant's per-variant gain (RMS to the cue's target on the recorded master, capped so the variant peaks at .9 at volume 1)."""
+    x = s / 32768; peak = max(1e-4, np.abs(x).max()); g = x[np.abs(x) > .01]
+    rms = math.sqrt((g ** 2).mean()) if len(g) else 1e-4; mdb = 20 * math.log10(max(rms, 1e-5)); t = TARGET_DB.get(cue, 0)
+    gain = 10 ** ((t - mdb) / 20) / (.65 * .355) if t < 0 else 1 / (.65 * .355)
+    return min(gain, .9 / (peak * .65 * .355))
+
+
+def as_pass5(d, banks):
+    """A pass 4 log played through the pass 5 level rule: volume x variant gain x jitter x makeup, no solo ceiling, no peak budget, the
+    weapon layers at class volume 1 (pass 4 scaled them by .65/.75/.85). Jitter is recovered where the logged level is within +-2 dB of
+    the uncapped level, else taken as 1."""
+    W = {'LightHit': .65, 'HeavyHit': .75, 'HeadHit': .85}
+    for it in d['items']:
+        if it['cue'] not in banks or it['variant'] >= len(banks[it['cue']]): continue
+        g = variant_gain(it['cue'], banks[it['cue']][it['variant']]); mk = 10 ** (-1.5 / 20)
+        un = min(it['volume'], 1.5) * g * mk; r = it['level'] / un if un > 0 else 1
+        jit = r if .79 <= r <= 1.26 else 1.0
+        vol = it['volume'] / W[it['kind']] if it['kind'] in W and it['cue'] in ('Contact', 'Guard', 'ArmorHit', 'Impact', 'Exposed', 'DragonStep', 'Break') else it['volume']
+        it['level'] = min(vol, 1.5) * g * mk * jit
+
+
 def load_banks(content):
     content = Path(content); d = content / 'Audio/Recorded20261118'; banks = {}
     for cue in CUES:
@@ -76,6 +104,10 @@ def tilt(s, fc, k):
     return np.clip(lp + k * (s - lp), -32767, 32767).astype(np.int16).astype(np.float64)
 
 
+NARROW = {'Landing', 'Slam', 'BodyFall', 'WalkStep'}
+NARROW_BY = 1.0  # --narrow: model of mix pass 5's half-way-to-the-view-axis placement on a log recorded without it (pan x 0.5)
+
+
 def render_item(it, banks, offset_db):
     pcm = banks[it['cue']][it['variant']]
     if it.get('tiltK', -1) >= 0: pcm = tilt(pcm, it['tiltFc'], it['tiltK'])
@@ -86,7 +118,8 @@ def render_item(it, banks, offset_db):
     f = src - i0
     x = (pcm[i0] * (1 - f) + pcm[i0 + 1] * f) / 32768
     amp = it['level'] * MASTER * EFFECTS * it['attenuation'] * 10 ** (offset_db / 20)
-    ang = (it['pan'] + 1) * math.pi * .25
+    pan = it['pan'] * (NARROW_BY if it.get('kind') in NARROW and it.get('place', 4) else 1.0)
+    ang = (pan + 1) * math.pi * .25
     return x * amp * math.cos(ang), x * amp * math.sin(ang)
 
 
@@ -268,12 +301,16 @@ def main():
     ap.add_argument('--limiter', type=float); ap.add_argument('--no-limiter', action='store_true')
     ap.add_argument('--out'); ap.add_argument('--verify', action='store_true'); ap.add_argument('--solve', action='store_true')
     ap.add_argument('--top', type=float, default=-3.0, help='target median peak of the landing (dBFS)'); ap.add_argument('--step', type=float, default=1.2)
+    ap.add_argument('--narrow', type=float, default=1.0, help='scale the pan of the dragon ground thuds (0.5 models the pass 5 placement on an older log)')
+    ap.add_argument('--as-pass5', action='store_true', help='play a pass 4 log through the pass 5 level rule (no ceiling, no budget)')
     ap.add_argument('--json'); ap.add_argument('--ladder', help='explicit targets, e.g. Landing:-2.5/Slam:-3.3/... (dBFS median peak)')
     a = ap.parse_args()
     d = json.loads(Path(a.cues).read_text()); global MASTER, EFFECTS
     MASTER, EFFECTS = d.get('masterVolume', .65), d.get('effectsVolume', 1.0)
+    global NARROW_BY; NARROW_BY = a.narrow
     banks = load_banks(a.content)
     infer_kinds(d)
+    if a.as_pass5: as_pass5(d, banks)
     stem = Path(a.cues).name.replace('-cues.json', '')
     bp = Path(a.cues).with_name(stem + '-beds.wav'); beds = rdwav(bp)[0] if bp.exists() else None
     offset = a.offset if a.offset is not None else d.get('tapOffsetDb', -9)

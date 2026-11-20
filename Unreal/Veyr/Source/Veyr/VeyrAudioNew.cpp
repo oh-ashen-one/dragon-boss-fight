@@ -526,6 +526,16 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
             default:break;
         }
         if(Inner<=0.f||Falloff<=0.f)DefaultRadius(Cue,Inner,Falloff);
+        // Mix pass 5: the dragon's ground thuds (landing, slams, body falls, walking steps) sit halfway between where they happen and the
+        // view axis at the same distance: the same loudness by distance, half the sideways pan, so the big events are not lost to one side
+        // (the image leaned with the feet) and their mono peak is their peak. -VeyrMixPass4 restores full panning.
+        if(bMixTable&&Place==EPlace::World&&(CurKind==EMixKind::Landing||CurKind==EMixKind::Slam||CurKind==EMixKind::BodyFall||CurKind==EMixKind::WalkStep))
+            if(const APlayerController* PCv=GetWorld()->GetFirstPlayerController())
+            {
+                FVector Eye;FRotator Rot;PCv->GetPlayerViewPoint(Eye,Rot);
+                const float Dist=FVector::Dist(P,Eye);
+                P=FMath::Lerp(P,Eye+Rot.Vector()*Dist,.5f);
+            }
         Voice->bAllowSpatialization=true;Voice->bOverrideAttenuation=true;
         Voice->SetWorldLocation(P);
         Voice->AttenuationOverrides.bAttenuate=true;Voice->AttenuationOverrides.bSpatialize=true;
@@ -1190,13 +1200,23 @@ void AVeyrAudio::LoadMixTable()
     // -VeyrMixPass4 restores the pass 4 behaviour (per-voice solo ceiling, coincident-peak budget, hit classes by volume, limiter at -1.5).
     // Tuning without a rebuild: -VeyrMixGains=Landing:2/Slam:-1 (dB per kind), -VeyrMixTrimDb=<dB>, -VeyrMusicTrimDb=<dB>, -VeyrLimiterDb=<dBFS>.
     static const float Defaults[MixKindCount]={
-        /*Other*/0.f,/*Landing*/0.f,/*Slam*/0.f,/*ClawTail*/0.f,/*BodyFall*/0.f,/*HeadHit*/0.f,/*HeavyHit*/0.f,/*FireIgnition*/0.f,
-        /*LightHit*/0.f,/*Hurt*/0.f,/*WalkStep*/0.f,/*KnightStep*/0.f,/*Wing*/0.f,/*FireSustain*/0.f,/*Presence*/0.f};
-    constexpr float DefaultTrimDb=-8.f,DefaultMusicTrimDb=0.f;
+        /*Other*/0.f,/*Landing*/.5f,/*Slam*/-3.6f,/*ClawTail*/.6f,/*BodyFall*/1.1f,/*HeadHit*/-10.4f,/*HeavyHit*/-7.f,/*FireIgnition*/-8.9f,
+        /*LightHit*/-3.4f,/*Hurt*/-5.5f,/*WalkStep*/5.3f,/*KnightStep*/-15.2f,/*Wing*/0.f,/*FireSustain*/6.f,/*Presence*/-13.f};
+    // Solved offline (offline_mix.py --solve, ladder Landing -2 ... KnightStep -15.5 dBFS median mono peak) on the r5 victory log replayed
+    // through this level rule; first-pass values, refined on a pass 5 log with -VeyrMixGains.
+    constexpr float DefaultTrimDb=0.f,DefaultMusicTrimDb=-4.f;
     bMixTable=!FParse::Param(FCommandLine::Get(),TEXT("VeyrMixPass4"));
     for(int32 K=0;K<MixKindCount;++K){KindGainDb[K]=Defaults[K];for(int32 Q=0;Q<CueCount;++Q)LayerGainDb[K][Q]=0.f;}
     struct FLayerDefault{EMixKind K;ECue Q;float Db;};
-    static const FLayerDefault LayerDefaults[]={{EMixKind::Other,ECue::Swing,0.f}};
+    // Per layer where one kind's layers need different weights: the knight's whooshes and the dragon's swing/roll/breath under Other,
+    // the light hit's low layers down (its crack carries it), the slam's crunch layers up (stomps differ from each other by their debris).
+    static const FLayerDefault LayerDefaults[]={
+        {EMixKind::Other,ECue::Swing,-12.f},{EMixKind::Other,ECue::HeavySwing,-12.f},{EMixKind::Other,ECue::DragonSwing,-11.f},{EMixKind::Other,ECue::Roll,-10.f},
+        {EMixKind::Other,ECue::Breath,-10.f},{EMixKind::Other,ECue::Roar,-3.f},{EMixKind::Other,ECue::Debris,-6.f},{EMixKind::Other,ECue::Exposed,-6.f},
+        {EMixKind::LightHit,ECue::ArmorHit,-12.f},{EMixKind::LightHit,ECue::Impact,-12.f},{EMixKind::LightHit,ECue::Contact,2.f},
+        {EMixKind::Slam,ECue::Exposed,-8.f},{EMixKind::Slam,ECue::Debris,8.f},{EMixKind::Slam,ECue::Break,8.f},
+        {EMixKind::FireIgnition,ECue::Debris,6.f},{EMixKind::FireIgnition,ECue::Break,6.f},{EMixKind::FireIgnition,ECue::Fire,3.f},
+        {EMixKind::HeadHit,ECue::Impact,4.f},{EMixKind::HeadHit,ECue::Exposed,4.f},{EMixKind::Landing,ECue::Debris,-4.f}};
     for(const FLayerDefault& L:LayerDefaults)LayerGainDb[static_cast<int32>(L.K)][static_cast<int32>(L.Q)]=L.Db;
     MasterTrimDb=DefaultTrimDb;MusicTrimDb=DefaultMusicTrimDb;
     FParse::Value(FCommandLine::Get(),TEXT("VeyrMixTrimDb="),MasterTrimDb);
