@@ -62,7 +62,7 @@ public:
     // B2 struck-part reaction evidence: blows by region (legs 0-3, head 4, other parts 5) and the largest snap.
     int32 HeldStopTicks=0,StrikeEvents=0,StrikesByRegion[6]={0,0,0,0,0,0},KnightRecoils=0,ContactFlashes=0;
     mutable float MaxStrikeDegrees=0.f,MaxStrikeLegDegrees=0.f,MaxStrikeHeadDegrees=0.f,MaxStrikeBodyDegrees=0.f;
-    mutable int32 StrikeBonesApplied=0;
+    mutable int32 StrikeBonesApplied=0,StrikeBuckles=0;
     mutable uint64 FlinchFrame=0;
     float MaxRibbonWidthCm=0.f;
     mutable FString FlinchDiagnostic;
@@ -104,7 +104,8 @@ private:
     // (only that leg hangs below them), and the bone that carries all four legs (the whole-body rock).
     mutable TArray<FChainBone> StrikeSpine;
     mutable FName LegTop[4],LegMid[4],BodyBone;
-    struct FStrike { int32 Region=-1; FVector Blow=FVector::ForwardVector; float Weight=0.f,Size=1.f,Age=10.f; uint64 ContactFrame=0; bool bSeen=false; };
+    struct FStrike { int32 Region=-1; FVector Blow=FVector::ForwardVector; float Weight=0.f,Size=1.f,Age=10.f; uint64 ContactFrame=0; bool bSeen=false,bHeavy=false; };
+    int32 HeroHits=0,HeroKnockdowns=0; float LastHeroShake=0.f,LastHeroStop=0.f,FlashCameraScale=1.f;
     mutable FStrike Strikes[4]; int32 NextStrike=0;
     mutable int32 StrikesSeen=0,MaxStrikeLagFrames=0; int32 FxRealTimeFrames=0; float FxTimeScaleNow=1.f;
     void AddStrikes(AVeyrDragon* Boss,TMap<FName,FRotator>& Rotations,bool bDown) const;

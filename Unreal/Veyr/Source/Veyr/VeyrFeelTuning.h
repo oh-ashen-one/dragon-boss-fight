@@ -32,7 +32,11 @@ namespace VeyrFeelSwitches
     bool ContactBurst();     // -VeyrLegacyContactBurst (the B4 burst and the wide flat mesh tint)
     bool KnightRecoil();     // -VeyrNoKnightRecoil (no rebound lean of the knight on contact)
     bool WideTrail();        // -VeyrLegacyTrailWidth (the B6 ribbon width and brightness)
-    bool KickAfterSnap();    // -VeyrLegacyKickTiming (camera kick on the contact frame, before the struck leg's snap shows)
+    bool KickAfterSnap();    // opt-in -VeyrKickAfterSnap since critic W3 (the kick waited two frames for the leg snap); -VeyrLegacyKickTiming
+    bool LocalFlash();       // -VeyrLegacyContactFlash (critic W3: whole-part mesh tint, full-size point light and glint at any camera distance)
+    bool LegFlinch();        // -VeyrLegacyLegFlinch (critic W3: the 0.1 s leg snap, no buckle of the struck limb on a heavy blow)
+    bool HeroHit();          // -VeyrLegacyHeroHit (critic W3: boss hits on the knight with the distance-faded shake and a 0.07 s stop)
+    bool HitHierarchy();     // -VeyrLegacyHitHierarchy (critic W3: light and heavy blows with nearly the same punch and shake)
     bool StopFx();           // -VeyrLegacyStopFx (struck-part snap and contact burst on the dilated game clock during the stop)
     bool FilmEvidence();     // -VeyrLegacyFilmEvidence (full evidence.json rewritten every 5 s during a film)
 }
