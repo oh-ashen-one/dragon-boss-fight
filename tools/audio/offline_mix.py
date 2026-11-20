@@ -261,7 +261,7 @@ def check(res, pass2_light=13.0):
     """Every target of the brief, PASS/FAIL, on one measured result."""
     K = res['kinds']; out = []; m = {k: K[ev]['full'] for ev, k in EVENT_KIND.items() if ev in K}
     def chk(name, ok, val): out.append((name, bool(ok), val))
-    chk('integrated -20 +-1.5 LUFS', -21.5 <= res['lufs'] <= -18.5, res['lufs']); chk('true peak <= -1.5 dBTP', res['tp'] <= -1.5, res['tp'])
+    chk('integrated -24 +-1.5 LUFS', -25.5 <= res['lufs'] <= -22.5, res['lufs']); chk('true peak <= -1.5 dBTP', res['tp'] <= -1.5, res['tp'])
     chk('full-scale samples 0', res['fullScale'] == 0, res['fullScale']); chk('R-L within 1 dB', abs(res['rMinusL']) <= 1, round(res['rMinusL'], 2))
     lad = [k for k in LADDER if k in m]
     bad = [(a, b, round(m[a] - m[b], 1)) for a, b in zip(lad, lad[1:]) if m[a] < m[b] - 1.0]

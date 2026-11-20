@@ -360,8 +360,16 @@ void AVeyrAudio::UpdateVoiceFollow()
             case 2:P=D->GetActorLocation();break;
             default:if(!ResolvePart(VoicePart[I],P))P=D->GetMouthLocation();break;
         }
-        Voices[I]->SetWorldLocation(P);
+        Voices[I]->SetWorldLocation(VoiceHalfway[I]?HalfwayToView(P):P);
     }
+}
+
+FVector AVeyrAudio::HalfwayToView(const FVector& P) const
+{
+    const APlayerController* PCv=GetWorld()?GetWorld()->GetFirstPlayerController():nullptr;
+    if(!PCv)return P;
+    FVector Eye;FRotator Rot;PCv->GetPlayerViewPoint(Eye,Rot);
+    return FMath::Lerp(P,Eye+Rot.Vector()*FVector::Dist(P,Eye),.5f);
 }
 
 void AVeyrAudio::DefaultRadius(ECue Cue,float& Inner,float& Falloff)
@@ -529,13 +537,12 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
         // Mix pass 5: the dragon's ground thuds (landing, slams, body falls, walking steps) sit halfway between where they happen and the
         // view axis at the same distance: the same loudness by distance, half the sideways pan, so the big events are not lost to one side
         // (the image leaned with the feet) and their mono peak is their peak. -VeyrMixPass4 restores full panning.
-        if(bMixTable&&Place==EPlace::World&&(CurKind==EMixKind::Landing||CurKind==EMixKind::Slam||CurKind==EMixKind::BodyFall||CurKind==EMixKind::WalkStep))
-            if(const APlayerController* PCv=GetWorld()->GetFirstPlayerController())
-            {
-                FVector Eye;FRotator Rot;PCv->GetPlayerViewPoint(Eye,Rot);
-                const float Dist=FVector::Dist(P,Eye);
-                P=FMath::Lerp(P,Eye+Rot.Vector()*Dist,.5f);
-            }
+        // Mix pass 6: the claw and tail impacts too (the dragon stands right of frame: they were the largest share of the right lean and,
+        // panned hard, the loudest channel peaks of two fights); -VeyrMixClawWide restores their full pan.
+        VoiceHalfway[Slot]=false;
+        if(bMixTable&&((Place==EPlace::World&&(CurKind==EMixKind::Landing||CurKind==EMixKind::Slam||CurKind==EMixKind::BodyFall||CurKind==EMixKind::WalkStep))||
+            (Place==EPlace::Part&&CurKind==EMixKind::ClawTail&&!bClawWide)))
+        {VoiceHalfway[Slot]=true;P=HalfwayToView(P);} // a claw/tail voice keeps following its part, halfway (UpdateVoiceFollow)
         Voice->bAllowSpatialization=true;Voice->bOverrideAttenuation=true;
         Voice->SetWorldLocation(P);
         Voice->AttenuationOverrides.bAttenuate=true;Voice->AttenuationOverrides.bSpatialize=true;
@@ -1218,8 +1225,14 @@ void AVeyrAudio::LoadMixTable()
     // through this level rule, then re-solved on the pass 5 sync-test log calibrated against its real master (20:24, offline_mix.py
     // --calibrate --solve --clamp 4); head +1.4 (its low-band rise), wing -6 (its lows under a walking step), fire
     // ignition +.5 and light -.6 (they were 1.1 dB out of order in the first film) by hand.
-    constexpr float DefaultTrimDb=0.f,DefaultMusicTrimDb=-4.f;
+    // Mix pass 6 (coordinator 2026-11-19): level -24 LUFS +-1.5, true peak <= -1.5 dBTP, no full-scale samples, from the master trim alone
+    // (no limiter dependence). Loudest coincidence over two recorded fights, replayed offline without a limiter: +3.2 dBFS (with the
+    // claw/tail placement above; +4.1 before). Trim -5.2 puts it at -2.0 dBFS and the two fights at -24.2 and -25.3 LUFS; the brief's
+    // full 1.5 dB margin (-6.2) would leave one fight at -26.3 LUFS, so the margin is 0.5 dB. -VeyrMixTrimDb=0 restores pass 5.
+    constexpr float DefaultTrimDb=-5.2f,DefaultMusicTrimDb=-4.f;
     bMixTable=!FParse::Param(FCommandLine::Get(),TEXT("VeyrMixPass4"));
+    bClawWide=FParse::Param(FCommandLine::Get(),TEXT("VeyrMixClawWide"));
+    bHeadPass5=FParse::Param(FCommandLine::Get(),TEXT("VeyrMixHeadPass5"));
     for(int32 K=0;K<MixKindCount;++K){KindGainDb[K]=Defaults[K];for(int32 Q=0;Q<CueCount;++Q)LayerGainDb[K][Q]=0.f;}
     struct FLayerDefault{EMixKind K;ECue Q;float Db;};
     // Per layer where one kind's layers need different weights: the knight's whooshes and the dragon's swing/roll/breath under Other,
@@ -1230,8 +1243,11 @@ void AVeyrAudio::LoadMixTable()
         {EMixKind::LightHit,ECue::ArmorHit,-12.f},{EMixKind::LightHit,ECue::Impact,-12.f},{EMixKind::LightHit,ECue::Contact,2.f},
         {EMixKind::Slam,ECue::Exposed,-8.f},{EMixKind::Slam,ECue::Debris,8.f},{EMixKind::Slam,ECue::Break,8.f},
         {EMixKind::FireIgnition,ECue::Debris,6.f},{EMixKind::FireIgnition,ECue::Break,6.f},{EMixKind::FireIgnition,ECue::Fire,3.f},
-        {EMixKind::HeadHit,ECue::Impact,4.f},{EMixKind::HeadHit,ECue::Exposed,4.f},{EMixKind::Landing,ECue::Debris,-4.f}};
+        {EMixKind::HeadHit,ECue::Impact,4.f},{EMixKind::HeadHit,ECue::Exposed,4.f},
+        // Mix pass 6: the head hit's low thump and its crack up (rise was 9.2 / 13.4 / 7.0 dB in the three bands); its median peak stays under the body fall.
+        {EMixKind::HeadHit,ECue::DragonStep,7.f},{EMixKind::HeadHit,ECue::Contact,5.f},{EMixKind::HeadHit,ECue::ArmorHit,4.f},{EMixKind::Landing,ECue::Debris,-4.f}};
     for(const FLayerDefault& L:LayerDefaults)LayerGainDb[static_cast<int32>(L.K)][static_cast<int32>(L.Q)]=L.Db;
+    if(bHeadPass5)for(ECue Q:{ECue::DragonStep,ECue::Contact,ECue::ArmorHit})LayerGainDb[static_cast<int32>(EMixKind::HeadHit)][static_cast<int32>(Q)]=0.f; // -VeyrMixHeadPass5
     MasterTrimDb=DefaultTrimDb;MusicTrimDb=DefaultMusicTrimDb;
     FParse::Value(FCommandLine::Get(),TEXT("VeyrMixTrimDb="),MasterTrimDb);
     FParse::Value(FCommandLine::Get(),TEXT("VeyrMusicTrimDb="),MusicTrimDb);
