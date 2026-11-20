@@ -14,8 +14,8 @@ class UWorld;
  * passive rehearsal actor and the knight's own capsule and movement component are driven into the court
  * boundary all the way round, at walking, sprint and roll speed, every 50 cm (walk every 100 cm) square on,
  * and at every boundary vertex from five approach angles. Each probe starts from a teleport inside the court
- * (test setup only), then drives input only. A probe escapes when the knight ends more than 150 cm behind the
- * boundary line, below the floor, or falling. Run with -VeyrNoFallRecovery to test the walls themselves.
+ * (test setup only), then drives input only. A probe escapes when the knight gets more than 250 cm behind the
+ * boundary line (where the collision ring starts), below the floor, or falling. Run with -VeyrNoFallRecovery to test the walls themselves.
  */
 class FVeyrPerimeterProof
 {

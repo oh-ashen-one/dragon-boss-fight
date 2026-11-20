@@ -1,5 +1,8 @@
 #include "VeyrArena.h"
 #include "VeyrLook.h"
+#include "Misc/App.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SpotLightComponent.h"
@@ -19,8 +22,13 @@ bool AVeyrArena::LoadFortressKit()
     {
         const FString Path=FString::Printf(TEXT("/Game/ArtPass/Tripo/%s_v001/SM_%s_v001.SM_%s_v001"),Name,Name,Name);
         UStaticMesh* Mesh=LoadObject<UStaticMesh>(nullptr,*Path,nullptr,LOAD_Quiet|LOAD_NoWarn);
-        if(!Mesh||Mesh->GetNumLODs()<3||Mesh->GetBoundingBox().GetSize().GetMin()<1.f)
-        {ConnectedCourtDiagnostic+=FString::Printf(TEXT("; %s missing/invalid"),Name);continue;}
+        // Arena gaps (2026-11-19): under the null renderer (windowless sweeps) a cooked mesh has no
+        // render LODs, so this check dropped every fortress wall and those fights ran in a court with
+        // no walls at all. Collision does not need render data: windowless runs now build the same
+        // walls as play. -VeyrHeadlessNoFortress restores the old windowless court.
+        static const bool bRenderLodsRequired=FApp::CanEverRender()||FParse::Param(FCommandLine::Get(),TEXT("VeyrHeadlessNoFortress"));
+        if(!Mesh||(bRenderLodsRequired&&Mesh->GetNumLODs()<3)||Mesh->GetBoundingBox().GetSize().GetMin()<1.f)
+        {ConnectedCourtDiagnostic+=FString::Printf(TEXT("; %s missing/invalid (lods %d)"),Name,Mesh?Mesh->GetNumLODs():-1);continue;}
         if(FCString::Strcmp(Name,TEXT("FortressPaintedWall"))==0&&Mesh->GetStaticMaterials().Num()!=2)
         {ConnectedCourtDiagnostic+=TEXT("; mural wall must retain stone and plaster sections");continue;}
         PolishMeshes.Add(FName(Name),Mesh);ConnectedMeshDimensionsCm.Add(FName(Name),Mesh->GetBoundingBox().GetSize());++FortressMeshCount;

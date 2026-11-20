@@ -14,6 +14,8 @@ namespace
     constexpr float StartBack[3]={130.f,280.f,260.f};
     constexpr float PushSeconds[3]={1.05f,.95f,1.35f};
     constexpr float SettleSeconds=.25f;
+    // Escaped: past the start of the collision ring behind the walls (VeyrArena BuildPerimeterBlockers).
+    constexpr float EscapeCm=250.f;
     const TCHAR* SpeedName(int32 S){return S==0?TEXT("walk"):S==1?TEXT("sprint"):TEXT("roll");}
 }
 
@@ -81,7 +83,7 @@ void FVeyrPerimeterProof::EndProbe(double Elapsed)
     const float Outside=A->CourtOutsideDistance(L);
     const UCharacterMovementComponent* M=K->GetCharacterMovement();
     const bool bFalling=M&&M->IsFalling()&&L.Z-Half<Floor-50.f;
-    const bool bEscaped=Outside>150.f||MaxOutside>150.f||MinBottom<Floor-300.f||bFalling;
+    const bool bEscaped=Outside>EscapeCm||MaxOutside>EscapeCm||MinBottom<Floor-300.f||bFalling;
     WorstOutside=FMath::Max(WorstOutside,MaxOutside);++Completed;
     auto Record=[&](TArray<TSharedPtr<FJsonValue>>& List)
     {
