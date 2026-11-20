@@ -418,6 +418,14 @@ private:
     /** Real seconds of the clip's whole trim at its playback rate; negative when the clip has no tempo data. */
     float TempoDuration(FName Clip) const;
     bool TempoTrimmedSeconds(FName Clip,float RealElapsed,float& OutTrimmed) const;
+    /** Fire slam (coordinator 2026-11-19): the picture runs FireSlamLeadSeconds ahead of the gameplay clock through the
+     * fire so the source's head slam (the first 0.24 s of the strike trim) is shown before ignition; the lead is given
+     * back inside the recovery's still hold. Gameplay timing is unchanged. -VeyrLegacyFireSlam restores. */
+    bool bFireSlamLead=false;float FireSlamLeadSeconds=.24f;
+    FName FireSlamHoldClip;float FireSlamHold0=-1.f,FireSlamHold1=-1.f;
+    bool FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed);
+    /** Evidence: gameplay seconds into the fire strike of each flame contact and of each one that cost health. */
+    TArray<float> FireContactElapsed,FireHitElapsed;
     float ActivePhaseSeconds(float Phase) const;
     const FVeyrMoveTempo* TempoForMove(EVeyrDragonMove Attack,int32 Leg) const;
     float SnapTrackRate() const;

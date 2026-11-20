@@ -1481,6 +1481,8 @@ void AVeyrDragon::TryDamageTarget()
         const FVector Source=Move==EVeyrDragonMove::Fire||Move==EVeyrDragonMove::Bite?GetMouthLocation():
             Contacts.IsEmpty()?AttackOrigin:Contacts[0].Start;
         Target->ApplyBossDamage(AttackDamage,Source,false);
+        if(Move==EVeyrDragonMove::Fire&&State==EVeyrDragonState::Active)
+        {FireContactElapsed.Add(StateElapsed);if(Target->Health<Before-.001f)FireHitElapsed.Add(StateElapsed);}
         if(Target->Health>=Before-.001f){++AvoidedContactCount;CloseBrainLogEntry(TEXT("rolled"));}else{bStringLanded=true;CloseBrainLogEntry(TEXT("HIT"));}
         return;
     }
@@ -2479,9 +2481,13 @@ void AVeyrDragon::UpdateImportedPresentation()
         const bool TempoMapped=!ByTime&&!KnockdownState&&!(bShowcaseMode&&!ShowcaseOverrideClip.IsNone())&&
             TempoTrimmedSeconds(Clip,StateElapsed+(State==EVeyrDragonState::Windup?PhaseEntryReal:0.f),Trimmed);
         if(ByTime)Trimmed=Loop&&Duration>.001f?FMath::Fmod(FMath::Max(0.f,SampleSeconds),Duration):FMath::Clamp(SampleSeconds,0.f,Duration);
-        const float SequenceSeconds=Config.StartSeconds+Trimmed;
+        // Fire slam: the picture may sample the move's next trim ahead of the gameplay clock (gameplay unchanged).
+        FName SampleClip=Clip;
+        const bool bSlamLead=TempoMapped&&!ByTime&&FireSlamLeadSample(SampleClip,Trimmed);
+        const FVeyrVisualClip& SampleConfig=bSlamLead?VisualDefinition->Clips[SampleClip]:Config;
+        const float SequenceSeconds=SampleConfig.StartSeconds+Trimmed;
         // F4: the actor carries the clip's own Spine_0 track (moves flagged root_track); the pose loses it.
-        if(bRootTracks)ApplyRootTracks(Clip,SequenceSeconds,bImportedTransitionReady?Alpha:1.f);
+        if(bRootTracks)ApplyRootTracks(SampleClip,SequenceSeconds,bImportedTransitionReady?Alpha:1.f);
         if(bFadeActive&&bImportedTransitionReady&&Linear<1.f)
         {
             const float Dt=FMath::Max(0.f,Clock-FadeLastClock);FadeLastClock=Clock;
@@ -2489,25 +2495,25 @@ void AVeyrDragon::UpdateImportedPresentation()
             if(bFadeSourceLoop&&FadeSourceMax-FadeSourceMin>.001f)
                 FadeSourceSeconds=FadeSourceMin+FMath::Fmod(FMath::Max(0.f,FadeSourceSeconds-FadeSourceMin),FadeSourceMax-FadeSourceMin);
             else FadeSourceSeconds=FMath::Clamp(FadeSourceSeconds,FadeSourceMin,FadeSourceMax);
-            Sampled=ImportedPresentation->SampleClipTimeMovingSource(Clip,Trimmed,Alpha,FadeSourceClip,FadeSourceSeconds);
+            Sampled=ImportedPresentation->SampleClipTimeMovingSource(SampleClip,Trimmed,Alpha,FadeSourceClip,FadeSourceSeconds);
             if(!Sampled){bFadeActive=false;PlaybackStats.FindOrAdd(PlaybackStatKey(Clip)).Blends.FindOrAdd(TEXT("movingFailed"))++;}
         }
         else if(Linear>=1.f)bFadeActive=false;
         if(!Sampled)
-            Sampled=ByTime||TempoMapped?ImportedPresentation->SampleClipTimeBlended(Clip,ByTime?SampleSeconds:Trimmed,Alpha):
+            Sampled=ByTime||TempoMapped?ImportedPresentation->SampleClipTimeBlended(SampleClip,ByTime?SampleSeconds:Trimmed,Alpha):
                 ImportedPresentation->SampleClipPhaseBlended(Clip,StateElapsed/FMath::Max(.001f,StateDuration),Alpha);
         // Evidence: effective source rate per clip (both paths) and the moving-source rate for the next fade.
         if(Sampled)
         {
             const float Dt=LastSampleClock>=0.f?Clock-LastSampleClock:0.f;
-            if(LastSampledClip==Clip&&Dt>1.e-4f)
+            if(LastSampledClip==SampleClip&&Dt>1.e-4f)
             {
                 const float Rate=(SequenceSeconds-LastSampledSequenceSeconds)/Dt;
                 if(Rate>=0.f)LastSequenceRate=FMath::Min(Rate,6.f);
                 FName Phase;
-                if(const FVeyrClipPlayback* P=Playback.bLoaded?Playback.Find(Clip,Phase):nullptr;P&&Rate>=0.f)
+                if(const FVeyrClipPlayback* P=Playback.bLoaded?Playback.Find(SampleClip,Phase):nullptr;P&&Rate>=0.f)
                 {
-                    FPlaybackStat& St=PlaybackStats.FindOrAdd(PlaybackStatKey(Clip));
+                    FPlaybackStat& St=PlaybackStats.FindOrAdd(PlaybackStatKey(SampleClip));
                     const float S0=P->SourceFrameAt(LastSampledSequenceSeconds),S1=P->SourceFrameAt(SequenceSeconds);
                     const double Source=(S1-S0)/P->SrcFps;
                     St.RealSeconds+=Dt;St.SourceSeconds+=Source;++St.Frames;
@@ -2515,9 +2521,9 @@ void AVeyrDragon::UpdateImportedPresentation()
                     if(!P->InHold(S0)&&!P->InHold(S1)&&!P->InHold((S0+S1)*.5f)){St.RealNonHold+=Dt;St.SourceNonHold+=Source;St.MaxRateNonHold=FMath::Max(St.MaxRateNonHold,static_cast<float>(Source/Dt));}
                 }
             }
-            else if(LastSampledClip!=Clip&&Duration>.001f)
+            else if(LastSampledClip!=SampleClip&&Duration>.001f)
                 LastSequenceRate=ByTime||TempoMapped?1.f:Duration/FMath::Max(.05f,StateDuration);
-            if(Dt>1.e-4f||LastSampledClip!=Clip){LastSampledClip=Clip;LastSampledSequenceSeconds=SequenceSeconds;LastSampleClock=Clock;}
+            if(Dt>1.e-4f||LastSampledClip!=SampleClip){LastSampledClip=SampleClip;LastSampledSequenceSeconds=SequenceSeconds;LastSampleClock=Clock;}
         }
     }
     if(Sampled&&Move==EVeyrDragonMove::FlyAway&&State==EVeyrDragonState::Active)

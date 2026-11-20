@@ -10,6 +10,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
 
 namespace
 {
@@ -59,6 +60,51 @@ bool AVeyrDragon::TempoTrimmedSeconds(FName Clip,float RealElapsed,float& OutTri
     OutTrimmed=FVeyrDragonPlayback::BakedAfter(*C,Config->StartSeconds,End,FMath::Max(0.f,RealElapsed),Rate,Hold)-Config->StartSeconds;
     OutTrimmed=FMath::Clamp(OutTrimmed,0.f,End-Config->StartSeconds);
     return true;
+}
+
+bool AVeyrDragon::FireSlamLeadSample(FName& InOutClip,float& InOutTrimmed)
+{
+    if(!bFireSlamLead||FireSlamLeadSeconds<=0.f||Move!=EVeyrDragonMove::Fire)return false;
+    if(State!=EVeyrDragonState::Windup&&State!=EVeyrDragonState::Active&&State!=EVeyrDragonState::Recovery)return false;
+    const FName W=ImportedMoveClip(Move,StompLeg,TEXT("Windup")),A=ImportedMoveClip(Move,StompLeg,TEXT("Active")),R=ImportedMoveClip(Move,StompLeg,TEXT("Recovery"));
+    if(InOutClip!=(State==EVeyrDragonState::Windup?W:State==EVeyrDragonState::Active?A:R))return false;
+    const float WD=TempoDuration(W),AD=TempoDuration(A),RD=TempoDuration(R);
+    if(WD<=0.f||AD<=0.f||RD<=0.f)return false;
+    const float L=FireSlamLeadSeconds;
+    float T=0.f;FName Out;
+    if(State==EVeyrDragonState::Recovery)
+    {
+        // Where the recovery's still hold sits on the real-time input (found once by scanning the tempo map).
+        if(FireSlamHoldClip!=R)
+        {
+            FireSlamHoldClip=R;FireSlamHold0=FireSlamHold1=-1.f;FName Phase;
+            const FVeyrClipPlayback* P=Playback.bLoaded?Playback.Find(R,Phase):nullptr;
+            const FVeyrVisualClip* Config=VisualDefinition?VisualDefinition->Clips.Find(R):nullptr;
+            if(P&&Config)
+                for(int32 I=0;I<=240;++I)
+                {
+                    const float Real=RD*I/240.f;float Tr=0.f;
+                    if(!TempoTrimmedSeconds(R,Real,Tr)||!P->InHold(P->SourceFrameAt(Config->StartSeconds+Tr)))continue;
+                    if(FireSlamHold0<0.f)FireSlamHold0=Real;FireSlamHold1=Real;
+                }
+        }
+        const float Rr=StateElapsed;float V=Rr;
+        const float S=FMath::Max(0.f,FireSlamHold0-L),VS=S+L;
+        if(FireSlamHold0>=0.f&&FireSlamHold1>VS+.01f)
+            V=Rr<=S?Rr+L:Rr<FireSlamHold1?VS+(Rr-S)*(FireSlamHold1-VS)/(FireSlamHold1-S):Rr;
+        else V=Rr+L*FMath::Max(0.f,1.f-Rr/FMath::Max(.05f,RecoveryDuration));
+        Out=R;T=V;
+    }
+    else
+    {
+        // One real-time input along wind-up and strike, L ahead: the wind-up is entered L in (under its entry fade)
+        // and reaches the strike trim L before ignition, so the slam plays at its own speed in those frames.
+        const float U=State==EVeyrDragonState::Windup?FMath::Max(0.f,StateElapsed+WD+L-WindupDuration):WD+StateElapsed+L;
+        if(U<WD){Out=W;T=U;}else if(U<WD+AD){Out=A;T=U-WD;}else{Out=R;T=U-WD-AD;}
+    }
+    float Trimmed=0.f;
+    if(!TempoTrimmedSeconds(Out,T,Trimmed)||!VisualDefinition||!VisualDefinition->Clips.Find(Out))return false;
+    InOutClip=Out;InOutTrimmed=Trimmed;return true;
 }
 
 float AVeyrDragon::ActivePhaseSeconds(float Phase) const
@@ -144,6 +190,9 @@ void AVeyrDragon::InitPlayback()
     // -VeyrDragonSlowTrackTurn restores round 1's 90 deg/s turn (-VeyrLegacySnapTurn still forces the snap).
     bSlowSnapTurn=Loaded&&FParse::Param(Cmd,TEXT("VeyrDragonSlowTrackTurn"))&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
+    // Fire slam (coordinator 2026-11-19): a visual lead only; -VeyrLegacyFireSlam restores, -VeyrFireSlamLead=<s> sets it.
+    bFireSlamLead=bClipTempo&&!FParse::Param(Cmd,TEXT("VeyrLegacyFireSlam"));
+    FParse::Value(Cmd,TEXT("VeyrFireSlamLead="),FireSlamLeadSeconds);FireSlamLeadSeconds=FMath::Clamp(FireSlamLeadSeconds,0.f,.5f);
     // Gate 2 (round 2, 18:05): the one-hand sweep on package 11 had a median of 50 pops per fight (22-68) against
     // round 1's 25-47, so inertial blending is opt-in (-VeyrInertialBlend); the default keeps the two-clip fades.
     bInertialBlend=bTwoClipBlend&&FParse::Param(Cmd,TEXT("VeyrInertialBlend"))&&!FParse::Param(Cmd,TEXT("VeyrCrossfadeBlend"));
@@ -703,6 +752,14 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("worstPopRatio"),WorstPop);O->SetStringField(TEXT("worstPopClipBone"),WorstPopKey);
     O->SetBoolField(TEXT("gateNoBlendPops"),PopsInBlend==0);
     O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("yawStepsCurrentFlat"),YawStepsCurrentFlat);O->SetNumberField(TEXT("yawStepsInHitReaction"),YawStepsInHitReaction);O->SetNumberField(TEXT("headTurnSteps"),HeadTurnSteps);O->SetNumberField(TEXT("worstHeadTurnDegPer30Hz"),WorstTurn);O->SetStringField(TEXT("worstHeadTurnClip"),WorstTurnKey);O->SetNumberField(TEXT("yawStepsAll"),YawSteps+YawStepsInHitReaction);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
+    O->SetBoolField(TEXT("fireSlamLead"),bFireSlamLead);O->SetNumberField(TEXT("fireSlamLeadSeconds"),bFireSlamLead?FireSlamLeadSeconds:0.f);
+    {
+        TArray<TSharedPtr<FJsonValue>> FC,FH;int32 EarlyC=0,EarlyH=0;
+        for(const float T:FireContactElapsed){FC.Add(MakeShared<FJsonValueNumber>(T));EarlyC+=T<=.18f;}
+        for(const float T:FireHitElapsed){FH.Add(MakeShared<FJsonValueNumber>(T));EarlyH+=T<=.18f;}
+        O->SetArrayField(TEXT("fireContactElapsed"),FC);O->SetArrayField(TEXT("fireHitElapsed"),FH);
+        O->SetNumberField(TEXT("fireContactsFirst018"),EarlyC);O->SetNumberField(TEXT("fireHitsFirst018"),EarlyH);
+    }
     O->SetBoolField(TEXT("gateRateAtMost1_25"),WorstRate<=1.25f+.02f);O->SetBoolField(TEXT("gateSlideUnder5"),WorstSlide<5.f);
     return O;
 }

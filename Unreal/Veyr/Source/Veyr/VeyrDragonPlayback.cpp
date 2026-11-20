@@ -93,7 +93,7 @@ bool FVeyrDragonPlayback::Load(FString& OutDiagnostic)
             // -VeyrDragonShortRecoveries keeps the package-14 exits.
             if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrDragonShortRecoveries")))
             {
-                const FString K=E.Key;
+                const FString K(*E.Key);
                 const float R2=K==TEXT("claw")?.46f:K==TEXT("stomp")?.43f:K==TEXT("bite")?.45f:K==TEXT("tail")?.40f:K==TEXT("fire")?1.f:0.f;
                 T.RecoveryExit=FMath::Max(T.RecoveryExit,R2);
             }
