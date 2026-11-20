@@ -1,4 +1,6 @@
 #include "VeyrGameMode.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "VeyrArena.h"
 #include "VeyrDragon.h"
 #include "VeyrKnight.h"
@@ -153,6 +155,7 @@ void AVeyrGameMode::Tick(float DeltaSeconds)
             if(AVeyrLightCheck* Check=GetWorld()->SpawnActor<AVeyrLightCheck>())
                 Check->Initialize(bLightCheck?LightCheckDirectory:FString(),bFrameReport?FrameReportDirectory:FString());
     }
+    GuardCourtBounds();
     if(bArenaIntroActive)
     {
         if(FParse::Param(FCommandLine::Get(),TEXT("VeyrCaptureIntroAudio"))||FParse::Param(FCommandLine::Get(),TEXT("VeyrFilmIntro")))StartMixCapture();
@@ -348,4 +351,47 @@ void AVeyrGameMode::EndPlay(const EEndPlayReason::Type Reason)
         bCaptureBackgroundOverride=false;
     }
     Super::EndPlay(Reason);
+}
+
+void AVeyrGameMode::GuardCourtBounds()
+{
+    // Arena gaps (2026-11-19). A hole in our level is not a hazard: a knight who ends up more than
+    // 300 cm below the court floor or 400 cm outside the court boundary is put back at his last
+    // grounded position inside the court at once (no damage), logged VEYR_FALL_RECOVERY and counted
+    // for the scripted evidence. A dragon that leaves the court is an error and returns to its last
+    // valid position. Read-only in every frame that does not trigger. -VeyrNoFallRecovery disables it.
+    if(FallRecoveryMode<0)FallRecoveryMode=FParse::Param(FCommandLine::Get(),TEXT("VeyrNoFallRecovery"))?0:1;
+    if(!FallRecoveryMode||!Arena||!bPawnPositioned||Arena->CourtBoundary.Num()<3)return;
+    const float Floor=Arena->GetActorLocation().Z;
+    if(Knight)
+    {
+        const FVector P=Knight->GetActorLocation();
+        const float Half=Knight->GetCapsuleComponent()?Knight->GetCapsuleComponent()->GetScaledCapsuleHalfHeight():90.f;
+        const float Outside=P.ContainsNaN()?1e9f:Arena->CourtOutsideDistance(P);
+        UCharacterMovementComponent* M=Knight->GetCharacterMovement();
+        const bool bLost=P.ContainsNaN()||P.Z-Half<Floor-300.f||Outside>400.f;
+        if(!bLost&&M&&M->IsMovingOnGround()&&Outside<-10.f&&P.Z-Half>Floor-60.f){LastGroundedKnight=P;bHaveGroundedKnight=true;}
+        else if(bLost&&bHaveGroundedKnight)
+        {
+            ++KnightFallRecoveries;
+            UE_LOG(LogTemp,Warning,TEXT("VEYR_FALL_RECOVERY knight %d from (%.0f,%.0f,%.0f) outside=%.0f back to (%.0f,%.0f,%.0f) encounter=%.2f s"),
+                KnightFallRecoveries,P.X,P.Y,P.Z,Outside,LastGroundedKnight.X,LastGroundedKnight.Y,LastGroundedKnight.Z,EncounterSeconds);
+            Knight->SetActorLocation(LastGroundedKnight,false,nullptr,ETeleportType::TeleportPhysics);
+            if(M){M->StopMovementImmediately();M->SetMovementMode(MOVE_Walking);}
+        }
+    }
+    if(Dragon)
+    {
+        const FVector P=Dragon->GetActorLocation();
+                const float Outside=P.ContainsNaN()?1e9f:Arena->CourtOutsideDistance(P);
+        const bool bLost=P.ContainsNaN()||P.Z<Floor-400.f||Outside>800.f;
+        if(!bLost&&Outside<0.f&&P.Z>Floor-100.f){LastValidDragon=P;bHaveValidDragon=true;}
+        else if(bLost&&bHaveValidDragon)
+        {
+            ++DragonFallRecoveries;
+            UE_LOG(LogTemp,Error,TEXT("VEYR_FALL_RECOVERY dragon %d from (%.0f,%.0f,%.0f) outside=%.0f back to (%.0f,%.0f,%.0f) encounter=%.2f s"),
+                DragonFallRecoveries,P.X,P.Y,P.Z,Outside,LastValidDragon.X,LastValidDragon.Y,LastValidDragon.Z,EncounterSeconds);
+            Dragon->SetActorLocation(LastValidDragon,false,nullptr,ETeleportType::TeleportPhysics);
+        }
+    }
 }

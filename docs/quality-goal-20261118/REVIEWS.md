@@ -233,7 +233,7 @@ Consequence: the branch merges once its band and regression pass; the five fault
 | Sound | ours clearly better | sound pass 2 (clips slightly) | no (mix calibration running) |
 | Camera | ours slightly better | steady view, package 20 | no (merge pending its identity check) |
 | Weight of impacts | ours clearly better | impacts second approach | no (band and regression pending) |
-| Hero model and movement | not reviewed | | Greystone films pending |
+| Hero model and movement | ours slightly better (Greystone; but the old knight beats him slightly in the pair) | Greystone package 3, arena clip | no (dodge broken, playback merges first) |
 
 "Done" needs all six on ONE final film of the integrated build, reviewed blind again.
 
@@ -254,4 +254,26 @@ breath (2.20-2.33 s), which our yaw-step metric does not count; a struck foot fl
 `Local/quality-goal/review-F-blind2.md`.
 
 Consequence: fire aim and the pre-breath head turn join the playback merge list, with the one-hand band (recoveries).
+
+## Hero blind reviews — 2026-11-19 21:55 and 22:10 ET (Greystone, branch `fable/quality-goal-E` `23d8280`, package 3)
+
+**1. Greystone against our old knight**, the matched 65 s hero clips (`greystone-hero.mp4`, `knight-hero.mp4`), labels
+at random. **Verdict: the OLD KNIGHT slightly better overall; model: old knight slightly better; movement: equal.** The
+old knight's silhouette still reads at quarter size and his idle is alive (head bobs 7-8 px); Greystone's idle is close
+to frozen (2 px in 3.3 s) and his slim dark body blends into the background. Greystone has believable sword and shield
+proportions (the old knight's weapon is 1.07 times his height: "a canoe"), smaller weapon jumps, and settles after a
+sprint. Shared faults: the body turns in one frame at a sprint start; a hit takes them from standing to flat in 4-5
+frames. The roll was not judged: the script's dodge inputs played as sprints. Full text:
+`Local/quality-goal/review-E-blind1-pair.md`.
+
+**2. Greystone in the arena against the reference's hero**, his 30 s arena clip (`greystone-arena.mp4`) against the
+51 s reference fight cut, silent. **Verdict: OURS SLIGHTLY BETTER overall; model: reference slightly better;
+movement: ours slightly better.** The reference hero is an unlit black silhouette, hidden by blur and smoke, and his
+hammer pops onto his back without a hand. Our faults, worst first: the dodge is a dive into a headstand (upright to
+flat in one frame, legs straight up, head on the cobbles; about nine times in ten seconds) and the sword does not
+follow the flip; getting up is a two-frame snap. Captured at about 42 frames per second. Full text:
+`Local/quality-goal/review-E-blind2-reference.md`.
+
+Consequence: Greystone's dodge is the first fix, then getting up, idle, sprint turn and readability at small size; he
+has to beat the old knight in the pair before he becomes the default.
 
