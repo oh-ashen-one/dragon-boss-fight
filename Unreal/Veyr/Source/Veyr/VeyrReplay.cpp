@@ -3304,7 +3304,16 @@ void AVeyrReplay::Tick(float DeltaSeconds)
     if(LastWallFrameTime>0)WallFrameIntervals.Add(Now-LastWallFrameTime);LastWallFrameTime=Now;
     if(!IsValid(Knight)||!IsValid(Dragon))
     {
-        bFinished=true;bPassed=false;OutcomeReason=TEXT("encounter actors lost");StopVideoCapture(OutcomeReason);SaveEvidence(true);bFinalSaved=true;return;
+        bFinished=true;bPassed=false;OutcomeReason=TEXT("encounter actors lost");StopVideoCapture(OutcomeReason);SaveEvidence(true);bFinalSaved=true;
+        // Round 2 (F, 2026-11-19): a sweep or batch moves on after any terminal result; this path used to stop the
+        // process ticking an empty fight until the lock holder was killed.
+        if(AVeyrDragon::AdvanceSweep())
+        {
+            const FString Level=UGameplayStatics::GetCurrentLevelName(this,true);
+            if(!Level.IsEmpty()){bAwaitingNextReplayWorld=true;UGameplayStatics::OpenLevel(this,FName(*Level));return;}
+        }
+        if(bQuit)FPlatformMisc::RequestExit(false,TEXT("Veyr replay ended: encounter actors lost"));
+        return;
     }
     CaptureClock+=DeltaSeconds;
     // Film runs (-VeyrFilmIntro) play the production intro untouched before the scripted fight begins.
