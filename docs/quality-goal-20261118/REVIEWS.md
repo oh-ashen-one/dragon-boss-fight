@@ -229,11 +229,29 @@ Consequence: the branch merges once its band and regression pass; the five fault
 | Aspect | Latest blind verdict | On which build | In the goal branch |
 |---|---|---|---|
 | Lighting and picture | ours slightly better | picture polish round | yes, installed |
-| Boss animation | ours clearly better | playback round 1 film | no (band not yet in) |
+| Boss animation | ours clearly better (round 1 and round 2) | playback round 2 film | no (one-hand band, fire aim) |
 | Sound | ours clearly better | sound pass 2 (clips slightly) | no (mix calibration running) |
 | Camera | ours slightly better | steady view, package 20 | no (merge pending its identity check) |
 | Weight of impacts | ours clearly better | impacts second approach | no (band and regression pending) |
 | Hero model and movement | not reviewed | | Greystone films pending |
 
 "Done" needs all six on ONE final film of the integrated build, reviewed blind again.
+
+## Phase F blind review 2 — 2026-11-19 21:25 ET, boss animation, playback round 2 against the reference
+
+Opus critic, sides hidden (labels L and M at random; key outside the pack), silent films: our 92.5 s two-hand victory
+on playback round 2 (`veyr-dragonplayback2-victory-2h.mp4`, branch `fable/quality-goal-F`, package 14 with the goal
+branch's tracking; captured at 29.5 of 30 frames per second, no repeats) against the 51 s reference fight cut.
+
+**Verdict: OURS CLEARLY BETTER** (as on round 1). Ours shows a full flight cycle, a knock-down and a get-up with no
+pops, and a death fall that plays through and settles; in a turn the front foot stays within 3 px of the cobbles for
+14 frames and lifts cleanly. The reference boss never reacts to a hit and never dies on film.
+
+Our faults, worst first: the fire does not go where the head points (flame column straight up at 32.1 s with the head
+facing the hero; the first jet sweeps away from him); the death fall is seen from inside the body and the lens enters
+a leg at 39.6 s (the old camera on that branch); the head still snaps about 90 degrees in 4 frames before the first
+breath (2.20-2.33 s), which our yaw-step metric does not count; a struck foot flashes without recoiling. Full text:
+`Local/quality-goal/review-F-blind2.md`.
+
+Consequence: fire aim and the pre-breath head turn join the playback merge list, with the one-hand band (recoveries).
 
