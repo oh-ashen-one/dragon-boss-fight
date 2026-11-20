@@ -119,6 +119,15 @@ public:
     float FadeNearCm=80.f,FadeFarCm=220.f,FadeSightFloor=.22f,FadeSightEaseSeconds=.2f,FadeMaxStepCm=36.f,FadeCutCm=600.f;int32 FadeStepLimitedFrames=0;
     /** 6b dragon framing (2026-11-19): eased view lift toward the head/torso. -VeyrNoDragonFraming turns it off. */
     bool bDragonFraming=true;FRotator FadeDragonLift=FRotator::ZeroRotator;int32 FadeDragonLiftFrames=0;
+    /** Third pass (2026-11-19, critic A5). 6c: frame the head AND chest - lift the view, and pull the arm back (eased, up
+     * to FramePullMax) when the lift alone cannot reach them with his feet in frame; -VeyrLegacyDragonFraming = 6b.
+     * Coverage fade: dragon surface nearer than the knight that covers 15 % of the frame is faded fully (by screen
+     * coverage and closing speed, not only distance); -VeyrFadeDistanceOnly restores the fixed near/far.
+     * Safe area: his body stays inside the central 70 % of the width (clear of the HUD dials); -VeyrNoKnightSafeArea. */
+    bool bHeadChestFraming=true,bCoverageFade=true,bKnightSafeArea=true;
+    float FramePull=1.f,FramePullMax=1.6f,FramePullTarget=1.f;
+    float CoverNearCm=0.f,LastNearSkinCm=-1.f,CoverClosingCmPerSec=0.f,CoverUnfadedShare=0.f,CoverNearShare=0.f,AppliedFadeNearCm=0.f,AppliedFadeFarCm=0.f;
+    int32 FramePullFrames=0,CoverageFadeFrames=0,SafeAreaYawFrames=0,HeadChestUnmetFrames=0;
     float FadeArenaFraction=1.f,FadeDragonFraction=1.f,FadeSight=0.f;bool bFadeArenaPull=false,bFadeLensInside=false,bFadeApplied=false;
     int32 FadeSightFrames=0,FadeInsideFrames=0,FadeShortFrames=0;uint64 FadeArenaPullFrame=0;
     /** The lock target point the fifth-pass audit frames (dragon chest: half-way up to the head, a quarter toward it). */
@@ -245,6 +254,9 @@ struct FVeyrViewAudit
     float RuleRunStart=-1.f,RuleRunLast=-1.f,LongestRuleHiddenSeconds=0.f,LongestRuleHiddenAt=0.f;int32 RuleHiddenRuns=0,RuleRunsOver1s=0;bool bRuleRunCounted=false;
     // Fifth pass (fade rig), fight scope (dragon alive).
     int32 FadeFrames=0,FadeLensInside=0,FadeInteriorDrawable=0,FadeKnightReadable=0,FadeKnightInFrame=0,FadeKnightTall=0,FadeLocked=0,FadeLockInFrame=0,FadePitchInBand=0,FadeSightActive=0,FadeApplied=0,FadeNearClipNoFade=0,FadeDragonVisible=0,FadeDragonHeadVisible=0,FadeJumps=0,FadeCuts=0;
+    int32 FadeDragonChestVisible=0,FadeDragonHeadChest=0,FadeKnightSafe=0,FadeKnightUnderDial=0,FadeCoverOver25=0,FadeViewOver20=0,FadeSteerOver20=0;
+    float FadeCoverMax=0.f,FadeLockChangedAt=-100.f,FadeLastCutAt=-100.f;bool bFadeLastLocked=false;
+    TArray<float> FadeViewPx,FadeSteerPx,FadeCoverShares,FadeLurchDetail,FadeDialSeconds,FadeHeadChestOutSeconds,FadeCoverSeconds;
     float FadeKnightMaxHeight=0.f;TArray<float> FadeLensSteps,FadeInsideSeconds,FadeUnreadableSeconds,FadeTallSeconds,FadeDragonOutSeconds,FadeJumpSeconds;
     int32 InsideHidden=0,InsideOverhead=0,InsideInRigProxy=0;float InsideLensOffsetMaxCm=0.f,InsideRigProxyMinCm=TNumericLimits<float>::Max(),InsideNearMinCm=TNumericLimits<float>::Max();
 };

@@ -260,7 +260,8 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
         RigRot=Turn>MaxTurn?FQuat::Slerp(RigRot,WantQ,MaxTurn/Turn):WantQ;RigRot.Normalize();
     }
     FRotator ArmRot=RigRot.Rotator();ArmRot.Roll=0.f;
-    const float Length=FMath::Max(100.f,TargetArmLength);
+    // 6c pull-back (eased below) lengthens the arm while the head and chest cannot be framed from the normal one.
+    const float Length=FMath::Max(100.f,TargetArmLength)*(bHeadChestFraming&&bDragonFraming?FramePull:1.f);
     // Upward look keeps the lens near shoulder height by raising the arm origin (arena-swept), as the knight's rule.
     FVector Origin=Pivot;
     if(ArmRot.Pitch>0.f)
@@ -322,6 +323,33 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
                 const FVector Down=-FVector::UpVector*180.f*S;const FVector Mid=(Chest+Pelvis)*.5;
                 Pts.Append({Chest,NeckBase,Pelvis,Mid,Chest+Down,Pelvis+Down,Mid+Down});
             }
+            if(bHeadChestFraming&&Pts.Num()>1)
+            {
+                // 6c: head AND chest. Both points need the lift; what the pitch room cannot give becomes pull-back.
+                const FVector HC[2]={Pts[0],Pts[1]};
+                auto AllIn=[&](const FRotator& R,float M){const FQuat Q=R.Quaternion();for(const FVector& P:HC){float U,V;if(!ProjectToView(P,Lens,Q,HalfH*2.f,Aspect,U,V)||FMath::Abs(U)>M||FMath::Abs(V)>M)return false;}return true;};
+                const float PitchMax=FMath::Min(FadeUpDeg,VHalf*.95f-FeetBelow);
+                float PitchNeed=0.f,YawLo=-1e3f,YawHi=1e3f;
+                for(const FVector& P:HC)
+                {
+                    const FRotator To=(P-Lens).Rotation();
+                    const float DYaw=FMath::FindDeltaAngleDegrees(static_cast<float>(VR.Yaw),static_cast<float>(To.Yaw));
+                    YawLo=FMath::Max(YawLo,DYaw-HalfH*.8f);YawHi=FMath::Min(YawHi,DYaw+HalfH*.8f);
+                    PitchNeed=FMath::Max(PitchNeed,static_cast<float>(To.Pitch)-VHalf*.8f-static_cast<float>(VR.Pitch));
+                }
+                const float YawNeed=YawLo>YawHi?0.f:FMath::Clamp(0.f,YawLo,YawHi);
+                const float Room=FMath::Max(0.f,PitchMax-static_cast<float>(VR.Pitch));
+                const float Unmet=PitchNeed-Room+(YawLo>YawHi||FMath::Abs(YawNeed)>HalfH*.6f?6.f:0.f);
+                if(AllIn(VR,.85f))LiftTarget=FRotator::ZeroRotator;
+                else if(!AllIn(VR+FadeDragonLift,.92f))LiftTarget=FRotator(FMath::Clamp(PitchNeed,0.f,Room),FMath::Clamp(YawNeed,-HalfH*.6f,HalfH*.6f),0.f);
+                else LiftTarget=FadeDragonLift;
+                // Pull-back: grow while the lift cannot reach both, relax once they fit with room to spare.
+                if(Unmet>0.f){FramePullTarget=FMath::Min(FramePullMax,FMath::Max(FramePullTarget,FramePull)+Unmet/30.f*Dt*4.f);++HeadChestUnmetFrames;}
+                else if(Unmet<-4.f)FramePullTarget=FMath::Max(1.f,FramePullTarget-.25f*Dt);
+                LiftTarget.Pitch=FMath::Min(static_cast<float>(LiftTarget.Pitch),Room);
+            }
+            else
+            {
             auto AnyIn=[&](const FRotator& R,float M){const FQuat Q=R.Quaternion();for(const FVector& P:Pts){float U,V;if(ProjectToView(P,Lens,Q,HalfH*2.f,Aspect,U,V)&&FMath::Abs(U)<=M&&FMath::Abs(V)<=M)return true;}return false;};
             const bool bInBare=AnyIn(VR,.85f),bIn=bInBare||AnyIn(VR+FadeDragonLift,.92f);
             if(bInBare)LiftTarget=FRotator::ZeroRotator; // in shot without help: settle back
@@ -343,13 +371,25 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
             }
             else LiftTarget=FadeDragonLift; // in shot only with the lift: hold it
             LiftTarget.Pitch=FMath::Min(static_cast<float>(LiftTarget.Pitch),FMath::Max(0.f,FMath::Min(FadeUpDeg,VHalf*.95f-FeetBelow)-static_cast<float>(VR.Pitch)));
+            }
         }
+        if(!(bHeadChestFraming&&bDragonFraming&&FD&&!FD->IsDead()))FramePullTarget=1.f;
+        FramePull=FMath::FInterpTo(FramePull,FramePullTarget,Dt,FramePullTarget>FramePull?1.2f:.6f);FramePullFrames+=FramePull>1.02f;
         FadeDragonLift=FMath::RInterpTo(FadeDragonLift,LiftTarget,Dt,LiftTarget.IsNearlyZero()?1.5f:5.f);
         FadeDragonLiftFrames+=!FadeDragonLift.IsNearlyZero(.5f);
         const float PitchBeforeLift=static_cast<float>(VR.Pitch);
         VR+=FadeDragonLift;
         VR.Pitch=FMath::Min(static_cast<float>(VR.Pitch),FMath::Max(PitchBeforeLift,VHalf*.95f-FeetBelow));
         VR.Pitch=FMath::Clamp(static_cast<float>(VR.Pitch),-FadeDownDeg,FadeUpDeg);
+        // 6d safe area: his body inside the central 70 % of the width (the HUD dials sit in the bottom corners).
+        if(bKnightSafeArea)
+        {
+            const float TanH=FMath::Tan(FMath::DegreesToRadians(Fov*.5f));
+            const FVector KMid=FMath::Lerp(Foot,Top,.5f);
+            const float KYaw=FMath::FindDeltaAngleDegrees(static_cast<float>(VR.Yaw),static_cast<float>((KMid-Lens).Rotation().Yaw));
+            const float Lim=FMath::RadiansToDegrees(FMath::Atan(.7f*TanH));
+            if(FMath::Abs(KYaw)>Lim){VR.Yaw+=KYaw-FMath::Sign(KYaw)*Lim;++SafeAreaYawFrames;}
+        }
     }
     FQuat View=VR.Quaternion();
     if(bSafeLastView)
@@ -370,10 +410,49 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
             if(True.SegmentBlocked(Lens,FMath::Lerp(Foot,Top,H))){bOccluded=true;break;}
     FadeSight=FMath::FInterpConstantTo(FadeSight,bOccluded?1.f:0.f,Dt,1.f/FMath::Max(.05f,FadeSightEaseSeconds));
     FadeSightFrames+=FadeSight>.01f;FadeInsideFrames+=bFadeLensInside;FadeShortFrames+=FadeDragonFraction<.999f;
+    // Coverage fade: rays through a 6x4 grid; skin nearer than the knight that covers 15 % of the frame fades fully
+    // (its distance plus the closing speed over a quarter second); eased back out. Distance fade stays the floor.
+    float NearUse=FadeNearCm*S,FarUse=FadeFarCm*S;
+    CoverUnfadedShare=CoverNearShare=0.f;
+    if(bProxyTight)
+    {
+        const float Range=FMath::Min(550.f*S,static_cast<float>(FVector::Dist(Lens,FMath::Lerp(Foot,Top,.5f)))-KR);
+        const float NearSkin=Range>50.f?True.NearestDistance(Lens,Range):Range;
+        if(LastNearSkinCm>=0.f&&Dt>0.f&&NearSkin<Range)CoverClosingCmPerSec=FMath::FInterpTo(CoverClosingCmPerSec,(LastNearSkinCm-NearSkin)/Dt,Dt,8.f);
+        else CoverClosingCmPerSec=0.f;
+        LastNearSkinCm=NearSkin<Range?NearSkin:-1.f;
+        float Hits[24];int32 NumHits=0;
+        if(Range>50.f&&NearSkin<Range)
+        {
+            const FQuat VQ=FramedView;
+            const UCameraComponent* Camera=nullptr;
+            for(USceneComponent* Child:GetAttachChildren())if(const UCameraComponent* C=Cast<UCameraComponent>(Child)){Camera=C;break;}
+            const float TanH=FMath::Tan(FMath::DegreesToRadians((Camera?Camera->FieldOfView:78.f)*.5f)),TanV=TanH/FMath::Max(.5f,ViewAspect());
+            for(int32 IY=0;IY<4;++IY)for(int32 IX=0;IX<6;++IX)
+            {
+                const float U=-1.f+(IX+.5f)/3.f,V=-1.f+(IY+.5f)/2.f;
+                const FVector Dir=VQ.RotateVector(FVector(1.f,U*TanH,V*TanV)).GetSafeNormal();
+                const float T=True.SweepSphere(Lens,Lens+Dir*Range,2.f,0.f);
+                if(T<.999f)Hits[NumHits++]=T*Range;
+            }
+        }
+        float Target=0.f;
+        if(NumHits>=4)
+        {
+            for(int32 I=1;I<NumHits;++I){const float X=Hits[I];int32 J=I-1;while(J>=0&&Hits[J]>X){Hits[J+1]=Hits[J];--J;}Hits[J+1]=X;}
+            Target=Hits[3]+FMath::Max(0.f,CoverClosingCmPerSec)*.25f+20.f;
+        }
+        if(!bCoverageFade)Target=0.f;
+        CoverNearCm=Target>CoverNearCm?Target:FMath::FInterpConstantTo(CoverNearCm,Target,Dt,400.f);
+        if(CoverNearCm>NearUse){NearUse=CoverNearCm;FarUse=FMath::Max(FarUse,CoverNearCm+(FadeFarCm-FadeNearCm)*S*.5f);++CoverageFadeFrames;}
+        int32 Unfaded=0;for(int32 I=0;I<NumHits;++I)Unfaded+=Hits[I]>NearUse;
+        CoverNearShare=NumHits/24.f;CoverUnfadedShare=Unfaded/24.f;
+    }
+    AppliedFadeNearCm=NearUse;AppliedFadeFarCm=FarUse;
     if(AVeyrDragon* D=Dragon.Get())
     {
         const float Height=static_cast<float>(Top.Z-Foot.Z);
-        bFadeApplied=D->SetCameraFade(Lens,FMath::Lerp(Foot,Top,.55f),FadeNearCm*S,FadeFarCm*S,FMath::Max(90.f,Height),
+        bFadeApplied=D->SetCameraFade(Lens,FMath::Lerp(Foot,Top,.55f),NearUse,FarUse,FMath::Max(90.f,Height),
             FMath::SmoothStep(0.f,1.f,FadeSight),FadeSightFloor,bFadeLensInside);
     }
     else bFadeApplied=false;

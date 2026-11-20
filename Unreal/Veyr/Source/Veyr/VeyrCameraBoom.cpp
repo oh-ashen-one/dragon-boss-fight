@@ -38,7 +38,7 @@ void UVeyrCameraBoom::BeginPlay()
     FParse::Value(Cmd,TEXT("VeyrRigOverPitch="),RigOverheadPitchDeg);FParse::Value(Cmd,TEXT("VeyrRigAssistDown="),RigAssistDownDeg);FParse::Value(Cmd,TEXT("VeyrRigMaxUp="),RigMaxUpDeg);
     FParse::Value(Cmd,TEXT("VeyrRigFootprint="),RigFootprintCm);
     FParse::Value(Cmd,TEXT("VeyrFadeNear="),FadeNearCm);FParse::Value(Cmd,TEXT("VeyrFadeFar="),FadeFarCm);FParse::Value(Cmd,TEXT("VeyrFadeMinArm="),FadeMinArmFraction);
-    FParse::Value(Cmd,TEXT("VeyrFadeUp="),FadeUpDeg);FParse::Value(Cmd,TEXT("VeyrFadeDown="),FadeDownDeg);FParse::Value(Cmd,TEXT("VeyrFadeSightFloor="),FadeSightFloor);FParse::Value(Cmd,TEXT("VeyrFadeMaxStep="),FadeMaxStepCm);if(FParse::Param(Cmd,TEXT("VeyrFadeNoStepLimit")))FadeMaxStepCm=0.f;bDragonFraming=!FParse::Param(Cmd,TEXT("VeyrNoDragonFraming"));FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
+    FParse::Value(Cmd,TEXT("VeyrFadeUp="),FadeUpDeg);FParse::Value(Cmd,TEXT("VeyrFadeDown="),FadeDownDeg);FParse::Value(Cmd,TEXT("VeyrFadeSightFloor="),FadeSightFloor);FParse::Value(Cmd,TEXT("VeyrFadeMaxStep="),FadeMaxStepCm);if(FParse::Param(Cmd,TEXT("VeyrFadeNoStepLimit")))FadeMaxStepCm=0.f;bDragonFraming=!FParse::Param(Cmd,TEXT("VeyrNoDragonFraming"));bHeadChestFraming=!FParse::Param(Cmd,TEXT("VeyrLegacyDragonFraming"));bCoverageFade=!FParse::Param(Cmd,TEXT("VeyrFadeDistanceOnly"));bKnightSafeArea=!FParse::Param(Cmd,TEXT("VeyrNoKnightSafeArea"));FParse::Value(Cmd,TEXT("VeyrFramePullMax="),FramePullMax);FParse::Value(Cmd,TEXT("VeyrRigPivot="),RigPivotHeightCm);
     // Fourth pass: the knight stays inside the central 80 % of the frame; the lens may open further.
     if(!bLegacySafety){KnightScreenMargin=FMath::Max(KnightScreenMargin,.1f);MaxFovBoostDeg=FMath::Max(MaxFovBoostDeg,14.f);}
     FindDragon();
@@ -874,7 +874,7 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     FVeyrDragonTrueSkin& True=FVeyrDragonTrueSkin::Get();A.TrueSkinSource=True.Source;
     AVeyrDragon* AuditDragon=Dragon.Get();
     const bool bTrue=AuditDragon&&AuditDragon->bUsingCustomuseVisual&&True.Skin(AuditDragon->ImportedPresentation);
-    bool bCapsule=false,bHull=false,bBehind=false,bNear=false,bInside=false;bool bVolumeHere=false;float NearHere=1e6f;float StepCm=-1.f;
+    bool bCapsule=false,bHull=false,bBehind=false,bNear=false,bInside=false;bool bVolumeHere=false;float NearHere=1e6f;float StepCm=-1.f;float ViewPx=-1.f,SteerPx=-1.f;
     if(bTrue)
     {
         ++A.TrueSkinFrames;AuditOtherFrame+=RigFrame!=GFrameCounter;AuditOtherSkinFrame+=RigSkinFrame!=True.SkinFrame();
@@ -908,7 +908,7 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
     FQuat Steer=View;
     for(USceneComponent* Child:GetAttachChildren())if(const UCameraComponent* C=Cast<UCameraComponent>(Child)){Steer=View*C->GetRelativeRotation().Quaternion().Inverse();break;}
     // A gap in the audited frames is a cut away from the knight's camera (intro, restart): not a pop.
-    if(A.bHasLast&&Dt>.25f){++A.Cuts;A.bHasLast=false;A.SettleFrames=0;}
+    if(A.bHasLast&&Dt>.25f){++A.Cuts;A.bHasLast=false;A.SettleFrames=0;A.FadeLastCutAt=Seconds;}
     // The first frames after the intro hands over (or after a cut) are the cut itself, not a pop.
     if(++A.SettleFrames<=3)A.bHasLast=false;
     if(A.bHasLast)
@@ -919,6 +919,14 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
         A.KnightTeleports+=bTeleport;
         if(Dt>0.f&&A.TurnRates.Num()<20000)A.TurnRates.Add(Turn/Dt);
         if(Dt>0.f&&A.SteerRates.Num()<20000)A.SteerRates.Add(FMath::RadiansToDegrees(static_cast<float>(Steer.AngularDistance(A.LastSteer)))/Dt);
+        // Third pass: frame-to-frame view motion in pixels at 640 px width - where last frame's centre point 15 m ahead
+        // lands now (rotation plus parallax), with (view) and without (steer) the fight-feel kick.
+        {
+            const float Asp=ViewAspect();float U,V;
+            const FVector PV=A.LastCamera+A.LastView.GetForwardVector()*1500.f,PS=A.LastCamera+A.LastSteer.GetForwardVector()*1500.f;
+            ViewPx=ProjectToView(PV,Camera,View,HorizontalFovDeg,Asp,U,V)?FMath::Sqrt(FMath::Square(U*320.f)+FMath::Square(V*320.f/Asp)):640.f;
+            SteerPx=ProjectToView(PS,Camera,Steer,HorizontalFovDeg,Asp,U,V)?FMath::Sqrt(FMath::Square(U*320.f)+FMath::Square(V*320.f/Asp)):640.f;
+        }
         if(!bTeleport)
         {
             A.MaxMoveCm=FMath::Max(A.MaxMoveCm,Move);A.MaxTurnDeg=FMath::Max(A.MaxTurnDeg,Turn);
@@ -1016,6 +1024,40 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
                 }
                 A.FadeDragonHeadVisible+=bHead;A.FadeDragonVisible+=bHead||bTorso;
                 if(!bHead&&!bTorso)Note(A.FadeDragonOutSeconds,Seconds);
+                // Third pass: the chest bone itself, and head AND chest together.
+                FVector C2,N2,P2;const bool bChest=AuditDragon->GetTorsoLocations(C2,N2,P2)&&In(C2);
+                A.FadeDragonChestVisible+=bChest;A.FadeDragonHeadChest+=bHead&&bChest;if(!(bHead&&bChest))Note(A.FadeHeadChestOutSeconds,Seconds);
+            }
+            // Third pass: safe area (body inside the central 80 % of width, feet above the bottom 22 %) and the HUD dials
+            // (bottom-left x<13 %, y>72 %; bottom-right x>82 %, y>76 %), from feet, middle and head.
+            {
+                float U0,V0,U1,V1,U2,V2;
+                const bool bP=ProjectToView(Foot,Camera,View,HorizontalFovDeg,Aspect,U0,V0)&&ProjectToView(FMath::Lerp(Foot,Head,.5f),Camera,View,HorizontalFovDeg,Aspect,U1,V1)&&ProjectToView(Head,Camera,View,HorizontalFovDeg,Aspect,U2,V2);
+                if(bP)
+                {
+                    A.FadeKnightSafe+=FMath::Abs(U0)<=.8f&&FMath::Abs(U1)<=.8f&&FMath::Abs(U2)<=.8f&&V0>=-.56f;
+                    auto Dial=[](float U,float V){return (U<-.74f&&V<-.44f)||(U>.64f&&V<-.52f);};
+                    const bool bDial=Dial(U0,V0)||Dial(U1,V1)||Dial(U2,V2);A.FadeKnightUnderDial+=bDial;if(bDial)Note(A.FadeDialSeconds,Seconds);
+                }
+            }
+            // Third pass: unfaded dragon surface nearer than the knight, share of the frame (rig's 6x4 rays this frame).
+            if(RigFrame==GFrameCounter)
+            {
+                A.FadeCoverMax=FMath::Max(A.FadeCoverMax,CoverUnfadedShare);if(A.FadeCoverShares.Num()<40000)A.FadeCoverShares.Add(CoverUnfadedShare);
+                if(CoverUnfadedShare>.25f){++A.FadeCoverOver25;Note(A.FadeCoverSeconds,Seconds);}
+            }
+            // Third pass: view motion (px at 640 wide) and what moved it.
+            {
+                const AVeyrKnight* LK=Cast<AVeyrKnight>(GetOwner());const bool bLockNow=LK&&LK->bLockedOn;
+                if(bLockNow!=A.bFadeLastLocked){A.FadeLockChangedAt=Seconds;A.bFadeLastLocked=bLockNow;}
+                if(ViewPx>=0.f)
+                {
+                    if(A.FadeViewPx.Num()<40000){A.FadeViewPx.Add(ViewPx);A.FadeSteerPx.Add(SteerPx);}
+                    A.FadeViewOver20+=ViewPx>20.f;A.FadeSteerOver20+=SteerPx>20.f;
+                    if(ViewPx>20.f&&A.FadeLurchDetail.Num()<7*200)
+                        A.FadeLurchDetail.Append({Seconds,ViewPx,SteerPx,StepCm,Seconds-A.FadeLockChangedAt,Seconds-A.FadeLastCutAt,static_cast<float>(FadeStepLimitedFrames)});
+                }
+            }
             }
         }
     }
@@ -1076,6 +1118,21 @@ TSharedPtr<FJsonObject> UVeyrCameraBoom::AuditJson(const FVeyrViewAudit& A) cons
         Times(TEXT("fadeInsideSeconds"),A.FadeInsideSeconds);Times(TEXT("fadeUnreadableSeconds"),A.FadeUnreadableSeconds);Times(TEXT("fadeTallSeconds"),A.FadeTallSeconds);
         N(TEXT("fadeDragonInFrameShare"),A.FadeFrames?double(A.FadeDragonVisible)/A.FadeFrames:0.0);N(TEXT("fadeDragonHeadInFrameShare"),A.FadeFrames?double(A.FadeDragonHeadVisible)/A.FadeFrames:0.0);
         N(TEXT("fadeJumpsOver40Cm"),A.FadeJumps);N(TEXT("fadeCuts"),A.FadeCuts);N(TEXT("fadeStepLimitedFrames"),FadeStepLimitedFrames);N(TEXT("fadeDragonLiftFrames"),FadeDragonLiftFrames);
+        N(TEXT("fadeDragonChestInFrameShare"),A.FadeDragonChestVisible/F);N(TEXT("fadeDragonHeadAndChestInFrameShare"),A.FadeDragonHeadChest/F);
+        N(TEXT("fadeKnightSafeAreaShare"),A.FadeKnightSafe/F);N(TEXT("fadeKnightUnderDialFrames"),A.FadeKnightUnderDial);Times(TEXT("fadeKnightUnderDialSeconds"),A.FadeDialSeconds);
+        Times(TEXT("fadeHeadChestOutSeconds"),A.FadeHeadChestOutSeconds);
+        N(TEXT("fadeNearCoverMaxShare"),A.FadeCoverMax);N(TEXT("fadeNearCoverOver25Frames"),A.FadeCoverOver25);Times(TEXT("fadeNearCoverOver25Seconds"),A.FadeCoverSeconds);
+        {TArray<float> Cv=A.FadeCoverShares;Cv.Sort();N(TEXT("fadeNearCoverP99Share"),Cv.IsEmpty()?0.f:Cv[FMath::Clamp(FMath::FloorToInt(.99f*(Cv.Num()-1)),0,Cv.Num()-1)]);}
+        {
+            TArray<float> Vp=A.FadeViewPx,Sp=A.FadeSteerPx;Vp.Sort();Sp.Sort();
+            auto Q=[](const TArray<float>& X,float P){return X.IsEmpty()?0.f:X[FMath::Clamp(FMath::FloorToInt(P*(X.Num()-1)),0,X.Num()-1)];};
+            N(TEXT("viewPxP50"),Q(Vp,.5f));N(TEXT("viewPxP99"),Q(Vp,.99f));N(TEXT("viewPxP999"),Q(Vp,.999f));N(TEXT("viewPxMax"),Vp.IsEmpty()?0.f:Vp.Last());N(TEXT("viewPxOver20Frames"),A.FadeViewOver20);
+            N(TEXT("steerPxP999"),Q(Sp,.999f));N(TEXT("steerPxMax"),Sp.IsEmpty()?0.f:Sp.Last());N(TEXT("steerPxOver20Frames"),A.FadeSteerOver20);
+            TArray<TSharedPtr<FJsonValue>> L;for(float X:A.FadeLurchDetail)L.Add(MakeShared<FJsonValueNumber>(FMath::RoundToFloat(X*100.f)/100.f));
+            O->SetArrayField(TEXT("lurch_t_viewPx_steerPx_stepCm_sinceLockSwitch_sinceCut_stepLimitedTotal"),L);
+        }
+        N(TEXT("framePullFrames"),FramePullFrames);N(TEXT("headChestUnmetFrames"),HeadChestUnmetFrames);N(TEXT("coverageFadeFrames"),CoverageFadeFrames);N(TEXT("safeAreaYawFrames"),SafeAreaYawFrames);
+        O->SetBoolField(TEXT("headChestFraming"),bHeadChestFraming);O->SetBoolField(TEXT("coverageFade"),bCoverageFade);O->SetBoolField(TEXT("knightSafeArea"),bKnightSafeArea);
         Times(TEXT("fadeDragonOutSeconds"),A.FadeDragonOutSeconds);Times(TEXT("fadeJumpSeconds"),A.FadeJumpSeconds);
     }
     O->SetBoolField(TEXT("legacyCameraPlacement"),bLegacyPlacement);
