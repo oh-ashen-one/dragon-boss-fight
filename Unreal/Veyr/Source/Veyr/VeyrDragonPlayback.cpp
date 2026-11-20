@@ -1,4 +1,6 @@
 #include "VeyrDragonPlayback.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "VeyrMoveData.h"
 #include "Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
@@ -57,6 +59,8 @@ bool FVeyrDragonPlayback::Load(FString& OutDiagnostic)
     Phase2Rate=FMath::Clamp(Num(Root,TEXT("phase2_rate"),1.12f),1.f,2.f);
     Phase2MaxRate=FMath::Clamp(Num(Root,TEXT("phase2_max_rate"),1.25f),1.f,8.f);
     Phase2RecoveryExitScale=FMath::Clamp(Num(Root,TEXT("phase2_recovery_exit_scale"),.85f),.2f,1.f);
+    // Round 2 one-hand band: phase two no longer halves the recoveries (0.5); 0.85 (goal branch: about 0.9).
+    if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrDragonShortRecoveries")))Phase2RecoveryExitScale=FMath::Max(Phase2RecoveryExitScale,.85f);
     Phase2GapScale=FMath::Clamp(Num(Root,TEXT("phase2_gap_scale"),1.f),0.f,1.f);
     Phase2ChainEntryAdd=FMath::Clamp(Num(Root,TEXT("phase2_chain_entry_add"),0.f),0.f,.5f);
     if(Root->TryGetObjectField(TEXT("turn"),Obj)){TrackRateDps=Num(*Obj,TEXT("track_rate_dps"),TrackRateDps);TrackLeadSeconds=Num(*Obj,TEXT("track_lead_seconds"),TrackLeadSeconds);}
@@ -83,6 +87,16 @@ bool FVeyrDragonPlayback::Load(FString& OutDiagnostic)
             T.GapScale=FMath::Max(0.f,Num(O,TEXT("gap_scale"),1.f));T.GapAdd=Num(O,TEXT("gap_add"),0.f);
             T.ChainEntry=FMath::Clamp(Num(O,TEXT("chain_entry"),0.f),0.f,.9f);
             O->TryGetBoolField(TEXT("root_track"),T.bRootTrack);
+            // Round 2 one-hand band (coordinator 2026-11-19): the recoveries paid for the longer wind-ups shrank the punish
+            // window (recovery + idle) 13-18 % against the goal branch. Pay less back: recovery exits rise so the claw,
+            // stomp, bite and tail recoveries return to about 0.55 s (fire 0.4 s) and those moves grow instead.
+            // -VeyrDragonShortRecoveries keeps the package-14 exits.
+            if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrDragonShortRecoveries")))
+            {
+                const FString K=E.Key;
+                const float R2=K==TEXT("claw")?.46f:K==TEXT("stomp")?.43f:K==TEXT("bite")?.45f:K==TEXT("tail")?.40f:K==TEXT("fire")?1.f:0.f;
+                T.RecoveryExit=FMath::Max(T.RecoveryExit,R2);
+            }
             for(float* R:{&T.Rate,&T.WindupRate,&T.StrikeRate,&T.RecoveryRate,&T.HoldRate})*R=FMath::Clamp(*R,.2f,8.f);
             Moves.Add(FName(*E.Key),T);
         }
