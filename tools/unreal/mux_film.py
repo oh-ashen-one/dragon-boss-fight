@@ -16,6 +16,7 @@ p = argparse.ArgumentParser(description=__doc__)
 p.add_argument('run', type=Path)
 p.add_argument('--output', type=Path, required=True)
 p.add_argument('--world-index', type=int, default=0)
+p.add_argument('--offset', type=float, help='audio position of video time 0 (s), from tools/audio/content_offset.py; replaces the clock-based offset (the recording drops time while the game stalls)')
 a = p.parse_args()
 run = a.run.resolve(strict=True)
 manifest = run / 'native-video' / 'frames.jsonl'
@@ -38,7 +39,7 @@ chosen = min(a.world_index, len(audio) - 1)
 audio_start = float(evidence.get('audioStartVideoSeconds', 0.0)) - (ticks[-1] - ticks[chosen]) / 1e7
 audio = [audio[chosen]]
 # Audio position of the first encoded video frame.
-offset = first['wallSeconds'] - audio_start
+offset = first['wallSeconds'] - audio_start if a.offset is None else first['wallSeconds'] + a.offset
 cmd = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', str(silent)]
 cmd += (['-ss', f'{offset:.4f}'] if offset >= 0 else ['-itsoffset', f'{-offset:.4f}']) + ['-i', str(audio[0])]
 cmd += ['-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', str(a.output)]
