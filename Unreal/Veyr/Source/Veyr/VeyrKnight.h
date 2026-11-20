@@ -31,6 +31,13 @@ public:
     /** Lock-input proof (camera third pass, replay mode "lockinput"): the mouse-look path past the human-input gate,
      * and the locked move direction exactly as Tick builds it from held keys. Not bound to any input. */
     void ProofLookInput(float Yaw,float Pitch);
+    /** Proof only: human input enabled without an OS mouse capture (replay control released), and the lock's view
+     * steering paused (the camera can be set away from the target while the lock stays on). */
+    bool bProofHumanInput=false,bProofFreezeLockView=false;
+    void ProofBeginHumanInput(){bReplayControlled=false;bProofHumanInput=true;}
+    /** Proof only: the bound mouse-look and forward-key handlers themselves. */
+    void ProofLookYaw(float Value){LookYaw(Value);}
+    void ProofForward(bool bDown){if(bDown)ForwardPressed();else ForwardReleased();}
     FVector ProofLockedMoveDirection(float Forward,float Right) const;
     AVeyrKnight();
     virtual void Tick(float DeltaSeconds) override;

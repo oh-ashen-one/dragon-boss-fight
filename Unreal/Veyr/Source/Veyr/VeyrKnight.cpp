@@ -249,8 +249,9 @@ void AVeyrKnight::BeginPlay()
             TEXT("/Game/Characters/Customuse/KnightB/v047contiguous/DA_KnightB.DA_KnightB"),nullptr,LOAD_Quiet|LOAD_NoWarn);
     // Each completion feature keeps its "before" behind a flag (boss-fight-blueprint principle 8).
     bLockOnStrafeEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoLockOnStrafe"));
-    bLockMouseOffset=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyLockMouseHold"));
-    bLockMoveFollowsCamera=!FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyLockMoveBasis"));
+    // D1/D2 are opt-in until the player-input proof (replay mode "lockinput") makes them defaults (coordinator 2026-11-19).
+    bLockMouseOffset=FParse::Param(FCommandLine::Get(),TEXT("VeyrLockMouseRelease"));
+    bLockMoveFollowsCamera=FParse::Param(FCommandLine::Get(),TEXT("VeyrLockMoveCameraBasis"));
     bDirectionalStaggerEnabled=!FParse::Param(FCommandLine::Get(),TEXT("VeyrNoDirectionalStagger"));
     float RequestedRunStopBlend=0.f;
     bSprintContactRevision=FParse::Param(FCommandLine::Get(),TEXT("VeyrSprintContactRevision"));
@@ -836,7 +837,7 @@ void AVeyrKnight::Tick(float DeltaSeconds)
         (FRotationMatrix(ViewYaw).GetUnitAxis(EAxis::X) * (float(bForwardHeld) - float(bBackHeld)) +
          FRotationMatrix(ViewYaw).GetUnitAxis(EAxis::Y) * (float(bRightHeld) - float(bLeftHeld))).GetClampedToMaxSize(1.f);
     MoveIntent.Z = 0.f;
-    if (!bReplayControlled && !bMouseCaptured) MoveIntent = FVector::ZeroVector;
+    if (!bReplayControlled && !bMouseCaptured && !bProofHumanInput) MoveIntent = FVector::ZeroVector;
     if (bReplayControlled)
     {
         SetGuard(bReplayGuard);
@@ -1119,7 +1120,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             const FVector Right=FRotationMatrix(FRotator(0,Look.Yaw,0)).GetUnitAxis(EAxis::Y);
             DeathCameraSide=FVector::DotProduct(Boss->GetHeadLocation()-GetActorLocation(),Right)>10.f?1.f:-1.f;
         }
-        if(bLockedOn&&IsValid(Boss)&&(!Boss->IsDead()||FollowFall)&&ManualCameraRemaining<=0.f)
+        if(bLockedOn&&IsValid(Boss)&&(!Boss->IsDead()||FollowFall)&&ManualCameraRemaining<=0.f&&!bProofFreezeLockView)
         {
             FVector Focus=Boss->GetHeadLocation();
             // Preserve an existing lock through the fall so a standing kill
@@ -1183,7 +1184,7 @@ void AVeyrKnight::UpdateCamera(float DeltaSeconds)
             if(bLockMouseOffset)
             {
                 LockOffsetHold=FMath::Max(0.f,LockOffsetHold-DeltaSeconds);
-                if(LockOffsetHold<=0.f)LockLookOffset=FMath::RInterpTo(LockLookOffset,FRotator::ZeroRotator,DeltaSeconds,2.5f);
+                if(LockOffsetHold<=0.f)LockLookOffset=FMath::RInterpTo(LockLookOffset,FRotator::ZeroRotator,DeltaSeconds,4.f);
                 // The bend is immediate (the player's hand), the lock's own tracking keeps its pace.
                 Look+=LockLookOffset-LockOffsetApplied;LockOffsetApplied=LockLookOffset;
                 Desired+=LockLookOffset;
@@ -2427,7 +2428,7 @@ void AVeyrKnight::LookYaw(float Value)
 void AVeyrKnight::ApplyLookYaw(float Value)
 {
     if(bLockMouseOffset&&bLockedOn&&IsValid(Boss)&&!Boss->IsDead())
-    {LockLookOffset.Yaw=FMath::Clamp(static_cast<float>(LockLookOffset.Yaw)+Value*.7f*MouseSensitivity,-60.f,60.f);LockOffsetHold=.5f;return;}
+    {LockLookOffset.Yaw=FMath::Clamp(static_cast<float>(LockLookOffset.Yaw)+Value*.7f*MouseSensitivity,-60.f,60.f);LockOffsetHold=.25f;return;}
     ManualCameraRemaining=1.8f;AddControllerYawInput(Value*.7f*MouseSensitivity);
 }
 void AVeyrKnight::LookPitch(float Value)
@@ -2438,7 +2439,7 @@ void AVeyrKnight::LookPitch(float Value)
 void AVeyrKnight::ApplyLookPitch(float Value)
 {
     if(bLockMouseOffset&&bLockedOn&&IsValid(Boss)&&!Boss->IsDead())
-    {LockLookOffset.Pitch=FMath::Clamp(static_cast<float>(LockLookOffset.Pitch)-Value*.6f*MouseSensitivity,-20.f,20.f);LockOffsetHold=.5f;return;}
+    {LockLookOffset.Pitch=FMath::Clamp(static_cast<float>(LockLookOffset.Pitch)-Value*.6f*MouseSensitivity,-20.f,20.f);LockOffsetHold=.25f;return;}
     ManualCameraRemaining=1.8f;AddControllerPitchInput(-Value*.6f*MouseSensitivity);
 }
 void AVeyrKnight::ProofLookInput(float Yaw,float Pitch)
@@ -2469,6 +2470,7 @@ void AVeyrKnight::RightPressed() { bRightHeld = HumanInputEnabled(); } void AVey
 bool AVeyrKnight::HumanInputEnabled() const
 {
     if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->IsArenaIntroActive())return false;
+    if(bProofHumanInput)return !UGameplayStatics::IsGamePaused(this); // lockinput proof: the player path without a captured OS mouse
     if(!bMouseCaptured||bMouseCaptureConfirmationPending||bResumeCapturePending||bReplayControlled||UGameplayStatics::IsGamePaused(this))return false;
     const UGameViewportClient* Viewport=GetWorld()->GetGameViewport();
     return Viewport&&Viewport->Viewport&&Viewport->Viewport->HasFocus()&&
