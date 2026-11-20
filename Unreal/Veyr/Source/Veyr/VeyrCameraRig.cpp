@@ -382,13 +382,13 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
         VR+=FadeDragonLift;
         VR.Pitch=FMath::Min(static_cast<float>(VR.Pitch),FMath::Max(PitchBeforeLift,VHalf*.95f-FeetBelow));
         VR.Pitch=FMath::Clamp(static_cast<float>(VR.Pitch),-FadeDownDeg,FadeUpDeg);
-        // 6d safe area: his body inside the central 70 % of the width (the HUD dials sit in the bottom corners).
+        // 6d safe area: his body inside the central 60 % of the width (the HUD dials sit in the bottom corners).
         if(bKnightSafeArea)
         {
             const float TanH=FMath::Tan(FMath::DegreesToRadians(Fov*.5f));
             const FVector KMid=FMath::Lerp(Foot,Top,.5f);
             const float KYaw=FMath::FindDeltaAngleDegrees(static_cast<float>(VR.Yaw),static_cast<float>((KMid-Lens).Rotation().Yaw));
-            const float Lim=FMath::RadiansToDegrees(FMath::Atan(.7f*TanH));
+            const float Lim=FMath::RadiansToDegrees(FMath::Atan(.6f*TanH));
             if(FMath::Abs(KYaw)>Lim){VR.Yaw+=KYaw-FMath::Sign(KYaw)*Lim;++SafeAreaYawFrames;}
         }
     }
