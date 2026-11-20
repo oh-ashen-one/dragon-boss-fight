@@ -55,7 +55,7 @@ def frame_text(row):
             f"{slide_text}")
 
 
-def encode(manifest_rows, frames, evidence_rows, out_dir, name, ffmpeg, skip_overlay, clock="callback"):
+def encode(manifest_rows, frames, evidence_rows, out_dir, name, ffmpeg, skip_overlay, clock="callback", out_fps=30):
     """frames: native 'frame' records already filtered; manifest_rows: world_start/world_end context."""
     video_dir = out_dir.parent / "native-video"
     sub = video_dir / f"frames-{name}.jsonl"
@@ -86,11 +86,11 @@ def encode(manifest_rows, frames, evidence_rows, out_dir, name, ffmpeg, skip_ove
             best = None
         lines += [str(i + 1), f"{srt_time(begin)} --> {srt_time(max(finish, begin + 0.001))}", frame_text(best), ""]
     srt.write_text("\n".join(lines))
-    video_filter = "fps=30" if skip_overlay else (
+    video_filter = f"fps={out_fps}" if skip_overlay else (
         "subtitles=" + srt.name + ":original_size=1280x720:force_style='FontName=Menlo,FontSize=9,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
-        "BorderStyle=3,Outline=1,Shadow=0,Alignment=5,MarginL=10,MarginV=8',fps=30")
+        "BorderStyle=3,Outline=1,Shadow=0,Alignment=5,MarginL=10,MarginV=8',fps=" + str(out_fps))
     command = [ffmpeg, "-hide_banner", "-nostdin", "-y", "-i", vfr.name, "-vf", video_filter, "-an", "-c:v", "libx264", "-preset", "medium",
-               "-crf", "18", "-pix_fmt", "yuv420p", "-r", "30", "-movflags", "+faststart", final.name]
+               "-crf", "18", "-pix_fmt", "yuv420p", "-r", str(out_fps), "-movflags", "+faststart", final.name]
     result = subprocess.run(command, cwd=out_dir, capture_output=True, text=True)
     if result.returncode:
         raise SystemExit(f"ffmpeg failed for {name}: {result.stderr[-2000:]}")
@@ -109,6 +109,7 @@ def main():
     parser.add_argument("--no-overlay", action="store_true")
     parser.add_argument("--delete-frames", action="store_true", help="remove native-video PNGs after every MP4 verified")
     parser.add_argument("--margin", type=float, default=0.25, help="game seconds of context around each sequence")
+    parser.add_argument("--fps", type=int, default=30, help="constant output frame rate (60 for a 60 fps take)")
     parser.add_argument("--clock", choices=("callback", "requested"), default="callback", help="frame timestamps (encode_video.py --clock)")
     args = parser.parse_args()
     ffmpeg = shutil.which("ffmpeg")
@@ -138,7 +139,7 @@ def main():
             continue
         name = f"{seq['index']:02d}-{seq['name']}"
         sequence_rows = [r for r in evidence_rows if r["seq"] == seq["index"]]
-        receipts.append(encode(rows, picked, sequence_rows, out_dir, name, ffmpeg, args.no_overlay, args.clock))
+        receipts.append(encode(rows, picked, sequence_rows, out_dir, name, ffmpeg, args.no_overlay, args.clock, args.fps))
         print("encoded", name, len(picked), "native frames", flush=True)
     receipts.append(encode(rows, frames, evidence_rows, out_dir, "00-blendproof-all", ffmpeg, args.no_overlay))
     (out_dir / "media-receipt.json").write_text(json.dumps(receipts, indent=2) + "\n")
