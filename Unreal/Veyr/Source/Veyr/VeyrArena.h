@@ -62,6 +62,10 @@ public:
     float CourtOutsideDistance(const FVector& WorldPoint) const;
     /** Collision-only boxes behind every boundary edge (arena gaps fix; -VeyrLegacyArenaGaps removes them). */
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 PerimeterBlockerCount=0;
+    /** Fortress corners closed where the watchtower doorways opened out of the court (-VeyrLegacyArenaGaps restores). */
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Environment") int32 CornerPierCount=0;
+    /** Pawn-blocking court collision: counts and a checksum of world bounds (computed once, then cached). */
+    FString CourtCollisionSignature() const;
     /** Phase C frame-report counters: court parts split out for Lumen, shadowed court lights now. */
     int32 GetLumenSplitComponentCount() const { return LumenSplitParts.Num(); }
     int32 CountShadowedCourtLights() const;
@@ -181,6 +185,8 @@ private:
     FVector KitSize(FName Name,float Height) const;
     void KitPiece(FName Name,const FVector& Anchor,float Height,float Yaw,bool bBlocking=true,bool bFrontAnchor=false,float WidthScale=1.f);
     void BuildPerimeterBlockers(float InnerDepth,float OuterDepth);
+    void BuildFortressCornerPiers();
+    mutable FString CourtCollisionSignatureCache;
     void KitWallRun(FName Name,const FVector& Start,const FVector& End,const FVector& Inward,float Height,float FloorZ,bool bBlocking=true);
     void BuildCourtTerrain();
 };

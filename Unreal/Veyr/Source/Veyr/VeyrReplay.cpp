@@ -411,6 +411,8 @@ TSharedPtr<FJsonObject> AVeyrReplay::Snapshot() const
     O->SetNumberField(TEXT("fortressTowerCount"),SnapshotArena?SnapshotArena->FortressTowerCount:0);
     O->SetBoolField(TEXT("overhaulAssetsReady"),SnapshotArena&&SnapshotArena->bOverhaulAssetsReady);
     O->SetNumberField(TEXT("breakablePropCount"),SnapshotArena?SnapshotArena->BreakablePropCount:0);
+    O->SetStringField(TEXT("courtCollision"),SnapshotArena?SnapshotArena->CourtCollisionSignature():FString());
+    O->SetNumberField(TEXT("cornerPierCount"),SnapshotArena?SnapshotArena->CornerPierCount:0);
     O->SetNumberField(TEXT("brokenProps"),SnapshotArena?SnapshotArena->BrokenProps:0);
     if(SnapshotMode&&SnapshotMode->Audio)
     {

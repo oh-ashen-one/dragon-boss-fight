@@ -128,6 +128,7 @@ bool AVeyrArena::BuildFortressCourt()
         for(int32 Rail=0;Rail<4;++Rail)
             Box(GateRails,FVector(Side*(FortressHalfX+GateRecess),0,FortressFloorZ+120.f+Rail*DoorHeight*.23f),FVector(30,DoorWidth+30.f,30));
     }
+    BuildFortressCornerPiers();
     // Limited collapsed masonry along the perimeter; no funerary statues or bell.
     for(float Side:{-1.f,1.f})for(int32 I=0;I<4;++I)
         KitPiece(TEXT("CollapsedVaultRubble"),FVector(-3400+I*2200.f,Side*4210.f,0),200.f+(I%3)*45.f,I*61.f,true);
@@ -149,4 +150,34 @@ void AVeyrArena::BuildFortressSkyline()
         KitPiece(TEXT("FortressWatchtower"),FVector(X,7200,0),X>0?4800.f:4200.f,180,false);
         ++FortressTowerCount;
     }
+}
+
+void AVeyrArena::BuildFortressCornerPiers()
+{
+    // Arena gaps (2026-11-19). The perimeter probe found the knight leaving the court at both east
+    // corners: between the end of the long wall (x 4675-5075, y +-4500) and the taller east watchtower
+    // the capsule walks into the tower's open base and out behind the walls. A stone corner pier in the
+    // wall line closes the opening; its mesh collision is backed by a box of the same footprint (hidden
+    // inside the pier, pawns only) so the capsule and the roll sweep stop at the pier face. Both sit on
+    // or behind the wall line: the fighting floor is unchanged. -VeyrLegacyArenaGaps restores the gap.
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyArenaGaps")))return;
+    const bool bButtress=PolishMeshes.Contains(TEXT("CornerButtress"));
+    const FName PierName=bButtress?FName(TEXT("CornerButtress")):FName(TEXT("FortressCurtainWall"));
+    const float PierHeight=1700.f,PierWidth=760.f,PierX=FortressHalfX-280.f;
+    const FVector Size=KitSize(PierName,PierHeight);
+    const float WidthScale=Size.X>1.f?PierWidth/static_cast<float>(Size.X):1.f;
+    auto* Backing=NewObject<UInstancedStaticMeshComponent>(this,TEXT("FortressCornerPierCollision"));
+    AddInstanceComponent(Backing);Backing->SetupAttachment(GetRootComponent());Backing->SetMobility(EComponentMobility::Static);
+    Backing->SetStaticMesh(CubeMesh);Backing->SetHiddenInGame(true);Backing->SetVisibility(false);Backing->SetCastShadow(false);
+    Backing->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);Backing->SetCollisionObjectType(ECC_WorldStatic);
+    Backing->SetCollisionResponseToAllChannels(ECR_Ignore);Backing->SetCollisionResponseToChannel(ECC_Pawn,ECR_Block);
+    Backing->SetGenerateOverlapEvents(false);Backing->SetCanEverAffectNavigation(false);Backing->RegisterComponent();
+    for(float Side:{-1.f,1.f})
+    {
+        KitPiece(PierName,FVector(PierX,Side*FortressHalfY,FortressFloorZ),PierHeight,Side>0?180.f:0.f,true,true,WidthScale);
+        // Footprint from 20 cm behind the face line to 700 cm behind, across the whole opening.
+        Backing->AddInstance(FTransform(FRotator::ZeroRotator,FVector(PierX,Side*(FortressHalfY+360.f),FortressFloorZ+700.f),FVector(PierWidth,680.f,1600.f)/100.f));
+        ++CornerPierCount;
+    }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_FORTRESS_CORNER_PIERS piers=%d mesh=%s width=%.0f height=%.0f x=%.0f"),CornerPierCount,*PierName.ToString(),PierWidth,PierHeight,PierX);
 }

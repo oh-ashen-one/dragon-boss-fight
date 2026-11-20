@@ -108,6 +108,10 @@ void AVeyrLightCheck::Initialize(const FString& StillsDirectory,const FString& F
         {TEXT("12_play_15m"),NAME_None,1.8f},
         {TEXT("13_play_25m"),NAME_None,1.8f},
         {TEXT("14_play_feet"),NAME_None,1.8f}};
+    // Arena gaps (2026-11-19): -VeyrLightCheckCorners shoots only the two east corners, from the court.
+    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrLightCheckCorners")))
+        Shots={{TEXT("15_corner_southeast"),NAME_None,2.5f},{TEXT("16_corner_northeast"),NAME_None,1.8f},
+               {TEXT("17_corner_southeast_close"),NAME_None,1.8f},{TEXT("18_corner_northeast_close"),NAME_None,1.8f}};
     LastWall=FPlatformTime::Seconds();
     UE_LOG(LogTemp,Display,TEXT("VEYR_LIGHTCHECK_BEGIN stills=%s frames=%s legacy=%d tier=%d"),*StillsDir,*FrameDir,VeyrLook::IsLegacy(),VeyrLook::RenderTier());
 }
@@ -283,6 +287,12 @@ void AVeyrLightCheck::PlaceCamera()
         // Combat-camera stand-in: 4.5 m behind and 2 m above the knight, aimed between him and the dragon.
         At=K-KF*450.f+FVector(0,0,200);Look=FMath::Lerp(K+FVector(0,0,120),D+FVector(0,0,300),.35f);Fov=75.f;
         if(Name.StartsWith(TEXT("14"))){At=K-KF*350.f+FVector(0,0,150);Look=K+KF*400.f+FVector(0,0,180);}
+    }
+    else if(Name.StartsWith(TEXT("15"))||Name.StartsWith(TEXT("16"))||Name.StartsWith(TEXT("17"))||Name.StartsWith(TEXT("18")))
+    {
+        const float Side=(Name.StartsWith(TEXT("15"))||Name.StartsWith(TEXT("17")))?-1.f:1.f;
+        const bool bClose=Name.StartsWith(TEXT("17"))||Name.StartsWith(TEXT("18"));
+        At=bClose?FVector(3900,Side*3500,260):FVector(2300,Side*2300,420);Look=FVector(4900,Side*4500,bClose?450.f:600.f);Fov=bClose?60.f:70.f;
     }
     Camera->GetCameraComponent()->SetFieldOfView(Fov);
     Camera->SetActorLocationAndRotation(At,(Look-At).Rotation());

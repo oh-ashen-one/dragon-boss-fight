@@ -19,6 +19,9 @@
 #include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "Misc/App.h"
+#include "Misc/Crc.h"
 #include "Engine/Texture2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UObject/ConstructorHelpers.h"
@@ -221,6 +224,7 @@ void AVeyrArena::BeginPlay()
     BuildInteractiveDetails();
     BuildCollision();
     if(VeyrLook::SplitInstancesForLumen())SplitCourtInstancesForLumen();
+    CourtCollisionSignature(); // VEYR_COURT_COLLISION: compare windowless and rendered runs
     if(!VeyrLook::IsLegacy())SetActorTickInterval(0.f);
     UE_LOG(LogTemp, Display, TEXT("VEYR_ARENA_READY connected court: clear fight diameter~7200cm, walkable aisles0..240cm; %d instanced groups."), Batches.Num());
     UE_LOG(LogTemp,Display,TEXT("VEYR_CONNECTED_COURT ready=%d meshes=%d/12 instances=%d diagnostic=%s"),
@@ -1167,8 +1171,9 @@ void AVeyrArena::BuildPerimeterBlockers(float InnerDepth,float OuterDepth)
     // out of the world. It starts InnerDepth behind the face line (behind the fortress gate bars),
     // so the fighting floor is unchanged, and it blocks only pawns: camera and visibility traces
     // pass through it. Each box runs OuterDepth past both ends so neighbouring boxes overlap at
-    // every vertex. -VeyrLegacyArenaGaps restores the walls alone.
-    if(FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyArenaGaps"))||CourtBoundary.Num()<3||!CubeMesh)return;
+    // every vertex. Opt-in (-VeyrArenaRing): the real walls hold once their gaps are closed
+    // (BuildFortressCornerPiers), so ordinary play has no invisible wall.
+    if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrArenaRing"))||CourtBoundary.Num()<3||!CubeMesh)return;
     auto* Ring=NewObject<UInstancedStaticMeshComponent>(this,TEXT("CourtPerimeterBlockers"));
     AddInstanceComponent(Ring);Ring->SetupAttachment(GetRootComponent());Ring->SetMobility(EComponentMobility::Static);
     Ring->SetStaticMesh(CubeMesh);Ring->SetHiddenInGame(true);Ring->SetVisibility(false);Ring->SetCastShadow(false);
@@ -1188,4 +1193,31 @@ void AVeyrArena::BuildPerimeterBlockers(float InnerDepth,float OuterDepth)
         ++PerimeterBlockerCount;
     }
     UE_LOG(LogTemp,Display,TEXT("VEYR_PERIMETER_BLOCKERS edges=%d innerCm=%.0f outerCm=%.0f"),PerimeterBlockerCount,InnerDepth,OuterDepth);
+}
+
+FString AVeyrArena::CourtCollisionSignature() const
+{
+    // Equality check for windowless and rendered runs: every pawn-blocking primitive of the court,
+    // its instances and their world bounds (rounded to cm), plus whether each has a collision body.
+    if(!CourtCollisionSignatureCache.IsEmpty())return CourtCollisionSignatureCache;
+    TArray<UPrimitiveComponent*> Parts;GetComponents<UPrimitiveComponent>(Parts);
+    TArray<int32> Words;int32 Components=0,Instances=0,Bodies=0,ComplexAsSimple=0,Simple=0;
+    auto Add=[&Words](const FBox& B){for(const FVector& V:{B.Min,B.Max}){Words.Add(FMath::RoundToInt(V.X));Words.Add(FMath::RoundToInt(V.Y));Words.Add(FMath::RoundToInt(V.Z));}};
+    for(UPrimitiveComponent* C:Parts)
+    {
+        if(!C||!C->IsCollisionEnabled()||C->GetCollisionResponseToChannel(ECC_Pawn)!=ECR_Block)continue;
+        ++Components;
+        if(UBodySetup* Body=C->GetBodySetup()){++Bodies;ComplexAsSimple+=Body->GetCollisionTraceFlag()==CTF_UseComplexAsSimple?1:0;Simple+=Body->AggGeom.GetElementCount();}
+        if(auto* ISM=Cast<UInstancedStaticMeshComponent>(C))
+        {
+            const FBox Local=ISM->GetStaticMesh()?ISM->GetStaticMesh()->GetBoundingBox():FBox(ForceInit);
+            for(int32 I=0;I<ISM->GetInstanceCount();++I){FTransform T;ISM->GetInstanceTransform(I,T,true);Add(Local.TransformBy(T));++Instances;}
+        }
+        else{Add(C->Bounds.GetBox());++Instances;}
+    }
+    const uint32 Crc=FCrc::MemCrc32(Words.GetData(),Words.Num()*sizeof(int32));
+    CourtCollisionSignatureCache=FString::Printf(TEXT("components=%d instances=%d bodies=%d complexAsSimple=%d simple=%d boundsCrc=%08x fortressMeshes=%d cornerPiers=%d"),
+        Components,Instances,Bodies,ComplexAsSimple,Simple,Crc,FortressMeshCount,CornerPierCount);
+    UE_LOG(LogTemp,Display,TEXT("VEYR_COURT_COLLISION %s render=%d"),*CourtCollisionSignatureCache,FApp::CanEverRender()?1:0);
+    return CourtCollisionSignatureCache;
 }
