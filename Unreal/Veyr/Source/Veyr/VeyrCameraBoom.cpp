@@ -1060,7 +1060,6 @@ void UVeyrCameraBoom::AuditView(FVeyrViewAudit& A,const FVector& Camera,const FQ
                         A.FadeLurchDetail.Append({Seconds,ViewPx,SteerPx,StepCm,Seconds-A.FadeLockChangedAt,Seconds-A.FadeLastCutAt,static_cast<float>(FadeStepLimitedFrames)});
                 }
             }
-            }
         }
     }
 }
