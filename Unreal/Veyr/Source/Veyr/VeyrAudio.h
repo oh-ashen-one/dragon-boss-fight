@@ -126,6 +126,8 @@ private:
     bool bMixTable=true;
     EMixKind CurKind=EMixKind::Other;
     float KindGainDb[MixKindCount]={};
+    float LayerGainDb[MixKindCount][CueCount]={}; // per layer where needed: kind x cue (dB), e.g. the light hit's low layers, the knight's swings under Other
+    float LayerGain(EMixKind K,ECue Cue) const { return bMixTable?FMath::Pow(10.f,LayerGainDb[static_cast<int32>(K)][static_cast<int32>(Cue)]/20.f):1.f; }
     float MasterTrimDb=0.f,MusicTrimDb=0.f;
     float LimiterDb=-2.5f;
     void LoadMixTable();

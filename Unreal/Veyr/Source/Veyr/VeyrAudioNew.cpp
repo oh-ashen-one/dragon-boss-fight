@@ -417,7 +417,7 @@ bool AVeyrAudio::PickVariant(ECue Cue,float Volume,FChosen& C,int32 Force,uint8 
     C.Seconds=C.Seconds0/FMath::Max(.5f,Pitch);
     C.Level=FMath::Clamp(Volume,0.f,1.5f)*Bank.Gains[V]*LevelJitter*FMath::Pow(10.f,MakeupDb/20.f);
     // Mix pass 5: one static gain per event kind and one master trim; no per-voice ceiling (headroom = trim + what can coincide, the master limiter for the rare rest).
-    if(bMixTable){C.Level*=KindGain(CurKind)*MixTrim();return true;}
+    if(bMixTable){C.Level*=KindGain(CurKind)*LayerGain(CurKind,Cue)*MixTrim();return true;}
     // Pass 4: solo peak ceiling just under full scale after the master; the master limiter deals with sums.
     if(Bank.Peaks.IsValidIndex(V)&&Bank.Peaks[V]>.01f)
         C.Level=FMath::Min(C.Level,.9f/(Bank.Peaks[V]*FMath::Max(.05f,MasterVolume*EffectsVolume)*EngineFactor));
@@ -1194,7 +1194,10 @@ void AVeyrAudio::LoadMixTable()
         /*LightHit*/0.f,/*Hurt*/0.f,/*WalkStep*/0.f,/*KnightStep*/0.f,/*Wing*/0.f,/*FireSustain*/0.f,/*Presence*/0.f};
     constexpr float DefaultTrimDb=-8.f,DefaultMusicTrimDb=0.f;
     bMixTable=!FParse::Param(FCommandLine::Get(),TEXT("VeyrMixPass4"));
-    for(int32 K=0;K<MixKindCount;++K)KindGainDb[K]=Defaults[K];
+    for(int32 K=0;K<MixKindCount;++K){KindGainDb[K]=Defaults[K];for(int32 Q=0;Q<CueCount;++Q)LayerGainDb[K][Q]=0.f;}
+    struct FLayerDefault{EMixKind K;ECue Q;float Db;};
+    static const FLayerDefault LayerDefaults[]={{EMixKind::Other,ECue::Swing,0.f}};
+    for(const FLayerDefault& L:LayerDefaults)LayerGainDb[static_cast<int32>(L.K)][static_cast<int32>(L.Q)]=L.Db;
     MasterTrimDb=DefaultTrimDb;MusicTrimDb=DefaultMusicTrimDb;
     FParse::Value(FCommandLine::Get(),TEXT("VeyrMixTrimDb="),MasterTrimDb);
     FParse::Value(FCommandLine::Get(),TEXT("VeyrMusicTrimDb="),MusicTrimDb);
@@ -1205,14 +1208,21 @@ void AVeyrAudio::LoadMixTable()
         TArray<FString> Parts;Spec.ParseIntoArray(Parts,TEXT("/"),true);
         for(const FString& Part:Parts)
         {
-            FString Name,Value;
+            FString Name,Value,KindPart,Layer;
             if(!Part.Split(TEXT(":"),&Name,&Value))continue;
+            if(Name.Split(TEXT("."),&KindPart,&Layer))
+            {
+                for(int32 K=0;K<MixKindCount;++K)if(KindPart.Equals(KindName(K),ESearchCase::IgnoreCase))
+                    for(int32 Q=0;Q<CueCount;++Q)if(Layer.Equals(CueName(Q),ESearchCase::IgnoreCase))LayerGainDb[K][Q]=FCString::Atof(*Value);
+                continue;
+            }
             for(int32 K=0;K<MixKindCount;++K)if(Name.Equals(KindName(K),ESearchCase::IgnoreCase))KindGainDb[K]=FCString::Atof(*Value);
         }
     }
     bTiming=FParse::Param(FCommandLine::Get(),TEXT("VeyrAudioTiming"));
     bSyncTest=FParse::Param(FCommandLine::Get(),TEXT("VeyrSyncTest"));
     FString Table;for(int32 K=0;K<MixKindCount;++K)Table+=FString::Printf(TEXT(" %s=%+.1f"),KindName(K),KindGainDb[K]);
+    for(int32 K=0;K<MixKindCount;++K)for(int32 Q=0;Q<CueCount;++Q)if(LayerGainDb[K][Q]!=0.f)Table+=FString::Printf(TEXT(" %s.%s=%+.1f"),KindName(K),CueName(Q),LayerGainDb[K][Q]);
     UE_LOG(LogTemp,Display,TEXT("VEYR_MIX_TABLE on=%d trimDb=%.1f musicTrimDb=%.1f limiterDb=%.1f%s"),bMixTable?1:0,MasterTrimDb,MusicTrimDb,LimiterDb,*Table);
 }
 

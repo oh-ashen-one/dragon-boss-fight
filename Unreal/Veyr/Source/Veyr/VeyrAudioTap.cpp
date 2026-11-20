@@ -130,7 +130,7 @@ void AVeyrAudio::TapAdd(ECue Cue,const TArray<int16>& PCM,int32 Variant,float Vo
     FTapItem Item;Item.T=T;Item.Cue=static_cast<int32>(Cue);Item.Variant=Variant;Item.Volume=Volume;Item.Level=Level;Item.Pitch=Pitch;
     Item.Pan=Pan;Item.Wall=FPlatformTime::Seconds();Item.GameT=GetWorld()?GetWorld()->GetTimeSeconds():0.f;Item.Dist=Dist;Item.Gain=Atten;Item.Seconds=float(Frames)/TapRate;Item.Place=static_cast<uint8>(Place);Item.bRandom=bRandom;
     Item.Label=TapLabel;Item.PeakDb=ToDb(Peak);Item.RmsDb=ToDb(std::sqrt(SumSq/FMath::Max<double>(1.0,Frames*2.0)));
-    Item.Kind=static_cast<uint8>(CurKind);Item.KindGain=KindGain(CurKind);Item.Trim=MixTrim();Item.TiltFc=TapTiltFc;Item.TiltK=TapTiltK;Item.Probe=TapProbe;Item.Frame=GFrameCounter;
+    Item.Kind=static_cast<uint8>(CurKind);Item.KindGain=KindGain(CurKind)*LayerGain(CurKind,Cue);Item.Trim=MixTrim();Item.TiltFc=TapTiltFc;Item.TiltK=TapTiltK;Item.Probe=TapProbe;Item.Frame=GFrameCounter;
     TapTiltFc=0.f;TapTiltK=-1.f;TapProbe=-1;
     TapItems.Add(Item);
 }
