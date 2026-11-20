@@ -80,7 +80,11 @@ bool AVeyrKnight::UpdateGreystoneFootLock(float DeltaSeconds)
                     OutOfLeg=FVector::Dist(H,Held)>LegReachFraction*Leg;
                 }
             }
-            if(Lifted||Reach>ReachCm||Replanted||OutOfLeg)
+            // E4 pops (2026-11-19): a roll, stagger or run start moves the body at once; a held foot then trails in the
+            // mesh frame and snaps when its release ends (mesh-frame pops 33-53 cm). Start the release on that entry.
+            const bool BurstEntry=NewTransition&&(Action==EVeyrKnightAction::Roll||Action==EVeyrKnightAction::Stagger||
+                Action==EVeyrKnightAction::RunStart||Action==EVeyrKnightAction::Backstep);
+            if(Lifted||Reach>ReachCm||Replanted||OutOfLeg||BurstEntry)
             {
                 F.bReleasing=true;F.ReleaseSeconds=0.f;
                 // Clip lifts it: the offset is absorbed in the air. Still on the floor: a small step, not a slide.

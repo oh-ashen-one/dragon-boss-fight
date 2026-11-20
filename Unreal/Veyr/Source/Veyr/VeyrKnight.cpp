@@ -1581,6 +1581,57 @@ bool AVeyrKnight::GetWeaponSweep(FVector& Base,FVector& Tip)
     return true;
 }
 
+bool AVeyrKnight::PrepareGreystoneGameplayRig()
+{
+    static const bool bOwnSweep=FParse::Param(FCommandLine::Get(),TEXT("VeyrGreystoneOwnSweep"));
+    if(bOwnSweep||GreystoneRigFailures>3)return false;
+    if(GreystoneGameplayRig&&GreystoneGameplayDefinition)return true;
+    GreystoneGameplayDefinition=LoadObject<UVeyrVisualDefinition>(nullptr,
+        TEXT("/Game/Characters/Customuse/RuntimePolish/DA_Knight.DA_Knight"),nullptr,LOAD_Quiet|LOAD_NoWarn);
+    if(!GreystoneGameplayDefinition){GreystoneRigFailures=100;UE_LOG(LogTemp,Warning,TEXT("VEYR_GREYSTONE_RIG knight definition missing"));return false;}
+    GreystoneGameplayRig=NewObject<UVeyrSkeletalPresentation>(this,TEXT("HiddenGreystoneGameplayRig"));
+    AddInstanceComponent(GreystoneGameplayRig);GreystoneGameplayRig->ConfigureRenderPolicy(true,false);
+    GreystoneGameplayRig->SetupAttachment(ImportedPresentation->GetAttachParent());GreystoneGameplayRig->SetVisibility(false);
+    GreystoneGameplayRig->SetHiddenInGame(true);GreystoneGameplayRig->SetCastShadow(false);GreystoneGameplayRig->SetRenderInMainPass(false);
+    GreystoneGameplayRig->RegisterComponent();
+    GreystoneGameplayRig->bPreferCanonicalMesh=ImportedPresentation->bPreferCanonicalMesh;
+    if(!GreystoneGameplayRig->SetVisualDefinition(GreystoneGameplayDefinition,false))
+    {
+        UE_LOG(LogTemp,Warning,TEXT("VEYR_GREYSTONE_RIG rejected: %s"),*GreystoneGameplayRig->LastError);
+        GreystoneRigFailures=100;return false;
+    }
+    UE_LOG(LogTemp,Display,TEXT("VEYR_GREYSTONE_RIG ready (old knight pose drives the sword sweep)"));
+    return true;
+}
+
+bool AVeyrKnight::SampleGreystoneGameplaySweep(FName Clip,float GreystoneSourceSeconds,float GreystoneRate,FVector& Base,FVector& Tip)
+{
+    const UVeyrVisualDefinition* K=GreystoneGameplayDefinition;
+    const FVeyrVisualClip* KC=K?K->Clips.Find(Clip):nullptr;
+    if(!KC||!KC->WeaponMesh){++GreystoneRigFailures;return false;}
+    // Same game time, the knight's own cadence: source = game seconds x the knight's rate.
+    const float KnightRate=FMath::Clamp(KC->GameplayPlayRate,.1f,4.f);
+    const float KnightSource=GreystoneSourceSeconds/FMath::Max(.01f,GreystoneRate)*KnightRate;
+    // Placement as the knight's shown mesh: its relative transform, turned by the roll yaw like the visual.
+    FTransform Rel=K->MeshRelativeTransform;
+    Rel.SetRotation(FQuat(FVector::UpVector,FMath::DegreesToRadians(PresentationRollYaw))*K->MeshRelativeTransform.GetRotation());
+    GreystoneGameplayRig->SetRelativeTransform(Rel);
+    if(!GreystoneGameplayRig->SampleClipTimeBlended(Clip,KnightSource,1.f)){++GreystoneRigFailures;return false;}
+    FTransform Authored;
+    if(!GreystoneGameplayRig->GetBoneTargetWorldTransform(TEXT("weapon_socket"),Authored)){++GreystoneRigFailures;return false;}
+    // The knight branch of GetWeaponSweep, on the hidden knight.
+    const FBox Box=KC->WeaponMesh->GetBoundingBox();const FVector Size=Box.GetSize();
+    const int32 Axis=Size.X>Size.Y?(Size.X>Size.Z?0:2):(Size.Y>Size.Z?1:2);
+    const float Near=FMath::Abs(Box.Min[Axis])<FMath::Abs(Box.Max[Axis])?Box.Min[Axis]:Box.Max[Axis];
+    const float Far=Near==Box.Min[Axis]?Box.Max[Axis]:Box.Min[Axis];
+    FVector PA=Box.GetCenter(),PB=PA;PA[Axis]=FMath::Lerp(Near,Far,.28f);PB[Axis]=Far;
+    Base=Authored.TransformPosition(PA);Tip=Authored.TransformPosition(PB);
+    const FVector WorldSize=Size*Authored.GetScale3D().GetAbs();
+    BladeContactRadius=FMath::Clamp(static_cast<float>(FMath::Max(WorldSize[(Axis+1)%3],WorldSize[(Axis+2)%3])*.38),8.f,42.f);
+    ++GreystoneRigSweeps;
+    return true;
+}
+
 void AVeyrKnight::BuildGreystoneRefBlade()
 {
     // E4 (2026-11-19 19:00 ET): the first version derived the knight's blade from its definition and came out 2.4x too
@@ -1794,7 +1845,7 @@ void AVeyrKnight::UpdateImportedPresentation(float DeltaSeconds)
     // E4 (2026-11-19): Greystone's native attacks start mid-wind-up (timed to the knight's impact), so a 0.10 s fade
     // from idle or run kinks the weapon hand by 22-28 cm in one frame. 0.18 s on his attack entries; visual only (the
     // action timing and damage windows are the knight's). -VeyrGreystone only.
-    const float GreystoneAttackEntry=bGreystoneActive&&!bFlowTransition&&IsAttackAction()?.18f:0.f;
+    const float GreystoneAttackEntry=bGreystoneActive&&!bFlowTransition&&(IsAttackAction()||Action==EVeyrKnightAction::Stagger)?.18f:0.f;
     const float BlendSeconds=GreystoneAttackEntry>0.f?GreystoneAttackEntry:bFlowTransition&&IsAttackAction()?.14f:Action==EVeyrKnightAction::AttackRecovery?ActionDuration:GripTransitionRemaining>0.f?.28f:bTransitionInvolvesMobility?.25f:bTransitionInvolvesRunStop?RunStopBlendSeconds:bTransitionInvolvesRunStart?.30f:bTransitionLockOnEdge?LockOnBlendSeconds:bTransitionIdleWalkEdge?.20f:Action==EVeyrKnightAction::Guard?.06f:.10f;
     const float LinearAlpha=bPresentationTransitionActive?FMath::Clamp((VisualClock-PresentationTransitionStarted)/BlendSeconds,0.f,1.f):1.f;
     const float Alpha=RunStartTail?FMath::Clamp((ActionElapsed-(ActionDuration-.30f))/.30f,0.f,1.f):
@@ -2184,7 +2235,11 @@ void AVeyrKnight::ResolveAttackWindows(float PreviousSeconds)
     auto SampleBlade=[&](float Seconds,FVector& Base,FVector& Tip)
     {
         Resampled=true;
-        if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,PrimarySourceOffset+Seconds*Rate,Alpha)||!GetWeaponSweep(Base,Tip))return false;
+        if(bGreystoneActive&&PrepareGreystoneGameplayRig())
+        {
+            if(!SampleGreystoneGameplaySweep(ActionPresentationClip,PrimarySourceOffset+Seconds*Rate,Rate,Base,Tip))return false;
+        }
+        else if(!ImportedPresentation->SampleClipTimeBlended(ActionPresentationClip,PrimarySourceOffset+Seconds*Rate,Alpha)||!GetWeaponSweep(Base,Tip))return false;
         if(C->bRootMotionRemoved&&!bActionRootBlocked)
         {
             FVector Offset=RootTranslationAt(Seconds)-RootTranslationAt(ActionElapsed);Offset.Z=0.f;
@@ -2653,7 +2708,7 @@ void AVeyrKnight::MonitorGreystoneFrame()
             const FVector L0=M.L[1][I]-M.L[0][I],L1=M.L[2][I]-M.L[1][I],L2=M.L[3][I]-M.L[2][I];
             const float LocalPop=FMath::Min(FVector::Dist(L1,L0),FVector::Dist(L1,L2));
             if(LocalPop>M.MaxLocalPopCm){M.MaxLocalPopCm=LocalPop;M.MaxLocalPopAt=FString::Printf(TEXT("%s->%s %s"),*M.SwitchFrom.ToString(),*M.SwitchTo.ToString(),Names[I]);}
-            if(LocalPop>20.f){float& W=M.LocalPopOver20.FindOrAdd(M.SwitchFrom.ToString()+TEXT("->")+M.SwitchTo.ToString());W=FMath::Max(W,LocalPop);}
+            if(LocalPop>20.f){const FString Key=M.SwitchFrom.ToString()+TEXT("->")+M.SwitchTo.ToString();float& W=M.LocalPopOver20.FindOrAdd(Key);if(LocalPop>W){W=LocalPop;M.LocalPopPoint.Add(Key,Names[I]);}}
         }
     // Sword seat: hand_r to sword_bottom distance against the bind pose.
     const FName Hand=VeyrBoneRoles::Resolve(P,EVeyrBoneRole::RightHand);
@@ -2685,6 +2740,7 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
         Blade->SetNumberField(TEXT("knightRadiusCm"),GreystoneRefBladeDefault.Z);
         Blade->SetNumberField(TEXT("greystoneOwnTipFromGripCm"),GreystoneOwnBladeCm);
         Blade->SetNumberField(TEXT("greystoneOwnBaseFromGripCm"),GreystoneOwnBaseFromHandCm);
+        Blade->SetNumberField(TEXT("knightRigSweeps"),GreystoneRigSweeps);Blade->SetNumberField(TEXT("knightRigFailures"),GreystoneRigFailures);
         O->SetObjectField(TEXT("blade"),Blade);
     }
     O->SetBoolField(TEXT("twoHanded"),bTwoHanded);
@@ -2702,6 +2758,8 @@ TSharedRef<FJsonObject> AVeyrKnight::GreystoneEvidence() const
         F->SetNumberField(TEXT("maxLocalSwitchPopCm"),M.MaxLocalPopCm);F->SetStringField(TEXT("maxLocalSwitchPopAt"),M.MaxLocalPopAt);
         TSharedRef<FJsonObject> LocalOver=MakeShared<FJsonObject>();for(const auto& It:M.LocalPopOver20)LocalOver->SetNumberField(It.Key,It.Value);
         F->SetObjectField(TEXT("localSwitchPopsOver20Cm"),LocalOver);
+        TSharedRef<FJsonObject> LocalPoint=MakeShared<FJsonObject>();for(const auto& It:M.LocalPopPoint)LocalPoint->SetStringField(It.Key,It.Value);
+        F->SetObjectField(TEXT("localSwitchPopPoint"),LocalPoint);
         if(M.KnightBladeSamples>0)
         {
             TSharedRef<FJsonObject> KB=MakeShared<FJsonObject>();KB->SetNumberField(TEXT("samples"),M.KnightBladeSamples);

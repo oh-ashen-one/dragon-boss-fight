@@ -386,6 +386,14 @@ private:
     bool bReadableAutoLockCamera=false;
     UPROPERTY() TArray<TObjectPtr<UTexture2D>> WarmedVariantTextures;
     UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> LocomotionPoseProbe;
+    // E4 (2026-11-19): under -VeyrGreystone a hidden copy of the old knight (RuntimePolish definition) gives the sword
+    // sweep: his pose at the knight's own clip time and his own blade, so contacts do not depend on the costume.
+    // -VeyrGreystoneOwnSweep restores Greystone's own pose for the sweep.
+    UPROPERTY() TObjectPtr<UVeyrSkeletalPresentation> GreystoneGameplayRig;
+    UPROPERTY() TObjectPtr<UVeyrVisualDefinition> GreystoneGameplayDefinition;
+    bool PrepareGreystoneGameplayRig();
+    bool SampleGreystoneGameplaySweep(FName Clip,float GreystoneSourceSeconds,float GreystoneRate,FVector& Base,FVector& Tip);
+    int32 GreystoneRigSweeps=0,GreystoneRigFailures=0;
     struct FLocomotionPhasePose { float Time=0.f,RootSpeed=0.f; FVector Points[4]; };
     struct FLocomotionPhaseCache { TArray<FLocomotionPhasePose> Poses; float NominalSpeed=0.f; };
     TMap<FName,FLocomotionPhaseCache> LocomotionPhaseCache;
@@ -484,6 +492,7 @@ private:
         FString MaxPopAt,MaxGripClip;TMap<FString,float> PopOver20;
         // Same points in the presentation mesh's own frame (body turn and capsule motion removed): true pose pops only.
         FVector L[4][3];float MaxLocalPopCm=0.f;FString MaxLocalPopAt;TMap<FString,float> LocalPopOver20;
+        TMap<FString,FString> LocalPopPoint; // switch -> which point popped most (weapon_hand/left_foot/right_foot)
         int32 KnightBladeSamples=0;float KnightBaseFromGripCm=0.f,KnightTipFromGripCm=0.f,KnightRadiusCm=0.f,KnightHandOffLineCm=0.f;
     };
     // -VeyrKnightMonitor: run the same monitor on the old knight (like-for-like baseline); visual measurement only.
