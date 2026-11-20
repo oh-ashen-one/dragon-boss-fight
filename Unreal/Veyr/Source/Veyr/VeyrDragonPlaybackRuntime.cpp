@@ -1,6 +1,8 @@
 // F1-F4 (2026-11-18): dragon clip playback at runtime. Data and switches: VeyrDragonPlayback.h.
 #include "VeyrDragon.h"
 #include "VeyrDragonPlayback.h"
+#include "VeyrFightFeel.h"
+#include "VeyrGameMode.h"
 #include "VeyrSingleNodeInstance.h"
 #include "VeyrSkeletalPresentation.h"
 #include "VeyrVisualDefinition.h"
@@ -333,7 +335,11 @@ void AVeyrDragon::UpdatePoseDeltaStat()
                 FPlaybackStat& St=PlaybackStats.FindOrAdd(PlaybackStatKey(LastImportedClip));
                 if(H>St.MaxHeadYawPer30){St.MaxHeadYawPer30=H;St.MaxHeadYawPhase=ImportedPresentation->CurrentPhase;St.MaxHeadYawStateSeconds=StateElapsed;}
                 St.MaxBodyYawPer30=FMath::Max(St.MaxBodyYawPer30,B);
-                if(H>20.f||B>20.f)++St.YawSteps;
+                // Round 2 (coordinator 2026-11-19): a step inside the fight-feel hit reaction (the knight's blow swings the
+                // downed head, -VeyrLegacyDownFlinch) is an intended reaction, counted apart as yawStepsInHitReaction.
+                const AVeyrGameMode* FeelMode=GetWorld()?GetWorld()->GetAuthGameMode<AVeyrGameMode>():nullptr;
+                const bool bReacting=FeelMode&&FeelMode->FightFeel&&FeelMode->FightFeel->FlinchDisplacesPose();
+                if(H>20.f||B>20.f){if(bReacting)++St.YawStepsInHitReaction;else ++St.YawSteps;}
             }
             if(YDt>1.e-4f||!bYawPrev){YawPrevHead=HeadYaw;YawPrevBody=BodyYaw;YawPrevClock=Clock;YawPrevFlat=Flat;bYawPrev=true;}
         }
@@ -621,7 +627,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     if(ImportedPresentation){int32 Starts=0;float Deg=0.f,Cm=0.f;ImportedPresentation->GetInertialStats(Starts,Deg,Cm);
         O->SetNumberField(TEXT("inertialStarts"),Starts);O->SetNumberField(TEXT("inertialMaxOffsetDegrees"),Deg);O->SetNumberField(TEXT("inertialMaxOffsetCm"),Cm);}
     O->SetStringField(TEXT("dragonSkin"),ImportedPresentation?ImportedPresentation->SkinDiagnostic:FString(TEXT("no presentation")));
-    int32 YawSteps=0,YawStepsCurrentFlat=0;float WorstYaw=0.f;FString WorstYawKey;
+    int32 YawSteps=0,YawStepsCurrentFlat=0,YawStepsInHitReaction=0;float WorstYaw=0.f;FString WorstYawKey;
     float WorstRate=0.f,WorstSlide=0.f,WorstPop=0.f;FString WorstRateKey,WorstSlideKey,WorstPopKey;int32 Pops=0,PopsInBlend=0;
     TSharedPtr<FJsonObject> Clips=MakeShared<FJsonObject>();
     for(const auto& E:PlaybackStats)
@@ -661,9 +667,9 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
         C->SetNumberField(TEXT("trackNetAppliedCm"),S.TrackNetAppliedCm);C->SetNumberField(TEXT("trackMinRatio"),S.TrackMinRatio);C->SetNumberField(TEXT("trackMaxRatio"),S.TrackMaxRatio);
         C->SetNumberField(TEXT("poseFrames"),S.PoseFrames);C->SetNumberField(TEXT("pops"),S.Pops);C->SetNumberField(TEXT("popsInBlend"),S.PopsInBlend);
         C->SetNumberField(TEXT("maxPopRatio"),S.MaxPopRatio);C->SetNumberField(TEXT("maxPopRatioInBlend"),S.MaxPopRatioInBlend);
-        C->SetNumberField(TEXT("yawSteps"),S.YawSteps);C->SetNumberField(TEXT("maxHeadYawDegPer30Hz"),S.MaxHeadYawPer30);C->SetNumberField(TEXT("maxBodyYawDegPer30Hz"),S.MaxBodyYawPer30);
+        C->SetNumberField(TEXT("yawSteps"),S.YawSteps);C->SetNumberField(TEXT("yawStepsInHitReaction"),S.YawStepsInHitReaction);C->SetNumberField(TEXT("maxHeadYawDegPer30Hz"),S.MaxHeadYawPer30);C->SetNumberField(TEXT("maxBodyYawDegPer30Hz"),S.MaxBodyYawPer30);
         C->SetNumberField(TEXT("maxHeadYawClipPhase"),S.MaxHeadYawPhase);C->SetNumberField(TEXT("maxHeadYawStateSeconds"),S.MaxHeadYawStateSeconds);
-        YawSteps+=S.YawSteps;YawStepsCurrentFlat+=S.YawStepsCurrentFlat;if(S.MaxHeadYawPer30>WorstYaw){WorstYaw=S.MaxHeadYawPer30;WorstYawKey=E.Key.ToString();}
+        YawSteps+=S.YawSteps;YawStepsCurrentFlat+=S.YawStepsCurrentFlat;YawStepsInHitReaction+=S.YawStepsInHitReaction;if(S.MaxHeadYawPer30>WorstYaw){WorstYaw=S.MaxHeadYawPer30;WorstYawKey=E.Key.ToString();}
         C->SetStringField(TEXT("worstPopBone"),S.WorstPopBone.ToString());
         Pops+=S.Pops;PopsInBlend+=S.PopsInBlend;
         if(S.MaxPopRatio>WorstPop){WorstPop=S.MaxPopRatio;WorstPopKey=E.Key.ToString()+TEXT(" ")+S.WorstPopBone.ToString();}
@@ -677,7 +683,7 @@ TSharedPtr<FJsonObject> AVeyrDragon::PlaybackEvidence() const
     O->SetNumberField(TEXT("poseDeltaPops"),Pops);O->SetNumberField(TEXT("poseDeltaPopsInBlend"),PopsInBlend);
     O->SetNumberField(TEXT("worstPopRatio"),WorstPop);O->SetStringField(TEXT("worstPopClipBone"),WorstPopKey);
     O->SetBoolField(TEXT("gateNoBlendPops"),PopsInBlend==0);
-    O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("yawStepsCurrentFlat"),YawStepsCurrentFlat);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
+    O->SetNumberField(TEXT("yawSteps"),YawSteps);O->SetNumberField(TEXT("yawStepsCurrentFlat"),YawStepsCurrentFlat);O->SetNumberField(TEXT("yawStepsInHitReaction"),YawStepsInHitReaction);O->SetNumberField(TEXT("yawStepsAll"),YawSteps+YawStepsInHitReaction);O->SetNumberField(TEXT("worstHeadYawDegPer30Hz"),WorstYaw);O->SetStringField(TEXT("worstHeadYawClip"),WorstYawKey);
     O->SetBoolField(TEXT("gateRateAtMost1_25"),WorstRate<=1.25f+.02f);O->SetBoolField(TEXT("gateSlideUnder5"),WorstSlide<5.f);
     return O;
 }
