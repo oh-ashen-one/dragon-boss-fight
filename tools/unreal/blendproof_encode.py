@@ -141,7 +141,7 @@ def main():
         sequence_rows = [r for r in evidence_rows if r["seq"] == seq["index"]]
         receipts.append(encode(rows, picked, sequence_rows, out_dir, name, ffmpeg, args.no_overlay, args.clock, args.fps))
         print("encoded", name, len(picked), "native frames", flush=True)
-    receipts.append(encode(rows, frames, evidence_rows, out_dir, "00-blendproof-all", ffmpeg, args.no_overlay))
+    receipts.append(encode(rows, frames, evidence_rows, out_dir, "00-blendproof-all", ffmpeg, args.no_overlay, args.clock, args.fps))
     (out_dir / "media-receipt.json").write_text(json.dumps(receipts, indent=2) + "\n")
     if args.delete_frames:
         for png in (unreal_run / "native-video").glob("frame-*.png"):
