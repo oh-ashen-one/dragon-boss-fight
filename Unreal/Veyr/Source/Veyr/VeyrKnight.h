@@ -28,6 +28,10 @@ class VEYR_API AVeyrKnight : public ACharacter
     GENERATED_BODY()
 
 public:
+    /** Lock-input proof (camera third pass, replay mode "lockinput"): the mouse-look path past the human-input gate,
+     * and the locked move direction exactly as Tick builds it from held keys. Not bound to any input. */
+    void ProofLookInput(float Yaw,float Pitch);
+    FVector ProofLockedMoveDirection(float Forward,float Right) const;
     AVeyrKnight();
     virtual void Tick(float DeltaSeconds) override;
     // Owner removed jumping; also reject inherited/Blueprint jump requests.
@@ -491,6 +495,8 @@ private:
     UStaticMeshComponent* CreateProxyPart(const TCHAR* Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location, const FVector& Size);
     bool MouseLookReady() const;
     void LookYaw(float Value);
+    void ApplyLookYaw(float Value);
+    void ApplyLookPitch(float Value);
     void LookPitch(float Value);
     void ZoomIn();
     void ZoomOut();

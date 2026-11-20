@@ -234,6 +234,10 @@ private:
     void TrackFlightWithLookInput();
     // Knight completion 2026-10-28: lock-on locomotion and directional stagger lab ("lockon" mode).
     bool DriveLockOnInputs();
+    /** Camera third pass, mode "lockinput": D1 (mouse while locked bends the view, then the lock takes it back - no
+     * freeze) and D2 (locked forward follows the camera), through the knight's real look and move-basis code. */
+    bool DriveLockInputProof();
+    float LockInputStart=-1.f,LockInputBase=0.f,LockInputPeak=0.f,LockInputEnd=-1.f,LockInputMoveVsCamera=-1.f,LockInputMoveVsBoss=-1.f,LockInputCamVsBoss=-1.f;bool bLockInputStayedLocked=true;
     TSharedPtr<FJsonObject> LockOnEvidence() const;
     int32 LockOnStage=0,LockOnLabHit=0,LockOnLabPassed=0;
     int32 LockOnBlink=0,LockOnBlinkPhase=0,LockOnBlinkShots=0,LockOnBlinkPassed=0,LockOnBlinksBefore=0;

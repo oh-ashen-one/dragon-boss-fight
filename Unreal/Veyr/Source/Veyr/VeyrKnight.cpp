@@ -2422,6 +2422,10 @@ bool AVeyrKnight::MouseLookReady() const
 void AVeyrKnight::LookYaw(float Value)
 {
     if(!MouseLookReady()||FMath::Abs(Value)<=.001f)return;
+    ApplyLookYaw(Value);
+}
+void AVeyrKnight::ApplyLookYaw(float Value)
+{
     if(bLockMouseOffset&&bLockedOn&&IsValid(Boss)&&!Boss->IsDead())
     {LockLookOffset.Yaw=FMath::Clamp(static_cast<float>(LockLookOffset.Yaw)+Value*.7f*MouseSensitivity,-60.f,60.f);LockOffsetHold=.5f;return;}
     ManualCameraRemaining=1.8f;AddControllerYawInput(Value*.7f*MouseSensitivity);
@@ -2429,9 +2433,24 @@ void AVeyrKnight::LookYaw(float Value)
 void AVeyrKnight::LookPitch(float Value)
 {
     if(!MouseLookReady()||FMath::Abs(Value)<=.001f)return;
+    ApplyLookPitch(Value);
+}
+void AVeyrKnight::ApplyLookPitch(float Value)
+{
     if(bLockMouseOffset&&bLockedOn&&IsValid(Boss)&&!Boss->IsDead())
     {LockLookOffset.Pitch=FMath::Clamp(static_cast<float>(LockLookOffset.Pitch)-Value*.6f*MouseSensitivity,-20.f,20.f);LockOffsetHold=.5f;return;}
     ManualCameraRemaining=1.8f;AddControllerPitchInput(-Value*.6f*MouseSensitivity);
+}
+void AVeyrKnight::ProofLookInput(float Yaw,float Pitch)
+{
+    if(FMath::Abs(Yaw)>.001f)ApplyLookYaw(Yaw);
+    if(FMath::Abs(Pitch)>.001f)ApplyLookPitch(Pitch);
+}
+FVector AVeyrKnight::ProofLockedMoveDirection(float Forward,float Right) const
+{
+    const float Yaw=bLockedOn&&IsValid(Boss)?LockedMoveYaw():Controller?Controller->GetControlRotation().Yaw:GetActorRotation().Yaw;
+    const FRotationMatrix Basis(FRotator(0.f,Yaw,0.f));
+    return (Basis.GetUnitAxis(EAxis::X)*Forward+Basis.GetUnitAxis(EAxis::Y)*Right).GetSafeNormal2D();
 }
 float AVeyrKnight::LockedMoveYaw() const
 {

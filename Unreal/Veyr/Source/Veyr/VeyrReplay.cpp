@@ -129,7 +129,7 @@ bool AVeyrReplay::Initialize(const FString& Mode, const FString& EvidenceDirecto
     if(FParse::Value(FCommandLine::Get(),TEXT("VeyrStillInterval="),StillInterval))StillInterval=FMath::Clamp(StillInterval,.30f,10.f);
     bVictoryStartTwoHandedRequested=(ReplayMode==TEXT("victory")||ReplayMode==TEXT("core"))&&FParse::Param(FCommandLine::Get(),TEXT("VeyrReplayStartTwoHanded"));
     bLegIsolation=ReplayMode==TEXT("leg0")||ReplayMode==TEXT("leg1")||ReplayMode==TEXT("leg2")||ReplayMode==TEXT("leg3");
-    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!FVeyrA123Proof::IsMode(ReplayMode)&&!FVeyrFeelProof::IsMode(ReplayMode)&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
+    if((ReplayMode!=TEXT("core")&&ReplayMode!=TEXT("camp")&&ReplayMode!=TEXT("death")&&ReplayMode!=TEXT("victory")&&ReplayMode!=TEXT("controls")&&ReplayMode!=TEXT("avoidance")&&ReplayMode!=TEXT("healing")&&ReplayMode!=TEXT("guard")&&ReplayMode!=TEXT("stance")&&ReplayMode!=TEXT("integration")&&ReplayMode!=TEXT("collision")&&ReplayMode!=TEXT("lockon")&&ReplayMode!=TEXT("lockinput")&&ReplayMode!=TEXT("blendproof")&&ReplayMode!=TEXT("environment")&&ReplayMode!=TEXT("intro")&&!FVeyrA123Proof::IsMode(ReplayMode)&&!FVeyrFeelProof::IsMode(ReplayMode)&&!IsShowcase()&&!bLegIsolation)||EvidenceDirectory.IsEmpty()||FPaths::IsRelative(EvidenceDirectory))
     {
         UE_LOG(LogTemp,Error,TEXT("VEYR_REPLAY_REJECTED requires core|death|victory|leg0|leg1|leg2|leg3|controls|avoidance|healing|guard|stance|integration|collision|lockon|blendproof|environment|intro|footclosehits|camerahug|soleheights and absolute evidence directory")); return false;
     }
@@ -2198,6 +2198,38 @@ TSharedPtr<FJsonObject> AVeyrReplay::LockOnEvidence() const
     return O;
 }
 
+bool AVeyrReplay::DriveLockInputProof()
+{
+    if(ReplayMode!=TEXT("lockinput"))return false;
+    Knight->SetReplayInput(FVector::ZeroVector,false,false,false,false,false,false);
+    APlayerController* PC=Cast<APlayerController>(Knight->GetController());
+    if(!PC||!Knight->CombatCamera||Dragon->IsDead()){Finish(false,TEXT("lockinput: no controller, camera or live dragon"));return true;}
+    if(LockInputStart<0.f){if(!Knight->bLockedOn)Knight->ToggleLockOn();if(Elapsed<3.f)return true;LockInputStart=Elapsed;}
+    const float T=Elapsed-LockInputStart;
+    const float BossYaw=static_cast<float>((Dragon->GetActorLocation()-Knight->GetActorLocation()).Rotation().Yaw);
+    const float Dev=FMath::FindDeltaAngleDegrees(BossYaw,static_cast<float>(PC->GetControlRotation().Yaw));
+    bLockInputStayedLocked&=Knight->bLockedOn;
+    if(T<.05f){LockInputBase=Dev;return true;}
+    if(T<.35f)Knight->ProofLookInput(3.f,0.f); // a steady mouse drag to the right for 0.3 s
+    LockInputPeak=FMath::Max(LockInputPeak,FMath::Abs(Dev-LockInputBase));
+    if(LockInputMoveVsCamera<0.f&&T>=.4f)
+    {
+        const FVector Move=Knight->ProofLockedMoveDirection(1.f,0.f);const float MoveYaw=static_cast<float>(Move.Rotation().Yaw);
+        const float CamYaw=static_cast<float>(Knight->CombatCamera->GetComponentRotation().Yaw);
+        LockInputMoveVsCamera=FMath::Abs(FMath::FindDeltaAngleDegrees(CamYaw,MoveYaw));LockInputMoveVsBoss=FMath::Abs(FMath::FindDeltaAngleDegrees(BossYaw,MoveYaw));
+        LockInputCamVsBoss=FMath::Abs(FMath::FindDeltaAngleDegrees(BossYaw,CamYaw));
+    }
+    if(T>=3.35f)
+    {
+        LockInputEnd=FMath::Abs(Dev-LockInputBase);
+        const bool bD1=LockInputPeak>=8.f&&LockInputEnd<=4.f&&bLockInputStayedLocked;
+        const bool bD2=LockInputMoveVsCamera>=0.f&&LockInputMoveVsCamera<=3.f;
+        Finish(bD1&&bD2,FString::Printf(TEXT("lockinput D1 %s (view bent %.1f deg by the drag, %.1f deg off 3 s later, lock held %d) D2 %s (locked forward vs camera %.1f deg, vs dragon %.1f deg, camera vs dragon %.1f deg)"),
+            bD1?TEXT("pass"):TEXT("FAIL"),LockInputPeak,LockInputEnd,bLockInputStayedLocked?1:0,bD2?TEXT("pass"):TEXT("FAIL"),LockInputMoveVsCamera,LockInputMoveVsBoss,LockInputCamVsBoss));
+    }
+    return true;
+}
+
 bool AVeyrReplay::DriveLockOnInputs()
 {
     // Input-level locomotion trials (movement keys, Shift, grip, lock) plus a labelled lab segment
@@ -2447,6 +2479,7 @@ void AVeyrReplay::DriveInputs()
     if(DriveCollisionInputs())return;
     if(DriveIntegrationInputs())return;
     if(DriveStanceInputs())return;
+    if(DriveLockInputProof())return;
     if(DriveLockOnInputs())return;
     if(DriveScenarioInputs())return;
     if(DriveCampInputs())return;
