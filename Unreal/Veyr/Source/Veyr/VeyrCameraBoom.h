@@ -124,7 +124,7 @@ public:
      * Coverage fade: dragon surface nearer than the knight that covers 15 % of the frame is faded fully (by screen
      * coverage and closing speed, not only distance); -VeyrFadeDistanceOnly restores the fixed near/far.
      * Safe area: his body stays inside the central 70 % of the width (clear of the HUD dials); -VeyrNoKnightSafeArea. */
-    bool bHeadChestFraming=true,bCoverageFade=true,bKnightSafeArea=true;
+    bool bHeadChestFraming=true,bCoverageFade=true,bKnightSafeArea=true;float FadeTurnDegPerSec=90.f;
     float FramePull=1.f,FramePullMax=1.6f,FramePullTarget=1.f;
     float CoverNearCm=0.f,LastNearSkinCm=-1.f,CoverClosingCmPerSec=0.f,CoverUnfadedShare=0.f,CoverNearShare=0.f,AppliedFadeNearCm=0.f,AppliedFadeFarCm=0.f;
     int32 FramePullFrames=0,CoverageFadeFrames=0,SafeAreaYawFrames=0,HeadChestUnmetFrames=0;

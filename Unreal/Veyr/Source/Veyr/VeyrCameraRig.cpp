@@ -255,7 +255,8 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
     if(!bRigRot){RigRot=WantQ;bRigRot=true;}
     else
     {
-        const float MaxTurn=RigTurnRateDegPerSec*FMath::Max(Dt,1.f/240.f);
+        // Third pass: the steady view turns at most FadeTurnDegPerSec (90 deg/s, about 20 px per 1/30 s at 640 px); -VeyrFadeTurnRate=0 restores 220.
+        const float MaxTurn=(FadeTurnDegPerSec>0.f?FadeTurnDegPerSec:RigTurnRateDegPerSec)*FMath::Max(Dt,1.f/240.f);
         const float Turn=FMath::RadiansToDegrees(static_cast<float>(RigRot.AngularDistance(WantQ)));
         RigRot=Turn>MaxTurn?FQuat::Slerp(RigRot,WantQ,MaxTurn/Turn):WantQ;RigRot.Normalize();
     }
@@ -394,7 +395,7 @@ FVector UVeyrCameraBoom::FadeArm(const FVector& Base,float DeltaTime)
     FQuat View=VR.Quaternion();
     if(bSafeLastView)
     {
-        const float MaxTurn=(RigTurnRateDegPerSec+10.f)*FMath::Max(Dt,1.f/240.f);
+        const float MaxTurn=((FadeTurnDegPerSec>0.f?FadeTurnDegPerSec:RigTurnRateDegPerSec)+10.f)*FMath::Max(Dt,1.f/240.f);
         const float Turn=FMath::RadiansToDegrees(static_cast<float>(View.AngularDistance(SafeLastView)));
         if(Turn>MaxTurn){View=FQuat::Slerp(SafeLastView,View,MaxTurn/Turn);View.Normalize();++ClampedTurns;}
     }
