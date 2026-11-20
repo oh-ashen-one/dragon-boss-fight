@@ -48,11 +48,20 @@ def main(argv):
         v = [r for r in rows if r['mode'] == 'victory' and r['grip'] == grip]
         if not v:
             continue
-        times = [r['seconds'] for r in v]
-        wins = sum(1 for r in v if r['passed'] and r['seconds'] <= 150)
-        med = statistics.median(times)
-        print(f"{grip}: {wins}/{len(v)} wins inside 150 s, median {med:.1f} s ({100 * (med / target - 1):+.0f} % against "
-              f"{target} s, band +-15 %: {'in' if abs(med / target - 1) <= .15 else 'OUT'}), range {min(times):.1f}-{max(times):.1f} s")
+        # A loss has no fight time (-1 s); it never enters the median. Medians are over wins only.
+        won = [r for r in v if r['passed'] and r['seconds'] >= 0]
+        lost = [r for r in v if r not in won]
+        times = [r['seconds'] for r in won]
+        inside = sum(1 for t in times if t <= 150)
+        if times:
+            med = statistics.median(times)
+            print(f"{grip}: wins {len(won)} of {len(v)} ({inside} inside 150 s), median over wins {med:.1f} s "
+                  f"({100 * (med / target - 1):+.0f} % against {target} s, band +-15 %: "
+                  f"{'in' if abs(med / target - 1) <= .15 else 'OUT'}), range {min(times):.1f}-{max(times):.1f} s")
+        else:
+            print(f"{grip}: wins 0 of {len(v)}")
+        for r in lost:
+            print(f"{grip}: loss seed {r['seed']}: {r['reason'][:80]}")
     deaths = [r['seconds'] for r in rows if r['mode'] == 'death']
     if deaths:
         print(f"passive: death in {min(deaths):.2f}-{max(deaths):.2f} s over {len(deaths)} runs "
