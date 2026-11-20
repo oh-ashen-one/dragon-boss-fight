@@ -140,7 +140,9 @@ void AVeyrDragon::InitPlayback()
     bClipTempo=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacyClipTempo"));
     bTwoClipBlend=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacyBlend"));
     bFootLock=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoFootLock"));
-    bSlowSnapTurn=Loaded&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
+    // Round 2 fairness (coordinator 2026-11-19): wind-up tracking is the goal branch's 195 deg/s late snap by default;
+    // -VeyrDragonSlowTrackTurn restores round 1's 90 deg/s turn (-VeyrLegacySnapTurn still forces the snap).
+    bSlowSnapTurn=Loaded&&FParse::Param(Cmd,TEXT("VeyrDragonSlowTrackTurn"))&&!FParse::Param(Cmd,TEXT("VeyrLegacySnapTurn"));
     bRootTracks=Loaded&&!FParse::Param(Cmd,TEXT("VeyrNoRootTracks"));
     // Gate 2 (round 2, 18:05): the one-hand sweep on package 11 had a median of 50 pops per fight (22-68) against
     // round 1's 25-47, so inertial blending is opt-in (-VeyrInertialBlend); the default keeps the two-clip fades.
