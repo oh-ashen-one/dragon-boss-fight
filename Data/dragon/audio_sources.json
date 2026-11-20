@@ -1,5 +1,48 @@
 {
  "_about": "Which files feed each cue (quality goal B1). Files in Content/Audio/Recorded20261118: <Cue>_<n>.pcm = recorded, <Cue>_g<n>.pcm = generated supplement. Per cue: recorded (only <Cue>_<n>), generated (only <Cue>_g<n>) or mixed (both pools together). A choice with no matching files falls back to the other pool and logs it. Missing file: every cue is mixed (compiled-in default; packaged builds have no Data/). Read at start from the Data/dragon folder.",
  "default": "mixed",
- "cues": {}
+ "cues": {},
+ "ambience": {
+  "_about": "Mix pass 6 courtyard ambience (tools/audio/prepare_courtyard_ambience.py from tools/audio/freesound_candidates.py public CC0 previews; no account). Content/Audio/Courtyard20261119, 24 kHz mono loops. -VeyrCathedralAmbience restores the old room tone.",
+  "Courtyard20261119/Ambience.pcm": {
+   "use": "bed under everything: low wind (high-pass 60 Hz, low-pass 1.2 kHz) plus night insects 12 dB under it, 61 s loop, RMS -24 dBFS",
+   "sources": [
+    {
+     "id": "397091",
+     "title": "Soft Tonal Wind_01",
+     "author": "janbezouska",
+     "page": "https://freesound.org/s/397091/",
+     "license": "CC0-1.0",
+     "licenseBasis": "Freesound search filter license:\"Creative Commons 0\"",
+     "sha256": "9b6a02f6765d2a162fe22d736764ff7cb872128d23a20f9f6c3a128f4906ed8e",
+     "seconds": 59.7207
+    },
+    {
+     "id": "805466",
+     "title": "Night Crickets 02",
+     "author": "Vrymaa",
+     "page": "https://freesound.org/s/805466/",
+     "license": "CC0-1.0",
+     "licenseBasis": "Freesound search filter license:\"Creative Commons 0\"",
+     "sha256": "8fec5bacbb8b89a3ee2491a3dfe2ad1611d87e136ec42314fd6c5e2063432391",
+     "seconds": 61.1167
+    }
+   ]
+  },
+  "Courtyard20261119/Brazier.pcm": {
+   "use": "fire crackle loop played from each courtyard brazier, 35 s loop, RMS -28 dBFS",
+   "sources": [
+    {
+     "id": "813328",
+     "title": "Crackling Flames (loop)",
+     "author": "NickTayloe",
+     "page": "https://freesound.org/s/813328/",
+     "license": "CC0-1.0",
+     "licenseBasis": "Freesound search filter license:\"Creative Commons 0\"",
+     "sha256": "b7a16eddcafa1218c331375d262fff427a84c4015ac5d50d207567108d261326",
+     "seconds": 35.0
+    }
+   ]
+  }
+ }
 }

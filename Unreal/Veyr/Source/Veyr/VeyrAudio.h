@@ -86,6 +86,23 @@ private:
     UPROPERTY(Transient) TArray<TObjectPtr<UAudioComponent>> Beds;
     UPROPERTY(Transient) TArray<TObjectPtr<USoundWaveProcedural>> BedWaves;
     TArray<uint8> BedPCM[2];
+    // Mix pass 6: courtyard ambience (night air and a low wind, Audio/Courtyard20261119/Ambience.pcm) in the ambience bed, a fire loop at
+    // each brazier, both ducked with the music; -VeyrCathedralAmbience restores the old room tone and no brazier loops.
+    bool bCourtyard=false,bVoicePass5=false;
+    float AmbienceTrimDb=10.f,BrazierTrimDb=0.f;
+    UPROPERTY(Transient) TArray<TObjectPtr<UAudioComponent>> BrazierLoops;
+    UPROPERTY(Transient) TArray<TObjectPtr<USoundWaveProcedural>> BrazierWaves;
+    TArray<uint8> BrazierPCM;
+    TArray<int32> BrazierOffsets;
+    int32 BrazierSearches=0;
+    double WindupGrowlClock=0.0;
+    bool bOpeningRoar=false;
+    void UpdateBraziers();
+    // Mix pass 6: the boss events (landing, slam, claw/tail, body fall) are bounded under their table level: not ducked by the knight's head hit
+    // or a flame ignition (that duck took a coincident stomp's low layers 9 dB down), their debris never dropped for want of a voice, at most
+    // 3 dB lost to distance in the arena. -VeyrMixVoicePass5 restores pass 5.
+    bool BossKindFloor() const { return bMixTable&&!bVoicePass5&&(CurKind==EMixKind::Landing||CurKind==EMixKind::Slam||CurKind==EMixKind::ClawTail||CurKind==EMixKind::BodyFall); }
+    float AmbienceExtra() const { return bCourtyard?FMath::Pow(10.f,AmbienceTrimDb/20.f)*(bAudioPolish?MusicDuckGain:1.f):1.f; }
     int32 BedOffsets[2]={};
     int32 BedSampleRates[2]={24000,24000},BedChannels[2]={1,1};
     float VoiceLevels[TotalVoices]={};

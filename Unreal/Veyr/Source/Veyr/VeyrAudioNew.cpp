@@ -25,6 +25,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/PlayerController.h"
+#include "EngineUtils.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include <cmath>
 
 namespace
@@ -219,6 +221,14 @@ void AVeyrAudio::LoadNewSet()
     // Music and cathedral ambience are untouched: the same files, the same owner score, the same levels.
     for(int32 I=0;I<2;++I)
         FFileHelper::LoadFileToArray(BedPCM[I],*(FPaths::ProjectContentDir()/TEXT("Audio/Overhaul")/(I==0?TEXT("Music.pcm"):TEXT("Ambience.pcm"))));
+    // Mix pass 6: the courtyard bed (24 kHz mono, as the old ambience) and the brazier fire loop; -VeyrCathedralAmbience restores the room tone.
+    if(!FParse::Param(FCommandLine::Get(),TEXT("VeyrCathedralAmbience")))
+    {
+        TArray<uint8> Court;
+        if(FFileHelper::LoadFileToArray(Court,*(FPaths::ProjectContentDir()/TEXT("Audio/Courtyard20261119/Ambience.pcm")))&&Court.Num()>48000)
+        {BedPCM[1]=MoveTemp(Court);bCourtyard=true;FFileHelper::LoadFileToArray(BrazierPCM,*(FPaths::ProjectContentDir()/TEXT("Audio/Courtyard20261119/Brazier.pcm")));}
+        FParse::Value(FCommandLine::Get(),TEXT("VeyrAmbienceTrimDb="),AmbienceTrimDb);FParse::Value(FCommandLine::Get(),TEXT("VeyrBrazierTrimDb="),BrazierTrimDb);
+    }
     // -VeyrLegacyAudio keeps its pre-goal meaning: older music and vocals (no owner score, no pain cue, no dragon library).
     const bool bOlderVocals=FParse::Param(FCommandLine::Get(),TEXT("VeyrLegacyAudio"));
     if(!bOlderVocals)
@@ -364,6 +374,42 @@ void AVeyrAudio::UpdateVoiceFollow()
     }
 }
 
+void AVeyrAudio::UpdateBraziers()
+{
+    // Mix pass 6: one fire loop at each courtyard brazier (found from the arena's flame cards, three per brazier), attenuated by distance.
+    if(!bCourtyard||BrazierPCM.Num()<48000||!GetWorld())return;
+    if(BrazierLoops.IsEmpty()&&BrazierSearches<120) // the arena may still be building: look again for about two seconds
+    {
+        ++BrazierSearches;TArray<FVector> At;
+        for(TActorIterator<AActor> It(GetWorld());It;++It)
+            for(UActorComponent* C:It->GetComponents())
+                if(const auto* Ism=Cast<UInstancedStaticMeshComponent>(C))
+                    if(Ism->GetName().Contains(TEXT("CourtBrazierAtlasFlames")))
+                        for(int32 I=0;I+2<Ism->GetInstanceCount()&&At.Num()<8;I+=3){FTransform T;if(Ism->GetInstanceTransform(I,T,true))At.Add(T.GetLocation());}
+        for(int32 I=0;I<At.Num();++I)
+        {
+            auto* L=NewObject<UAudioComponent>(this);L->bAutoActivate=false;L->bIsUISound=false;L->RegisterComponent();L->SetWorldLocation(At[I]);
+            L->bAllowSpatialization=true;L->bOverrideAttenuation=true;L->AttenuationOverrides.bAttenuate=true;L->AttenuationOverrides.bSpatialize=true;
+            L->AttenuationOverrides.AttenuationShapeExtents=FVector(350.f,0,0);L->AttenuationOverrides.FalloffDistance=2200.f;
+            auto* W=NewObject<USoundWaveProcedural>(this);W->SetSampleRate(24000);W->NumChannels=1;W->Duration=INDEFINITELY_LOOPING_DURATION;W->bLooping=false;
+            L->SetSound(W);BrazierLoops.Add(L);BrazierWaves.Add(W);BrazierOffsets.Add((I*7919*48)%BrazierPCM.Num()&~1);
+        }
+        if(!At.IsEmpty())UE_LOG(LogTemp,Display,TEXT("VEYR_BRAZIER_LOOPS %d"),At.Num());
+    }
+    for(int32 I=0;I<BrazierLoops.Num();++I)
+    {
+        if(!IsValid(BrazierLoops[I])||!BrazierWaves.IsValidIndex(I))continue;
+        USoundWaveProcedural* W=BrazierWaves[I].Get();
+        if(!W||!BrazierLoops[I]->GetSound()){W=NewObject<USoundWaveProcedural>(this);W->SetSampleRate(24000);W->NumChannels=1;W->Duration=INDEFINITELY_LOOPING_DURATION;W->bLooping=false;BrazierWaves[I]=W;BrazierLoops[I]->SetSound(W);}
+        while(W->GetAvailableAudioByteCount()<48000)
+        {
+            const int32 Count=FMath::Min(48000,BrazierPCM.Num()-BrazierOffsets[I]);
+            W->QueueAudio(BrazierPCM.GetData()+BrazierOffsets[I],Count);BrazierOffsets[I]=(BrazierOffsets[I]+Count)%BrazierPCM.Num();
+        }
+        if(!BrazierLoops[I]->IsPlaying())BrazierLoops[I]->Play();
+    }
+}
+
 FVector AVeyrAudio::HalfwayToView(const FVector& P) const
 {
     const APlayerController* PCv=GetWorld()?GetWorld()->GetFirstPlayerController():nullptr;
@@ -473,7 +519,7 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     for(int32 I=Lo;I<Hi;++I)if(VoiceEndTimes[I]<=0){Slot=I;break;}
     if(Slot==INDEX_NONE)
     {
-        const bool bLow=Cue==ECue::DragonBreathIn||Cue==ECue::DragonBreathOut||Cue==ECue::Debris||Cue==ECue::DragonSnort||Cue==ECue::Wing||Cue==ECue::Footstep;
+        const bool bLow=(Cue==ECue::DragonBreathIn||Cue==ECue::DragonBreathOut||Cue==ECue::Debris||Cue==ECue::DragonSnort||Cue==ECue::Wing||Cue==ECue::Footstep)&&!BossKindFloor(); // pass 6: a boss event's debris steals a voice, never drops
         if(bLow){++CuesDropped;return false;}
         Slot=Lo;for(int32 I=Lo+1;I<Hi;++I)if(VoiceEndTimes[I]<VoiceEndTimes[Slot])Slot=I;
         Voices[Slot]->Stop();VoiceWaves[Slot]=nullptr;VoiceEndTimes[Slot]=0;ActiveVoices=FMath::Max(0,ActiveVoices-1);
@@ -492,7 +538,7 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
     const TArray<int16>& PCM=*Source;
     float Level=C.Level;
     // Brief duck of the small background cues after a head hit or a flame ignition, so the big moment rises out of them.
-    if(Now<BackgroundDuckUntil&&Volume<.6f&&(Cue==ECue::DragonStep||Cue==ECue::Footstep||Cue==ECue::DragonBreathIn||Cue==ECue::DragonBreathOut||Cue==ECue::Wing||Cue==ECue::Roll||Cue==ECue::Debris))
+    if(Now<BackgroundDuckUntil&&Volume<.6f&&!BossKindFloor()&&(Cue==ECue::DragonStep||Cue==ECue::Footstep||Cue==ECue::DragonBreathIn||Cue==ECue::DragonBreathOut||Cue==ECue::Wing||Cue==ECue::Roll||Cue==ECue::Debris))
         Level*=.35f;
     // Peak budget instead of a limiter: transients that start together (a stomp is four layers) are scaled so their peaks, if they
     // coincided, stay under about -1.5 dBFS on the recorded master. Only voices started in the last 120 ms count (their peaks are still ahead or just passed).
@@ -534,6 +580,7 @@ bool AVeyrAudio::PlayCueEx(ECue Cue,float Volume,EPlace Place,const FVector& Wor
             default:break;
         }
         if(Inner<=0.f||Falloff<=0.f)DefaultRadius(Cue,Inner,Falloff);
+        if(BossKindFloor())Falloff=FMath::Max(Falloff,15000.f); // pass 6: a boss event loses at most 3 dB to distance inside 60 m (linear: 1-(d-inner)/falloff)
         // Mix pass 5: the dragon's ground thuds (landing, slams, body falls, walking steps) sit halfway between where they happen and the
         // view axis at the same distance: the same loudness by distance, half the sideways pan, so the big events are not lost to one side
         // (the image leaned with the feet) and their mono peak is their peak. -VeyrMixPass4 restores full panning.
@@ -927,11 +974,11 @@ void AVeyrAudio::UpdatePresence(float DeltaSeconds)
         }
         else BreathClock=Banks[static_cast<int32>(Cue)].Variants.IsEmpty()?3.f:.5f;
     }
-    if(GrowlClock<=0.f&&(Idle||Move))
+    if(GrowlClock<=0.f&&(Idle||Move||(Rec&&!bVoicePass5)))
     {
         const ECue Cue=Rand.FRand()<.45f?ECue::DragonGrowlLow:ECue::DragonSnort;
         CurKind=EMixKind::Presence;if(PlayCueEx(Cue,.75f,EPlace::Head))++Growls;CurKind=EMixKind::Other;
-        GrowlClock=Rand.FRandRange(14.f,26.f);
+        GrowlClock=bVoicePass5?Rand.FRandRange(14.f,26.f):Rand.FRandRange(6.f,11.f); // mix pass 6: a low growl or snort every 6-11 s between attacks
     }
 }
 
@@ -1058,7 +1105,7 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
     // Fire and take-off threat calls only; no roar on every wind-up (the existing rule).
     if(bDragonLibraryLoaded&&D->State==EVeyrDragonState::Windup&&RoarClock<=0.f&&
        (D->Move==EVeyrDragonMove::Fire||D->Move==EVeyrDragonMove::FlyAway))
-    {PlayCueEx(ECue::Roar,.85f,EPlace::Head);RoarClock=14.f;}
+    {PlayCueEx(ECue::Roar,.85f,EPlace::Head);RoarClock=bVoicePass5?14.f:10.f;}
 
     // Knight swings, timed by the clip's own damage windows.
     const bool SwordAction=K->Action==EVeyrKnightAction::LightAttack||K->Action==EVeyrKnightAction::HeavyAttack||
@@ -1120,6 +1167,15 @@ void AVeyrAudio::TickNew(float DeltaSeconds)
     if(D->State!=LastDragonState)
     {
         if(D->State==EVeyrDragonState::Windup)bSwingFromData=false;
+        // Mix pass 6: the dragon voices its wind-ups (a low growl, at most every 4 s; fire and take-off keep their roar) and growls getting up.
+        if(!bVoicePass5&&bDragonLibraryLoaded)
+        {
+            const double NowV=AudioNow();
+            if(D->State==EVeyrDragonState::Windup&&!bOpeningRoar){bOpeningRoar=true;PlayCueEx(ECue::Roar,.85f,EPlace::Head);RoarClock=10.f;} // the opening: its first wind-up
+            else if(D->State==EVeyrDragonState::Windup&&D->Move!=EVeyrDragonMove::Fire&&D->Move!=EVeyrDragonMove::FlyAway&&D->Move!=EVeyrDragonMove::Bite&&NowV>=WindupGrowlClock)
+            {CurKind=EMixKind::Presence;PlayCueEx(ECue::DragonGrowlLow,.95f,EPlace::Head);CurKind=EMixKind::Other;WindupGrowlClock=NowV+4.0;}
+            else if(D->State==EVeyrDragonState::Rise)PlayCueEx(ECue::DragonGrowl,.8f,EPlace::Head);
+        }
         if(D->State==EVeyrDragonState::Exposed){if(!bBodyDownHeard)ArmExpect(0,.9f,ECue::Exposed,1.f,ECue::Impact,.8f);} // the knock-down already thudded: no second one
         else if(D->State==EVeyrDragonState::Buckle)PlayCueEx(ECue::DragonPain,.8f,EPlace::Head);
         else if(D->State==EVeyrDragonState::Active)
@@ -1229,11 +1285,15 @@ void AVeyrAudio::LoadMixTable()
     // (no limiter dependence). Loudest coincidence over two recorded fights, replayed offline without a limiter: +3.2 dBFS (with the
     // claw/tail placement above; +4.1 before). Trim -5.2 puts it at -2.0 dBFS and the two fights at -24.2 and -25.3 LUFS; the brief's
     // full 1.5 dB margin (-6.2) would leave one fight at -26.3 LUFS, so the margin is 0.5 dB. -VeyrMixTrimDb=0 restores pass 5.
-    constexpr float DefaultTrimDb=-5.2f,DefaultMusicTrimDb=-4.f;
+    // Mix pass 6 (critic: between events the mix fell to -48..-55 dBFS): the owner's score was 9 dB under pass 2 (trim -5.2, music -4) and sat at
+    // -53 dBFS RMS; music +8 puts it near -41 dBFS, the courtyard bed (AmbienceTrimDb) near -42: quiet moments about -38. -VeyrMusicTrimDb=-4 restores pass 6.
+    constexpr float DefaultTrimDb=-5.2f,DefaultMusicTrimDb=8.f;
     bMixTable=!FParse::Param(FCommandLine::Get(),TEXT("VeyrMixPass4"));
     bClawWide=FParse::Param(FCommandLine::Get(),TEXT("VeyrMixClawWide"));
     bHeadPass5=FParse::Param(FCommandLine::Get(),TEXT("VeyrMixHeadPass5"));
+    bVoicePass5=FParse::Param(FCommandLine::Get(),TEXT("VeyrMixVoicePass5"));
     for(int32 K=0;K<MixKindCount;++K){KindGainDb[K]=Defaults[K];for(int32 Q=0;Q<CueCount;++Q)LayerGainDb[K][Q]=0.f;}
+    if(!bVoicePass5)KindGainDb[static_cast<int32>(EMixKind::Presence)]=-7.f; // mix pass 6: the dragon is heard breathing between attacks (-13 in pass 5)
     struct FLayerDefault{EMixKind K;ECue Q;float Db;};
     // Per layer where one kind's layers need different weights: the knight's whooshes and the dragon's swing/roll/breath under Other,
     // the light hit's low layers down (its crack carries it), the slam's crunch layers up (stomps differ from each other by their debris).

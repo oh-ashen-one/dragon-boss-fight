@@ -342,6 +342,7 @@ void AVeyrAudio::StopVoices()
     }
     ActiveVoices = 0;
     for(int32 I=0;I<Beds.Num();++I){Beds[I]->Stop();Beds[I]->SetSound(nullptr);BedWaves[I]=nullptr;BedOffsets[I]=0;}
+    for(int32 I=0;I<BrazierLoops.Num();++I)if(IsValid(BrazierLoops[I])){BrazierLoops[I]->Stop();BrazierLoops[I]->SetSound(nullptr);BrazierWaves[I]=nullptr;}
 }
 
 void AVeyrAudio::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -493,7 +494,8 @@ void AVeyrAudio::RefreshMix()
     const float FinalGain=bAudioPolish&&Dragon.IsValid()&&Dragon->Health<=Dragon->MaxHealth*.25f?1.15f:1.f;
     // Mix pass 5: the master trim on the beds too (the music trim on the music alone); both 0 dB / off under -VeyrMixPass4.
     const float BedTrim=bNewSet?MixTrim():1.f,MusicTrim=bNewSet&&bMixTable?FMath::Pow(10.f,MusicTrimDb/20.f):1.f;
-    for(int32 I=0;I<Beds.Num();++I)Beds[I]->SetVolumeMultiplier(BedTrim*MasterVolume*(I==0?MusicVolume*.32f*MusicTrim*(bAudioPolish?MusicDuckGain*MusicEnvelope*FinalGain:1.f):EffectsVolume*.22f));
+    for(int32 I=0;I<Beds.Num();++I)Beds[I]->SetVolumeMultiplier(BedTrim*MasterVolume*(I==0?MusicVolume*.32f*MusicTrim*(bAudioPolish?MusicDuckGain*MusicEnvelope*FinalGain:1.f):EffectsVolume*.22f*AmbienceExtra()));
+    for(int32 I=0;I<BrazierLoops.Num();++I)if(IsValid(BrazierLoops[I]))BrazierLoops[I]->SetVolumeMultiplier(BedTrim*MasterVolume*EffectsVolume*FMath::Pow(10.f,BrazierTrimDb/20.f)*(bAudioPolish?MusicDuckGain:1.f));
 }
 void AVeyrAudio::UpdateBeds()
 {
@@ -520,6 +522,7 @@ void AVeyrAudio::UpdateBeds()
             if(I==0){++MusicStarts;MusicStartWorldSeconds=GetWorld()->GetTimeSeconds();UE_LOG(LogTemp,Display,TEXT("VEYR_MUSIC_START ownerScore=%d encounter=%d offsetBytes=%d"),bOwnerScoreLoaded,Knight->HasEnteredEncounter(),0);}
         }
     }
+    UpdateBraziers();
     RefreshMix();
 }
 void AVeyrAudio::PlayDestruction(const FVector& Position)

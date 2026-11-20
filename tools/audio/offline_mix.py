@@ -236,6 +236,8 @@ def summary(x, d, lag=0.0, quiet=False):
     res.update(loudness(x)); res['samplePeak'] = float(20 * np.log10(np.abs(x).max() + 1e-9))
     res['fullScale'] = int((np.abs(x) >= .999).sum())
     res['rMinusL'] = float(10 * np.log10((x[:, 1] ** 2).mean() / max((x[:, 0] ** 2).mean(), 1e-12)))
+    n4 = int(.4 * SR); k4 = len(x) // n4; blk = 10 * np.log10((x[:k4 * n4].mean(1).reshape(k4, n4) ** 2).mean(1) + 1e-12); blk = blk[blk > -90]  # trailing silence out
+    res['quietP10'] = float(np.percentile(blk, 10)); res['under45'] = float((blk < -45).mean())
     for k, v in rows.items():
         sp = [r['spec'] for r in v]; ts = [r['t'] for r in v]
         cors = [float(np.corrcoef(a, b)[0, 1]) for a, b, t1, t2 in zip(sp, sp[1:], ts, ts[1:]) if t2 - t1 < 3.0]
@@ -282,6 +284,8 @@ def check(res, pass2_light=13.0):
     if 'dragonStomp' in K and K['dragonStomp']['corr']:
         c = K['dragonStomp']['corr']; chk('stomp neighbours spectral corr < 0.8 for most pairs', c[1] < c[2] / 2, f'{c[2] - c[1]}/{c[2]} under 0.8, median {c[0]:.2f}')
     chk('loudness range >= 7 LU', res['lra'] >= 7, res['lra'])
+    if 'quietP10' in res:  # mix pass 6 (critic S6: 11 % of the film under -45 dBFS): the bed holds the quiet moments at -38..-34 dBFS
+        chk('quiet moments (400 ms RMS, 10th percentile) -38..-34 dBFS, under 2 % below -45', -38 <= res['quietP10'] <= -34 and res['under45'] < .02, f"{res['quietP10']:.1f} dBFS, {100 * res['under45']:.0f}% under -45")
     for n, ok, v in out: print(f"  {'PASS' if ok else 'FAIL'}  {n}: {v}")
     return out
 

@@ -90,7 +90,7 @@ void AVeyrAudio::TapTick()
     const float FinalGain=bAudioPolish&&Dragon.IsValid()&&Dragon->Health<=Dragon->MaxHealth*.25f?1.15f:1.f;
     FTapGain G;G.T=T;
     G.Music=Live?MasterVolume*MusicVolume*.32f*(bAudioPolish?MusicDuckGain*MusicEnvelope*FinalGain:1.f)*MixTrim()*(bMixTable?FMath::Pow(10.f,MusicTrimDb/20.f):1.f):0.f;
-    G.Ambience=Live&&!BedPCM[1].IsEmpty()?MasterVolume*EffectsVolume*.22f*MixTrim():0.f;
+    G.Ambience=Live&&!BedPCM[1].IsEmpty()?MasterVolume*EffectsVolume*.22f*MixTrim()*AmbienceExtra():0.f; // brazier loops are spatial: not in the tap
     if(Live&&TapMusicStart<0)TapMusicStart=T;
     TapGains.Add(G);
 }
