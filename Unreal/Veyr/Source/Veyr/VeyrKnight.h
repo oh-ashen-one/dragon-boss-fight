@@ -38,6 +38,9 @@ public:
     /** Proof only: the bound mouse-look and forward-key handlers themselves. */
     void ProofLookYaw(float Value){LookYaw(Value);}
     void ProofForward(bool bDown){if(bDown)ForwardPressed();else ForwardReleased();}
+    /** Proof only: the lock is steering the view again (no manual-look pause) and what is left of the mouse bend. */
+    bool ProofLockSteering() const {return bLockedOn&&ManualCameraRemaining<=0.f&&!bProofFreezeLockView;}
+    float ProofLockOffsetDeg() const {return static_cast<float>(FMath::Max(FMath::Abs(LockLookOffset.Yaw),FMath::Abs(LockLookOffset.Pitch)));}
     FVector ProofLockedMoveDirection(float Forward,float Right) const;
     AVeyrKnight();
     virtual void Tick(float DeltaSeconds) override;

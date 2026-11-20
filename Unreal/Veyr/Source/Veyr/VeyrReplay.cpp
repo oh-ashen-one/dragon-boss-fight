@@ -2222,7 +2222,7 @@ bool AVeyrReplay::DriveLockInputProof()
     if(T<.05f){LockInputBase=Dev;return true;}
     if(T<.55f){Knight->ProofLookYaw(3.f);LockInputPeak=FMath::Max(LockInputPeak,FMath::Abs(Dev-LockInputBase));return true;}
     if(T<1.55f){LockInputPeak=FMath::Max(LockInputPeak,FMath::Abs(Dev-LockInputBase));return true;}
-    if(LockInputEnd<0.f)LockInputEnd=FMath::Abs(Dev-LockInputBase); // 1.0 s after release
+    if(LockInputEnd<0.f){LockInputEnd=FMath::Abs(Dev-LockInputBase);bLockInputSteering=Knight->ProofLockSteering();LockInputOffsetLeft=Knight->ProofLockOffsetDeg();} // 1.0 s after release
     // D2
     if(!Knight->bLockedOn)Knight->ToggleLockOn();
     Knight->bProofFreezeLockView=true;
@@ -2240,10 +2240,12 @@ bool AVeyrReplay::DriveLockInputProof()
         const FVector D=(Knight->GetActorLocation()-LockInputMoveFrom).GetSafeNormal2D();const float Moved=static_cast<float>(FVector::Dist2D(Knight->GetActorLocation(),LockInputMoveFrom));
         const float MoveYaw=static_cast<float>(D.Rotation().Yaw);
         LockInputMoveVsCamera=FMath::Abs(FMath::FindDeltaAngleDegrees(LockInputCamYaw,MoveYaw));LockInputMoveVsBoss=FMath::Abs(FMath::FindDeltaAngleDegrees(LockInputMoveBossYaw,MoveYaw));
-        const bool bD1=LockInputPeak>=8.f&&LockInputEnd<=6.f&&bLockInputStayedLocked;
+        // D1 passes when, 1.0 s after release, the lock is steering the view again and the bend is gone (under 2 deg);
+        // the view's angle to the dragon line is reported (the dragon moves meanwhile, so it is not the criterion).
+        const bool bD1=LockInputPeak>=8.f&&bLockInputSteering&&LockInputOffsetLeft<=2.f&&bLockInputStayedLocked;
         const bool bD2=Moved>=60.f&&LockInputMoveVsCamera<=10.f&&Knight->bLockedOn;
-        Finish(bD1&&bD2,FString::Printf(TEXT("lockinput D1 %s (look input bent the view %.1f deg; %.1f deg off the lock line 1.0 s after release; lock held %d) D2 %s (camera %.0f deg off the dragon line; forward moved %.0f cm at %.1f deg from the camera's forward, %.1f deg from the dragon line) switches D1=%d D2=%d"),
-            bD1?TEXT("pass"):TEXT("FAIL"),LockInputPeak,LockInputEnd,bLockInputStayedLocked?1:0,bD2?TEXT("pass"):TEXT("FAIL"),LockInputCamVsBoss,Moved,LockInputMoveVsCamera,LockInputMoveVsBoss,
+        Finish(bD1&&bD2,FString::Printf(TEXT("lockinput D1 %s (look input bent the view %.1f deg; 1.0 s after release: lock steering %d, bend left %.1f deg, view %.1f deg from its line before the input; lock held %d) D2 %s (camera %.0f deg off the dragon line; forward moved %.0f cm at %.1f deg from the camera's forward, %.1f deg from the dragon line) switches D1=%d D2=%d"),
+            bD1?TEXT("pass"):TEXT("FAIL"),LockInputPeak,bLockInputSteering?1:0,LockInputOffsetLeft,LockInputEnd,bLockInputStayedLocked?1:0,bD2?TEXT("pass"):TEXT("FAIL"),LockInputCamVsBoss,Moved,LockInputMoveVsCamera,LockInputMoveVsBoss,
             FParse::Param(FCommandLine::Get(),TEXT("VeyrLockMouseRelease"))?1:0,FParse::Param(FCommandLine::Get(),TEXT("VeyrLockMoveCameraBasis"))?1:0));
     }
     return true;

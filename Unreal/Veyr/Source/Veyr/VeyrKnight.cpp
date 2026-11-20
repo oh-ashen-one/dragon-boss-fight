@@ -954,7 +954,7 @@ void AVeyrKnight::UpdateMovement(float DeltaSeconds)
     UCharacterMovementComponent* Movement = GetCharacterMovement();
     if(const auto* Mode=GetWorld()->GetAuthGameMode<AVeyrGameMode>())if(Mode->IsArenaIntroActive())
     {ConsumeMovementInputVector();Movement->StopMovementImmediately();MoveIntent=FVector::ZeroVector;return;}
-    if (!bReplayControlled && !bMouseCaptured)
+    if (!bReplayControlled && !bMouseCaptured && !bProofHumanInput)
     {
         ConsumeMovementInputVector();
         Movement->Velocity.X = Movement->Velocity.Y = 0.f;
